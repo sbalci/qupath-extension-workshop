@@ -30,7 +30,6 @@
 import qupath.lib.gui.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import qupath.lib.projects.Project
-import qupath.lib.objects.classes.PathClass
 
 // ──────────────────────────────────────────────────────────────
 // Non-modal pencere yardımcıları
@@ -233,7 +232,7 @@ def t0 = System.currentTimeMillis()
 // nesneler çoğalmasın
 def existing = QP.getAnnotationObjects().findAll {
     def cls = it.getPathClass()?.getName() ?: ""
-    cls in ["Tumor", "Stroma", "tumor-stroma-RF"]
+    cls in ["Tumor", "Stroma"]
 }
 if (!existing.isEmpty()) {
     QP.removeObjects(existing, true)

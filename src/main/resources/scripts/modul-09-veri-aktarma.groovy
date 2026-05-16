@@ -227,6 +227,18 @@ if (!projectMode && currentImageData == null) {
     return
 }
 
+if (!projectMode && currentEntry == null) {
+    // Açık görüntü var ama projeye dahil değil — MeasurementExporter ve
+    // entry.saveImageData çağrılarımız bir ProjectImageEntry gerektirir.
+    Dialogs.showErrorMessage(
+        "Slayt projeye eklenmemiş",
+        "Açık olan slayt projenin parçası değil; ihraç edilemez.\n\n" +
+        "Çözüm: Project panelinden bu slaytı projeye ekleyin\n" +
+        "(sol üstte + ikonu) ve scripti tekrar çalıştırın."
+    )
+    return
+}
+
 // ──────────────────────────────────────────────────────────────
 // 2.5) Açık slaydı diske kaydet — kritik
 // MeasurementExporter ve readImageData her ikisi de .qpdata dosyasından

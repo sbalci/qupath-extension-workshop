@@ -329,7 +329,11 @@ if (hasClassifier) {
     println "Adım 3/4: Tümör vs Non-neoplastic sınıflandırma..."
 
     def t2 = System.currentTimeMillis()
-    QP.selectObjects(detectedCells)
+    // runObjectClassifier all detections in the current hierarchy by default.
+    // TCR is the only ancestor; we don't pre-select to avoid selection state
+    // mismatches that bit older QuPath versions. detectedCells listesi referans
+    // tutar; classifier setPathClass'i çağırır, listenin elementlerini güncel
+    // sınıflandırılmış halde okuruz.
     QP.runObjectClassifier(objClassifierName)
     step3Time = (System.currentTimeMillis() - t2) / 1000.0
 

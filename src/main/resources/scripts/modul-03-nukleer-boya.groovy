@@ -3,7 +3,7 @@
  * --------------------------------------------------------
  * Atölye için "hızlı deneme" scripti. Seçilen anotasyon içinde
  * Ki-67 / p53 / başka bir nükleer IHC boyamasını otomatik olarak skorlar
- * ve **Ki-67 LI** (etiketleme indeksi) ile **H-score**'u raporlar.
+ * ve **Ki-67 LI** (etiketleme indeksi) ile bin dağılımını raporlar.
  *
  * KULLANIM:
  *   1. Ki-67 (veya başka nükleer DAB) IHC slaytını açın
@@ -17,9 +17,11 @@
  *   • Atölye boya vektörleri ile çekirdek-yoğun DAB sinyalini ayırır
  *   • Her çekirdeği Negative / 1+ / 2+ / 3+ olarak sınıflar
  *     (eşikler: 0.2 / 0.4 / 0.6 OD)
- *   • Pozitif yüzdesini (Ki-67 LI) ve H-score'u (0–300) hesaplar
+ *   • Pozitif yüzdesini (Ki-67 LI), bin dağılımını ve hücre yoğunluğunu hesaplar
  *
  * NE YAPMAZ:
+ *   • H-score HESAPLAMAZ — H-score Ki-67 için kullanılmaz; ER/PR (Modül 3b)
+ *     ve sitoplazmik markerlar (Modül 5) için uygundur
  *   • Boya vektörlerinizi otomatik tahmin etmez — önceden ayarlanmış olmalı
  *     ya da QuPath'in varsayılan H-DAB vektörlerini kullanır
  *   • Klinik raporlama için değildir — araştırma/eğitim amaçlı
@@ -196,9 +198,11 @@ def devam = waitForConfirm(
     "  • 2+ (orta):   0.40 OD\n" +
     "  • 3+ (güçlü):  0.60 OD\n\n" +
     "Çıktı:\n" +
-    "  • Ki-67 LI (Pozitif %) — proliferasyon indeksi\n" +
-    "  • H-score (0–300) — yoğunluk-ağırlıklı bütünleşik skor\n" +
-    "  • Hücre yoğunluğu (hücre/mm²)\n\n" +
+    "  • Ki-67 LI (Pozitif %) — proliferasyon indeksi (tek klinik metrik)\n" +
+    "  • Bin dağılımı (% 0 / 1+ / 2+ / 3+)\n" +
+    "  • Hücre yoğunluğu (hücre/mm²) + anotasyon alanı\n\n" +
+    "Not: H-score Ki-67 için kullanılmaz. ER/PR için Modül 3b'yi, sitoplazmik\n" +
+    "markerlar için Modül 5'i kullanın.\n\n" +
     "Hazırsanız OK, değilse Cancel ile çıkın."
 )
 if (!devam) {
@@ -313,10 +317,14 @@ def density = totalAreaMm2 > 0 ? Math.round(totalCells / totalAreaMm2) : 0
 // Sadece istatistiksel örneklem uyarısı (klinik yorum değil — yalnızca veri kalitesi notu)
 def uyari = ""
 if (totalCells < 200) {
-    uyari = "\n📝 Not: %,d hücre <200 — küçük örneklem; sonuçlar istatistiksel olarak hassasiyetli olmayabilir.\n" +
-            "  Daha büyük bir ROI ile tekrar deneyebilirsiniz (≥500-1000 hücre).".replace("%,d", String.format("%,d", totalCells))
+    uyari = String.format(
+        "\n📝 Not: %,d hücre <200 — küçük örneklem; sonuçlar istatistiksel olarak hassasiyetli olmayabilir.\n" +
+        "  Daha büyük bir ROI ile tekrar deneyebilirsiniz (≥500-1000 hücre).",
+        totalCells)
 } else if (totalCells > 50000) {
-    uyari = "\n📝 Not: %,d hücre çok fazla — ROI küçültmek hesaplama hızını artırır.".replace("%,d", String.format("%,d", totalCells))
+    uyari = String.format(
+        "\n📝 Not: %,d hücre çok fazla — ROI küçültmek hesaplama hızını artırır.",
+        totalCells)
 }
 
 // ──────────────────────────────────────────────────────────────
