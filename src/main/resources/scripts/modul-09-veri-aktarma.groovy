@@ -201,6 +201,11 @@ def choice = waitForChoice(
     "Modül 9 — Veri dışa aktarma",
     "Annotation + Detection ölçümlerini ve anotasyon geometrilerini\n" +
     "(GeoJSON) dışa aktaracağım.\n\n" +
+    "⚠️ Önemli: İhraç slaytın **diske kaydedilmiş** halinden okunur\n" +
+    "(QuPath'in MeasurementExporter'ı .qpdata dosyasından çalışır).\n" +
+    "Açık slaydı sizin için otomatik kaydedeceğim. Eğer son anotasyon /\n" +
+    "tespit değişikliklerinizin dahil olmasını istiyorsanız, devam edin —\n" +
+    "kaydetme bu scriptin ilk adımı olacak.\n\n" +
     "Çıktı klasörü:\n" +
     "  <proje-klasörü>/exports/YYYY-MM-DD_HHmm/\n\n" +
     "Hangi modu istiyorsunuz?\n" +
@@ -220,6 +225,27 @@ if (!projectMode && currentImageData == null) {
         "'Sadece bu görüntü' modu için bir slaytın açık olması gerekir."
     )
     return
+}
+
+// ──────────────────────────────────────────────────────────────
+// 2.5) Açık slaydı diske kaydet — kritik
+// MeasurementExporter ve readImageData her ikisi de .qpdata dosyasından
+// okur. Kaydedilmemiş anotasyon / tespit değişiklikleri ihracda görünmez,
+// dosyalar boş çıkar. Burada savunmacı bir kaydetme yapıyoruz.
+// ──────────────────────────────────────────────────────────────
+def currentSaved = false
+def currentSaveError = null
+if (currentImageData != null && currentEntry != null) {
+    try {
+        currentEntry.saveImageData(currentImageData)
+        currentSaved = true
+        println "✓ Açık slayt diske kaydedildi: ${currentEntry.getImageName()}"
+    } catch (Throwable t) {
+        currentSaveError = "${t.getClass().getSimpleName()}: ${t.getMessage()}"
+        println "⚠ Açık slayt kaydedilemedi: ${currentSaveError}"
+    }
+} else if (projectMode) {
+    println "(Açık görüntü yok — projedeki tüm slaytlar son kayıtlı halinden okunur.)"
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -359,11 +385,35 @@ def errSection = errors.isEmpty()
     : "\n\n⚠️  Bazı dosyalar yazılamadı:\n" + errors.take(10).collect { "  • ${it}" }.join("\n") +
       (errors.size() > 10 ? "\n  ... ve ${errors.size() - 10} hata daha" : "")
 
+def saveStatusLine
+if (currentSaved) {
+    saveStatusLine = "✓ Açık slayt diske kaydedildi (anotasyon/tespitler dahildir)"
+} else if (currentSaveError != null) {
+    saveStatusLine = "⚠ Açık slayt KAYDEDİLEMEDİ — son değişiklikler ihracda görünmeyebilir.\n" +
+                     "  Detay: " + currentSaveError + "\n" +
+                     "  Çözüm: QuPath ana penceresinde [Ctrl+S] basın, scripti tekrar çalıştırın."
+} else {
+    saveStatusLine = "(Açık slayt yok — projedeki tüm slaytlar son kayıtlı halinden okundu.)"
+}
+
+// Eğer ihraç toplamları sıfırsa — çoğunlukla kaydedilmemiş slayt göstergesi
+def emptyHint = ""
+if (annotationsTotal == 0 && detectionsTotal == 0 && currentSaveError == null) {
+    emptyHint = "\n\n💡 Çıktıda 0 annotation / 0 detection görünüyor. Olası nedenler:\n" +
+                "  1. Bu slaytta gerçekten hiç anotasyon / tespit yoktu — önce Modül 2-8'den birini koşun.\n" +
+                "  2. Slayt scriptten ÖNCE QuPath dışında değiştirildi ve .qpdata kaydedilmedi.\n" +
+                "  3. ROI seçilip içinde detection üretildi ama anotasyon save'lenmedi.\n" +
+                "QuPath'te [Ctrl+S] ile slaydı kaydedin ve scripti tekrar çalıştırın."
+}
+
 showResultWindow(
     "Veri dışa aktarma — Tamamlandı 📤",
     String.format(
         "Mod: %s\n" +
         "Çıktı klasörü:\n  %s\n\n" +
+        "💾 Kaydetme durumu\n" +
+        "──────────────────\n" +
+        "  %s\n\n" +
         "📊 Özet\n" +
         "──────\n" +
         "  Slayt sayısı            : %d\n" +
@@ -371,7 +421,7 @@ showResultWindow(
         "  Toplam detection        : %d\n" +
         "  Yazılan dosya sayısı    : %d\n" +
         "  Süre                    : %.1f sn\n\n" +
-        "📁 Yazılan dosyalar:\n%s%s\n\n" +
+        "📁 Yazılan dosyalar:\n%s%s%s\n\n" +
         "📝 Sonraki adım:\n" +
         "  • R / Python / Excel ile `exports/%s/` içindeki TSV dosyalarını okuyun.\n" +
         "  • GeoJSON dosyaları geopandas / sf paketleriyle açılır (anotasyon\n" +
@@ -380,9 +430,10 @@ showResultWindow(
         "    kodları var.",
         (projectMode ? "Tüm proje" : "Sadece bu görüntü"),
         outDir.getAbsolutePath(),
+        saveStatusLine,
         imagesProcessed, annotationsTotal, detectionsTotal,
         filesWritten.size(), elapsed,
-        fileList, errSection,
+        fileList, errSection, emptyHint,
         stamp
     )
 )
