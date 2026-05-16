@@ -13,9 +13,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.zip.ZipException;
 
 import javafx.application.Platform;
 import javafx.scene.control.MenuItem;
@@ -104,7 +106,25 @@ public class WorkshopExtension implements QuPathExtension {
      * thread isn't blocked while the script displays its own dialogs.
      */
     private void runScriptSafely(QuPathGUI qupath, ScriptEntry entry) {
-        String scriptBody = readScriptResource(entry.resource);
+        String scriptBody;
+        try {
+            scriptBody = readScriptResource(entry.resource);
+        } catch (JarCorruptedException jce) {
+            Dialogs.showErrorMessage(
+                "Eklenti yeniden yüklenmeli",
+                "QuPath bu eklenti JAR'ını başlatma sırasında okudu, ama dosya bundan sonra " +
+                "değişmiş görünüyor (büyük olasılıkla atölye eklentisinin yeni bir sürümü ile " +
+                "değiştirildi). Java'nın iç ZIP indeksi artık dosyanın güncel içeriğiyle " +
+                "eşleşmiyor.\n\n" +
+                "Çözüm:\n" +
+                "  1. QuPath'ı tamamen kapatın (sadece projeyi değil)\n" +
+                "  2. QuPath'ı yeniden açın\n" +
+                "  3. Atölye menüsünü tekrar deneyin\n\n" +
+                "Eğer hata devam ederse JAR dosyasının bozulmuş olabileceği için " +
+                "yeni bir kopyasını atölye organizatöründen isteyin."
+            );
+            return;
+        }
         if (scriptBody == null) {
             Dialogs.showErrorMessage(
                 "Script bulunamadı",
@@ -151,10 +171,32 @@ public class WorkshopExtension implements QuPathExtension {
                     new InputStreamReader(in, StandardCharsets.UTF_8))) {
                 return reader.lines().collect(Collectors.joining("\n"));
             }
+        } catch (UncheckedIOException ex) {
+            // BufferedReader.lines() wraps IOException as UncheckedIOException.
+            // ZipException here almost always means the JAR was replaced on disk
+            // while QuPath had it open — stale central directory points at offsets
+            // that no longer contain valid local file headers in the new JAR.
+            Throwable cause = ex.getCause();
+            if (cause instanceof ZipException) {
+                logger.error("JAR corruption reading {} — likely JAR replaced while QuPath running", path, ex);
+                throw new JarCorruptedException(ex);
+            }
+            logger.error("Unchecked I/O reading script resource: {}", path, ex);
+            return null;
         } catch (IOException ex) {
+            if (ex instanceof ZipException) {
+                logger.error("JAR corruption reading {} — likely JAR replaced while QuPath running", path, ex);
+                throw new JarCorruptedException(ex);
+            }
             logger.error("Failed to read script resource: {}", path, ex);
             return null;
         }
+    }
+
+    /** Marker exception: JAR central directory and on-disk content disagree.
+     *  Almost always caused by replacing the JAR while QuPath has it open. */
+    private static final class JarCorruptedException extends RuntimeException {
+        JarCorruptedException(Throwable cause) { super(cause); }
     }
 
     private void showAboutDialog() {
