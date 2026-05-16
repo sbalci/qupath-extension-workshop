@@ -1,0 +1,337 @@
+/**
+ * Modül 6 — Tek Tıkla Tümör vs Stroma Segmentasyonu
+ * ---------------------------------------------------
+ * Bu script önceden eğitilmiş bir **piksel sınıflandırıcısını** projedeki
+ * `classifiers/` klasöründen yükleyip aktif slayttaki tüm doku üzerinde
+ * çalıştırır. Sonuçtan **Tumor** ve **Stroma** sınıflı anotasyonlar üretir
+ * ve **Tümör/Stroma Oranı (TSR)** raporlar.
+ *
+ * ÖNKOŞUL — sınıflandırıcı dosyası:
+ *   Proje klasörünüzde şu yol bulunmalı:
+ *     <proje>/classifiers/tumor-stroma-RF.json
+ *
+ *   Sınıflandırıcı yoksa: Modül 6'nın "Şimdi anlayalım" bölümündeki
+ *   adımları izleyerek anotasyon çizip eğitin (5 dk), sonra "Save classifier"
+ *   ile bu isimle kaydedin.
+ *
+ * KULLANIM:
+ *   1. Bir H&E slaytı açın
+ *   2. Tüm slaytı işlemek için anotasyon ÇİZMENIZE GEREK YOK
+ *      — script tüm görüntüye uygular
+ *   3. [Automate → Project scripts → bu script]
+ *
+ * KLİNİK ÖNEM:
+ *   Tümör/Stroma Oranı (TSR) birçok kanserde **prognostik biomarker**:
+ *     • Düşük TSR (stroma baskın <%50) = kötü prognoz (kolon, meme, baş-boyun)
+ *     • Yüksek TSR (tümör baskın >%50) = nispeten iyi prognoz
+ *   Modül 7'de bu sınıflandırıcı çıktısını IHC sayımıyla birleştireceğiz.
+ */
+
+import qupath.lib.gui.dialogs.Dialogs
+import qupath.lib.scripting.QP
+import qupath.lib.projects.Project
+import qupath.lib.objects.classes.PathClass
+
+// ──────────────────────────────────────────────────────────────
+// Non-modal pencere yardımcıları
+//   - waitForConfirm    : modal-hissi veren ama QuPath'i bloklamayan onay penceresi
+//   - showResultWindow  : sonuç penceresi — açık kalır, QuPath kullanılmaya devam edilebilir
+//
+// İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
+// parametre değiştirip scripti tekrar koşabilir, sonuçları kopyalayabilir.
+// ──────────────────────────────────────────────────────────────
+def waitForConfirm = { String windowTitle, String windowBody ->
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    def confirmed = new java.util.concurrent.atomic.AtomicBoolean(false)
+
+    javafx.application.Platform.runLater {
+        try {
+            def stage = new javafx.stage.Stage()
+            stage.initModality(javafx.stage.Modality.NONE)
+            stage.setTitle(windowTitle)
+            stage.setAlwaysOnTop(true)
+
+            def label = new javafx.scene.control.Label(windowBody)
+            label.setWrapText(true)
+            label.setStyle("-fx-font-size: 12px; -fx-padding: 8px;")
+
+            def scrollPane = new javafx.scene.control.ScrollPane(label)
+            scrollPane.setFitToWidth(true)
+
+            def okBtn = new javafx.scene.control.Button("Çalıştır")
+            okBtn.setDefaultButton(true)
+            okBtn.setOnAction({
+                confirmed.set(true)
+                stage.close()
+            })
+
+            def cancelBtn = new javafx.scene.control.Button("İptal")
+            cancelBtn.setCancelButton(true)
+            cancelBtn.setOnAction({
+                confirmed.set(false)
+                stage.close()
+            })
+
+            stage.setOnHidden({ latch.countDown() })
+
+            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            alwaysTop.setSelected(true)
+            alwaysTop.selectedProperty().addListener(
+                { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
+            )
+
+            def spacer = new javafx.scene.layout.Region()
+            javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
+
+            def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, cancelBtn, okBtn)
+            buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
+            buttons.setPadding(new javafx.geometry.Insets(10))
+
+            def root = new javafx.scene.layout.BorderPane()
+            root.setCenter(scrollPane)
+            root.setBottom(buttons)
+
+            stage.setScene(new javafx.scene.Scene(root, 620, 460))
+            stage.show()
+        } catch (Throwable t) {
+            // FX kurulumu başarısızsa modal'a geri dön
+            confirmed.set(qupath.lib.gui.dialogs.Dialogs.showConfirmDialog(windowTitle, windowBody))
+            latch.countDown()
+        }
+    }
+
+    latch.await()
+    return confirmed.get()
+}
+
+def showResultWindow = { String windowTitle, String windowBody ->
+    javafx.application.Platform.runLater {
+        try {
+            def stage = new javafx.stage.Stage()
+            stage.initModality(javafx.stage.Modality.NONE)
+            stage.setTitle(windowTitle)
+            stage.setAlwaysOnTop(true)
+
+            def textArea = new javafx.scene.control.TextArea(windowBody)
+            textArea.setEditable(false)
+            textArea.setWrapText(false)
+            textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
+
+            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            alwaysTop.setSelected(true)
+            alwaysTop.selectedProperty().addListener(
+                { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
+            )
+
+            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            copyBtn.setOnAction({
+                def cb = javafx.scene.input.Clipboard.getSystemClipboard()
+                def content = new javafx.scene.input.ClipboardContent()
+                content.putString(windowBody)
+                cb.setContent(content)
+            })
+
+            def closeBtn = new javafx.scene.control.Button("Kapat")
+            closeBtn.setDefaultButton(true)
+            closeBtn.setOnAction({ stage.close() })
+
+            def spacer = new javafx.scene.layout.Region()
+            javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
+
+            def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, copyBtn, closeBtn)
+            buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
+            buttons.setPadding(new javafx.geometry.Insets(8))
+
+            def root = new javafx.scene.layout.BorderPane()
+            root.setCenter(textArea)
+            root.setBottom(buttons)
+
+            stage.setScene(new javafx.scene.Scene(root, 760, 580))
+            stage.show()
+        } catch (Throwable t) {
+            // FX başarısızsa modal'a geri dön — kayıp olmasın
+            qupath.lib.gui.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────
+// 1) Ön kontroller
+// ──────────────────────────────────────────────────────────────
+def imageData = QP.getCurrentImageData()
+if (imageData == null) {
+    Dialogs.showErrorMessage(
+        "Görüntü açık değil",
+        "Önce bir H&E slaytı açın, sonra bu scripti tekrar çalıştırın."
+    )
+    return
+}
+
+def project = QP.getProject()
+if (project == null) {
+    Dialogs.showErrorMessage(
+        "Proje açık değil",
+        "Bu script proje seviyesinde çalışır.\n" +
+        "Önce [File → Project → Create project] ile bir proje oluşturun ve slaytlarınızı ekleyin."
+    )
+    return
+}
+
+def classifierName = 'tumor-stroma-RF'
+def availableClassifiers = project.getPixelClassifiers().getNames()
+
+if (!availableClassifiers.contains(classifierName)) {
+    Dialogs.showErrorMessage(
+        "Sınıflandırıcı bulunamadı",
+        "Bu script şu sınıflandırıcıyı arıyor:\n" +
+        "  classifiers/${classifierName}.json\n\n" +
+        "Projenizde bu dosya yok. Bulunan sınıflandırıcılar:\n" +
+        "  ${availableClassifiers.join(', ') ?: '(hiçbiri)'}\n\n" +
+        "Çözüm — Modül 6'daki adımları izleyin:\n" +
+        "  1. H&E slaytında Tumor / Stroma anotasyonları çizin (~5 dk)\n" +
+        "  2. [Classify → Pixel classification → Train pixel classifier]\n" +
+        "  3. Random Forest, Resolution: High (2 µm/px)\n" +
+        "  4. Eğitin ve 'Save classifier' ile **${classifierName}** ismiyle kaydedin\n" +
+        "  5. Bu scripti tekrar çalıştırın"
+    )
+    return
+}
+
+// ──────────────────────────────────────────────────────────────
+// 2) Karşılama
+// ──────────────────────────────────────────────────────────────
+def devam = waitForConfirm(
+    "Modül 6 — Tümör vs Stroma segmentasyonu",
+    "Bu script projenizdeki '${classifierName}' adlı piksel sınıflandırıcıyı\n" +
+    "açık slaytın tamamına uygular ve **Tumor** + **Stroma** sınıflı anotasyon\n" +
+    "nesneleri üretir.\n\n" +
+    "Atölye varsayılan post-işlem parametreleri:\n" +
+    "  • Minimum object size  : 10000 µm²  (≈ 0.01 mm²)\n" +
+    "  • Minimum hole size    : 5000 µm²\n" +
+    "  • Split objects        : Açık (birleşik tümör adalarını ayır)\n\n" +
+    "Çıktı:\n" +
+    "  • Annotations panelinde Tumor ve Stroma sınıflı yeni anotasyonlar\n" +
+    "  • Toplam alan, TSR ve klinik yorum\n\n" +
+    "Bu işlem tüm slaytı tarayacağı için 1–3 dakika sürebilir.\n\n" +
+    "Hazırsanız OK."
+)
+if (!devam) { println "İptal."; return }
+
+// ──────────────────────────────────────────────────────────────
+// 3) Sınıflandırıcıyı çalıştır
+// ──────────────────────────────────────────────────────────────
+println "─────────────────────────────────────"
+println "Modül 6 — Tümör vs Stroma"
+println "─────────────────────────────────────"
+println "Sınıflandırıcı: ${classifierName}"
+println "Aktif slayt: ${QP.getProjectEntry()?.getImageName() ?: 'unnamed'}"
+println "Tüm görüntü üzerine uygulanıyor..."
+
+def t0 = System.currentTimeMillis()
+
+// Önce mevcut Tumor/Stroma anotasyonlarını temizleyelim ki tekrar koşulduğunda
+// nesneler çoğalmasın
+def existing = QP.getAnnotationObjects().findAll {
+    def cls = it.getPathClass()?.getName() ?: ""
+    cls in ["Tumor", "Stroma", "tumor-stroma-RF"]
+}
+if (!existing.isEmpty()) {
+    QP.removeObjects(existing, true)
+    println "  Önceki ${existing.size()} Tumor/Stroma anotasyon temizlendi."
+}
+
+// Sınıflandırıcıyı uygula → anotasyonlar üret
+// Quarto'nun handson script'inden çağırıyoruz; QP helper'ı doğrudan kullanır
+QP.createAnnotationsFromPixelClassifier(
+    classifierName,
+    10000.0,   // minimum object area (µm²)
+    5000.0     // minimum hole area (µm²)
+)
+
+def elapsed = (System.currentTimeMillis() - t0) / 1000.0
+
+// ──────────────────────────────────────────────────────────────
+// 4) Sonuçları topla
+// ──────────────────────────────────────────────────────────────
+def cal = imageData.getServer().getPixelCalibration()
+def pixelWidth  = cal.getPixelWidthMicrons()
+def pixelHeight = cal.getPixelHeightMicrons()
+
+def tumorAnnotations = QP.getAnnotationObjects().findAll {
+    it.getPathClass()?.getName() == "Tumor"
+}
+def stromaAnnotations = QP.getAnnotationObjects().findAll {
+    it.getPathClass()?.getName() == "Stroma"
+}
+
+def areaFn = { ann ->
+    def roi = ann.getROI()
+    return roi != null ? (roi.getArea() * pixelWidth * pixelHeight) / 1_000_000.0 : 0.0
+}
+
+def tumorAreaMm2  = tumorAnnotations.sum(0.0)  { areaFn(it) }
+def stromaAreaMm2 = stromaAnnotations.sum(0.0) { areaFn(it) }
+def totalAreaMm2  = tumorAreaMm2 + stromaAreaMm2
+
+def tsr = totalAreaMm2 > 0 ? 100.0 * tumorAreaMm2 / totalAreaMm2 : 0.0  // % tumor of total tissue
+
+// ──────────────────────────────────────────────────────────────
+// 5) Klinik yorum — TSR
+// ──────────────────────────────────────────────────────────────
+def klinikNot
+if (tsr < 30) {
+    klinikNot = "**Stroma-baskın tümör** (TSR <%30).\n" +
+                "Kolon, meme, baş-boyun gibi tümörlerde **kötü prognozla** ilişkilendirilmiştir.\n" +
+                "Daha agresif tedavi protokolü düşünülebilir (klinik bağlamda)."
+} else if (tsr < 50) {
+    klinikNot = "**Stroma-zengin tümör** (TSR %30-50).\n" +
+                "Orta düzeyde prognostik anlam taşır. Diğer parametrelerle (Ki-67, stage) birlikte değerlendirin."
+} else if (tsr < 70) {
+    klinikNot = "**Dengeli tümör/stroma** (TSR %50-70). Tipik aralık."
+} else {
+    klinikNot = "**Tümör-baskın** (TSR >%70).\n" +
+                "Nispeten iyi prognoz işareti olabilir; agresif tümör türlerinde\n" +
+                "(yüksek dereceli sarkom vb.) bu yorum geçerli olmayabilir."
+}
+
+def uyari = ""
+if (tumorAnnotations.isEmpty()) {
+    uyari = "\n⚠️ Hiç tümör bölgesi tespit edilmedi.\n" +
+            "  Sınıflandırıcı bu slayt için iyi eğitilmemiş olabilir.\n" +
+            "  Modül 6'daki Active learning iş akışıyla daha fazla anotasyon ekleyin."
+} else if (totalAreaMm2 < 1.0) {
+    uyari = String.format("\n⚠️ Çok küçük doku alanı (%.2f mm²) — sonuçlar güvenilir olmayabilir.", totalAreaMm2)
+}
+
+// ──────────────────────────────────────────────────────────────
+// 6) Sonucu sun
+// ──────────────────────────────────────────────────────────────
+showResultWindow(
+    "Tamamlandı 🧠",
+    String.format(
+        "Tümör vs Stroma segmentasyonu bitti.\n\n" +
+        "📊 Alan dağılımı\n" +
+        "─────────────────\n" +
+        "  Tümör  : %.2f mm²  (%,d anotasyon nesnesi)\n" +
+        "  Stroma : %.2f mm²  (%,d anotasyon nesnesi)\n" +
+        "  Toplam : %.2f mm²\n\n" +
+        "🎯 Tümör/Stroma Oranı (TSR)\n" +
+        "────────────────────────────\n" +
+        "  TSR (%%tümör / toplam doku) : %%%.1f\n" +
+        "  Süre                       : %.1f sn\n" +
+        "%s\n" +
+        "💡 Klinik yorum:\n%s\n\n" +
+        "Sıradaki: Modül 7'de bu tümör anotasyonlarını Ki-67 IHC ile birleştirip\n" +
+        "yalnızca tümör alanı içinde proliferasyon indeksi hesaplayacağız.",
+        tumorAreaMm2, tumorAnnotations.size(),
+        stromaAreaMm2, stromaAnnotations.size(),
+        totalAreaMm2, tsr, elapsed, uyari, klinikNot
+    )
+)
+
+println "─────────────────────────────────────"
+println "Tamamlandı:"
+println String.format("  Tümör: %.2f mm² (%d nesne)", tumorAreaMm2, tumorAnnotations.size())
+println String.format("  Stroma: %.2f mm² (%d nesne)", stromaAreaMm2, stromaAnnotations.size())
+println String.format("  TSR: %.1f%%  |  Süre: %.1f sn", tsr, elapsed)
+println "─────────────────────────────────────"
