@@ -58,7 +58,8 @@ public class WorkshopExtension implements QuPathExtension {
         new ScriptEntry("Modül 5 — Sitoplazmik boya (CD68)",        "modul-05-sitoplazmik-boya.groovy"),
         new ScriptEntry("Modül 6 — Tümör vs stroma sınıflandırıcı", "modul-06-tumor-stroma.groovy"),
         new ScriptEntry("Modül 7 — Tümör içi Ki-67",                "modul-07-tumor-ici-ki67.groovy"),
-        new ScriptEntry("Modül 8 — QuANTUM cTCF",                   "modul-08-quantum-ctcf.groovy")
+        new ScriptEntry("Modül 8 — QuANTUM cTCF",                   "modul-08-quantum-ctcf.groovy"),
+        new ScriptEntry("Modül 9 — Veri dışa aktarma",              "modul-09-veri-aktarma.groovy")
     );
 
     private boolean alreadyInstalled = false;
@@ -169,7 +170,8 @@ public class WorkshopExtension implements QuPathExtension {
             "  5 — Sitoplazmik boya (CD68)\n" +
             "  6 — Tümör vs stroma sınıflandırıcı\n" +
             "  7 — Tümör içi Ki-67\n" +
-            "  8 — QuANTUM cTCF (NSCLC, NGS yeterlilik)\n\n" +
+            "  8 — QuANTUM cTCF (NSCLC, NGS yeterlilik)\n" +
+            "  9 — Veri dışa aktarma (TSV / GeoJSON)\n\n" +
             "Versiyon: " + getVersion() + "\n" +
             "QuPath baseline: " + getQuPathVersion() + "+\n\n" +
             "🌐 Atölye sitesi: https://atolye.patoloji.dev\n" +

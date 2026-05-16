@@ -44,21 +44,6 @@ Output: `build/libs/qupath-extension-workshop-0.1.0.jar`
 
 (On Windows: `gradlew.bat clean build`.)
 
-```
-[System.Environment]::SetEnvironmentVariable('JAVA_HOME', 'C:\Program Files\Eclipse Adoptium\jdk-21.0.7.6-hotspot', 'Machine')
-```
-
-
-```
-Add-Content $PROFILE "`n# Override broken Machine-scope JAVA_HOME with working JDK 21
-`$env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-21.0.7.6-hotspot'`n"
-```
-
-```
-$env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-21.0.7.6-hotspot'; .\gradlew.bat clean build
-```
-
-
 
 If you don't have the Gradle wrapper checked in, run `gradle wrapper` once or use a globally-installed Gradle 8.x.
 
@@ -98,3 +83,34 @@ Apache 2.0 — matches QuPath itself.
 ## Disclaimer
 
 ⚠️ Yalnızca **araştırma ve eğitim** amaçlıdır. Klinik karar verme için onaylı tıbbi cihaz değildir.
+
+
+
+
+## Local build and install steps
+
+```
+[System.Environment]::SetEnvironmentVariable('JAVA_HOME', 'C:\Program Files\Eclipse Adoptium\jdk-21.0.7.6-hotspot', 'Machine')
+```
+
+
+```
+Add-Content $PROFILE "`n# Override broken Machine-scope JAVA_HOME with working JDK 21
+`$env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-21.0.7.6-hotspot'`n"
+```
+
+```
+$env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-21.0.7.6-hotspot'; .\gradlew.bat clean build
+```
+
+Then update tag and push
+
+```
+cd qupath-extension-workshop
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+
+
+
