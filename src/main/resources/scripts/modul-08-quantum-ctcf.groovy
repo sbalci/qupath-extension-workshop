@@ -21,15 +21,6 @@
  *      `tumor-vs-nonneoplastic-RT.json` adıyla
  *
  *   Object classifier yoksa: script size eğitim adımlarını söyler.
- *
- * YAYIN VE VALİDASYON:
- *   • 121 NSCLC olgusu valide edildi (Virchows Archiv 2025)
- *   • Patolog içi/lar arası tutarlılık: **Wk = 0.9** (mükemmel)
- *   • Patologlar TCF'yi **sistematik %1.5–2× yüksek** tahmin ediyor:
- *       Manuel: 52 ± 19%  |  Computational (cTCF): 30 ± 10%
- *   • CNV analizi için raporlanan ölçüm farkları
- *
- * UYARI: Bu script yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
 
 import qupath.lib.gui.dialogs.Dialogs
@@ -244,8 +235,6 @@ def devam = waitForConfirm(
     "Beklenen süre:\n" +
     "  • CPU: TCR boyutuna göre 1–5 dakika\n" +
     "  • GPU varsa: 5–30 saniye\n\n" +
-    "YAYIN REFERANSI: Pisapia P et al. *QuANTUM: a computational pipeline...*\n" +
-    "Virchows Archiv 2025. Wk=0.9, n=121 NSCLC.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
     "Hazırsanız OK."
 )
@@ -382,37 +371,14 @@ def tcrAreaMm2 = roi != null
 def totalElapsed = (System.currentTimeMillis() - t0) / 1000.0
 
 // ──────────────────────────────────────────────────────────────
-// 8) Eşik karşılaştırması (factual — yayında kullanılan sınırlar)
-// ──────────────────────────────────────────────────────────────
-def esikSatiri = ""
-if (hasClassifier) {
-    def cTCFEsik = cTCF >= 20 ? "≥ %20" : (cTCF >= 10 ? "%10–20" : "< %10")
-    def hucreEsik = tumorCount >= 100 ? "≥ 100" : "< 100"
-    esikSatiri = String.format(
-        "  cTCF (sizin)              : %s   (yayın eşikleri: %%20 / %%10)\n" +
-        "  Tümör hücre sayısı (sizin): %,d  (%s — yayın eşiği: ≥100)",
-        cTCFmetin, tumorCount, hucreEsik
-    ).replace("%%", "%")
-}
-
-def yayinNot = String.format(
-    "📊 Yayın bağlamında ölçüm karşılaştırması (Virchows Archiv 2025):\n" +
-    "  Manuel pTCF dağılımı: %%52 ± 19\n" +
-    "  Computational cTCF:   %%30 ± 10\n" +
-    "  Sizin cTCF'iniz:       %s"
-, cTCFmetin).replace("%%", "%")
-
-// ──────────────────────────────────────────────────────────────
-// 9) Sonucu sun
+// 8) Sonucu sun
 // ──────────────────────────────────────────────────────────────
 def egitimNot = ""
 if (!hasClassifier) {
     egitimNot = "\n\n⚠️ ÖNEMLİ: Object classifier '${objClassifierName}' projenizde yok.\n" +
                 "cTCF hesaplanamadı — sınıflandırıcıyı şu adımlarla eğitin:\n\n" +
                 "  1. StarDist sonuçları üzerinde ~5-10 hücreyi 'Tumor' sınıfına atayın\n" +
-                "     (büyük çekirdek, atipi, nucleolar belirginlik)\n" +
                 "  2. Aynı şekilde ~5-10 hücreyi 'Non-neoplastic'e atayın\n" +
-                "     (lenfosit, fibroblast, endotel)\n" +
                 "  3. [Classify → Object classification → Train object classifier]\n" +
                 "  4. Random Tree seç → Train → Save as '${objClassifierName}'\n" +
                 "  5. Bu scripti tekrar çalıştırın → cTCF hesaplanacak"
@@ -431,15 +397,11 @@ showResultWindow(
         "  Ignore                : %,d\n\n" +
         "🧬 ANA SONUÇ: cTCF = %s\n" +
         "════════════════════════════\n\n" +
-        "%s\n\n" +
-        "📐 Yayın eşiklerine göre:\n%s\n\n" +
-        "Not: Cutoff'lar (cTCF %%20, ≥100 tümör hücresi) Virchows Archiv 2025\n" +
-        "yayınında kullanılan araştırma eşikleridir. Bu çıktı yalnızca\n" +
-        "araştırma/eğitim amaçlı ölçüm referansıdır.\n\n" +
-        "⏱ Toplam süre: %.1f sn (StarDist %.1f sn, sınıflandırma %.1f sn)" +
+        "⏱ Toplam süre: %.1f sn (StarDist %.1f sn, sınıflandırma %.1f sn)\n\n" +
+        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir." +
         "%s",
         tcrAreaMm2, totalNuclei, tumorCount, nonNeoCount, ignoreCount,
-        cTCFmetin, yayinNot, esikSatiri,
+        cTCFmetin,
         totalElapsed, step2Time, step3Time, egitimNot
     )
 )

@@ -18,12 +18,6 @@
  *       - Nükleer Ki-67: 0.20 / 0.40 / 0.60
  *       - Sitoplazmik CD68: 0.10 / 0.20 / 0.35  ← bu script
  *   • Cell expansion DAHA BÜYÜK (7 µm) — sitoplazma hacmini örneklemek için
- *
- * KLİNİK KULLANIMLAR:
- *   • CD68 → makrofaj yoğunluğu (TAM = Tumor-Associated Macrophage)
- *   • CD163 → M2-polarize makrofajlar
- *   • EBER (ISH) → EBV+ DLBCL, nazofarengeal CA
- *   • CK7/CK20 → epitel sitokeratin profilleri (primer odak)
  */
 
 import qupath.lib.gui.dialogs.Dialogs
@@ -200,7 +194,8 @@ def devam = waitForConfirm(
     "Çıktı:\n" +
     "  • Bin dağılımı + yüzdeler\n" +
     "  • H-score (yoğunluk-ağırlıklı)\n" +
-    "  • Hücre yoğunluğu (mm² başına) — CD68 için TAM yoğunluğu metriği\n\n" +
+    "  • Hücre yoğunluğu (mm² başına)\n\n" +
+    "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
     "Hazırsanız OK."
 )
 if (!devam) { println "İptal."; return }
@@ -319,13 +314,11 @@ showResultWindow(
         "  Pozitif yüzdesi       : %%%.1f\n" +
         "  H-score (0–300)       : %.0f\n" +
         "  Toplam yoğunluk       : ~%,d hücre/mm²\n" +
-        "  CD68+ yoğunluk        : ~%,d hücre/mm²  ← TAM yoğunluğu metriği\n" +
+        "  CD68+ yoğunluk        : ~%,d hücre/mm²\n" +
         "  Anotasyon alanı       : %.2f mm²\n" +
         "  Süre                  : %.1f sn\n" +
         "%s\n" +
-        "Not: H-score (sitoplazmik) araştırma/eğitim amaçlı nicel metriktir.\n\n" +
-        "Modül 6'da tümör/stroma ayrımı yaparsak CD68+ hücrelerin\n" +
-        "intratumoral vs peritümöral dağılımı çıkarılabilir.",
+        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
         totalCells,
         nNeg, pctNeg, n1, pct1, n2, pct2, n3, pct3,
         positivePct, hScore, totalDensity, positiveDensity, totalAreaMm2, elapsed,

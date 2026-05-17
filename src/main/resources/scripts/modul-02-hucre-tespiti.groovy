@@ -175,6 +175,7 @@ def devam = waitForConfirm(
     "  • Bir H&E slaytı açık\n" +
     "  • Bir dikdörtgen anotasyon (R tuşu) çizdiniz (~1×1 mm tümör alanı)\n" +
     "  • Anotasyon SEÇİLİ (kenarları sarı görünür)\n\n" +
+    "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
     "Hazırsanız OK, değilse Cancel ile çıkın."
 )
 if (!devam) {
@@ -269,31 +270,18 @@ def density = totalAreaMm2 > 0 ? Math.round(totalCells / totalAreaMm2) : 0
 // ──────────────────────────────────────────────────────────────
 // 6) Kullanıcıya sonucu sun
 // ──────────────────────────────────────────────────────────────
-def yorum
-if (density < 1000) {
-    yorum = "Yoğunluk oldukça düşük. Stromal/yağ ağırlıklı bir alan seçmiş olabilirsiniz, ya da algoritma çekirdekleri kaçırıyor olabilir."
-} else if (density > 10000) {
-    yorum = "Yoğunluk çok yüksek — lenfoid doku veya muhtemelen fazla-tespit (over-segmentation)."
-} else {
-    yorum = "Yoğunluk eğitim örnekleri için beklenen başlangıç aralığında (3000–8000 hücre/mm²)."
-}
-
 showResultWindow(
     "Tamamlandı 🎉",
     String.format(
-        "İlk computational hücre sayımınız bitti!\n\n" +
+        "İlk computational hücre sayımınız bitti.\n\n" +
         "📊 Sonuçlar\n" +
         "──────────\n" +
         "  Toplam hücre        : %,d\n" +
         "  Anotasyon alanı     : %.2f mm²\n" +
         "  Hücre yoğunluğu     : ~%,d hücre/mm²\n" +
         "  Süre                : %.1f sn\n\n" +
-        "💡 %s\n\n" +
-        "Slayta bakın — anotasyon içindeki renkli daireler her biri tespit edilmiş\n" +
-        "bir çekirdek. Yakınlaşın, bazılarını gözle kontrol edin.\n\n" +
-        "Sıradaki: Web sitesindeki Modül 2 'Şimdi anlayalım' bölümüne dönün ve\n" +
-        "parametreleri değiştirip sonucun nasıl değiştiğini görün.",
-        totalCells, totalAreaMm2, density, elapsed, yorum
+        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
+        totalCells, totalAreaMm2, density, elapsed
     )
 )
 

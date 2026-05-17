@@ -218,8 +218,9 @@ def devam = waitForConfirm(
     "  • Split objects        : Açık (birleşik tümör adalarını ayır)\n\n" +
     "Çıktı:\n" +
     "  • Annotations panelinde Tumor ve Stroma sınıflı yeni anotasyonlar\n" +
-    "  • Toplam alan, TSR ve araştırma bağlamı\n\n" +
+    "  • Toplam alan ve TSR (tümör/stroma oranı)\n\n" +
     "Bu işlem tüm slaytı tarayacağı için 1–3 dakika sürebilir.\n\n" +
+    "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
     "Hazırsanız OK."
 )
 if (!devam) { println "İptal."; return }
@@ -290,23 +291,6 @@ def totalAreaMm2  = tumorAreaMm2 + stromaAreaMm2
 
 def tsr = totalAreaMm2 > 0 ? 100.0 * tumorAreaMm2 / totalAreaMm2 : 0.0  // % tumor of total tissue
 
-// ──────────────────────────────────────────────────────────────
-// 5) Araştırma bağlamı — TSR
-// ──────────────────────────────────────────────────────────────
-def arastirmaNot
-if (tsr < 30) {
-    arastirmaNot = "**Stroma-baskın dağılım** (TSR <%30).\n" +
-                   "Bu çıktı yalnızca alan ölçümüdür; yorum için çalışma protokolünüzde tanımlı eşikleri kullanın."
-} else if (tsr < 50) {
-    arastirmaNot = "**Stroma-zengin dağılım** (TSR %30-50).\n" +
-                   "Bu çıktı yalnızca alan ölçümüdür; yorum için çalışma protokolünüzde tanımlı eşikleri kullanın."
-} else if (tsr < 70) {
-    arastirmaNot = "**Dengeli tümör/stroma alanı** (TSR %50-70). Bu çıktı yalnızca alan ölçümüdür."
-} else {
-    arastirmaNot = "**Tümör-baskın alan** (TSR >%70).\n" +
-                   "Bu çıktı yalnızca alan ölçümüdür; yorum için çalışma protokolünüzde tanımlı eşikleri kullanın."
-}
-
 def uyari = ""
 if (tumorAnnotations.isEmpty()) {
     uyari = "\n⚠️ Hiç tümör bölgesi tespit edilmedi.\n" +
@@ -333,12 +317,10 @@ showResultWindow(
         "  TSR (%%tümör / toplam doku) : %%%.1f\n" +
         "  Süre                       : %.1f sn\n" +
         "%s\n" +
-        "💡 Araştırma bağlamı:\n%s\n\n" +
-        "Sıradaki: Modül 7'de bu tümör anotasyonlarını Ki-67 IHC ile birleştirip\n" +
-        "yalnızca tümör alanı içinde proliferasyon indeksi hesaplayacağız.",
+        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
         tumorAreaMm2, tumorAnnotations.size(),
         stromaAreaMm2, stromaAnnotations.size(),
-        totalAreaMm2, tsr, elapsed, uyari, arastirmaNot
+        totalAreaMm2, tsr, elapsed, uyari
     )
 )
 

@@ -20,14 +20,8 @@
  *   • Pozitif yüzdesini (Ki-67 LI), bin dağılımını ve hücre yoğunluğunu hesaplar
  *
  * NE YAPMAZ:
- *   • H-score HESAPLAMAZ — H-score Ki-67 için kullanılmaz; ER/PR (Modül 3b)
- *     ve sitoplazmik markerlar (Modül 5) için uygundur
  *   • Boya vektörlerinizi otomatik tahmin etmez — önceden ayarlanmış olmalı
  *     ya da QuPath'in varsayılan H-DAB vektörlerini kullanır
- *   • Yalnızca araştırma/eğitim amaçlı ölçüm üretir
- *
- * Web sitesindeki Modül 3 "Şimdi anlayalım" bölümü her parametrenin
- * ne işe yaradığını açıklar.
  */
 
 import qupath.lib.gui.dialogs.Dialogs
@@ -211,8 +205,7 @@ def devam = waitForConfirm(
     "  • Ki-67 LI (Pozitif %) — ölçüm çıktısı\n" +
     "  • Bin dağılımı (% 0 / 1+ / 2+ / 3+)\n" +
     "  • Hücre yoğunluğu (hücre/mm²) + anotasyon alanı\n\n" +
-    "Not: H-score Ki-67 için kullanılmaz. ER/PR için Modül 3b'yi, sitoplazmik\n" +
-    "markerlar için Modül 5'i kullanın.\n\n" +
+    "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
     "Hazırsanız OK, değilse Cancel ile çıkın."
 )
 if (!devam) {
@@ -311,8 +304,6 @@ cells.each { c ->
 
 def numPositive = num1Plus + num2Plus + num3Plus
 def ki67LI = totalCells > 0 ? 100.0 * numPositive / totalCells : 0.0
-// Not: H-score Ki-67 için kullanılmaz — H-score ER/PR (nükleer hormon
-// reseptörleri) ve sitoplazmik markerlar için uygundur. Hesaplanmıyor.
 
 // Alan ve yoğunluk
 def cal = imageData.getServer().getPixelCalibration()
@@ -338,7 +329,7 @@ if (totalCells < 200) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 6) Sonucu sun — yalnızca sayılar; klinik yorum eklenmez
+// 6) Sonucu sun
 // ──────────────────────────────────────────────────────────────
 showResultWindow(
     "Tamamlandı 🔬",
@@ -358,8 +349,7 @@ showResultWindow(
         "  Anotasyon alanı        : %.2f mm²\n" +
         "  Süre                   : %.1f sn\n" +
         "%s\n" +
-        "Sıradaki: Web sitesindeki Modül 3 'Şimdi anlayalım' bölümünde\n" +
-        "DAB OD eşiklerini değiştirip Ki-67 LI'nin nasıl kaydığını gözleyin.",
+        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
         totalCells,
         numNegative, totalCells > 0 ? 100.0 * numNegative / totalCells : 0.0,
         num1Plus,    totalCells > 0 ? 100.0 * num1Plus / totalCells : 0.0,

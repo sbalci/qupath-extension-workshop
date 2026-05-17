@@ -5,14 +5,6 @@
  * ER / PR (östrojen / progesteron reseptörü) gibi nükleer hormon
  * reseptörlerini skorlar ve **H-score**'u (0–300) kaydeder.
  *
- * NEDEN AYRI BİR MODÜL?
- *   • Ki-67 için H-score KULLANILMAZ — yalnızca **Ki-67 LI (Pozitif %)**
- *     kaydedilir. Bkz. Modül 3.
- *   • ER / PR için ise H-score (ve Allred) standart skorlama yöntemidir;
- *     proporsiyon + yoğunluk birleştirilir.
- *   • Sitoplazmik markerlar (CD68, MUC1 vb.) için de H-score uygun
- *     olabilir (bkz. Modül 5).
- *
  * KULLANIM:
  *   1. ER veya PR IHC slaytını açın
  *   2. Image type → "Brightfield (other)"
@@ -27,7 +19,6 @@
  *
  * NE YAPMAZ:
  *   • Allred skoru hesaplamaz (yoğunluk × dağılım puanı — manuel)
- *   • Yalnızca araştırma/eğitim amaçlı ölçüm üretir
  */
 
 import qupath.lib.gui.dialogs.Dialogs
@@ -200,6 +191,7 @@ def devam = waitForConfirm(
     "  • Bin dağılımı (% 0 / % 1+ / % 2+ / % 3+)\n\n" +
     "Not: Allred skoru bu script tarafından hesaplanmaz (proporsiyon\n" +
     "puanlaması manuel görsel adımdır).\n\n" +
+    "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
     "Hazırsanız OK."
 )
 if (!devam) { println "İptal."; return }
@@ -318,8 +310,7 @@ showResultWindow(
         "  Anotasyon alanı        : %.2f mm²\n" +
         "  Süre                   : %.1f sn\n" +
         "%s\n" +
-        "Not: H-score = (1×%%1+) + (2×%%2+) + (3×%%3+). Bu değer\n" +
-        "araştırma/eğitim amaçlı nicel metriktir.",
+        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
         totalCells,
         nNeg, pctNeg, n1, pct1, n2, pct2, n3, pct3,
         hScore, positivePct,

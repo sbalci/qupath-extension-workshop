@@ -214,9 +214,9 @@ def devam = waitForConfirm(
     "  3️⃣ Yalnızca tümör hücrelerinde Ki-67 LI hesapla\n\n" +
     "Ki-67 IHC eşikleri (Nucleus: DAB OD mean):\n" +
     "  • 1+ / 2+ / 3+: 0.20 / 0.40 / 0.60 OD\n\n" +
-    "Çıktı: tümör-içi Ki-67 LI + tüm-slayt karşılaştırması\n" +
-    "(stromal dilüsyon etkisinin büyüklüğünü göreceksiniz)\n\n" +
+    "Çıktı: tümör-içi Ki-67 LI + bin dağılımı + yoğunluk\n\n" +
     "Bu işlem 2–5 dakika sürebilir (slayt boyutuna bağlı).\n\n" +
+    "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
     "Hazırsanız OK."
 )
 if (!devam) { println "İptal."; return }
@@ -236,7 +236,6 @@ def sayHucreler = { collection ->
     }
     def pozitif = n1 + n2 + n3
     def ki67LI = total > 0 ? 100.0 * pozitif / total : 0.0
-    // Not: H-score Ki-67 için kullanılmaz — H-score ER/PR ve sitoplazmik markerlar için uygundur.
     return [total: total, n0: n0, n1: n1, n2: n2, n3: n3,
             pozitif: pozitif, ki67LI: ki67LI]
 }
@@ -380,21 +379,14 @@ showResultWindow(
         "  Ki-67 LI               : %%%.1f %s (95%% Güven Aralığı)\n" +
         "  Tümör içi yoğunluk     : ~%,d hücre/mm²\n" +
         "  Toplam süre            : %.1f sn\n\n" +
-        "Not: H-score Ki-67 için kullanılmaz (ER/PR ve sitoplazmik markerlara uygundur).\n" +
-        "Tümör/stroma sınırını ve DAB eşiklerini görsel olarak kontrol edin;\n" +
-        "bu çıktı yalnızca araştırma/eğitim amaçlı ölçümdür.\n\n" +
-        "📝 Ölçüm özeti:\n" +
-        "  \"Ki-67 LI: %%%.1f (yalnızca tümör alanı, n=%,d hücre).\n" +
-        "   Yöntem: QuPath 0.6 + RF piksel sınıflandırıcı + Positive cell detection.\"\n\n" +
-        "Modül 8 ileriki atölye sürümlerinde ele alınacaktır.",
+        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
         tumorAnnotations.size(), tumorAreaMm2,
         tumorStats.total,
         tumorStats.n0, pct(tumorStats.n0, tumorStats.total),
         tumorStats.n1, pct(tumorStats.n1, tumorStats.total),
         tumorStats.n2, pct(tumorStats.n2, tumorStats.total),
         tumorStats.n3, pct(tumorStats.n3, tumorStats.total),
-        tumorStats.ki67LI, ciMetin, density, totalElapsed,
-        tumorStats.ki67LI, tumorStats.total
+        tumorStats.ki67LI, ciMetin, density, totalElapsed
     )
 )
 
