@@ -12,11 +12,21 @@
  *   3. [R] tuşu → tümör içeren ~1×1 mm dikdörtgen anotasyon çizin
  *   4. Anotasyon seçili iken → [Automate → Project scripts → bu script]
  *
- * NEDEN MEMBRAN FARKLI?
- *   • Membran DAB ÇEKİRDEĞİN ÇEVRESİNDE → tek çekirdek değil "hücre" seviyesi
- *   • Bu yüzden Cell expansion (5 µm) ile çekirdek dışına genişletilir
- *   • Score compartment "Cell: DAB OD mean" — tüm hücredeki DAB
- *   • Bu script yalnızca araştırma/eğitim amaçlı ölçüm üretir.
+ * MEMBRAN-ODAKLI HÜCRE TESPİTİ:
+ *   • `WatershedCellMembraneDetection` plugin'i kullanır
+ *     (qupath.imagej.detect.cells.WatershedCellMembraneDetection)
+ *   • Standart `WatershedCellDetection`'dan farkı: membran konumunu
+ *     DAB sinyalinden **watershed** ile çıkarır — geometrik halka değil
+ *   • `excludeDAB=true` → DAB-yoğun bölgeler çekirdek sanılmaz
+ *   • `Membrane: DAB OD mean` ölçümü, gerçek membran etiketleri üzerinden
+ *     hesaplanır (her hücreye atanan watershed membran label'ı boyunca)
+ *
+ * SKORLAMA:
+ *   • Tespit sonrası `setCellIntensityClassifications` ile her hücre
+ *     Membrane: DAB OD mean değerine göre Negative / 1+ / 2+ / 3+ bin'ine atanır
+ *   • Eşikler: 0.15 / 0.40 / 0.70 OD (atölye varsayılanları)
+ *
+ * KAYNAK: javadoc/docs/qupath/imagej/detect/cells/WatershedCellMembraneDetection
  */
 
 import qupath.lib.gui.dialogs.Dialogs
@@ -185,6 +195,9 @@ def devam = waitForConfirm(
     "Modül 4 - HER2 / Membran IHC skorlaması",
     "Bu script seçili anotasyon içindeki her hücreye 0 / 1+ / 2+ / 3+\n" +
     "skoru atar ve membran DAB yoğunluk dağılımını özetler.\n\n" +
+    "Detektör: WatershedCellMembraneDetection (membran-aware).\n" +
+    "Standart cell detection'dan farkı: membran konumu DAB sinyalinden\n" +
+    "watershed ile bulunur (geometrik 5 µm halka yerine).\n\n" +
     "Atölye varsayılan eşikleri (Membrane: DAB OD mean):\n" +
     "  • 1+ (zayıf):       0.15 OD\n" +
     "  • 2+ (orta):        0.40 OD\n" +
@@ -213,21 +226,25 @@ if (selected == null || !(selected instanceof PathAnnotationObject)) {
 def targetAnnotation = selected
 
 // ──────────────────────────────────────────────────────────────
-// 4) Positive cell detection (membran)
+// 4) Membran-aware hücre tespiti
+//    WatershedCellMembraneDetection: DAB sinyalini kullanarak gerçek
+//    membran konumunu watershed ile bulur (geometrik halka değil).
+//    excludeDAB=true → DAB-yoğun bölgeler çekirdek sanılmaz (membran için kritik).
+//    Sonra setCellIntensityClassifications ile bin'leri (1+/2+/3+) atarız.
 // ──────────────────────────────────────────────────────────────
 println "─────────────────────────────────────"
 println "Modül 4 - HER2 / Membran IHC"
 println "─────────────────────────────────────"
 println "Membran skorlaması başlatılıyor..."
-println "  • Score compartment: Membrane: DAB OD mean"
-println "  • Threshold 1+ / 2+ / 3+: 0.15 / 0.40 / 0.70 OD"
+println "  • Detektör: WatershedCellMembraneDetection (DAB-temelli membran)"
+println "  • Bin eşikleri (Membrane: DAB OD mean): 0.15 / 0.40 / 0.70"
 println "  • Cell expansion: 5 µm"
 
 def t0 = System.currentTimeMillis()
 
 QP.selectObjects(targetAnnotation)
 QP.runPlugin(
-    'qupath.imagej.detect.cells.PositiveCellDetection',
+    'qupath.imagej.detect.cells.WatershedCellMembraneDetection',
     '{' +
         '"detectionImageBrightfield":"Hematoxylin OD",' +
         '"requestedPixelSizeMicrons":0.5,' +
@@ -235,20 +252,22 @@ QP.runPlugin(
         '"medianRadiusMicrons":0.0,' +
         '"sigmaMicrons":1.5,' +
         '"minAreaMicrons":10.0,' +
-        '"maxAreaMicrons":400.0,' +
+        '"maxAreaMicrons":1000.0,' +
         '"threshold":0.1,' +
+        '"maxBackground":2.0,' +
         '"watershedPostProcess":true,' +
+        '"excludeDAB":true,' +
         '"cellExpansionMicrons":5.0,' +
+        '"limitExpansionByNucleusSize":false,' +
         '"includeNuclei":true,' +
-        '"smoothBoundaries":true,' +
-        '"makeMeasurements":true,' +
-        '"thresholdCompartment":"Membrane: DAB OD mean",' +
-        '"thresholdPositive1":0.15,' +
-        '"thresholdPositive2":0.40,' +
-        '"thresholdPositive3":0.70,' +
-        '"singleThreshold":false' +
+        '"smoothBoundaries":false,' +
+        '"makeMeasurements":true' +
     '}'
 )
+
+// Cell-by-cell intensity binning by membrane DAB OD
+// Creates classes: "Negative", "1+", "2+", "3+"
+QP.setCellIntensityClassifications("Membrane: DAB OD mean", 0.15, 0.40, 0.70)
 
 def elapsed = (System.currentTimeMillis() - t0) / 1000.0
 
