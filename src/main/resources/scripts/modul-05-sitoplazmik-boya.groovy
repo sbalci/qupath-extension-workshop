@@ -1,5 +1,5 @@
 /**
- * Modül 5 — Tek Tıkla CD68 / Sitoplazmik IHC Kantifikasyonu
+ * Modül 5 - Tek Tıkla CD68 / Sitoplazmik IHC Kantifikasyonu
  * ----------------------------------------------------------
  * Atölye için "hızlı deneme" scripti. Sitoplazmik DAB boyamasını (CD68,
  * CD163, EBER vb.) skorlar. Her hücre sitoplazmik DAB yoğunluğuna göre
@@ -38,7 +38,13 @@ import qupath.lib.objects.PathAnnotationObject
 // İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
 // parametre değiştirip scripti tekrar koşabilir, sonuçları kopyalayabilir.
 // ──────────────────────────────────────────────────────────────
+def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
+
 def waitForConfirm = { String windowTitle, String windowBody ->
+    if (isHeadless) {
+        println "=== ${windowTitle} ===\n${windowBody}\n=================="
+        return true
+    }
     def latch = new java.util.concurrent.CountDownLatch(1)
     def confirmed = new java.util.concurrent.atomic.AtomicBoolean(false)
 
@@ -103,6 +109,10 @@ def waitForConfirm = { String windowTitle, String windowBody ->
 }
 
 def showResultWindow = { String windowTitle, String windowBody ->
+    if (isHeadless) {
+        println "=== ${windowTitle} ===\n${windowBody}\n=================="
+        return
+    }
     javafx.application.Platform.runLater {
         try {
             def stage = new javafx.stage.Stage()
@@ -178,7 +188,7 @@ if (!imageTypeName.toLowerCase().contains("brightfield")) {
 // 2) Karşılama
 // ──────────────────────────────────────────────────────────────
 def devam = waitForConfirm(
-    "Modül 5 — CD68 / Sitoplazmik IHC kantifikasyonu",
+    "Modül 5 - CD68 / Sitoplazmik IHC kantifikasyonu",
     "Bu script, seçili anotasyon içinde sitoplazmik DAB sinyaline göre\n" +
     "her hücreyi Negative / Weak (1+) / Moderate (2+) / Strong (3+) olarak\n" +
     "sınıflar.\n\n" +
@@ -212,7 +222,7 @@ def targetAnnotation = selected
 // 4) Positive cell detection (sitoplazma)
 // ──────────────────────────────────────────────────────────────
 println "─────────────────────────────────────"
-println "Modül 5 — CD68 / Sitoplazmik IHC"
+println "Modül 5 - CD68 / Sitoplazmik IHC"
 println "─────────────────────────────────────"
 println "  • Score compartment: Cytoplasm: DAB OD mean"
 println "  • Threshold 1+ / 2+ / 3+: 0.10 / 0.20 / 0.35 OD"
@@ -250,7 +260,7 @@ def elapsed = (System.currentTimeMillis() - t0) / 1000.0
 // ──────────────────────────────────────────────────────────────
 // 5) Sonuçları topla
 // ──────────────────────────────────────────────────────────────
-def cells = targetAnnotation.getChildObjects()
+def cells = targetAnnotation.getChildObjects().findAll { it.isDetection() }
 def totalCells = cells.size()
 
 def nNeg = 0, n1 = 0, n2 = 0, n3 = 0
@@ -313,8 +323,7 @@ showResultWindow(
         "  Anotasyon alanı       : %.2f mm²\n" +
         "  Süre                  : %.1f sn\n" +
         "%s\n" +
-        "Not: H-score (sitoplazmik) bir araştırma metriğidir; klinik karar için\n" +
-        "patolog görsel skoru esastır.\n\n" +
+        "Not: H-score (sitoplazmik) araştırma/eğitim amaçlı nicel metriktir.\n\n" +
         "Modül 6'da tümör/stroma ayrımı yaparsak CD68+ hücrelerin\n" +
         "intratumoral vs peritümöral dağılımı çıkarılabilir.",
         totalCells,

@@ -1,5 +1,5 @@
 /**
- * Modül 9 — Tek Tıkla Veri Dışa Aktarma
+ * Modül 9 - Tek Tıkla Veri Dışa Aktarma
  * ----------------------------------------
  * Annotation + Detection ölçümlerini ve anotasyon geometrisini (GeoJSON)
  * proje klasörünün yanındaki `exports/<tarih>/` altına yazar.
@@ -11,7 +11,7 @@
  *
  * KULLANIM:
  *   1. Modüllerden birinde (2, 3, 3b, 4, 5, 7, 8) ölçüm üretmiş olun
- *   2. [Automate → Project scripts → Modül 9 — Veri dışa aktarma]
+ *   2. [Automate → Project scripts → Modül 9 - Veri dışa aktarma]
  *   3. Diyalogdan mod seçin → Çalıştır
  *
  * ÇIKTI:
@@ -39,6 +39,8 @@ import java.time.format.DateTimeFormatter
 // ──────────────────────────────────────────────────────────────
 // Non-modal pencere yardımcıları (atölyenin tüm scriptlerinde paylaşılan iskelet)
 // ──────────────────────────────────────────────────────────────
+def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
+
 def waitForChoice = { String windowTitle, String windowBody,
                       String optionA, String optionB ->
     def latch = new java.util.concurrent.CountDownLatch(1)
@@ -114,6 +116,10 @@ def waitForChoice = { String windowTitle, String windowBody,
 }
 
 def showResultWindow = { String windowTitle, String windowBody ->
+    if (isHeadless) {
+        println "=== ${windowTitle} ===\n${windowBody}\n=================="
+        return
+    }
     javafx.application.Platform.runLater {
         try {
             def stage = new javafx.stage.Stage()
@@ -198,7 +204,7 @@ def currentEntry = QP.getProjectEntry()
 // 2) Mod seçimi
 // ──────────────────────────────────────────────────────────────
 def choice = waitForChoice(
-    "Modül 9 — Veri dışa aktarma",
+    "Modül 9 - Veri dışa aktarma",
     "Annotation + Detection ölçümlerini ve anotasyon geometrilerini\n" +
     "(GeoJSON) dışa aktaracağım.\n\n" +
     "⚠️ Önemli: İhraç slaytın **diske kaydedilmiş** halinden okunur\n" +
@@ -263,7 +269,7 @@ if (currentImageData != null && currentEntry != null) {
 // ──────────────────────────────────────────────────────────────
 // 3) Çıktı klasörünü hazırla — proje klasörünün yanına 'exports/tarih/'
 // ──────────────────────────────────────────────────────────────
-def stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmm"))
+def stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmmss"))
 def projectPath = project.getPath()
 def projectDir = projectPath.getParent().toFile()
 def exportsRoot = new File(projectDir, 'exports')
@@ -271,7 +277,7 @@ def outDir = new File(exportsRoot, stamp)
 outDir.mkdirs()
 
 println "─────────────────────────────────────"
-println "Modül 9 — Veri dışa aktarma"
+println "Modül 9 - Veri dışa aktarma"
 println "─────────────────────────────────────"
 println "Mod: " + (projectMode ? "Tüm proje" : "Sadece bu görüntü")
 println "Çıktı: ${outDir.getAbsolutePath()}"

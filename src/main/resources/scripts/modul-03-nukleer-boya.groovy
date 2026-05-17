@@ -1,9 +1,9 @@
 /**
- * Modül 3 — Tek Tıkla Ki-67 / Nükleer IHC Kantifikasyonu
+ * Modül 3 - Tek Tıkla Ki-67 / Nükleer IHC Kantifikasyonu
  * --------------------------------------------------------
  * Atölye için "hızlı deneme" scripti. Seçilen anotasyon içinde
  * Ki-67 / p53 / başka bir nükleer IHC boyamasını otomatik olarak skorlar
- * ve **Ki-67 LI** (etiketleme indeksi) ile bin dağılımını raporlar.
+ * ve **Ki-67 LI** (etiketleme indeksi) ile bin dağılımını kaydeder.
  *
  * KULLANIM:
  *   1. Ki-67 (veya başka nükleer DAB) IHC slaytını açın
@@ -24,7 +24,7 @@
  *     ve sitoplazmik markerlar (Modül 5) için uygundur
  *   • Boya vektörlerinizi otomatik tahmin etmez — önceden ayarlanmış olmalı
  *     ya da QuPath'in varsayılan H-DAB vektörlerini kullanır
- *   • Klinik raporlama için değildir — araştırma/eğitim amaçlı
+ *   • Yalnızca araştırma/eğitim amaçlı ölçüm üretir
  *
  * Web sitesindeki Modül 3 "Şimdi anlayalım" bölümü her parametrenin
  * ne işe yaradığını açıklar.
@@ -42,7 +42,13 @@ import qupath.lib.objects.PathAnnotationObject
 // İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
 // parametre değiştirip scripti tekrar koşabilir, sonuçları kopyalayabilir.
 // ──────────────────────────────────────────────────────────────
+def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
+
 def waitForConfirm = { String windowTitle, String windowBody ->
+    if (isHeadless) {
+        println "=== ${windowTitle} ===\n${windowBody}\n=================="
+        return true
+    }
     def latch = new java.util.concurrent.CountDownLatch(1)
     def confirmed = new java.util.concurrent.atomic.AtomicBoolean(false)
 
@@ -107,6 +113,10 @@ def waitForConfirm = { String windowTitle, String windowBody ->
 }
 
 def showResultWindow = { String windowTitle, String windowBody ->
+    if (isHeadless) {
+        println "=== ${windowTitle} ===\n${windowBody}\n=================="
+        return
+    }
     javafx.application.Platform.runLater {
         try {
             def stage = new javafx.stage.Stage()
@@ -190,7 +200,7 @@ if (!imageTypeName.toLowerCase().contains("brightfield")) {
 // 2) Karşılama dialog
 // ──────────────────────────────────────────────────────────────
 def devam = waitForConfirm(
-    "Modül 3 — Ki-67 / Nükleer IHC kantifikasyonu",
+    "Modül 3 - Ki-67 / Nükleer IHC kantifikasyonu",
     "Bu script, seçtiğiniz anotasyon içindeki tüm çekirdekleri tespit edip\n" +
     "her birini DAB yoğunluğuna göre Negative / 1+ / 2+ / 3+ olarak sınıflar.\n\n" +
     "Atölye varsayılan eşikleri (DAB OD — Nucleus mean):\n" +
@@ -198,7 +208,7 @@ def devam = waitForConfirm(
     "  • 2+ (orta):   0.40 OD\n" +
     "  • 3+ (güçlü):  0.60 OD\n\n" +
     "Çıktı:\n" +
-    "  • Ki-67 LI (Pozitif %) — proliferasyon indeksi (tek klinik metrik)\n" +
+    "  • Ki-67 LI (Pozitif %) — ölçüm çıktısı\n" +
     "  • Bin dağılımı (% 0 / 1+ / 2+ / 3+)\n" +
     "  • Hücre yoğunluğu (hücre/mm²) + anotasyon alanı\n\n" +
     "Not: H-score Ki-67 için kullanılmaz. ER/PR için Modül 3b'yi, sitoplazmik\n" +
@@ -242,7 +252,7 @@ def targetAnnotation = selected
 // 4) Positive cell detection — atölye varsayılanları
 // ──────────────────────────────────────────────────────────────
 println "─────────────────────────────────────"
-println "Modül 3 — Ki-67 / Nükleer IHC"
+println "Modül 3 - Ki-67 / Nükleer IHC"
 println "─────────────────────────────────────"
 println "Pozitif hücre tespiti başlatılıyor..."
 println "  • Image: ${QP.getProjectEntry()?.getImageName() ?: imageData.getServer().getMetadata().getName()}"
@@ -283,7 +293,7 @@ def elapsed = (System.currentTimeMillis() - t0) / 1000.0
 // ──────────────────────────────────────────────────────────────
 // 5) Sonuçları topla — her bin için sayım
 // ──────────────────────────────────────────────────────────────
-def cells = targetAnnotation.getChildObjects()
+def cells = targetAnnotation.getChildObjects().findAll { it.isDetection() }
 def totalCells = cells.size()
 
 def numNegative = 0
@@ -348,7 +358,6 @@ showResultWindow(
         "  Anotasyon alanı        : %.2f mm²\n" +
         "  Süre                   : %.1f sn\n" +
         "%s\n" +
-        "Klinik anlamlandırma rapor eden patologa aittir.\n\n" +
         "Sıradaki: Web sitesindeki Modül 3 'Şimdi anlayalım' bölümünde\n" +
         "DAB OD eşiklerini değiştirip Ki-67 LI'nin nasıl kaydığını gözleyin.",
         totalCells,

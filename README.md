@@ -13,18 +13,17 @@ Extensions
 └── Atölye
     ├── — Atölye scriptleri —
     ├── ─────────────────────
-    ├── Modül 2 — Hücre tespiti
-    ├── Modül 3 — Nükleer boya (Ki-67)
-    ├── Modül 4 — Membran boya (HER2)
-    ├── Modül 5 — Sitoplazmik boya (CD68)
-    ├── Modül 6 — Tümör vs stroma sınıflandırıcı
-    ├── Modül 7 — Tümör içi Ki-67
-    ├── Modül 8 — QuANTUM cTCF
+    ├── Modül 2 - Hücre tespiti
+    ├── Modül 3 - Nükleer boya (Ki-67)
+    ├── Modül 4 - Membranöz boya (HER2)
+    ├── Modül 5 - Sitoplazmik boya (CD68)
+    ├── Modül 6 - Tümör vs stroma sınıflandırıcı
+    ├── Modül 7 - Tümör içi Ki-67
     ├── ─────────────────────
     └── Atölye hakkında…
 ```
 
-Each item runs the corresponding workshop Groovy script: friendly Turkish dialogs explain what's about to happen, sensible defaults are applied, and the results pop-up gives clinical interpretation alongside the numbers.
+Each item runs the corresponding workshop Groovy script: friendly Turkish dialogs explain what's about to happen, sensible defaults are applied, and the results pop-up gives measurements plus research/education context.
 
 The extension is a convenience wrapper around the loose scripts at [handson/scripts/](../handson/scripts/). Both coexist: the loose scripts surface via **Automate → Project scripts** when the workshop project is open; the extension provides the same scripts without requiring participants to open the workshop project.
 
@@ -32,7 +31,7 @@ The extension is a convenience wrapper around the loose scripts at [handson/scri
 
 - **QuPath 0.6.0** or newer (baseline targeted by this build; works up to 0.7.x)
 - Java 17+ (bundled with QuPath; no separate install needed)
-- For Module 8: the StarDist extension + the `he_heavy_augment.pb` model under `~/.qupath/stardist/`
+- Module 8 / StarDist / QuANTUM are reserved for later workshop versions and are not required for this release.
 
 ## Build
 
@@ -110,7 +109,6 @@ cd qupath-extension-workshop
 git tag v0.1.0
 git push origin v0.1.0
 ```
-
 
 
 

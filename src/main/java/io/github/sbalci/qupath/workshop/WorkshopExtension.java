@@ -53,18 +53,18 @@ public class WorkshopExtension implements QuPathExtension {
      * {@code /scripts/} resource directory (ASCII for cross-platform safety).
      */
     private static final List<ScriptEntry> SCRIPTS = List.of(
-        new ScriptEntry("Modül 2 — Hücre tespiti",                  "modul-02-hucre-tespiti.groovy"),
-        new ScriptEntry("Modül 3 — Nükleer boya (Ki-67)",           "modul-03-nukleer-boya.groovy"),
-        new ScriptEntry("Modül 3b — ER / PR H-score",               "modul-03b-er-pr-hscore.groovy"),
-        new ScriptEntry("Modül 4 — Membran boya (HER2)",            "modul-04-membran-boya.groovy"),
-        new ScriptEntry("Modül 5 — Sitoplazmik boya (CD68)",        "modul-05-sitoplazmik-boya.groovy"),
-        new ScriptEntry("Modül 6 — Tümör vs stroma sınıflandırıcı", "modul-06-tumor-stroma.groovy"),
-        new ScriptEntry("Modül 7 — Tümör içi Ki-67",                "modul-07-tumor-ici-ki67.groovy"),
+        new ScriptEntry("Modül 2 - Hücre tespiti",                  "modul-02-hucre-tespiti.groovy"),
+        new ScriptEntry("Modül 3 - Nükleer boya (Ki-67)",           "modul-03-nukleer-boya.groovy"),
+        new ScriptEntry("Modül 3b - ER / PR H-score",               "modul-03b-er-pr-hscore.groovy"),
+        new ScriptEntry("Modül 4 - Membran boya (HER2)",            "modul-04-membran-boya.groovy"),
+        new ScriptEntry("Modül 5 - Sitoplazmik boya (CD68)",        "modul-05-sitoplazmik-boya.groovy"),
+        new ScriptEntry("Modül 6 - Tümör vs stroma sınıflandırıcı", "modul-06-tumor-stroma.groovy"),
+        new ScriptEntry("Modül 7 - Tümör içi Ki-67",                "modul-07-tumor-ici-ki67.groovy"),
         // Modül 8 (QuANTUM cTCF) sonraki sürümlere ertelendi — StarDist + object classifier
         // ön-gereksinimleri ilk sürüm katılımcıları için fazla. Script JAR resource olarak
         // kalır (modul-08-quantum-ctcf.groovy) → ileride aşağıdaki satır yorum-dışı bırakılır.
-        // new ScriptEntry("Modül 8 — QuANTUM cTCF",                "modul-08-quantum-ctcf.groovy"),
-        new ScriptEntry("Modül 9 — Veri dışa aktarma",              "modul-09-veri-aktarma.groovy")
+        // new ScriptEntry("Modül 8 - QuANTUM cTCF",                "modul-08-quantum-ctcf.groovy"),
+        new ScriptEntry("Modül 9 - Veri dışa aktarma",              "modul-09-veri-aktarma.groovy")
     );
 
     private boolean alreadyInstalled = false;
@@ -216,7 +216,7 @@ public class WorkshopExtension implements QuPathExtension {
             "  6 — Tümör vs stroma sınıflandırıcı\n" +
             "  7 — Tümör içi Ki-67\n" +
             "  9 — Veri dışa aktarma (TSV / GeoJSON)\n\n" +
-            "  (Modül 8 — QuANTUM cTCF: sonraki sürümlerde)\n\n" +
+            "  (Modül 8 - QuANTUM cTCF: sonraki sürümlerde)\n\n" +
             "Versiyon: " + getVersion() + "\n" +
             "QuPath baseline: " + getQuPathVersion() + "+\n\n" +
             "🌐 Atölye sitesi: https://atolye.patoloji.dev\n" +

@@ -1,5 +1,5 @@
 /**
- * Modül 8 — QuANTUM-tarzı cTCF (Computational Tumor Cellular Fraction)
+ * Modül 8 - QuANTUM-tarzı cTCF (Computational Tumor Cellular Fraction)
  * -----------------------------------------------------------------------
  * Atölyenin EN ÖNEMLI scripti: yayınlanmış (Virchows Archiv 2025) QuANTUM
  * pipeline'ının basitleştirilmiş bir versiyonu. NSCLC slaytında **cTCF**
@@ -27,9 +27,9 @@
  *   • Patolog içi/lar arası tutarlılık: **Wk = 0.9** (mükemmel)
  *   • Patologlar TCF'yi **sistematik %1.5–2× yüksek** tahmin ediyor:
  *       Manuel: 52 ± 19%  |  Computational (cTCF): 30 ± 10%
- *   • CNV tespitinde **+%85.7 gerçek pozitif kazanım**
+ *   • CNV analizi için raporlanan ölçüm farkları
  *
- * UYARI: cTCF KLİNİK karar için değildir; ARAŞTIRMA/EĞİTİM amaçlıdır.
+ * UYARI: Bu script yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
 
 import qupath.lib.gui.dialogs.Dialogs
@@ -44,7 +44,13 @@ import qupath.lib.objects.PathAnnotationObject
 // İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
 // parametre değiştirip scripti tekrar koşabilir, sonuçları kopyalayabilir.
 // ──────────────────────────────────────────────────────────────
+def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
+
 def waitForConfirm = { String windowTitle, String windowBody ->
+    if (isHeadless) {
+        println "=== ${windowTitle} ===\n${windowBody}\n=================="
+        return true
+    }
     def latch = new java.util.concurrent.CountDownLatch(1)
     def confirmed = new java.util.concurrent.atomic.AtomicBoolean(false)
 
@@ -109,6 +115,10 @@ def waitForConfirm = { String windowTitle, String windowBody ->
 }
 
 def showResultWindow = { String windowTitle, String windowBody ->
+    if (isHeadless) {
+        println "=== ${windowTitle} ===\n${windowBody}\n=================="
+        return
+    }
     javafx.application.Platform.runLater {
         try {
             def stage = new javafx.stage.Stage()
@@ -210,7 +220,7 @@ if (selected == null || !(selected instanceof PathAnnotationObject)) {
         "  1. [P] tuşu → Polygon aracı\n" +
         "  2. NSCLC slaytında **NGS için kullanılacak** dokunun çevresini çizin\n" +
         "     (pre-dissection iş akışını taklit eder)\n" +
-        "  3. Bu manuel olarak yapılır — patolog kararı\n" +
+        "  3. Bu manuel olarak yapılır — seçilen araştırma ROI'si\n" +
         "  4. Anotasyona 'TCR' sınıfı atayabilirsiniz (opsiyonel)\n" +
         "  5. TCR seçili iken bu scripti çalıştırın"
     )
@@ -226,7 +236,7 @@ def pipelineDesc = hasClassifier
     : "  3️⃣ Object classifier yok — sadece StarDist tespiti çalışacak\n  4️⃣ Sınıflandırıcıyı eğitmeniz gerekecek (eğitim adımları sonda açıklanır)"
 
 def devam = waitForConfirm(
-    "Modül 8 — QuANTUM cTCF Pipeline",
+    "Modül 8 - QuANTUM cTCF Pipeline",
     "Bu script QuANTUM yayınının iş akışını uygular:\n\n" +
     "  1️⃣ Seçili TCR içinde StarDist → tüm çekirdekleri tespit\n" +
     "  2️⃣ Cell expansion: 5 µm, threshold: 0.5\n" +
@@ -236,7 +246,7 @@ def devam = waitForConfirm(
     "  • GPU varsa: 5–30 saniye\n\n" +
     "YAYIN REFERANSI: Pisapia P et al. *QuANTUM: a computational pipeline...*\n" +
     "Virchows Archiv 2025. Wk=0.9, n=121 NSCLC.\n\n" +
-    "⚠️ Klinik karar için değildir — ARAŞTIRMA/EĞİTİM.\n\n" +
+    "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
     "Hazırsanız OK."
 )
 if (!devam) { println "İptal."; return }
@@ -245,13 +255,15 @@ if (!devam) { println "İptal."; return }
 // 4) Adım 1 — TCR'yi etiketle
 // ──────────────────────────────────────────────────────────────
 println "─────────────────────────────────────"
-println "Modül 8 — QuANTUM cTCF Pipeline"
+println "Modül 8 - QuANTUM cTCF Pipeline"
 println "─────────────────────────────────────"
 println "Adım 1/4: TCR hazırlığı..."
 
 tcr.setName("TCR")
 def viewer = qupath.lib.gui.QuPathGUI.getInstance()?.getViewer()
-viewer?.repaint()
+if (viewer != null) {
+    javafx.application.Platform.runLater { viewer.repaint() }
+}
 
 // ──────────────────────────────────────────────────────────────
 // 5) Adım 2 — StarDist
@@ -329,11 +341,8 @@ if (hasClassifier) {
     println "Adım 3/4: Tümör vs Non-neoplastic sınıflandırma..."
 
     def t2 = System.currentTimeMillis()
-    // runObjectClassifier all detections in the current hierarchy by default.
-    // TCR is the only ancestor; we don't pre-select to avoid selection state
-    // mismatches that bit older QuPath versions. detectedCells listesi referans
-    // tutar; classifier setPathClass'i çağırır, listenin elementlerini güncel
-    // sınıflandırılmış halde okuruz.
+    // Sınıflandırmayı yalnızca TCR içinde üretilen hücrelere uygula.
+    QP.selectObjects(detectedCells)
     QP.runObjectClassifier(objClassifierName)
     step3Time = (System.currentTimeMillis() - t2) / 1000.0
 
@@ -387,9 +396,9 @@ if (hasClassifier) {
 }
 
 def yayinNot = String.format(
-    "📊 Yayın bağlamında karşılaştırma (Virchows Archiv 2025):\n" +
-    "  Manuel pTCF dağılımı: %%52 ± 19 (yüksek varyans)\n" +
-    "  Computational cTCF:   %%30 ± 10 (dar, tekrarlanabilir)\n" +
+    "📊 Yayın bağlamında ölçüm karşılaştırması (Virchows Archiv 2025):\n" +
+    "  Manuel pTCF dağılımı: %%52 ± 19\n" +
+    "  Computational cTCF:   %%30 ± 10\n" +
     "  Sizin cTCF'iniz:       %s"
 , cTCFmetin).replace("%%", "%")
 
@@ -425,9 +434,8 @@ showResultWindow(
         "%s\n\n" +
         "📐 Yayın eşiklerine göre:\n%s\n\n" +
         "Not: Cutoff'lar (cTCF %%20, ≥100 tümör hücresi) Virchows Archiv 2025\n" +
-        "yayınından alınmıştır. Örnek yeterlilik kararı laboratuvarın NGS panel\n" +
-        "validasyonuna ve patolog değerlendirmesine göre verilir; bu çıktı\n" +
-        "yalnızca araştırma/eğitim amaçlı bir referanstır.\n\n" +
+        "yayınında kullanılan araştırma eşikleridir. Bu çıktı yalnızca\n" +
+        "araştırma/eğitim amaçlı ölçüm referansıdır.\n\n" +
         "⏱ Toplam süre: %.1f sn (StarDist %.1f sn, sınıflandırma %.1f sn)" +
         "%s",
         tcrAreaMm2, totalNuclei, tumorCount, nonNeoCount, ignoreCount,

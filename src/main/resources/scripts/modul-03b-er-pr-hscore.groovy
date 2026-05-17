@@ -1,13 +1,13 @@
 /**
- * Modül 3b — Tek Tıkla ER / PR Nükleer H-score
+ * Modül 3b - Tek Tıkla ER / PR Nükleer H-score
  * ----------------------------------------------
  * Atölye için "hızlı deneme" scripti. Seçilen anotasyon içinde
  * ER / PR (östrojen / progesteron reseptörü) gibi nükleer hormon
- * reseptörlerini skorlar ve **H-score**'u (0–300) raporlar.
+ * reseptörlerini skorlar ve **H-score**'u (0–300) kaydeder.
  *
  * NEDEN AYRI BİR MODÜL?
  *   • Ki-67 için H-score KULLANILMAZ — yalnızca **Ki-67 LI (Pozitif %)**
- *     raporlanır. Bkz. Modül 3.
+ *     kaydedilir. Bkz. Modül 3.
  *   • ER / PR için ise H-score (ve Allred) standart skorlama yöntemidir;
  *     proporsiyon + yoğunluk birleştirilir.
  *   • Sitoplazmik markerlar (CD68, MUC1 vb.) için de H-score uygun
@@ -27,8 +27,7 @@
  *
  * NE YAPMAZ:
  *   • Allred skoru hesaplamaz (yoğunluk × dağılım puanı — manuel)
- *   • Klinik karar vermez — bu çıktı patolog için yardımcı bir tarama
- *     amaçlıdır; raporlama görsel değerlendirme ile yapılır
+ *   • Yalnızca araştırma/eğitim amaçlı ölçüm üretir
  */
 
 import qupath.lib.gui.dialogs.Dialogs
@@ -40,7 +39,13 @@ import qupath.lib.objects.PathAnnotationObject
 //   - waitForConfirm    : modal-hissi veren ama QuPath'i bloklamayan onay penceresi
 //   - showResultWindow  : sonuç penceresi — açık kalır, QuPath kullanılmaya devam edilebilir
 // ──────────────────────────────────────────────────────────────
+def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
+
 def waitForConfirm = { String windowTitle, String windowBody ->
+    if (isHeadless) {
+        println "=== ${windowTitle} ===\n${windowBody}\n=================="
+        return true
+    }
     def latch = new java.util.concurrent.CountDownLatch(1)
     def confirmed = new java.util.concurrent.atomic.AtomicBoolean(false)
 
@@ -104,6 +109,10 @@ def waitForConfirm = { String windowTitle, String windowBody ->
 }
 
 def showResultWindow = { String windowTitle, String windowBody ->
+    if (isHeadless) {
+        println "=== ${windowTitle} ===\n${windowBody}\n=================="
+        return
+    }
     javafx.application.Platform.runLater {
         try {
             def stage = new javafx.stage.Stage()
@@ -178,7 +187,7 @@ if (!imageTypeName.toLowerCase().contains("brightfield")) {
 // 2) Karşılama
 // ──────────────────────────────────────────────────────────────
 def devam = waitForConfirm(
-    "Modül 3b — ER / PR Nükleer H-score",
+    "Modül 3b - ER / PR Nükleer H-score",
     "Bu script, seçili anotasyon içindeki tüm çekirdekleri tespit edip\n" +
     "her birini DAB yoğunluğuna göre Negative / 1+ / 2+ / 3+ olarak sınıflar.\n\n" +
     "Atölye varsayılan eşikleri (Nucleus: DAB OD mean):\n" +
@@ -212,7 +221,7 @@ def targetAnnotation = selected
 // 4) Positive cell detection (nükleer DAB)
 // ──────────────────────────────────────────────────────────────
 println "─────────────────────────────────────"
-println "Modül 3b — ER / PR Nükleer H-score"
+println "Modül 3b - ER / PR Nükleer H-score"
 println "─────────────────────────────────────"
 println "  • Score compartment: Nucleus: DAB OD mean"
 println "  • Threshold 1+ / 2+ / 3+: 0.20 / 0.40 / 0.60 OD"
@@ -249,7 +258,7 @@ def elapsed = (System.currentTimeMillis() - t0) / 1000.0
 // ──────────────────────────────────────────────────────────────
 // 5) Sonuçları topla
 // ──────────────────────────────────────────────────────────────
-def cells = targetAnnotation.getChildObjects()
+def cells = targetAnnotation.getChildObjects().findAll { it.isDetection() }
 def totalCells = cells.size()
 
 def nNeg = 0, n1 = 0, n2 = 0, n3 = 0
@@ -309,9 +318,8 @@ showResultWindow(
         "  Anotasyon alanı        : %.2f mm²\n" +
         "  Süre                   : %.1f sn\n" +
         "%s\n" +
-        "Not: H-score = (1×%%1+) + (2×%%2+) + (3×%%3+). Klinik raporlama\n" +
-        "(Allred dahil) patolog görsel skoruyla yapılır; bu değer yardımcı\n" +
-        "bir tarama metriğidir.",
+        "Not: H-score = (1×%%1+) + (2×%%2+) + (3×%%3+). Bu değer\n" +
+        "araştırma/eğitim amaçlı nicel metriktir.",
         totalCells,
         nNeg, pctNeg, n1, pct1, n2, pct2, n3, pct3,
         hScore, positivePct,

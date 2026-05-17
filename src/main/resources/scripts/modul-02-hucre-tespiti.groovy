@@ -1,5 +1,5 @@
 /**
- * Modül 2 — Tek Tıkla Hücre Tespiti
+ * Modül 2 - Tek Tıkla Hücre Tespiti
  * ----------------------------------
  * Atölye için "hızlı deneme" scripti. Seçilen anotasyon içindeki tüm
  * çekirdekleri H&E için atölye varsayılan parametreleriyle tespit eder.
@@ -12,7 +12,7 @@
  *
  * Bu script atölyenin tek tıkla "wow" anı için yazılmıştır. Aynı parametrelerin
  * her birinin ne işe yaradığını ve nasıl ayarlayacağınızı öğrenmek için
- * web sitesindeki **Modül 2 — Hücre Tespiti** bölümüne dönün.
+ * web sitesindeki **Modül 2 - Hücre Tespiti** bölümüne dönün.
  */
 
 import qupath.lib.gui.dialogs.Dialogs
@@ -27,7 +27,13 @@ import qupath.lib.objects.PathAnnotationObject
 // İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
 // parametre değiştirip scripti tekrar koşabilir, sonuçları kopyalayabilir.
 // ──────────────────────────────────────────────────────────────
+def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
+
 def waitForConfirm = { String windowTitle, String windowBody ->
+    if (isHeadless) {
+        println "=== ${windowTitle} ===\n${windowBody}\n=================="
+        return true
+    }
     def latch = new java.util.concurrent.CountDownLatch(1)
     def confirmed = new java.util.concurrent.atomic.AtomicBoolean(false)
 
@@ -92,6 +98,10 @@ def waitForConfirm = { String windowTitle, String windowBody ->
 }
 
 def showResultWindow = { String windowTitle, String windowBody ->
+    if (isHeadless) {
+        println "=== ${windowTitle} ===\n${windowBody}\n=================="
+        return
+    }
     javafx.application.Platform.runLater {
         try {
             def stage = new javafx.stage.Stage()
@@ -158,7 +168,7 @@ if (imageData == null) {
 // 2) Karşılama — kullanıcıya ne yapacağımızı anlat
 // ──────────────────────────────────────────────────────────────
 def devam = waitForConfirm(
-    "Modül 2 — Hızlı hücre tespiti",
+    "Modül 2 - Hızlı hücre tespiti",
     "Bu script, seçtiğiniz anotasyon içindeki TÜM çekirdekleri otomatik olarak\n" +
     "tespit edecek. Atölye için ayarlanmış varsayılan parametreleri kullanır.\n\n" +
     "Şunlardan emin olun:\n" +
@@ -247,7 +257,7 @@ def pixelHeight = cal.getPixelHeightMicrons()
 def totalCells = 0
 def totalAreaMm2 = 0.0
 
-totalCells = targetAnnotation.getChildObjects().size()
+totalCells = targetAnnotation.getChildObjects().findAll { it.isDetection() }.size()
 def roi = targetAnnotation.getROI()
 if (roi != null) {
     def areaPx = roi.getArea()
@@ -265,7 +275,7 @@ if (density < 1000) {
 } else if (density > 10000) {
     yorum = "Yoğunluk çok yüksek — lenfoid doku veya muhtemelen fazla-tespit (over-segmentation)."
 } else {
-    yorum = "Yoğunluk beklenen aralıkta (sağlıklı tümörde tipik 3000–8000 hücre/mm²)."
+    yorum = "Yoğunluk eğitim örnekleri için beklenen başlangıç aralığında (3000–8000 hücre/mm²)."
 }
 
 showResultWindow(
