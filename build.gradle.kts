@@ -9,6 +9,10 @@
  * Reference: https://github.com/qupath/qupath-extension-template
  */
 
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+
 plugins {
     java
     `java-library`
@@ -66,6 +70,29 @@ tasks.compileJava {
 
 tasks.processResources {
     filteringCharset = "UTF-8"
+}
+
+// Generates build-info.properties fresh on every build (timestamp computed at
+// execution time, so it isn't frozen into Gradle's configuration cache).
+// Output is placed under build/generated/build-info and added to the main
+// resources so it ends up at the root of the JAR.
+val generateBuildInfo = tasks.register("generateBuildInfo") {
+    val outDir = layout.buildDirectory.dir("generated/build-info")
+    val ver = project.version.toString()
+    outputs.dir(outDir)
+    outputs.upToDateWhen { false }
+    doLast {
+        val ts = ZonedDateTime
+            .now(ZoneId.of("Europe/Istanbul"))
+            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 'TRT'"))
+        val file = outDir.get().file("build-info.properties").asFile
+        file.parentFile.mkdirs()
+        file.writeText("build.timestamp=$ts\nbuild.version=$ver\n", Charsets.UTF_8)
+    }
+}
+
+sourceSets.main {
+    resources.srcDir(generateBuildInfo.map { it.outputs.files })
 }
 
 tasks.jar {

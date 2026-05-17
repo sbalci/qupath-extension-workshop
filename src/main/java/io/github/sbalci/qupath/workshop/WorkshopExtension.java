@@ -16,6 +16,7 @@ import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.zip.ZipException;
 
@@ -46,6 +47,10 @@ public class WorkshopExtension implements QuPathExtension {
 
     private static final String MENU_PATH = "Extensions>Atölye";
     private static final String SCRIPT_RESOURCE_ROOT = "/scripts/";
+    private static final String BUILD_INFO_RESOURCE = "/build-info.properties";
+
+    /** Build timestamp injected by Gradle's processResources at JAR assembly time. */
+    private static final String BUILD_TIMESTAMP = loadBuildProperty("build.timestamp", "bilinmiyor");
 
     /**
      * The workshop scripts in display order. Each entry maps a human-readable
@@ -202,6 +207,18 @@ public class WorkshopExtension implements QuPathExtension {
         JarCorruptedException(Throwable cause) { super(cause); }
     }
 
+    private static String loadBuildProperty(String key, String fallback) {
+        try (InputStream in = WorkshopExtension.class.getResourceAsStream(BUILD_INFO_RESOURCE)) {
+            if (in == null) return fallback;
+            Properties props = new Properties();
+            props.load(in);
+            String value = props.getProperty(key);
+            return (value == null || value.isBlank() || value.startsWith("@")) ? fallback : value;
+        } catch (IOException ex) {
+            return fallback;
+        }
+    }
+
     private void showAboutDialog() {
         Dialogs.showMessageDialog(
             "QuPath Atölye Scriptleri",
@@ -218,6 +235,7 @@ public class WorkshopExtension implements QuPathExtension {
             "  9 — Veri dışa aktarma (TSV / GeoJSON)\n\n" +
             "  (Modül 8 - QuANTUM cTCF: sonraki sürümlerde)\n\n" +
             "Versiyon: " + getVersion() + "\n" +
+            "Derlenme tarihi: " + BUILD_TIMESTAMP + "\n" +
             "QuPath baseline: " + getQuPathVersion() + "+\n\n" +
             "🌐 Atölye sitesi: https://atolye.patoloji.dev\n" +
             "👤 İletişim:     https://www.serdarbalci.com\n" +

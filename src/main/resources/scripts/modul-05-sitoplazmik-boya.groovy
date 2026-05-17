@@ -173,9 +173,23 @@ def imageTypeName = imageData.getImageType()?.toString() ?: ""
 if (!imageTypeName.toLowerCase().contains("brightfield")) {
     Dialogs.showErrorMessage(
         "Yanlış görüntü tipi",
-        "Image type 'Brightfield (other)' olmalı. Şu anki: ${imageTypeName}"
+        "Image type 'Brightfield (H-DAB)' olmalı. Şu anki: ${imageTypeName}"
     )
     return
+}
+
+// "Hematoxylin OD" kanalı yalnızca H-DAB stain vektörleri ayarlanmışsa var olur.
+def stains = imageData.getColorDeconvolutionStains()
+def hasHematoxylin = false
+if (stains != null) {
+    for (int i = 1; i <= 3; i++) {
+        def name = stains.getStain(i)?.getName()?.toLowerCase()
+        if (name != null && name.contains("hematoxylin")) { hasHematoxylin = true; break }
+    }
+}
+if (!hasHematoxylin) {
+    println "⚠ H-DAB stain vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
+    QP.setImageType('BRIGHTFIELD_H_DAB')
 }
 
 // ──────────────────────────────────────────────────────────────

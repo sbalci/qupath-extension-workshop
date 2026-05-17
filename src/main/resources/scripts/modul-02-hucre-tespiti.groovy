@@ -164,6 +164,22 @@ if (imageData == null) {
     return
 }
 
+// "Hematoxylin OD" kanalı yalnızca brightfield + Hematoxylin stain ayarlanmışsa var olur.
+// Aksi halde plugin "Unable to set parameter detectionImageBrightfield" hatası verir.
+// Brightfield (other) açıkta ise H&E varsayılanı uygulanır (M2 H&E için yazılmıştır).
+def stains = imageData.getColorDeconvolutionStains()
+def hasHematoxylin = false
+if (stains != null) {
+    for (int i = 1; i <= 3; i++) {
+        def name = stains.getStain(i)?.getName()?.toLowerCase()
+        if (name != null && name.contains("hematoxylin")) { hasHematoxylin = true; break }
+    }
+}
+if (!hasHematoxylin) {
+    println "⚠ Hematoxylin stain tanımlı değil → BRIGHTFIELD_H_E varsayılanı uygulanıyor."
+    QP.setImageType('BRIGHTFIELD_H_E')
+}
+
 // ──────────────────────────────────────────────────────────────
 // 2) Karşılama — kullanıcıya ne yapacağımızı anlat
 // ──────────────────────────────────────────────────────────────

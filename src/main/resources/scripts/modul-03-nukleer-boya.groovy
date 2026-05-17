@@ -173,7 +173,7 @@ if (imageData == null) {
     return
 }
 
-// Image type uyarısı (Brightfield (other) zorunlu — DAB ayrımı için)
+// Image type uyarısı (Brightfield (H-DAB) zorunlu — DAB ayrımı için)
 def imageType = imageData.getImageType()
 def imageTypeName = imageType?.toString() ?: ""
 if (!imageTypeName.toLowerCase().contains("brightfield")) {
@@ -183,11 +183,25 @@ if (!imageTypeName.toLowerCase().contains("brightfield")) {
         "Şu anki tip: ${imageTypeName}\n\n" +
         "Çözüm:\n" +
         "  1. Image panelini açın (sol-üst)\n" +
-        "  2. 'Image type' → 'Brightfield (H&E)' veya 'Brightfield (other)'\n" +
-        "  3. IHC slaytları için **'Brightfield (other)'** seçin (DAB ayrımı için gerekli)\n" +
-        "  4. Bu scripti tekrar çalıştırın"
+        "  2. 'Image type' → 'Brightfield (H-DAB)' seçin (DAB ayrımı için gerekli)\n" +
+        "  3. Bu scripti tekrar çalıştırın"
     )
     return
+}
+
+// "Hematoxylin OD" kanalı yalnızca H-DAB stain vektörleri ayarlanmışsa var olur.
+// Image type 'Brightfield (other)' veya stain vektörleri eksikse parametre reddedilir.
+def stains = imageData.getColorDeconvolutionStains()
+def hasHematoxylin = false
+if (stains != null) {
+    for (int i = 1; i <= 3; i++) {
+        def name = stains.getStain(i)?.getName()?.toLowerCase()
+        if (name != null && name.contains("hematoxylin")) { hasHematoxylin = true; break }
+    }
+}
+if (!hasHematoxylin) {
+    println "⚠ H-DAB stain vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
+    QP.setImageType('BRIGHTFIELD_H_DAB')
 }
 
 // ──────────────────────────────────────────────────────────────

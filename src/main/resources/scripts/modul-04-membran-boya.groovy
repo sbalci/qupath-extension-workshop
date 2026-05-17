@@ -8,7 +8,8 @@
  *
  * KULLANIM:
  *   1. HER2 IHC slaytını açın
- *   2. Image type → "Brightfield (other)" olduğundan emin olun
+ *   2. Image type → "Brightfield (H-DAB)" olduğundan emin olun
+ *      (script açık değilse otomatik ayarlar — varsayılan stain vektörleri uygulanır)
  *   3. [R] tuşu → tümör içeren ~1×1 mm dikdörtgen anotasyon çizin
  *   4. Anotasyon seçili iken → [Automate → Project scripts → bu script]
  *
@@ -183,9 +184,26 @@ if (!imageTypeName.toLowerCase().contains("brightfield")) {
     Dialogs.showErrorMessage(
         "Yanlış görüntü tipi",
         "Image type 'Brightfield' olmalı. Şu anki: ${imageTypeName}\n\n" +
-        "IHC için: Image type → 'Brightfield (other)' seçin."
+        "IHC için: Image type → 'Brightfield (H-DAB)' seçin."
     )
     return
+}
+
+// "Hematoxylin OD" kanalı yalnızca H-DAB stain vektörleri ayarlanmışsa var olur.
+// Image type 'Brightfield (other)' veya stain vektörleri eksikse parametre reddedilir
+// ("Unable to set parameter detectionImageBrightfield with value Hematoxylin OD").
+// Hematoxylin stain'i tanımlı değilse otomatik olarak BRIGHTFIELD_H_DAB'a geç.
+def stains = imageData.getColorDeconvolutionStains()
+def hasHematoxylin = false
+if (stains != null) {
+    for (int i = 1; i <= 3; i++) {
+        def name = stains.getStain(i)?.getName()?.toLowerCase()
+        if (name != null && name.contains("hematoxylin")) { hasHematoxylin = true; break }
+    }
+}
+if (!hasHematoxylin) {
+    println "⚠ H-DAB stain vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
+    QP.setImageType('BRIGHTFIELD_H_DAB')
 }
 
 // ──────────────────────────────────────────────────────────────
