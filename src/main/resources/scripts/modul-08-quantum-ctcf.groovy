@@ -181,17 +181,23 @@ def modelPath = "${userHome}/.qupath/stardist/he_heavy_augment.pb"
 def modelFile = new File(modelPath)
 
 if (!modelFile.exists()) {
-    Dialogs.showErrorMessage(
+    def browse = Dialogs.showConfirmDialog(
         "StarDist modeli bulunamadı",
         "Beklenen yol:\n  ${modelPath}\n\n" +
-        "Model dosyası yok. Çözüm:\n" +
-        "  1. https://github.com/qupath/models adresinden 'he_heavy_augment.pb' indirin\n" +
-        "  2. ${userHome}/.qupath/stardist/ klasörüne yerleştirin\n" +
-        "     (klasör yoksa oluşturun)\n" +
-        "  3. Bu scripti tekrar çalıştırın\n\n" +
-        "Detaylar: Modül 1 'Yazılım kurulumu' → StarDist model bölümü"
+        "Model dosyası yok. El ile seçmek ister misiniz?\n" +
+        "(Detaylar: Modül 1 'Yazılım kurulumu' → StarDist model bölümü)"
     )
-    return
+    if (browse) {
+        def selectedFile = Dialogs.showFileChooser(null, "StarDist Modelini Seç (.pb)", null, "StarDist Model", "pb")
+        if (selectedFile != null) {
+            modelFile = selectedFile
+            modelPath = modelFile.getAbsolutePath()
+        } else {
+            return
+        }
+    } else {
+        return
+    }
 }
 
 // Object classifier
