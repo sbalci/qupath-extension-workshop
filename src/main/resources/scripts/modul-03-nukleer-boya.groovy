@@ -22,6 +22,14 @@
  * NE YAPMAZ:
  *   • Boya vektörlerinizi otomatik tahmin etmez — önceden ayarlanmış olmalı
  *     ya da QuPath'in varsayılan H-DAB vektörlerini kullanır
+ *
+ * YÖNTEM REFERANSLARI:
+ *   • Nielsen TO et al. (2021), J Natl Cancer Inst — Ki-67 Working Group sayma standardı
+ *     (≥500-1.000 tümör hücresi). doi:10.1093/jnci/djaa201
+ *   • Skjervold AH et al. (2022), Diagn Pathol — manuel vs dijital uyum
+ *     doi:10.1186/s13000-022-01225-4
+ *   • GUI tarafı tutorial (cancer-informatics.org, J. Cieślik et al., CC-BY-SA):
+ *     cancer-informatics.org/de/docs/ai/qupath_04_ki67_index
  */
 
 import qupath.lib.gui.dialogs.Dialogs
@@ -270,11 +278,24 @@ println "  • Nucleus background radius: 8 µm"
 
 def t0 = System.currentTimeMillis()
 
+// Tespit kanalı seçimi — yöntemsel not:
+//   "Hematoxylin OD" → çekirdek tespiti hematoksilin sinyali üzerinden (varsayılan).
+//     Yüksek-LI Ki-67'de güçlü DAB hematoksilin sinyalini bastırabilir, bazı
+//     pozitif çekirdekler kaçabilir.
+//   "Optical density sum" → H + DAB + Eozin OD kombinasyonu; ASCO/cancer-informatics
+//     tutorialları Ki-67 için bu kanalı önerir (DAB-yoğun pozitiflerde daha güvenli).
+//     Trade-off: arka plan gürültüsüne biraz daha duyarlı; eşiklerin yeniden
+//     kalibre edilmesi gerekebilir.
+// Atölye varsayılanı "Hematoxylin OD" — düşük-orta LI'da daha temiz segmentasyon verir.
+// Yüksek-LI vakada aşağıdaki satırı '"Optical density sum"' yapın ve eşikleri
+// referans hücrelerde yeniden test edin.
+def detectionImageBrightfield = 'Hematoxylin OD'   // veya 'Optical density sum'
+
 QP.selectObjects(targetAnnotation)
 QP.runPlugin(
     'qupath.imagej.detect.cells.PositiveCellDetection',
     '{' +
-        '"detectionImageBrightfield":"Hematoxylin OD",' +
+        '"detectionImageBrightfield":"' + detectionImageBrightfield + '",' +
         '"requestedPixelSizeMicrons":0.5,' +
         '"backgroundRadiusMicrons":8.0,' +
         '"medianRadiusMicrons":0.0,' +
@@ -329,12 +350,14 @@ def totalAreaMm2 = roi != null
     : 0.0
 def density = totalAreaMm2 > 0 ? Math.round(totalCells / totalAreaMm2) : 0
 
-// Sadece istatistiksel örneklem uyarısı (klinik yorum değil — yalnızca veri kalitesi notu)
+// Örneklem boyutu uyarısı — International Ki-67 in Breast Cancer Working Group (Nielsen 2021)
+// minimum 500-1000 tümör hücresi sayılmasını metodoloji standardı olarak önerir.
+// Klinik yorum değil, ölçüm hassasiyeti notu.
 def uyari = ""
-if (totalCells < 200) {
+if (totalCells < 500) {
     uyari = String.format(
-        "\n📝 Not: %,d hücre <200 — küçük örneklem; sonuçlar istatistiksel olarak hassasiyetli olmayabilir.\n" +
-        "  Daha büyük bir ROI ile tekrar deneyebilirsiniz (≥500-1000 hücre).",
+        "\n📝 Not: %,d hücre <500 — Ki-67 Working Group (Nielsen 2021) sayma standardının altında.\n" +
+        "  Daha büyük bir ROI ile tekrar deneyin (hedef: ≥500-1.000 hücre).",
         totalCells)
 } else if (totalCells > 50000) {
     uyari = String.format(

@@ -23,6 +23,15 @@
  * ÇIKTI:
  *   Tümör/Stroma Oranı (TSR) alan temelli araştırma/eğitim ölçümüdür.
  *   Modül 7'de bu sınıflandırıcı çıktısını IHC sayımıyla birleştireceğiz.
+ *
+ * METODOLOJI NOTLARI (cancer-informatics tutorial 03'ten uyarlanmış):
+ *   • Eğitim örnekleri farklı bölgelerden gelmeli — aynı alanın 10 katmanı
+ *     yerine slayta yayılmış birkaç temsili örnek daha öğreticidir.
+ *   • "Create objects" adımında minimum object size + hole size kalibrasyonu
+ *     gürültü temizliği için kritiktir; bu script `10000.0 µm² / 5000.0 µm²`
+ *     varsayılanını kullanır (atölye seçimi — slayt çözünürlüğüne göre değişir).
+ *   • GUI tarafı tutorial (J. Cieślik et al., CC-BY-SA):
+ *     cancer-informatics.org/de/docs/ai/qupath_03_tissue_segmentation
  */
 
 import qupath.lib.gui.dialogs.Dialogs
@@ -251,12 +260,20 @@ if (!existing.isEmpty()) {
 
 def beforeAnnotations = QP.getAnnotationObjects() as Set
 
-// Sınıflandırıcıyı uygula → anotasyonlar üret
-// Quarto'nun handson script'inden çağırıyoruz; QP helper'ı doğrudan kullanır
+// Sınıflandırıcıyı uygula → anotasyonlar üret.
+// minArea + minHoleArea açıkça veriliyor; QuPath varsayılanları (0/0) yüksek
+// çözünürlüklü sınıflandırıcılarda binlerce küçük parça üretir
+// (cancer-informatics ci_03: bu adım "create objects" sırasında en sık atlanan
+// kalibrasyondur). 10.000 µm² ≈ 0.01 mm² eşiği small-noise temizliği yapar
+// ama ~100 µm çaplı küçük tümör adacıklarını hala tutar; 5.000 µm² hole eşiği
+// stromal cep'leri (lakün) doldurmaz ama mikro-bir delikleri kapatır.
 QP.createAnnotationsFromPixelClassifier(
     classifierName,
-    10000.0,   // minimum object area (µm²)
-    5000.0     // minimum hole area (µm²)
+    10000.0,            // minimum object area (µm²) — 0.01 mm² gürültü filtresi
+    5000.0,             // minimum hole area (µm²)  — mikro-deliklerin doldurulma eşiği
+    "SPLIT",            // split into multiple annotations
+    "DELETE_EXISTING",  // delete previous annotations of the same class
+    "SELECT_NEW"        // select newly created objects
 )
 
 def generatedAnnotations = QP.getAnnotationObjects().findAll {

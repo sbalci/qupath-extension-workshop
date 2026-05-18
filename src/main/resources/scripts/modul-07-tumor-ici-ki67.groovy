@@ -28,6 +28,14 @@
  *   1. Sınıflandırıcı → tümör anotasyonları
  *   2. Tümör anotasyonları seçili → Positive cell detection
  *   3. Ki-67 LI'yi yalnızca tümör alanında ölç
+ *
+ * YÖNTEM REFERANSLARI:
+ *   • Nielsen TO et al. (2021), J Natl Cancer Inst — Ki-67 Working Group
+ *     sayma standardı (≥500-1.000 tümör hücresi). doi:10.1093/jnci/djaa201
+ *   • Bankhead P et al. (2018), Lab Invest — QuPath ile entegre tümör tanıma
+ *     + IHC skorlama orijinal yayını. doi:10.1038/labinvest.2017.131
+ *   • Skjervold AH et al. (2022), Diagn Pathol — manuel vs dijital uyum.
+ *     doi:10.1186/s13000-022-01225-4
  */
 
 import qupath.lib.gui.dialogs.Dialogs
@@ -318,11 +326,15 @@ println String.format("  ✓ %d tümör nesnesi (%.1f sn)", tumorAnnotations.siz
 // ──────────────────────────────────────────────────────────────
 println "Adım 2/3: Tümör alanında Ki-67 pozitif hücre tespiti..."
 
+// Tespit kanalı — Modül 3 ile aynı yöntem notu geçerli.
+// Varsayılan: Hematoxylin OD. Yüksek-LI vakada 'Optical density sum'a geçin.
+def detectionImageBrightfield = 'Hematoxylin OD'   // veya 'Optical density sum'
+
 QP.selectObjects(tumorAnnotations)
 QP.runPlugin(
     'qupath.imagej.detect.cells.PositiveCellDetection',
     '{' +
-        '"detectionImageBrightfield":"Hematoxylin OD",' +
+        '"detectionImageBrightfield":"' + detectionImageBrightfield + '",' +
         '"requestedPixelSizeMicrons":0.5,' +
         '"backgroundRadiusMicrons":8.0,' +
         '"medianRadiusMicrons":0.0,' +
@@ -375,6 +387,16 @@ def ciMetin = nCells > 30 ? String.format("±%.1f%%", errorMargin) : "(n<30)"
 
 def totalElapsed = (System.currentTimeMillis() - t0) / 1000.0
 
+// Sayma standardı uyarısı — Nielsen 2021 (J Natl Cancer Inst, doi:10.1093/jnci/djaa201)
+// International Ki-67 in Breast Cancer Working Group: en az 500-1.000 tümör hücresi.
+def sayimUyari = ""
+if (tumorStats.total < 500) {
+    sayimUyari = String.format(
+        "\n📝 Not: %,d tümör hücresi <500 — Ki-67 Working Group (Nielsen 2021) sayma\n" +
+        "  standardının altında. Tümör annotation alanını büyütmeyi değerlendirin.",
+        tumorStats.total)
+}
+
 // ──────────────────────────────────────────────────────────────
 // 6) Sonucu sun — tümör-içi LI'yi vurgulayalım
 // ──────────────────────────────────────────────────────────────
@@ -399,7 +421,8 @@ showResultWindow(
         "─────────────────────────\n" +
         "  Ki-67 LI               : %%%.1f %s (95%% Güven Aralığı)\n" +
         "  Tümör içi yoğunluk     : ~%,d hücre/mm²\n" +
-        "  Toplam süre            : %.1f sn\n\n" +
+        "  Toplam süre            : %.1f sn\n" +
+        "%s\n" +
         "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
         tumorAnnotations.size(), tumorAreaMm2,
         tumorStats.total,
@@ -407,7 +430,7 @@ showResultWindow(
         tumorStats.n1, pct(tumorStats.n1, tumorStats.total),
         tumorStats.n2, pct(tumorStats.n2, tumorStats.total),
         tumorStats.n3, pct(tumorStats.n3, tumorStats.total),
-        tumorStats.ki67LI, ciMetin, density, totalElapsed
+        tumorStats.ki67LI, ciMetin, density, totalElapsed, sayimUyari
     )
 )
 
