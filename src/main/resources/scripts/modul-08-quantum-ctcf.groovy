@@ -1,26 +1,26 @@
 /**
  * Modül 8 - QuANTUM-tarzı cTCF (Computational Tumor Cellular Fraction)
  * -----------------------------------------------------------------------
- * Atölyenin EN ÖNEMLI scripti: yayınlanmış (Virchows Archiv 2025) QuANTUM
- * pipeline'ının basitleştirilmiş bir versiyonu. NSCLC slaytında **cTCF**
+ * Atölyenin en önemli betiği: yayınlanmış (Virchows Archiv 2025) QuANTUM
+ * iş akışının basitleştirilmiş bir versiyonu. NSCLC slaytında **cTCF**
  * hesaplar — NGS için tümör hücre fraksiyonu.
  *
- * PIPELINE:
+ * İŞ AKIŞI:
  *   1. TCR (Tumor-Containing Region) anotasyonunuz seçili olmalı
  *      (Pen/Polygon ile manuel çizilmiş)
  *   2. StarDist → TCR içindeki TÜM çekirdekler tespit edilir
- *   3. Object classifier (Tumor / Non-neoplastic) → her hücreyi sınıflar
- *      ← Önkoşul: önceden eğitilmiş object classifier
- *   4. cTCF = tumor / (tumor + non-neoplastic) × 100
+ *   3. Nesne sınıflandırıcı (Tumor / Non-neoplastic) → her hücreyi sınıflar
+ *      ← Önkoşul: önceden eğitilmiş nesne sınıflandırıcı
+ *   4. cTCF = Tumor / (Tumor + Non-neoplastic) × 100
  *
  * ÖNKOŞULLAR:
  *   1. **StarDist eklentisi yüklü** (Modül 1 hazırlığı)
  *   2. **Model dosyası**: ~/.qupath/stardist/he_heavy_augment.pb
  *      (github.com/qupath/models)
- *   3. **Object classifier** projede: classifiers/object_classifiers/
+ *   3. **Nesne sınıflandırıcı** projede: classifiers/object_classifiers/
  *      `tumor-vs-nonneoplastic-RT.json` adıyla
  *
- *   Object classifier yoksa: script size eğitim adımlarını söyler.
+ *   Nesne sınıflandırıcı yoksa betik size eğitim adımlarını gösterir.
  */
 
 import qupath.lib.gui.dialogs.Dialogs
@@ -28,12 +28,12 @@ import qupath.lib.scripting.QP
 import qupath.lib.objects.PathAnnotationObject
 
 // ──────────────────────────────────────────────────────────────
-// Non-modal pencere yardımcıları
-//   - waitForConfirm    : modal-hissi veren ama QuPath'i bloklamayan onay penceresi
+// Modal olmayan pencere yardımcıları
+//   - waitForConfirm    : modal hissi veren ama QuPath'i kilitlemeyen onay penceresi
 //   - showResultWindow  : sonuç penceresi — açık kalır, QuPath kullanılmaya devam edilebilir
 //
 // İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
-// parametre değiştirip scripti tekrar koşabilir, sonuçları kopyalayabilir.
+// parametre değiştirip betiği tekrar çalıştırabilir, sonuçları kopyalayabilir.
 // ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
@@ -200,7 +200,7 @@ if (!modelFile.exists()) {
     }
 }
 
-// Object classifier
+// Nesne sınıflandırıcı
 def objClassifierName = 'tumor-vs-nonneoplastic-RT'
 def availableObjClassifiers = project.getObjectClassifiers().getNames()
 def hasClassifier = availableObjClassifiers.contains(objClassifierName)
@@ -216,10 +216,10 @@ if (selected == null || !(selected instanceof PathAnnotationObject)) {
         "Nasıl çizilir:\n" +
         "  1. [P] tuşu → Polygon aracı\n" +
         "  2. NSCLC slaytında **NGS için kullanılacak** dokunun çevresini çizin\n" +
-        "     (pre-dissection iş akışını taklit eder)\n" +
+        "     (diseksiyon öncesi iş akışını taklit eder)\n" +
         "  3. Bu manuel olarak yapılır — seçilen araştırma ROI'si\n" +
         "  4. Anotasyona 'TCR' sınıfı atayabilirsiniz (opsiyonel)\n" +
-        "  5. TCR seçili iken bu scripti çalıştırın"
+        "  5. TCR seçili iken bu betiği çalıştırın"
     )
     return
 }
@@ -228,21 +228,21 @@ def tcr = selected
 // ──────────────────────────────────────────────────────────────
 // 3) Karşılama
 // ──────────────────────────────────────────────────────────────
-def pipelineDesc = hasClassifier
-    ? "  3️⃣ Object classifier '${objClassifierName}' → her hücre Tumor vs Non-neoplastic\n  4️⃣ cTCF = tümör / toplam × 100"
-    : "  3️⃣ Object classifier yok — sadece StarDist tespiti çalışacak\n  4️⃣ Sınıflandırıcıyı eğitmeniz gerekecek (eğitim adımları sonda açıklanır)"
+def workflowDesc = hasClassifier
+    ? "  3️⃣ Nesne sınıflandırıcı '${objClassifierName}' → her hücre Tumor vs Non-neoplastic\n  4️⃣ cTCF = tümör / toplam × 100"
+    : "  3️⃣ Nesne sınıflandırıcı yok — sadece StarDist tespiti çalışacak\n  4️⃣ Sınıflandırıcıyı eğitmeniz gerekecek (eğitim adımları sonda açıklanır)"
 
 def devam = waitForConfirm(
-    "Modül 8 - QuANTUM cTCF Pipeline",
-    "Bu script QuANTUM yayınının iş akışını uygular:\n\n" +
+    "Modül 8 - QuANTUM cTCF İş Akışı",
+    "Bu betik QuANTUM yayınının iş akışını uygular:\n\n" +
     "  1️⃣ Seçili TCR içinde StarDist → tüm çekirdekleri tespit\n" +
-    "  2️⃣ Cell expansion: 5 µm, threshold: 0.5\n" +
-    "${pipelineDesc}\n\n" +
+    "  2️⃣ Hücre genişletme (cell expansion): 5 µm, eşik: 0.5\n" +
+    "${workflowDesc}\n\n" +
     "Beklenen süre:\n" +
     "  • CPU: TCR boyutuna göre 1–5 dakika\n" +
     "  • GPU varsa: 5–30 saniye\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız OK."
+    "Hazırsanız OK düğmesine basın."
 )
 if (!devam) { println "İptal."; return }
 
@@ -250,7 +250,7 @@ if (!devam) { println "İptal."; return }
 // 4) Adım 1 — TCR'yi etiketle
 // ──────────────────────────────────────────────────────────────
 println "─────────────────────────────────────"
-println "Modül 8 - QuANTUM cTCF Pipeline"
+println "Modül 8 - QuANTUM cTCF İş Akışı"
 println "─────────────────────────────────────"
 println "Adım 1/4: TCR hazırlığı..."
 
@@ -278,7 +278,7 @@ try {
         "  1. QuPath → [Extensions → Manage extensions]\n" +
         "  2. StarDist'i kur\n" +
         "  3. QuPath'i yeniden başlat\n" +
-        "  4. Bu scripti tekrar çalıştır"
+        "  4. Bu betiği tekrar çalıştır"
     )
     return
 }
@@ -317,7 +317,7 @@ if (totalNuclei == 0) {
         "Hiç nükleus tespit edilmedi",
         "TCR içinde StarDist 0 hücre buldu.\n" +
         "Olası nedenler:\n" +
-        "  • Threshold çok yüksek (0.5) — düşürmeyi deneyin (0.3)\n" +
+        "  • Eşik çok yüksek (0.5) — düşürmeyi deneyin (0.3)\n" +
         "  • TCR çok küçük\n" +
         "  • Slayt boyama H&E için tipik aralıkta değil"
     )
@@ -325,7 +325,7 @@ if (totalNuclei == 0) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 6) Adım 3 — Object classifier (varsa)
+// 6) Adım 3 — Nesne sınıflandırıcı (varsa)
 // ──────────────────────────────────────────────────────────────
 def tumorCount = 0
 def nonNeoCount = 0
@@ -350,7 +350,7 @@ if (hasClassifier) {
     println String.format("  ✓ Tumor: %d  |  Non-neoplastic: %d  |  Ignore: %d  (%.1f sn)",
         tumorCount, nonNeoCount, ignoreCount, step3Time)
 } else {
-    println "Adım 3/4: Atlandı — object classifier yok."
+    println "Adım 3/4: Atlandı — nesne sınıflandırıcı yok."
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -381,25 +381,25 @@ def totalElapsed = (System.currentTimeMillis() - t0) / 1000.0
 // ──────────────────────────────────────────────────────────────
 def egitimNot = ""
 if (!hasClassifier) {
-    egitimNot = "\n\n⚠️ ÖNEMLİ: Object classifier '${objClassifierName}' projenizde yok.\n" +
+    egitimNot = "\n\n⚠️ ÖNEMLİ: Nesne sınıflandırıcı '${objClassifierName}' projenizde yok.\n" +
                 "cTCF hesaplanamadı — sınıflandırıcıyı şu adımlarla eğitin:\n\n" +
                 "  1. StarDist sonuçları üzerinde ~5-10 hücreyi 'Tumor' sınıfına atayın\n" +
                 "  2. Aynı şekilde ~5-10 hücreyi 'Non-neoplastic'e atayın\n" +
                 "  3. [Classify → Object classification → Train object classifier]\n" +
-                "  4. Random Tree seç → Train → Save as '${objClassifierName}'\n" +
-                "  5. Bu scripti tekrar çalıştırın → cTCF hesaplanacak"
+                "  4. Random Tree seçin → Train → Save as '${objClassifierName}'\n" +
+                "  5. Bu betiği tekrar çalıştırın → cTCF hesaplanacak"
 }
 
 showResultWindow(
     "QuANTUM Tamamlandı 🧪",
     String.format(
-        "QuANTUM-tarzı cTCF pipeline'ı bitti.\n\n" +
+        "QuANTUM-tarzı cTCF iş akışı bitti.\n\n" +
         "🎯 TCR ve Sayım\n" +
         "────────────────\n" +
         "  TCR alanı            : %.2f mm²\n" +
         "  Toplam nükleus        : %,d\n" +
-        "  Tumor hücreleri       : %,d\n" +
-        "  Non-neoplastic        : %,d\n" +
+        "  Tumor sınıfı          : %,d\n" +
+        "  Non-neoplastic sınıfı : %,d\n" +
         "  Ignore                : %,d\n\n" +
         "🧬 ANA SONUÇ: cTCF = %s\n" +
         "════════════════════════════\n\n" +

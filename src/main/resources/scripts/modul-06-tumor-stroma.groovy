@@ -1,7 +1,7 @@
 /**
  * Modül 6 - Tek Tıkla Tümör vs Stroma Segmentasyonu
  * ---------------------------------------------------
- * Bu script önceden eğitilmiş bir **piksel sınıflandırıcısını** projedeki
+ * Bu betik önceden eğitilmiş bir **piksel sınıflandırıcısını** projedeki
  * `classifiers/` klasöründen yükleyip aktif slayttaki tüm doku üzerinde
  * çalıştırır. Sonuçtan **Tumor** ve **Stroma** sınıflı anotasyonlar üretir
  * ve **Tümör/Stroma Oranı (TSR)** ölçümünü kaydeder.
@@ -17,20 +17,20 @@
  * KULLANIM:
  *   1. Bir H&E slaytı açın
  *   2. Tüm slaytı işlemek için anotasyon ÇİZMENIZE GEREK YOK
- *      — script tüm görüntüye uygular
- *   3. [Automate → Project scripts → bu script]
+ *      — betik tüm görüntüye uygular
+ *   3. [Automate → Project scripts → bu betik]
  *
  * ÇIKTI:
  *   Tümör/Stroma Oranı (TSR) alan temelli araştırma/eğitim ölçümüdür.
- *   Modül 7'de bu sınıflandırıcı çıktısını IHC sayımıyla birleştireceğiz.
+ *   Modül 7'de bu sınıflandırıcı çıktısını İHK sayımıyla birleştireceğiz.
  *
- * METODOLOJI NOTLARI (cancer-informatics tutorial 03'ten uyarlanmış):
+ * METODOLOJI NOTLARI (cancer-informatics eğitim 03'ten uyarlanmış):
  *   • Eğitim örnekleri farklı bölgelerden gelmeli — aynı alanın 10 katmanı
  *     yerine slayta yayılmış birkaç temsili örnek daha öğreticidir.
  *   • "Create objects" adımında minimum object size + hole size kalibrasyonu
- *     gürültü temizliği için kritiktir; bu script `10000.0 µm² / 5000.0 µm²`
+ *     gürültü temizliği için kritiktir; bu betik `10000.0 µm² / 5000.0 µm²`
  *     varsayılanını kullanır (atölye seçimi — slayt çözünürlüğüne göre değişir).
- *   • GUI tarafı tutorial (J. Cieślik et al., CC-BY-SA):
+ *   • arayüz tarafı eğitimi (J. Cieślik et al., CC-BY-SA):
  *     cancer-informatics.org/de/docs/ai/qupath_03_tissue_segmentation
  */
 
@@ -39,12 +39,12 @@ import qupath.lib.scripting.QP
 import qupath.lib.projects.Project
 
 // ──────────────────────────────────────────────────────────────
-// Non-modal pencere yardımcıları
-//   - waitForConfirm    : modal-hissi veren ama QuPath'i bloklamayan onay penceresi
+// Modal olmayan pencere yardımcıları
+//   - waitForConfirm    : modal hissi veren ama QuPath'i kilitlemeyen onay penceresi
 //   - showResultWindow  : sonuç penceresi — açık kalır, QuPath kullanılmaya devam edilebilir
 //
 // İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
-// parametre değiştirip scripti tekrar koşabilir, sonuçları kopyalayabilir.
+// parametre değiştirip betiği tekrar çalıştırabilir, sonuçları kopyalayabilir.
 // ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
@@ -178,7 +178,7 @@ def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     Dialogs.showErrorMessage(
         "Görüntü açık değil",
-        "Önce bir H&E slaytı açın, sonra bu scripti tekrar çalıştırın."
+        "Önce bir H&E slaytı açın, sonra bu betiği tekrar çalıştırın."
     )
     return
 }
@@ -187,7 +187,7 @@ def project = QP.getProject()
 if (project == null) {
     Dialogs.showErrorMessage(
         "Proje açık değil",
-        "Bu script proje seviyesinde çalışır.\n" +
+        "Bu betik proje seviyesinde çalışır.\n" +
         "Önce [File → Project → Create project] ile bir proje oluşturun ve slaytlarınızı ekleyin."
     )
     return
@@ -199,7 +199,7 @@ def availableClassifiers = project.getPixelClassifiers().getNames()
 if (!availableClassifiers.contains(classifierName)) {
     Dialogs.showErrorMessage(
         "Sınıflandırıcı bulunamadı",
-        "Bu script şu sınıflandırıcıyı arıyor:\n" +
+        "Bu betik şu sınıflandırıcıyı arıyor:\n" +
         "  classifiers/${classifierName}.json\n\n" +
         "Projenizde bu dosya yok. Bulunan sınıflandırıcılar:\n" +
         "  ${availableClassifiers.join(', ') ?: '(hiçbiri)'}\n\n" +
@@ -208,7 +208,7 @@ if (!availableClassifiers.contains(classifierName)) {
         "  2. [Classify → Pixel classification → Train pixel classifier]\n" +
         "  3. Random Forest, Resolution: High (2 µm/px)\n" +
         "  4. Eğitin ve 'Save classifier' ile **${classifierName}** ismiyle kaydedin\n" +
-        "  5. Bu scripti tekrar çalıştırın"
+        "  5. Bu betiği tekrar çalıştırın"
     )
     return
 }
@@ -218,7 +218,7 @@ if (!availableClassifiers.contains(classifierName)) {
 // ──────────────────────────────────────────────────────────────
 def devam = waitForConfirm(
     "Modül 6 - Tümör vs Stroma segmentasyonu",
-    "Bu script projenizdeki '${classifierName}' adlı piksel sınıflandırıcıyı\n" +
+    "Bu betik projenizdeki '${classifierName}' adlı piksel sınıflandırıcıyı\n" +
     "açık slaytın tamamına uygular ve **Tumor** + **Stroma** sınıflı anotasyon\n" +
     "nesneleri üretir.\n\n" +
     "Atölye varsayılan post-işlem parametreleri:\n" +
@@ -230,7 +230,7 @@ def devam = waitForConfirm(
     "  • Toplam alan ve TSR (tümör/stroma oranı)\n\n" +
     "Bu işlem tüm slaytı tarayacağı için 1–3 dakika sürebilir.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız OK."
+    "Hazırsanız OK düğmesine basın."
 )
 if (!devam) { println "İptal."; return }
 
@@ -248,14 +248,14 @@ def t0 = System.currentTimeMillis()
 
 def generatedName = "Generated by Modül 6 - ${classifierName}"
 
-// Önce yalnızca bu scriptin önceki çıktısını temizleyelim.
+// Önce yalnızca bu betiğin önceki çıktısını temizleyelim.
 // Kullanıcının elle çizdiği Tumor/Stroma eğitim anotasyonlarına dokunmayız.
 def existing = QP.getAnnotationObjects().findAll {
     (it.getName() ?: "") == generatedName
 }
 if (!existing.isEmpty()) {
     QP.removeObjects(existing, true)
-    println "  Önceki ${existing.size()} script çıktısı temizlendi."
+    println "  Önceki ${existing.size()} betik çıktısı temizlendi."
 }
 
 def beforeAnnotations = QP.getAnnotationObjects() as Set
@@ -312,7 +312,7 @@ def uyari = ""
 if (tumorAnnotations.isEmpty()) {
     uyari = "\n⚠️ Hiç tümör bölgesi tespit edilmedi.\n" +
             "  Sınıflandırıcı bu slayt için iyi eğitilmemiş olabilir.\n" +
-            "  Modül 6'daki Active learning iş akışıyla daha fazla anotasyon ekleyin."
+            "  Modül 6'daki aktif öğrenme iş akışıyla daha fazla anotasyon ekleyin."
 } else if (totalAreaMm2 < 1.0) {
     uyari = String.format("\n⚠️ Çok küçük doku alanı (%.2f mm²) — sonuçlar güvenilir olmayabilir.", totalAreaMm2)
 }

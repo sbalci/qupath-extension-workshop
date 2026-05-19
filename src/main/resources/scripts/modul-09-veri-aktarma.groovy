@@ -1,7 +1,7 @@
 /**
  * Modül 9 - Tek Tıkla Veri Dışa Aktarma
  * ----------------------------------------
- * Annotation + Detection ölçümlerini ve anotasyon geometrisini (GeoJSON)
+ * Anotasyon + tespit ölçümlerini ve anotasyon geometrisini (GeoJSON)
  * proje klasörünün yanındaki `exports/<tarih>/` altına yazar.
  *
  * İki mod:
@@ -37,7 +37,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 // ──────────────────────────────────────────────────────────────
-// Non-modal pencere yardımcıları (atölyenin tüm scriptlerinde paylaşılan iskelet)
+// Modal olmayan pencere yardımcıları (atölyenin tüm betiklerinde paylaşılan iskelet)
 // ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
@@ -191,7 +191,7 @@ def project = QP.getProject()
 if (project == null) {
     Dialogs.showErrorMessage(
         "Proje açık değil",
-        "Bu script bir QuPath projesinin açık olmasını gerektirir.\n" +
+        "Bu betik bir QuPath projesinin açık olmasını gerektirir.\n" +
         "Önce bir proje açın, sonra tekrar deneyin."
     )
     return
@@ -205,13 +205,13 @@ def currentEntry = QP.getProjectEntry()
 // ──────────────────────────────────────────────────────────────
 def choice = waitForChoice(
     "Modül 9 - Veri dışa aktarma",
-    "Annotation + Detection ölçümlerini ve anotasyon geometrilerini\n" +
+    "Anotasyon + tespit ölçümlerini ve anotasyon geometrilerini\n" +
     "(GeoJSON) dışa aktaracağım.\n\n" +
-    "⚠️ Önemli: İhraç slaytın **diske kaydedilmiş** halinden okunur\n" +
+    "⚠️ Önemli: Dışa aktarım slaytın **diske kaydedilmiş** halinden okunur\n" +
     "(QuPath'in MeasurementExporter'ı .qpdata dosyasından çalışır).\n" +
     "Açık slaydı sizin için otomatik kaydedeceğim. Eğer son anotasyon /\n" +
     "tespit değişikliklerinizin dahil olmasını istiyorsanız, devam edin —\n" +
-    "kaydetme bu scriptin ilk adımı olacak.\n\n" +
+    "kaydetme bu betiğin ilk adımı olacak.\n\n" +
     "Çıktı klasörü:\n" +
     "  <proje-klasörü>/exports/YYYY-MM-DD_HHmm/\n\n" +
     "Hangi modu istiyorsunuz?\n" +
@@ -238,9 +238,9 @@ if (!projectMode && currentEntry == null) {
     // entry.saveImageData çağrılarımız bir ProjectImageEntry gerektirir.
     Dialogs.showErrorMessage(
         "Slayt projeye eklenmemiş",
-        "Açık olan slayt projenin parçası değil; ihraç edilemez.\n\n" +
+        "Açık olan slayt projenin parçası değil; dışa aktarılamaz. \n\n" +
         "Çözüm: Project panelinden bu slaytı projeye ekleyin\n" +
-        "(sol üstte + ikonu) ve scripti tekrar çalıştırın."
+        "(sol üstte + ikonu) ve betiği tekrar çalıştırın."
     )
     return
 }
@@ -248,7 +248,7 @@ if (!projectMode && currentEntry == null) {
 // ──────────────────────────────────────────────────────────────
 // 2.5) Açık slaydı diske kaydet — kritik
 // MeasurementExporter ve readImageData her ikisi de .qpdata dosyasından
-// okur. Kaydedilmemiş anotasyon / tespit değişiklikleri ihracda görünmez,
+// okur. Kaydedilmemiş anotasyon / tespit değişiklikleri dışa aktarımda görünmez,
 // dosyalar boş çıkar. Burada savunmacı bir kaydetme yapıyoruz.
 // ──────────────────────────────────────────────────────────────
 def currentSaved = false
@@ -297,7 +297,7 @@ def gson = GsonTools.getInstance(true)
 def exportEntry = { entry, imageDataForGeo ->
     def slug = toSlug(entry.getImageName())
 
-    // Detection TSV (per-image)
+    // Tespit TSV (per-image)
     try {
         def detFile = new File(outDir, "${slug}__detections.tsv")
         new MeasurementExporter()
@@ -310,7 +310,7 @@ def exportEntry = { entry, imageDataForGeo ->
         errors << "${entry.getImageName()} → detections: ${t.getMessage()}"
     }
 
-    // Annotation TSV (per-image)
+    // Anotasyon TSV (per-image)
     try {
         def annFile = new File(outDir, "${slug}__annotations.tsv")
         new MeasurementExporter()
@@ -357,7 +357,7 @@ if (projectMode) {
         }
     }
 
-    // Birleştirilmiş TSV'ler — tek dosyada tüm projenin detections + annotations
+    // Birleştirilmiş TSV'ler — tek dosyada tüm projenin tespitler + anotasyonlar
     try {
         def allDet = new File(outDir, '_all_detections.tsv')
         new MeasurementExporter()
@@ -407,21 +407,21 @@ def saveStatusLine
 if (currentSaved) {
     saveStatusLine = "✓ Açık slayt diske kaydedildi (anotasyon/tespitler dahildir)"
 } else if (currentSaveError != null) {
-    saveStatusLine = "⚠ Açık slayt KAYDEDİLEMEDİ — son değişiklikler ihracda görünmeyebilir.\n" +
+    saveStatusLine = "⚠ Açık slayt KAYDEDİLEMEDİ — son değişiklikler dışa aktarımda görünmeyebilir.\n" +
                      "  Detay: " + currentSaveError + "\n" +
-                     "  Çözüm: QuPath ana penceresinde [Ctrl+S] basın, scripti tekrar çalıştırın."
+                     "  Çözüm: QuPath ana penceresinde [Ctrl+S] basın, betiği tekrar çalıştırın."
 } else {
     saveStatusLine = "(Açık slayt yok — projedeki tüm slaytlar son kayıtlı halinden okundu.)"
 }
 
-// Eğer ihraç toplamları sıfırsa — çoğunlukla kaydedilmemiş slayt göstergesi
+// Eğer dışa aktarım toplamları sıfırsa — çoğunlukla kaydedilmemiş slayt göstergesi
 def emptyHint = ""
 if (annotationsTotal == 0 && detectionsTotal == 0 && currentSaveError == null) {
-    emptyHint = "\n\n💡 Çıktıda 0 annotation / 0 detection görünüyor. Olası nedenler:\n" +
-                "  1. Bu slaytta gerçekten hiç anotasyon / tespit yoktu — önce Modül 2-8'den birini koşun.\n" +
-                "  2. Slayt scriptten ÖNCE QuPath dışında değiştirildi ve .qpdata kaydedilmedi.\n" +
-                "  3. ROI seçilip içinde detection üretildi ama anotasyon save'lenmedi.\n" +
-                "QuPath'te [Ctrl+S] ile slaydı kaydedin ve scripti tekrar çalıştırın."
+    emptyHint = "\n\n💡 Çıktıda 0 anotasyon / 0 tespit görünüyor. Olası nedenler:\n" +
+                "  1. Bu slaytta gerçekten hiç anotasyon / tespit yoktu — önce Modül 2-8'den birini çalıştırın.\n" +
+                "  2. Slayt betikten ÖNCE QuPath dışında değiştirildi ve .qpdata kaydedilmedi.\n" +
+                "  3. ROI seçilip içinde tespit üretildi ama anotasyon kaydedilmedi.\n" +
+                "QuPath'te [Ctrl+S] ile slaydı kaydedin ve betiği tekrar çalıştırın."
 }
 
 showResultWindow(
@@ -435,8 +435,8 @@ showResultWindow(
         "📊 Özet\n" +
         "──────\n" +
         "  Slayt sayısı            : %d\n" +
-        "  Toplam annotation       : %d\n" +
-        "  Toplam detection        : %d\n" +
+        "  Toplam anotasyon       : %d\n" +
+        "  Toplam tespit        : %d\n" +
         "  Yazılan dosya sayısı    : %d\n" +
         "  Süre                    : %.1f sn\n\n" +
         "📁 Yazılan dosyalar:\n%s%s%s\n\n" +

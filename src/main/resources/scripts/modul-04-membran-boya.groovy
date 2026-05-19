@@ -1,17 +1,17 @@
 /**
- * Modül 4 - Tek Tıkla HER2 / Membran IHC Skorlaması
+ * Modül 4 - Tek Tıkla HER2 / Membran İHK Skorlaması
  * ---------------------------------------------------
- * Atölye için "hızlı deneme" scripti. Seçilen anotasyon içinde HER2 (veya
- * E-kadherin, β-katenin gibi başka bir membran IHC boyamasını) skorlar.
+ * Atölye için "hızlı deneme" betiği. Seçilen anotasyon içinde HER2 (veya
+ * E-kadherin, β-katenin gibi başka bir membran İHK boyamasını) skorlar.
  * Her hücre **0 / 1+ / 2+ / 3+** olarak sınıflanır ve membran DAB
  * yoğunluk dağılımı ölçülür.
  *
  * KULLANIM:
- *   1. HER2 IHC slaytını açın
+ *   1. HER2 İHK slaytını açın
  *   2. Image type → "Brightfield (H-DAB)" olduğundan emin olun
- *      (script açık değilse otomatik ayarlar — varsayılan stain vektörleri uygulanır)
+ *      (betik açık değilse otomatik ayarlar — varsayılan boya vektörleri uygulanır)
  *   3. [R] tuşu → tümör içeren ~1×1 mm dikdörtgen anotasyon çizin
- *   4. Anotasyon seçili iken → [Automate → Project scripts → bu script]
+ *   4. Anotasyon seçili iken → [Automate → Project scripts → bu betik]
  *
  * MEMBRAN-ODAKLI HÜCRE TESPİTİ:
  *   • İlk tercih: **Cellpose** (`qupath-extension-cellpose`, BIOP) — `cyto3`
@@ -22,7 +22,7 @@
  *     Cellpose kurulu değilse otomatik kullanılır. Membran konumunu DAB
  *     sinyalinden watershed ile çıkarır; `excludeDAB=true` ile DAB-yoğun
  *     bölgeler çekirdek sanılmaz.
- *   • Detektör seçimi runtime'da yapılır; karşılama penceresi hangisinin
+ *   • Detektör seçimi çalışma zamanı'da yapılır; karşılama penceresi hangisinin
  *     kullanılacağını gösterir.
  *
  * CELLPOSE KURULUMU (opsiyonel, daha iyi sonuç):
@@ -42,7 +42,7 @@
  * KAYNAKLAR:
  *   • Cellpose builder JavaDoc: biop.github.io/qupath-extension-cellpose
  *   • Watershed plugin JavaDoc: javadoc/docs/qupath/imagej/detect/cells/WatershedCellMembraneDetection
- *   • Piksel H-score scripti (Sara McArdle): github.com/saramcardle/Image-Analysis-Scripts
+ *   • Piksel H-score betiği (Sara McArdle): github.com/saramcardle/Image-Analysis-Scripts
  *   • Yöntem makalesi: Ram et al., PLoS One 2021 — doi.org/10.1371/journal.pone.0245638
  *   • Workflow referansı (cancer-informatics.org): docs/ai/qupath_05_her2_expression
  */
@@ -62,12 +62,12 @@ import org.bytedeco.opencv.opencv_core.Mat
 import groovy.transform.CompileStatic
 
 // ──────────────────────────────────────────────────────────────
-// Non-modal pencere yardımcıları
-//   - waitForConfirm    : modal-hissi veren ama QuPath'i bloklamayan onay penceresi
+// Modal olmayan pencere yardımcıları
+//   - waitForConfirm    : modal hissi veren ama QuPath'i kilitlemeyen onay penceresi
 //   - showResultWindow  : sonuç penceresi — açık kalır, QuPath kullanılmaya devam edilebilir
 //
 // İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
-// parametre değiştirip scripti tekrar koşabilir, sonuçları kopyalayabilir.
+// parametre değiştirip betiği tekrar çalıştırabilir, sonuçları kopyalayabilir.
 // ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
@@ -201,7 +201,7 @@ def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     Dialogs.showErrorMessage(
         "Görüntü açık değil",
-        "Önce bir HER2 IHC slaytı açın, sonra bu scripti tekrar çalıştırın."
+        "Önce bir HER2 İHK slaytı açın, sonra bu betiği tekrar çalıştırın."
     )
     return
 }
@@ -211,15 +211,15 @@ if (!imageTypeName.toLowerCase().contains("brightfield")) {
     Dialogs.showErrorMessage(
         "Yanlış görüntü tipi",
         "Image type 'Brightfield' olmalı. Şu anki: ${imageTypeName}\n\n" +
-        "IHC için: Image type → 'Brightfield (H-DAB)' seçin."
+        "İHK için: Image type → 'Brightfield (H-DAB)' seçin."
     )
     return
 }
 
-// "Hematoxylin OD" kanalı yalnızca H-DAB stain vektörleri ayarlanmışsa var olur.
-// Image type 'Brightfield (other)' veya stain vektörleri eksikse parametre reddedilir
+// "Hematoxylin OD" kanalı yalnızca H-DAB boya vektörleri ayarlanmışsa var olur.
+// Image type 'Brightfield (other)' veya boya vektörleri eksikse parametre reddedilir
 // ("Unable to set parameter detectionImageBrightfield with value Hematoxylin OD").
-// Hematoxylin stain'i tanımlı değilse otomatik olarak BRIGHTFIELD_H_DAB'a geç.
+// Hematoxylin boyası tanımlı değilse otomatik olarak BRIGHTFIELD_H_DAB'a geç.
 def stains = imageData.getColorDeconvolutionStains()
 def hasHematoxylin = false
 if (stains != null) {
@@ -229,7 +229,7 @@ if (stains != null) {
     }
 }
 if (!hasHematoxylin) {
-    println "⚠ H-DAB stain vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
+    println "⚠ H-DAB boya vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
     QP.setImageType('BRIGHTFIELD_H_DAB')
 }
 
@@ -249,18 +249,18 @@ def detectorLine = cellposeHere
       "    https://atolye.patoloji.dev/kaynaklar.html#ileri-kurulumlar"
 
 def devam = waitForConfirm(
-    "Modül 4 - HER2 / Membran IHC skorlaması",
-    "Bu script seçili anotasyon içindeki her hücreye 0 / 1+ / 2+ / 3+\n" +
+    "Modül 4 - HER2 / Membran İHK skorlaması",
+    "Bu betik seçili anotasyon içindeki her hücreye 0 / 1+ / 2+ / 3+\n" +
     "skoru atar ve membran DAB yoğunluk dağılımını özetler.\n\n" +
     "${detectorLine}\n\n" +
     "Atölye varsayılan eşikleri (Membrane: DAB OD mean):\n" +
     "  • 1+ (zayıf):       0.15 OD\n" +
     "  • 2+ (orta):        0.40 OD\n" +
     "  • 3+ (güçlü):       0.70 OD\n\n" +
-    "Cell expansion: 5 µm (membran sinyalinin örnekleneceği halka)\n\n" +
+    "Hücre genişletme (cell expansion): 5 µm (membran sinyalinin örnekleneceği halka)\n\n" +
     "Çıktı: her bin için yüzdeler + H-score + yoğunluk dağılımı.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız OK."
+    "Hazırsanız OK düğmesine basın."
 )
 if (!devam) {
     println "Kullanıcı iptal etti."
@@ -296,20 +296,20 @@ if (!cellposeAvailable) {
 
 def detector = cellposeAvailable ? "Cellpose (cyto3, DAB + Hematoxylin)" : "WatershedCellMembraneDetection (DAB-temelli)"
 println "─────────────────────────────────────"
-println "Modül 4 - HER2 / Membran IHC"
+println "Modül 4 - HER2 / Membran İHK"
 println "─────────────────────────────────────"
 println "Membran skorlaması başlatılıyor..."
 println "  • Detektör: ${detector}"
-println "  • Bin eşikleri (Membrane: DAB OD mean): 0.15 / 0.40 / 0.70"
-println "  • Cell expansion: 5 µm"
+println "  • Grup eşikleri (Membrane: DAB OD mean): 0.15 / 0.40 / 0.70"
+println "  • Hücre genişletme (cell expansion): 5 µm"
 
 def t0 = System.currentTimeMillis()
 
 QP.selectObjects(targetAnnotation)
 
 if (cellposeAvailable) {
-    // İç scripti ayrı bir GroovyShell'de çalıştır: `import qupath.ext.biop.cellpose.Cellpose2D`
-    // ifadesi yalnızca eklenti classpath'te ise parse olabildiği için, dış script Cellpose
+    // İç betiği ayrı bir GroovyShell'de çalıştır: `import qupath.ext.biop.cellpose.Cellpose2D`
+    // ifadesi yalnızca eklenti classpath'te ise parse olabildiği için, dış betik Cellpose
     // yüklü olmayan kurulumlarda da çalışsın diye iç bloğa kapatıyoruz.
     def innerScript = '''
         import qupath.ext.biop.cellpose.Cellpose2D
@@ -361,7 +361,7 @@ def cellElapsed = (System.currentTimeMillis() - t0) / 1000.0
 // 4b) Piksel bazlı H-score (Sara McArdle / Ram et al. PLoS One 2021)
 //     Hücre tespitinden tamamen bağımsız. Annotation içindeki her pikseli
 //     DAB OD'ye göre 0/1+/2+/3+ olarak sınıflar; bir Hematoxylin maskesi ile
-//     stain'siz boş alanlar dışlanır. Sonuç: alan-ağırlıklı H-score (0–300).
+//     boyasız boş alanlar dışlanır. Sonuç: alan-ağırlıklı H-score (0–300).
 // ──────────────────────────────────────────────────────────────
 def pixT0 = System.currentTimeMillis()
 def pixDABthresholds = [0.10, 0.30, 0.60] as double[]   // 1+, 2+, 3+ DAB OD
@@ -440,7 +440,7 @@ def hScore = pct1 + 2.0 * pct2 + 3.0 * pct3
 
 def uyari = ""
 if (totalCells < 200) {
-    uyari = String.format("\n📝 Not: %,d hücre <200 — küçük örneklem; sonuç istatistiksel olarak hassasiyetli olmayabilir.", totalCells)
+    uyari = String.format("\n📝 Not: %,d hücre <200 — küçük örneklem; sonuç istatistiksel olarak güvenilir olmayabilir.", totalCells)
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -449,7 +449,7 @@ if (totalCells < 200) {
 showResultWindow(
     "Tamamlandı 🧬",
     String.format(
-        "HER2 / Membran IHC skorlaması bitti.\n\n" +
+        "HER2 / Membran İHK skorlaması bitti.\n\n" +
         "═══════════════════════════════════════════════════\n" +
         "  A. HÜCRE BAZLI — %s\n" +
         "═══════════════════════════════════════════════════\n" +
@@ -464,13 +464,13 @@ showResultWindow(
         "═══════════════════════════════════════════════════\n" +
         "  B. PİKSEL BAZLI — Ram et al. 2021 / S. McArdle\n" +
         "═══════════════════════════════════════════════════\n" +
-        "📊 Alan dağılımı (toplam %,.0f µm², stainsız alanlar maskelendi)\n" +
+        "📊 Alan dağılımı (toplam %,.0f µm², boyasız alanlar maskelendi)\n" +
         "  0  (negatif)        : %%%.1f\n" +
         "  1+ (zayıf)          : %%%.1f\n" +
         "  2+ (orta)           : %%%.1f\n" +
         "  3+ (güçlü)          : %%%.1f\n\n" +
         "  Pixelwise H-score   : %.0f / 300\n" +
-        "  Süre (piksel pass)  : %.1f sn\n\n" +
+        "  Süre (piksel geçişi)  : %.1f sn\n\n" +
         "  Eşikler: DAB [%.2f / %.2f / %.2f] OD,  H mask %.2f OD\n" +
         "%s\n" +
         "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",

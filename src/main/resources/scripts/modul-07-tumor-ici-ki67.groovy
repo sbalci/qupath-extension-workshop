@@ -1,7 +1,7 @@
 /**
  * Modül 7 - Tek Tıkla Tümör-Restricted Ki-67 Kantifikasyonu
  * -----------------------------------------------------------
- * Bu script atölyenin birleşik analiz adımıdır: önce piksel
+ * Bu betik atölyenin birleşik analiz adımıdır: önce piksel
  * sınıflandırıcı ile tümör bölgesini ayırır, sonra **yalnızca tümör
  * alanı içinde** Ki-67 pozitif çekirdek sayımı yapar.
  *
@@ -10,21 +10,21 @@
  *     • Stromal lenfosit ve endotel hücrelerinin Ki-67+ çekirdekleri
  *       paydaya girer → DİLÜSYON etkisi
  *
- *   Bu script tümör/stroma ayrımını açık bir ölçüm adımı olarak uygular.
+ *   Bu betik tümör/stroma ayrımını açık bir ölçüm adımı olarak uygular.
  *
  * KULLANIM:
- *   1. Ki-67 IHC slaytını açın (atölye için: Ki-67 slaytında piksel
- *      sınıflandırıcı IHC üzerinde de çalışabilir; gerçek hayatta
+ *   1. Ki-67 İHK slaytını açın (atölye için: Ki-67 slaytında piksel
+ *      sınıflandırıcı İHK üzerinde de çalışabilir; gerçek hayatta
  *      H&E seri kesit kullanılır)
  *   2. Image type → "Brightfield (other)"
- *   3. [Automate → Project scripts → bu script]
- *      (Anotasyon ÇİZMENIZE GEREK YOK — script tüm slayttan başlar)
+ *   3. [Automate → Project scripts → bu betik]
+ *      (Anotasyon ÇİZMENIZE GEREK YOK — betik tüm slayttan başlar)
  *
  * ÖNKOŞUL:
  *   Projenizde `classifiers/tumor-stroma-RF.json` sınıflandırıcısı olmalı
- *   (Modül 6'da kaydedilen). Yoksa script size adımları söyler.
+ *   (Modül 6'da kaydedilen). Yoksa betik size adımları söyler.
  *
- * PIPELINE (3 adım):
+ * İŞ AKIŞI (3 adım):
  *   1. Sınıflandırıcı → tümör anotasyonları
  *   2. Tümör anotasyonları seçili → Positive cell detection
  *   3. Ki-67 LI'yi yalnızca tümör alanında ölç
@@ -33,7 +33,7 @@
  *   • Nielsen TO et al. (2021), J Natl Cancer Inst — Ki-67 Working Group
  *     sayma standardı (≥500-1.000 tümör hücresi). doi:10.1093/jnci/djaa201
  *   • Bankhead P et al. (2018), Lab Invest — QuPath ile entegre tümör tanıma
- *     + IHC skorlama orijinal yayını. doi:10.1038/labinvest.2017.131
+ *     + İHK skorlama orijinal yayını. doi:10.1038/labinvest.2017.131
  *   • Skjervold AH et al. (2022), Diagn Pathol — manuel vs dijital uyum.
  *     doi:10.1186/s13000-022-01225-4
  */
@@ -42,12 +42,12 @@ import qupath.lib.gui.dialogs.Dialogs
 import qupath.lib.scripting.QP
 
 // ──────────────────────────────────────────────────────────────
-// Non-modal pencere yardımcıları
-//   - waitForConfirm    : modal-hissi veren ama QuPath'i bloklamayan onay penceresi
+// Modal olmayan pencere yardımcıları
+//   - waitForConfirm    : modal hissi veren ama QuPath'i kilitlemeyen onay penceresi
 //   - showResultWindow  : sonuç penceresi — açık kalır, QuPath kullanılmaya devam edilebilir
 //
 // İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
-// parametre değiştirip scripti tekrar koşabilir, sonuçları kopyalayabilir.
+// parametre değiştirip betiği tekrar çalıştırabilir, sonuçları kopyalayabilir.
 // ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
@@ -179,7 +179,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ──────────────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir Ki-67 IHC slaytı açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir Ki-67 İHK slaytı açın.")
     return
 }
 
@@ -192,7 +192,7 @@ if (!imageTypeName.toLowerCase().contains("brightfield")) {
     return
 }
 
-// "Hematoxylin OD" kanalı yalnızca H-DAB stain vektörleri ayarlanmışsa var olur.
+// "Hematoxylin OD" kanalı yalnızca H-DAB boya vektörleri ayarlanmışsa var olur.
 def stains = imageData.getColorDeconvolutionStains()
 def hasHematoxylin = false
 if (stains != null) {
@@ -202,7 +202,7 @@ if (stains != null) {
     }
 }
 if (!hasHematoxylin) {
-    println "⚠ H-DAB stain vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
+    println "⚠ H-DAB boya vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
     QP.setImageType('BRIGHTFIELD_H_DAB')
 }
 
@@ -216,30 +216,30 @@ def classifierName = 'tumor-stroma-RF'
 if (!project.getPixelClassifiers().getNames().contains(classifierName)) {
     Dialogs.showErrorMessage(
         "Sınıflandırıcı bulunamadı",
-        "Bu script şu sınıflandırıcıya ihtiyaç duyar: ${classifierName}\n\n" +
+        "Bu betik şu sınıflandırıcıya ihtiyaç duyar: ${classifierName}\n\n" +
         "Önce Modül 6'yı tamamlayın:\n" +
         "  1. H&E slaytında Tumor / Stroma anotasyonları eğitin\n" +
         "  2. '${classifierName}' ismiyle kaydedin\n" +
-        "  3. Bu scripti tekrar çalıştırın"
+        "  3. Bu betiği tekrar çalıştırın"
     )
     return
 }
 
 // ──────────────────────────────────────────────────────────────
-// 2) Karşılama — 3-adımlı pipeline açıklaması
+// 2) Karşılama — 3-adımlı iş akışı açıklaması
 // ──────────────────────────────────────────────────────────────
 def devam = waitForConfirm(
     "Modül 7 - Tümör-Restricted Ki-67",
-    "Bu script 3 adımlı bir pipeline çalıştırır:\n\n" +
+    "Bu betik 3 adımlı bir iş akışı çalıştırır:\n\n" +
     "  1️⃣ Piksel sınıflandırıcı '${classifierName}' → tümör bölgesi ayır\n" +
     "  2️⃣ Tümör anotasyonları seçili → Positive cell detection\n" +
     "  3️⃣ Yalnızca tümör hücrelerinde Ki-67 LI hesapla\n\n" +
-    "Ki-67 IHC eşikleri (Nucleus: DAB OD mean):\n" +
+    "Ki-67 İHK eşikleri (Nucleus: DAB OD mean):\n" +
     "  • 1+ / 2+ / 3+: 0.20 / 0.40 / 0.60 OD\n\n" +
-    "Çıktı: tümör-içi Ki-67 LI + bin dağılımı + yoğunluk\n\n" +
+    "Çıktı: tümör-içi Ki-67 LI + grup dağılımı + yoğunluk\n\n" +
     "Bu işlem 2–5 dakika sürebilir (slayt boyutuna bağlı).\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız OK."
+    "Hazırsanız OK düğmesine basın."
 )
 if (!devam) { println "İptal."; return }
 
@@ -274,14 +274,14 @@ def t0 = System.currentTimeMillis()
 
 def generatedName = "Generated by Modül 7 - ${classifierName}"
 
-// Önce yalnızca bu scriptin önceki çıktısını temizle.
+// Önce yalnızca bu betiğin önceki çıktısını temizle.
 // Kullanıcının elle çizdiği Tumor/Stroma anotasyonlarına dokunma.
 def existing = QP.getAnnotationObjects().findAll {
     (it.getName() ?: "") == generatedName
 }
 if (!existing.isEmpty()) {
     QP.removeObjects(existing, true)
-    println "  Önceki ${existing.size()} script çıktısı temizlendi."
+    println "  Önceki ${existing.size()} betik çıktısı temizlendi."
 }
 
 def beforeAnnotations = QP.getAnnotationObjects() as Set
@@ -308,11 +308,11 @@ if (tumorAnnotations.isEmpty()) {
         "Tümör bulunamadı",
         "Sınıflandırıcı bu slaytta hiç tümör bölgesi tespit edemedi.\n\n" +
         "Olası nedenler:\n" +
-        "  • Sınıflandırıcı IHC için değil H&E için eğitildi (tipik durum)\n" +
+        "  • Sınıflandırıcı İHK için değil H&E için eğitildi (tipik durum)\n" +
         "  • Eşikler bu slayta uymuyor\n" +
         "  • Slayt gerçekten tümör içermiyor (lenf nodu, normal doku?)\n\n" +
-        "Çözüm: Modül 6'da Ki-67 IHC üzerinde de çalışan bir sınıflandırıcı eğitin\n" +
-        "(IHC + H&E karışık eğitim seti) ya da H&E seri kesit kullanın."
+        "Çözüm: Modül 6'da Ki-67 İHK üzerinde de çalışan bir sınıflandırıcı eğitin\n" +
+        "(İHK + H&E karışık eğitim seti) ya da H&E seri kesit kullanın."
     )
     return
 }

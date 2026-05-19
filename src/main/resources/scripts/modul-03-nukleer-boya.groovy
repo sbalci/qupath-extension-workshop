@@ -1,23 +1,23 @@
 /**
- * Modül 3 - Tek Tıkla Ki-67 / Nükleer IHC Kantifikasyonu
+ * Modül 3 - Tek Tıkla Ki-67 / Nükleer İHK Kantifikasyonu
  * --------------------------------------------------------
- * Atölye için "hızlı deneme" scripti. Seçilen anotasyon içinde
- * Ki-67 / p53 / başka bir nükleer IHC boyamasını otomatik olarak skorlar
- * ve **Ki-67 LI** (etiketleme indeksi) ile bin dağılımını kaydeder.
+ * Atölye için "hızlı deneme" betiği. Seçilen anotasyon içinde
+ * Ki-67 / p53 / başka bir nükleer İHK boyamasını otomatik olarak skorlar
+ * ve **Ki-67 LI** ile grup dağılımını kaydeder.
  *
  * KULLANIM:
- *   1. Ki-67 (veya başka nükleer DAB) IHC slaytını açın
+ *   1. Ki-67 (veya başka nükleer DAB) İHK slaytını açın
  *   2. Image type → "Brightfield (other)" olduğundan emin olun
  *      ([Image → Image type → Brightfield (other)])
  *   3. [R] tuşu → tümör içeren ~1×1 mm dikdörtgen anotasyon çizin
- *   4. Anotasyon seçili iken → [Automate → Project scripts → bu script]
- *   5. Sonuçları popup pencereden okuyun
+ *   4. Anotasyon seçili iken → [Automate → Project scripts → bu betik]
+ *   5. Sonuçları sonuç penceresinden okuyun
  *
  * NE YAPAR:
  *   • Atölye boya vektörleri ile çekirdek-yoğun DAB sinyalini ayırır
  *   • Her çekirdeği Negative / 1+ / 2+ / 3+ olarak sınıflar
  *     (eşikler: 0.2 / 0.4 / 0.6 OD)
- *   • Pozitif yüzdesini (Ki-67 LI), bin dağılımını ve hücre yoğunluğunu hesaplar
+ *   • Pozitif yüzdesini (Ki-67 LI), grup dağılımını ve hücre yoğunluğunu hesaplar
  *
  * NE YAPMAZ:
  *   • Boya vektörlerinizi otomatik tahmin etmez — önceden ayarlanmış olmalı
@@ -28,7 +28,7 @@
  *     (≥500-1.000 tümör hücresi). doi:10.1093/jnci/djaa201
  *   • Skjervold AH et al. (2022), Diagn Pathol — manuel vs dijital uyum
  *     doi:10.1186/s13000-022-01225-4
- *   • GUI tarafı tutorial (cancer-informatics.org, J. Cieślik et al., CC-BY-SA):
+ *   • Arayüz tarafı eğitimi (cancer-informatics.org, J. Cieślik et al., CC-BY-SA):
  *     cancer-informatics.org/de/docs/ai/qupath_04_ki67_index
  */
 
@@ -37,12 +37,12 @@ import qupath.lib.scripting.QP
 import qupath.lib.objects.PathAnnotationObject
 
 // ──────────────────────────────────────────────────────────────
-// Non-modal pencere yardımcıları
-//   - waitForConfirm    : modal-hissi veren ama QuPath'i bloklamayan onay penceresi
+// Modal olmayan pencere yardımcıları
+//   - waitForConfirm    : modal hissi veren ama QuPath'i kilitlemeyen onay penceresi
 //   - showResultWindow  : sonuç penceresi — açık kalır, QuPath kullanılmaya devam edilebilir
 //
 // İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
-// parametre değiştirip scripti tekrar koşabilir, sonuçları kopyalayabilir.
+// parametre değiştirip betiği tekrar çalıştırabilir, sonuçları kopyalayabilir.
 // ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
@@ -176,7 +176,7 @@ def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     Dialogs.showErrorMessage(
         "Görüntü açık değil",
-        "Önce bir Ki-67 IHC slaytı açın, sonra bu scripti tekrar çalıştırın."
+        "Önce bir Ki-67 İHK slaytı açın, sonra bu betiği tekrar çalıştırın."
     )
     return
 }
@@ -192,13 +192,13 @@ if (!imageTypeName.toLowerCase().contains("brightfield")) {
         "Çözüm:\n" +
         "  1. Image panelini açın (sol-üst)\n" +
         "  2. 'Image type' → 'Brightfield (H-DAB)' seçin (DAB ayrımı için gerekli)\n" +
-        "  3. Bu scripti tekrar çalıştırın"
+        "  3. Bu betiği tekrar çalıştırın"
     )
     return
 }
 
-// "Hematoxylin OD" kanalı yalnızca H-DAB stain vektörleri ayarlanmışsa var olur.
-// Image type 'Brightfield (other)' veya stain vektörleri eksikse parametre reddedilir.
+// "Hematoxylin OD" kanalı yalnızca H-DAB boya vektörleri ayarlanmışsa var olur.
+// Image type 'Brightfield (other)' veya boya vektörleri eksikse parametre reddedilir.
 def stains = imageData.getColorDeconvolutionStains()
 def hasHematoxylin = false
 if (stains != null) {
@@ -208,7 +208,7 @@ if (stains != null) {
     }
 }
 if (!hasHematoxylin) {
-    println "⚠ H-DAB stain vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
+    println "⚠ H-DAB boya vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
     QP.setImageType('BRIGHTFIELD_H_DAB')
 }
 
@@ -216,8 +216,8 @@ if (!hasHematoxylin) {
 // 2) Karşılama dialog
 // ──────────────────────────────────────────────────────────────
 def devam = waitForConfirm(
-    "Modül 3 - Ki-67 / Nükleer IHC kantifikasyonu",
-    "Bu script, seçtiğiniz anotasyon içindeki tüm çekirdekleri tespit edip\n" +
+    "Modül 3 - Ki-67 / Nükleer İHK kantifikasyonu",
+    "Bu betik, seçtiğiniz anotasyon içindeki tüm çekirdekleri tespit edip\n" +
     "her birini DAB yoğunluğuna göre Negative / 1+ / 2+ / 3+ olarak sınıflar.\n\n" +
     "Atölye varsayılan eşikleri (DAB OD — Nucleus mean):\n" +
     "  • 1+ (zayıf):  0.20 OD\n" +
@@ -225,10 +225,10 @@ def devam = waitForConfirm(
     "  • 3+ (güçlü):  0.60 OD\n\n" +
     "Çıktı:\n" +
     "  • Ki-67 LI (Pozitif %) — ölçüm çıktısı\n" +
-    "  • Bin dağılımı (% 0 / 1+ / 2+ / 3+)\n" +
+    "  • Grup dağılımı (% 0 / 1+ / 2+ / 3+)\n" +
     "  • Hücre yoğunluğu (hücre/mm²) + anotasyon alanı\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız OK, değilse Cancel ile çıkın."
+    "Hazırsanız OK düğmesine basın; devam etmek istemiyorsanız Cancel ile çıkın."
 )
 if (!devam) {
     println "Kullanıcı iptal etti."
@@ -248,7 +248,7 @@ if (annotations.isEmpty()) {
         "Nasıl:\n" +
         "  1. R tuşu → tümör içeren ~1×1 mm bir dikdörtgen sürükleyin\n" +
         "  2. Anotasyona tıklayarak seçili tutun (kenarı sarı görünmeli)\n" +
-        "  3. Bu scripti tekrar çalıştırın"
+        "  3. Bu betiği tekrar çalıştırın"
     )
     return
 }
@@ -267,12 +267,12 @@ def targetAnnotation = selected
 // 4) Positive cell detection — atölye varsayılanları
 // ──────────────────────────────────────────────────────────────
 println "─────────────────────────────────────"
-println "Modül 3 - Ki-67 / Nükleer IHC"
+println "Modül 3 - Ki-67 / Nükleer İHK"
 println "─────────────────────────────────────"
 println "Pozitif hücre tespiti başlatılıyor..."
 println "  • Image: ${QP.getProjectEntry()?.getImageName() ?: imageData.getServer().getMetadata().getName()}"
 println "  • Score compartment: Nucleus: DAB OD mean"
-println "  • Threshold 1+ / 2+ / 3+: 0.2 / 0.4 / 0.6 OD"
+println "  • Eşik 1+ / 2+ / 3+: 0.2 / 0.4 / 0.6 OD"
 println "  • Requested pixel size: 0.5 µm/px"
 println "  • Nucleus background radius: 8 µm"
 
@@ -283,7 +283,7 @@ def t0 = System.currentTimeMillis()
 //     Yüksek-LI Ki-67'de güçlü DAB hematoksilin sinyalini bastırabilir, bazı
 //     pozitif çekirdekler kaçabilir.
 //   "Optical density sum" → H + DAB + Eozin OD kombinasyonu; ASCO/cancer-informatics
-//     tutorialları Ki-67 için bu kanalı önerir (DAB-yoğun pozitiflerde daha güvenli).
+//     eğitimleri Ki-67 için bu kanalı önerir (DAB-yoğun pozitiflerde daha güvenli).
 //     Trade-off: arka plan gürültüsüne biraz daha duyarlı; eşiklerin yeniden
 //     kalibre edilmesi gerekebilir.
 // Atölye varsayılanı "Hematoxylin OD" — düşük-orta LI'da daha temiz segmentasyon verir.
@@ -371,7 +371,7 @@ if (totalCells < 500) {
 showResultWindow(
     "Tamamlandı 🔬",
     String.format(
-        "Ki-67 / Nükleer IHC kantifikasyonu bitti.\n\n" +
+        "Ki-67 / Nükleer İHK kantifikasyonu bitti.\n\n" +
         "📊 Sayım sonuçları\n" +
         "────────────────────\n" +
         "  Toplam hücre        : %,d\n" +

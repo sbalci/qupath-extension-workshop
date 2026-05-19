@@ -1,23 +1,23 @@
 /**
  * Modül 2 - Tek Tıkla Hücre Tespiti
  * ----------------------------------
- * Atölye için "hızlı deneme" scripti. Seçilen anotasyon içindeki tüm
+ * Atölye için "hızlı deneme" betiği. Seçilen anotasyon içindeki tüm
  * çekirdekleri H&E için atölye varsayılan parametreleriyle tespit eder.
  *
  * KULLANIM:
  *   1. Bir H&E slaytı açın
  *   2. [R] tuşu → tümör içeren küçük bir dikdörtgen (~1×1 mm) çizin
- *   3. Anotasyon seçili iken → [Automate → Project scripts → bu script]
- *   4. Sonuçları popup pencereden okuyun
+ *   3. Anotasyon seçili iken → [Automate → Project scripts → bu betik]
+ *   4. Sonuçları sonuç penceresinden okuyun
  *
- * Bu script atölyenin tek tıkla "wow" anı için yazılmıştır. Aynı parametrelerin
+ * Bu betik atölyenin tek tıkla "wow" anı için yazılmıştır. Aynı parametrelerin
  * her birinin ne işe yaradığını ve nasıl ayarlayacağınızı öğrenmek için
  * web sitesindeki **Modül 2 - Hücre Tespiti** bölümüne dönün.
  *
  * NOT — manuel sayım alternatifi:
  *   Küçük örneklemlerde veya zor durumlarda QuPath'in **Point Tool**'u ile
  *   her hücreyi tek tek tıklayarak manuel sayım yapılabilir; sonuçlar `.tsv`
- *   olarak dışa aktarılır. GUI üzerinden manuel/otomatik karşılaştırma için:
+ *   olarak dışa aktarılır. arayüz üzerinden manuel/otomatik karşılaştırma için:
  *   cancer-informatics.org/de/docs/ai/qupath_02_Cell-Counting (J. Cieślik et al.)
  */
 
@@ -26,12 +26,12 @@ import qupath.lib.scripting.QP
 import qupath.lib.objects.PathAnnotationObject
 
 // ──────────────────────────────────────────────────────────────
-// Non-modal pencere yardımcıları
-//   - waitForConfirm    : modal-hissi veren ama QuPath'i bloklamayan onay penceresi
+// Modal olmayan pencere yardımcıları
+//   - waitForConfirm    : modal hissi veren ama QuPath'i kilitlemeyen onay penceresi
 //   - showResultWindow  : sonuç penceresi — açık kalır, QuPath kullanılmaya devam edilebilir
 //
 // İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
-// parametre değiştirip scripti tekrar koşabilir, sonuçları kopyalayabilir.
+// parametre değiştirip betiği tekrar çalıştırabilir, sonuçları kopyalayabilir.
 // ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
@@ -165,12 +165,12 @@ def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     Dialogs.showErrorMessage(
         "Görüntü açık değil",
-        "Önce bir slayt açın (sol Proje panelinden çift tıklayın), sonra bu scripti tekrar çalıştırın."
+        "Önce bir slayt açın (sol Proje panelinden çift tıklayın), sonra bu betiği tekrar çalıştırın."
     )
     return
 }
 
-// "Hematoxylin OD" kanalı yalnızca brightfield + Hematoxylin stain ayarlanmışsa var olur.
+// "Hematoxylin OD" kanalı yalnızca brightfield + Hematoxylin boyası ayarlanmışsa var olur.
 // Aksi halde plugin "Unable to set parameter detectionImageBrightfield" hatası verir.
 // Brightfield (other) açıkta ise H&E varsayılanı uygulanır (M2 H&E için yazılmıştır).
 def stains = imageData.getColorDeconvolutionStains()
@@ -182,7 +182,7 @@ if (stains != null) {
     }
 }
 if (!hasHematoxylin) {
-    println "⚠ Hematoxylin stain tanımlı değil → BRIGHTFIELD_H_E varsayılanı uygulanıyor."
+    println "⚠ Hematoxylin boyası tanımlı değil → BRIGHTFIELD_H_E varsayılanı uygulanıyor."
     QP.setImageType('BRIGHTFIELD_H_E')
 }
 
@@ -191,14 +191,14 @@ if (!hasHematoxylin) {
 // ──────────────────────────────────────────────────────────────
 def devam = waitForConfirm(
     "Modül 2 - Hızlı hücre tespiti",
-    "Bu script, seçtiğiniz anotasyon içindeki TÜM çekirdekleri otomatik olarak\n" +
+    "Bu betik, seçtiğiniz anotasyon içindeki TÜM çekirdekleri otomatik olarak\n" +
     "tespit edecek. Atölye için ayarlanmış varsayılan parametreleri kullanır.\n\n" +
     "Şunlardan emin olun:\n" +
     "  • Bir H&E slaytı açık\n" +
     "  • Bir dikdörtgen anotasyon (R tuşu) çizdiniz (~1×1 mm tümör alanı)\n" +
     "  • Anotasyon SEÇİLİ (kenarları sarı görünür)\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız OK, değilse Cancel ile çıkın."
+    "Hazırsanız OK düğmesine basın; devam etmek istemiyorsanız Cancel ile çıkın."
 )
 if (!devam) {
     println "Kullanıcı iptal etti."
@@ -218,7 +218,7 @@ if (annotations.isEmpty()) {
         "Nasıl:\n" +
         "  1. Toolbar'dan dikdörtgen aracını seçin (veya R tuşu)\n" +
         "  2. Slayttaki tümör alanına ~1×1 mm dikdörtgen sürükleyin\n" +
-        "  3. Bu scripti tekrar çalıştırın"
+        "  3. Bu betiği tekrar çalıştırın"
     )
     return
 }
@@ -229,7 +229,7 @@ if (selected == null || !(selected instanceof PathAnnotationObject)) {
         "Lütfen yalnızca çalıştırmak istediğiniz dikdörtgen anotasyonu seçin.\n\n" +
         "Nasıl:\n" +
         "  1. Slayttaki anotasyona tıklayın (kenarı sarı görünmeli)\n" +
-        "  2. Bu scripti tekrar çalıştırın"
+        "  2. Bu betiği tekrar çalıştırın"
     )
     return
 }
@@ -241,10 +241,10 @@ def targetAnnotation = selected
 // ──────────────────────────────────────────────────────────────
 println "Hücre tespiti başlatılıyor — atölye varsayılan parametreleriyle..."
 println "  • Requested pixel size: 0.5 µm/px"
-println "  • Threshold (Hematoxylin OD): 0.1"
+println "  • Eşik (Hematoxylin OD): 0.1"
 println "  • Sigma: 1.5 µm"
 println "  • Min/Max area: 10 / 400 µm²"
-println "  • Cell expansion: 5 µm"
+println "  • Hücre genişletme (cell expansion): 5 µm"
 
 def t0 = System.currentTimeMillis()
 
@@ -295,7 +295,7 @@ def density = totalAreaMm2 > 0 ? Math.round(totalCells / totalAreaMm2) : 0
 showResultWindow(
     "Tamamlandı 🎉",
     String.format(
-        "İlk computational hücre sayımınız bitti.\n\n" +
+        "İlk hesaplamalı hücre sayımınız bitti.\n\n" +
         "📊 Sonuçlar\n" +
         "──────────\n" +
         "  Toplam hücre        : %,d\n" +

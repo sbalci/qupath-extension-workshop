@@ -1,23 +1,23 @@
 /**
- * Modül 5 - Tek Tıkla CD68 / Sitoplazmik IHC Kantifikasyonu
+ * Modül 5 - Tek Tıkla CD68 / Sitoplazmik İHK Kantifikasyonu
  * ----------------------------------------------------------
- * Atölye için "hızlı deneme" scripti. Sitoplazmik DAB boyamasını (CD68,
+ * Atölye için "hızlı deneme" betiği. Sitoplazmik DAB boyamasını (CD68,
  * CD163, EBER vb.) skorlar. Her hücre sitoplazmik DAB yoğunluğuna göre
  * Negative / Weak / Moderate / Strong bin'lerine atanır.
  *
  * KULLANIM:
- *   1. CD68 (veya benzeri sitoplazmik DAB) IHC slaytını açın
+ *   1. CD68 (veya benzeri sitoplazmik DAB) İHK slaytını açın
  *   2. Image type → "Brightfield (other)"
  *   3. [R] tuşu → ~1×1 mm dikdörtgen anotasyon çizin
- *   4. Anotasyon seçili iken → [Automate → Project scripts → bu script]
+ *   4. Anotasyon seçili iken → [Automate → Project scripts → bu betik]
  *
  * NEDEN SİTOPLAZMA FARKLI?
  *   • Sitoplazma çekirdekten **çok daha büyük hacme** sahip
  *   • Aynı miktarda DAB → daha düşük ortalama OD
  *   • Bu yüzden EŞİKLER DAHA DÜŞÜK olmalı:
  *       - Nükleer Ki-67: 0.20 / 0.40 / 0.60
- *       - Sitoplazmik CD68: 0.10 / 0.20 / 0.35  ← bu script
- *   • Cell expansion DAHA BÜYÜK (7 µm) — sitoplazma hacmini örneklemek için
+ *       - Sitoplazmik CD68: 0.10 / 0.20 / 0.35  ← bu betik
+ *   • Hücre genişletme (cell expansion) DAHA BÜYÜK (7 µm) — sitoplazma hacmini örneklemek için
  */
 
 import qupath.lib.gui.dialogs.Dialogs
@@ -25,12 +25,12 @@ import qupath.lib.scripting.QP
 import qupath.lib.objects.PathAnnotationObject
 
 // ──────────────────────────────────────────────────────────────
-// Non-modal pencere yardımcıları
-//   - waitForConfirm    : modal-hissi veren ama QuPath'i bloklamayan onay penceresi
+// Modal olmayan pencere yardımcıları
+//   - waitForConfirm    : modal hissi veren ama QuPath'i kilitlemeyen onay penceresi
 //   - showResultWindow  : sonuç penceresi — açık kalır, QuPath kullanılmaya devam edilebilir
 //
 // İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
-// parametre değiştirip scripti tekrar koşabilir, sonuçları kopyalayabilir.
+// parametre değiştirip betiği tekrar çalıştırabilir, sonuçları kopyalayabilir.
 // ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
@@ -164,7 +164,7 @@ def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     Dialogs.showErrorMessage(
         "Görüntü açık değil",
-        "Önce bir CD68 (veya başka sitoplazmik IHC) slaytı açın."
+        "Önce bir CD68 (veya başka sitoplazmik İHK) slaytı açın."
     )
     return
 }
@@ -178,7 +178,7 @@ if (!imageTypeName.toLowerCase().contains("brightfield")) {
     return
 }
 
-// "Hematoxylin OD" kanalı yalnızca H-DAB stain vektörleri ayarlanmışsa var olur.
+// "Hematoxylin OD" kanalı yalnızca H-DAB boya vektörleri ayarlanmışsa var olur.
 def stains = imageData.getColorDeconvolutionStains()
 def hasHematoxylin = false
 if (stains != null) {
@@ -188,7 +188,7 @@ if (stains != null) {
     }
 }
 if (!hasHematoxylin) {
-    println "⚠ H-DAB stain vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
+    println "⚠ H-DAB boya vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
     QP.setImageType('BRIGHTFIELD_H_DAB')
 }
 
@@ -196,21 +196,21 @@ if (!hasHematoxylin) {
 // 2) Karşılama
 // ──────────────────────────────────────────────────────────────
 def devam = waitForConfirm(
-    "Modül 5 - CD68 / Sitoplazmik IHC kantifikasyonu",
-    "Bu script, seçili anotasyon içinde sitoplazmik DAB sinyaline göre\n" +
+    "Modül 5 - CD68 / Sitoplazmik İHK kantifikasyonu",
+    "Bu betik, seçili anotasyon içinde sitoplazmik DAB sinyaline göre\n" +
     "her hücreyi Negative / Weak (1+) / Moderate (2+) / Strong (3+) olarak\n" +
     "sınıflar.\n\n" +
     "Atölye varsayılan eşikleri (Cytoplasm: DAB OD mean):\n" +
     "  • 1+ (zayıf):       0.10 OD  ← nükleerden düşük (sitoplazma büyük hacim)\n" +
     "  • 2+ (orta):        0.20 OD\n" +
     "  • 3+ (güçlü):       0.35 OD\n\n" +
-    "Cell expansion: **7 µm** (sitoplazma için daha büyük örnekleme halkası)\n\n" +
+    "Hücre genişletme (cell expansion): **7 µm** (sitoplazma için daha büyük örnekleme halkası)\n\n" +
     "Çıktı:\n" +
-    "  • Bin dağılımı + yüzdeler\n" +
+    "  • Grup dağılımı + yüzdeler\n" +
     "  • H-score (yoğunluk-ağırlıklı)\n" +
     "  • Hücre yoğunluğu (mm² başına)\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız OK."
+    "Hazırsanız OK düğmesine basın."
 )
 if (!devam) { println "İptal."; return }
 
@@ -231,11 +231,11 @@ def targetAnnotation = selected
 // 4) Positive cell detection (sitoplazma)
 // ──────────────────────────────────────────────────────────────
 println "─────────────────────────────────────"
-println "Modül 5 - CD68 / Sitoplazmik IHC"
+println "Modül 5 - CD68 / Sitoplazmik İHK"
 println "─────────────────────────────────────"
 println "  • Score compartment: Cytoplasm: DAB OD mean"
-println "  • Threshold 1+ / 2+ / 3+: 0.10 / 0.20 / 0.35 OD"
-println "  • Cell expansion: 7 µm"
+println "  • Eşik 1+ / 2+ / 3+: 0.10 / 0.20 / 0.35 OD"
+println "  • Hücre genişletme (cell expansion): 7 µm"
 
 def t0 = System.currentTimeMillis()
 
@@ -316,7 +316,7 @@ def pct3   = totalCells > 0 ? 100.0 * n3 / totalCells : 0.0
 showResultWindow(
     "Tamamlandı 🦠",
     String.format(
-        "CD68 / Sitoplazmik IHC bitti.\n\n" +
+        "CD68 / Sitoplazmik İHK bitti.\n\n" +
         "📊 Hücre dağılımı (n = %,d toplam)\n" +
         "────────────────────────────────────\n" +
         "  Negative            : %,d  (%%%.1f)\n" +
