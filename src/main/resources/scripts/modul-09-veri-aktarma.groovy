@@ -307,7 +307,7 @@ def exportEntry = { entry, imageDataForGeo ->
             .exportMeasurements(detFile)
         if (detFile.length() > 0) filesWritten << detFile.getName()
     } catch (Throwable t) {
-        errors << "${entry.getImageName()} → detections: ${t.getMessage()}"
+        errors << "${entry.getImageName()} → tespitler: ${t.getMessage()}"
     }
 
     // Anotasyon TSV (per-image)
@@ -320,7 +320,7 @@ def exportEntry = { entry, imageDataForGeo ->
             .exportMeasurements(annFile)
         if (annFile.length() > 0) filesWritten << annFile.getName()
     } catch (Throwable t) {
-        errors << "${entry.getImageName()} → annotations: ${t.getMessage()}"
+        errors << "${entry.getImageName()} → anotasyonlar: ${t.getMessage()}"
     }
 
     // Annotation GeoJSON — only if we have an ImageData with annotations
