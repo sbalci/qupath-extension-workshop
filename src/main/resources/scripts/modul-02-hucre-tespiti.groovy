@@ -170,7 +170,7 @@ if (imageData == null) {
     return
 }
 
-// "Hematoxylin OD" kanalı yalnızca brightfield + Hematoxylin boyası ayarlanmışsa var olur.
+// "Hematoxylin OD" kanalı yalnızca brightfield + Hematoxylin boyası ayarlanmışsa görünür.
 // Aksi halde plugin "Unable to set parameter detectionImageBrightfield" hatası verir.
 // Brightfield (other) açıkta ise H&E varsayılanı uygulanır (M2 H&E için yazılmıştır).
 def stains = imageData.getColorDeconvolutionStains()

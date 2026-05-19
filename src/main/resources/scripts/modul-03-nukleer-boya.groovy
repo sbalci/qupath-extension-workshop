@@ -197,7 +197,7 @@ if (!imageTypeName.toLowerCase().contains("brightfield")) {
     return
 }
 
-// "Hematoxylin OD" kanalı yalnızca H-DAB boya vektörleri ayarlanmışsa var olur.
+// "Hematoxylin OD" kanalı yalnızca H-DAB boya vektörleri ayarlanmışsa görünür.
 // Image type 'Brightfield (other)' veya boya vektörleri eksikse parametre reddedilir.
 def stains = imageData.getColorDeconvolutionStains()
 def hasHematoxylin = false
