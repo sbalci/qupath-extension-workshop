@@ -17,7 +17,7 @@
  * NOT — manuel sayım alternatifi:
  *   Küçük örneklemlerde veya zor durumlarda QuPath'in **Point Tool**'u ile
  *   her hücreyi tek tek tıklayarak manuel sayım yapılabilir; sonuçlar `.tsv`
- *   olarak dışa aktarılır. arayüz üzerinden manuel/otomatik karşılaştırma için:
+ *   olarak dışa aktarılır. Arayüz üzerinden manuel/otomatik karşılaştırma için:
  *   cancer-informatics.org/de/docs/ai/qupath_02_Cell-Counting (J. Cieślik et al.)
  */
 

@@ -3,7 +3,7 @@
  * --------------------------------------------------------
  * Atölye için "hızlı deneme" betiği. Seçilen anotasyon içinde
  * Ki-67 / p53 / başka bir nükleer İHK boyamasını otomatik olarak skorlar
- * ve **Ki-67 LI** ile grup dağılımını kaydeder.
+ * ve **Ki-67 LI** (etiketleme indeksi) ile grup dağılımını kaydeder.
  *
  * KULLANIM:
  *   1. Ki-67 (veya başka nükleer DAB) İHK slaytını açın

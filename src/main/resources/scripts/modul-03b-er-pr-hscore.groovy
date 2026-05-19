@@ -298,7 +298,7 @@ def density = totalAreaMm2 > 0 ? Math.round(totalCells / totalAreaMm2) : 0
 
 def uyari = ""
 if (totalCells < 200) {
-    uyari = String.format("\n📝 Not: %,d hücre <200 — küçük örneklem; sonuçlar istatistiksel olarak istatistiksel olarak güvenilir olmayabilir.",
+    uyari = String.format("\n📝 Not: %,d hücre <200 — küçük örneklem; sonuçlar istatistiksel olarak güvenilir olmayabilir.",
         totalCells)
 }
 

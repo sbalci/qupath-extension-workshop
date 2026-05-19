@@ -238,7 +238,7 @@ if (!projectMode && currentEntry == null) {
     // entry.saveImageData çağrılarımız bir ProjectImageEntry gerektirir.
     Dialogs.showErrorMessage(
         "Slayt projeye eklenmemiş",
-        "Açık olan slayt projenin parçası değil; dışa aktarılamaz. \n\n" +
+        "Açık olan slayt projenin parçası değil; dışa aktarılamaz.\n\n" +
         "Çözüm: Project panelinden bu slaytı projeye ekleyin\n" +
         "(sol üstte + ikonu) ve betiği tekrar çalıştırın."
     )

@@ -30,7 +30,7 @@
  *   • "Create objects" adımında minimum object size + hole size kalibrasyonu
  *     gürültü temizliği için kritiktir; bu betik `10000.0 µm² / 5000.0 µm²`
  *     varsayılanını kullanır (atölye seçimi — slayt çözünürlüğüne göre değişir).
- *   • arayüz tarafı eğitimi (J. Cieślik et al., CC-BY-SA):
+ *   • Arayüz tarafı eğitimi (J. Cieślik et al., CC-BY-SA):
  *     cancer-informatics.org/de/docs/ai/qupath_03_tissue_segmentation
  */
 
