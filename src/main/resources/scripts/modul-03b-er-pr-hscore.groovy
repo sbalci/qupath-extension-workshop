@@ -206,7 +206,7 @@ def devam = waitForConfirm(
     "Not: Allred skoru bu betik tarafından hesaplanmaz (proporsiyon\n" +
     "puanlaması manuel görsel adımdır).\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız OK düğmesine basın."
+    "Hazırsanız Çalıştır düğmesine basın."
 )
 if (!devam) { println "İptal."; return }
 

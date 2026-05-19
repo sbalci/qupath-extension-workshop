@@ -72,6 +72,17 @@ public class WorkshopExtension implements QuPathExtension {
         new ScriptEntry("Modül 9 - Veri dışa aktarma",              "modul-09-veri-aktarma.groovy")
     );
 
+    /**
+     * Utility (non-module) scripts displayed below a separator, after the
+     * numbered workflow modules. Add new helpers here without touching the
+     * module list.
+     */
+    private static final List<ScriptEntry> UTILITY_SCRIPTS = List.of(
+        new ScriptEntry("Yardımcı - Tespitleri sil",                "yardimci-tespitleri-sil.groovy"),
+        new ScriptEntry("Yardımcı - Görüntü tipi ayarla",           "yardimci-image-type.groovy"),
+        new ScriptEntry("Yardımcı - Eşikleri ayarla",               "yardimci-esik-ayarla.groovy")
+    );
+
     private boolean alreadyInstalled = false;
 
     @Override
@@ -97,12 +108,22 @@ public class WorkshopExtension implements QuPathExtension {
                 menu.getItems().add(item);
             }
 
+            if (!UTILITY_SCRIPTS.isEmpty()) {
+                menu.getItems().add(new SeparatorMenuItem());
+                for (ScriptEntry entry : UTILITY_SCRIPTS) {
+                    MenuItem item = new MenuItem(entry.label);
+                    item.setOnAction(e -> runScriptSafely(qupath, entry));
+                    menu.getItems().add(item);
+                }
+            }
+
             menu.getItems().add(new SeparatorMenuItem());
             var about = new MenuItem("Atölye hakkında…");
             about.setOnAction(e -> showAboutDialog());
             menu.getItems().add(about);
 
-            logger.info("Workshop extension installed with {} scripts.", SCRIPTS.size());
+            logger.info("Workshop extension installed with {} module + {} utility scripts.",
+                    SCRIPTS.size(), UTILITY_SCRIPTS.size());
         } catch (Exception ex) {
             logger.error("Failed to install Workshop extension menu", ex);
         }
@@ -234,6 +255,10 @@ public class WorkshopExtension implements QuPathExtension {
             "  7 — Tümör içi Ki-67\n" +
             "  9 — Veri dışa aktarma (TSV / GeoJSON)\n\n" +
             "  (Modül 8 - QuANTUM cTCF: sonraki sürümlerde)\n\n" +
+            "Yardımcılar:\n" +
+            "  • Tespitleri sil (orphan / tümü)\n" +
+            "  • Görüntü tipi ayarla (slayt / proje)\n" +
+            "  • Eşikleri ayarla (yeniden tespit etmeden re-binning)\n\n" +
             "Versiyon: " + getVersion() + "\n" +
             "Derlenme tarihi: " + BUILD_TIMESTAMP + "\n" +
             "QuPath baseline: " + getQuPathVersion() + "+\n\n" +

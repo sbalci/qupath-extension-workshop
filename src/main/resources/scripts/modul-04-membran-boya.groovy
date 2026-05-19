@@ -243,7 +243,14 @@ try {
 } catch (Throwable ignored) { /* not installed */ }
 
 def detectorLine = cellposeHere
-    ? "Detektör: Cellpose (cyto3 — DAB + Hematoxylin)."
+    ? "Detektör: Cellpose (cyto3 — DAB + H OD).\n" +
+      "  Görüntü H-DAB renk dekonvolüsyonundan geçirilip\n" +
+      "  DAB (membran) ve Hematoksilen (çekirdek) kanalları\n" +
+      "  Cellpose'a verilir. Çap (diameter) 25 px (~12.5 µm) —\n" +
+      "  çok küçük tümör hücrelerinde 18-20 deneyin.\n" +
+      "  ℹ Cellpose çalıştırma anında başarısız olursa\n" +
+      "    (Python yolu yok / model yok) WatershedCellMembraneDetection\n" +
+      "    yedeğine otomatik düşülür — betik yine sonuç üretir."
     : "Detektör: WatershedCellMembraneDetection (yerleşik yedek).\n" +
       "  ℹ Daha iyi sonuç için Cellpose eklentisini kurun:\n" +
       "    https://atolye.patoloji.dev/kaynaklar.html#ileri-kurulumlar"
@@ -260,7 +267,7 @@ def devam = waitForConfirm(
     "Hücre genişletme (cell expansion): 5 µm (membran sinyalinin örnekleneceği halka)\n\n" +
     "Çıktı: her bin için yüzdeler + H-score + yoğunluk dağılımı.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız OK düğmesine basın."
+    "Hazırsanız Çalıştır düğmesine basın."
 )
 if (!devam) {
     println "Kullanıcı iptal etti."
@@ -294,7 +301,7 @@ if (!cellposeAvailable) {
     println "Cellpose eklentisi bulunamadı → WatershedCellMembraneDetection'a düşülüyor."
 }
 
-def detector = cellposeAvailable ? "Cellpose (cyto3, DAB + Hematoxylin)" : "WatershedCellMembraneDetection (DAB-temelli)"
+def detector = cellposeAvailable ? "Cellpose (cyto3, DAB + H OD)" : "WatershedCellMembraneDetection (DAB-temelli)"
 println "─────────────────────────────────────"
 println "Modül 4 - HER2 / Membran İHK"
 println "─────────────────────────────────────"
@@ -307,27 +314,11 @@ def t0 = System.currentTimeMillis()
 
 QP.selectObjects(targetAnnotation)
 
-if (cellposeAvailable) {
-    // İç betiği ayrı bir GroovyShell'de çalıştır: `import qupath.ext.biop.cellpose.Cellpose2D`
-    // ifadesi yalnızca eklenti classpath'te ise parse olabildiği için, dış betik Cellpose
-    // yüklü olmayan kurulumlarda da çalışsın diye iç bloğa kapatıyoruz.
-    def innerScript = '''
-        import qupath.ext.biop.cellpose.Cellpose2D
-        import qupath.lib.scripting.QP
-
-        def cellpose = Cellpose2D.builder("cyto3")
-            .pixelSize(0.5)
-            .channels("DAB", "Hematoxylin")
-            .diameter(15)
-            .cellExpansion(5.0)
-            .measureShape()
-            .measureIntensity()
-            .build()
-
-        cellpose.detectObjects(QP.getCurrentImageData(), QP.getSelectedObjects())
-    '''
-    new groovy.lang.GroovyShell(this.class.classLoader).evaluate(innerScript)
-} else {
+// Yardımcı kapatma: Watershed-tabanlı yedek detektör.
+// Cellpose hiç yoksa veya çalıştırma anında başarısız olursa devreye girer
+// (eklenti class'ı yüklü ama Python yolu ayarlanmamış, model dosyası bulunamadı,
+// Python ortamı kırık, vb.).
+def runWatershedFallback = {
     QP.runPlugin(
         'qupath.imagej.detect.cells.WatershedCellMembraneDetection',
         '{' +
@@ -351,6 +342,78 @@ if (cellposeAvailable) {
     )
 }
 
+if (cellposeAvailable) {
+    // İç betiği ayrı bir GroovyShell'de çalıştır: `import qupath.ext.biop.cellpose.Cellpose2D`
+    // ifadesi yalnızca eklenti classpath'te ise parse olabildiği için, dış betik Cellpose
+    // yüklü olmayan kurulumlarda da çalışsın diye iç bloğa kapatıyoruz.
+    //
+    // KANAL HAZIRLIĞI (HER2 için kritik):
+    //   • Doğrudan RGB → Cellpose modeli "bright nuclei on dark background"
+    //     beklediği için brightfield görüntüde zayıf çalışır.
+    //   • Çözüm: önce **renk dekonvolüsyonu** uygulayıp DAB ve Hematoxylin
+    //     OD kanallarını çıkarıyoruz (boya bölgelerinde yüksek değer alan,
+    //     arka planda sıfıra yakın olan kanallar — Cellpose'un sevdiği biçim).
+    //   • ImageOps.Channels.extract(1, 0) → sırasıyla DAB (cyto/membran sinyali)
+    //     ve Hematoxylin (çekirdek sinyali) verir; Cellpose chan=DAB, chan2=H
+    //     olarak işler.
+    //
+    // PARAMETRELER:
+    //   • normalizePercentilesGlobal(0.1, 99.8, 10) — Cellpose normalize edilmiş
+    //     input bekler; bu adım atlanırsa hücreler büyük olasılıkla bulunmaz.
+    //   • diameter(25) — 0.5 µm/px'de yaklaşık 12.5 µm çaplı epitel hücreleri.
+    //     Çok küçük tümör hücreleri için 18-20, büyük apokrin hücreler için 30-35
+    //     deneyin. diameter(0) otomatik tahmin yapar (daha yavaş, daha tutarsız).
+    //   • cellExpansion(5.0) — çekirdek + sitoplazma sınırından dışarıya 5 µm
+    //     halka oluşturur; "Membrane: DAB OD mean" ölçümü bu halkadan alınır.
+    //
+    // ÇALIŞMA ZAMANI HATA YAKALAMA: Cellpose JAR'ı yüklü olabilir ama Python
+    // ortamı ayarlanmamış, model indirilmemiş veya bir tile başarısız olabilir.
+    // Bu durumda Watershed yedeğine geçiyoruz, betik kesintisiz tamamlanır.
+    def innerScript = '''
+        import qupath.ext.biop.cellpose.Cellpose2D
+        import qupath.lib.scripting.QP
+        import qupath.opencv.ops.ImageOps
+
+        def stainVectors = QP.getCurrentImageData().getColorDeconvolutionStains()
+
+        def cellpose = Cellpose2D.builder("cyto3")
+            .pixelSize(0.5)
+            .preprocess(
+                ImageOps.Channels.deconvolve(stainVectors),
+                ImageOps.Channels.extract(1, 0)   // 1=DAB (cyto), 0=Hematoxylin (nuclei)
+            )
+            .cellposeChannels(1, 2)               // Cellpose CLI: --chan 1 (DAB) --chan2 2 (H)
+                                                  // .preprocess() çıktısı 2 kanallı TIFF olarak yazılır;
+                                                  // bu çağrı olmadan CLI grayscale'e düşer → 0 hücre.
+            .normalizePercentilesGlobal(0.1, 99.8, 10)
+            .diameter(25)
+            .cellExpansion(5.0)
+            .measureShape()
+            .measureIntensity()
+            .build()
+
+        cellpose.detectObjects(QP.getCurrentImageData(), QP.getSelectedObjects())
+    '''
+    try {
+        new groovy.lang.GroovyShell(this.class.classLoader).evaluate(innerScript)
+    } catch (Throwable cellposeError) {
+        def reason = cellposeError.getMessage() ?: cellposeError.getClass().getSimpleName()
+        println "⚠ Cellpose çalıştırılamadı: ${reason}"
+        println "→ WatershedCellMembraneDetection yedeğine düşülüyor."
+        cellposeAvailable = false
+        detector = "WatershedCellMembraneDetection (Cellpose başarısız oldu)"
+        // Cellpose kısmi nesneler bırakmış olabilir — temizle.
+        def partial = targetAnnotation.getChildObjects().findAll { it.isDetection() }
+        if (!partial.isEmpty()) {
+            QP.removeObjects(partial, true)
+        }
+        QP.selectObjects(targetAnnotation)
+        runWatershedFallback()
+    }
+} else {
+    runWatershedFallback()
+}
+
 // Cell-by-cell intensity binning by membrane DAB OD
 // Creates classes: "Negative", "1+", "2+", "3+"
 QP.setCellIntensityClassifications("Membrane: DAB OD mean", 0.15, 0.40, 0.70)
@@ -370,10 +433,10 @@ double pixScale = 1.0                                    // downsample (büyük 
 
 def imgData = QP.getCurrentImageData()
 def cal = imgData.getServer().getPixelCalibration()
-def stains = imgData.getColorDeconvolutionStains()
+def pixStains = imgData.getColorDeconvolutionStains()
 
 def op = ImageOps.buildImageDataOp().appendOps(
-    ImageOps.Channels.deconvolve(stains),
+    ImageOps.Channels.deconvolve(pixStains),
     ImageOps.Channels.extract(0, 1),   // H=0, DAB=1
     new HScoreThresholdOp()
         .lowThreshold((double) pixDABthresholds[0])

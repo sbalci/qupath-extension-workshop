@@ -210,7 +210,7 @@ def devam = waitForConfirm(
     "  • H-score (yoğunluk-ağırlıklı)\n" +
     "  • Hücre yoğunluğu (mm² başına)\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız OK düğmesine basın."
+    "Hazırsanız Çalıştır düğmesine basın."
 )
 if (!devam) { println "İptal."; return }
 

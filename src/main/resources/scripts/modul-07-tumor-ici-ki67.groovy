@@ -239,7 +239,7 @@ def devam = waitForConfirm(
     "Çıktı: tümör-içi Ki-67 LI + grup dağılımı + yoğunluk\n\n" +
     "Bu işlem 2–5 dakika sürebilir (slayt boyutuna bağlı).\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız OK düğmesine basın."
+    "Hazırsanız Çalıştır düğmesine basın."
 )
 if (!devam) { println "İptal."; return }
 

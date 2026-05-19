@@ -242,7 +242,7 @@ def devam = waitForConfirm(
     "  • CPU: TCR boyutuna göre 1–5 dakika\n" +
     "  • GPU varsa: 5–30 saniye\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız OK düğmesine basın."
+    "Hazırsanız Çalıştır düğmesine basın."
 )
 if (!devam) { println "İptal."; return }
 

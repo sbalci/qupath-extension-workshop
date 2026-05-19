@@ -230,7 +230,7 @@ def devam = waitForConfirm(
     "  • Toplam alan ve TSR (tümör/stroma oranı)\n\n" +
     "Bu işlem tüm slaytı tarayacağı için 1–3 dakika sürebilir.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız OK düğmesine basın."
+    "Hazırsanız Çalıştır düğmesine basın."
 )
 if (!devam) { println "İptal."; return }
 

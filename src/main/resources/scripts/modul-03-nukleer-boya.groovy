@@ -228,7 +228,7 @@ def devam = waitForConfirm(
     "  • Grup dağılımı (% 0 / 1+ / 2+ / 3+)\n" +
     "  • Hücre yoğunluğu (hücre/mm²) + anotasyon alanı\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız OK düğmesine basın; devam etmek istemiyorsanız Cancel ile çıkın."
+    "Hazırsanız Çalıştır düğmesine basın; devam etmek istemiyorsanız Cancel ile çıkın."
 )
 if (!devam) {
     println "Kullanıcı iptal etti."
