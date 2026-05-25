@@ -1,0 +1,80 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using this metadata. The concept DOI below resolves to the latest released version."
+title: "QuPath Atölye Eklentisi (QuPath Workshop Extension): Patologlar için tek-tıkla İHK kantifikasyon ve dijital patoloji eğitim araç seti"
+abstract: >
+  A QuPath 0.6+ extension that bundles the Patologlar için QuPath Atölyesi
+  (QuPath Workshop for Pathologists) Groovy scripts as one-click menu entries
+  under "Extensions → Atölye". Includes workflow modules for cell detection
+  (M2), nuclear IHC scoring (M3 — Ki-67, M3b — ER/PR), membrane IHC scoring
+  (M4 — HER2, with Cellpose primary + WatershedCellMembraneDetection fallback),
+  cytoplasmic IHC scoring (M5 — CD68), tumor-vs-stroma classification (M6),
+  tumor-restricted scoring (M7), and measurement export (M9). Companion
+  utilities cover detection cleanup, image-type setup, and threshold re-binning
+  without re-running cell detection. The bundled HER2 pipeline implements both
+  a cell-based H-score and a parallel pixel-wise H-score adapted from
+  S. McArdle (PLoS One 2021, Ram et al.).
+type: software
+authors:
+  - family-names: "Balcı"
+    given-names: "Serdar"
+    email: "drserdarbalci@gmail.com"
+    affiliation: "Memorial Pathology, Istanbul, Turkey"
+    orcid: "https://orcid.org/0000-0002-7852-3851"
+license: Apache-2.0
+version: "0.1.0"
+date-released: "2026-05-25"
+doi: "10.5281/zenodo.20375398"
+repository-code: "https://github.com/sbalci/qupath-extension-workshop"
+url: "https://atolye.patoloji.dev"
+keywords:
+  - "QuPath"
+  - "digital pathology"
+  - "computational pathology"
+  - "immunohistochemistry"
+  - "IHC quantification"
+  - "HER2"
+  - "Ki-67"
+  - "ER/PR"
+  - "H-score"
+  - "tumor-stroma segmentation"
+  - "Cellpose"
+  - "whole slide image"
+  - "WSI"
+  - "Groovy"
+  - "pathology education"
+  - "Turkish"
+references:
+  - type: software
+    title: "QuPath: Open source software for digital pathology image analysis"
+    authors:
+      - family-names: "Bankhead"
+        given-names: "Peter"
+    doi: "10.1038/s41598-017-17204-5"
+    year: 2017
+    notes: "Underlying platform — required citation for any QuPath-based work"
+  - type: article
+    title: "Pixelwise H-score: A novel digital image analysis-based metric to quantify membrane biomarker expression from immunohistochemistry images"
+    authors:
+      - family-names: "Ram"
+        given-names: "S."
+      - family-names: "Vizcarra"
+        given-names: "P."
+      - family-names: "Whalen"
+        given-names: "P."
+    journal: "PLoS One"
+    year: 2021
+    doi: "10.1371/journal.pone.0245638"
+    notes: "Methodology for the pixel-wise H-score implemented in Modül 4 (HER2)"
+preferred-citation:
+  type: software
+  title: "QuPath Atölye Eklentisi (QuPath Workshop Extension)"
+  authors:
+    - family-names: "Balcı"
+      given-names: "Serdar"
+      email: "drserdarbalci@gmail.com"
+      affiliation: "Memorial Pathology, Istanbul, Turkey"
+      orcid: "https://orcid.org/0000-0002-7852-3851"
+  version: "0.1.0"
+  date-released: "2026-05-25"
+  doi: "10.5281/zenodo.20375398"
+  url: "https://github.com/sbalci/qupath-extension-workshop"

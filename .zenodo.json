@@ -1,0 +1,88 @@
+{
+  "title": "QuPath Atölye Eklentisi (QuPath Workshop Extension): Patologlar için tek-tıkla İHK kantifikasyon ve dijital patoloji eğitim araç seti",
+  "description": "<p>A <strong>QuPath 0.6+ extension</strong> that bundles the <em>Patologlar için QuPath Atölyesi</em> (QuPath Workshop for Pathologists) Groovy scripts as one-click menu entries under <strong>Extensions → Atölye</strong>.</p><p><strong>Workflow modules:</strong> cell detection (M2), nuclear IHC scoring (M3 — Ki-67; M3b — ER/PR H-score), membrane IHC scoring (M4 — HER2, with <em>Cellpose</em> primary detector and <em>WatershedCellMembraneDetection</em> automatic fallback), cytoplasmic IHC scoring (M5 — CD68), tumor-vs-stroma classification (M6), tumor-restricted scoring (M7), and measurement export (M9).</p><p><strong>Utility helpers:</strong> orphan detection cleanup, image-type setup (per-slide or project-wide), and threshold re-binning of existing detections without re-running cell detection.</p><p>The bundled HER2 pipeline implements both a cell-based H-score and a parallel pixel-wise H-score adapted from Sara McArdle's published Groovy script (method: Ram et al., <em>PLoS One</em> 2021).</p><p><strong>Scope:</strong> research and education only — produces numerical measurements (counts, percentages, intensities, H-scores, densities); clinical interpretation is explicitly out of scope.</p><p><strong>Companion workshop site:</strong> <a href=\"https://atolye.patoloji.dev\">atolye.patoloji.dev</a></p>",
+  "upload_type": "software",
+  "creators": [
+    {
+      "name": "Balcı, Serdar",
+      "affiliation": "Memorial Pathology, Istanbul, Turkey",
+      "orcid": "0000-0002-7852-3851"
+    }
+  ],
+  "license": "Apache-2.0",
+  "access_right": "open",
+  "language": "tur",
+  "keywords": [
+    "QuPath",
+    "digital pathology",
+    "computational pathology",
+    "immunohistochemistry",
+    "IHC quantification",
+    "HER2",
+    "Ki-67",
+    "ER/PR",
+    "H-score",
+    "tumor-stroma segmentation",
+    "Cellpose",
+    "whole slide image",
+    "WSI",
+    "Groovy",
+    "pathology education",
+    "Turkish"
+  ],
+  "communities": [
+    {"identifier": "qupath"}
+  ],
+  "related_identifiers": [
+    {
+      "scheme": "url",
+      "identifier": "https://atolye.patoloji.dev",
+      "relation": "isDocumentedBy",
+      "resource_type": "publication-other"
+    },
+    {
+      "scheme": "url",
+      "identifier": "https://github.com/sbalci/qupath-workshop",
+      "relation": "isPartOf",
+      "resource_type": "software"
+    },
+    {
+      "scheme": "url",
+      "identifier": "https://github.com/sbalci/qupath-extension-workshop",
+      "relation": "isSupplementTo",
+      "resource_type": "software"
+    },
+    {
+      "scheme": "doi",
+      "identifier": "10.1038/s41598-017-17204-5",
+      "relation": "isBasedOn",
+      "resource_type": "publication-article"
+    },
+    {
+      "scheme": "doi",
+      "identifier": "10.1371/journal.pone.0245638",
+      "relation": "isBasedOn",
+      "resource_type": "publication-article"
+    },
+    {
+      "scheme": "doi",
+      "identifier": "10.1093/jnci/djaa201",
+      "relation": "references",
+      "resource_type": "publication-article"
+    },
+    {
+      "scheme": "doi",
+      "identifier": "10.1038/labinvest.2017.131",
+      "relation": "references",
+      "resource_type": "publication-article"
+    },
+    {
+      "scheme": "doi",
+      "identifier": "10.1002/path.5921",
+      "relation": "references",
+      "resource_type": "publication-article"
+    }
+  ],
+  "contributors": [],
+  "notes": "Concept DOI (always latest version): 10.5281/zenodo.20375398. Companion workshop website at https://atolye.patoloji.dev. The extension JAR is also distributed via OSF at https://osf.io/v7mjq alongside the workshop slide set and pixel classifier."
+}
