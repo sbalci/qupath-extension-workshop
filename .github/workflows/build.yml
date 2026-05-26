@@ -26,8 +26,31 @@ jobs:
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
 
-      - name: Build with Gradle
-        run: ./gradlew --no-daemon clean build
+      - name: Set up Gradle (with dependency cache)
+        uses: gradle/actions/setup-gradle@v4
+
+      # SciJava Maven (maven.scijava.org) is the only host for io.github.qupath
+      # artifacts and has had intermittent timeouts. Retry the build up to 3
+      # times with 30s backoff before giving up, so a transient network blip
+      # doesn't fail the release.
+      - name: Build with Gradle (retry on transient failures)
+        run: |
+          set +e
+          for attempt in 1 2 3; do
+            echo "::group::Gradle build attempt $attempt of 3"
+            ./gradlew --no-daemon clean build
+            rc=$?
+            echo "::endgroup::"
+            if [ $rc -eq 0 ]; then
+              exit 0
+            fi
+            if [ $attempt -lt 3 ]; then
+              echo "::warning::Build attempt $attempt failed (exit $rc) — retrying in 30s..."
+              sleep 30
+            fi
+          done
+          echo "::error::Build failed after 3 attempts."
+          exit 1
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
