@@ -23,7 +23,7 @@ plugins {
 }
 
 group = "io.github.sbalci"
-version = "0.1.1-alpha1"
+version = "0.1.1-alpha2"
 description = "QuPath atölyesi: hücre tespiti, IHC kantifikasyonu, tümör/stroma, cTCF — bir menü ile."
 
 java {
