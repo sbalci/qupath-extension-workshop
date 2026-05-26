@@ -177,10 +177,12 @@ public class WorkshopExtension implements QuPathExtension {
                 shell.evaluate(scriptBody, entry.resource);
             } catch (Throwable t) {
                 logger.error("Script execution failed: {}", entry.label, t);
+                String msg = t.getMessage();
+                String detail = t.getClass().getSimpleName() + ": " + (msg != null ? msg : "(no message)");
                 Platform.runLater(() -> Dialogs.showErrorMessage(
                     "Script hatası — " + entry.label,
                     "Script çalıştırılırken bir hata oluştu:\n\n" +
-                    t.getClass().getSimpleName() + ": " + t.getMessage() +
+                    detail +
                     "\n\nDetaylar için View → Show log dialogue'a bakın."
                 ));
             }
@@ -283,7 +285,7 @@ public class WorkshopExtension implements QuPathExtension {
 
     @Override
     public Version getVersion() {
-        return Version.parse("0.1.0");
+        return Version.parse("0.1.1-alpha1");
     }
 
     @Override

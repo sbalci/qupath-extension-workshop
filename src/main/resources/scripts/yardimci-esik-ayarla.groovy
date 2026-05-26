@@ -292,10 +292,14 @@ if (newThr == null) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 4) Yeniden sınıflandır + sayıları güncelle
+// 4) Yeniden sınıflandır — yalnızca seçili anotasyonun altındaki hücreler
+//    QP.setCellIntensityClassifications() varsayılan olarak slayttaki TÜM
+//    hücreleri re-bin'ler. Birden fazla anotasyonda hücreniz varsa diğer
+//    anotasyonların etiketleri de değişir. Aşağıdaki form sadece seçili
+//    anotasyonun child detection'larına uygular.
 // ──────────────────────────────────────────────────────────────
 def t0 = System.currentTimeMillis()
-QP.setCellIntensityClassifications(measurement, newThr.t1, newThr.t2, newThr.t3)
+QP.setIntensityClassifications(cells, measurement, newThr.t1, newThr.t2, newThr.t3)
 QP.fireHierarchyUpdate()
 def elapsed = (System.currentTimeMillis() - t0) / 1000.0
 
@@ -313,6 +317,27 @@ def pct = { c -> total > 0 ? 100.0 * c / total : 0.0 }
 def pct0 = pct(n0), pct1 = pct(n1), pct2 = pct(n2), pct3 = pct(n3)
 def hScore = pct1 + 2.0 * pct2 + 3.0 * pct3
 
+// Bayatlamış piksel-bazlı H-score ölçümünü temizle (sadece M4 için var olur).
+// Yeni hücre eşikleri uygulandıktan sonra annotation'da kalan "Pixelwise H-score"
+// ve "H-score-px: ..." ölçümleri eski eşiklerle hesaplandığı için yanıltıcıdır.
+// Piksel-bazlı H-score'u yeniden hesaplamak için kullanıcı M4'ü yeni eşiklerle
+// yeniden çalıştırmalıdır.
+def pixelStaleRemoved = false
+def annotationMeasNames = selected.getMeasurementList().getNames().toList()
+def staleKeys = annotationMeasNames.findAll {
+    it == 'Pixelwise H-score' || it.startsWith('H-score-px:')
+}
+if (!staleKeys.isEmpty()) {
+    def list = selected.getMeasurementList()
+    staleKeys.each { key -> list.remove(key) }
+    list.close()
+    pixelStaleRemoved = true
+}
+
+def pixelNote = pixelStaleRemoved
+    ? "\nℹ Annotation'daki bayatlamış piksel-bazlı H-score ölçümleri (Pixelwise H-score, H-score-px: …) temizlendi.\n  Piksel-bazlı H-score'u güncel eşiklerle yeniden hesaplamak için Modül 4'ü yeniden çalıştırın.\n"
+    : ""
+
 // ──────────────────────────────────────────────────────────────
 // 5) Sonuç penceresi
 // ──────────────────────────────────────────────────────────────
@@ -324,7 +349,7 @@ showResultWindow(
         "  1+ ≥ %.3f OD\n" +
         "  2+ ≥ %.3f OD\n" +
         "  3+ ≥ %.3f OD\n\n" +
-        "📊 Yeni grup dağılımı (n = %,d)\n" +
+        "📊 Yeni grup dağılımı (n = %,d, sadece seçili anotasyon)\n" +
         "──────────────────────────────────\n" +
         "  0  (negatif)  : %,d  (%%%.1f)\n" +
         "  1+ (zayıf)    : %,d  (%%%.1f)\n" +
@@ -334,7 +359,7 @@ showResultWindow(
         "🎯 Metrikler\n" +
         "──────────────\n" +
         "  H-score (0–300)   : %.0f\n" +
-        "  Süre              : %.2f sn\n\n" +
+        "  Süre              : %.2f sn\n%s\n" +
         "ℹ Memnun değilseniz Yardımcı'yı tekrar açıp yeni eşikler deneyebilirsiniz —\n" +
         "  hücre tespiti yeniden çalıştırılmaz, sadece sınıflandırma güncellenir.\n\n" +
         "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
@@ -343,7 +368,7 @@ showResultWindow(
         total,
         n0, pct0, n1, pct1, n2, pct2, n3, pct3,
         n1 + n2 + n3, pct1 + pct2 + pct3,
-        hScore, elapsed
+        hScore, elapsed, pixelNote
     )
 )
 
