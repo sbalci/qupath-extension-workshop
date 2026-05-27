@@ -1,0 +1,26 @@
+{
+    "name": "QuPath Atölye katalog",
+    "description": "QuPath atölyesi için Türkçe modüllerin tek tıkla Atölye menüsüne eklenmesini sağlayan eklenti (qupath-extension-workshop).",
+    "extensions": [{
+        "name": "QuPath Workshop extension (Atölye)",
+        "description": "Türkçe QuPath atölyesinin Groovy modüllerini Extensions → Atölye menüsünden çalıştıran eklenti. Modül 2-9 (IHC, tümör/stroma, dışa aktarma) ve yardımcı betikler dahildir.",
+        "author": "Serdar Balci",
+        "homepage": "https://github.com/sbalci/qupath-extension-workshop",
+        "releases": [
+            {
+                "name": "v0.1.1-alpha2",
+                "main_url": "https://github.com/sbalci/qupath-extension-workshop/releases/download/v0.1.1-alpha2/qupath-extension-workshop-0.1.1-alpha2.jar",
+                "version_range": {
+                    "min": "v0.6.0"
+                }
+            },
+            {
+                "name": "v0.1.0",
+                "main_url": "https://github.com/sbalci/qupath-extension-workshop/releases/download/v0.1.0/qupath-extension-workshop-0.1.0.jar",
+                "version_range": {
+                    "min": "v0.6.0"
+                }
+            }
+        ]
+    }]
+}
