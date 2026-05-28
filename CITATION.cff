@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it using this metadata. The concept DOI below resolves to the latest released version."
+message: "If you use this software, please cite it using this metadata. The DOI below represents all versions and always resolves to the latest one."
 title: "QuPath Atölye Eklentisi (QuPath Workshop Extension): Patologlar için tek-tıkla İHK kantifikasyon ve dijital patoloji eğitim araç seti"
 abstract: >
   A QuPath 0.6+ extension that bundles the Patologlar için QuPath Atölyesi
@@ -23,7 +23,7 @@ authors:
 license: Apache-2.0
 version: "0.1.1-alpha2"
 date-released: "2026-05-26"
-doi: "10.5281/zenodo.20375398"
+doi: "10.5281/zenodo.20375397"
 repository-code: "https://github.com/sbalci/qupath-extension-workshop"
 url: "https://atolye.patoloji.dev"
 keywords:
@@ -76,5 +76,5 @@ preferred-citation:
       orcid: "https://orcid.org/0000-0002-7852-3851"
   version: "0.1.1-alpha2"
   date-released: "2026-05-26"
-  doi: "10.5281/zenodo.20375398"
+  doi: "10.5281/zenodo.20375397"
   url: "https://github.com/sbalci/qupath-extension-workshop"

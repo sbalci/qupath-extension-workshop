@@ -84,5 +84,5 @@
     }
   ],
   "contributors": [],
-  "notes": "Concept DOI (always latest version): 10.5281/zenodo.20375398. Companion workshop website at https://atolye.patoloji.dev. The extension JAR is also distributed via OSF at https://osf.io/v7mjq alongside the workshop slide set and pixel classifier."
+  "notes": "Cite all versions using DOI 10.5281/zenodo.20375397 — this DOI represents all versions and always resolves to the latest one. Companion workshop website at https://atolye.patoloji.dev. The extension JAR is also distributed via OSF at https://osf.io/v7mjq alongside the workshop slide set and pixel classifier."
 }

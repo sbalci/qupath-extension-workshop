@@ -1,6 +1,6 @@
 # qupath-extension-workshop
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20375398.svg)](https://doi.org/10.5281/zenodo.20375398)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20375397.svg)](https://doi.org/10.5281/zenodo.20375397)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Release](https://img.shields.io/github/v/release/sbalci/qupath-extension-workshop)](https://github.com/sbalci/qupath-extension-workshop/releases/latest)
 
@@ -10,7 +10,7 @@ QuPath extension that bundles the workshop scripts of the **Patologlar için QuP
 
 ## Citation
 
-If you use this software in published work, please cite it using the metadata in [`CITATION.cff`](CITATION.cff). The DOI [`10.5281/zenodo.20375398`](https://doi.org/10.5281/zenodo.20375398) is a concept DOI that always resolves to the latest released version on Zenodo; each release also has its own version-specific DOI.
+If you use this software in published work, please cite it using the metadata in [`CITATION.cff`](CITATION.cff). You can cite all versions by using the DOI [`10.5281/zenodo.20375397`](https://doi.org/10.5281/zenodo.20375397) — this DOI represents all versions and will always resolve to the latest one.
 
 ## What it does
 
