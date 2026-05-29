@@ -296,7 +296,7 @@ public class WorkshopExtension implements QuPathExtension {
 
     @Override
     public Version getVersion() {
-        return Version.parse("0.1.1-alpha2");
+        return Version.parse("0.2.0-alpha1");
     }
 
     @Override
