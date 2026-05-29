@@ -41,6 +41,19 @@ import java.time.format.DateTimeFormatter
 // ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
+// --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
+def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
+def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
+    def c = __wpClass(); if (c == null) return dflt
+    try { c.getMethod(m, sig).invoke(null, args) } catch (Throwable t) { dflt }
+}
+def atolyeD = { String k, double  d -> (double)  __wpCall('dbl',  [String.class, double.class]  as Class[], [k, d] as Object[], d) }
+def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class, String.class]  as Class[], [k, d] as Object[], d) }
+def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
+def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
+def exportFolder = atolyeS('atolye.exportFolder', 'exports')
+def exportSeparatorChar = (atolyeS('atolye.exportSeparator', '\t')).charAt(0) as char
+
 def waitForChoice = { String windowTitle, String windowBody,
                       String optionA, String optionB ->
     def latch = new java.util.concurrent.CountDownLatch(1)
@@ -213,7 +226,7 @@ def choice = waitForChoice(
     "tespit değişikliklerinizin dahil olmasını istiyorsanız, devam edin —\n" +
     "kaydetme bu betiğin ilk adımı olacak.\n\n" +
     "Çıktı klasörü:\n" +
-    "  <proje-klasörü>/exports/YYYY-MM-DD_HHmm/\n\n" +
+    "  <proje-klasörü>/${exportFolder}/YYYY-MM-DD_HHmm/${exportFolder != 'exports' ? ' ← değiştirildi' : ''}\n\n" +
     "Hangi modu istiyorsunuz?\n" +
     "  • Sadece bu görüntü — sadece şu an açık slayt\n" +
     "  • Tüm proje         — projedeki her slayt için ayrı dosya,\n" +
@@ -272,7 +285,7 @@ if (currentImageData != null && currentEntry != null) {
 def stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmmss"))
 def projectPath = project.getPath()
 def projectDir = projectPath.getParent().toFile()
-def exportsRoot = new File(projectDir, 'exports')
+def exportsRoot = new File(projectDir, exportFolder)
 def outDir = new File(exportsRoot, stamp)
 outDir.mkdirs()
 
@@ -302,7 +315,7 @@ def exportEntry = { entry, imageDataForGeo ->
         def detFile = new File(outDir, "${slug}__detections.tsv")
         new MeasurementExporter()
             .imageList([entry])
-            .separator('\t')
+            .separator(exportSeparatorChar)
             .exportType(PathDetectionObject.class)
             .exportMeasurements(detFile)
         if (detFile.length() > 0) filesWritten << detFile.getName()
@@ -315,7 +328,7 @@ def exportEntry = { entry, imageDataForGeo ->
         def annFile = new File(outDir, "${slug}__annotations.tsv")
         new MeasurementExporter()
             .imageList([entry])
-            .separator('\t')
+            .separator(exportSeparatorChar)
             .exportType(PathAnnotationObject.class)
             .exportMeasurements(annFile)
         if (annFile.length() > 0) filesWritten << annFile.getName()
@@ -362,7 +375,7 @@ if (projectMode) {
         def allDet = new File(outDir, '_all_detections.tsv')
         new MeasurementExporter()
             .imageList(imageList)
-            .separator('\t')
+            .separator(exportSeparatorChar)
             .exportType(PathDetectionObject.class)
             .exportMeasurements(allDet)
         if (allDet.length() > 0) filesWritten << allDet.getName()
@@ -374,7 +387,7 @@ if (projectMode) {
         def allAnn = new File(outDir, '_all_annotations.tsv')
         new MeasurementExporter()
             .imageList(imageList)
-            .separator('\t')
+            .separator(exportSeparatorChar)
             .exportType(PathAnnotationObject.class)
             .exportMeasurements(allAnn)
         if (allAnn.length() > 0) filesWritten << allAnn.getName()
@@ -441,7 +454,7 @@ showResultWindow(
         "  Süre                    : %.1f sn\n\n" +
         "📁 Yazılan dosyalar:\n%s%s%s\n\n" +
         "📝 Sonraki adım:\n" +
-        "  • R / Python / Excel ile `exports/%s/` içindeki TSV dosyalarını okuyun.\n" +
+        "  • R / Python / Excel ile `${exportFolder}/%s/` içindeki TSV dosyalarını okuyun.\n" +
         "  • GeoJSON dosyaları geopandas / sf paketleriyle açılır (anotasyon\n" +
         "    geometrisini başka araçlara taşımak için).\n" +
         "  • Modül 9'un web sayfasında format karşılaştırması ve örnek R/Python\n" +
