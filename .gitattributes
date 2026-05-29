@@ -1,0 +1,3 @@
+# Bundled workshop scripts stay LF so they remain byte-identical with the
+# handson/scripts/ copies (checked by tools/check-script-sync.ps1 in the main repo).
+*.groovy text eol=lf
