@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipException;
 
 import javafx.application.Platform;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 
@@ -102,20 +103,28 @@ public class WorkshopExtension implements QuPathExtension {
             menu.getItems().add(header);
             menu.getItems().add(new SeparatorMenuItem());
 
+            Menu modulesMenu = new Menu("Modüller");
             for (ScriptEntry entry : SCRIPTS) {
                 MenuItem item = new MenuItem(entry.label);
                 item.setOnAction(e -> runScriptSafely(qupath, entry));
-                menu.getItems().add(item);
+                modulesMenu.getItems().add(item);
             }
+            menu.getItems().add(modulesMenu);
 
             if (!UTILITY_SCRIPTS.isEmpty()) {
-                menu.getItems().add(new SeparatorMenuItem());
+                Menu utilsMenu = new Menu("Yardımcılar");
                 for (ScriptEntry entry : UTILITY_SCRIPTS) {
                     MenuItem item = new MenuItem(entry.label);
                     item.setOnAction(e -> runScriptSafely(qupath, entry));
-                    menu.getItems().add(item);
+                    utilsMenu.getItems().add(item);
                 }
+                menu.getItems().add(utilsMenu);
             }
+
+            menu.getItems().add(new SeparatorMenuItem());
+            var settings = new MenuItem("Atölye Ayarları…");
+            settings.setOnAction(e -> WorkshopSettingsDialog.show());
+            menu.getItems().add(settings);
 
             menu.getItems().add(new SeparatorMenuItem());
             var about = new MenuItem("Atölye hakkında…");
@@ -261,6 +270,8 @@ public class WorkshopExtension implements QuPathExtension {
             "  • Tespitleri sil (orphan / tümü)\n" +
             "  • Görüntü tipi ayarla (slayt / proje)\n" +
             "  • Eşikleri ayarla (yeniden tespit etmeden re-binning)\n\n" +
+            "Ayarlar:\n" +
+            "  • Atölye Ayarları — parametreleri değiştir, hatırlanır, sıfırlanabilir\n\n" +
             "Versiyon: " + getVersion() + "\n" +
             "Derlenme tarihi: " + BUILD_TIMESTAMP + "\n" +
             "QuPath baseline: " + getQuPathVersion() + "+\n\n" +
