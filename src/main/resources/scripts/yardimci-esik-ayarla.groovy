@@ -34,10 +34,21 @@ import qupath.lib.scripting.QP
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
+// --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
+def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
+def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
+    def c = __wpClass(); if (c == null) return dflt
+    try { c.getMethod(m, sig).invoke(null, args) } catch (Throwable t) { dflt }
+}
+def atolyeD = { String k, double  d -> (double)  __wpCall('dbl',  [String.class, double.class]  as Class[], [k, d] as Object[], d) }
+def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class, String.class]  as Class[], [k, d] as Object[], d) }
+def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
+def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
+
 // ──────────────────────────────────────────────────────────────
 // Form penceresi: üç eşik girişli, varsayılan-değer önceden yazılı
 // ──────────────────────────────────────────────────────────────
-def showThresholdForm = { String title, String body, double t1, double t2, double t3 ->
+def showThresholdForm = { String title, String body, double t1, double t2, double t3, String k1 = '', String k2 = '', String k3 = '' ->
     if (isHeadless) {
         println "=== ${title} === ${body} (headless: değerler değişmedi)"
         return [t1: t1, t2: t2, t3: t3]
@@ -111,11 +122,38 @@ def showThresholdForm = { String title, String body, double t1, double t2, doubl
             cancelBtn.setCancelButton(true)
             cancelBtn.setOnAction({ result.set(null); stage.close() })
 
+            def saveDefaultsBtn = new javafx.scene.control.Button("Bu eşikleri varsayılan yap")
+            saveDefaultsBtn.setOnAction({
+                try {
+                    def v1 = Double.parseDouble(f1.getText().trim().replace(',', '.'))
+                    def v2 = Double.parseDouble(f2.getText().trim().replace(',', '.'))
+                    def v3 = Double.parseDouble(f3.getText().trim().replace(',', '.'))
+                    if (!(v1 < v2 && v2 < v3)) {
+                        Dialogs.showErrorMessage("Sıralama hatası",
+                            "Kaydetmeden önce: eşikler 1+ < 2+ < 3+ olmalı. Girdi: ${v1} / ${v2} / ${v3}")
+                        return
+                    }
+                    def wpCls = __wpClass()
+                    if (wpCls != null && k1 && k2 && k3) {
+                        [[k1, v1], [k2, v2], [k3, v3]].each { pair ->
+                            try { wpCls.getMethod('setDbl', String.class, double.class).invoke(null, pair[0], (double) pair[1]) } catch (Throwable ignored) {}
+                        }
+                        Dialogs.showMessageDialog("Varsayılan kaydedildi",
+                            "Yeni varsayılan eşikler kaydedildi:\n  1+: ${v1}\n  2+: ${v2}\n  3+: ${v3}")
+                    } else {
+                        Dialogs.showWarningNotification("Kaydedilemedi",
+                            "Atölye eklentisi yüklü değil ya da anahtar yok — varsayılan kaydedilemedi.")
+                    }
+                } catch (NumberFormatException nfe) {
+                    Dialogs.showErrorMessage("Sayı formatı", "Eşikler ondalık sayı olmalı.")
+                }
+            })
+
             stage.setOnHidden({ latch.countDown() })
 
             def spacer = new javafx.scene.layout.Region()
             javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-            def buttons = new javafx.scene.layout.HBox(10, resetBtn, spacer, cancelBtn, runBtn)
+            def buttons = new javafx.scene.layout.HBox(10, resetBtn, saveDefaultsBtn, spacer, cancelBtn, runBtn)
             buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
             buttons.setPadding(new javafx.geometry.Insets(10))
 
@@ -237,9 +275,9 @@ if (measurement == null) {
 // Modüle özgü varsayılan eşikler (her zaman önce mevcut sınıf etiketlerinden
 // tahmin etmeyi denemeyiz çünkü etiketler aynı; varsayılanlar modüldeki ile aynı)
 def defaultsFor = [
-    "Membrane: DAB OD mean":  [0.15, 0.40, 0.70],   // M4
-    "Nucleus: DAB OD mean":   [0.20, 0.40, 0.60],   // M3 / M3b / M7
-    "Cytoplasm: DAB OD mean": [0.10, 0.20, 0.35]    // M5
+    "Membrane: DAB OD mean":  [atolyeD("atolye.membrane1", 0.15), atolyeD("atolye.membrane2", 0.40), atolyeD("atolye.membrane3", 0.70)],   // M4
+    "Nucleus: DAB OD mean":   [atolyeD("atolye.nuclear1", 0.20), atolyeD("atolye.nuclear2", 0.40), atolyeD("atolye.nuclear3", 0.60)],   // M3 / M3b / M7
+    "Cytoplasm: DAB OD mean": [atolyeD("atolye.cyto1", 0.10), atolyeD("atolye.cyto2", 0.20), atolyeD("atolye.cyto3", 0.35)]    // M5
 ]
 def defaults = defaultsFor[measurement]
 
@@ -279,12 +317,19 @@ def formBody = String.format(
     existingCounts["3+"],    100.0 * existingCounts["3+"] / cells.size()
 )
 
+def prefKeysFor = [
+    "Membrane: DAB OD mean":  ["atolye.membrane1", "atolye.membrane2", "atolye.membrane3"],
+    "Nucleus: DAB OD mean":   ["atolye.nuclear1",  "atolye.nuclear2",  "atolye.nuclear3"],
+    "Cytoplasm: DAB OD mean": ["atolye.cyto1",     "atolye.cyto2",     "atolye.cyto3"]
+]
+def prefKeys = prefKeysFor[measurement] ?: ['', '', '']
 def newThr = showThresholdForm(
     "Eşikleri ayarla — ${moduleHint}",
     formBody,
     (double) defaults[0],
     (double) defaults[1],
-    (double) defaults[2]
+    (double) defaults[2],
+    prefKeys[0], prefKeys[1], prefKeys[2]
 )
 if (newThr == null) {
     println "Kullanıcı kapattı."
@@ -346,9 +391,9 @@ showResultWindow(
     String.format(
         "Modül: %s\nÖlçüm: %s\n\n" +
         "Yeni eşikler:\n" +
-        "  1+ ≥ %.3f OD\n" +
-        "  2+ ≥ %.3f OD\n" +
-        "  3+ ≥ %.3f OD\n\n" +
+        "  1+ ≥ %.3f OD%s\n" +
+        "  2+ ≥ %.3f OD%s\n" +
+        "  3+ ≥ %.3f OD%s\n\n" +
         "📊 Yeni grup dağılımı (n = %,d, sadece seçili anotasyon)\n" +
         "──────────────────────────────────\n" +
         "  0  (negatif)  : %,d  (%%%.1f)\n" +
@@ -364,7 +409,9 @@ showResultWindow(
         "  hücre tespiti yeniden çalıştırılmaz, sadece sınıflandırma güncellenir.\n\n" +
         "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
         moduleHint, measurement,
-        newThr.t1, newThr.t2, newThr.t3,
+        newThr.t1, (newThr.t1 != defaults[0] ? ' (değiştirildi)' : ''),
+        newThr.t2, (newThr.t2 != defaults[1] ? ' (değiştirildi)' : ''),
+        newThr.t3, (newThr.t3 != defaults[2] ? ' (değiştirildi)' : ''),
         total,
         n0, pct0, n1, pct1, n2, pct2, n3, pct3,
         n1 + n2 + n3, pct1 + pct2 + pct3,
