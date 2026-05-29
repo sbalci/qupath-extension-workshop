@@ -34,6 +34,16 @@ import qupath.lib.objects.PathAnnotationObject
 // parametre değiştirip betiği tekrar çalıştırabilir, sonuçları kopyalayabilir.
 // ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
+// --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
+def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
+def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
+    def c = __wpClass(); if (c == null) return dflt
+    try { c.getMethod(m, sig).invoke(null, args) } catch (Throwable t) { dflt }
+}
+def atolyeD = { String k, double  d -> (double)  __wpCall('dbl',  [String.class, double.class]  as Class[], [k, d] as Object[], d) }
+def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class, String.class]  as Class[], [k, d] as Object[], d) }
+def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
+def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
 
 def waitForConfirm = { String windowTitle, String windowBody ->
     if (isHeadless) {
@@ -239,12 +249,22 @@ def targetAnnotation = selected
 // ──────────────────────────────────────────────────────────────
 // 4) Hücre tespitini çalıştır (atölye varsayılanları)
 // ──────────────────────────────────────────────────────────────
+def pixelSize          = atolyeD('atolye.pixelSize', 0.5)
+def detectionThreshold = atolyeD('atolye.detectionThreshold', 0.1)
+def sigma              = atolyeD('atolye.sigma', 1.5)
+def backgroundRadius   = atolyeD('atolye.backgroundRadius', 8.0)
+def medianRadius       = atolyeD('atolye.medianRadius', 0.0)
+def minArea            = atolyeD('atolye.minArea', 10.0)
+def maxArea            = atolyeD('atolye.maxArea', 400.0)
+def cellExpansion      = atolyeD('atolye.cellExpansionNuclear', 5.0)
+def doWatershed        = atolyeB('atolye.watershed', true)
+
 println "Hücre tespiti başlatılıyor — atölye varsayılan parametreleriyle..."
-println "  • Requested pixel size: 0.5 µm/px"
-println "  • Eşik (Hematoxylin OD): 0.1"
-println "  • Sigma: 1.5 µm"
-println "  • Min/Max area: 10 / 400 µm²"
-println "  • Hücre genişletme (cell expansion): 5 µm"
+println "  • Requested pixel size: ${pixelSize} µm/px${pixelSize != 0.5 ? ' (değiştirildi)' : ''}"
+println "  • Eşik (Hematoxylin OD): ${detectionThreshold}${detectionThreshold != 0.1 ? ' (değiştirildi)' : ''}"
+println "  • Sigma: ${sigma} µm${sigma != 1.5 ? ' (değiştirildi)' : ''}"
+println "  • Min/Max area: ${minArea} / ${maxArea} µm²${(minArea != 10.0 || maxArea != 400.0) ? ' (değiştirildi)' : ''}"
+println "  • Hücre genişletme (cell expansion): ${cellExpansion} µm${cellExpansion != 5.0 ? ' (değiştirildi)' : ''}"
 
 def t0 = System.currentTimeMillis()
 
@@ -253,15 +273,15 @@ QP.runPlugin(
     'qupath.imagej.detect.cells.WatershedCellDetection',
     '{' +
         '"detectionImageBrightfield":"Hematoxylin OD",' +
-        '"requestedPixelSizeMicrons":0.5,' +
-        '"backgroundRadiusMicrons":8.0,' +
-        '"medianRadiusMicrons":0.0,' +
-        '"sigmaMicrons":1.5,' +
-        '"minAreaMicrons":10.0,' +
-        '"maxAreaMicrons":400.0,' +
-        '"threshold":0.1,' +
-        '"watershedPostProcess":true,' +
-        '"cellExpansionMicrons":5.0,' +
+        '"requestedPixelSizeMicrons":' + pixelSize + ',' +
+        '"backgroundRadiusMicrons":' + backgroundRadius + ',' +
+        '"medianRadiusMicrons":' + medianRadius + ',' +
+        '"sigmaMicrons":' + sigma + ',' +
+        '"minAreaMicrons":' + minArea + ',' +
+        '"maxAreaMicrons":' + maxArea + ',' +
+        '"threshold":' + detectionThreshold + ',' +
+        '"watershedPostProcess":' + doWatershed + ',' +
+        '"cellExpansionMicrons":' + cellExpansion + ',' +
         '"includeNuclei":true,' +
         '"smoothBoundaries":true,' +
         '"makeMeasurements":true' +
