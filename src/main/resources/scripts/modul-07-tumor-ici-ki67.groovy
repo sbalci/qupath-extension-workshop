@@ -51,6 +51,17 @@ import qupath.lib.scripting.QP
 // ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
+// --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
+def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
+def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
+    def c = __wpClass(); if (c == null) return dflt
+    try { c.getMethod(m, sig).invoke(null, args) } catch (Throwable t) { dflt }
+}
+def atolyeD = { String k, double  d -> (double)  __wpCall('dbl',  [String.class, double.class]  as Class[], [k, d] as Object[], d) }
+def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class, String.class]  as Class[], [k, d] as Object[], d) }
+def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
+def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
+
 def waitForConfirm = { String windowTitle, String windowBody ->
     if (isHeadless) {
         println "=== ${windowTitle} ===\n${windowBody}\n=================="
@@ -212,7 +223,7 @@ if (project == null) {
     return
 }
 
-def classifierName = 'tumor-stroma-RF'
+def classifierName = atolyeS('atolye.classifierName', 'tumor-stroma-RF')
 if (!project.getPixelClassifiers().getNames().contains(classifierName)) {
     Dialogs.showErrorMessage(
         "Sınıflandırıcı bulunamadı",
@@ -235,7 +246,8 @@ def devam = waitForConfirm(
     "  2️⃣ Tümör anotasyonları seçili → Positive cell detection\n" +
     "  3️⃣ Yalnızca tümör hücrelerinde Ki-67 LI hesapla\n\n" +
     "Ki-67 İHK eşikleri (Nucleus: DAB OD mean):\n" +
-    "  • 1+ / 2+ / 3+: 0.20 / 0.40 / 0.60 OD\n\n" +
+    "  • 1+ / 2+ / 3+: ${atolyeD('atolye.nuclear1',0.20)} / ${atolyeD('atolye.nuclear2',0.40)} / ${atolyeD('atolye.nuclear3',0.60)} OD" +
+    (atolyeD('atolye.nuclear1',0.20)!=0.20||atolyeD('atolye.nuclear2',0.40)!=0.40||atolyeD('atolye.nuclear3',0.60)!=0.60 ? " (değiştirildi)" : "") + "\n\n" +
     "Çıktı: tümör-içi Ki-67 LI + grup dağılımı + yoğunluk\n\n" +
     "Bu işlem 2–5 dakika sürebilir (slayt boyutuna bağlı).\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
@@ -287,8 +299,8 @@ if (!existing.isEmpty()) {
 def beforeAnnotations = QP.getAnnotationObjects() as Set
 QP.createAnnotationsFromPixelClassifier(
     classifierName,
-    10000.0,            // minimum object area (µm²)
-    5000.0,             // minimum hole area (µm²)
+    atolyeD('atolye.minObjectArea', 10000.0),            // minimum object area (µm²)
+    atolyeD('atolye.minHoleArea', 5000.0),             // minimum hole area (µm²)
     "SPLIT",            // split into multiple annotations
     "DELETE_EXISTING",  // delete previous annotations of the same class
     "SELECT_NEW"        // select newly created objects
@@ -328,29 +340,29 @@ println "Adım 2/3: Tümör alanında Ki-67 pozitif hücre tespiti..."
 
 // Tespit kanalı — Modül 3 ile aynı yöntem notu geçerli.
 // Varsayılan: Hematoxylin OD. Yüksek-LI vakada 'Optical density sum'a geçin.
-def detectionImageBrightfield = 'Hematoxylin OD'   // veya 'Optical density sum'
+def detectionImageBrightfield = atolyeS('atolye.detectionChannel', 'Hematoxylin OD')   // veya 'Optical density sum'
 
 QP.selectObjects(tumorAnnotations)
 QP.runPlugin(
     'qupath.imagej.detect.cells.PositiveCellDetection',
     '{' +
         '"detectionImageBrightfield":"' + detectionImageBrightfield + '",' +
-        '"requestedPixelSizeMicrons":0.5,' +
-        '"backgroundRadiusMicrons":8.0,' +
-        '"medianRadiusMicrons":0.0,' +
-        '"sigmaMicrons":1.5,' +
-        '"minAreaMicrons":10.0,' +
-        '"maxAreaMicrons":400.0,' +
-        '"threshold":0.1,' +
-        '"watershedPostProcess":true,' +
-        '"cellExpansionMicrons":5.0,' +
+        '"requestedPixelSizeMicrons":' + atolyeD('atolye.pixelSize', 0.5) + ',' +
+        '"backgroundRadiusMicrons":' + atolyeD('atolye.backgroundRadius', 8.0) + ',' +
+        '"medianRadiusMicrons":' + atolyeD('atolye.medianRadius', 0.0) + ',' +
+        '"sigmaMicrons":' + atolyeD('atolye.sigma', 1.5) + ',' +
+        '"minAreaMicrons":' + atolyeD('atolye.minArea', 10.0) + ',' +
+        '"maxAreaMicrons":' + atolyeD('atolye.maxArea', 400.0) + ',' +
+        '"threshold":' + atolyeD('atolye.detectionThreshold', 0.1) + ',' +
+        '"watershedPostProcess":' + atolyeB('atolye.watershed', true) + ',' +
+        '"cellExpansionMicrons":' + atolyeD('atolye.cellExpansionNuclear', 5.0) + ',' +
         '"includeNuclei":true,' +
         '"smoothBoundaries":true,' +
         '"makeMeasurements":true,' +
         '"thresholdCompartment":"Nucleus: DAB OD mean",' +
-        '"thresholdPositive1":0.2,' +
-        '"thresholdPositive2":0.4,' +
-        '"thresholdPositive3":0.6,' +
+        '"thresholdPositive1":' + atolyeD('atolye.nuclear1', 0.20) + ',' +
+        '"thresholdPositive2":' + atolyeD('atolye.nuclear2', 0.40) + ',' +
+        '"thresholdPositive3":' + atolyeD('atolye.nuclear3', 0.60) + ',' +
         '"singleThreshold":false' +
     '}'
 )
@@ -381,18 +393,20 @@ def density = tumorAreaMm2 > 0 ? Math.round(tumorStats.total / tumorAreaMm2) : 0
 // İstatistiksel güven aralığı (95% CI - Basitleştirilmiş binomial proportion)
 def nCells = tumorStats.total
 def pVal = tumorStats.ki67LI / 100.0
-def zVal = 1.96 // 95% güven
-def errorMargin = nCells > 30 ? zVal * Math.sqrt((pVal * (1 - pVal)) / nCells) * 100.0 : 0.0
-def ciMetin = nCells > 30 ? String.format("±%.1f%%", errorMargin) : "(n<30)"
+def zVal = atolyeD('atolye.ciZ', 1.96) // 95% güven
+def ciMinCells = atolyeI('atolye.ciMinCells', 30)
+def errorMargin = nCells > ciMinCells ? zVal * Math.sqrt((pVal * (1 - pVal)) / nCells) * 100.0 : 0.0
+def ciMetin = nCells > ciMinCells ? String.format("±%.1f%%", errorMargin) : "(n<${ciMinCells})"
 
 def totalElapsed = (System.currentTimeMillis() - t0) / 1000.0
 
 // Sayma standardı uyarısı — Nielsen 2021 (J Natl Cancer Inst, doi:10.1093/jnci/djaa201)
 // International Ki-67 in Breast Cancer Working Group: en az 500-1.000 tümör hücresi.
 def sayimUyari = ""
-if (tumorStats.total < 500) {
+def warnNuclearCount = atolyeI('atolye.warnNuclearCount', 500)
+if (tumorStats.total < warnNuclearCount) {
     sayimUyari = String.format(
-        "\n📝 Not: %,d tümör hücresi <500 — Ki-67 Working Group (Nielsen 2021) sayma\n" +
+        "\n📝 Not: %,d tümör hücresi <${warnNuclearCount} — Ki-67 Working Group (Nielsen 2021) sayma\n" +
         "  standardının altında. Tümör annotation alanını büyütmeyi değerlendirin.",
         tumorStats.total)
 }
