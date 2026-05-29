@@ -71,6 +71,17 @@ import groovy.transform.CompileStatic
 // ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
+// --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
+def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
+def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
+    def c = __wpClass(); if (c == null) return dflt
+    try { c.getMethod(m, sig).invoke(null, args) } catch (Throwable t) { dflt }
+}
+def atolyeD = { String k, double  d -> (double)  __wpCall('dbl',  [String.class, double.class]  as Class[], [k, d] as Object[], d) }
+def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class, String.class]  as Class[], [k, d] as Object[], d) }
+def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
+def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
+
 def waitForConfirm = { String windowTitle, String windowBody ->
     if (isHeadless) {
         println "=== ${windowTitle} ===\n${windowBody}\n=================="
@@ -234,6 +245,21 @@ if (!hasHematoxylin) {
 }
 
 // ──────────────────────────────────────────────────────────────
+// Atölye parametreleri (WorkshopPrefs'ten veya varsayılan)
+// ──────────────────────────────────────────────────────────────
+def cellposeModel    = atolyeS('atolye.cellposeModel',        'cyto3')
+def cellposeDiameter = atolyeI('atolye.cellposeDiameter',     25)
+def pixelSize        = atolyeD('atolye.pixelSize',            0.5)
+def cellExpansion    = atolyeD('atolye.cellExpansionNuclear', 5.0)
+def backgroundRadius = atolyeD('atolye.backgroundRadius',     8.0)
+def sigma            = atolyeD('atolye.sigma',                1.5)
+def detectionThreshold = atolyeD('atolye.detectionThreshold', 0.1)
+def minArea          = atolyeD('atolye.minArea',              10.0)
+def membrane1        = atolyeD('atolye.membrane1',            0.15)
+def membrane2        = atolyeD('atolye.membrane2',            0.40)
+def membrane3        = atolyeD('atolye.membrane3',            0.70)
+
+// ──────────────────────────────────────────────────────────────
 // 2) Karşılama
 // ──────────────────────────────────────────────────────────────
 def cellposeHere = false
@@ -261,10 +287,10 @@ def devam = waitForConfirm(
     "skoru atar ve membran DAB yoğunluk dağılımını özetler.\n\n" +
     "${detectorLine}\n\n" +
     "Atölye varsayılan eşikleri (Membrane: DAB OD mean):\n" +
-    "  • 1+ (zayıf):       0.15 OD\n" +
-    "  • 2+ (orta):        0.40 OD\n" +
-    "  • 3+ (güçlü):       0.70 OD\n\n" +
-    "Hücre genişletme (cell expansion): 5 µm (membran sinyalinin örnekleneceği halka)\n\n" +
+    "  • 1+ (zayıf):       ${membrane1}${membrane1 != 0.15 ? ' (değiştirildi)' : ''} OD\n" +
+    "  • 2+ (orta):        ${membrane2}${membrane2 != 0.40 ? ' (değiştirildi)' : ''} OD\n" +
+    "  • 3+ (güçlü):       ${membrane3}${membrane3 != 0.70 ? ' (değiştirildi)' : ''} OD\n\n" +
+    "Hücre genişletme (cell expansion): ${cellExpansion}${cellExpansion != 5.0 ? ' (değiştirildi)' : ''} µm (membran sinyalinin örnekleneceği halka)\n\n" +
     "Çıktı: her bin için yüzdeler + H-score + yoğunluk dağılımı.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
     "Hazırsanız Çalıştır düğmesine basın."
@@ -307,8 +333,8 @@ println "Modül 4 - HER2 / Membran İHK"
 println "─────────────────────────────────────"
 println "Membran skorlaması başlatılıyor..."
 println "  • Detektör: ${detector}"
-println "  • Grup eşikleri (Membrane: DAB OD mean): 0.15 / 0.40 / 0.70"
-println "  • Hücre genişletme (cell expansion): 5 µm"
+println "  • Grup eşikleri (Membrane: DAB OD mean): ${membrane1} / ${membrane2} / ${membrane3}"
+println "  • Hücre genişletme (cell expansion): ${cellExpansion} µm"
 
 def t0 = System.currentTimeMillis()
 
@@ -323,17 +349,17 @@ def runWatershedFallback = {
         'qupath.imagej.detect.cells.WatershedCellMembraneDetection',
         '{' +
             '"detectionImageBrightfield":"Hematoxylin OD",' +
-            '"requestedPixelSizeMicrons":0.5,' +
-            '"backgroundRadiusMicrons":8.0,' +
+            "\"requestedPixelSizeMicrons\":${pixelSize}," +
+            "\"backgroundRadiusMicrons\":${backgroundRadius}," +
             '"medianRadiusMicrons":0.0,' +
-            '"sigmaMicrons":1.5,' +
-            '"minAreaMicrons":10.0,' +
+            "\"sigmaMicrons\":${sigma}," +
+            "\"minAreaMicrons\":${minArea}," +
             '"maxAreaMicrons":1000.0,' +
-            '"threshold":0.1,' +
+            "\"threshold\":${detectionThreshold}," +
             '"maxBackground":2.0,' +
             '"watershedPostProcess":true,' +
             '"excludeDAB":true,' +
-            '"cellExpansionMicrons":5.0,' +
+            "\"cellExpansionMicrons\":${cellExpansion}," +
             '"limitExpansionByNucleusSize":false,' +
             '"includeNuclei":true,' +
             '"smoothBoundaries":false,' +
@@ -369,31 +395,31 @@ if (cellposeAvailable) {
     // ÇALIŞMA ZAMANI HATA YAKALAMA: Cellpose JAR'ı yüklü olabilir ama Python
     // ortamı ayarlanmamış, model indirilmemiş veya bir tile başarısız olabilir.
     // Bu durumda Watershed yedeğine geçiyoruz, betik kesintisiz tamamlanır.
-    def innerScript = '''
+    def innerScript = """
         import qupath.ext.biop.cellpose.Cellpose2D
         import qupath.lib.scripting.QP
         import qupath.opencv.ops.ImageOps
 
         def stainVectors = QP.getCurrentImageData().getColorDeconvolutionStains()
 
-        def cellpose = Cellpose2D.builder("cyto3")
-            .pixelSize(0.5)
+        def cellpose = Cellpose2D.builder("${cellposeModel}")
+            .pixelSize(${pixelSize})
             .preprocess(
                 ImageOps.Channels.deconvolve(stainVectors),
                 ImageOps.Channels.extract(1, 0)   // 1=DAB (cyto), 0=Hematoxylin (nuclei)
             )
             .cellposeChannels(1, 2)               // Cellpose CLI: --chan 1 (DAB) --chan2 2 (H)
                                                   // .preprocess() çıktısı 2 kanallı TIFF olarak yazılır;
-                                                  // bu çağrı olmadan CLI grayscale'e düşer → 0 hücre.
+                                                  // bu çağrı olmadan CLI grayscale'e düşer -> 0 hücre.
             .normalizePercentilesGlobal(0.1, 99.8, 10)
-            .diameter(25)
-            .cellExpansion(5.0)
+            .diameter(${cellposeDiameter})
+            .cellExpansion(${cellExpansion})
             .measureShape()
             .measureIntensity()
             .build()
 
         cellpose.detectObjects(QP.getCurrentImageData(), QP.getSelectedObjects())
-    '''
+    """
     try {
         new groovy.lang.GroovyShell(this.class.classLoader).evaluate(innerScript)
     } catch (Throwable cellposeError) {
@@ -416,7 +442,7 @@ if (cellposeAvailable) {
 
 // Cell-by-cell intensity binning by membrane DAB OD
 // Creates classes: "Negative", "1+", "2+", "3+"
-QP.setCellIntensityClassifications("Membrane: DAB OD mean", 0.15, 0.40, 0.70)
+QP.setCellIntensityClassifications("Membrane: DAB OD mean", membrane1, membrane2, membrane3)
 
 def cellElapsed = (System.currentTimeMillis() - t0) / 1000.0
 
@@ -427,9 +453,12 @@ def cellElapsed = (System.currentTimeMillis() - t0) / 1000.0
 //     boyasız boş alanlar dışlanır. Sonuç: alan-ağırlıklı H-score (0–300).
 // ──────────────────────────────────────────────────────────────
 def pixT0 = System.currentTimeMillis()
-def pixDABthresholds = [0.10, 0.30, 0.60] as double[]   // 1+, 2+, 3+ DAB OD
-def pixHthreshold = 0.05                                 // Hematoxylin OD — boş alanı maskelemek için
-double pixScale = 1.0                                    // downsample (büyük = hızlı, daha az hassas)
+def pixDab1 = atolyeD('atolye.pixDab1', 0.10)
+def pixDab2 = atolyeD('atolye.pixDab2', 0.30)
+def pixDab3 = atolyeD('atolye.pixDab3', 0.60)
+def pixDABthresholds = [pixDab1, pixDab2, pixDab3] as double[]   // 1+, 2+, 3+ DAB OD
+def pixHthreshold = atolyeD('atolye.pixHmask', 0.05)             // Hematoxylin OD — boş alanı maskelemek için
+double pixScale = atolyeD('atolye.pixScale', 1.0)                 // downsample (büyük = hızlı, daha az hassas)
 
 def imgData = QP.getCurrentImageData()
 def cal = imgData.getServer().getPixelCalibration()
@@ -501,8 +530,9 @@ def pct = { count -> totalCells > 0 ? 100.0 * count / totalCells : 0.0 }
 def pct0 = pct(n0), pct1 = pct(n1), pct2 = pct(n2), pct3 = pct(n3)
 def hScore = pct1 + 2.0 * pct2 + 3.0 * pct3
 
+def warnCount = atolyeI('atolye.warnGenericCount', 200)
 def uyari = ""
-if (totalCells < 200) {
+if (totalCells < warnCount) {
     uyari = String.format("\n📝 Not: %,d hücre <200 — küçük örneklem; sonuç istatistiksel olarak güvenilir olmayabilir.", totalCells)
 }
 
