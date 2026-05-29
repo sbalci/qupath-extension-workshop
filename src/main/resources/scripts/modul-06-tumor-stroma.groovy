@@ -48,6 +48,17 @@ import qupath.lib.projects.Project
 // ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
+// --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
+def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
+def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
+    def c = __wpClass(); if (c == null) return dflt
+    try { c.getMethod(m, sig).invoke(null, args) } catch (Throwable t) { dflt }
+}
+def atolyeD = { String k, double  d -> (double)  __wpCall('dbl',  [String.class, double.class]  as Class[], [k, d] as Object[], d) }
+def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class, String.class]  as Class[], [k, d] as Object[], d) }
+def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
+def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
+
 def waitForConfirm = { String windowTitle, String windowBody ->
     if (isHeadless) {
         println "=== ${windowTitle} ===\n${windowBody}\n=================="
@@ -193,7 +204,7 @@ if (project == null) {
     return
 }
 
-def classifierName = 'tumor-stroma-RF'
+def classifierName = atolyeS('atolye.classifierName', 'tumor-stroma-RF')
 def availableClassifiers = project.getPixelClassifiers().getNames()
 
 if (!availableClassifiers.contains(classifierName)) {
@@ -213,6 +224,9 @@ if (!availableClassifiers.contains(classifierName)) {
     return
 }
 
+def minObjectArea = atolyeD('atolye.minObjectArea', 10000.0)
+def minHoleArea   = atolyeD('atolye.minHoleArea',   5000.0)
+
 // ──────────────────────────────────────────────────────────────
 // 2) Karşılama
 // ──────────────────────────────────────────────────────────────
@@ -222,8 +236,8 @@ def devam = waitForConfirm(
     "açık slaytın tamamına uygular ve **Tumor** + **Stroma** sınıflı anotasyon\n" +
     "nesneleri üretir.\n\n" +
     "Atölye varsayılan post-işlem parametreleri:\n" +
-    "  • Minimum object size  : 10000 µm²  (≈ 0.01 mm²)\n" +
-    "  • Minimum hole size    : 5000 µm²\n" +
+    "  • Minimum object size  : ${minObjectArea} µm²${minObjectArea != 10000.0 ? ' (değiştirildi)' : ''}  (≈ 0.01 mm²)\n" +
+    "  • Minimum hole size    : ${minHoleArea} µm²${minHoleArea != 5000.0 ? ' (değiştirildi)' : ''}\n" +
     "  • Split objects        : Açık (birleşik tümör adalarını ayır)\n\n" +
     "Çıktı:\n" +
     "  • Annotations panelinde Tumor ve Stroma sınıflı yeni anotasyonlar\n" +
@@ -269,8 +283,8 @@ def beforeAnnotations = QP.getAnnotationObjects() as Set
 // stromal cep'leri (lakün) doldurmaz ama mikro-bir delikleri kapatır.
 QP.createAnnotationsFromPixelClassifier(
     classifierName,
-    10000.0,            // minimum object area (µm²) — 0.01 mm² gürültü filtresi
-    5000.0,             // minimum hole area (µm²)  — mikro-deliklerin doldurulma eşiği
+    minObjectArea,       // minimum object area (µm²) — 0.01 mm² gürültü filtresi
+    minHoleArea,        // minimum hole area (µm²)  — mikro-deliklerin doldurulma eşiği
     "SPLIT",            // split into multiple annotations
     "DELETE_EXISTING",  // delete previous annotations of the same class
     "SELECT_NEW"        // select newly created objects
@@ -308,12 +322,13 @@ def totalAreaMm2  = tumorAreaMm2 + stromaAreaMm2
 
 def tsr = totalAreaMm2 > 0 ? 100.0 * tumorAreaMm2 / totalAreaMm2 : 0.0  // % tumor of total tissue
 
+def warnTissueAreaMm2 = atolyeD('atolye.warnTissueAreaMm2', 1.0)
 def uyari = ""
 if (tumorAnnotations.isEmpty()) {
     uyari = "\n⚠️ Hiç tümör bölgesi tespit edilmedi.\n" +
             "  Sınıflandırıcı bu slayt için iyi eğitilmemiş olabilir.\n" +
             "  Modül 6'daki aktif öğrenme iş akışıyla daha fazla anotasyon ekleyin."
-} else if (totalAreaMm2 < 1.0) {
+} else if (totalAreaMm2 < warnTissueAreaMm2) {
     uyari = String.format("\n⚠️ Çok küçük doku alanı (%.2f mm²) — sonuçlar güvenilir olmayabilir.", totalAreaMm2)
 }
 
