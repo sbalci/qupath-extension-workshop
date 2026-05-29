@@ -46,6 +46,32 @@ import qupath.lib.objects.PathAnnotationObject
 // ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
+// --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
+def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
+def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
+    def c = __wpClass(); if (c == null) return dflt
+    try { c.getMethod(m, sig).invoke(null, args) } catch (Throwable t) { dflt }
+}
+def atolyeD = { String k, double  d -> (double)  __wpCall('dbl',  [String.class, double.class]  as Class[], [k, d] as Object[], d) }
+def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class, String.class]  as Class[], [k, d] as Object[], d) }
+def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
+def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
+
+def detectionImageBrightfield = atolyeS('atolye.detectionChannel', 'Hematoxylin OD')   // veya 'Optical density sum'
+def requestedPixelSizeMicrons = atolyeD('atolye.pixelSize', 0.5)
+def backgroundRadiusMicrons   = atolyeD('atolye.backgroundRadius', 8.0)
+def medianRadiusMicrons       = atolyeD('atolye.medianRadius', 0.0)
+def sigmaMicrons              = atolyeD('atolye.sigma', 1.5)
+def minAreaMicrons            = atolyeD('atolye.minArea', 10.0)
+def maxAreaMicrons            = atolyeD('atolye.maxArea', 400.0)
+def detectionThreshold        = atolyeD('atolye.detectionThreshold', 0.1)
+def watershedPostProcess      = atolyeB('atolye.watershed', true)
+def cellExpansionMicrons      = atolyeD('atolye.cellExpansionNuclear', 5.0)
+def thresholdPositive1        = atolyeD('atolye.nuclear1', 0.20)
+def thresholdPositive2        = atolyeD('atolye.nuclear2', 0.40)
+def thresholdPositive3        = atolyeD('atolye.nuclear3', 0.60)
+def warnNuclearCount          = atolyeI('atolye.warnNuclearCount', 500)
+
 def waitForConfirm = { String windowTitle, String windowBody ->
     if (isHeadless) {
         println "=== ${windowTitle} ===\n${windowBody}\n=================="
@@ -219,10 +245,10 @@ def devam = waitForConfirm(
     "Modül 3 - Ki-67 / Nükleer İHK kantifikasyonu",
     "Bu betik, seçtiğiniz anotasyon içindeki tüm çekirdekleri tespit edip\n" +
     "her birini DAB yoğunluğuna göre Negative / 1+ / 2+ / 3+ olarak sınıflar.\n\n" +
-    "Atölye varsayılan eşikleri (DAB OD — Nucleus mean):\n" +
-    "  • 1+ (zayıf):  0.20 OD\n" +
-    "  • 2+ (orta):   0.40 OD\n" +
-    "  • 3+ (güçlü):  0.60 OD\n\n" +
+    "Atölye eşikleri (DAB OD — Nucleus mean)" + (thresholdPositive1 != 0.20 || thresholdPositive2 != 0.40 || thresholdPositive3 != 0.60 ? " (değiştirildi)" : "") + ":\n" +
+    "  • 1+ (zayıf):  " + String.format('%.2f', thresholdPositive1) + " OD\n" +
+    "  • 2+ (orta):   " + String.format('%.2f', thresholdPositive2) + " OD\n" +
+    "  • 3+ (güçlü):  " + String.format('%.2f', thresholdPositive3) + " OD\n\n" +
     "Çıktı:\n" +
     "  • Ki-67 LI (Pozitif %) — ölçüm çıktısı\n" +
     "  • Grup dağılımı (% 0 / 1+ / 2+ / 3+)\n" +
@@ -272,9 +298,9 @@ println "───────────────────────�
 println "Pozitif hücre tespiti başlatılıyor..."
 println "  • Image: ${QP.getProjectEntry()?.getImageName() ?: imageData.getServer().getMetadata().getName()}"
 println "  • Score compartment: Nucleus: DAB OD mean"
-println "  • Eşik 1+ / 2+ / 3+: 0.2 / 0.4 / 0.6 OD"
-println "  • Requested pixel size: 0.5 µm/px"
-println "  • Nucleus background radius: 8 µm"
+println "  • Eşik 1+ / 2+ / 3+: ${thresholdPositive1} / ${thresholdPositive2} / ${thresholdPositive3} OD"
+println "  • Requested pixel size: ${requestedPixelSizeMicrons} µm/px"
+println "  • Nucleus background radius: ${backgroundRadiusMicrons} µm"
 
 def t0 = System.currentTimeMillis()
 
@@ -287,31 +313,30 @@ def t0 = System.currentTimeMillis()
 //     Trade-off: arka plan gürültüsüne biraz daha duyarlı; eşiklerin yeniden
 //     kalibre edilmesi gerekebilir.
 // Atölye varsayılanı "Hematoxylin OD" — düşük-orta LI'da daha temiz segmentasyon verir.
-// Yüksek-LI vakada aşağıdaki satırı '"Optical density sum"' yapın ve eşikleri
-// referans hücrelerde yeniden test edin.
-def detectionImageBrightfield = 'Hematoxylin OD'   // veya 'Optical density sum'
+// Yüksek-LI vakada WorkshopPrefs'ten 'atolye.detectionChannel' → 'Optical density sum' yapın
+// ve eşikleri referans hücrelerde yeniden test edin.
 
 QP.selectObjects(targetAnnotation)
 QP.runPlugin(
     'qupath.imagej.detect.cells.PositiveCellDetection',
     '{' +
         '"detectionImageBrightfield":"' + detectionImageBrightfield + '",' +
-        '"requestedPixelSizeMicrons":0.5,' +
-        '"backgroundRadiusMicrons":8.0,' +
-        '"medianRadiusMicrons":0.0,' +
-        '"sigmaMicrons":1.5,' +
-        '"minAreaMicrons":10.0,' +
-        '"maxAreaMicrons":400.0,' +
-        '"threshold":0.1,' +
-        '"watershedPostProcess":true,' +
-        '"cellExpansionMicrons":5.0,' +
+        '"requestedPixelSizeMicrons":' + requestedPixelSizeMicrons + ',' +
+        '"backgroundRadiusMicrons":' + backgroundRadiusMicrons + ',' +
+        '"medianRadiusMicrons":' + medianRadiusMicrons + ',' +
+        '"sigmaMicrons":' + sigmaMicrons + ',' +
+        '"minAreaMicrons":' + minAreaMicrons + ',' +
+        '"maxAreaMicrons":' + maxAreaMicrons + ',' +
+        '"threshold":' + detectionThreshold + ',' +
+        '"watershedPostProcess":' + watershedPostProcess + ',' +
+        '"cellExpansionMicrons":' + cellExpansionMicrons + ',' +
         '"includeNuclei":true,' +
         '"smoothBoundaries":true,' +
         '"makeMeasurements":true,' +
         '"thresholdCompartment":"Nucleus: DAB OD mean",' +
-        '"thresholdPositive1":0.2,' +
-        '"thresholdPositive2":0.4,' +
-        '"thresholdPositive3":0.6,' +
+        '"thresholdPositive1":' + thresholdPositive1 + ',' +
+        '"thresholdPositive2":' + thresholdPositive2 + ',' +
+        '"thresholdPositive3":' + thresholdPositive3 + ',' +
         '"singleThreshold":false' +
     '}'
 )
@@ -354,7 +379,7 @@ def density = totalAreaMm2 > 0 ? Math.round(totalCells / totalAreaMm2) : 0
 // minimum 500-1000 tümör hücresi sayılmasını metodoloji standardı olarak önerir.
 // Klinik yorum değil, ölçüm hassasiyeti notu.
 def uyari = ""
-if (totalCells < 500) {
+if (totalCells < warnNuclearCount) {
     uyari = String.format(
         "\n📝 Not: %,d hücre <500 — Ki-67 Working Group (Nielsen 2021) sayma standardının altında.\n" +
         "  Daha büyük bir ROI ile tekrar deneyin (hedef: ≥500-1.000 hücre).",
