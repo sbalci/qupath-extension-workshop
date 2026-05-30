@@ -3,48 +3,38 @@
  * ---------------------------------------------------
  * Atölye için "hızlı deneme" betiği. Seçilen anotasyon içinde HER2 (veya
  * E-kadherin, β-katenin gibi başka bir membran İHK boyamasını) skorlar.
- * Her hücre **0 / 1+ / 2+ / 3+** olarak sınıflanır ve membran DAB
- * yoğunluk dağılımı ölçülür.
+ *
+ * BİRİNCİL METRİK — PİKSEL BAZLI H-SCORE (Cellpose gerektirmez):
+ *   Seçili (tümör) anotasyon içindeki her piksel DAB OD üzerinden
+ *   Negative / 1+ / 2+ / 3+ olarak sınıflanır → alan-ağırlıklı H-score.
+ *   Hücre tespitinden bağımsız, her zaman çalışır.
+ *   Eşikler: 0.10 / 0.30 / 0.60 OD (atölye varsayılanı), 0.05 H OD maskesi.
+ *   → Slayt-spesifik kalibrasyon için referans noktaları kullanın.
+ *
+ * İKİNCİL METRİK — HÜCRE BAZLI (karşılaştırma, opsiyonel):
+ *   Cellpose ya da WatershedCellMembraneDetection ile hücreler tespit edilir,
+ *   "Membrane: DAB OD mean" ölçümüyle 0/1+/2+/3+ olarak sınıflanır.
+ *   Cellpose / Python yoksa veya hata oluşursa bu adım atlanır — birincil
+ *   piksel H-score zaten hesaplanmış olacaktır.
+ *   Eşikler: 0.15 / 0.40 / 0.70 OD (Membrane: DAB OD mean).
  *
  * KULLANIM:
  *   1. HER2 İHK slaytını açın
  *   2. Image type → "Brightfield (H-DAB)" olduğundan emin olun
- *      (betik açık değilse otomatik ayarlar — varsayılan boya vektörleri uygulanır)
- *   3. [R] tuşu → tümör içeren ~1×1 mm dikdörtgen anotasyon çizin
+ *   3. [R] tuşu → TÜMÖR (epitel) içeren ~1×1 mm dikdörtgen anotasyon çizin
+ *      (stroma dahil büyük ROI seçmek piksel H-score'u seyreltir)
  *   4. Anotasyon seçili iken → [Automate → Project scripts → bu betik]
  *
- * MEMBRAN-ODAKLI HÜCRE TESPİTİ:
- *   • İlk tercih: **Cellpose** (`qupath-extension-cellpose`, BIOP) — `cyto3`
- *     modeli DAB + Hematoxylin kanallarından hücre sınırlarını çıkarır.
- *     `cellExpansion(5.0)` ile membran halkası oluşur; "Membrane: DAB OD mean"
- *     ölçümü bu halka boyunca hesaplanır.
- *   • Yedek: `WatershedCellMembraneDetection` (yerleşik, Python gerekmez) —
- *     Cellpose kurulu değilse otomatik kullanılır. Membran konumunu DAB
- *     sinyalinden watershed ile çıkarır; `excludeDAB=true` ile DAB-yoğun
- *     bölgeler çekirdek sanılmaz.
- *   • Detektör seçimi çalışma zamanı'da yapılır; karşılama penceresi hangisinin
- *     kullanılacağını gösterir.
- *
- * CELLPOSE KURULUMU (opsiyonel, daha iyi sonuç):
+ * CELLPOSE KURULUMU (opsiyonel — ikincil hücre bazlı metrik için):
  *   • qupath-extension-cellpose JAR + Python + `cellpose` paketi
  *   • Detaylar: https://atolye.patoloji.dev/kaynaklar.html#ileri-kurulumlar
  *
- * SKORLAMA — iki paralel metrik:
- *   1. **Hücre bazlı H-score**: tespit edilen hücreler `setCellIntensityClassifications`
- *      ile Negative / 1+ / 2+ / 3+ bin'lerine atanır → H = %1+ + 2×%2+ + 3×%3+.
- *      Eşikler: 0.15 / 0.40 / 0.70 OD (Membrane: DAB OD mean).
- *   2. **Piksel bazlı H-score** (Sara McArdle / PLoS One 2021): annotation içindeki
- *      her piksel DAB OD üzerinden Negative / 1+ / 2+ / 3+'a sınıflanır →
- *      H = (Σ alan_bin × ağırlık) × 100 / toplam alan. Hücre tespitinden bağımsız.
- *      Eşikler: 0.10 / 0.30 / 0.60 DAB OD, 0.05 H OD (atölye varsayılanı).
- *      → Slayt-spesifik kalibrasyon için referans noktaları kullanın (bkz. modül qmd).
- *
  * KAYNAKLAR:
- *   • Cellpose builder JavaDoc: biop.github.io/qupath-extension-cellpose
- *   • Watershed plugin JavaDoc: javadoc/docs/qupath/imagej/detect/cells/WatershedCellMembraneDetection
  *   • Piksel H-score betiği (Sara McArdle): github.com/saramcardle/Image-Analysis-Scripts
  *   • Yöntem makalesi: Ram et al., PLoS One 2021 — doi.org/10.1371/journal.pone.0245638
- *   • Workflow referansı (cancer-informatics.org): docs/ai/qupath_05_her2_expression
+ *   • Membran bütünlüğü sınırı: Sode et al., Histopathology 2023 — doi.org/10.1111/his.14877
+ *   • Cellpose builder JavaDoc: biop.github.io/qupath-extension-cellpose
+ *   • Watershed plugin: javadoc/docs/qupath/imagej/detect/cells/WatershedCellMembraneDetection
  */
 
 import qupath.lib.gui.dialogs.Dialogs
@@ -245,22 +235,33 @@ if (!hasHematoxylin) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Atölye parametreleri (WorkshopPrefs'ten veya varsayılan)
+// 2) Atölye parametreleri (WorkshopPrefs'ten veya varsayılan)
 // ──────────────────────────────────────────────────────────────
-def cellposeModel    = atolyeS('atolye.cellposeModel',        'cyto3')
-def cellposeDiameter = atolyeI('atolye.cellposeDiameter',     25)
-def pixelSize        = atolyeD('atolye.pixelSize',            0.5)
-def cellExpansion    = atolyeD('atolye.cellExpansionNuclear', 5.0)
-def backgroundRadius = atolyeD('atolye.backgroundRadius',     8.0)
-def sigma            = atolyeD('atolye.sigma',                1.5)
-def detectionThreshold = atolyeD('atolye.detectionThreshold', 0.1)
-def minArea          = atolyeD('atolye.minArea',              10.0)
-def membrane1        = atolyeD('atolye.membrane1',            0.15)
-def membrane2        = atolyeD('atolye.membrane2',            0.40)
-def membrane3        = atolyeD('atolye.membrane3',            0.70)
+// — Piksel bazlı (birincil) —
+def pixDab1       = atolyeD('atolye.pixDab1',            0.10)
+def pixDab2       = atolyeD('atolye.pixDab2',            0.30)
+def pixDab3       = atolyeD('atolye.pixDab3',            0.60)
+def pixHthreshold = atolyeD('atolye.pixHmask',           0.05)
+double pixScale   = atolyeD('atolye.pixScale',            1.0)
+
+// — Hücre bazlı (ikincil) —
+def cellposeModel      = atolyeS('atolye.cellposeModel',        'cyto3')
+def cellposeDiameter   = atolyeI('atolye.cellposeDiameter',     25)
+def pixelSize          = atolyeD('atolye.pixelSize',            0.5)
+def cellExpansion      = atolyeD('atolye.cellExpansionNuclear', 5.0)
+def backgroundRadius   = atolyeD('atolye.backgroundRadius',     8.0)
+def sigma              = atolyeD('atolye.sigma',                1.5)
+def detectionThreshold = atolyeD('atolye.detectionThreshold',   0.1)
+def minArea            = atolyeD('atolye.minArea',              10.0)
+def membrane1          = atolyeD('atolye.membrane1',            0.15)
+def membrane2          = atolyeD('atolye.membrane2',            0.40)
+def membrane3          = atolyeD('atolye.membrane3',            0.70)
+
+// — Genel —
+def warnCount = atolyeI('atolye.warnGenericCount', 200)
 
 // ──────────────────────────────────────────────────────────────
-// 2) Karşılama
+// Karşılama — Cellpose algıla (karşılama penceresi için)
 // ──────────────────────────────────────────────────────────────
 def cellposeHere = false
 try {
@@ -269,29 +270,40 @@ try {
 } catch (Throwable ignored) { /* not installed */ }
 
 def detectorLine = cellposeHere
-    ? "Detektör: Cellpose (cyto3 — DAB + H OD).\n" +
+    ? "Detektör (ikincil karşılaştırma): Cellpose (cyto3 — DAB + H OD).\n" +
       "  Görüntü H-DAB renk dekonvolüsyonundan geçirilip\n" +
       "  DAB (membran) ve Hematoksilen (çekirdek) kanalları\n" +
-      "  Cellpose'a verilir. Çap (diameter) 25 px (~12.5 µm) —\n" +
-      "  çok küçük tümör hücrelerinde 18-20 deneyin.\n" +
+      "  Cellpose'a verilir. Çap (diameter) 25 px (~12.5 µm).\n" +
       "  ℹ Cellpose çalıştırma anında başarısız olursa\n" +
-      "    (Python yolu yok / model yok) WatershedCellMembraneDetection\n" +
-      "    yedeğine otomatik düşülür — betik yine sonuç üretir."
-    : "Detektör: WatershedCellMembraneDetection (yerleşik yedek).\n" +
-      "  ℹ Daha iyi sonuç için Cellpose eklentisini kurun:\n" +
+      "    WatershedCellMembraneDetection yedeğine otomatik düşülür."
+    : "Detektör (ikincil karşılaştırma): WatershedCellMembraneDetection (yerleşik).\n" +
+      "  ℹ Daha iyi hücre bazlı sonuç için Cellpose eklentisini kurun:\n" +
       "    https://atolye.patoloji.dev/kaynaklar.html#ileri-kurulumlar"
 
 def devam = waitForConfirm(
     "Modül 4 - HER2 / Membran İHK skorlaması",
-    "Bu betik seçili anotasyon içindeki her hücreye 0 / 1+ / 2+ / 3+\n" +
-    "skoru atar ve membran DAB yoğunluk dağılımını özetler.\n\n" +
+    "BİRİNCİL METRİK — Piksel bazlı H-score (Cellpose gerekmez):\n" +
+    "  Seçili anotasyon içindeki her piksel DAB OD'ye göre\n" +
+    "  Negatif / 1+ / 2+ / 3+ olarak sınıflanır → alan-ağırlıklı H-score.\n" +
+    "  Bu metrik her zaman çalışır; hücre tespitinden bağımsızdır.\n\n" +
+    "  ➤ LÜTFEN bir TÜMÖR (epitel) bölgesi seçin/çizin.\n" +
+    "    Stroma içeren büyük ROI seçmek piksel H-score'u seyreltir.\n\n" +
+    "  Piksel eşikleri (DAB OD): " +
+    "${pixDab1}${pixDab1 != 0.10 ? ' (değiştirildi)' : ''} / " +
+    "${pixDab2}${pixDab2 != 0.30 ? ' (değiştirildi)' : ''} / " +
+    "${pixDab3}${pixDab3 != 0.60 ? ' (değiştirildi)' : ''}\n" +
+    "  H maskesi (OD): ${pixHthreshold}${pixHthreshold != 0.05 ? ' (değiştirildi)' : ''}\n\n" +
+    "İKİNCİL METRİK — Hücre bazlı ring H-score (opsiyonel karşılaştırma):\n" +
+    "  Cellpose / Watershed ile hücreler tespit edilir, membran DAB OD mean\n" +
+    "  ile 0/1+/2+/3+ olarak sınıflanır. Cellpose yoksa veya hata oluşursa\n" +
+    "  bu adım atlanır — birincil piksel skoru zaten hesaplanmıştır.\n\n" +
     "${detectorLine}\n\n" +
-    "Atölye varsayılan eşikleri (Membrane: DAB OD mean):\n" +
-    "  • 1+ (zayıf):       ${membrane1}${membrane1 != 0.15 ? ' (değiştirildi)' : ''} OD\n" +
-    "  • 2+ (orta):        ${membrane2}${membrane2 != 0.40 ? ' (değiştirildi)' : ''} OD\n" +
-    "  • 3+ (güçlü):       ${membrane3}${membrane3 != 0.70 ? ' (değiştirildi)' : ''} OD\n\n" +
-    "Hücre genişletme (cell expansion): ${cellExpansion}${cellExpansion != 5.0 ? ' (değiştirildi)' : ''} µm (membran sinyalinin örnekleneceği halka)\n\n" +
-    "Çıktı: her bin için yüzdeler + H-score + yoğunluk dağılımı.\n\n" +
+    "  Hücre bazlı eşikler (Membrane: DAB OD mean):\n" +
+    "  • 1+ (zayıf):  ${membrane1}${membrane1 != 0.15 ? ' (değiştirildi)' : ''} OD\n" +
+    "  • 2+ (orta):   ${membrane2}${membrane2 != 0.40 ? ' (değiştirildi)' : ''} OD\n" +
+    "  • 3+ (güçlü):  ${membrane3}${membrane3 != 0.70 ? ' (değiştirildi)' : ''} OD\n\n" +
+    "Not: Bu betik membran boyamasının GÜCÜNÜ ölçer — membranın kaç hücrede\n" +
+    "TAM çevrelendiğini (bütünlük / completeness) ÖLÇMEZ.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
     "Hazırsanız Çalıştır düğmesine basın."
 )
@@ -314,154 +326,22 @@ if (selected == null || !(selected instanceof PathAnnotationObject)) {
 def targetAnnotation = selected
 
 // ──────────────────────────────────────────────────────────────
-// 4) Membran-aware hücre tespiti — Cellpose öncelikli, Watershed yedek
-//    Cellpose (qupath-extension-cellpose, BIOP): cyto3 modeli DAB+Hematoxylin
-//      kanallarından hücre sınırlarını öğrenmiş şekilde çıkarır, kalabalık
-//      ve membran-bright kesitlerde daha sağlam.
-//    Watershed (yerleşik): Cellpose kurulu değilse otomatik geri-düşer.
-//    Her iki yoldan sonra `setCellIntensityClassifications("Membrane: DAB OD mean")`
-//    ile bin'ler (1+/2+/3+) atanır → metrik tarafı aynı kalır.
-// ──────────────────────────────────────────────────────────────
-def cellposeAvailable = cellposeHere
-if (!cellposeAvailable) {
-    println "Cellpose eklentisi bulunamadı → WatershedCellMembraneDetection'a düşülüyor."
-}
-
-def detector = cellposeAvailable ? "Cellpose (cyto3, DAB + H OD)" : "WatershedCellMembraneDetection (DAB-temelli)"
-println "─────────────────────────────────────"
-println "Modül 4 - HER2 / Membran İHK"
-println "─────────────────────────────────────"
-println "Membran skorlaması başlatılıyor..."
-println "  • Detektör: ${detector}"
-println "  • Grup eşikleri (Membrane: DAB OD mean): ${membrane1} / ${membrane2} / ${membrane3}"
-println "  • Hücre genişletme (cell expansion): ${cellExpansion} µm"
-
-def t0 = System.currentTimeMillis()
-
-QP.selectObjects(targetAnnotation)
-
-// Yardımcı kapatma: Watershed-tabanlı yedek detektör.
-// Cellpose hiç yoksa veya çalıştırma anında başarısız olursa devreye girer
-// (eklenti class'ı yüklü ama Python yolu ayarlanmamış, model dosyası bulunamadı,
-// Python ortamı kırık, vb.).
-def runWatershedFallback = {
-    QP.runPlugin(
-        'qupath.imagej.detect.cells.WatershedCellMembraneDetection',
-        '{' +
-            '"detectionImageBrightfield":"Hematoxylin OD",' +
-            "\"requestedPixelSizeMicrons\":${pixelSize}," +
-            "\"backgroundRadiusMicrons\":${backgroundRadius}," +
-            '"medianRadiusMicrons":0.0,' +
-            "\"sigmaMicrons\":${sigma}," +
-            "\"minAreaMicrons\":${minArea}," +
-            '"maxAreaMicrons":1000.0,' +
-            "\"threshold\":${detectionThreshold}," +
-            '"maxBackground":2.0,' +
-            '"watershedPostProcess":true,' +
-            '"excludeDAB":true,' +
-            "\"cellExpansionMicrons\":${cellExpansion}," +
-            '"limitExpansionByNucleusSize":false,' +
-            '"includeNuclei":true,' +
-            '"smoothBoundaries":false,' +
-            '"makeMeasurements":true' +
-        '}'
-    )
-}
-
-if (cellposeAvailable) {
-    // İç betiği ayrı bir GroovyShell'de çalıştır: `import qupath.ext.biop.cellpose.Cellpose2D`
-    // ifadesi yalnızca eklenti classpath'te ise parse olabildiği için, dış betik Cellpose
-    // yüklü olmayan kurulumlarda da çalışsın diye iç bloğa kapatıyoruz.
-    //
-    // KANAL HAZIRLIĞI (HER2 için kritik):
-    //   • Doğrudan RGB → Cellpose modeli "bright nuclei on dark background"
-    //     beklediği için brightfield görüntüde zayıf çalışır.
-    //   • Çözüm: önce **renk dekonvolüsyonu** uygulayıp DAB ve Hematoxylin
-    //     OD kanallarını çıkarıyoruz (boya bölgelerinde yüksek değer alan,
-    //     arka planda sıfıra yakın olan kanallar — Cellpose'un sevdiği biçim).
-    //   • ImageOps.Channels.extract(1, 0) → sırasıyla DAB (cyto/membran sinyali)
-    //     ve Hematoxylin (çekirdek sinyali) verir; Cellpose chan=DAB, chan2=H
-    //     olarak işler.
-    //
-    // PARAMETRELER:
-    //   • normalizePercentilesGlobal(0.1, 99.8, 10) — Cellpose normalize edilmiş
-    //     input bekler; bu adım atlanırsa hücreler büyük olasılıkla bulunmaz.
-    //   • diameter(25) — 0.5 µm/px'de yaklaşık 12.5 µm çaplı epitel hücreleri.
-    //     Çok küçük tümör hücreleri için 18-20, büyük apokrin hücreler için 30-35
-    //     deneyin. diameter(0) otomatik tahmin yapar (daha yavaş, daha tutarsız).
-    //   • cellExpansion(5.0) — çekirdek + sitoplazma sınırından dışarıya 5 µm
-    //     halka oluşturur; "Membrane: DAB OD mean" ölçümü bu halkadan alınır.
-    //
-    // ÇALIŞMA ZAMANI HATA YAKALAMA: Cellpose JAR'ı yüklü olabilir ama Python
-    // ortamı ayarlanmamış, model indirilmemiş veya bir tile başarısız olabilir.
-    // Bu durumda Watershed yedeğine geçiyoruz, betik kesintisiz tamamlanır.
-    def innerScript = """
-        import qupath.ext.biop.cellpose.Cellpose2D
-        import qupath.lib.scripting.QP
-        import qupath.opencv.ops.ImageOps
-
-        def stainVectors = QP.getCurrentImageData().getColorDeconvolutionStains()
-
-        def cellpose = Cellpose2D.builder("${cellposeModel}")
-            .pixelSize(${pixelSize})
-            .preprocess(
-                ImageOps.Channels.deconvolve(stainVectors),
-                ImageOps.Channels.extract(1, 0)   // 1=DAB (cyto), 0=Hematoxylin (nuclei)
-            )
-            .cellposeChannels(1, 2)               // Cellpose CLI: --chan 1 (DAB) --chan2 2 (H)
-                                                  // .preprocess() çıktısı 2 kanallı TIFF olarak yazılır;
-                                                  // bu çağrı olmadan CLI grayscale'e düşer -> 0 hücre.
-            .normalizePercentilesGlobal(0.1, 99.8, 10)
-            .diameter(${cellposeDiameter})
-            .cellExpansion(${cellExpansion})
-            .measureShape()
-            .measureIntensity()
-            .build()
-
-        cellpose.detectObjects(QP.getCurrentImageData(), QP.getSelectedObjects())
-    """
-    try {
-        new groovy.lang.GroovyShell(this.class.classLoader).evaluate(innerScript)
-    } catch (Throwable cellposeError) {
-        def reason = cellposeError.getMessage() ?: cellposeError.getClass().getSimpleName()
-        println "⚠ Cellpose çalıştırılamadı: ${reason}"
-        println "→ WatershedCellMembraneDetection yedeğine düşülüyor."
-        cellposeAvailable = false
-        detector = "WatershedCellMembraneDetection (Cellpose başarısız oldu)"
-        // Cellpose kısmi nesneler bırakmış olabilir — temizle.
-        def partial = targetAnnotation.getChildObjects().findAll { it.isDetection() }
-        if (!partial.isEmpty()) {
-            QP.removeObjects(partial, true)
-        }
-        QP.selectObjects(targetAnnotation)
-        runWatershedFallback()
-    }
-} else {
-    runWatershedFallback()
-}
-
-// Cell-by-cell intensity binning by membrane DAB OD
-// Creates classes: "Negative", "1+", "2+", "3+"
-QP.setCellIntensityClassifications("Membrane: DAB OD mean", membrane1, membrane2, membrane3)
-
-def cellElapsed = (System.currentTimeMillis() - t0) / 1000.0
-
-// ──────────────────────────────────────────────────────────────
-// 4b) Piksel bazlı H-score (Sara McArdle / Ram et al. PLoS One 2021)
+// 4a) Piksel bazlı H-score — BİRİNCİL, her zaman çalışır
+//     (Ram et al. PLoS One 2021 / Sara McArdle)
 //     Hücre tespitinden tamamen bağımsız. Annotation içindeki her pikseli
 //     DAB OD'ye göre 0/1+/2+/3+ olarak sınıflar; bir Hematoxylin maskesi ile
 //     boyasız boş alanlar dışlanır. Sonuç: alan-ağırlıklı H-score (0–300).
 // ──────────────────────────────────────────────────────────────
-def pixT0 = System.currentTimeMillis()
-def pixDab1 = atolyeD('atolye.pixDab1', 0.10)
-def pixDab2 = atolyeD('atolye.pixDab2', 0.30)
-def pixDab3 = atolyeD('atolye.pixDab3', 0.60)
-def pixDABthresholds = [pixDab1, pixDab2, pixDab3] as double[]   // 1+, 2+, 3+ DAB OD
-def pixHthreshold = atolyeD('atolye.pixHmask', 0.05)             // Hematoxylin OD — boş alanı maskelemek için
-double pixScale = atolyeD('atolye.pixScale', 1.0)                 // downsample (büyük = hızlı, daha az hassas)
+println "─────────────────────────────────────"
+println "Modül 4 - HER2 / Membran İHK"
+println "─────────────────────────────────────"
+println "Piksel bazlı H-score hesaplanıyor (birincil)..."
 
-def imgData = QP.getCurrentImageData()
-def cal = imgData.getServer().getPixelCalibration()
+def pixT0 = System.currentTimeMillis()
+def pixDABthresholds = [pixDab1, pixDab2, pixDab3] as double[]   // 1+, 2+, 3+ DAB OD
+
+def imgData  = QP.getCurrentImageData()
+def cal      = imgData.getServer().getPixelCalibration()
 def pixStains = imgData.getColorDeconvolutionStains()
 
 def op = ImageOps.buildImageDataOp().appendOps(
@@ -483,108 +363,285 @@ def pixClassMap = [
 ]
 
 def pixClassifier = PixelClassifiers.createClassifier(op, cal.createScaledInstance(pixScale, pixScale), pixClassMap)
-def pixServer = PixelClassifierTools.createPixelClassificationServer(imgData, pixClassifier)
-def pixManager = PixelClassifierTools.createMeasurementManager(pixServer)
-def pixPrefix = "H-score-px"
+def pixServer     = PixelClassifierTools.createPixelClassificationServer(imgData, pixClassifier)
+def pixManager    = PixelClassifierTools.createMeasurementManager(pixServer)
+def pixPrefix     = "H-score-px"
 
 // Pre-fetch tiles (parallel) to speed up large annotations
-def roi = targetAnnotation.getROI()
+def roi    = targetAnnotation.getROI()
 def region = ImageRegion.createInstance(roi)
-def tiles = pixServer.getTileRequestManager().getAllTileRequests()
+def tiles  = pixServer.getTileRequestManager().getAllTileRequests()
     .findAll { t -> t.getRegionRequest().intersects(region) }
 tiles.parallelStream().forEach { t -> pixServer.readRegion(t.getRegionRequest()) }
 
 PixelClassifierTools.addMeasurements([targetAnnotation], pixManager, pixPrefix)
 
-def pxArea1 = (targetAnnotation.measurements["${pixPrefix}: Pixel-1+ area µm^2"] ?: 0.0) as double
-def pxArea2 = (targetAnnotation.measurements["${pixPrefix}: Pixel-2+ area µm^2"] ?: 0.0) as double
-def pxArea3 = (targetAnnotation.measurements["${pixPrefix}: Pixel-3+ area µm^2"] ?: 0.0) as double
+def pxArea1   = (targetAnnotation.measurements["${pixPrefix}: Pixel-1+ area µm^2"]       ?: 0.0) as double
+def pxArea2   = (targetAnnotation.measurements["${pixPrefix}: Pixel-2+ area µm^2"]       ?: 0.0) as double
+def pxArea3   = (targetAnnotation.measurements["${pixPrefix}: Pixel-3+ area µm^2"]       ?: 0.0) as double
 def pxAreaNeg = (targetAnnotation.measurements["${pixPrefix}: Pixel-Negative area µm^2"] ?: 0.0) as double
 def pxAreaDenom = pxArea1 + pxArea2 + pxArea3 + pxAreaNeg
-def pxPct1 = pxAreaDenom > 0 ? 100.0 * pxArea1 / pxAreaDenom : 0.0
-def pxPct2 = pxAreaDenom > 0 ? 100.0 * pxArea2 / pxAreaDenom : 0.0
-def pxPct3 = pxAreaDenom > 0 ? 100.0 * pxArea3 / pxAreaDenom : 0.0
-def pxPctNeg = pxAreaDenom > 0 ? 100.0 * pxAreaNeg / pxAreaDenom : 0.0
+def pxPct1    = pxAreaDenom > 0 ? 100.0 * pxArea1   / pxAreaDenom : 0.0
+def pxPct2    = pxAreaDenom > 0 ? 100.0 * pxArea2   / pxAreaDenom : 0.0
+def pxPct3    = pxAreaDenom > 0 ? 100.0 * pxArea3   / pxAreaDenom : 0.0
+def pxPctNeg  = pxAreaDenom > 0 ? 100.0 * pxAreaNeg / pxAreaDenom : 0.0
 def pixelHScore = pxPct1 * 1 + pxPct2 * 2 + pxPct3 * 3
 targetAnnotation.measurements['Pixelwise H-score'] = pixelHScore
 
 def pixElapsed = (System.currentTimeMillis() - pixT0) / 1000.0
-def elapsed = cellElapsed + pixElapsed
+
+// ROI alanı ve büyük-ROI uyarısı
+double areaMm2 = targetAnnotation.getROI().getScaledArea(
+    cal.getPixelWidthMicrons(), cal.getPixelHeightMicrons()
+) / 1e6
+double LARGE_ROI_MM2 = 25.0  // sezgisel; kalibre değil
+def roiWarnStr = areaMm2 > LARGE_ROI_MM2
+    ? "\n⚠ Büyük ROI uyarısı: seçili alan ${String.format('%.1f', areaMm2)} mm²" +
+      " (eşik ${String.format('%.0f', LARGE_ROI_MM2)} mm²).\n" +
+      "  Stroma içeren büyük alanlar piksel H-score'u seyreltebilir.\n" +
+      "  Daha güvenilir sonuç için yalnızca tümör (epitel) bölgesini seçin.\n"
+    : ""
+
+println "  Piksel H-score: ${String.format('%.0f', pixelHScore)} / 300  (süre: ${String.format('%.1f', pixElapsed)} sn)"
 
 // ──────────────────────────────────────────────────────────────
-// 5) Sonuçları topla
+// 4b) Hücre bazlı H-score — İKİNCİL, non-blocking
+//     Membran-aware hücre tespiti: Cellpose öncelikli, Watershed yedek.
+//     Herhangi bir hata → cellBasedOk = false, atlanır. Birincil piksel
+//     sonucu etkilenmez.
 // ──────────────────────────────────────────────────────────────
-def cells = targetAnnotation.getChildObjects().findAll { it.isDetection() }
-def totalCells = cells.size()
 
-def n0 = 0, n1 = 0, n2 = 0, n3 = 0
-cells.each { c ->
-    def cls = c.getPathClass()?.getName() ?: ""
-    if (cls.contains("3+"))      n3++
-    else if (cls.contains("2+")) n2++
-    else if (cls.contains("1+")) n1++
-    else                          n0++
+// Tüm hücre bazlı değişkenleri try bloğunun DIŞINDA tanımla
+// (result window her iki durumda da bunlara erişir)
+boolean cellBasedOk = true
+String detector = "—"
+int totalCells = 0, n0 = 0, n1 = 0, n2 = 0, n3 = 0
+double hScore = 0.0
+double cellElapsed = 0.0
+
+try {
+    def cellposeAvailable = cellposeHere
+    if (!cellposeAvailable) {
+        println "Cellpose eklentisi bulunamadı → WatershedCellMembraneDetection'a düşülüyor."
+    }
+
+    detector = cellposeAvailable ? "Cellpose (cyto3, DAB + H OD)" : "WatershedCellMembraneDetection (DAB-temelli)"
+    println "Hücre bazlı tespit başlatılıyor (ikincil)..."
+    println "  • Detektör: ${detector}"
+    println "  • Grup eşikleri (Membrane: DAB OD mean): ${membrane1} / ${membrane2} / ${membrane3}"
+    println "  • Hücre genişletme (cell expansion): ${cellExpansion} µm"
+
+    def t0 = System.currentTimeMillis()
+
+    QP.selectObjects(targetAnnotation)
+
+    // Yardımcı kapatma: Watershed-tabanlı yedek detektör.
+    def runWatershedFallback = {
+        QP.runPlugin(
+            'qupath.imagej.detect.cells.WatershedCellMembraneDetection',
+            '{' +
+                '"detectionImageBrightfield":"Hematoxylin OD",' +
+                "\"requestedPixelSizeMicrons\":${pixelSize}," +
+                "\"backgroundRadiusMicrons\":${backgroundRadius}," +
+                '"medianRadiusMicrons":0.0,' +
+                "\"sigmaMicrons\":${sigma}," +
+                "\"minAreaMicrons\":${minArea}," +
+                '"maxAreaMicrons":1000.0,' +
+                "\"threshold\":${detectionThreshold}," +
+                '"maxBackground":2.0,' +
+                '"watershedPostProcess":true,' +
+                '"excludeDAB":true,' +
+                "\"cellExpansionMicrons\":${cellExpansion}," +
+                '"limitExpansionByNucleusSize":false,' +
+                '"includeNuclei":true,' +
+                '"smoothBoundaries":false,' +
+                '"makeMeasurements":true' +
+            '}'
+        )
+    }
+
+    if (cellposeAvailable) {
+        // İç betiği ayrı bir GroovyShell'de çalıştır: `import qupath.ext.biop.cellpose.Cellpose2D`
+        // ifadesi yalnızca eklenti classpath'te ise parse olabildiği için, dış betik Cellpose
+        // yüklü olmayan kurulumlarda da çalışsın diye iç bloğa kapatıyoruz.
+        //
+        // KANAL HAZIRLIĞI (HER2 için kritik):
+        //   • Doğrudan RGB → Cellpose modeli "bright nuclei on dark background"
+        //     beklediği için brightfield görüntüde zayıf çalışır.
+        //   • Çözüm: önce **renk dekonvolüsyonu** uygulayıp DAB ve Hematoxylin
+        //     OD kanallarını çıkarıyoruz (boya bölgelerinde yüksek değer alan,
+        //     arka planda sıfıra yakın olan kanallar — Cellpose'un sevdiği biçim).
+        //   • ImageOps.Channels.extract(1, 0) → sırasıyla DAB (cyto/membran sinyali)
+        //     ve Hematoxylin (çekirdek sinyali) verir; Cellpose chan=DAB, chan2=H
+        //     olarak işler.
+        //
+        // PARAMETRELER:
+        //   • normalizePercentilesGlobal(0.1, 99.8, 10) — Cellpose normalize edilmiş
+        //     input bekler; bu adım atlanırsa hücreler büyük olasılıkla bulunmaz.
+        //   • diameter(25) — 0.5 µm/px'de yaklaşık 12.5 µm çaplı epitel hücreleri.
+        //     Çok küçük tümör hücreleri için 18-20, büyük apokrin hücreler için 30-35
+        //     deneyin. diameter(0) otomatik tahmin yapar (daha yavaş, daha tutarsız).
+        //   • cellExpansion(5.0) — çekirdek + sitoplazma sınırından dışarıya 5 µm
+        //     halka oluşturur; "Membrane: DAB OD mean" ölçümü bu halkadan alınır.
+        //
+        // ÇALIŞMA ZAMANI HATA YAKALAMA: Cellpose JAR'ı yüklü olabilir ama Python
+        // ortamı ayarlanmamış, model indirilmemiş veya bir tile başarısız olabilir.
+        // Bu durumda Watershed yedeğine geçiyoruz, betik kesintisiz tamamlanır.
+        def innerScript = """
+            import qupath.ext.biop.cellpose.Cellpose2D
+            import qupath.lib.scripting.QP
+            import qupath.opencv.ops.ImageOps
+
+            def stainVectors = QP.getCurrentImageData().getColorDeconvolutionStains()
+
+            def cellpose = Cellpose2D.builder("${cellposeModel}")
+                .pixelSize(${pixelSize})
+                .preprocess(
+                    ImageOps.Channels.deconvolve(stainVectors),
+                    ImageOps.Channels.extract(1, 0)   // 1=DAB (cyto), 0=Hematoxylin (nuclei)
+                )
+                .cellposeChannels(1, 2)               // Cellpose CLI: --chan 1 (DAB) --chan2 2 (H)
+                                                      // .preprocess() çıktısı 2 kanallı TIFF olarak yazılır;
+                                                      // bu çağrı olmadan CLI grayscale'e düşer -> 0 hücre.
+                .normalizePercentilesGlobal(0.1, 99.8, 10)
+                .diameter(${cellposeDiameter})
+                .cellExpansion(${cellExpansion})
+                .measureShape()
+                .measureIntensity()
+                .build()
+
+            cellpose.detectObjects(QP.getCurrentImageData(), QP.getSelectedObjects())
+        """
+        try {
+            new groovy.lang.GroovyShell(this.class.classLoader).evaluate(innerScript)
+        } catch (Throwable cellposeError) {
+            def reason = cellposeError.getMessage() ?: cellposeError.getClass().getSimpleName()
+            println "⚠ Cellpose çalıştırılamadı: ${reason}"
+            println "→ WatershedCellMembraneDetection yedeğine düşülüyor."
+            cellposeAvailable = false
+            detector = "WatershedCellMembraneDetection (Cellpose başarısız oldu)"
+            // Cellpose kısmi nesneler bırakmış olabilir — temizle.
+            def partial = targetAnnotation.getChildObjects().findAll { it.isDetection() }
+            if (!partial.isEmpty()) {
+                QP.removeObjects(partial, true)
+            }
+            QP.selectObjects(targetAnnotation)
+            runWatershedFallback()
+        }
+    } else {
+        runWatershedFallback()
+    }
+
+    // Cell-by-cell intensity binning by membrane DAB OD
+    // Creates classes: "Negative", "1+", "2+", "3+"
+    QP.setCellIntensityClassifications("Membrane: DAB OD mean", membrane1, membrane2, membrane3)
+
+    cellElapsed = (System.currentTimeMillis() - t0) / 1000.0
+
+    // Hücre sayımı
+    def cells = targetAnnotation.getChildObjects().findAll { it.isDetection() }
+    totalCells = cells.size()
+
+    cells.each { c ->
+        def cls = c.getPathClass()?.getName() ?: ""
+        if (cls.contains("3+"))      n3++
+        else if (cls.contains("2+")) n2++
+        else if (cls.contains("1+")) n1++
+        else                          n0++
+    }
+
+    def pct = { count -> totalCells > 0 ? 100.0 * count / totalCells : 0.0 }
+    hScore = pct(n1) + 2.0 * pct(n2) + 3.0 * pct(n3)
+
+    println "  Hücre bazlı H-score: ${String.format('%.0f', hScore)} / 300  (${totalCells} hücre, ${String.format('%.1f', cellElapsed)} sn)"
+
+} catch (Throwable cellErr) {
+    cellBasedOk = false
+    def reason = cellErr.getMessage() ?: cellErr.getClass().getSimpleName()
+    println "⚠ Hücre bazlı tespit atlandı: ${reason}"
+    println "  Birincil piksel H-score sonucu etkilenmedi."
 }
 
-def pct = { count -> totalCells > 0 ? 100.0 * count / totalCells : 0.0 }
-def pct0 = pct(n0), pct1 = pct(n1), pct2 = pct(n2), pct3 = pct(n3)
-def hScore = pct1 + 2.0 * pct2 + 3.0 * pct3
+// ──────────────────────────────────────────────────────────────
+// 5) Sonucu sun — piksel bazlı birincil, hücre bazlı ikincil
+// ──────────────────────────────────────────────────────────────
 
-def warnCount = atolyeI('atolye.warnGenericCount', 200)
-def uyari = ""
-if (totalCells < warnCount) {
-    uyari = String.format("\n📝 Not: %,d hücre <200 — küçük örneklem; sonuç istatistiksel olarak güvenilir olmayabilir.", totalCells)
+// Per-cell percentages (safe: totalCells=0 when cellBasedOk=false → all 0.0)
+def pct0Cell = totalCells > 0 ? 100.0 * n0 / totalCells : 0.0
+def pct1Cell = totalCells > 0 ? 100.0 * n1 / totalCells : 0.0
+def pct2Cell = totalCells > 0 ? 100.0 * n2 / totalCells : 0.0
+def pct3Cell = totalCells > 0 ? 100.0 * n3 / totalCells : 0.0
+
+// Piksel bazlı blok (her zaman) — pure GString, no String.format wrapping the block
+def pixBlock =
+    "HER2 / Membran İHK skorlaması bitti.\n\n" +
+    "═══════════════════════════════════════════════════════════\n" +
+    "  PİKSEL-BAZLI H-SCORE  (birincil · segmentasyon-bağımsız)\n" +
+    "═══════════════════════════════════════════════════════════\n" +
+    "  H-score          : ${String.format('%.0f', pixelHScore)} / 300\n" +
+    "  Negatif          : %${String.format('%.1f', pxPctNeg)}\n" +
+    "  1+ (zayıf)       : %${String.format('%.1f', pxPct1)}\n" +
+    "  2+ (orta)        : %${String.format('%.1f', pxPct2)}\n" +
+    "  3+ (güçlü)       : %${String.format('%.1f', pxPct3)}\n" +
+    "  Toplam pozitif   : %${String.format('%.1f', (pxPct1 + pxPct2 + pxPct3))}\n\n" +
+    "  Eşikler: DAB [${String.format('%.2f', pixDABthresholds[0])} / " +
+                    "${String.format('%.2f', pixDABthresholds[1])} / " +
+                    "${String.format('%.2f', pixDABthresholds[2])}] OD," +
+              "  H mask ${String.format('%.2f', pixHthreshold)} OD\n" +
+    "  Alan (boyalı)    : ${String.format('%,.0f', pxAreaDenom)} µm²\n" +
+    "  Bölge            : seçili ROI · ${String.format('%.2f', areaMm2)} mm²" +
+                        "  (süre: ${String.format('%.1f', pixElapsed)} sn)\n\n"
+
+// Hücre bazlı blok (koşullu) — pure GString
+def cellBlock
+if (cellBasedOk) {
+    def uyari = totalCells < warnCount
+        ? "\n  📝 Not: ${String.format('%,d', totalCells)} hücre < ${String.format('%,d', warnCount)}" +
+          " — küçük örneklem; istatistiksel güvenilirlik sınırlı."
+        : ""
+    cellBlock =
+        "═══════════════════════════════════════════════════════════\n" +
+        "  Hücre bazlı  (karşılaştırma · ring) — ${detector}\n" +
+        "═══════════════════════════════════════════════════════════\n" +
+        "  H-score          : ${String.format('%.0f', hScore)} / 300\n" +
+        "  Toplam hücre     : ${String.format('%,d', totalCells)}\n" +
+        "  0  (negatif)     : ${String.format('%,d', n0)}  (%${String.format('%.1f', pct0Cell)})\n" +
+        "  1+ (zayıf)       : ${String.format('%,d', n1)}  (%${String.format('%.1f', pct1Cell)})\n" +
+        "  2+ (orta)        : ${String.format('%,d', n2)}  (%${String.format('%.1f', pct2Cell)})\n" +
+        "  3+ (güçlü)       : ${String.format('%,d', n3)}  (%${String.format('%.1f', pct3Cell)})\n" +
+        "  Süre             : ${String.format('%.1f', cellElapsed)} sn${uyari}\n" +
+        "  ⓘ İki yöntem farklıysa: ring sitoplazma/eksik membranı yanlış örnekleyebilir.\n\n"
+} else {
+    cellBlock = "Hücre bazlı karşılaştırma atlandı (Cellpose/Watershed yok ya da hata).\n\n"
 }
 
-// ──────────────────────────────────────────────────────────────
-// 7) Sonucu sun — yalnızca sayısal özet
-// ──────────────────────────────────────────────────────────────
+// Bütünlük notu (her zaman)
+def completenessNote =
+    "───────────────────────────────────────────────────────────\n" +
+    "Not: Bu betik membran boyamasının GÜCÜNÜ ölçer; membranın\n" +
+    "kaç hücrede TAM çevrelendiğini (bütünlük) ÖLÇMEZ. (Sode 2023)\n\n"
+
+// Büyük ROI uyarısı (koşullu — boş string ise eklenmez)
+def roiWarn = roiWarnStr.isEmpty() ? "" : roiWarnStr + "\n"
+
+// Son uyarı satırı
+def finalDisclaimer = "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+
 showResultWindow(
     "Tamamlandı 🧬",
-    String.format(
-        "HER2 / Membran İHK skorlaması bitti.\n\n" +
-        "═══════════════════════════════════════════════════\n" +
-        "  A. HÜCRE BAZLI — %s\n" +
-        "═══════════════════════════════════════════════════\n" +
-        "📊 Hücre dağılımı (n = %,d toplam)\n" +
-        "  0  (negatif)        : %,d  (%%%.1f)\n" +
-        "  1+ (zayıf)          : %,d  (%%%.1f)\n" +
-        "  2+ (orta)           : %,d  (%%%.1f)\n" +
-        "  3+ (güçlü)          : %,d  (%%%.1f)\n" +
-        "  Toplam pozitif (≥1+): %%%.1f\n\n" +
-        "  H-score (hücre)     : %.0f / 300\n" +
-        "  Süre                : %.1f sn\n\n" +
-        "═══════════════════════════════════════════════════\n" +
-        "  B. PİKSEL BAZLI — Ram et al. 2021 / S. McArdle\n" +
-        "═══════════════════════════════════════════════════\n" +
-        "📊 Alan dağılımı (toplam %,.0f µm², boyasız alanlar maskelendi)\n" +
-        "  0  (negatif)        : %%%.1f\n" +
-        "  1+ (zayıf)          : %%%.1f\n" +
-        "  2+ (orta)           : %%%.1f\n" +
-        "  3+ (güçlü)          : %%%.1f\n\n" +
-        "  Pixelwise H-score   : %.0f / 300\n" +
-        "  Süre (piksel geçişi)  : %.1f sn\n\n" +
-        "  Eşikler: DAB [%.2f / %.2f / %.2f] OD,  H mask %.2f OD\n" +
-        "%s\n" +
-        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
-        detector,
-        totalCells,
-        n0, pct0, n1, pct1, n2, pct2, n3, pct3, (pct1 + pct2 + pct3),
-        hScore, cellElapsed,
-        pxAreaDenom,
-        pxPctNeg, pxPct1, pxPct2, pxPct3,
-        pixelHScore, pixElapsed,
-        pixDABthresholds[0], pixDABthresholds[1], pixDABthresholds[2], pixHthreshold,
-        uyari
-    )
+    pixBlock + cellBlock + completenessNote + roiWarn + finalDisclaimer
 )
 
 println "─────────────────────────────────────"
 println "Tamamlandı:"
-println "  Hücre (n=${totalCells}) | H-score: ${String.format('%.0f', hScore)}"
-println "  0:${n0} (${String.format('%.1f', pct0)}%) | 1+:${n1} (${String.format('%.1f', pct1)}%) | 2+:${n2} (${String.format('%.1f', pct2)}%) | 3+:${n3} (${String.format('%.1f', pct3)}%)"
-println "  Piksel H-score: ${String.format('%.0f', pixelHScore)}"
+println "  Piksel H-score: ${String.format('%.0f', pixelHScore)} / 300"
 println "    Neg:${String.format('%.1f', pxPctNeg)}% | 1+:${String.format('%.1f', pxPct1)}% | 2+:${String.format('%.1f', pxPct2)}% | 3+:${String.format('%.1f', pxPct3)}%"
+if (cellBasedOk) {
+    println "  Hücre (n=${totalCells}) | H-score: ${String.format('%.0f', hScore)}"
+    println "  0:${n0} (${String.format('%.1f', pct0Cell)}%) | 1+:${n1} (${String.format('%.1f', pct1Cell)}%) | 2+:${n2} (${String.format('%.1f', pct2Cell)}%) | 3+:${n3} (${String.format('%.1f', pct3Cell)}%)"
+} else {
+    println "  Hücre bazlı: atlandı"
+}
 println "─────────────────────────────────────"
 
 // ──────────────────────────────────────────────────────────────
