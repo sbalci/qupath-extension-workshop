@@ -396,13 +396,13 @@ double areaMm2 = targetAnnotation.getROI().getScaledArea(
 ) / 1e6
 double LARGE_ROI_MM2 = 25.0  // sezgisel; kalibre değil
 def roiWarnStr = areaMm2 > LARGE_ROI_MM2
-    ? "\n⚠ Büyük ROI uyarısı: seçili alan ${String.format('%.1f', areaMm2)} mm²" +
-      " (eşik ${String.format('%.0f', LARGE_ROI_MM2)} mm²).\n" +
+    ? "\n⚠ Büyük ROI uyarısı: seçili alan ${String.format(java.util.Locale.US, '%.1f', areaMm2)} mm²" +
+      " (eşik ${String.format(java.util.Locale.US, '%.0f', LARGE_ROI_MM2)} mm²).\n" +
       "  Stroma içeren büyük alanlar piksel H-score'u seyreltebilir.\n" +
       "  Daha güvenilir sonuç için yalnızca tümör (epitel) bölgesini seçin.\n"
     : ""
 
-println "  Piksel H-score: ${String.format('%.0f', pixelHScore)} / 300  (süre: ${String.format('%.1f', pixElapsed)} sn)"
+println "  Piksel H-score: ${String.format(java.util.Locale.US, '%.0f', pixelHScore)} / 300  (süre: ${String.format(java.util.Locale.US, '%.1f', pixElapsed)} sn)"
 
 // ──────────────────────────────────────────────────────────────
 // 4b) Hücre bazlı H-score — İKİNCİL, non-blocking
@@ -553,7 +553,7 @@ try {
     def pct = { count -> totalCells > 0 ? 100.0 * count / totalCells : 0.0 }
     hScore = pct(n1) + 2.0 * pct(n2) + 3.0 * pct(n3)
 
-    println "  Hücre bazlı H-score: ${String.format('%.0f', hScore)} / 300  (${totalCells} hücre, ${String.format('%.1f', cellElapsed)} sn)"
+    println "  Hücre bazlı H-score: ${String.format(java.util.Locale.US, '%.0f', hScore)} / 300  (${totalCells} hücre, ${String.format(java.util.Locale.US, '%.1f', cellElapsed)} sn)"
 
 } catch (Throwable cellErr) {
     cellBasedOk = false
@@ -578,38 +578,38 @@ def pixBlock =
     "═══════════════════════════════════════════════════════════\n" +
     "  PİKSEL-BAZLI H-SCORE  (birincil · segmentasyon-bağımsız)\n" +
     "═══════════════════════════════════════════════════════════\n" +
-    "  H-score          : ${String.format('%.0f', pixelHScore)} / 300\n" +
-    "  Negatif          : %${String.format('%.1f', pxPctNeg)}\n" +
-    "  1+ (zayıf)       : %${String.format('%.1f', pxPct1)}\n" +
-    "  2+ (orta)        : %${String.format('%.1f', pxPct2)}\n" +
-    "  3+ (güçlü)       : %${String.format('%.1f', pxPct3)}\n" +
-    "  Toplam pozitif   : %${String.format('%.1f', (pxPct1 + pxPct2 + pxPct3))}\n\n" +
-    "  Eşikler: DAB [${String.format('%.2f', pixDABthresholds[0])} / " +
-                    "${String.format('%.2f', pixDABthresholds[1])} / " +
-                    "${String.format('%.2f', pixDABthresholds[2])}] OD," +
-              "  H mask ${String.format('%.2f', pixHthreshold)} OD\n" +
-    "  Alan (boyalı)    : ${String.format('%,.0f', pxAreaDenom)} µm²\n" +
-    "  Bölge            : seçili ROI · ${String.format('%.2f', areaMm2)} mm²" +
-                        "  (süre: ${String.format('%.1f', pixElapsed)} sn)\n\n"
+    "  H-score          : ${String.format(java.util.Locale.US, '%.0f', pixelHScore)} / 300\n" +
+    "  Negatif          : %${String.format(java.util.Locale.US, '%.1f', pxPctNeg)}\n" +
+    "  1+ (zayıf)       : %${String.format(java.util.Locale.US, '%.1f', pxPct1)}\n" +
+    "  2+ (orta)        : %${String.format(java.util.Locale.US, '%.1f', pxPct2)}\n" +
+    "  3+ (güçlü)       : %${String.format(java.util.Locale.US, '%.1f', pxPct3)}\n" +
+    "  Toplam pozitif   : %${String.format(java.util.Locale.US, '%.1f', (pxPct1 + pxPct2 + pxPct3))}\n\n" +
+    "  Eşikler: DAB [${String.format(java.util.Locale.US, '%.2f', pixDABthresholds[0])} / " +
+                    "${String.format(java.util.Locale.US, '%.2f', pixDABthresholds[1])} / " +
+                    "${String.format(java.util.Locale.US, '%.2f', pixDABthresholds[2])}] OD," +
+              "  H mask ${String.format(java.util.Locale.US, '%.2f', pixHthreshold)} OD\n" +
+    "  Alan (boyalı)    : ${String.format(java.util.Locale.US, '%,.0f', pxAreaDenom)} µm²\n" +
+    "  Bölge            : seçili ROI · ${String.format(java.util.Locale.US, '%.2f', areaMm2)} mm²" +
+                        "  (süre: ${String.format(java.util.Locale.US, '%.1f', pixElapsed)} sn)\n\n"
 
 // Hücre bazlı blok (koşullu) — pure GString
 def cellBlock
 if (cellBasedOk) {
     def uyari = totalCells < warnCount
-        ? "\n  📝 Not: ${String.format('%,d', totalCells)} hücre < ${String.format('%,d', warnCount)}" +
+        ? "\n  📝 Not: ${String.format(java.util.Locale.US, '%,d', totalCells)} hücre < ${String.format(java.util.Locale.US, '%,d', warnCount)}" +
           " — küçük örneklem; istatistiksel güvenilirlik sınırlı."
         : ""
     cellBlock =
         "═══════════════════════════════════════════════════════════\n" +
         "  Hücre bazlı  (karşılaştırma · ring) — ${detector}\n" +
         "═══════════════════════════════════════════════════════════\n" +
-        "  H-score          : ${String.format('%.0f', hScore)} / 300\n" +
-        "  Toplam hücre     : ${String.format('%,d', totalCells)}\n" +
-        "  0  (negatif)     : ${String.format('%,d', n0)}  (%${String.format('%.1f', pct0Cell)})\n" +
-        "  1+ (zayıf)       : ${String.format('%,d', n1)}  (%${String.format('%.1f', pct1Cell)})\n" +
-        "  2+ (orta)        : ${String.format('%,d', n2)}  (%${String.format('%.1f', pct2Cell)})\n" +
-        "  3+ (güçlü)       : ${String.format('%,d', n3)}  (%${String.format('%.1f', pct3Cell)})\n" +
-        "  Süre             : ${String.format('%.1f', cellElapsed)} sn${uyari}\n" +
+        "  H-score          : ${String.format(java.util.Locale.US, '%.0f', hScore)} / 300\n" +
+        "  Toplam hücre     : ${String.format(java.util.Locale.US, '%,d', totalCells)}\n" +
+        "  0  (negatif)     : ${String.format(java.util.Locale.US, '%,d', n0)}  (%${String.format(java.util.Locale.US, '%.1f', pct0Cell)})\n" +
+        "  1+ (zayıf)       : ${String.format(java.util.Locale.US, '%,d', n1)}  (%${String.format(java.util.Locale.US, '%.1f', pct1Cell)})\n" +
+        "  2+ (orta)        : ${String.format(java.util.Locale.US, '%,d', n2)}  (%${String.format(java.util.Locale.US, '%.1f', pct2Cell)})\n" +
+        "  3+ (güçlü)       : ${String.format(java.util.Locale.US, '%,d', n3)}  (%${String.format(java.util.Locale.US, '%.1f', pct3Cell)})\n" +
+        "  Süre             : ${String.format(java.util.Locale.US, '%.1f', cellElapsed)} sn${uyari}\n" +
         "  ⓘ İki yöntem farklıysa: ring sitoplazma/eksik membranı yanlış örnekleyebilir.\n\n"
 } else {
     cellBlock = "Hücre bazlı karşılaştırma atlandı (Cellpose/Watershed yok ya da hata).\n\n"
@@ -634,11 +634,11 @@ showResultWindow(
 
 println "─────────────────────────────────────"
 println "Tamamlandı:"
-println "  Piksel H-score: ${String.format('%.0f', pixelHScore)} / 300"
-println "    Neg:${String.format('%.1f', pxPctNeg)}% | 1+:${String.format('%.1f', pxPct1)}% | 2+:${String.format('%.1f', pxPct2)}% | 3+:${String.format('%.1f', pxPct3)}%"
+println "  Piksel H-score: ${String.format(java.util.Locale.US, '%.0f', pixelHScore)} / 300"
+println "    Neg:${String.format(java.util.Locale.US, '%.1f', pxPctNeg)}% | 1+:${String.format(java.util.Locale.US, '%.1f', pxPct1)}% | 2+:${String.format(java.util.Locale.US, '%.1f', pxPct2)}% | 3+:${String.format(java.util.Locale.US, '%.1f', pxPct3)}%"
 if (cellBasedOk) {
-    println "  Hücre (n=${totalCells}) | H-score: ${String.format('%.0f', hScore)}"
-    println "  0:${n0} (${String.format('%.1f', pct0Cell)}%) | 1+:${n1} (${String.format('%.1f', pct1Cell)}%) | 2+:${n2} (${String.format('%.1f', pct2Cell)}%) | 3+:${n3} (${String.format('%.1f', pct3Cell)}%)"
+    println "  Hücre (n=${totalCells}) | H-score: ${String.format(java.util.Locale.US, '%.0f', hScore)}"
+    println "  0:${n0} (${String.format(java.util.Locale.US, '%.1f', pct0Cell)}%) | 1+:${n1} (${String.format(java.util.Locale.US, '%.1f', pct1Cell)}%) | 2+:${n2} (${String.format(java.util.Locale.US, '%.1f', pct2Cell)}%) | 3+:${n3} (${String.format(java.util.Locale.US, '%.1f', pct3Cell)}%)"
 } else {
     println "  Hücre bazlı: atlandı"
 }

@@ -314,7 +314,7 @@ def density = totalAreaMm2 > 0 ? Math.round(totalCells / totalAreaMm2) : 0
 // ──────────────────────────────────────────────────────────────
 showResultWindow(
     "Tamamlandı 🎉",
-    String.format(
+    String.format(java.util.Locale.US, 
         "İlk hesaplamalı hücre sayımınız bitti.\n\n" +
         "📊 Sonuçlar\n" +
         "──────────\n" +
@@ -328,5 +328,5 @@ showResultWindow(
 )
 
 println "─────────────────────────────────────"
-println "Tamamlandı: ${totalCells} hücre / ${String.format('%.2f', totalAreaMm2)} mm² / ${density} hücre/mm² (${elapsed} sn)"
+println "Tamamlandı: ${totalCells} hücre / ${String.format(java.util.Locale.US, '%.2f', totalAreaMm2)} mm² / ${density} hücre/mm² (${elapsed} sn)"
 println "─────────────────────────────────────"

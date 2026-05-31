@@ -329,7 +329,7 @@ if (tumorAnnotations.isEmpty()) {
             "  Sınıflandırıcı bu slayt için iyi eğitilmemiş olabilir.\n" +
             "  Modül 6'daki aktif öğrenme iş akışıyla daha fazla anotasyon ekleyin."
 } else if (totalAreaMm2 < warnTissueAreaMm2) {
-    uyari = String.format("\n⚠️ Çok küçük doku alanı (%.2f mm²) — sonuçlar güvenilir olmayabilir.", totalAreaMm2)
+    uyari = String.format(java.util.Locale.US, "\n⚠️ Çok küçük doku alanı (%.2f mm²) — sonuçlar güvenilir olmayabilir.", totalAreaMm2)
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -337,7 +337,7 @@ if (tumorAnnotations.isEmpty()) {
 // ──────────────────────────────────────────────────────────────
 showResultWindow(
     "Tamamlandı 🧠",
-    String.format(
+    String.format(java.util.Locale.US, 
         "Tümör vs Stroma segmentasyonu bitti.\n\n" +
         "📊 Alan dağılımı\n" +
         "─────────────────\n" +
@@ -358,7 +358,7 @@ showResultWindow(
 
 println "─────────────────────────────────────"
 println "Tamamlandı:"
-println String.format("  Tümör: %.2f mm² (%d nesne)", tumorAreaMm2, tumorAnnotations.size())
-println String.format("  Stroma: %.2f mm² (%d nesne)", stromaAreaMm2, stromaAnnotations.size())
-println String.format("  TSR: %.1f%%  |  Süre: %.1f sn", tsr, elapsed)
+println String.format(java.util.Locale.US, "  Tümör: %.2f mm² (%d nesne)", tumorAreaMm2, tumorAnnotations.size())
+println String.format(java.util.Locale.US, "  Stroma: %.2f mm² (%d nesne)", stromaAreaMm2, stromaAnnotations.size())
+println String.format(java.util.Locale.US, "  TSR: %.1f%%  |  Süre: %.1f sn", tsr, elapsed)
 println "─────────────────────────────────────"

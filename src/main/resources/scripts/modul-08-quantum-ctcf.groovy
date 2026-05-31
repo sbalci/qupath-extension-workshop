@@ -310,7 +310,7 @@ def step2Time = (t1 - t0) / 1000.0
 
 def detectedCells = tcr.getChildObjects().findAll { it.isDetection() }
 def totalNuclei = detectedCells.size()
-println String.format("  ✓ %,d nükleus tespit edildi (%.1f sn)", totalNuclei, step2Time)
+println String.format(java.util.Locale.US, "  ✓ %,d nükleus tespit edildi (%.1f sn)", totalNuclei, step2Time)
 
 if (totalNuclei == 0) {
     Dialogs.showErrorMessage(
@@ -347,7 +347,7 @@ if (hasClassifier) {
         else if (cls.contains("ignore")) ignoreCount++
         else                              nonNeoCount++   // Non-neoplastic / Other / vb.
     }
-    println String.format("  ✓ Tumor: %d  |  Non-neoplastic: %d  |  Ignore: %d  (%.1f sn)",
+    println String.format(java.util.Locale.US, "  ✓ Tumor: %d  |  Non-neoplastic: %d  |  Ignore: %d  (%.1f sn)",
         tumorCount, nonNeoCount, ignoreCount, step3Time)
 } else {
     println "Adım 3/4: Atlandı — nesne sınıflandırıcı yok."
@@ -362,7 +362,7 @@ def cTCFmetin = "Sınıflandırıcı yok — cTCF hesaplanamadı"
 if (hasClassifier) {
     def validTotal = tumorCount + nonNeoCount  // Ignore'u dışla
     cTCF = validTotal > 0 ? 100.0 * tumorCount / validTotal : 0.0
-    cTCFmetin = String.format("%.1f%%", cTCF)
+    cTCFmetin = String.format(java.util.Locale.US, "%.1f%%", cTCF)
 }
 
 // Alan hesabı
@@ -392,7 +392,7 @@ if (!hasClassifier) {
 
 showResultWindow(
     "QuANTUM Tamamlandı 🧪",
-    String.format(
+    String.format(java.util.Locale.US, 
         "QuANTUM-tarzı cTCF iş akışı bitti.\n\n" +
         "🎯 TCR ve Sayım\n" +
         "────────────────\n" +
@@ -413,10 +413,10 @@ showResultWindow(
 )
 
 println "─────────────────────────────────────"
-println String.format("QuANTUM Tamamlandı:")
-println String.format("  TCR: %.2f mm²  |  Nükleus: %,d", tcrAreaMm2, totalNuclei)
+println String.format(java.util.Locale.US, "QuANTUM Tamamlandı:")
+println String.format(java.util.Locale.US, "  TCR: %.2f mm²  |  Nükleus: %,d", tcrAreaMm2, totalNuclei)
 if (hasClassifier) {
-    println String.format("  Tumor: %,d  |  Non-neo: %,d  |  cTCF: %s", tumorCount, nonNeoCount, cTCFmetin)
+    println String.format(java.util.Locale.US, "  Tumor: %,d  |  Non-neo: %,d  |  cTCF: %s", tumorCount, nonNeoCount, cTCFmetin)
 }
-println String.format("  Toplam süre: %.1f sn", totalElapsed)
+println String.format(java.util.Locale.US, "  Toplam süre: %.1f sn", totalElapsed)
 println "─────────────────────────────────────"

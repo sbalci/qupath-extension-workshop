@@ -331,7 +331,7 @@ if (tumorAnnotations.isEmpty()) {
 
 def t1 = System.currentTimeMillis()
 def step1Time = (t1 - t0) / 1000.0
-println String.format("  ✓ %d tümör nesnesi (%.1f sn)", tumorAnnotations.size(), step1Time)
+println String.format(java.util.Locale.US, "  ✓ %d tümör nesnesi (%.1f sn)", tumorAnnotations.size(), step1Time)
 
 // ──────────────────────────────────────────────────────────────
 // 4) Adım 2 — Tümör seçili, pozitif hücre tespiti
@@ -369,7 +369,7 @@ QP.runPlugin(
 
 def t2 = System.currentTimeMillis()
 def step2Time = (t2 - t1) / 1000.0
-println String.format("  ✓ Pozitif hücre tespiti bitti (%.1f sn)", step2Time)
+println String.format(java.util.Locale.US, "  ✓ Pozitif hücre tespiti bitti (%.1f sn)", step2Time)
 
 // ──────────────────────────────────────────────────────────────
 // 5) Adım 3 — Tümör hücrelerini topla
@@ -396,7 +396,7 @@ def pVal = tumorStats.ki67LI / 100.0
 def zVal = atolyeD('atolye.ciZ', 1.96) // 95% güven
 def ciMinCells = atolyeI('atolye.ciMinCells', 30)
 def errorMargin = nCells > ciMinCells ? zVal * Math.sqrt((pVal * (1 - pVal)) / nCells) * 100.0 : 0.0
-def ciMetin = nCells > ciMinCells ? String.format("±%.1f%%", errorMargin) : "(n<${ciMinCells})"
+def ciMetin = nCells > ciMinCells ? String.format(java.util.Locale.US, "±%.1f%%", errorMargin) : "(n<${ciMinCells})"
 
 def totalElapsed = (System.currentTimeMillis() - t0) / 1000.0
 
@@ -405,7 +405,7 @@ def totalElapsed = (System.currentTimeMillis() - t0) / 1000.0
 def sayimUyari = ""
 def warnNuclearCount = atolyeI('atolye.warnNuclearCount', 500)
 if (tumorStats.total < warnNuclearCount) {
-    sayimUyari = String.format(
+    sayimUyari = String.format(java.util.Locale.US, 
         "\n📝 Not: %,d tümör hücresi <${warnNuclearCount} — Ki-67 Working Group (Nielsen 2021) sayma\n" +
         "  standardının altında. Tümör annotation alanını büyütmeyi değerlendirin.",
         tumorStats.total)
@@ -418,7 +418,7 @@ def pct = { c, t -> t > 0 ? 100.0 * c / t : 0.0 }
 
 showResultWindow(
     "Tamamlandı 🔗",
-    String.format(
+    String.format(java.util.Locale.US, 
         "Tümör-Restricted Ki-67 kantifikasyonu bitti.\n\n" +
         "🧠 Adım 1 — Tümör segmentasyonu\n" +
         "──────────────────────────────────\n" +
@@ -449,8 +449,8 @@ showResultWindow(
 )
 
 println "─────────────────────────────────────"
-println String.format("Tamamlandı:")
-println String.format("  Tümör alanı: %.2f mm² (%d nesne)", tumorAreaMm2, tumorAnnotations.size())
-println String.format("  Tümör-içi hücre: %d  |  Ki-67 LI: %.1f%%", tumorStats.total, tumorStats.ki67LI)
-println String.format("  Toplam süre: %.1f sn", totalElapsed)
+println String.format(java.util.Locale.US, "Tamamlandı:")
+println String.format(java.util.Locale.US, "  Tümör alanı: %.2f mm² (%d nesne)", tumorAreaMm2, tumorAnnotations.size())
+println String.format(java.util.Locale.US, "  Tümör-içi hücre: %d  |  Ki-67 LI: %.1f%%", tumorStats.total, tumorStats.ki67LI)
+println String.format(java.util.Locale.US, "  Toplam süre: %.1f sn", totalElapsed)
 println "─────────────────────────────────────"

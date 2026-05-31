@@ -301,7 +301,7 @@ def moduleHint = [
 // ──────────────────────────────────────────────────────────────
 // 3) Form göster (mevcut/varsayılan eşikler önceden yazılı)
 // ──────────────────────────────────────────────────────────────
-def formBody = String.format(
+def formBody = String.format(java.util.Locale.US, 
     "Tespit edilen: %s\n" +
     "Ölçüm sütunu  : %s\n" +
     "Toplam hücre  : %,d\n\n" +
@@ -388,7 +388,7 @@ def pixelNote = pixelStaleRemoved
 // ──────────────────────────────────────────────────────────────
 showResultWindow(
     "Eşikler Yeniden Uygulandı 🎛️",
-    String.format(
+    String.format(java.util.Locale.US, 
         "Modül: %s\nÖlçüm: %s\n\n" +
         "Yeni eşikler:\n" +
         "  1+ ≥ %.3f OD%s\n" +
@@ -422,5 +422,5 @@ showResultWindow(
 println "─────────────────────────────────────"
 println "Eşikler yeniden uygulandı: ${moduleHint}"
 println "  ${newThr.t1} / ${newThr.t2} / ${newThr.t3}"
-println "  n=${total} | 0:${n0} 1+:${n1} 2+:${n2} 3+:${n3} | H-score: ${String.format('%.0f', hScore)}"
+println "  n=${total} | 0:${n0} 1+:${n1} 2+:${n2} 3+:${n3} | H-score: ${String.format(java.util.Locale.US, '%.0f', hScore)}"
 println "─────────────────────────────────────"

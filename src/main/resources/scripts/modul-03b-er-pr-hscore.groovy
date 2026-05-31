@@ -322,7 +322,7 @@ def density = totalAreaMm2 > 0 ? Math.round(totalCells / totalAreaMm2) : 0
 
 def uyari = ""
 if (totalCells < warnGenericCount) {
-    uyari = String.format("\n📝 Not: %,d hücre <%d — küçük örneklem; sonuçlar istatistiksel olarak güvenilir olmayabilir.",
+    uyari = String.format(java.util.Locale.US, "\n📝 Not: %,d hücre <%d — küçük örneklem; sonuçlar istatistiksel olarak güvenilir olmayabilir.",
         totalCells, warnGenericCount)
 }
 
@@ -331,7 +331,7 @@ if (totalCells < warnGenericCount) {
 // ──────────────────────────────────────────────────────────────
 showResultWindow(
     "Tamamlandı 🧬",
-    String.format(
+    String.format(java.util.Locale.US, 
         "ER / PR Nükleer H-score kantifikasyonu bitti.\n\n" +
         "📊 Sayım (n = %,d toplam çekirdek)\n" +
         "────────────────────────────────────\n" +
@@ -359,7 +359,7 @@ showResultWindow(
 
 println "─────────────────────────────────────"
 println "Tamamlandı: ${totalCells} çekirdek"
-println "  0: ${nNeg} (${String.format('%.1f', pctNeg)}%)  |  1+: ${n1} (${String.format('%.1f', pct1)}%)"
-println "  2+: ${n2} (${String.format('%.1f', pct2)}%)  |  3+: ${n3} (${String.format('%.1f', pct3)}%)"
-println "  H-score: ${String.format('%.0f', hScore)}  |  Pozitif: ${String.format('%.1f', positivePct)}%"
+println "  0: ${nNeg} (${String.format(java.util.Locale.US, '%.1f', pctNeg)}%)  |  1+: ${n1} (${String.format(java.util.Locale.US, '%.1f', pct1)}%)"
+println "  2+: ${n2} (${String.format(java.util.Locale.US, '%.1f', pct2)}%)  |  3+: ${n3} (${String.format(java.util.Locale.US, '%.1f', pct3)}%)"
+println "  H-score: ${String.format(java.util.Locale.US, '%.0f', hScore)}  |  Pozitif: ${String.format(java.util.Locale.US, '%.1f', positivePct)}%"
 println "─────────────────────────────────────"

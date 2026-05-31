@@ -246,9 +246,9 @@ def devam = waitForConfirm(
     "Bu betik, seçtiğiniz anotasyon içindeki tüm çekirdekleri tespit edip\n" +
     "her birini DAB yoğunluğuna göre Negative / 1+ / 2+ / 3+ olarak sınıflar.\n\n" +
     "Atölye eşikleri (DAB OD — Nucleus mean)" + (thresholdPositive1 != 0.20 || thresholdPositive2 != 0.40 || thresholdPositive3 != 0.60 ? " (değiştirildi)" : "") + ":\n" +
-    "  • 1+ (zayıf):  " + String.format('%.2f', thresholdPositive1) + " OD\n" +
-    "  • 2+ (orta):   " + String.format('%.2f', thresholdPositive2) + " OD\n" +
-    "  • 3+ (güçlü):  " + String.format('%.2f', thresholdPositive3) + " OD\n\n" +
+    "  • 1+ (zayıf):  " + String.format(java.util.Locale.US, '%.2f', thresholdPositive1) + " OD\n" +
+    "  • 2+ (orta):   " + String.format(java.util.Locale.US, '%.2f', thresholdPositive2) + " OD\n" +
+    "  • 3+ (güçlü):  " + String.format(java.util.Locale.US, '%.2f', thresholdPositive3) + " OD\n\n" +
     "Çıktı:\n" +
     "  • Ki-67 LI (Pozitif %) — ölçüm çıktısı\n" +
     "  • Grup dağılımı (% 0 / 1+ / 2+ / 3+)\n" +
@@ -380,12 +380,12 @@ def density = totalAreaMm2 > 0 ? Math.round(totalCells / totalAreaMm2) : 0
 // Klinik yorum değil, ölçüm hassasiyeti notu.
 def uyari = ""
 if (totalCells < warnNuclearCount) {
-    uyari = String.format(
+    uyari = String.format(java.util.Locale.US, 
         "\n📝 Not: %,d hücre <500 — Ki-67 Working Group (Nielsen 2021) sayma standardının altında.\n" +
         "  Daha büyük bir ROI ile tekrar deneyin (hedef: ≥500-1.000 hücre).",
         totalCells)
 } else if (totalCells > 50000) {
-    uyari = String.format(
+    uyari = String.format(java.util.Locale.US, 
         "\n📝 Not: %,d hücre çok fazla — ROI küçültmek hesaplama hızını artırır.",
         totalCells)
 }
@@ -395,7 +395,7 @@ if (totalCells < warnNuclearCount) {
 // ──────────────────────────────────────────────────────────────
 showResultWindow(
     "Tamamlandı 🔬",
-    String.format(
+    String.format(java.util.Locale.US, 
         "Ki-67 / Nükleer İHK kantifikasyonu bitti.\n\n" +
         "📊 Sayım sonuçları\n" +
         "────────────────────\n" +
@@ -423,6 +423,6 @@ showResultWindow(
 
 println "─────────────────────────────────────"
 println "Tamamlandı:"
-println "  Toplam: ${totalCells}  |  Pozitif: ${numPositive}  |  Ki-67 LI: ${String.format('%.1f', ki67LI)}%"
+println "  Toplam: ${totalCells}  |  Pozitif: ${numPositive}  |  Ki-67 LI: ${String.format(java.util.Locale.US, '%.1f', ki67LI)}%"
 println "  Yoğunluk: ${density}/mm²  |  Süre: ${elapsed} sn"
 println "─────────────────────────────────────"

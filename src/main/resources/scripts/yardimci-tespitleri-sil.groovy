@@ -155,9 +155,9 @@ if (allDetections.isEmpty()) {
 def secim = chooseAction(
     "Tespitleri Sil — Hangileri?",
     "Bu slayttaki detection durumu:\n\n" +
-    String.format("  Toplam tespit       : %,d\n", allDetections.size()) +
-    String.format("  Orphan (anotasyon yok): %,d\n", orphanDetections.size()) +
-    String.format("  Anotasyon altında    : %,d\n\n", nestedDetections) +
+    String.format(java.util.Locale.US, "  Toplam tespit       : %,d\n", allDetections.size()) +
+    String.format(java.util.Locale.US, "  Orphan (anotasyon yok): %,d\n", orphanDetections.size()) +
+    String.format(java.util.Locale.US, "  Anotasyon altında    : %,d\n\n", nestedDetections) +
     "İki seçenek:\n\n" +
     "  • Sadece orphan'ları sil (varsayılan, güvenli):\n" +
     "    Bir anotasyona ait olmayan tespitleri temizler.\n" +
@@ -198,7 +198,7 @@ def kalan = QP.getDetectionObjects().size()
 
 showResultWindow(
     "Temizlik Tamamlandı 🧹",
-    String.format(
+    String.format(java.util.Locale.US, 
         "%s.\n\n" +
         "📊 Özet\n" +
         "──────────────\n" +
@@ -212,5 +212,5 @@ showResultWindow(
 
 println "─────────────────────────────────────"
 println "Temizlik: ${mod}"
-println "  Silinen: ${silinen}  |  Kalan: ${kalan}  |  Süre: ${String.format('%.2f', elapsed)} sn"
+println "  Silinen: ${silinen}  |  Kalan: ${kalan}  |  Süre: ${String.format(java.util.Locale.US, '%.2f', elapsed)} sn"
 println "─────────────────────────────────────"

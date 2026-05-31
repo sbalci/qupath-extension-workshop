@@ -327,7 +327,7 @@ def positiveDensity = totalAreaMm2 > 0 ? Math.round(positives / totalAreaMm2) : 
 // ──────────────────────────────────────────────────────────────
 def uyari = ""
 if (totalCells < warnGenericCount) {
-    uyari = String.format("\n⚠️ Sadece %%,d hücre — istatistiksel olarak güvenilmez (≥500 önerilir).", totalCells).replace("%%,d", String.format("%,d", totalCells))
+    uyari = String.format(java.util.Locale.US, "\n⚠️ Sadece %,d hücre — istatistiksel olarak güvenilmez (≥500 önerilir).", totalCells)
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -340,7 +340,7 @@ def pct3   = totalCells > 0 ? 100.0 * n3 / totalCells : 0.0
 
 showResultWindow(
     "Tamamlandı 🦠",
-    String.format(
+    String.format(java.util.Locale.US, 
         "CD68 / Sitoplazmik İHK bitti.\n\n" +
         "📊 Hücre dağılımı (n = %,d toplam)\n" +
         "────────────────────────────────────\n" +
@@ -367,6 +367,6 @@ showResultWindow(
 
 println "─────────────────────────────────────"
 println "Tamamlandı: ${totalCells} hücre"
-println "  Pozitif: ${positives} (${String.format('%.1f', positivePct)}%)"
-println "  H-score: ${String.format('%.0f', hScore)}  |  CD68+ yoğunluk: ${positiveDensity}/mm²"
+println "  Pozitif: ${positives} (${String.format(java.util.Locale.US, '%.1f', positivePct)}%)"
+println "  H-score: ${String.format(java.util.Locale.US, '%.0f', hScore)}  |  CD68+ yoğunluk: ${positiveDensity}/mm²"
 println "─────────────────────────────────────"

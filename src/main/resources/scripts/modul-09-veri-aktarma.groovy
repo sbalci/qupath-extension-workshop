@@ -52,10 +52,14 @@ def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class,
 def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
 def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
 def exportFolder = atolyeS('atolye.exportFolder', 'exports')
-def exportSeparatorChar = (atolyeS('atolye.exportSeparator', '\t')).charAt(0) as char
+def exportSeparatorChar = (atolyeS('atolye.exportSeparator', "\t")).charAt(0) as char
 
 def waitForChoice = { String windowTitle, String windowBody,
                       String optionA, String optionB ->
+    if (isHeadless) {
+        println "=== ${windowTitle} ===\n${windowBody}\n=================="
+        return "B"
+    }
     def latch = new java.util.concurrent.CountDownLatch(1)
     def picked = new java.util.concurrent.atomic.AtomicReference<String>(null)
 
@@ -439,7 +443,7 @@ if (annotationsTotal == 0 && detectionsTotal == 0 && currentSaveError == null) {
 
 showResultWindow(
     "Veri dışa aktarma — Tamamlandı 📤",
-    String.format(
+    String.format(java.util.Locale.US, 
         "Mod: %s\n" +
         "Çıktı klasörü:\n  %s\n\n" +
         "💾 Kaydetme durumu\n" +
@@ -470,7 +474,7 @@ showResultWindow(
 )
 
 println "─────────────────────────────────────"
-println String.format("Tamamlandı: %d slayt, %d dosya, %.1f sn",
+println String.format(java.util.Locale.US, "Tamamlandı: %d slayt, %d dosya, %.1f sn",
     imagesProcessed, filesWritten.size(), elapsed)
 println "Çıktı: ${outDir.getAbsolutePath()}"
 if (!errors.isEmpty()) {

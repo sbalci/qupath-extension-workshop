@@ -281,10 +281,10 @@ def elapsed = (System.currentTimeMillis() - t0) / 1000.0
 // ──────────────────────────────────────────────────────────────
 def scopeLabel = scope == "current" ? "Yalnızca açık slayt" : "Projedeki tüm slaytlar"
 def summary = new StringBuilder()
-summary << String.format("Görüntü tipi → %s%n", targetTypeName)
-summary << String.format("Kapsam        : %s%n", scopeLabel)
-summary << String.format("Süre          : %.2f sn%n%n", elapsed)
-summary << String.format("📋 Güncellenen (%d)%n", updated.size())
+summary << String.format(java.util.Locale.US, "Görüntü tipi → %s%n", targetTypeName)
+summary << String.format(java.util.Locale.US, "Kapsam        : %s%n", scopeLabel)
+summary << String.format(java.util.Locale.US, "Süre          : %.2f sn%n%n", elapsed)
+summary << String.format(java.util.Locale.US, "📋 Güncellenen (%d)%n", updated.size())
 summary << "──────────────────────────────────\n"
 if (updated.isEmpty()) {
     summary << "  (yok)\n"
@@ -292,7 +292,7 @@ if (updated.isEmpty()) {
     updated.each { summary << "  • ${it}\n" }
 }
 summary << "\n"
-summary << String.format("📋 Atlanan (%d)%n", skipped.size())
+summary << String.format(java.util.Locale.US, "📋 Atlanan (%d)%n", skipped.size())
 summary << "──────────────────────────────────\n"
 if (skipped.isEmpty()) {
     summary << "  (yok)\n"
@@ -307,5 +307,5 @@ showResultWindow("Görüntü Tipi Ayarlandı 🎨", summary.toString())
 
 println "─────────────────────────────────────"
 println "Görüntü tipi: ${targetTypeName}  |  Kapsam: ${scopeLabel}"
-println "  Güncellenen: ${updated.size()}  |  Atlanan: ${skipped.size()}  |  Süre: ${String.format('%.2f', elapsed)} sn"
+println "  Güncellenen: ${updated.size()}  |  Atlanan: ${skipped.size()}  |  Süre: ${String.format(java.util.Locale.US, '%.2f', elapsed)} sn"
 println "─────────────────────────────────────"
