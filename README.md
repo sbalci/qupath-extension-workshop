@@ -47,7 +47,7 @@ The extension is a convenience wrapper around the loose scripts at [handson/scri
 ./gradlew clean build
 ```
 
-Output: `build/libs/qupath-extension-workshop-0.1.0.jar`
+Output: `build/libs/qupath-extension-workshop-X.Y.Z.jar`
 
 (On Windows: `gradlew.bat clean build`.)
 
