@@ -7,8 +7,8 @@
  *
  * KULLANIM:
  *   1. Ki-67 (veya başka nükleer DAB) İHK slaytını açın
- *   2. Image type → "Brightfield (other)" olduğundan emin olun
- *      ([Image → Image type → Brightfield (other)])
+ *   2. Image type → "Brightfield (H-DAB)" olduğundan emin olun
+ *      ([Image → Image type → Brightfield (H-DAB)])
  *   3. [R] tuşu → tümör içeren ~1×1 mm dikdörtgen anotasyon çizin
  *   4. Anotasyon seçili iken → [Automate → Project scripts → bu betik]
  *   5. Sonuçları sonuç penceresinden okuyun
@@ -254,7 +254,7 @@ def devam = waitForConfirm(
     "  • Grup dağılımı (% 0 / 1+ / 2+ / 3+)\n" +
     "  • Hücre yoğunluğu (hücre/mm²) + anotasyon alanı\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız Çalıştır düğmesine basın; devam etmek istemiyorsanız Cancel ile çıkın."
+    "Hazırsanız Çalıştır düğmesine basın; devam etmek istemiyorsanız İptal ile çıkın."
 )
 if (!devam) {
     println "Kullanıcı iptal etti."

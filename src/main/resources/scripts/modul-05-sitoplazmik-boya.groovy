@@ -7,7 +7,7 @@
  *
  * KULLANIM:
  *   1. CD68 (veya benzeri sitoplazmik DAB) İHK slaytını açın
- *   2. Image type → "Brightfield (other)"
+ *   2. Image type → "Brightfield (H-DAB)"
  *   3. [R] tuşu → ~1×1 mm dikdörtgen anotasyon çizin
  *   4. Anotasyon seçili iken → [Automate → Project scripts → bu betik]
  *

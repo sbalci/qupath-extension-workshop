@@ -11,7 +11,7 @@
  *       - Nucleus: DAB OD mean       → Modül 3, 3b, 7 (Ki-67 / ER / PR)
  *       - Cytoplasm: DAB OD mean     → Modül 5 (CD68)
  *   • Üç eşik (1+, 2+, 3+) için form gösterir, mevcut değerleri önceden yazar
- *   • Yeni değerlerle `setCellIntensityClassifications` çalıştırır
+ *   • Yeni değerlerle `setIntensityClassifications` çalıştırır
  *   • Negative / 1+ / 2+ / 3+ sayımı + yüzdeler + H-score'u yeniden hesaplar
  *
  * KULLANIM:
@@ -338,7 +338,7 @@ if (newThr == null) {
 
 // ──────────────────────────────────────────────────────────────
 // 4) Yeniden sınıflandır — yalnızca seçili anotasyonun altındaki hücreler
-//    QP.setCellIntensityClassifications() varsayılan olarak slayttaki TÜM
+//    QP.setIntensityClassifications() varsayılan olarak slayttaki TÜM
 //    hücreleri re-bin'ler. Birden fazla anotasyonda hücreniz varsa diğer
 //    anotasyonların etiketleri de değişir. Aşağıdaki form sadece seçili
 //    anotasyonun child detection'larına uygular.

@@ -16,12 +16,12 @@
  *   1. Ki-67 İHK slaytını açın (atölye için: Ki-67 slaytında piksel
  *      sınıflandırıcı İHK üzerinde de çalışabilir; gerçek hayatta
  *      H&E seri kesit kullanılır)
- *   2. Image type → "Brightfield (other)"
+ *   2. Image type → "Brightfield (H-DAB)"
  *   3. [Automate → Project scripts → bu betik]
  *      (Anotasyon ÇİZMENIZE GEREK YOK — betik tüm slayttan başlar)
  *
  * ÖNKOŞUL:
- *   Projenizde `classifiers/tumor-stroma-RF.json` sınıflandırıcısı olmalı
+ *   Projenizde `tumor-stroma-RF` adlı piksel sınıflandırıcısı olmalı
  *   (Modül 6'da kaydedilen). Yoksa betik size adımları söyler.
  *
  * İŞ AKIŞI (3 adım):

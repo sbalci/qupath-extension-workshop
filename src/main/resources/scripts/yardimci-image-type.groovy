@@ -8,6 +8,7 @@
  *   • İHK / DAB slaytları → BRIGHTFIELD_H_DAB
  *   • Diğer brightfield → BRIGHTFIELD_OTHER
  *   • Floresan → FLUORESCENCE
+ *   • Other → OTHER (bilinmeyen / belirsiz)
  *
  * NE YAPAR:
  *   1. Görüntü tipi seçici dialog (radio button)

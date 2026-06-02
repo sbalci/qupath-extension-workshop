@@ -208,7 +208,7 @@ def devam = waitForConfirm(
     "  • Bir dikdörtgen anotasyon (R tuşu) çizdiniz (~1×1 mm tümör alanı)\n" +
     "  • Anotasyon SEÇİLİ (kenarları sarı görünür)\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız Çalıştır düğmesine basın; devam etmek istemiyorsanız Cancel ile çıkın."
+    "Hazırsanız Çalıştır düğmesine basın; devam etmek istemiyorsanız İptal ile çıkın."
 )
 if (!devam) {
     println "Kullanıcı iptal etti."

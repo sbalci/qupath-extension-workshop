@@ -10,12 +10,12 @@
  *                       _all_detections.tsv / _all_annotations.tsv
  *
  * KULLANIM:
- *   1. Modüllerden birinde (2, 3, 3b, 4, 5, 7, 8) ölçüm üretmiş olun
+ *   1. Modüllerden birinde (2, 3, 3b, 4, 5, 6, 7, 8) ölçüm üretmiş olun
  *   2. [Automate → Project scripts → Modül 9 - Veri dışa aktarma]
  *   3. Diyalogdan mod seçin → Çalıştır
  *
  * ÇIKTI:
- *   <proje-klasörü>/exports/YYYY-MM-DD_HHmm/
+ *   <proje-klasörü>/exports/YYYY-MM-DD_HHmmss/
  *     ├── _all_detections.tsv          (yalnız "tüm proje" modunda)
  *     ├── _all_annotations.tsv         (yalnız "tüm proje" modunda)
  *     ├── <slayt-adı>__detections.tsv
@@ -230,7 +230,7 @@ def choice = waitForChoice(
     "tespit değişikliklerinizin dahil olmasını istiyorsanız, devam edin —\n" +
     "kaydetme bu betiğin ilk adımı olacak.\n\n" +
     "Çıktı klasörü:\n" +
-    "  <proje-klasörü>/${exportFolder}/YYYY-MM-DD_HHmm/${exportFolder != 'exports' ? ' ← değiştirildi' : ''}\n\n" +
+    "  <proje-klasörü>/${exportFolder}/YYYY-MM-DD_HHmmss/${exportFolder != 'exports' ? ' ← değiştirildi' : ''}\n\n" +
     "Hangi modu istiyorsunuz?\n" +
     "  • Sadece bu görüntü — sadece şu an açık slayt\n" +
     "  • Tüm proje         — projedeki her slayt için ayrı dosya,\n" +
