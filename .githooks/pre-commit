@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+#
+# pre-commit hook for qupath-extension-workshop.
+#
+# If you stage RELEASE-RELEVANT changes (anything that ships in / defines the
+# JAR) WITHOUT bumping the version, this reminds you and asks whether to commit
+# anyway. It stays quiet when:
+#   * the project version IS being bumped in this commit, or
+#   * only docs / meta files changed (no bump needed).
+#
+# It is safe in non-interactive contexts (VS Code Git, GUIs, CI): if there is no
+# usable terminal it just prints the reminder and lets the commit proceed — it
+# never hangs and only blocks an *interactive* commit you explicitly decline.
+#
+# Enable once per clone (from the qupath-extension-workshop working tree):
+#     git config core.hooksPath .githooks
+#
+set -u
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+# 1) Already bumping the project version in this commit? Nothing to ask.
+#    Matches a staged change to the top-level `version = "X.Y.Z"` line in
+#    build.gradle.kts (NOT the javafxplugin `... version "..."` line).
+if git diff --cached -U0 -- build.gradle.kts 2>/dev/null \
+        | grep -Eq '^\+version[[:space:]]*=[[:space:]]*"'; then
+    exit 0
+fi
+
+# 2) Are any staged paths release-relevant (would change the published JAR)?
+relevant=$(printf '%s\n' "$staged" \
+    | grep -E '^(src/|catalog\.json$|build\.gradle\.kts$|CITATION\.cff$|\.zenodo\.json$)' || true)
+[ -z "$relevant" ] && exit 0   # docs / meta only — no version bump needed
+
+{
+    echo ""
+    echo "  ⚠  pre-commit: release-relevant changes are staged, but the version in"
+    echo "     build.gradle.kts is NOT bumped in this commit:"
+    printf '%s\n' "$relevant" | sed 's/^/         /'
+    echo ""
+    echo "     If this changes what the published JAR does, bump the version first."
+    echo "     From the PARENT repo (qupath-workshop):"
+    echo "         pwsh ./tools/bump-extension-version.ps1"
+    echo ""
+} >&2
+
+# 3) Ask — but ONLY if the controlling terminal can actually be opened.
+#    `[ -r /dev/tty ]` is not enough: the device node's mode is rw even when there
+#    is NO controlling terminal, and the open then fails with ENXIO. So probe it
+#    with `: >/dev/tty` (a no-op write). We avoid `exec` on purpose — an exec
+#    redirection failure would abort the whole hook (and block the commit).
+#    No usable terminal (VS Code Git, CI, any headless commit) → just warn + proceed.
+if { : >/dev/tty; } 2>/dev/null; then
+    printf "  Commit anyway, without a version bump? [y/N] " >/dev/tty
+    answer=""
+    # 60s timeout is a safety net so a half-open tty can't hang forever.
+    read -r -t 60 answer </dev/tty || answer=""
+    case "$answer" in
+        [Yy] | [Yy][Ee][Ss])
+            echo "  → committing without a version bump." >/dev/tty
+            exit 0
+            ;;
+        *)
+            echo "  → commit aborted. Bump the version, or re-commit and answer 'y'." >/dev/tty
+            exit 1
+            ;;
+    esac
+else
+    echo "  (non-interactive commit — proceeding; this is a reminder only.)" >&2
+    exit 0
+fi
