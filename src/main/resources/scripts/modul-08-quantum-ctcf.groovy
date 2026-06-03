@@ -377,6 +377,19 @@ def tcrAreaMm2 = roi != null
 def totalElapsed = (System.currentTimeMillis() - t0) / 1000.0
 
 // ──────────────────────────────────────────────────────────────
+// 7b) cTCF'yi TCR anotasyonunun ölçüm listesine yaz → Modül 9 dışa aktarır.
+//    cTCF skaler değeri ekranda gösteriliyor ama hiçbir nesneye yazılmıyordu;
+//    bu nedenle Modül 9 TSV'sinde görünmüyordu. TCR anotasyonu zaten var, ona yazıyoruz.
+// ──────────────────────────────────────────────────────────────
+tcr.measurements['TCR alanı (mm2)'] = tcrAreaMm2
+if (hasClassifier) {
+    tcr.measurements['cTCF (%)']            = cTCF
+    tcr.measurements['Tümör hücre sayısı']  = tumorCount as double
+    tcr.measurements['Non-neoplastik sayı'] = nonNeoCount as double
+}
+QP.fireHierarchyUpdate()
+
+// ──────────────────────────────────────────────────────────────
 // 8) Sonucu sun
 // ──────────────────────────────────────────────────────────────
 def egitimNot = ""

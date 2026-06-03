@@ -337,6 +337,29 @@ if (tumorAnnotations.isEmpty()) {
 }
 
 // ──────────────────────────────────────────────────────────────
+// 4b) TSR'yi ölçüm listesine yaz → Modül 9 (MeasurementExporter) dışa aktarır.
+//    Skaler TSR değeri ekranda gösterilirken hiçbir nesneye yazılmıyordu; bu
+//    nedenle Modül 9 TSV'sinde görünmüyordu. Burada tam-görüntü ROI'li tek bir
+//    "TSR Özet" anotasyonu oluşturup değerleri ölçüm listesine yazıyoruz.
+//    (Eski "TSR Özet" varsa önce silinir → tekrar çalıştırmada birikmez.)
+// ──────────────────────────────────────────────────────────────
+QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() == "TSR Özet" }, false)
+def tsrServer  = imageData.getServer()
+def tsrSummary = qupath.lib.objects.PathObjects.createAnnotationObject(
+    qupath.lib.roi.ROIs.createRectangleROI(0, 0, tsrServer.getWidth(), tsrServer.getHeight(),
+        qupath.lib.regions.ImagePlane.getDefaultPlane()))
+tsrSummary.setName("TSR Özet")
+tsrSummary.measurements['TSR (%)']                 = tsr
+tsrSummary.measurements['Tümör alanı (mm2)']       = tumorAreaMm2
+tsrSummary.measurements['Stroma alanı (mm2)']      = stromaAreaMm2
+tsrSummary.measurements['Toplam doku alanı (mm2)'] = totalAreaMm2
+tsrSummary.setLocked(true)
+QP.addObjects([tsrSummary])
+QP.fireHierarchyUpdate()
+println String.format(java.util.Locale.US,
+    "  TSR (%%) = %.1f → \"TSR Özet\" anotasyonunun ölçüm listesine yazıldı (Modül 9 dışa aktarımında görünür).", tsr)
+
+// ──────────────────────────────────────────────────────────────
 // 5) Sonucu sun
 // ──────────────────────────────────────────────────────────────
 showResultWindow(
