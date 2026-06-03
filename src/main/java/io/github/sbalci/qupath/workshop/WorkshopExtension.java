@@ -84,6 +84,21 @@ public class WorkshopExtension implements QuPathExtension {
         new ScriptEntry("Yardımcı - Eşikleri ayarla",               "yardimci-esik-ayarla.groovy")
     );
 
+    /**
+     * Advanced-analysis helpers prepared for a LATER workshop session. They are
+     * bundled in the JAR and kept byte-synced with handson/scripts (see
+     * tools/check-script-sync.ps1), but rendered as DISABLED (greyed-out) menu
+     * items below so participants can see what's coming without running them
+     * yet. To activate one later, move its entry into {@link #UTILITY_SCRIPTS}.
+     */
+    private static final List<ScriptEntry> UPCOMING_SCRIPTS = List.of(
+        new ScriptEntry("Delaunay komşuluk özellikleri", "yardimci-delaunay-komsuluk.groovy"),
+        new ScriptEntry("En yakın komşu mesafesi",       "yardimci-nn-mesafe.groovy"),
+        new ScriptEntry("Yoğunluk haritası",             "yardimci-yogunluk-haritasi.groovy"),
+        new ScriptEntry("Ki-67 heterojenlik grid",       "yardimci-ki67-heterojenlik.groovy"),
+        new ScriptEntry("Stromal TIL yoğunluğu",         "yardimci-stromal-til.groovy")
+    );
+
     private boolean alreadyInstalled = false;
 
     @Override
@@ -121,6 +136,17 @@ public class WorkshopExtension implements QuPathExtension {
                 menu.getItems().add(utilsMenu);
             }
 
+            // İleri analiz — sonraki oturum (gri/disabled; tıklama etkisiz, yalnızca önizleme)
+            if (!UPCOMING_SCRIPTS.isEmpty()) {
+                Menu upcomingMenu = new Menu("İleri analiz — sonraki oturum");
+                for (ScriptEntry entry : UPCOMING_SCRIPTS) {
+                    MenuItem item = new MenuItem(entry.label);
+                    item.setDisable(true);   // henüz etkin değil — sonraki oturumda açılacak
+                    upcomingMenu.getItems().add(item);
+                }
+                menu.getItems().add(upcomingMenu);
+            }
+
             menu.getItems().add(new SeparatorMenuItem());
             var settings = new MenuItem("Atölye Ayarları…");
             settings.setOnAction(e -> WorkshopSettingsDialog.show());
@@ -131,8 +157,8 @@ public class WorkshopExtension implements QuPathExtension {
             about.setOnAction(e -> showAboutDialog());
             menu.getItems().add(about);
 
-            logger.info("Workshop extension installed with {} module + {} utility scripts.",
-                    SCRIPTS.size(), UTILITY_SCRIPTS.size());
+            logger.info("Workshop extension installed with {} module + {} utility + {} upcoming (disabled) scripts.",
+                    SCRIPTS.size(), UTILITY_SCRIPTS.size(), UPCOMING_SCRIPTS.size());
         } catch (Exception ex) {
             logger.error("Failed to install Workshop extension menu", ex);
         }
