@@ -55,13 +55,13 @@
     {
       "scheme": "doi",
       "identifier": "10.1038/s41598-017-17204-5",
-      "relation": "isBasedOn",
+      "relation": "isDerivedFrom",
       "resource_type": "publication-article"
     },
     {
       "scheme": "doi",
       "identifier": "10.1371/journal.pone.0245638",
-      "relation": "isBasedOn",
+      "relation": "isDerivedFrom",
       "resource_type": "publication-article"
     },
     {
