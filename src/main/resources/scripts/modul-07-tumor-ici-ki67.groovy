@@ -36,6 +36,10 @@
  *     + İHK skorlama orijinal yayını. doi:10.1038/labinvest.2017.131
  *   • Skjervold AH et al. (2022), Diagn Pathol — manuel vs dijital uyum.
  *     doi:10.1186/s13000-022-01225-4
+ *   • Acs B et al. (2018), Lab Invest 99(1):107–117 — platform/gözlemci arası
+ *     Ki-67 yeniden-üretilebilirliği. doi:10.1038/s41374-018-0123-7
+ *   • Catteau X et al. (2023), Technol Cancer Res Treat — dijital Ki-67 yalnızca
+ *     patolog-işaretli bölgede manuel skorla uyumlu. doi:10.1177/15330338231169603
  */
 
 import qupath.lib.gui.dialogs.Dialogs
