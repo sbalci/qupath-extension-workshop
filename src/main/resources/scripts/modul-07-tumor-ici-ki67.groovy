@@ -40,6 +40,15 @@
  *     Ki-67 yeniden-üretilebilirliği. doi:10.1038/s41374-018-0123-7
  *   • Catteau X et al. (2023), Technol Cancer Res Treat — dijital Ki-67 yalnızca
  *     patolog-işaretli bölgede manuel skorla uyumlu. doi:10.1177/15330338231169603
+ *   • Spyretos C et al. (2026), J Neuropathol Exp Neurol 85(5):475–486 — StarDist
+ *     ile tam otomatik, proje-ölçeğinde Ki-67 LI. doi:10.1093/jnen/nlaf163
+ *
+ * EŞİK HASSASİYETİ:
+ *   • Pozitif %, aynı slaytta yalnızca tespit + DAB eşiği değiştiğinde ~%3.7 →
+ *     ~%24 arası oynayabilir ve tarayıcıya göre farklılaşır (Bankhead 2022
+ *     parametre-duyarlılık örneği). Karşılaştırılan tüm slaytlarda aynı
+ *     parametreleri kullanın; boya vektörlerini her tarayıcı için yeniden
+ *     kestirin ([Analyze → Estimate stain vectors]).
  */
 
 import qupath.lib.gui.dialogs.Dialogs
