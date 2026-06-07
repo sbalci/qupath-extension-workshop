@@ -115,7 +115,10 @@ double ph = cal.getPixelHeightMicrons()
 boolean calibrated = (pw > 0 && ph > 0)
 
 def cores = tmaGrid.getTMACoreList()
-def isPositive = { cell -> cell.getPathClass()?.getName()?.toLowerCase()?.contains("positive") }
+def isPositive = { cell ->
+    def cn = cell.getPathClass()?.getName()
+    cn != null && (cn.equalsIgnoreCase("Positive") || cn.equalsIgnoreCase("Pozitif") || cn.endsWith("+"))
+}
 
 // ── 2) Çekirdek başına topla ────────────────────────────────────────
 def rows = []
@@ -134,7 +137,7 @@ cores.each { core ->
     int nPos = cells.count { isPositive(it) } as int
     double aMm2 = 0.0
     def roi = core.getROI()
-    if (roi != null && calibrated) aMm2 = (Math.PI * Math.pow(roi.getBoundsWidth() / 2.0, 2) * pw * ph) / 1_000_000.0
+    if (roi != null && calibrated) aMm2 = (roi.getArea() * pw * ph) / 1_000_000.0
     double pct = n > 0 ? (100.0 * nPos / n) : 0.0
     double density = aMm2 > 0 ? n / aMm2 : 0.0
 
