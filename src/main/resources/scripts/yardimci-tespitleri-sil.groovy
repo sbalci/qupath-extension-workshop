@@ -1,6 +1,7 @@
 /**
  * Yardımcı - Tespitleri Sil
  * --------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Hücre tespitlerini temizlemek için tek-tıkla bir araç. Atölye sırasında
  * "Delete objects → Keep descendant objects → Yes" diyerek anotasyonu silip
  * çocuk tespitleri **slayda öksüz** bırakırsanız, bu betik onları temizler.

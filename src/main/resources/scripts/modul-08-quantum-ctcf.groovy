@@ -1,6 +1,7 @@
 /**
  * Modül 8 - QuANTUM-tarzı cTCF (Computational Tumor Cellular Fraction)
  * -----------------------------------------------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Atölyenin en önemli betiği: yayınlanmış (Virchows Archiv 2025) QuANTUM
  * iş akışının basitleştirilmiş bir versiyonu. NSCLC slaytında **cTCF**
  * hesaplar — NGS için tümör hücre fraksiyonu.

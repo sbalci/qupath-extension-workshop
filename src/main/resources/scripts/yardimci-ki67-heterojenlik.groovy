@@ -1,6 +1,7 @@
 /**
  * Yardımcı - Ki-67 Heterojenlik Grid
  * -----------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * MEVCUT Ki-67 tespitlerini (Modül 3 veya Modül 7'den) bir kareli ızgaraya
  * böler, her karede Ki-67 işaretleme indeksini (LI) ölçer ve karelerarası
  * **heterojenlik** ölçütleri üretir: varyasyon katsayısı (CV) ve pozitif

@@ -1,6 +1,7 @@
 /**
  * Yardımcı - Stromal TIL Yoğunluğu (morfolojik ölçüm)
  * ----------------------------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Modül 6 ile ayrılan **Stroma** alanı içinde çekirdek tespiti yapar ve
  * küçük-çekirdekli hücreleri (lenfosit adayı) sayarak **stromal hücre
  * yoğunluğu (hücre/mm²)** üretir.

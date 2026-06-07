@@ -1,6 +1,7 @@
 /**
  * Yardımcı - Delaunay Komşuluk Özellikleri
  * -----------------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Hücreler arasında Delaunay komşuluk ağı kurar ve her hücreye komşu
  * sayısı + komşu mesafesi ölçümleri ekler. Doku mimarisinin (hücre-hücre
  * bağlantısallığı) sayısal bir betimidir.

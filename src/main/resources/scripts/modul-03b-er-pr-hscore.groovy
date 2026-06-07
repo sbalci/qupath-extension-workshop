@@ -1,6 +1,7 @@
 /**
  * Modül 3b - Tek Tıkla ER / PR Nükleer H-score
  * ----------------------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Atölye için "hızlı deneme" betiği. Seçilen anotasyon içinde
  * ER / PR (östrojen / progesteron reseptörü) gibi nükleer hormon
  * reseptörlerini skorlar ve **H-score**'u (0–300) kaydeder.

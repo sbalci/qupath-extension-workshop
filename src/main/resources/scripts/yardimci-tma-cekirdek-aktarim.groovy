@@ -1,6 +1,7 @@
 /**
  * Yardımcı - TMA Çekirdek Bazlı Dışa Aktarım
  * --------------------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Dearray edilmiş (ızgaraya ayrılmış) bir TMA'da her çekirdek (core) için
  * tespit ölçümlerini toplar ve **çekirdek-başına bir TSV tablosu** yazar.
  *

@@ -1,6 +1,7 @@
 /**
  * Yardımcı - Eşikleri ayarla
  * ---------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Modül 3, 3b, 4, 5 veya 7'yi varsayılan eşiklerle çalıştırdıktan sonra
  * sonuç beklediğiniz gibi değilse: bu betik **hücre tespitini yeniden
  * çalıştırmadan** sadece bin eşiklerini değiştirip yeniden sınıflandırma yapar.

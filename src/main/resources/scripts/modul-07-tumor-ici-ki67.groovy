@@ -1,6 +1,7 @@
 /**
  * Modül 7 - Tek Tıkla Tümör-Restricted Ki-67 Kantifikasyonu
  * -----------------------------------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Bu betik atölyenin birleşik analiz adımıdır: önce piksel
  * sınıflandırıcı ile tümör bölgesini ayırır, sonra **yalnızca tümör
  * alanı içinde** Ki-67 pozitif çekirdek sayımı yapar.

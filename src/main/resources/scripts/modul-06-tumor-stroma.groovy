@@ -1,6 +1,7 @@
 /**
  * Modül 6 - Tek Tıkla Tümör vs Stroma Segmentasyonu
  * ---------------------------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Bu betik önceden eğitilmiş bir **piksel sınıflandırıcısını** projedeki
  * `classifiers/` klasöründen yükleyip aktif slayttaki tüm doku üzerinde
  * çalıştırır. Sonuçtan **Tumor** ve **Stroma** sınıflı anotasyonlar üretir

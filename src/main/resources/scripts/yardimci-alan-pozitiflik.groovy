@@ -1,6 +1,7 @@
 /**
  * Yardımcı - Alan-Bazlı Pozitiflik (% positivity)
  * ------------------------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Seçili anotasyon(lar) içinde, kaydedilmiş bir EŞİK piksel-sınıflandırıcısı
  * kullanarak **DAB-pozitif alan oranını** (% pozitif alan) hesaplar. Hücre
  * tespiti YAPMAZ — bu, "percent positivity / area% load" yaklaşımıdır

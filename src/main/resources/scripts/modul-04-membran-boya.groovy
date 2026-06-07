@@ -1,6 +1,7 @@
 /**
  * Modül 4 - Tek Tıkla HER2 / Membran İHK Skorlaması
  * ---------------------------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Atölye için "hızlı deneme" betiği. Seçilen anotasyon içinde HER2 (veya
  * E-kadherin, β-katenin gibi başka bir membran İHK boyamasını) skorlar.
  *

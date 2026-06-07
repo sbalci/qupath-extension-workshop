@@ -1,6 +1,7 @@
 /**
  * Modül 3 - Tek Tıkla Ki-67 / Nükleer İHK Kantifikasyonu
  * --------------------------------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Atölye için "hızlı deneme" betiği. Seçilen anotasyon içinde
  * Ki-67 / p53 / başka bir nükleer İHK boyamasını otomatik olarak skorlar
  * ve **Ki-67 LI** (etiketleme indeksi) ile grup dağılımını kaydeder.

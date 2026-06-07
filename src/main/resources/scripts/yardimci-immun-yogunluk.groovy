@@ -1,6 +1,7 @@
 /**
  * Yardımcı - İmmün Hücre Yoğunluğu (DAB)
  * ----------------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Seçili anotasyon(lar) içinde bir DAB-İHK immün belirteci (CD8, CD57, PD1…)
  * için pozitif hücre tespiti yapar ve **pozitif hücre yoğunluğu (hücre/mm²)**
  * ile **pozitif hücre %** üretir.

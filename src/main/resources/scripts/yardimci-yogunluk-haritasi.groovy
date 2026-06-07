@@ -1,6 +1,7 @@
 /**
  * Yardımcı - Yoğunluk Haritası (ızgara)
  * --------------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Hücre tespitlerini kareli bir ızgaraya böler ve her karede hücre
  * **yoğunluğunu (hücre/mm²)** ölçer. Karelere yoğunluğa göre renk verince
  * doku boyunca hücresellik HARİTASI ortaya çıkar.

@@ -1,6 +1,7 @@
 /**
  * Modül 2 - Tek Tıkla Hücre Tespiti
  * ----------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Atölye için "hızlı deneme" betiği. Seçilen anotasyon içindeki tüm
  * çekirdekleri H&E için atölye varsayılan parametreleriyle tespit eder.
  *

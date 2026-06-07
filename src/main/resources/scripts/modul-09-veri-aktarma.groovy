@@ -1,6 +1,7 @@
 /**
  * Modül 9 - Tek Tıkla Veri Dışa Aktarma
  * ----------------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Anotasyon + tespit ölçümlerini ve anotasyon geometrisini (GeoJSON)
  * proje klasörünün yanındaki `exports/<tarih>/` altına yazar.
  *

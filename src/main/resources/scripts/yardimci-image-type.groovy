@@ -1,6 +1,7 @@
 /**
  * Yardımcı - Görüntü Tipi Ayarla
  * --------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * QuPath'in **Image type** ayarını tek tıkla değiştirir — açık slayt için ya da
  * projedeki TÜM slaytlar için. Doğru image type, sonraki tüm boya analizlerinin
  * (Modül 2–7) düzgün çalışması için zorunludur:

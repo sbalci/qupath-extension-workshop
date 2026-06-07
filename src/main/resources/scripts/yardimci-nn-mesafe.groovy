@@ -1,6 +1,7 @@
 /**
  * Yardımcı - En Yakın Komşu Mesafesi
  * -----------------------------------
+ * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Her hücre için en yakın komşu hücreye olan merkez-merkez mesafesini (µm)
  * hesaplar ve hücre ölçümü olarak yazar. Karelerarası uzamsal düzeni
  * (kümelenme/dağınıklık) sayısallaştıran basit bir ÖLÇÜTtür.
