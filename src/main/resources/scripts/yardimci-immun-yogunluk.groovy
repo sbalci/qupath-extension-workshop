@@ -24,10 +24,10 @@
  *   • Kilitli "İmmün Yoğunluk Özet" anotasyonu (Modül 9 ile dışa aktarılır)
  *
  * YÖNTEM REFERANSLARI:
- *   • de Ruiter EJ et al. (2022), Virchows Arch — CD57+ hücre/mm², QuPath
- *     vs iki gözlemci ICC. doi:10.1007/s00428-022-03303-w
- *   • Russell GG et al. (2023), Immunol Invest — PD1/PDL1 yoğunluğu,
- *     yarı-otomatik QuPath. doi:10.1080/08820139.2023.2197572
+ *   • de Ruiter EJ et al. (2022), Virchows Arch 481(2):223–231 — CD57+
+ *     hücre/mm², QuPath vs iki gözlemci ICC. doi:10.1007/s00428-022-03323-6
+ *   • Russell GG et al. (2023), Immunol Invest 52(6):661–680 — PD1/PDL1
+ *     yoğunluğu, yarı-otomatik QuPath. doi:10.1080/08820139.2023.2217845
  *   • Reichling C et al. (2019), Gut — CD3/CD8 yoğunluğu (tümör/invaziv kenar).
  *     doi:10.1136/gutjnl-2019-319292
  *

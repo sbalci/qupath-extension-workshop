@@ -21,12 +21,12 @@
  *   (sütunlar: Çekirdek ID, Geçerli, Alan mm2, Hücre, Pozitif, Pozitif %, Hücre/mm2)
  *
  * YÖNTEM REFERANSLARI:
- *   • Kurowski K et al. (2024), Methods Protoc — AI-destekli yüksek-verim TMA.
- *     doi:10.3390/mps7060093
- *   • Loughrey MB et al. (2018), Histopathology — TMA skorlama doğrulaması.
+ *   • Kurowski K et al. (2024), Methods Protoc 7(6):96 — AI-destekli yüksek-verim TMA.
+ *     doi:10.3390/mps7060096
+ *   • Loughrey MB et al. (2018), Histopathology 73(2):327–338 — TMA skorlama doğrulaması.
  *     doi:10.1111/his.13516
- *   • Porter R et al. (2023), Diagnostics — MLH1 TMA sınıflandırıcı.
- *     doi:10.3390/diagnostics13091890
+ *   • Porter RJ et al. (2023), Diagnostics 13(11):1890 — MLH1 TMA sınıflandırıcı.
+ *     doi:10.3390/diagnostics13111890
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */

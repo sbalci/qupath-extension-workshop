@@ -31,10 +31,10 @@
  *   • Sonuç penceresinde özet
  *
  * YÖNTEM REFERANSLARI:
- *   • Gonzalez AD et al. (2025), J Neuropathol Exp Neurol — % pozitiflik en
- *     güvenilir tau metriği; QuPath, Braak ile en iyi korelasyon. PMID:40380815
- *   • Finney C et al. (2020), J Neurosci Methods — ölçeklenebilir bölgesel
- *     İHK % kantifikasyonu (astrosit). doi:10.1016/j.jneumeth.2020.108937
+ *   • Gonzalez AD et al. (2025), J Neuropathol Exp Neurol 84(8):692–706 — %
+ *     pozitiflik en güvenilir tau metriği; QuPath Braak korelasyonu. doi:10.1093/jnen/nlaf026
+ *   • Finney CA et al. (2020), J Neurosci Methods 348:108994 — ölçeklenebilir
+ *     bölgesel İHK % kantifikasyonu (astrosit). doi:10.1016/j.jneumeth.2020.108994
  *   • Bankhead P et al. (2017), Sci Rep — QuPath. doi:10.1038/s41598-017-17204-5
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
