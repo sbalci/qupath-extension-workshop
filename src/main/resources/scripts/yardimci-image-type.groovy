@@ -163,6 +163,12 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
+            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            alwaysTop.setSelected(true)
+            alwaysTop.selectedProperty().addListener(
+                { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
+            )
+
             def copyBtn = new javafx.scene.control.Button("Kopyala")
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
@@ -176,7 +182,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def spacer = new javafx.scene.layout.Region()
             javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-            def buttons = new javafx.scene.layout.HBox(10, spacer, copyBtn, closeBtn)
+            def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, copyBtn, closeBtn)
             buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
             buttons.setPadding(new javafx.geometry.Insets(8))
 

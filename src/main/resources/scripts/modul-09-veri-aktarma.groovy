@@ -345,7 +345,7 @@ def exportEntry = { entry, imageDataForGeo ->
         def annos = imageDataForGeo?.getHierarchy()?.getAnnotationObjects() ?: []
         if (!annos.isEmpty()) {
             def geoFile = new File(outDir, "${slug}__annotations.geojson")
-            geoFile.text = gson.toJson(annos)
+            geoFile.write(gson.toJson(annos), "UTF-8")
             filesWritten << geoFile.getName()
             annotationsTotal += annos.size()
         }
