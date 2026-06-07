@@ -145,14 +145,14 @@ QP.addPixelClassifierMeasurements(classifier, classifierName)
 // ── 4) % pozitif alanı hesapla ──────────────────────────────────────
 // addPixelClassifierMeasurements her sınıf için "<ad>: <Sınıf> area µm^2"
 // benzeri ölçümler ekler. Pozitif sınıfın alanını / tüm sınıfların alanına böleriz.
-def areaKeyFor = { measurements, String cls ->
-    def k = measurements.getMeasurementNames().find {
+def areaKeyFor = { ann, String cls ->
+    def k = ann.measurements.keySet().find {
         it.toLowerCase().contains(cls.toLowerCase()) && it.toLowerCase().contains("area")
     }
-    k != null ? (measurements.get(k) as double) : Double.NaN
+    k != null ? (ann.measurements[k] ?: Double.NaN) as double : Double.NaN
 }
-def allAreaKeys = { measurements ->
-    measurements.getMeasurementNames().findAll {
+def allAreaKeysFor = { ann ->
+    ann.measurements.keySet().findAll {
         it.startsWith(classifierName) && it.toLowerCase().contains("area")
     }
 }
@@ -162,10 +162,9 @@ double totalPosArea = 0.0
 double totalAllArea = 0.0
 
 targets.each { ann ->
-    def m = ann.getMeasurementList()
-    double posArea = areaKeyFor(m, positiveClass)
+    double posArea = areaKeyFor(ann, positiveClass)
     double allArea = 0.0
-    allAreaKeys(m).each { allArea += (m.get(it) as double) }
+    allAreaKeysFor(ann).each { k -> allArea += ((ann.measurements[k] ?: 0.0) as double) }
 
     if (!Double.isNaN(posArea) && allArea > 0) {
         withData++
