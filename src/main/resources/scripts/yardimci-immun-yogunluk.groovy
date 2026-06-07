@@ -94,13 +94,14 @@ def showResultWindow = { String windowTitle, String windowBody ->
 }
 
 // ── Parametreler (sabit; kalibre edilebilir başlangıç değerleri) ────
-double pixelSizeMicrons   = 0.5
-double dabThreshold       = 0.20    // DAB OD eşiği — belirtece göre KALİBRE EDİN
-double minNucleusAreaUm2  = 10.0
-double maxNucleusAreaUm2  = 400.0
-double cellExpansionUm    = 2.0
-String detectionChannel   = "Hematoxylin OD"
-String summaryName        = "İmmün Yoğunluk Özet"
+double pixelSizeMicrons        = 0.5
+double dabThreshold            = 0.20    // DAB OD eşiği — belirtece göre KALİBRE EDİN
+double nucleusDetectionThreshold = 0.10  // Hematoxylin OD nükleus eşiği
+double minNucleusAreaUm2       = 10.0
+double maxNucleusAreaUm2       = 400.0
+double cellExpansionUm         = 2.0
+String detectionChannel        = "Hematoxylin OD"
+String summaryName             = "İmmün Yoğunluk Özet"
 
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
@@ -138,12 +139,13 @@ QP.runPlugin(
         '"sigmaMicrons":1.5,' +
         '"minAreaMicrons":' + minNucleusAreaUm2 + ',' +
         '"maxAreaMicrons":' + maxNucleusAreaUm2 + ',' +
-        '"threshold":0.10,' +
+        '"threshold":' + nucleusDetectionThreshold + ',' +
         '"watershedPostProcess":true,' +
         '"cellExpansionMicrons":' + cellExpansionUm + ',' +
         '"includeNuclei":true,' +
         '"smoothBoundaries":true,' +
         '"makeMeasurements":true,' +
+        // Membranöz immün belirteçler (CD8/PD-L1/PD1) için hücre gövdesi (membran dahil) compartmenti
         '"thresholdCompartment":"Cell: DAB OD mean",' +
         '"thresholdPositive1":' + dabThreshold + ',' +
         '"singleThreshold":true' +
