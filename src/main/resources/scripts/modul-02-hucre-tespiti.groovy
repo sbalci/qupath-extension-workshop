@@ -188,7 +188,7 @@ def stains = imageData.getColorDeconvolutionStains()
 def hasHematoxylin = false
 if (stains != null) {
     for (int i = 1; i <= 3; i++) {
-        def name = stains.getStain(i)?.getName()?.toLowerCase()
+        def name = stains.getStain(i)?.getName()?.toLowerCase(java.util.Locale.ROOT)
         if (name != null && name.contains("hematoxylin")) { hasHematoxylin = true; break }
     }
 }

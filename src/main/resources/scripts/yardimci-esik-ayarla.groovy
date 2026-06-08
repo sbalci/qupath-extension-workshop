@@ -295,7 +295,7 @@ cells.each { c ->
     if (cls.contains("3+"))      existingCounts["3+"]++
     else if (cls.contains("2+")) existingCounts["2+"]++
     else if (cls.contains("1+")) existingCounts["1+"]++
-    else if (cls.toLowerCase().contains("negative") || cls.isEmpty()) existingCounts.Negative++
+    else if (cls.toLowerCase(java.util.Locale.ROOT).contains("negative") || cls.isEmpty()) existingCounts.Negative++
     else                          existingCounts.other++
 }
 

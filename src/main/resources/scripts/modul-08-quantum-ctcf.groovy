@@ -343,7 +343,7 @@ if (hasClassifier) {
     step3Time = (System.currentTimeMillis() - t2) / 1000.0
 
     detectedCells.each { c ->
-        def cls = c.getPathClass()?.getName()?.toLowerCase() ?: ""
+        def cls = c.getPathClass()?.getName()?.toLowerCase(java.util.Locale.ROOT) ?: ""
         if (cls.contains("tumor"))      tumorCount++
         else if (cls.contains("ignore")) ignoreCount++
         else                              nonNeoCount++   // Non-neoplastic / Other / vb.

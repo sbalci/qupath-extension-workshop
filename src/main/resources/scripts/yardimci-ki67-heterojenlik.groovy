@@ -26,8 +26,8 @@
  * YÖNTEM REFERANSLARI:
  *   • Zhang Z et al. (2023), Mod Pathol — bölgesel Ki-67 heterojenliğinin
  *     dijital kantifikasyonu. doi:10.1016/j.modpat.2022.100017
- *   • Lu Z et al. (2024), J Pathol Clin Res — ızgara temelli heterojenlik
- *     ölçütleri. doi:10.1002/2056-4538.346
+ *   • Lu W et al. (2024), J Pathol Clin Res 10(1):e346 — ızgara temelli
+ *     heterojenlik ölçütleri. doi:10.1002/cjp2.346
  *   • Morisita M (1959) — dağılım indeksi Iδ (≈1 rastgele, >1 kümelenmiş).
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.

@@ -224,7 +224,7 @@ if (imageData == null) {
 // Image type uyarısı (Brightfield (H-DAB) zorunlu — DAB ayrımı için)
 def imageType = imageData.getImageType()
 def imageTypeName = imageType?.toString() ?: ""
-if (!imageTypeName.toLowerCase().contains("brightfield")) {
+if (!imageTypeName.toLowerCase(java.util.Locale.ROOT).contains("brightfield")) {
     Dialogs.showErrorMessage(
         "Yanlış görüntü tipi",
         "Bu slayt 'Brightfield' olarak ayarlı değil.\n" +
@@ -243,7 +243,7 @@ def stains = imageData.getColorDeconvolutionStains()
 def hasHematoxylin = false
 if (stains != null) {
     for (int i = 1; i <= 3; i++) {
-        def name = stains.getStain(i)?.getName()?.toLowerCase()
+        def name = stains.getStain(i)?.getName()?.toLowerCase(java.util.Locale.ROOT)
         if (name != null && name.contains("hematoxylin")) { hasHematoxylin = true; break }
     }
 }

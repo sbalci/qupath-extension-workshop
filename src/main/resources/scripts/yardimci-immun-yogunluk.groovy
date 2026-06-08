@@ -154,7 +154,7 @@ QP.runPlugin(
 )
 
 // ── 3) Pozitif hücreleri say, yoğunluk hesapla ──────────────────────
-def isPositive = { cell -> cell.getPathClass()?.getName()?.toLowerCase()?.contains("positive") }
+def isPositive = { cell -> def cn = cell.getPathClass()?.getName(); cn != null && (cn.equalsIgnoreCase("Positive") || cn.equalsIgnoreCase("Pozitif") || cn.endsWith("+")) }
 def areaMm2 = { ann ->
     def roi = ann.getROI()
     roi != null ? (roi.getArea() * pw * ph) / 1_000_000.0 : 0.0

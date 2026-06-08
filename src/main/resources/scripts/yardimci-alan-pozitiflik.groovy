@@ -148,13 +148,13 @@ QP.addPixelClassifierMeasurements(classifier, classifierName)
 // benzeri ölçümler ekler. Pozitif sınıfın alanını / tüm sınıfların alanına böleriz.
 def areaKeyFor = { ann, String cls ->
     def k = ann.measurements.keySet().find {
-        it.toLowerCase().contains(cls.toLowerCase()) && it.toLowerCase().contains("area")
+        it.toLowerCase(java.util.Locale.ROOT).contains(cls.toLowerCase(java.util.Locale.ROOT)) && it.toLowerCase(java.util.Locale.ROOT).contains("area")
     }
     k != null ? (ann.measurements[k] ?: Double.NaN) as double : Double.NaN
 }
 def allAreaKeysFor = { ann ->
     ann.measurements.keySet().findAll {
-        it.startsWith(classifierName) && it.toLowerCase().contains("area")
+        it.startsWith(classifierName) && it.toLowerCase(java.util.Locale.ROOT).contains("area")
     }
 }
 
