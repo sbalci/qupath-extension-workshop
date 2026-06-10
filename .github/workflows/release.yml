@@ -18,6 +18,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # On a tag push, this checks out the tag's commit. On workflow_dispatch the
+      # input tag may NOT exist yet (the dispatch path is documented to create it),
+      # so we deliberately do NOT pass `ref: inputs.tag` — that would fail for a
+      # not-yet-existing tag. The dispatch path builds from the selected branch HEAD,
+      # and the tag is then created against that commit by action-gh-release below.
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -79,4 +84,9 @@ jobs:
           files: build/libs/qupath-extension-workshop-*.jar
           generate_release_notes: true
           draft: false
+          # TODO (after the first workshop session): adopt the prerelease/release
+          # convention — mark -alpha/-beta tags as prerelease (e.g.
+          # prerelease: ${{ contains(steps.tag.outputs.tag, '-alpha') || contains(steps.tag.outputs.tag, '-beta') }})
+          # so alpha builds don't land as GitHub "Latest" and aren't pulled as
+          # stable by osf-sync.yml's `gh release download`. Kept false for now by choice.
           prerelease: false

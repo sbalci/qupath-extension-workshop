@@ -297,6 +297,12 @@ def elapsed = (System.currentTimeMillis() - t0) / 1000.0
 def cal = imageData.getServer().getPixelCalibration()
 def pixelWidth  = cal.getPixelWidthMicrons()
 def pixelHeight = cal.getPixelHeightMicrons()
+if (!(pixelWidth > 0) || !(pixelHeight > 0)) {
+    Dialogs.showErrorMessage("Kalibrasyon yok",
+        "Slaytta piksel boyutu (µm) tanımlı değil; alan/yoğunluk ölçümleri (mm²) hesaplanamaz.\n\n" +
+        "Image type ve piksel boyutunu ayarlayıp betiği tekrar çalıştırın.")
+    return
+}
 
 def totalCells = 0
 def totalAreaMm2 = 0.0

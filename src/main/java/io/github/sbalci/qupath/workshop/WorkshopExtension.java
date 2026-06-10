@@ -299,6 +299,9 @@ public class WorkshopExtension implements QuPathExtension {
             "  • Tespitleri sil (orphan / tümü)\n" +
             "  • Görüntü tipi ayarla (slayt / proje)\n" +
             "  • Eşikleri ayarla (yeniden tespit etmeden re-binning)\n\n" +
+            "İleri analiz (sonraki oturum):\n" +
+            "  • Menüde \"İleri analiz — sonraki oturum\" altında gri görünen\n" +
+            "    " + UPCOMING_SCRIPTS.size() + " yardımcı bir sonraki oturumda etkinleşecek.\n\n" +
             "Ayarlar:\n" +
             "  • Atölye Ayarları — parametreleri değiştir, hatırlanır, sıfırlanabilir\n\n" +
             "Versiyon: " + getVersion() + "\n" +

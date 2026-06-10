@@ -308,6 +308,12 @@ def elapsed = (System.currentTimeMillis() - t0) / 1000.0
 def cal = imageData.getServer().getPixelCalibration()
 def pixelWidth  = cal.getPixelWidthMicrons()
 def pixelHeight = cal.getPixelHeightMicrons()
+if (!(pixelWidth > 0) || !(pixelHeight > 0)) {
+    Dialogs.showErrorMessage("Kalibrasyon yok",
+        "Slaytta piksel boyutu (µm) tanımlı değil; alan ölçümleri (mm²) ve TSR hesaplanamaz.\n\n" +
+        "Image type ve piksel boyutunu ayarlayıp betiği tekrar çalıştırın.")
+    return
+}
 
 def tumorAnnotations = QP.getAnnotationObjects().findAll {
     it.getPathClass()?.getName() == "Tumor"

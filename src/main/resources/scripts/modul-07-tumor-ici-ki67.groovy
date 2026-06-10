@@ -402,6 +402,12 @@ def tumorStats = sayHucreler(tumorCells)
 def cal = imageData.getServer().getPixelCalibration()
 def pixelWidth  = cal.getPixelWidthMicrons()
 def pixelHeight = cal.getPixelHeightMicrons()
+if (!(pixelWidth > 0) || !(pixelHeight > 0)) {
+    Dialogs.showErrorMessage("Kalibrasyon yok",
+        "Slaytta piksel boyutu (µm) tanımlı değil; alan/yoğunluk ölçümleri (mm²) hesaplanamaz.\n\n" +
+        "Image type ve piksel boyutunu ayarlayıp betiği tekrar çalıştırın.")
+    return
+}
 def tumorAreaMm2 = tumorAnnotations.sum(0.0) { ann ->
     def roi = ann.getROI()
     roi != null ? (roi.getArea() * pixelWidth * pixelHeight) / 1_000_000.0 : 0.0

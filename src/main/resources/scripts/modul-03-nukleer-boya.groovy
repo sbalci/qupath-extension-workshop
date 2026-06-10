@@ -383,6 +383,12 @@ def ki67LI = totalCells > 0 ? 100.0 * numPositive / totalCells : 0.0
 def cal = imageData.getServer().getPixelCalibration()
 def pixelWidth  = cal.getPixelWidthMicrons()
 def pixelHeight = cal.getPixelHeightMicrons()
+if (!(pixelWidth > 0) || !(pixelHeight > 0)) {
+    Dialogs.showErrorMessage("Kalibrasyon yok",
+        "Slaytta piksel boyutu (µm) tanımlı değil; alan/yoğunluk ölçümleri (mm²) hesaplanamaz.\n\n" +
+        "Image type ve piksel boyutunu ayarlayıp betiği tekrar çalıştırın.")
+    return
+}
 def roi = targetAnnotation.getROI()
 def totalAreaMm2 = roi != null
     ? (roi.getArea() * pixelWidth * pixelHeight) / 1_000_000.0

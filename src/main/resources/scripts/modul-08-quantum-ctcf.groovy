@@ -189,7 +189,7 @@ if (!modelFile.exists()) {
         "(Detaylar: Modül 1 'Yazılım kurulumu' → StarDist model bölümü)"
     )
     if (browse) {
-        def selectedFile = Dialogs.showFileChooser(null, "StarDist Modelini Seç (.pb)", null, "StarDist Model", "pb")
+        def selectedFile = Dialogs.promptForFile("StarDist Modelini Seç (.pb)", null, "StarDist Model (.pb)", "pb")
         if (selectedFile != null) {
             modelFile = selectedFile
             modelPath = modelFile.getAbsolutePath()

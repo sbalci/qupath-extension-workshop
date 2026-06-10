@@ -147,8 +147,12 @@ QP.addPixelClassifierMeasurements(classifier, classifierName)
 // addPixelClassifierMeasurements her sınıf için "<ad>: <Sınıf> area µm^2"
 // benzeri ölçümler ekler. Pozitif sınıfın alanını / tüm sınıfların alanına böleriz.
 def areaKeyFor = { ann, String cls ->
+    // startsWith(classifierName) guard: a second thresholder whose positive class is
+    // also named "Pozitif" (QuPath's default) would otherwise let an unrelated key win
+    // the unordered find() — silently picking the wrong classifier's area. Mirrors
+    // allAreaKeysFor below so numerator and denominator come from the same classifier.
     def k = ann.measurements.keySet().find {
-        it.toLowerCase(java.util.Locale.ROOT).contains(cls.toLowerCase(java.util.Locale.ROOT)) && it.toLowerCase(java.util.Locale.ROOT).contains("area")
+        it.startsWith(classifierName) && it.toLowerCase(java.util.Locale.ROOT).contains(cls.toLowerCase(java.util.Locale.ROOT)) && it.toLowerCase(java.util.Locale.ROOT).contains("area")
     }
     k != null ? (ann.measurements[k] ?: Double.NaN) as double : Double.NaN
 }
