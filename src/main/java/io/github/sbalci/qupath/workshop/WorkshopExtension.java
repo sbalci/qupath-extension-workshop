@@ -79,10 +79,10 @@ public class WorkshopExtension implements QuPathExtension {
      * module list.
      */
     private static final List<ScriptEntry> UTILITY_SCRIPTS = List.of(
-        new ScriptEntry("Yardımcı - Tespitleri sil",                "yardimci-tespitleri-sil.groovy"),
-        new ScriptEntry("Yardımcı - Görüntü tipi ayarla",           "yardimci-image-type.groovy"),
-        new ScriptEntry("Yardımcı - Eşikleri ayarla",               "yardimci-esik-ayarla.groovy"),
-        new ScriptEntry("Yardımcı - Kalibrasyon (piksel boyutu)",    "yardimci-kalibrasyon.groovy")
+        new ScriptEntry("Tespitleri sil",              "yardimci-tespitleri-sil.groovy"),
+        new ScriptEntry("Görüntü tipi ayarla",         "yardimci-image-type.groovy"),
+        new ScriptEntry("Eşikleri ayarla",             "yardimci-esik-ayarla.groovy"),
+        new ScriptEntry("Kalibrasyon (piksel boyutu)", "yardimci-kalibrasyon.groovy")
     );
 
     /**
