@@ -81,7 +81,8 @@ public class WorkshopExtension implements QuPathExtension {
     private static final List<ScriptEntry> UTILITY_SCRIPTS = List.of(
         new ScriptEntry("Yardımcı - Tespitleri sil",                "yardimci-tespitleri-sil.groovy"),
         new ScriptEntry("Yardımcı - Görüntü tipi ayarla",           "yardimci-image-type.groovy"),
-        new ScriptEntry("Yardımcı - Eşikleri ayarla",               "yardimci-esik-ayarla.groovy")
+        new ScriptEntry("Yardımcı - Eşikleri ayarla",               "yardimci-esik-ayarla.groovy"),
+        new ScriptEntry("Yardımcı - Kalibrasyon (piksel boyutu)",    "yardimci-kalibrasyon.groovy")
     );
 
     /**
@@ -298,7 +299,8 @@ public class WorkshopExtension implements QuPathExtension {
             "Yardımcılar:\n" +
             "  • Tespitleri sil (orphan / tümü)\n" +
             "  • Görüntü tipi ayarla (slayt / proje)\n" +
-            "  • Eşikleri ayarla (yeniden tespit etmeden re-binning)\n\n" +
+            "  • Eşikleri ayarla (yeniden tespit etmeden re-binning)\n" +
+            "  • Kalibrasyon (piksel boyutu — µm/px ayarla)\n\n" +
             "İleri analiz (sonraki oturum):\n" +
             "  • Menüde \"İleri analiz — sonraki oturum\" altında gri görünen\n" +
             "    " + UPCOMING_SCRIPTS.size() + " yardımcı bir sonraki oturumda etkinleşecek.\n\n" +
