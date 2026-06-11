@@ -311,7 +311,8 @@ def pixelHeight = cal.getPixelHeightMicrons()
 if (!(pixelWidth > 0) || !(pixelHeight > 0)) {
     Dialogs.showErrorMessage("Kalibrasyon yok",
         "Slaytta piksel boyutu (µm) tanımlı değil; alan ölçümleri (mm²) ve TSR hesaplanamaz.\n\n" +
-        "Image type ve piksel boyutunu ayarlayıp betiği tekrar çalıştırın.")
+        "Piksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar →\n" +
+        "Kalibrasyon (piksel boyutu). Sonra bu betiği tekrar çalıştırın.")
     return
 }
 

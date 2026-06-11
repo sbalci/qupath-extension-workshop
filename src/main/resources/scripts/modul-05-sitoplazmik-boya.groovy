@@ -319,7 +319,8 @@ def pixelHeight = cal.getPixelHeightMicrons()
 if (!(pixelWidth > 0) || !(pixelHeight > 0)) {
     Dialogs.showErrorMessage("Kalibrasyon yok",
         "Slaytta piksel boyutu (µm) tanımlı değil; alan/yoğunluk ölçümleri (mm²) hesaplanamaz.\n\n" +
-        "Image type ve piksel boyutunu ayarlayıp betiği tekrar çalıştırın.")
+        "Piksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar →\n" +
+        "Kalibrasyon (piksel boyutu). Sonra bu betiği tekrar çalıştırın.")
     return
 }
 def roi = targetAnnotation.getROI()
