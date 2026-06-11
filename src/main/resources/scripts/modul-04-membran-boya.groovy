@@ -392,11 +392,15 @@ targetAnnotation.measurements['Pixelwise H-score'] = pixelHScore
 def pixElapsed = (System.currentTimeMillis() - pixT0) / 1000.0
 
 // ROI alanı ve büyük-ROI uyarısı
-double areaMm2 = targetAnnotation.getROI().getScaledArea(
-    cal.getPixelWidthMicrons(), cal.getPixelHeightMicrons()
-) / 1e6
+// Piksel boyutu yoksa alan NaN olur — birincil piksel H-score'u kalibrasyon
+// gerektirmez, bu yüzden betiği durdurmayız; yalnızca alanı "kalibre değil"
+// gösterir ve büyük-ROI uyarısını atlarız.
+boolean pixCalibrated = cal.getPixelWidthMicrons() > 0
+double areaMm2 = pixCalibrated
+    ? targetAnnotation.getROI().getScaledArea(cal.getPixelWidthMicrons(), cal.getPixelHeightMicrons()) / 1e6
+    : Double.NaN
 double LARGE_ROI_MM2 = 25.0  // sezgisel; kalibre değil
-def roiWarnStr = areaMm2 > LARGE_ROI_MM2
+def roiWarnStr = (pixCalibrated && areaMm2 > LARGE_ROI_MM2)
     ? "\n⚠ Büyük ROI uyarısı: seçili alan ${String.format(java.util.Locale.US, '%.1f', areaMm2)} mm²" +
       " (eşik ${String.format(java.util.Locale.US, '%.0f', LARGE_ROI_MM2)} mm²).\n" +
       "  Stroma içeren büyük alanlar piksel H-score'u seyreltebilir.\n" +
@@ -590,7 +594,7 @@ def pixBlock =
                     "${String.format(java.util.Locale.US, '%.2f', pixDABthresholds[2])}] OD," +
               "  H mask ${String.format(java.util.Locale.US, '%.2f', pixHthreshold)} OD\n" +
     "  Alan (boyalı)    : ${String.format(java.util.Locale.US, '%,.0f', pxAreaDenom)} µm²\n" +
-    "  Bölge            : seçili ROI · ${String.format(java.util.Locale.US, '%.2f', areaMm2)} mm²" +
+    "  Bölge            : seçili ROI · " + (pixCalibrated ? "${String.format(java.util.Locale.US, '%.2f', areaMm2)} mm²" : "kalibre değil") +
                         "  (süre: ${String.format(java.util.Locale.US, '%.1f', pixElapsed)} sn)\n\n"
 
 // Hücre bazlı blok (koşullu) — pure GString

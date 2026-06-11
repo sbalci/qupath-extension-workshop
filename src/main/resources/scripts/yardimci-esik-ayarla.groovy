@@ -18,7 +18,7 @@
  * KULLANIM:
  *   1. Önce Modül 3/3b/4/5/7'den birini çalıştırın (hücre tespiti yapılır)
  *   2. Hücreleri içeren anotasyonu seçili tutun
- *   3. [Extensions → Atölye → Yardımcı - Eşikleri ayarla]
+ *   3. [Extensions → Atölye → Yardımcılar → Eşikleri ayarla]
  *   4. Form açılır, eşikleri değiştirip "Yeniden hesapla" → yeni özet penceresi
  *   5. Memnun değilseniz tekrar açın, başka eşik deneyin (saniyeler içinde)
  *

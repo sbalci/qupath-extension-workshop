@@ -14,7 +14,7 @@
  *                              hâlâ ait olan tespitler korunur.
  *
  * KULLANIM:
- *   1. [Automate → Project scripts → Yardımcı - Tespitleri sil]
+ *   1. [Extensions → Atölye → Yardımcılar → Tespitleri sil]
  *   2. Sayım önizlemesi görünür → istediğiniz butona tıklayın
  *   3. Sonuç penceresi kaç nesnenin silindiğini gösterir
  *
