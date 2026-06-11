@@ -215,14 +215,11 @@ applyMeta(imageData, newPx)
 // Projedeyse açık görüntüyü diske de yaz (kalıcı olsun) — best-effort
 boolean persisted = false
 def project = QP.getProject()
-def currentEntry = null
-if (project != null) {
+def currentEntry = (project != null) ? QP.getProjectEntry() : null
+if (currentEntry != null) {
     try {
-        currentEntry = project.getEntry(imageData)
-        if (currentEntry != null) {
-            currentEntry.saveImageData(imageData)
-            persisted = true
-        }
+        currentEntry.saveImageData(imageData)
+        persisted = true
     } catch (Throwable t) {
         println "Uyarı: açık görüntü diske yazılamadı (${t.getClass().getSimpleName()})."
     }
@@ -236,23 +233,25 @@ javafx.application.Platform.runLater {
 // ── 4) İsteğe bağlı: proje genelinde kalibre edilmemişlere uygula (yalnız Mod A) ──
 int batchUpdated = 0
 int batchSkipped = 0
+boolean batchRan = false
 if (mode == "direct" && project != null && !isHeadless) {
     def doBatch = Dialogs.showConfirmDialog("Proje geneli",
         String.format(java.util.Locale.US,
             "Projedeki TÜM kalibre edilmemiş görüntülere de %.4f µm/px uygulansın mı?\n" +
             "(Zaten kalibre olan görüntülere dokunulmaz.)", newPx))
     if (doBatch) {
+        batchRan = true
         for (entry in project.getImageList()) {
             try {
                 if (currentEntry != null && entry == currentEntry) continue
-                def ed = entry.readImageData()
-                double pw = ed.getServer().getPixelCalibration().getPixelWidthMicrons()
-                if (!(pw > 0) || pw == 1.0) {
-                    applyMeta(ed, newPx)
-                    entry.saveImageData(ed)
-                    batchUpdated++
-                } else {
-                    batchSkipped++
+                entry.readImageData().withCloseable { ed ->
+                    if (!ed.getServer().getPixelCalibration().hasPixelSizeMicrons()) {
+                        applyMeta(ed, newPx)
+                        entry.saveImageData(ed)
+                        batchUpdated++
+                    } else {
+                        batchSkipped++
+                    }
                 }
             } catch (Throwable t) {
                 println "Uyarı: ${entry.getImageName()} güncellenemedi (${t.getClass().getSimpleName()})."
@@ -268,7 +267,7 @@ body << "  Yöntem        : ${methodNote}\n"
 body << "  Önceki        : ${curStr}\n"
 body << String.format(java.util.Locale.US, "  Yeni          : %.4f µm/px\n", newPx)
 body << "  Diske yazıldı : " + (persisted ? "evet (proje)" : (project != null ? "hayır" : "proje yok — yalnız bellek")) + "\n"
-if (mode == "direct" && project != null) {
+if (batchRan) {
     body << String.format(java.util.Locale.US, "  Proje geneli  : %d güncellendi, %d zaten kalibre\n", batchUpdated, batchSkipped)
 }
 body << "\nDoğrulama: Ruler aracıyla tipik bir tümör çekirdeği çapı ~8–12 µm görünmeli.\n"
