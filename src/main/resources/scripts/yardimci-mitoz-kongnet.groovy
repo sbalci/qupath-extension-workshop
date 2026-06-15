@@ -52,7 +52,6 @@ import qupath.lib.objects.PathObjects
 import qupath.lib.roi.ROIs
 import qupath.lib.regions.ImagePlane
 import qupath.fx.dialogs.FileChoosers
-import javafx.stage.FileChooser
 import com.google.gson.JsonParser
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
@@ -150,22 +149,25 @@ def points = []   // her eleman: [x, y]
 try {
     def reader = new java.io.InputStreamReader(
         new java.io.FileInputStream(geojsonFile), java.nio.charset.StandardCharsets.UTF_8)
-    def root = JsonParser.parseReader(reader).getAsJsonObject()
-    reader.close()
-    if (!root.has("features")) {
-        Dialogs.showErrorMessage("Geçersiz GeoJSON",
-            "Dosyada 'features' dizisi yok (FeatureCollection bekleniyor).")
-        return
-    }
-    root.getAsJsonArray("features").each { fe ->
-        def feat = fe.getAsJsonObject()
-        if (!feat.has("geometry") || feat.get("geometry").isJsonNull()) return
-        def geom = feat.getAsJsonObject("geometry")
-        def gtype = geom.has("type") ? geom.get("type").getAsString() : ""
-        if (gtype != "Point") return
-        def coords = geom.getAsJsonArray("coordinates")
-        if (coords == null || coords.size() < 2) return
-        points << [coords.get(0).getAsDouble(), coords.get(1).getAsDouble()]
+    try {
+        def root = JsonParser.parseReader(reader).getAsJsonObject()
+        if (!root.has("features")) {
+            Dialogs.showErrorMessage("Geçersiz GeoJSON",
+                "Dosyada 'features' dizisi yok (FeatureCollection bekleniyor).")
+            return
+        }
+        root.getAsJsonArray("features").each { fe ->
+            def feat = fe.getAsJsonObject()
+            if (!feat.has("geometry") || feat.get("geometry").isJsonNull()) return
+            def geom = feat.getAsJsonObject("geometry")
+            def gtype = geom.has("type") ? geom.get("type").getAsString() : ""
+            if (gtype != "Point") return
+            def coords = geom.getAsJsonArray("coordinates")
+            if (coords == null || coords.size() < 2) return
+            points << [coords.get(0).getAsDouble(), coords.get(1).getAsDouble()]
+        }
+    } finally {
+        reader.close()
     }
 } catch (Throwable t) {
     Dialogs.showErrorMessage("GeoJSON okunamadı",
