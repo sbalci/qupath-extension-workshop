@@ -100,7 +100,8 @@ public class WorkshopExtension implements QuPathExtension {
         new ScriptEntry("Stromal TIL yoğunluğu",         "yardimci-stromal-til.groovy"),
         new ScriptEntry("Alan-bazlı pozitiflik (% positivity)", "yardimci-alan-pozitiflik.groovy"),
         new ScriptEntry("TMA çekirdek bazlı dışa aktarım",      "yardimci-tma-cekirdek-aktarim.groovy"),
-        new ScriptEntry("İmmün hücre yoğunluğu (DAB)",          "yardimci-immun-yogunluk.groovy")
+        new ScriptEntry("İmmün hücre yoğunluğu (DAB)",          "yardimci-immun-yogunluk.groovy"),
+        new ScriptEntry("PHH3 mitoz kantifikasyonu",            "yardimci-mitoz-phh3.groovy")
     );
 
     private boolean alreadyInstalled = false;
