@@ -31,9 +31,11 @@ import org.slf4j.LoggerFactory;
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
 
+import qupath.lib.common.GeneralTools;
 import qupath.lib.common.Version;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.dialogs.Dialogs;
+import qupath.lib.gui.extensions.GitHubProject;
 import qupath.lib.gui.extensions.QuPathExtension;
 
 /**
@@ -42,7 +44,7 @@ import qupath.lib.gui.extensions.QuPathExtension;
  * Discovered by QuPath via the {@code META-INF/services/qupath.lib.gui.extensions.QuPathExtension}
  * resource file (ServiceLoader mechanism).
  */
-public class WorkshopExtension implements QuPathExtension {
+public class WorkshopExtension implements QuPathExtension, GitHubProject {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkshopExtension.class);
 
@@ -62,9 +64,16 @@ public class WorkshopExtension implements QuPathExtension {
         new ScriptEntry("Modül 2 - Hücre tespiti",                  "modul-02-hucre-tespiti.groovy"),
         new ScriptEntry("Modül 3 - Nükleer boya (Ki-67)",           "modul-03-nukleer-boya.groovy"),
         new ScriptEntry("Modül 3b - ER / PR H-score",               "modul-03b-er-pr-hscore.groovy"),
-        new ScriptEntry("Modül 4 - Membran boya (HER2)",            "modul-04-membran-boya.groovy"),
+        // Modül 4 (HER2 membran skorlama) sonraki oturuma ertelendi — script JAR'da kalır
+        // ve menüde görünür ama gri/disabled (tıklama etkisiz). İleride etkinleştirmek için
+        // aşağıdaki entry'nin sonundaki `true` (disabled) bayrağını kaldırın.
+        new ScriptEntry("Modül 4 - Membran boya (HER2)",            "modul-04-membran-boya.groovy", true),
         new ScriptEntry("Modül 5 - Sitoplazmik boya (CD68)",        "modul-05-sitoplazmik-boya.groovy"),
-        new ScriptEntry("Modül 6 - Tümör vs stroma sınıflandırıcı", "modul-06-tumor-stroma.groovy"),
+        // Modül 6 iki adım: önce modeli EĞİT (anotasyonlardan RF üretir), sonra UYGULA
+        // (tüm slayda uygulayıp TSR ölçer). Eğitim adımı, Train pixel classifier diyaloğunu
+        // açmadan tek tıkla bir 'tumor-stroma-RF' sınıflandırıcı kaydeder.
+        new ScriptEntry("Modül 6 - Tümör/Stroma modeli oluştur (eğit)", "modul-06-model-egit.groovy"),
+        new ScriptEntry("Modül 6 - Tümör vs stroma (uygula)",       "modul-06-tumor-stroma.groovy"),
         new ScriptEntry("Modül 7 - Tümör içi Ki-67",                "modul-07-tumor-ici-ki67.groovy"),
         // Modül 8 (QuANTUM cTCF) sonraki sürümlere ertelendi — StarDist + object classifier
         // ön-gereksinimleri ilk sürüm katılımcıları için fazla. Script JAR resource olarak
@@ -126,7 +135,11 @@ public class WorkshopExtension implements QuPathExtension {
             Menu modulesMenu = new Menu("Modüller");
             for (ScriptEntry entry : SCRIPTS) {
                 MenuItem item = new MenuItem(entry.label);
-                item.setOnAction(e -> runScriptSafely(qupath, entry));
+                if (entry.disabled) {
+                    item.setDisable(true);   // sonraki oturuma ertelendi — gri görünür, tıklama etkisiz
+                } else {
+                    item.setOnAction(e -> runScriptSafely(qupath, entry));
+                }
                 modulesMenu.getItems().add(item);
             }
             menu.getItems().add(modulesMenu);
@@ -156,6 +169,10 @@ public class WorkshopExtension implements QuPathExtension {
             var settings = new MenuItem("Atölye Ayarları…");
             settings.setOnAction(e -> WorkshopSettingsDialog.show());
             menu.getItems().add(settings);
+
+            var envCheck = new MenuItem("Ortam kontrolü…");
+            envCheck.setOnAction(e -> showEnvironmentCheck(qupath));
+            menu.getItems().add(envCheck);
 
             menu.getItems().add(new SeparatorMenuItem());
             var about = new MenuItem("Atölye hakkında…");
@@ -282,6 +299,62 @@ public class WorkshopExtension implements QuPathExtension {
         }
     }
 
+    /**
+     * Diagnostic dialog for workshop-day troubleshooting. Reports the running
+     * QuPath version, the current image/project state, and whether the optional
+     * sibling extensions used by advanced/deferred modules (Cellpose, StarDist,
+     * InstanSeg) are present on the classpath — so a participant can see at a
+     * glance what still needs installing, instead of discovering it via a cryptic
+     * error mid-script. Core modules (2, 3, 3b, 5, 6, 7, 9) need only QuPath.
+     */
+    private void showEnvironmentCheck(QuPathGUI qupath) {
+        String found = "✅ bulundu";
+        String missing = "—  bulunamadı";
+        boolean hasImage = qupath.getImageData() != null;
+        boolean hasProject = qupath.getProject() != null;
+        boolean cellpose = isOnClasspath("qupath.ext.biop.cellpose.Cellpose2D",
+                                         "qupath.ext.biop.cellpose.CellposeExtension");
+        boolean stardist = isOnClasspath("qupath.ext.stardist.StarDist2D",
+                                         "qupath.ext.stardist.StarDistExtension");
+        boolean instanseg = isOnClasspath("qupath.ext.instanseg.core.InstanSeg",
+                                          "qupath.ext.instanseg.InstanSegExtension");
+        Dialogs.showMessageDialog(
+            "Atölye — Ortam kontrolü",
+            "QuPath sürümü:     " + GeneralTools.getVersion() + "\n" +
+            "Atölye eklentisi:  v" + getVersion() + "  (derlenme " + BUILD_TIMESTAMP + ")\n" +
+            "QuPath baseline:   " + getQuPathVersion() + "+\n\n" +
+            "Açık görüntü:      " + (hasImage ? "var" : "yok — File → Open ile bir slayt açın") + "\n" +
+            "Açık proje:        " + (hasProject ? "var" : "yok") + "\n\n" +
+            "Opsiyonel bileşenler (yalnızca ileri / ertelenmiş modüller için):\n" +
+            "  • Cellpose eklentisi:   " + (cellpose ? found : missing) + "\n" +
+            "  • StarDist eklentisi:   " + (stardist ? found : missing) + "\n" +
+            "  • InstanSeg eklentisi:  " + (instanseg ? found : missing) + "\n\n" +
+            "Çekirdek modüller (2, 3, 3b, 5, 6, 7, 9) yalnızca QuPath gerektirir.\n" +
+            "\"bulunamadı\" görünen bileşenler yalnızca ilgili ileri modül için gerekir;\n" +
+            "kurulum rehberi: https://atolye.patoloji.dev/kaynaklar.html#ileri-kurulumlar\n\n" +
+            "Yalnızca araştırma ve eğitim amaçlıdır."
+        );
+    }
+
+    /**
+     * True if any candidate fully-qualified class name resolves on the current
+     * classpath. Used to detect optional sibling extensions without a hard
+     * compile-time dependency on them. {@code initialize=false} avoids running
+     * the target class's static initializers.
+     */
+    private static boolean isOnClasspath(String... candidates) {
+        ClassLoader loader = WorkshopExtension.class.getClassLoader();
+        for (String className : candidates) {
+            try {
+                Class.forName(className, false, loader);
+                return true;
+            } catch (Throwable ignored) {
+                // try next candidate
+            }
+        }
+        return false;
+    }
+
     private void showAboutDialog() {
         Dialogs.showMessageDialog(
             "QuPath Atölye Scriptleri",
@@ -291,9 +364,9 @@ public class WorkshopExtension implements QuPathExtension {
             "  2 — Hücre tespiti\n" +
             "  3 — Nükleer boya (Ki-67)\n" +
             "  3b — ER / PR H-score\n" +
-            "  4 — Membran boya (HER2)\n" +
+            "  4 — Membran boya (HER2) (gri — sonraki oturumda)\n" +
             "  5 — Sitoplazmik boya (CD68)\n" +
-            "  6 — Tümör vs stroma sınıflandırıcı\n" +
+            "  6 — Tümör/Stroma modeli oluştur (eğit) + Tümör vs stroma (uygula)\n" +
             "  7 — Tümör içi Ki-67\n" +
             "  9 — Veri dışa aktarma (TSV / GeoJSON)\n\n" +
             "  (Modül 8 - QuANTUM cTCF: sonraki sürümlerde)\n\n" +
@@ -339,15 +412,33 @@ public class WorkshopExtension implements QuPathExtension {
         return Version.parse("0.6.0");
     }
 
+    // ─── GitHubProject contract ───────────────────────────────────────
+    // Lets QuPath check GitHub Releases and notify the user when a newer
+    // workshop-extension version is available (participants typically install
+    // the JAR once and work offline for months afterwards). NOTE: this is the
+    // extension's OWN repo — unrelated to getQuPathVersion()'s 0.6.0 baseline.
+
+    @Override
+    public GitHubProject.GitHubRepo getRepository() {
+        return GitHubProject.GitHubRepo.create(getName(), "sbalci", "qupath-extension-workshop");
+    }
+
     // ─── helpers ───────────────────────────────────────────────────────
 
     private static final class ScriptEntry {
         final String label;
         final String resource;
+        /** When true the menu item is shown greyed-out / unclickable (deferred to a later session). */
+        final boolean disabled;
 
         ScriptEntry(String label, String resource) {
+            this(label, resource, false);
+        }
+
+        ScriptEntry(String label, String resource, boolean disabled) {
             this.label = label;
             this.resource = resource;
+            this.disabled = disabled;
         }
     }
 }
