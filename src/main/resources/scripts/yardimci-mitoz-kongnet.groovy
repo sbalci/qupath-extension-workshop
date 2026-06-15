@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   KongNet (TIAToolbox, MIDOG 2025) ile H&E slaytında bulunan mitoz
+ *   KongNet (KongNet_Inference_Main, MIDOG) ile H&E slaytında bulunan mitoz
  *   merkezlerini içeren bir GeoJSON dosyasını QuPath'e aktarır; her mitozu
  *   "Mitosis" sınıflı bir nokta-tespiti (point detection) olarak oluşturur ve
  *   seçili anotasyon(lar) için mitoz sayısı + yoğunluğu üretir:
@@ -19,9 +19,11 @@
  *     genelleme sınırları için bkz. Ek W. Görsel doğrulama gerekir.
  *
  * GeoJSON ÜRETİMİ (önkoşul, QuPath dışında):
- *   KongNet'i TIAToolbox ile çalıştırıp mitoz merkezlerini WSI taban (level-0)
- *   piksel koordinatlarında bir GeoJSON FeatureCollection olarak yazın (her
- *   özellik bir Point). Komut bloğu: kaynaklar.qmd § 4-E ve Ek Y.
+ *   KongNet'i resmi depo (Jiaqi-Lv/KongNet_Inference_Main) ile çalıştırın:
+ *   inference_MIDOG.py → SQLite çıktı; ardından output_to_qupath.py ile mitoz
+ *   merkezlerini WSI taban (level-0) piksel koordinatlarında GeoJSON
+ *   FeatureCollection (her özellik bir Point) olarak dışa aktarın. Bağlam ve
+ *   kurulum: kaynaklar.qmd § 5.4 (KongNet satırı).
  *
  * KULLANIM:
  *   1. H&E slaytını açın; piksel boyutu (µm/px) kalibre olsun
@@ -36,10 +38,10 @@
  *   • Kilitli "KongNet Mitoz Özet" anotasyonu (Modül 9 ile dışa aktarılır)
  *
  * YÖNTEM / KAYNAK REFERANSLARI:
- *   • KongNet (2025) — arXiv:2510.23559; MIDOG 2025 mitoz tespiti birincisi
- *     (KongNet-Det). MIDOG ağırlıkları CC BY 4.0.
- *   • Pocock J et al. (2022) TIAToolbox. Commun Med 2:120.
- *     doi:10.1038/s43856-022-00186-5
+ *   • Lv J ve ark. (2025) KongNet — arXiv:2510.23559; MIDOG 2025 mitoz tespiti
+ *     birincisi (KongNet-Det). Resmi çıkarım deposu + output_to_qupath.py:
+ *     github.com/Jiaqi-Lv/KongNet_Inference_Main. Kod BSD-3; ağırlıklar
+ *     CC BY-NC-SA (ticari-dışı).
  *   • Alan-tabanlı mitoz birimi (mitoz/2 mm²): bkz. Ek V (PHH3) ve oradaki
  *     Dessauvagie 2015 referansı.
  *
