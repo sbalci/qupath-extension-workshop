@@ -53,7 +53,6 @@ import qupath.lib.scripting.QP
 import qupath.lib.objects.PathObjects
 import qupath.lib.roi.ROIs
 import qupath.lib.regions.ImagePlane
-import qupath.fx.dialogs.FileChoosers
 import com.google.gson.JsonParser
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
@@ -139,8 +138,7 @@ if (isHeadless) {
     println "GeoJSON dosya seçimi için QuPath arayüzü gerekir (headless çalıştırılamaz)."
     return
 }
-def filter = FileChoosers.createExtensionFilter("KongNet GeoJSON", "*.geojson", "*.json")
-def geojsonFile = FileChoosers.promptForFile("KongNet mitoz GeoJSON dosyasını seçin", filter)
+def geojsonFile = Dialogs.promptForFile("KongNet mitoz GeoJSON dosyasını seçin", null, "KongNet GeoJSON", "geojson", "json")
 if (geojsonFile == null) {
     println "İptal edildi — dosya seçilmedi."
     return
