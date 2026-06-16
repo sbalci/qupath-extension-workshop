@@ -50,6 +50,77 @@ def stardistThreshold     = atolyeD('atolye.stardistThreshold', 0.5)
 def stardistPixelSize     = atolyeD('atolye.stardistPixelSize', 0.5)
 def stardistCellExpansion = atolyeD('atolye.stardistCellExpansion', 5.0)
 
+// --- StarDist modeli: kamuya açık qupath/models'ten sabitlenmiş indirme ---
+// Pin: qupath/models @ 60cc9dd (public, auth gerektirmez). İndirme sonrası
+// SHA-256 + boyut doğrulanır; uyuşmazsa elle seçim yedeğine düşülür.
+final String MODEL_URL    = "https://raw.githubusercontent.com/qupath/models/60cc9dd3406871fdd4bbbe8ad76a94e759bab7dd/stardist/he_heavy_augment.pb"
+final String MODEL_SHA256 = "00033ae84b03ef82faec2ffad4dc7cd12666738ab70b339f35d3a6e5a5379bab"
+final long   MODEL_BYTES  = 5722237L
+
+// İndirme sırasında gösterilen basit (belirsiz) ilerleme penceresi.
+// Stage'i FX thread'inde oluşturur, referansını döndürür; çağıran kapatır.
+def makeProgressStage = { String msg ->
+    if (isHeadless) return null
+    def ref = new java.util.concurrent.atomic.AtomicReference()
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    javafx.application.Platform.runLater {
+        try {
+            def stage = new javafx.stage.Stage()
+            stage.initModality(javafx.stage.Modality.NONE)
+            stage.setAlwaysOnTop(true)
+            stage.setTitle("StarDist modeli")
+            def bar = new javafx.scene.control.ProgressBar()
+            bar.setPrefWidth(300)
+            bar.setProgress(javafx.scene.control.ProgressIndicator.INDETERMINATE_PROGRESS)
+            def label = new javafx.scene.control.Label(msg)
+            label.setWrapText(true)
+            def box = new javafx.scene.layout.VBox(12, label, bar)
+            box.setPadding(new javafx.geometry.Insets(16))
+            stage.setScene(new javafx.scene.Scene(box, 380, 130))
+            stage.show()
+            ref.set(stage)
+        } catch (Throwable t) {
+            // FX kurulamadıysa pencere yok — indirme yine de devam eder
+        } finally {
+            latch.countDown()
+        }
+    }
+    latch.await()
+    return ref.get()
+}
+
+// Modeli temp dosyaya indir, boyut + SHA-256 doğrula, atomik taşı.
+def downloadModel = { File target ->
+    target.getParentFile().mkdirs()
+    def tmp = new File(target.getParentFile(), target.getName() + ".part")
+    if (tmp.exists()) tmp.delete()
+    def client = java.net.http.HttpClient.newBuilder()
+            .followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
+            .connectTimeout(java.time.Duration.ofSeconds(30))
+            .build()
+    def req = java.net.http.HttpRequest.newBuilder(java.net.URI.create(MODEL_URL))
+            .timeout(java.time.Duration.ofMinutes(5))
+            .GET().build()
+    def resp = client.send(req, java.net.http.HttpResponse.BodyHandlers.ofFile(tmp.toPath()))
+    if (resp.statusCode() != 200) {
+        tmp.delete(); throw new IOException("HTTP ${resp.statusCode()}")
+    }
+    if (tmp.length() != MODEL_BYTES) {
+        tmp.delete(); throw new IOException("Boyut uyuşmuyor: ${tmp.length()} != ${MODEL_BYTES}")
+    }
+    def md = java.security.MessageDigest.getInstance("SHA-256")
+    tmp.withInputStream { is ->
+        byte[] buf = new byte[65536]; int n
+        while ((n = is.read(buf)) > 0) md.update(buf, 0, n)
+    }
+    def hex = md.digest().collect { String.format(java.util.Locale.US, "%02x", it) }.join()
+    if (hex != MODEL_SHA256) {
+        tmp.delete(); throw new IOException("SHA-256 uyuşmuyor")
+    }
+    java.nio.file.Files.move(tmp.toPath(), target.toPath(),
+        java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+}
+
 def waitForConfirm = { String windowTitle, String windowBody ->
     if (isHeadless) {
         println "=== ${windowTitle} ===\n${windowBody}\n=================="
@@ -210,22 +281,37 @@ def modelPath = "${userHome}/.qupath/stardist/he_heavy_augment.pb"
 def modelFile = new File(modelPath)
 
 if (!modelFile.exists()) {
-    def browse = Dialogs.showConfirmDialog(
-        "StarDist modeli bulunamadı",
-        "Beklenen yol:\n  ${modelPath}\n\n" +
-        "Model dosyası yok. El ile seçmek ister misiniz?\n" +
-        "(Detaylar: Modül 1 'Yazılım kurulumu' → StarDist model bölümü)"
-    )
-    if (browse) {
-        def selectedFile = Dialogs.promptForFile("StarDist Modelini Seç (.pb)", null, "StarDist Model (.pb)", "pb")
-        if (selectedFile != null) {
-            modelFile = selectedFile
-            modelPath = modelFile.getAbsolutePath()
+    def progress = makeProgressStage("StarDist modeli indiriliyor…\n(he_heavy_augment.pb, ~5.7 MB)")
+    boolean ok = false
+    try {
+        println "StarDist modeli indiriliyor: ${MODEL_URL}"
+        downloadModel(modelFile)
+        ok = true
+        println "  ✓ Model indirildi ve doğrulandı: ${modelPath}"
+    } catch (Throwable t) {
+        println "  ✗ Otomatik indirme başarısız: ${t.message}"
+    } finally {
+        if (progress != null) javafx.application.Platform.runLater { progress.close() }
+    }
+    if (!ok) {
+        def browse = Dialogs.showConfirmDialog(
+            "Model otomatik indirilemedi",
+            "StarDist modeli internetten indirilemedi (bağlantı yok ya da doğrulama hatası).\n\n" +
+            "Beklenen yol:\n  ${modelPath}\n\n" +
+            "İpucu: atölyeden önce internet bağlıyken Modül 8'i bir kez çalıştırın; model önbelleğe alınır.\n\n" +
+            "Model dosyasını elle seçmek ister misiniz?"
+        )
+        if (browse) {
+            def selectedFile = Dialogs.promptForFile("StarDist Modelini Seç (.pb)", null, "StarDist Model (.pb)", "pb")
+            if (selectedFile != null) {
+                modelFile = selectedFile
+                modelPath = modelFile.getAbsolutePath()
+            } else {
+                return
+            }
         } else {
             return
         }
-    } else {
-        return
     }
 }
 
