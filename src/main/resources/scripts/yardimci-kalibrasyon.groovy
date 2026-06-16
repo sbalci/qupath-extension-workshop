@@ -75,7 +75,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 }
 
 // ── Mod seçimi — 3 düğmeli pencere (yardimci-tespitleri-sil kalıbı) ──
-def chooseMode = { ->
+def chooseMode = { String calStatus ->
     if (isHeadless) return "direct"
     def latch = new java.util.concurrent.CountDownLatch(1)
     def choice = new java.util.concurrent.atomic.AtomicReference<String>(null)
@@ -86,6 +86,7 @@ def chooseMode = { ->
             stage.setTitle("Kalibrasyon — yöntem seçin")
             stage.setAlwaysOnTop(true)
             def label = new javafx.scene.control.Label(
+                calStatus + "\n\n" +
                 "Piksel boyutunu (µm/px) nasıl ayarlamak istersiniz?\n\n" +
                 "• Doğrudan değer: tarayıcı değerini elle girin\n" +
                 "    (GT450 40× ≈ 0.26 · AT2 40× ≈ 0.25 / 20× ≈ 0.50)\n" +
@@ -109,7 +110,7 @@ def chooseMode = { ->
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(label)
             root.setBottom(buttons)
-            stage.setScene(new javafx.scene.Scene(root, 500, 240))
+            stage.setScene(new javafx.scene.Scene(root, 520, 290))
             stage.show()
         } catch (Throwable t) {
             choice.set(null); latch.countDown()
@@ -128,10 +129,14 @@ if (imageData == null) {
 def server = imageData.getServer()
 def cal = server.getPixelCalibration()
 double curPx = cal.getPixelWidthMicrons()
-def curStr = (curPx > 0) ? String.format(java.util.Locale.US, "%.4f µm/px", curPx) : "tanımsız (NaN)"
+boolean calibrated = (curPx > 0)
+def curStr = calibrated ? String.format(java.util.Locale.US, "%.4f µm/px", curPx) : "tanımsız (NaN)"
+def calStatus = calibrated
+    ? "ℹ Bu görüntü ZATEN kalibre: ${curStr}.".toString()
+    : "⚠ Bu görüntüde kalibrasyon YOK (µm/px tanımsız)."
 
 // ── 2) Mod seçimi ──
-def mode = chooseMode()
+def mode = chooseMode(calStatus)
 if (mode == null) { println "Kalibrasyon iptal edildi."; return }
 
 double newPx = 0.0
@@ -181,11 +186,23 @@ if (mode == "direct") {
         Dialogs.showErrorMessage("Sıfır uzunluk", "Çizginin uzunluğu sıfır görünüyor; daha uzun bir çizgi çizin.")
         return
     }
-    def lenInput = Dialogs.showInputDialog("Kalibrasyon — cetvel",
-        String.format(java.util.Locale.US,
+    String defaultLen = "100"
+    String bodyMeasure
+    if (calibrated) {
+        double measuredUm = lenPx * curPx
+        defaultLen = String.format(java.util.Locale.US, "%.1f", measuredUm)
+        bodyMeasure = String.format(java.util.Locale.US,
+            "Çizgi uzunluğu: %.1f piksel.\n" +
+            "Bu görüntü zaten kalibre (%s), bu da bu çizgi için yaklaşık %.1f µm demek.\n\n" +
+            "Mevcut kalibrasyon doğruysa değeri olduğu gibi bırakıp OK'a basın (değişmez).\n" +
+            "Düzeltmek isterseniz çizginin gerçek uzunluğunu (µm) girin.",
+            lenPx, curStr, measuredUm)
+    } else {
+        bodyMeasure = String.format(java.util.Locale.US,
             "Çizgi uzunluğu: %.1f piksel.\n\nBu çizginin gerçek uzunluğu kaç µm?\n" +
-            "(ör. 100 µm'lik bir ölçek çubuğu için 100)", lenPx),
-        "100")
+            "(ör. 100 µm'lik bir ölçek çubuğu için 100)", lenPx)
+    }
+    def lenInput = Dialogs.showInputDialog("Kalibrasyon — cetvel", bodyMeasure, defaultLen)
     if (lenInput == null) { println "İptal."; return }
     double realUm
     try {
