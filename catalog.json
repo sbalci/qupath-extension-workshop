@@ -8,8 +8,8 @@
         "homepage": "https://github.com/sbalci/qupath-extension-workshop",
         "releases": [
             {
-                "name": "v0.2.0-alpha1",
-                "main_url": "https://github.com/sbalci/qupath-extension-workshop/releases/download/v0.2.0-alpha1/qupath-extension-workshop-0.2.0-alpha1.jar",
+                "name": "v0.2.0-alpha2",
+                "main_url": "https://github.com/sbalci/qupath-extension-workshop/releases/download/v0.2.0-alpha2/qupath-extension-workshop-0.2.0-alpha2.jar",
                 "version_range": {
                     "min": "v0.6.0"
                 }
