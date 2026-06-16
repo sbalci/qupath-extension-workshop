@@ -91,7 +91,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Tespitleri sil",              "yardimci-tespitleri-sil.groovy"),
         new ScriptEntry("Görüntü tipi ayarla",         "yardimci-image-type.groovy"),
         new ScriptEntry("Eşikleri ayarla",             "yardimci-esik-ayarla.groovy"),
-        new ScriptEntry("Kalibrasyon (piksel boyutu)", "yardimci-kalibrasyon.groovy")
+        new ScriptEntry("Kalibrasyon (piksel boyutu)", "yardimci-kalibrasyon.groovy"),
+        new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy")
     );
 
     /**
@@ -375,7 +376,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "  • Tespitleri sil (orphan / tümü)\n" +
             "  • Görüntü tipi ayarla (slayt / proje)\n" +
             "  • Eşikleri ayarla (yeniden tespit etmeden re-binning)\n" +
-            "  • Kalibrasyon (piksel boyutu — µm/px ayarla)\n\n" +
+            "  • Kalibrasyon (piksel boyutu — µm/px ayarla)\n" +
+            "  • Karo (tile) dışa aktarma (derin öğrenme için görüntü/maske karoları)\n\n" +
             "İleri analiz (sonraki oturum):\n" +
             "  • Menüde \"İleri analiz — sonraki oturum\" altında gri görünen\n" +
             "    " + UPCOMING_SCRIPTS.size() + " yardımcı bir sonraki oturumda etkinleşecek.\n\n" +
