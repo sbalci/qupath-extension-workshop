@@ -84,9 +84,9 @@ jobs:
           files: build/libs/qupath-extension-workshop-*.jar
           generate_release_notes: true
           draft: false
-          # TODO (after the first workshop session): adopt the prerelease/release
-          # convention — mark -alpha/-beta tags as prerelease (e.g.
-          # prerelease: ${{ contains(steps.tag.outputs.tag, '-alpha') || contains(steps.tag.outputs.tag, '-beta') }})
-          # so alpha builds don't land as GitHub "Latest" and aren't pulled as
-          # stable by osf-sync.yml's `gh release download`. Kept false for now by choice.
-          prerelease: false
+          # Mark pre-release tags (-rc / -alpha / -beta) as prerelease so they
+          # never become GitHub's "Latest". The website's releases/latest link
+          # and OSF's "alternatif kaynak" link follow that badge, so only a clean
+          # final vX.Y.Z (no suffix) should be Latest. A clean tag evaluates to
+          # false here and becomes Latest as before.
+          prerelease: ${{ contains(steps.tag.outputs.tag, '-rc') || contains(steps.tag.outputs.tag, '-alpha') || contains(steps.tag.outputs.tag, '-beta') }}
