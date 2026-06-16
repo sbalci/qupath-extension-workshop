@@ -113,7 +113,7 @@ def downloadModel = { File target ->
         byte[] buf = new byte[65536]; int n
         while ((n = is.read(buf)) > 0) md.update(buf, 0, n)
     }
-    def hex = md.digest().collect { String.format(java.util.Locale.US, "%02x", it) }.join()
+    def hex = md.digest().collect { String.format(java.util.Locale.US, "%02x", it & 0xFF) }.join()
     if (hex != MODEL_SHA256) {
         tmp.delete(); throw new IOException("SHA-256 uyuşmuyor")
     }
