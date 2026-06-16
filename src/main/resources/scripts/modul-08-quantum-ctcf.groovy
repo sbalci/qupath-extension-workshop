@@ -38,6 +38,18 @@ import qupath.lib.objects.PathAnnotationObject
 // ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
+// --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
+def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
+def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
+    def c = __wpClass(); if (c == null) return dflt
+    try { c.getMethod(m, sig).invoke(null, args) } catch (Throwable t) { dflt }
+}
+def atolyeD = { String k, double d -> (double) __wpCall('dbl', [String.class, double.class] as Class[], [k, d] as Object[], d) }
+
+def stardistThreshold     = atolyeD('atolye.stardistThreshold', 0.5)
+def stardistPixelSize     = atolyeD('atolye.stardistPixelSize', 0.5)
+def stardistCellExpansion = atolyeD('atolye.stardistCellExpansion', 5.0)
+
 def waitForConfirm = { String windowTitle, String windowBody ->
     if (isHeadless) {
         println "=== ${windowTitle} ===\n${windowBody}\n=================="
@@ -176,6 +188,22 @@ if (project == null) {
     return
 }
 
+// StarDist eklentisi yüklü mü? (model indirmeden önce kontrol et)
+try {
+    Class.forName("qupath.ext.stardist.StarDist2D")
+} catch (Throwable t) {
+    Dialogs.showErrorMessage(
+        "StarDist eklentisi yüklü değil",
+        "qupath.ext.stardist.StarDist2D sınıfı bulunamadı.\n\n" +
+        "Çözüm:\n" +
+        "  1. QuPath → [Extensions → Manage extensions]\n" +
+        "  2. StarDist'i kur\n" +
+        "  3. QuPath'i yeniden başlat\n" +
+        "  4. Bu betiği tekrar çalıştır"
+    )
+    return
+}
+
 // StarDist model dosyası
 def userHome = System.getProperty('user.home')
 def modelPath = "${userHome}/.qupath/stardist/he_heavy_augment.pb"
@@ -233,11 +261,14 @@ def workflowDesc = hasClassifier
     ? "  3️⃣ Nesne sınıflandırıcı '${objClassifierName}' → her hücre Tumor vs Non-neoplastic\n  4️⃣ cTCF = tümör / toplam × 100"
     : "  3️⃣ Nesne sınıflandırıcı yok — sadece StarDist tespiti çalışacak\n  4️⃣ Sınıflandırıcıyı eğitmeniz gerekecek (eğitim adımları sonda açıklanır)"
 
+def expDesc = stardistCellExpansion > 0
+    ? String.format(java.util.Locale.US, "Hücre genişletme: %.1f µm (tüm hücre), eşik: %.2f", stardistCellExpansion, stardistThreshold)
+    : String.format(java.util.Locale.US, "Hücre genişletme yok (yalnız çekirdek), eşik: %.2f", stardistThreshold)
 def devam = waitForConfirm(
     "Modül 8 - QuANTUM cTCF İş Akışı",
     "Bu betik QuANTUM yayınının iş akışını uygular:\n\n" +
     "  1️⃣ Seçili TCR içinde StarDist → tüm çekirdekleri tespit\n" +
-    "  2️⃣ Hücre genişletme (cell expansion): 5 µm, eşik: 0.5\n" +
+    "  2️⃣ ${expDesc}\n" +
     "${workflowDesc}\n\n" +
     "Beklenen süre:\n" +
     "  • CPU: TCR boyutuna göre 1–5 dakika\n" +
@@ -269,21 +300,6 @@ println "  Model: ${modelPath}"
 
 def t0 = System.currentTimeMillis()
 
-try {
-    Class.forName("qupath.ext.stardist.StarDist2D")
-} catch (Throwable t) {
-    Dialogs.showErrorMessage(
-        "StarDist eklentisi yüklü değil",
-        "qupath.ext.stardist.StarDist2D sınıfı bulunamadı.\n\n" +
-        "Çözüm:\n" +
-        "  1. QuPath → [Extensions → Manage extensions]\n" +
-        "  2. StarDist'i kur\n" +
-        "  3. QuPath'i yeniden başlat\n" +
-        "  4. Bu betiği tekrar çalıştır"
-    )
-    return
-}
-
 // Önceki tespitleri temizle (TCR altındaki)
 def oldDetections = tcr.getChildObjects().findAll { it.isDetection() }
 if (!oldDetections.isEmpty()) {
@@ -293,10 +309,10 @@ if (!oldDetections.isEmpty()) {
 
 def stardist = qupath.ext.stardist.StarDist2D
         .builder(modelPath)
-        .threshold(0.5)
-        .normalizePercentiles(1, 99)
-        .pixelSize(0.5)
-        .cellExpansion(5.0)
+        .threshold(stardistThreshold)
+        .normalizePercentiles(1, 99)        // sabit — aşırı ayardan kaçınmak için açılmadı
+        .pixelSize(stardistPixelSize)
+        .cellExpansion(stardistCellExpansion)
         .constrainToParent(true)
         .measureShape()
         .measureIntensity()
