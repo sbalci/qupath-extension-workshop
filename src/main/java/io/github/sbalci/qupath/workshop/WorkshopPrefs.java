@@ -55,6 +55,7 @@ public final class WorkshopPrefs {
     public static final String SEC_DETECTION  = "Hücre tespiti";
     public static final String SEC_ADVANCED   = "İleri düzey";
     public static final String SEC_CLASSIFIER = "Sınıflandırıcı";
+    public static final String SEC_STARDIST   = "StarDist (Modül 8)";
     public static final String SEC_WARN       = "Uyarı eşikleri";
     public static final String SEC_EXPORT     = "Dışa aktarma";
 
@@ -79,6 +80,11 @@ public final class WorkshopPrefs {
     public static final DoubleProperty  pixelSize = regD(SEC_DETECTION, "atolye.pixelSize", 0.5);
     public static final DoubleProperty  cellExpansionNuclear = regD(SEC_DETECTION, "atolye.cellExpansionNuclear", 5.0);
     public static final DoubleProperty  cellExpansionCyto = regD(SEC_DETECTION, "atolye.cellExpansionCyto", 7.0);
+
+    // --- StarDist (Modül 8) ---
+    public static final DoubleProperty stardistThreshold     = regD(SEC_STARDIST, "atolye.stardistThreshold", 0.5);
+    public static final DoubleProperty stardistPixelSize     = regD(SEC_STARDIST, "atolye.stardistPixelSize", 0.5);
+    public static final DoubleProperty stardistCellExpansion = regD(SEC_STARDIST, "atolye.stardistCellExpansion", 5.0);
 
     // --- İleri düzey (detection geometry + toggles) ---
     public static final DoubleProperty  sigma = regD(SEC_ADVANCED, "atolye.sigma", 1.5);
