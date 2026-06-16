@@ -44,7 +44,7 @@ def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
     def c = __wpClass(); if (c == null) return dflt
     try { c.getMethod(m, sig).invoke(null, args) } catch (Throwable t) { dflt }
 }
-def atolyeD = { String k, double d -> (double) __wpCall('dbl', [String.class, double.class] as Class[], [k, d] as Object[], d) }
+def atolyeD = { String k, double  d -> (double) __wpCall('dbl', [String.class, double.class] as Class[], [k, d] as Object[], d) }
 
 def stardistThreshold     = atolyeD('atolye.stardistThreshold', 0.5)
 def stardistPixelSize     = atolyeD('atolye.stardistPixelSize', 0.5)
@@ -264,6 +264,7 @@ def workflowDesc = hasClassifier
 def expDesc = stardistCellExpansion > 0
     ? String.format(java.util.Locale.US, "Hücre genişletme: %.1f µm (tüm hücre), eşik: %.2f", stardistCellExpansion, stardistThreshold)
     : String.format(java.util.Locale.US, "Hücre genişletme yok (yalnız çekirdek), eşik: %.2f", stardistThreshold)
+
 def devam = waitForConfirm(
     "Modül 8 - QuANTUM cTCF İş Akışı",
     "Bu betik QuANTUM yayınının iş akışını uygular:\n\n" +
@@ -334,7 +335,7 @@ if (totalNuclei == 0) {
         "Hiç nükleus tespit edilmedi",
         "TCR içinde StarDist 0 hücre buldu.\n" +
         "Olası nedenler:\n" +
-        "  • Eşik çok yüksek (0.5) — düşürmeyi deneyin (0.3)\n" +
+        String.format(java.util.Locale.US, "  • Eşik çok yüksek (%.2f) — düşürmeyi deneyin (%.2f)\n", stardistThreshold, stardistThreshold * 0.6) +
         "  • TCR çok küçük\n" +
         "  • Slayt boyama H&E için tipik aralıkta değil"
     )
