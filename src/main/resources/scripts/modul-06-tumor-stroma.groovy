@@ -60,6 +60,17 @@ def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class,
 def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
 def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
 
+// --- Eklentiyle paketlenen örnek sınıflandırıcı (yoksa null) ---
+// Modül 6, projede aynı isimli model yoksa bu örnek modele düşer. Eklenti yüklü
+// değilse veya kaynak okunamazsa null döner (kullanıcı yönlendirilir).
+def __bundledClassifierJson = { ->
+    try {
+        Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
+            .getMethod('getTumorStromaClassifierJson')
+            .invoke(null)
+    } catch (Throwable t) { null }
+}
+
 def waitForConfirm = { String windowTitle, String windowBody ->
     if (isHeadless) {
         println "=== ${windowTitle} ===\n${windowBody}\n=================="
@@ -207,23 +218,33 @@ if (project == null) {
 
 def classifierName = atolyeS('atolye.classifierName', 'tumor-stroma-RF')
 def availableClassifiers = project.getPixelClassifiers().getNames()
+def hasProjectClassifier = availableClassifiers.contains(classifierName)
 
-if (!availableClassifiers.contains(classifierName)) {
+// Sınıflandırıcı önceliği:
+//   1) Projede aynı isimli model varsa O kullanılır (kullanıcının kendi modeli).
+//   2) Yoksa eklentiyle gelen örnek modele düşülür (in-memory; projeye yazılmaz).
+//   3) İkisi de yoksa (eklenti yüklü değil) kullanıcı yönlendirilir.
+def bundledJson = hasProjectClassifier ? null : __bundledClassifierJson()
+def usingBundled = !hasProjectClassifier && bundledJson != null
+
+if (!hasProjectClassifier && bundledJson == null) {
     Dialogs.showErrorMessage(
         "Sınıflandırıcı bulunamadı",
-        "Bu betik şu sınıflandırıcıyı arıyor:\n" +
-        "  classifiers/${classifierName}.json\n\n" +
-        "Projenizde bu dosya yok. Bulunan sınıflandırıcılar:\n" +
+        "Bu betik '${classifierName}' adlı bir piksel sınıflandırıcı kullanır.\n\n" +
+        "Projenizde bu model yok ve eklentiyle gelen örnek modele de ulaşılamadı\n" +
+        "(atölye eklentisi yüklü olmayabilir). Bulunan sınıflandırıcılar:\n" +
         "  ${availableClassifiers.join(', ') ?: '(hiçbiri)'}\n\n" +
-        "Çözüm — Modül 6'daki adımları izleyin:\n" +
-        "  1. H&E slaytında Tumor / Stroma anotasyonları çizin (~5 dk)\n" +
-        "  2. [Classify → Pixel classification → Train pixel classifier]\n" +
-        "  3. Random Forest, Resolution: High (2 µm/px)\n" +
-        "  4. Eğitin ve 'Save classifier' ile **${classifierName}** ismiyle kaydedin\n" +
-        "  5. Bu betiği tekrar çalıştırın"
+        "Çözümler:\n" +
+        "  • Atölye eklentisini yükleyin — örnek model otomatik kullanılır, veya\n" +
+        "    [Extensions → Atölye → Yardımcılar → Örnek tümör/stroma sınıflandırıcısını\n" +
+        "    projeye kaydet] ile projenize ekleyin.\n" +
+        "  • Ya da kendi modelinizi '${classifierName}' adıyla eğitip kaydedin\n" +
+        "    (Modül 6'daki adımlar)."
     )
     return
 }
+
+def classifierSource = hasProjectClassifier ? "projenizdeki modeliniz" : "eklentiyle gelen örnek model"
 
 def minObjectArea = atolyeD('atolye.minObjectArea', 10000.0)
 def minHoleArea   = atolyeD('atolye.minHoleArea',   5000.0)
@@ -232,10 +253,10 @@ def minHoleArea   = atolyeD('atolye.minHoleArea',   5000.0)
 // 2) Karşılama
 // ──────────────────────────────────────────────────────────────
 def devam = waitForConfirm(
-    "Modül 6 - Tümör vs Stroma segmentasyonu",
-    "Bu betik projenizdeki '${classifierName}' adlı piksel sınıflandırıcıyı\n" +
-    "açık slaytın tamamına uygular ve **Tumor** + **Stroma** sınıflı anotasyon\n" +
-    "nesneleri üretir.\n\n" +
+    "Modül 6 - Tümör vs stroma segmentasyonu",
+    "Kullanılacak sınıflandırıcı: ${classifierName} (${classifierSource})\n\n" +
+    "Bu betik bu piksel sınıflandırıcıyı açık slaytın tamamına uygular ve\n" +
+    "**Tumor** + **Stroma** sınıflı anotasyon nesneleri üretir.\n\n" +
     "Atölye varsayılan post-işlem parametreleri:\n" +
     "  • Minimum object size  : ${minObjectArea} µm²${minObjectArea != 10000.0 ? ' (değiştirildi)' : ''}  (≈ 0.01 mm²)\n" +
     "  • Minimum hole size    : ${minHoleArea} µm²${minHoleArea != 5000.0 ? ' (değiştirildi)' : ''}\n" +
@@ -244,10 +265,9 @@ def devam = waitForConfirm(
     "  • Annotations panelinde Tumor ve Stroma sınıflı yeni anotasyonlar\n" +
     "  • Toplam alan ve TSR (tümör/stroma oranı)\n\n" +
     "Bu işlem tüm slaytı tarayacağı için 1–3 dakika sürebilir.\n\n" +
-    "⚠️ Bu işlem slayttaki MEVCUT ANOTASYONLARI — elle çizdiğiniz Tumor/Stroma\n" +
-    "eğitim bölgeleri dahil — siler ve sınıflandırıcı çıktısıyla değiştirir.\n" +
-    "Sınıflandırıcı kaydedildiyse yeniden çizmeniz gerekmez; saklamak isterseniz\n" +
-    "önce [File → Export objects] ile dışa aktarın.\n\n" +
+    "Not: Bu betik yalnızca kendi önceki çıktısını temizler; elle çizdiğiniz\n" +
+    "diğer anotasyonlara dokunmaz. TSR yalnızca bu çalıştırmanın ürettiği\n" +
+    "Tumor/Stroma bölgelerinden hesaplanır.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
     "Hazırsanız Çalıştır düğmesine basın."
 )
@@ -267,8 +287,9 @@ def t0 = System.currentTimeMillis()
 
 def generatedName = "Generated by Modül 6 - ${classifierName}"
 
-// Önceki betik çıktısını temizle. (Aşağıdaki DELETE_EXISTING zaten tüm
-// anotasyonları — eğitim çizimleri dahil — siler; başlangıç onayına bakın.)
+// Önceki betik çıktısını isimle temizle (re-run'da birikmesin). DELETE_EXISTING
+// artık kullanılmıyor; yalnızca bu betiğin kendi ürettiği "${generatedName}"
+// anotasyonları silinir, kullanıcının anotasyonları korunur.
 def existing = QP.getAnnotationObjects().findAll {
     (it.getName() ?: "") == generatedName
 }
@@ -282,18 +303,32 @@ def beforeAnnotations = QP.getAnnotationObjects() as Set
 // Sınıflandırıcıyı uygula → anotasyonlar üret.
 // minArea + minHoleArea açıkça veriliyor; QuPath varsayılanları (0/0) yüksek
 // çözünürlüklü sınıflandırıcılarda binlerce küçük parça üretir
-// (cancer-informatics ci_03: bu adım "create objects" sırasında en sık atlanan
-// kalibrasyondur). 10.000 µm² ≈ 0.01 mm² eşiği small-noise temizliği yapar
-// ama ~100 µm çaplı küçük tümör adacıklarını hala tutar; 5.000 µm² hole eşiği
-// stromal cep'leri (lakün) doldurmaz ama mikro-bir delikleri kapatır.
-QP.createAnnotationsFromPixelClassifier(
-    classifierName,
-    minObjectArea,       // minimum object area (µm²) — 0.01 mm² gürültü filtresi
-    minHoleArea,        // minimum hole area (µm²)  — mikro-deliklerin doldurulma eşiği
-    "SPLIT",            // split into multiple annotations
-    "DELETE_EXISTING",  // deletes ALL existing child annotations (incl. training) — see confirm
-    "SELECT_NEW"        // select newly created objects
-)
+// (cancer-informatics ci_03: "create objects" sırasında en sık atlanan kalibrasyon).
+// DELETE_EXISTING KULLANILMIYOR: kullanıcının (veya başka modüllerin) anotasyonları
+// korunur; betik kendi önceki çıktısını yukarıda isimle temizledi ve TSR'yi yalnızca
+// bu çalıştırmada üretilen bölgelerden hesaplar (aşağıdaki generatedAnnotations).
+// usingBundled ise sınıflandırıcı nesnesi doğrudan uygulanır (projeye yazılmaz);
+// aksi halde projedeki model isimle yüklenir.
+if (usingBundled) {
+    // Pahalı ~50 MB JSON → PixelClassifier ayrıştırması burada (onaydan sonra) yapılır.
+    def bundledClassifier = qupath.lib.io.GsonTools.getInstance()
+        .fromJson(bundledJson, qupath.lib.classifiers.pixel.PixelClassifier.class)
+    QP.createAnnotationsFromPixelClassifier(
+        bundledClassifier,
+        minObjectArea,       // minimum object area (µm²)
+        minHoleArea,         // minimum hole area (µm²)
+        "SPLIT",             // split into multiple annotations
+        "SELECT_NEW"         // select newly created objects
+    )
+} else {
+    QP.createAnnotationsFromPixelClassifier(
+        classifierName,
+        minObjectArea,       // minimum object area (µm²)
+        minHoleArea,         // minimum hole area (µm²)
+        "SPLIT",             // split into multiple annotations
+        "SELECT_NEW"         // select newly created objects
+    )
+}
 
 def generatedAnnotations = QP.getAnnotationObjects().findAll {
     !beforeAnnotations.contains(it) && (it.getPathClass()?.getName() in ["Tumor", "Stroma"])
@@ -316,10 +351,10 @@ if (!(pixelWidth > 0) || !(pixelHeight > 0)) {
     return
 }
 
-def tumorAnnotations = QP.getAnnotationObjects().findAll {
+def tumorAnnotations = generatedAnnotations.findAll {
     it.getPathClass()?.getName() == "Tumor"
 }
-def stromaAnnotations = QP.getAnnotationObjects().findAll {
+def stromaAnnotations = generatedAnnotations.findAll {
     it.getPathClass()?.getName() == "Stroma"
 }
 
