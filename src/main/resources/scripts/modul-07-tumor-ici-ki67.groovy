@@ -76,6 +76,15 @@ def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class,
 def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
 def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
 
+// --- Eklentiyle paketlenen örnek sınıflandırıcı (yoksa null) ---
+def __bundledClassifierJson = { ->
+    try {
+        Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
+            .getMethod('getTumorStromaClassifierJson')
+            .invoke(null)
+    } catch (Throwable t) { null }
+}
+
 def waitForConfirm = { String windowTitle, String windowBody ->
     if (isHeadless) {
         println "=== ${windowTitle} ===\n${windowBody}\n=================="
@@ -238,23 +247,33 @@ if (project == null) {
 }
 
 def classifierName = atolyeS('atolye.classifierName', 'tumor-stroma-RF')
-if (!project.getPixelClassifiers().getNames().contains(classifierName)) {
+def hasProjectClassifier = project.getPixelClassifiers().getNames().contains(classifierName)
+def bundledJson = hasProjectClassifier ? null : __bundledClassifierJson()
+def usingBundled = !hasProjectClassifier && bundledJson != null
+
+if (!hasProjectClassifier && bundledJson == null) {
     Dialogs.showErrorMessage(
         "Sınıflandırıcı bulunamadı",
-        "Bu betik şu sınıflandırıcıya ihtiyaç duyar: ${classifierName}\n\n" +
-        "Önce Modül 6'yı tamamlayın:\n" +
-        "  1. H&E slaytında Tumor / Stroma anotasyonları eğitin\n" +
-        "  2. '${classifierName}' ismiyle kaydedin\n" +
-        "  3. Bu betiği tekrar çalıştırın"
+        "Bu betik '${classifierName}' adlı bir piksel sınıflandırıcı kullanır.\n\n" +
+        "Projenizde bu model yok ve eklentiyle gelen örnek modele de ulaşılamadı\n" +
+        "(atölye eklentisi yüklü olmayabilir).\n\n" +
+        "Çözümler:\n" +
+        "  • Atölye eklentisini yükleyin — örnek model otomatik kullanılır, veya\n" +
+        "    [Extensions → Atölye → Yardımcılar → Örnek tümör/stroma sınıflandırıcısını\n" +
+        "    projeye kaydet] ile projenize ekleyin.\n" +
+        "  • Ya da Modül 6 ile kendi modelinizi '${classifierName}' adıyla eğitin."
     )
     return
 }
+
+def classifierSource = hasProjectClassifier ? "projenizdeki modeliniz" : "eklentiyle gelen örnek model"
 
 // ──────────────────────────────────────────────────────────────
 // 2) Karşılama — 3-adımlı iş akışı açıklaması
 // ──────────────────────────────────────────────────────────────
 def devam = waitForConfirm(
     "Modül 7 - Tümör-Restricted Ki-67",
+    "Kullanılacak sınıflandırıcı: ${classifierName} (${classifierSource})\n\n" +
     "Bu betik 3 adımlı bir iş akışı çalıştırır:\n\n" +
     "  1️⃣ Piksel sınıflandırıcı '${classifierName}' → tümör bölgesi ayır\n" +
     "  2️⃣ Tümör anotasyonları seçili → Positive cell detection\n" +
@@ -315,14 +334,36 @@ if (!existing.isEmpty()) {
 }
 
 def beforeAnnotations = QP.getAnnotationObjects() as Set
-QP.createAnnotationsFromPixelClassifier(
-    classifierName,
-    atolyeD('atolye.minObjectArea', 10000.0),            // minimum object area (µm²)
-    atolyeD('atolye.minHoleArea', 5000.0),             // minimum hole area (µm²)
-    "SPLIT",            // split into multiple annotations
-    "DELETE_EXISTING",  // deletes ALL existing child annotations (incl. training) — see confirm
-    "SELECT_NEW"        // select newly created objects
-)
+if (usingBundled) {
+    // Pahalı ~50 MB JSON → PixelClassifier ayrıştırması burada (onaydan sonra) yapılır.
+    def bundledClassifier = qupath.lib.io.GsonTools.getInstance()
+        .fromJson(bundledJson, qupath.lib.classifiers.pixel.PixelClassifier.class)
+    if (bundledClassifier == null) {
+        Dialogs.showErrorMessage(
+            "Sınıflandırıcı yüklenemedi",
+            "Eklentiyle gelen örnek model okunamadı (JSON ayrıştırılamadı).\n" +
+            "Kendi modelinizi '${classifierName}' adıyla eğitip kaydedin."
+        )
+        return
+    }
+    QP.createAnnotationsFromPixelClassifier(
+        bundledClassifier,
+        atolyeD('atolye.minObjectArea', 10000.0),            // minimum object area (µm²)
+        atolyeD('atolye.minHoleArea', 5000.0),             // minimum hole area (µm²)
+        "SPLIT",            // split into multiple annotations
+        "DELETE_EXISTING",  // deletes ALL existing child annotations (incl. training) — see confirm
+        "SELECT_NEW"        // select newly created objects
+    )
+} else {
+    QP.createAnnotationsFromPixelClassifier(
+        classifierName,
+        atolyeD('atolye.minObjectArea', 10000.0),            // minimum object area (µm²)
+        atolyeD('atolye.minHoleArea', 5000.0),             // minimum hole area (µm²)
+        "SPLIT",            // split into multiple annotations
+        "DELETE_EXISTING",  // deletes ALL existing child annotations (incl. training) — see confirm
+        "SELECT_NEW"        // select newly created objects
+    )
+}
 
 def generatedAnnotations = QP.getAnnotationObjects().findAll {
     !beforeAnnotations.contains(it) && (it.getPathClass()?.getName() in ["Tumor", "Stroma"])
