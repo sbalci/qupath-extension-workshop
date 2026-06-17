@@ -22,8 +22,9 @@
  *   KongNet'i resmi depo (Jiaqi-Lv/KongNet_Inference_Main) ile çalıştırın:
  *   inference_MIDOG.py → SQLite çıktı; ardından output_to_qupath.py ile mitoz
  *   merkezlerini WSI taban (level-0) piksel koordinatlarında GeoJSON
- *   FeatureCollection (her özellik bir Point) olarak dışa aktarın. Bağlam ve
- *   kurulum: kaynaklar.qmd § 5.4 (KongNet satırı).
+ *   FeatureCollection (her özellik bir Point) olarak dışa aktarın. Bağlam,
+ *   akış ve sınırlar: Ek V — PHH3 mitoz § KongNet
+ *   (atolye.patoloji.dev/ekler/V-mitoz-phh3.html#kongnet).
  *
  * KULLANIM:
  *   1. H&E slaytını açın; piksel boyutu (µm/px) kalibre olsun
