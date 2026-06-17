@@ -92,6 +92,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Görüntü tipi ayarla",         "yardimci-image-type.groovy"),
         new ScriptEntry("Eşikleri ayarla",             "yardimci-esik-ayarla.groovy"),
         new ScriptEntry("Kalibrasyon (piksel boyutu)", "yardimci-kalibrasyon.groovy"),
+        new ScriptEntry("Örnek tümör/stroma sınıflandırıcısını projeye kaydet", "yardimci-ornek-siniflandirici.groovy"),
         new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy")
     );
 
@@ -377,6 +378,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "  • Görüntü tipi ayarla (slayt / proje)\n" +
             "  • Eşikleri ayarla (yeniden tespit etmeden re-binning)\n" +
             "  • Kalibrasyon (piksel boyutu — µm/px ayarla)\n" +
+            "  • Örnek tümör/stroma sınıflandırıcısı (projeye kaydet)\n" +
             "  • Karo (tile) dışa aktarma (derin öğrenme için görüntü/maske karoları)\n\n" +
             "İleri analiz (sonraki oturum):\n" +
             "  • Menüde \"İleri analiz — sonraki oturum\" altında gri görünen\n" +
