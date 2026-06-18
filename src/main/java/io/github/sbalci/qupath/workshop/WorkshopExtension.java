@@ -93,7 +93,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Eşikleri ayarla",             "yardimci-esik-ayarla.groovy"),
         new ScriptEntry("Kalibrasyon (piksel boyutu)", "yardimci-kalibrasyon.groovy"),
         new ScriptEntry("Örnek tümör/stroma sınıflandırıcısını projeye kaydet", "yardimci-ornek-siniflandirici.groovy"),
-        new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy")
+        new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy"),
+        new ScriptEntry("Makine öğrenmesi için özellik matrisi", "yardimci-ozellik-matrisi.groovy")
     );
 
     /**
@@ -379,7 +380,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "  • Eşikleri ayarla (yeniden tespit etmeden re-binning)\n" +
             "  • Kalibrasyon (piksel boyutu — µm/px ayarla)\n" +
             "  • Örnek tümör/stroma sınıflandırıcısı (projeye kaydet)\n" +
-            "  • Karo (tile) dışa aktarma (derin öğrenme için görüntü/maske karoları)\n\n" +
+            "  • Karo (tile) dışa aktarma (derin öğrenme için görüntü/maske karoları)\n" +
+            "  • Makine öğrenmesi için özellik matrisi (X özellik + y etiket, TSV)\n\n" +
             "İleri analiz (sonraki oturum):\n" +
             "  • Menüde \"İleri analiz — sonraki oturum\" altında gri görünen\n" +
             "    " + UPCOMING_SCRIPTS.size() + " yardımcı bir sonraki oturumda etkinleşecek.\n\n" +
