@@ -50,8 +50,8 @@ def computeState = { ->
     if (imageData != null) {
         def typeName = (imageData.getImageType()?.toString() ?: '').toUpperCase(Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
         st.he = typeName.contains('BRIGHTFIELD_H_E') && imageData.getColorDeconvolutionStains() != null
-        def cal = imageData.getServer().getPixelCalibration()
-        st.calib = cal.getAveragedPixelSizeMicrons() > 0
+        def cal = imageData.getServer()?.getPixelCalibration()
+        st.calib = cal != null && cal.getAveragedPixelSizeMicrons() > 0
         QP.getAnnotationObjects().each {
             def n = it.getPathClass()?.getName()
             if (it.getROI()?.isArea() && n == 'Tumor') st.tumor++
@@ -151,9 +151,11 @@ render = { ->
         buttons.getChildren().addAll(
             navButton('◀ Geri', { step.set('CHOICE'); render() }),
             navButton('Uygula penceresini aç', {
-                if (!launchBundled('modul-06-tumor-stroma.groovy'))
+                if (launchBundled('modul-06-tumor-stroma.groovy')) {
+                    stage.close()
+                } else {
                     menuHint('Extensions → Atölye → Modüller → Modül 6 - Tümör vs stroma (uygula)')
-                stage.close()
+                }
             }))
     }
 
