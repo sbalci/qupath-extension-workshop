@@ -191,6 +191,7 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
             })
             def measureBtn = new javafx.scene.control.Button('Seçilenlerle ölç')
             measureBtn.setDefaultButton(true)
+            measureBtn.setDisable(entries.isEmpty())
             measureBtn.setOnAction({
                 def picked = boxes.findAll { it.isSelected() }.collect { it.getUserData() as String }
                 result.set([action: 'MEASURE', models: picked, wholeSlide: rSlide.isSelected()])
@@ -366,9 +367,6 @@ def formatValue = { double value, String pattern ->
 boolean multi = selectedModelNames.size() > 1
 def keyPrefix = { String model -> multi ? "[${model}] " : '' }
 
-def oldSummaries = QP.getAnnotationObjects().findAll { it.getName() in ['Tümör-Stroma Özet', 'TSR Özet'] }
-if (!oldSummaries.isEmpty()) QP.removeObjectsAndDescendants(oldSummaries)
-
 def summary = PathObjects.createAnnotationObject(scopeRoi)
 summary.setName('Tümör-Stroma Özet')
 
@@ -400,16 +398,26 @@ selectedModelNames.each { modelName ->
     if (!wholeSlide) {
         specimenObjects.each { sp ->
             def m = measureWith(manager, tumorAreaName, stromaAreaName, sp.getROI())
+            sp.measurements["${p}ROI alanı (mm2)"] = m.roiArea
+            sp.measurements["${p}Tümör alanı (mm2)"] = m.tumorArea
+            sp.measurements["${p}Stroma alanı (mm2)"] = m.stromaArea
+            sp.measurements["${p}Sınıflandırılmış alan (mm2)"] = m.classifiedArea
             sp.measurements["${p}Tümör alanı (%)"] = m.tumorPct
             sp.measurements["${p}Stroma alanı (%)"] = m.stromaPct
             sp.measurements["${p}Tümör/Stroma oranı"] = m.ratio
+            sp.measurements["${p}Sınıflandırılmış kapsam (%)"] = m.coveragePct
         }
         analysisObjects.eachWithIndex { analysis, index ->
             def clipped = RoiTools.intersection([analysis.getROI(), scopeRoi])
             def m = measureWith(manager, tumorAreaName, stromaAreaName, clipped)
+            analysis.measurements["${p}ROI alanı (mm2)"] = m.roiArea
+            analysis.measurements["${p}Tümör alanı (mm2)"] = m.tumorArea
+            analysis.measurements["${p}Stroma alanı (mm2)"] = m.stromaArea
+            analysis.measurements["${p}Sınıflandırılmış alan (mm2)"] = m.classifiedArea
             analysis.measurements["${p}Tümör alanı (%)"] = m.tumorPct
             analysis.measurements["${p}Stroma alanı (%)"] = m.stromaPct
             analysis.measurements["${p}Tümör/Stroma oranı"] = m.ratio
+            analysis.measurements["${p}Sınıflandırılmış kapsam (%)"] = m.coveragePct
             analysisRows << [name: analysis.getName() ?: "Analysis ROI ${index + 1}", metrics: m]
         }
     }
@@ -424,6 +432,8 @@ if (perModel.isEmpty()) {
 summary.measurements['Seçilen model sayısı'] = perModel.size() as double
 summary.measurements['Analysis ROI sayısı'] = (wholeSlide ? 0 : analysisObjects.size()) as double
 summary.setLocked(true)
+def oldSummaries = QP.getAnnotationObjects().findAll { it.getName() in ['Tümör-Stroma Özet', 'TSR Özet'] }
+if (!oldSummaries.isEmpty()) QP.removeObjectsAndDescendants(oldSummaries)
 QP.addObjects([summary])
 
 def primary = perModel[0]
