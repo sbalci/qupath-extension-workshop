@@ -46,4 +46,30 @@ public final class WorkshopResources {
             return null;
         }
     }
+
+    /** Resource root for bundled Groovy scripts (mirrors WorkshopExtension.SCRIPT_RESOURCE_ROOT). */
+    private static final String SCRIPT_RESOURCE_ROOT = "/scripts/";
+
+    /**
+     * Returns the UTF-8 text of a bundled Groovy script (e.g. "modul-06-sihirbaz.groovy"),
+     * or {@code null} if the resource is missing or unreadable. Used by orchestrator
+     * scripts (the Modül 6 wizard / selection hub) to launch sibling scripts via GroovyShell.
+     */
+    public static String getBundledScript(String filename) {
+        String path = SCRIPT_RESOURCE_ROOT + filename;
+        try (InputStream raw = WorkshopResources.class.getResourceAsStream(path)) {
+            if (raw == null) {
+                return null;
+            }
+            ByteArrayOutputStream out = new ByteArrayOutputStream(1 << 16);
+            byte[] buffer = new byte[1 << 16];
+            int read;
+            while ((read = raw.read(buffer)) != -1) {
+                out.write(buffer, 0, read);
+            }
+            return out.toString(StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            return null;
+        }
+    }
 }
