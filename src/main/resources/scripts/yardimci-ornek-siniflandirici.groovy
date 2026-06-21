@@ -50,6 +50,26 @@ if (project.getPixelClassifiers().getNames().contains(classifierName)) {
     return
 }
 
+// Modelin kaynağı: önce eklenti JAR'ındaki paketli JSON, yoksa GitHub'dan .gz indir.
+def EXAMPLE_MODEL_GZ_URL =
+    'https://raw.githubusercontent.com/sbalci/qupath-extension-workshop/main/src/main/resources/classifiers/tumor-stroma-RF.json.gz'
+
+def downloadGunzip = { String url ->
+    def conn = new java.net.URL(url).openConnection()
+    conn.setConnectTimeout(20000)
+    conn.setReadTimeout(60000)
+    conn.setRequestProperty('User-Agent', 'qupath-extension-workshop')
+    def out = new java.io.ByteArrayOutputStream()
+    conn.getInputStream().withCloseable { rawIn ->
+        new java.util.zip.GZIPInputStream(rawIn).withCloseable { gz ->
+            byte[] buf = new byte[1 << 16]
+            int n
+            while ((n = gz.read(buf)) != -1) out.write(buf, 0, n)
+        }
+    }
+    return new String(out.toByteArray(), 'UTF-8')
+}
+
 def json = null
 try {
     json = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
@@ -57,10 +77,25 @@ try {
 } catch (Throwable t) { json = null }
 
 if (json == null) {
+    println "Paketli örnek model yok; GitHub'dan indiriliyor: ${EXAMPLE_MODEL_GZ_URL}"
+    try {
+        json = downloadGunzip(EXAMPLE_MODEL_GZ_URL)
+    } catch (Throwable t) {
+        json = null
+        println "İndirme başarısız: ${t.getClass().getSimpleName()} — ${t.getMessage()}"
+    }
+}
+
+if (json == null) {
     Dialogs.showErrorMessage(
-        "Örnek model bulunamadı",
-        "Eklentiyle gelen örnek sınıflandırıcıya ulaşılamadı.\n" +
-        "Atölye eklentisinin güncel sürümünü kullandığınızdan emin olun."
+        "Örnek model alınamadı",
+        "Örnek sınıflandırıcı ne eklenti JAR'ında bulundu ne de internetten indirilebildi.\n\n" +
+        "Çözüm:\n" +
+        "  • İnternet bağlantınızı kontrol edip tekrar deneyin, veya\n" +
+        "  • Modeli elle indirin: OSF veri paketi osf.io/v7mjq → atolye-eklenti/, veya\n" +
+        "    GitHub: github.com/sbalci/qupath-extension-workshop (classifiers/), ve\n" +
+        "    projenizin classifiers/ klasörüne koyun.\n\n" +
+        "Alternatif: kendi modelinizi 'Modül 6 - Tümör/Stroma modeli oluştur (eğit)' ile eğitin."
     )
     return
 }
