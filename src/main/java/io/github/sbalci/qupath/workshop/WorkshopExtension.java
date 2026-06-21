@@ -72,6 +72,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // Modül 6 iki adım: önce modeli EĞİT (anotasyonlardan RF üretir), sonra UYGULA
         // (tüm slayda uygulayıp TSR ölçer). Eğitim adımı, Train pixel classifier diyaloğunu
         // açmadan tek tıkla bir 'tumor-stroma-RF' sınıflandırıcı kaydeder.
+        // Sihirbaz her iki adımı bir karar ağacı ile yönlendirir.
+        new ScriptEntry("Modül 6 - Tümör/Stroma sihirbazı (model kur/eğit)", "modul-06-sihirbaz.groovy"),
         new ScriptEntry("Modül 6 - Tümör/Stroma modeli oluştur (eğit)", "modul-06-model-egit.groovy"),
         new ScriptEntry("Modül 6 - Tümör vs stroma (uygula)",       "modul-06-tumor-stroma.groovy"),
         new ScriptEntry("Modül 7 - Tümör içi Ki-67",                "modul-07-tumor-ici-ki67.groovy"),
