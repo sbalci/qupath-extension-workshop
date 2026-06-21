@@ -47,7 +47,7 @@ public final class WorkshopResources {
         }
     }
 
-    /** Resource root for bundled Groovy scripts (mirrors WorkshopExtension.SCRIPT_RESOURCE_ROOT). */
+    /** Resource root for bundled Groovy scripts (keep in sync with WorkshopExtension.SCRIPT_RESOURCE_ROOT, which is private). */
     private static final String SCRIPT_RESOURCE_ROOT = "/scripts/";
 
     /**
@@ -56,6 +56,7 @@ public final class WorkshopResources {
      * scripts (the Modül 6 wizard / selection hub) to launch sibling scripts via GroovyShell.
      */
     public static String getBundledScript(String filename) {
+        if (filename == null || filename.isEmpty()) return null;
         String path = SCRIPT_RESOURCE_ROOT + filename;
         try (InputStream raw = WorkshopResources.class.getResourceAsStream(path)) {
             if (raw == null) {
