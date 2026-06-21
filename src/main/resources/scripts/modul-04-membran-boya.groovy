@@ -209,7 +209,8 @@ if (imageData == null) {
 }
 
 def imageTypeName = imageData.getImageType()?.toString() ?: ""
-if (!imageTypeName.toLowerCase(java.util.Locale.ROOT).contains("brightfield")) {
+def normalizedImageType = imageTypeName.toUpperCase(java.util.Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
+if (!normalizedImageType.contains('H_DAB')) {
     Dialogs.showErrorMessage(
         "Yanlış görüntü tipi",
         "Image type 'Brightfield' olmalı. Şu anki: ${imageTypeName}\n\n" +

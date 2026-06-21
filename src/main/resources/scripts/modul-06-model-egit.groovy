@@ -6,9 +6,9 @@
  * Bu betik, slayta ÇİZDİĞİNİZ Tumor / Stroma anotasyonlarından bir **Random
  * Forest piksel sınıflandırıcı** eğitir ve projeye `tumor-stroma-RF` adıyla
  * kaydeder — `[Classify → Pixel classification → Train pixel classifier]`
- * diyaloğunu açmadan. Kaydedilen modeli sonra **Modül 6 (uygula)** tüm slayda
- * uygular ve TSR üretir. Akış: birkaç bölge çiz → bu betiği çalıştır → model
- * hazır → Modül 6 (uygula).
+ * diyaloğunu açmadan. Kaydedilen model, **Modül 6 (uygula)** tarafından
+ * patolog tarafından gözden geçirilmiş Specimen sınırı içinde alan ölçümü için kullanılır.
+ * Akış: birkaç eğitim bölgesi çiz → modeli eğit → Specimen sınırını ölç.
  *
  * ÖNKOŞUL — anotasyonlar:
  *   1. H&E slaytı açık ve görüntü tipi Brightfield (H&E) olmalı (boya
@@ -22,7 +22,7 @@
  *   1. H&E slaytında Tumor (kırmızı) + Stroma (yeşil) bölgeleri çizin
  *   2. [Extensions → Atölye → Modüller → Modül 6 - Tümör/Stroma modeli oluştur]
  *   3. Model kaydedilir; isterseniz bu slaytta hızlı önizleme yapın
- *   4. Modül 6 (uygula) ile tüm slayda uygulayıp TSR alın
+ *   4. Specimen sınırını çizin; Modül 6 (uygula) ile alan ölçümlerini alın
  *
  * MODEL (atölye varsayılanı — sabit, "küçük" model):
  *   • Sınıflandırıcı : Random Forest (OpenCV RTrees, QuPath varsayılan ağaç ayarları)
@@ -45,8 +45,7 @@ import qupath.lib.images.servers.ColorTransforms
 import qupath.lib.images.servers.ImageServerMetadata
 import qupath.lib.classifiers.pixel.PixelClassifier
 import qupath.lib.classifiers.pixel.PixelClassifierMetadata
-import qupath.lib.regions.ImagePlane
-import qupath.lib.roi.ROIs
+import qupath.lib.roi.RoiTools
 
 import qupath.opencv.ops.ImageOps
 import qupath.opencv.ml.OpenCVClassifiers
@@ -283,9 +282,11 @@ if (project == null) {
     return
 }
 
-// Boya vektörleri (brightfield H&E) gerekli — renk ayrıştırma kanalları buradan gelir.
+// Boya vektörleri ve gerçek Brightfield (H&E) görüntü tipi gerekli.
+def imageTypeName = imageData.getImageType()?.toString() ?: ''
+def normalizedImageType = imageTypeName.toUpperCase(java.util.Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
 def stains = imageData.getColorDeconvolutionStains()
-if (stains == null || !imageData.isBrightfield()) {
+if (stains == null || !normalizedImageType.contains('BRIGHTFIELD_H_E')) {
     Dialogs.showErrorMessage(
         "Görüntü tipi uygun değil",
         "Bu betik Hematoxylin/Eosin renk ayrıştırma kanallarını kullanır; bunun için\n" +
@@ -373,7 +374,7 @@ def devam = waitForConfirm(
     "  • Özellikler     : Hematoxylin OD + Eosin OD; ham + Gaussian σ = 1, 2, 4 µm\n" +
     "  • Çözünürlük     : ${trainResolutionMicrons} µm/px\n\n" +
     "Not: Bu işlem yalnızca modeli EĞİTİP KAYDEDER — slayttaki anotasyonlarınıza\n" +
-    "dokunmaz (silmez). Modeli tüm slayda uygulamak ve TSR almak için sonra\n" +
+    "dokunmaz (silmez). Modeli incelenmiş Specimen sınırında ölçmek için sonra\n" +
     "'Modül 6 - Tümör vs stroma (uygula)' betiğini çalıştırın.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
     "Hazırsanız Çalıştır düğmesine basın."
@@ -461,40 +462,49 @@ println String.format(java.util.Locale.US, "Model kaydedildi: %s  |  Süre: %.1f
 
 // ──────────────────────────────────────────────────────────────
 // 5) İsteğe bağlı önizleme (tahribatsız) — slayttaki anotasyonlara dokunmaz.
-//   Tüm-görüntü ROI'si üzerinden kaba Tumor/Stroma alan dağılımını ölçer;
+//   Patolog tarafından gözden geçirilmiş Specimen birleşimi içinde ölçer;
 //   hiçbir nesne oluşturmaz/silmez (aktif öğrenme döngüsü korunur).
 // ──────────────────────────────────────────────────────────────
 def previewText = { ->
     try {
-        def server = imageData.getServer()
-        def manager = PixelClassifierTools.createMeasurementManager(imageData, classifier)
-        def roi = ROIs.createRectangleROI(0, 0, server.getWidth(), server.getHeight(),
-            ImagePlane.getDefaultPlane())
-
-        def names = manager.getMeasurementNames()
-        def lines = []
-        // Sınıf yüzdeleri: "<Sınıf> %" biçimindeki ölçümler.
-        names.findAll { it.endsWith(" %") }.each { nm ->
-            def cls = nm.substring(0, nm.length() - 2)
-            def val = manager.getMeasurementValue(roi, nm)
-            if (val != null) {
-                lines << String.format(java.util.Locale.US, "  %-12s: %%%.1f", cls, val.doubleValue())
-            }
+        def specimenObjects = QP.getAnnotationObjects().findAll {
+            it.getROI()?.isArea() && it.getPathClass()?.getName() == 'Specimen'
         }
-        if (lines.isEmpty()) return "  (Önizleme ölçümü hesaplanamadı.)"
-        return lines.join("\n")
+        if (specimenObjects.isEmpty()) {
+            return '  Önizleme için patolog tarafından gözden geçirilmiş, sınıfı "Specimen" olan bir anotasyon gerekli.'
+        }
+        def roi = RoiTools.union(specimenObjects.collect { it.getROI() })
+        def manager = PixelClassifierTools.createMeasurementManager(imageData, classifier)
+        def names = manager.getMeasurementNames()
+        def tumorName = names.find { it.startsWith('Tumor area ') }
+        def stromaName = names.find { it.startsWith('Stroma area ') }
+        if (tumorName == null || stromaName == null) {
+            return '  Önizleme için sınıflandırıcıda Tumor ve Stroma çıktı sınıfları bulunmalı.'
+        }
+        double tumor = manager.getMeasurementValue(roi, tumorName)?.doubleValue() ?: 0.0
+        double stroma = manager.getMeasurementValue(roi, stromaName)?.doubleValue() ?: 0.0
+        double total = tumor + stroma
+        double tumorPct = total > 0 ? 100.0 * tumor / total : Double.NaN
+        double stromaPct = total > 0 ? 100.0 * stroma / total : Double.NaN
+        double ratio = stroma > 0 ? tumor / stroma : Double.NaN
+        def fmt = { double value, String pattern ->
+            Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : 'hesaplanamadı'
+        }
+        return '  Kapsam: Specimen anotasyonlarının birleşimi\n' +
+            "  Tümör alanı (%)    : ${fmt(tumorPct, '%.2f%%')}\n" +
+            "  Stroma alanı (%)   : ${fmt(stromaPct, '%.2f%%')}\n" +
+            "  Tümör/Stroma oranı : ${fmt(ratio, '%.4f')}"
     } catch (Throwable t) {
         return "  (Önizleme yapılamadı: ${t.getClass().getSimpleName()} — model yine de kaydedildi.)"
     }
 }
-
 def baseResult = String.format(java.util.Locale.US,
     "Model kaydedildi ✅\n\n" +
     "  Ad        : %s\n" +
     "  Konum     : <proje>/classifiers/%s.json\n" +
     "  Eğitim    : Tumor=%d, Stroma=%d (bu slayt)\n" +
     "  Çözünürlük: %.1f µm/px  |  Süre: %.1f sn\n\n" +
-    "Sıradaki: 'Modül 6 - Tümör vs stroma (uygula)' ile tüm slayda uygulayıp TSR alın.\n" +
+    "Sıradaki: Specimen sınırını gözden geçirin; 'Modül 6 - Tümör vs stroma (uygula)' ile alanları ölçün.\n" +
     "Slaytta canlı renk haritasını görmek için: [Classify → Pixel classification →\n" +
     "Load classifier] → %s.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
@@ -502,16 +512,16 @@ def baseResult = String.format(java.util.Locale.US,
 
 if (isHeadless) {
     println baseResult
-    println "Önizleme (kaba alan dağılımı):"
+    println "Önizleme (Specimen alan ölçümleri):"
     println previewText()
 } else {
-    // Önizleme isteğe bağlı: hesaplama tüm slaytı tarayabilir, 1 dk sürebilir.
+    // Önizleme isteğe bağlı ve yalnız Specimen sınırı içinde hesaplanır.
     def wantPreview = waitForConfirm(
         "Model kaydedildi — önizleme?",
         baseResult + "\n\n" +
-        "Bu slaytta hızlı bir önizleme (kaba Tumor/Stroma alan dağılımı) yapmak ister\n" +
+        "Bu slaytta Specimen sınırı içinde hızlı bir alan önizlemesi yapmak ister\n" +
         "misiniz? Bu, modelin işe yarayıp yaramadığını görmek içindir; anotasyonlarınıza\n" +
-        "dokunmaz. Tüm slaytı tarayacağı için ~1 dk sürebilir.\n\n" +
+        "dokunmaz. Specimen alanına göre hesaplanır.\n\n" +
         "Önizleme için Çalıştır, atlamak için İptal."
     )
     if (wantPreview) {
@@ -520,8 +530,8 @@ if (isHeadless) {
         showResultWindow(
             "Önizleme — kaba alan dağılımı",
             baseResult + "\n\n" +
-            "Önizleme (tüm slayt, kaba sınıf yüzdeleri):\n" + pv + "\n\n" +
-            "Belgelenen TSR ve alan değerleri için Modül 6 (uygula) betiğini kullanın."
+            "Önizleme (Specimen sınırı, betimsel alan ölçümleri):\n" + pv + "\n\n" +
+            "Kalıcı ve dışa aktarılabilir ölçümler için Modül 6 (uygula) betiğini kullanın."
         )
     } else {
         showResultWindow("Tamamlandı 🧠", baseResult)

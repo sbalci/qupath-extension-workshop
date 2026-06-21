@@ -3,8 +3,9 @@
  * --------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Atölye için "hızlı deneme" betiği. Seçilen anotasyon içinde
- * Ki-67 / p53 / başka bir nükleer İHK boyamasını otomatik olarak skorlar
- * ve **Ki-67 LI** (etiketleme indeksi) ile grup dağılımını kaydeder.
+ * Ki-67 ve benzeri nükleer DAB boyamalarını (p53 hariç — marker-özgü bir
+ * iş akışı gerektirir) otomatik olarak skorlar ve **Ki-67 LI**
+ * (etiketleme indeksi) ile grup dağılımını kaydeder.
  *
  * KULLANIM:
  *   1. Ki-67 (veya başka nükleer DAB) İHK slaytını açın
@@ -224,10 +225,11 @@ if (imageData == null) {
 // Image type uyarısı (Brightfield (H-DAB) zorunlu — DAB ayrımı için)
 def imageType = imageData.getImageType()
 def imageTypeName = imageType?.toString() ?: ""
-if (!imageTypeName.toLowerCase(java.util.Locale.ROOT).contains("brightfield")) {
+def normalizedImageType = imageTypeName.toUpperCase(java.util.Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
+if (!normalizedImageType.contains('H_DAB')) {
     Dialogs.showErrorMessage(
         "Yanlış görüntü tipi",
-        "Bu slayt 'Brightfield' olarak ayarlı değil.\n" +
+        "Bu slayt 'Brightfield (H-DAB)' olarak ayarlı değil.\n" +
         "Şu anki tip: ${imageTypeName}\n\n" +
         "Çözüm:\n" +
         "  1. Image panelini açın (sol-üst)\n" +

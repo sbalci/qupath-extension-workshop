@@ -195,8 +195,6 @@ public final class WorkshopSettingsDialog {
             case "atolye.warnNuclearCount": return "Uyarı: düşük çekirdek (Nielsen)";
             case "atolye.warnGenericCount": return "Uyarı: düşük hücre";
             case "atolye.warnTissueAreaMm2": return "Uyarı: küçük doku (mm²)";
-            case "atolye.ciMinCells": return "GA min hücre";
-            case "atolye.ciZ": return "GA z-skoru";
             case "atolye.exportFolder": return "Dışa aktarma klasörü";
             case "atolye.exportSeparator": return "Ayraç";
             default: return key;

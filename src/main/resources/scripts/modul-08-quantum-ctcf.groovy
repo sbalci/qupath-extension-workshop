@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Atölyenin en önemli betiği: yayınlanmış (Virchows Archiv 2025) QuANTUM
  * iş akışının basitleştirilmiş bir versiyonu. NSCLC slaytında **cTCF**
- * hesaplar — NGS için tümör hücre fraksiyonu.
+ * hesaplar: Tumor / (Tumor + Non-neoplastic) × 100.
  *
  * İŞ AKIŞI:
  *   1. TCR (Tumor-Containing Region) anotasyonunuz seçili olmalı
@@ -259,6 +259,21 @@ if (project == null) {
     return
 }
 
+def imageTypeName = imageData.getImageType()?.toString() ?: ''
+def normalizedImageType = imageTypeName.toUpperCase(java.util.Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
+if (!normalizedImageType.contains('BRIGHTFIELD_H_E')) {
+    Dialogs.showErrorMessage("Yanlış görüntü tipi", "Bu ölçüm Brightfield (H&E) görüntü bekler. Şu anki: ${imageTypeName}")
+    return
+}
+
+def calibration = imageData.getServer().getPixelCalibration()
+double pixelWidth = calibration.getPixelWidthMicrons()
+double pixelHeight = calibration.getPixelHeightMicrons()
+if (!(pixelWidth > 0) || !(pixelHeight > 0)) {
+    Dialogs.showErrorMessage("Kalibrasyon yok", "Piksel boyutu tanımlı değil; TCR alanı ve alan-temelli kayıt hesaplanamaz.")
+    return
+}
+
 // StarDist eklentisi yüklü mü? (model indirmeden önce kontrol et)
 try {
     Class.forName("qupath.ext.stardist.StarDist2D")
@@ -330,8 +345,7 @@ if (selected == null || !(selected instanceof PathAnnotationObject)) {
         "QuANTUM iş akışı bir **TCR (Tumor-Containing Region)** anotasyonu gerektirir.\n\n" +
         "Nasıl çizilir:\n" +
         "  1. [P] tuşu → Polygon aracı\n" +
-        "  2. NSCLC slaytında **NGS için kullanılacak** dokunun çevresini çizin\n" +
-        "     (diseksiyon öncesi iş akışını taklit eder)\n" +
+        "  2. H&E slaytında ölçülecek araştırma alanının çevresini çizin\n" +
         "  3. Bu manuel olarak yapılır — seçilen araştırma ROI'si\n" +
         "  4. Anotasyona 'TCR' sınıfı atayabilirsiniz (opsiyonel)\n" +
         "  5. TCR seçili iken bu betiği çalıştırın"
@@ -445,11 +459,20 @@ if (hasClassifier) {
     QP.runObjectClassifier(objClassifierName)
     step3Time = (System.currentTimeMillis() - t2) / 1000.0
 
+    // Kasıtlı katı eşleme: yalnız adı "Tumor" olan hücreler paya, yalnız adı
+    // "Non-neoplastic" (varyantları dahil) olan hücreler paydaya girer. Tanınmayan
+    // veya boş sınıflar (Stroma, Other, sınıflandırılmamış) Ignore sayılır ve
+    // cTCF paydasının dışında bırakılır. Bu, eski "tümör değilse non-neoplastik say"
+    // davranışından bilinçli olarak değiştirildi — geri çevirmeyin.
     detectedCells.each { c ->
         def cls = c.getPathClass()?.getName()?.toLowerCase(java.util.Locale.ROOT) ?: ""
-        if (cls.contains("tumor"))      tumorCount++
-        else if (cls.contains("ignore")) ignoreCount++
-        else                              nonNeoCount++   // Non-neoplastic / Other / vb.
+        if (cls.contains('tumor')) {
+            tumorCount++
+        } else if (cls.contains('non-neoplastic') || cls.contains('non neoplastic') || cls.contains('nonneoplastic')) {
+            nonNeoCount++
+        } else {
+            ignoreCount++
+        }
     }
     println String.format(java.util.Locale.US, "  ✓ Tumor: %d  |  Non-neoplastic: %d  |  Ignore: %d  (%.1f sn)",
         tumorCount, nonNeoCount, ignoreCount, step3Time)
@@ -460,19 +483,20 @@ if (hasClassifier) {
 // ──────────────────────────────────────────────────────────────
 // 7) Adım 4 — cTCF
 // ──────────────────────────────────────────────────────────────
-def cTCF = 0.0
+double cTCF = Double.NaN
 def cTCFmetin = "Sınıflandırıcı yok — cTCF hesaplanamadı"
 
 if (hasClassifier) {
     def validTotal = tumorCount + nonNeoCount  // Ignore'u dışla
-    cTCF = validTotal > 0 ? 100.0 * tumorCount / validTotal : 0.0
-    cTCFmetin = String.format(java.util.Locale.US, "%.1f%%", cTCF)
+    if (validTotal > 0) {
+        cTCF = 100.0 * tumorCount / validTotal
+        cTCFmetin = String.format(java.util.Locale.US, "%.1f%%", cTCF)
+    } else {
+        cTCFmetin = "Tumor/Non-neoplastic hücre yok — cTCF hesaplanamadı"
+    }
 }
 
 // Alan hesabı
-def cal = imageData.getServer().getPixelCalibration()
-def pixelWidth  = cal.getPixelWidthMicrons()
-def pixelHeight = cal.getPixelHeightMicrons()
 def roi = tcr.getROI()
 def tcrAreaMm2 = roi != null
     ? (roi.getArea() * pixelWidth * pixelHeight) / 1_000_000.0
@@ -487,9 +511,14 @@ def totalElapsed = (System.currentTimeMillis() - t0) / 1000.0
 // ──────────────────────────────────────────────────────────────
 tcr.measurements['TCR alanı (mm2)'] = tcrAreaMm2
 if (hasClassifier) {
-    tcr.measurements['cTCF (%)']            = cTCF
+    // cTCF yalnız hesaplanabildiğinde yazılır; geçerli hücre yoksa NaN'i dışa
+    // aktarma listesine yazmayız (sınıflandırıcı-yok yoluyla tutarlı).
+    if (!Double.isNaN(cTCF)) {
+        tcr.measurements['cTCF (%)'] = cTCF
+    }
     tcr.measurements['Tümör hücre sayısı']  = tumorCount as double
     tcr.measurements['Non-neoplastik sayı'] = nonNeoCount as double
+    tcr.measurements['Ignore / sınıflandırılmamış sayı'] = ignoreCount as double
 }
 QP.fireHierarchyUpdate()
 
@@ -500,8 +529,8 @@ def egitimNot = ""
 if (!hasClassifier) {
     egitimNot = "\n\n⚠️ ÖNEMLİ: Nesne sınıflandırıcı '${objClassifierName}' projenizde yok.\n" +
                 "cTCF hesaplanamadı — sınıflandırıcıyı şu adımlarla eğitin:\n\n" +
-                "  1. StarDist sonuçları üzerinde ~5-10 hücreyi 'Tumor' sınıfına atayın\n" +
-                "  2. Aynı şekilde ~5-10 hücreyi 'Non-neoplastic'e atayın\n" +
+                "  1. Temsilî hücreleri 'Tumor', 'Non-neoplastic' ve 'Ignore' olarak etiketleyin\n" +
+                "  2. Farklı morfolojileri ve artefaktları her sınıfta örnekleyin\n" +
                 "  3. [Classify → Object classification → Train object classifier]\n" +
                 "  4. Random Tree seçin → Train → Save as '${objClassifierName}'\n" +
                 "  5. Bu betiği tekrar çalıştırın → cTCF hesaplanacak"

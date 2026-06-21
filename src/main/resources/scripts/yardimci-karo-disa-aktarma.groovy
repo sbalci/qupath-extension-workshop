@@ -36,6 +36,12 @@
  *
  * NE YAPMAZ: Tüm projeyi (çoklu slayt) ya da anotasyonsuz tüm slaytı döşemez.
  *
+ * API / BELGE: TileExporter + LabeledImageServer.Builder (QuPath 0.6.0+).
+ *   Maske modu tek kanallı indeksli çıktı verir (multichannelOutput=false).
+ *   Resmi belgeler:
+ *     https://qupath.readthedocs.io/en/stable/docs/advanced/exporting_images.html
+ *     https://qupath.readthedocs.io/en/stable/docs/advanced/exporting_annotations.html
+ *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
 

@@ -16,7 +16,7 @@
  * KULLANIM:
  *   1. DAB-İHK slaytını açın, Image type → "Brightfield (H-DAB)"
  *   2. Ölçmek istediğiniz alanı anotasyon olarak çizin ve SEÇİN
- *      (seçim yoksa slayttaki tüm anotasyonlar kullanılır)
+ *      (ölçülecek anotasyonlar açıkça seçilmelidir)
  *   3. [Automate → Project scripts → bu betik]
  *
  * ÇIKTI:
@@ -121,7 +121,7 @@ if (!(pw > 0) || !(ph > 0)) {
 }
 
 def selected = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getName() != summaryName }
-def targets = selected.isEmpty() ? QP.getAnnotationObjects().findAll { it.getName() != summaryName } : selected
+def targets = selected
 if (targets.isEmpty()) {
     def msg = "Ölçülecek anotasyon yok.\n\nÖnce ilgilendiğiniz bölgeyi anotasyon olarak çizin (ve seçin)."
     if (isHeadless) println msg else Dialogs.showWarningNotification("Anotasyon yok", msg)

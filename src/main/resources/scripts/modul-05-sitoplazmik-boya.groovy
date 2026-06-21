@@ -3,7 +3,7 @@
  * ----------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Atölye için "hızlı deneme" betiği. Sitoplazmik DAB boyamasını (CD68,
- * CD163, EBER vb.) skorlar. Her hücre sitoplazmik DAB yoğunluğuna göre
+ * CD163 ve sitokeratinler gibi belirteçleri ölçer. Her hücre sitoplazmik DAB yoğunluğuna göre
  * Negative / Weak / Moderate / Strong bin'lerine atanır.
  *
  * KULLANIM:
@@ -182,7 +182,8 @@ if (imageData == null) {
 }
 
 def imageTypeName = imageData.getImageType()?.toString() ?: ""
-if (!imageTypeName.toLowerCase(java.util.Locale.ROOT).contains("brightfield")) {
+def normalizedImageType = imageTypeName.toUpperCase(java.util.Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
+if (!normalizedImageType.contains('H_DAB')) {
     Dialogs.showErrorMessage(
         "Yanlış görüntü tipi",
         "Image type 'Brightfield (H-DAB)' olmalı. Şu anki: ${imageTypeName}"

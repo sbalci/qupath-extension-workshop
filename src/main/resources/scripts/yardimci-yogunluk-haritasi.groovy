@@ -16,15 +16,20 @@
  *   • Slaytta hücre tespitleri olmalı (Modül 2/3/5/7). Betik tespit YAPMAZ.
  *
  * ÇIKTI:
- *   • Her dolu kare: kilitli "Yoğunluk grid r,c" anotasyonu +
+ *   • Analiz sınırını kesen her kare (sıfır hücreli kareler dahil): kilitli "Yoğunluk grid r,c" +
  *     "Hücre yoğunluğu (hücre/mm2)", "Hücre sayısı"
- *   • Kilitli "Yoğunluk Özet": ortalama / maksimum yoğunluk (hot-spot)
+ *   • Kilitli "Yoğunluk Özet": birleşik ROI yoğunluğu ve yalnız tam karolar
+ *     arasındaki maksimum yoğunluk
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
 
 import qupath.lib.gui.dialogs.Dialogs
 import qupath.lib.scripting.QP
+import qupath.lib.objects.PathObjects
+import qupath.lib.regions.ImagePlane
+import qupath.lib.roi.ROIs
+import qupath.lib.roi.RoiTools
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
@@ -83,124 +88,144 @@ def showResultWindow = { String windowTitle, String windowBody ->
 }
 
 // ── Parametreler ────────────────────────────────────────────────────
-double tileSizeMicrons = 250.0   // ızgara karesi kenarı (µm)
-int    maxTiles        = 600     // hiyerarşiyi boğmamak için üst sınır
+double tileSizeMicrons = 250.0
+int maxTiles = 600
 
-// ── 1) Ön kontroller ───────────────────────────────────────────────
+// ── 1) Açık görüntü, kalibrasyon ve açıkça seçilmiş analiz sınırı ──
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce hücre tespiti yapılmış bir slayt açın.")
+    Dialogs.showErrorMessage('Görüntü açık değil', 'Önce hücre tespiti yapılmış bir slayt açın.')
     return
 }
 def cal = imageData.getServer().getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0) || !(ph > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok", "Slaytta piksel boyutu (µm) tanımlı değil; yoğunluk hesaplanamaz." +
-        "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).")
+    Dialogs.showErrorMessage('Kalibrasyon yok', 'Piksel boyutu tanımlı değil; hücre/mm² hesaplanamaz.')
     return
 }
 
-def cells = QP.getDetectionObjects().findAll { it.getROI() != null }
+def targets = QP.getSelectedObjects().findAll {
+    it.isAnnotation() && it.getROI()?.isArea() &&
+        !(it.getName() ?: '').startsWith('Yoğunluk grid') && it.getName() != 'Yoğunluk Özet'
+}
+if (targets.isEmpty()) {
+    Dialogs.showErrorMessage('Analiz alanı seçili değil', 'Yoğunluk haritası için ölçülecek anotasyonları açıkça seçin.')
+    return
+}
+def analysisROI = RoiTools.union(targets.collect { it.getROI() })
+if (analysisROI == null || analysisROI.isEmpty() || !analysisROI.isArea()) {
+    Dialogs.showErrorMessage('Geçersiz analiz alanı', 'Seçili anotasyonlar geçerli bir analiz alanı oluşturmuyor.')
+    return
+}
+
+def cells = QP.getDetectionObjects().findAll { detection ->
+    def roi = detection.getROI()
+    detection.isCell() && roi != null && analysisROI.contains(roi.getCentroidX(), roi.getCentroidY())
+}
 int n = cells.size()
-if (n == 0) {
-    def msg = "Bu slaytta hücre tespiti yok.\nÖnce Modül 2/3/5/7 ile tespit yapın."
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Tespit yok", msg)
-    return
+
+// ── 2) Fiziksel kare boyutuyla, analiz ROI sınırlarından ızgara ─────
+double tilePxX = tileSizeMicrons / pw
+double tilePxY = tileSizeMicrons / ph
+double minX = analysisROI.getBoundsX()
+double minY = analysisROI.getBoundsY()
+double width = analysisROI.getBoundsWidth()
+double height = analysisROI.getBoundsHeight()
+int nCols = Math.max(1, (int)Math.ceil(width / tilePxX))
+int nRows = Math.max(1, (int)Math.ceil(height / tilePxY))
+while ((long)nCols * nRows > maxTiles) {
+    tilePxX *= 1.4
+    tilePxY *= 1.4
+    nCols = Math.max(1, (int)Math.ceil(width / tilePxX))
+    nRows = Math.max(1, (int)Math.ceil(height / tilePxY))
 }
 
-// ── 2) Izgara sınırları + boyutu ────────────────────────────────────
-double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY
-double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY
-cells.each { c ->
-    def r = c.getROI()
-    double cx = r.getCentroidX(), cy = r.getCentroidY()
-    if (cx < minX) minX = cx; if (cx > maxX) maxX = cx
-    if (cy < minY) minY = cy; if (cy > maxY) maxY = cy
-}
-double tilePx = tileSizeMicrons / pw
-int nCols = Math.max(1, (int) Math.ceil((maxX - minX) / tilePx))
-int nRows = Math.max(1, (int) Math.ceil((maxY - minY) / tilePx))
-while ((long) nCols * nRows > maxTiles) {
-    tilePx *= 1.4
-    nCols = Math.max(1, (int) Math.ceil((maxX - minX) / tilePx))
-    nRows = Math.max(1, (int) Math.ceil((maxY - minY) / tilePx))
-}
-double tileAreaMm2 = (tilePx * pw) * (tilePx * ph) / 1_000_000.0
-
-// ── 3) Hücreleri karelere ata ───────────────────────────────────────
 int[] tileCount = new int[nCols * nRows]
-cells.each { c ->
-    def r = c.getROI()
-    int col = (int) ((r.getCentroidX() - minX) / tilePx); if (col >= nCols) col = nCols - 1
-    int row = (int) ((r.getCentroidY() - minY) / tilePx); if (row >= nRows) row = nRows - 1
+cells.each { cell ->
+    def roi = cell.getROI()
+    int col = Math.min(nCols - 1, Math.max(0, (int)((roi.getCentroidX() - minX) / tilePxX)))
+    int row = Math.min(nRows - 1, Math.max(0, (int)((roi.getCentroidY() - minY) / tilePxY)))
     tileCount[row * nCols + col]++
 }
 
-// ── 4) Eski grid/özet temizle, dolu kareleri oluştur ────────────────
+// ── 3) Eski çıktıyı temizle; ROI ile kesişen sıfır/dolu tüm kareleri yaz ──
 QP.removeObjects(QP.getAnnotationObjects().findAll {
-    it.getName() != null && (it.getName().startsWith("Yoğunluk grid") || it.getName() == "Yoğunluk Özet")
+    it.getName() != null && (it.getName().startsWith('Yoğunluk grid') || it.getName() == 'Yoğunluk Özet')
 }, false)
 
-def plane = qupath.lib.regions.ImagePlane.getDefaultPlane()
+def plane = analysisROI.getImagePlane()
 def newTiles = []
-def densities = []
-double maxDensity = 0.0
-int filledTiles = 0
+double maxFullTileDensity = Double.NaN
+double analyzedAreaMm2 = 0.0
+int zeroTiles = 0
+double fullTileAreaPx = tilePxX * tilePxY
 for (int row = 0; row < nRows; row++) {
     for (int col = 0; col < nCols; col++) {
-        int cnt = tileCount[row * nCols + col]
-        if (cnt == 0) continue
-        filledTiles++
-        double density = tileAreaMm2 > 0 ? cnt / tileAreaMm2 : 0.0
-        densities << density
-        if (density > maxDensity) maxDensity = density
+        double x = minX + col * tilePxX
+        double y = minY + row * tilePxY
+        def rectangle = ROIs.createRectangleROI(x, y, tilePxX, tilePxY, plane)
+        def clipped = RoiTools.intersection([rectangle, analysisROI])
+        if (clipped == null || clipped.isEmpty() || !clipped.isArea()) continue
 
-        double x = minX + col * tilePx
-        double y = minY + row * tilePx
-        def tile = qupath.lib.objects.PathObjects.createAnnotationObject(
-            qupath.lib.roi.ROIs.createRectangleROI(x, y, tilePx, tilePx, plane))
-        tile.setName(String.format(java.util.Locale.US, "Yoğunluk grid %d,%d", row, col))
+        int count = tileCount[row * nCols + col]
+        if (count == 0) zeroTiles++
+        double areaMm2 = clipped.getArea() * pw * ph / 1_000_000.0
+        if (!(areaMm2 > 0)) continue
+        double density = count / areaMm2
+        double coverage = clipped.getArea() / fullTileAreaPx
+        analyzedAreaMm2 += areaMm2
+        if (coverage >= 0.99 && (!Double.isFinite(maxFullTileDensity) || density > maxFullTileDensity)) {
+            maxFullTileDensity = density
+        }
+
+        def tile = PathObjects.createAnnotationObject(clipped)
+        tile.setName(String.format(java.util.Locale.US, 'Yoğunluk grid %d,%d', row, col))
+        tile.measurements['Kare analiz alanı (mm2)'] = areaMm2
+        tile.measurements['Kare kapsamı (%)'] = 100.0 * coverage
+        tile.measurements['Hücre sayısı'] = count as double
         tile.measurements['Hücre yoğunluğu (hücre/mm2)'] = density
-        tile.measurements['Hücre sayısı'] = cnt as double
         tile.setLocked(true)
         newTiles << tile
     }
 }
 
-double meanDensity = densities.isEmpty() ? 0.0 : densities.sum() / densities.size()
+double overallDensity = analyzedAreaMm2 > 0 ? n / analyzedAreaMm2 : Double.NaN
 
-// ── 5) Kilitli özet anotasyonu ──────────────────────────────────────
-def srv = imageData.getServer()
-def summary = qupath.lib.objects.PathObjects.createAnnotationObject(
-    qupath.lib.roi.ROIs.createRectangleROI(0, 0, srv.getWidth(), srv.getHeight(), plane))
-summary.setName("Yoğunluk Özet")
-summary.measurements['Hücre sayısı (toplam)']             = n as double
-summary.measurements['Dolu kare sayısı']                  = filledTiles as double
-summary.measurements['Kare boyutu (µm)']                  = tilePx * pw
-summary.measurements['Ortalama yoğunluk (hücre/mm2)']     = meanDensity
-summary.measurements['Maksimum yoğunluk (hücre/mm2)']     = maxDensity
+def summary = PathObjects.createAnnotationObject(analysisROI)
+summary.setName('Yoğunluk Özet')
+summary.measurements['Hücre sayısı (toplam)'] = n as double
+summary.measurements['Analiz alanı (mm2)'] = analyzedAreaMm2
+summary.measurements['Kare sayısı'] = newTiles.size() as double
+summary.measurements['Sıfır hücreli kare'] = zeroTiles as double
+summary.measurements['Kare boyutu (µm)'] = tilePxX * pw
+summary.measurements['Genel yoğunluk (hücre/mm2)'] = overallDensity
+summary.measurements['Maksimum tam-karo yoğunluğu (hücre/mm2)'] = maxFullTileDensity
 summary.setLocked(true)
 
 QP.addObjects(newTiles)
 QP.addObjects([summary])
 QP.fireHierarchyUpdate()
 
-// ── 6) Sonucu sun ───────────────────────────────────────────────────
+def fmt = { double value, String pattern ->
+    Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : 'hesaplanamadı'
+}
 def body = new StringBuilder()
-body << "HÜCRE YOĞUNLUĞU HARİTASI (ızgara)\n"
-body << "══════════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Hücre (toplam)        : %,d%n", n)
-body << String.format(java.util.Locale.US, "Izgara                : %d sütun × %d satır, kare ≈ %.0f µm%n", nCols, nRows, tilePx * pw)
-body << String.format(java.util.Locale.US, "Dolu kare             : %d%n", filledTiles)
-body << "──────────────────────────────────\n"
-body << String.format(java.util.Locale.US, "Ortalama yoğunluk     : %.0f hücre/mm²%n", meanDensity)
-body << String.format(java.util.Locale.US, "Maksimum (hot-spot)   : %.0f hücre/mm²%n", maxDensity)
-body << "\n"
-body << "Kareleri 'Hücre yoğunluğu (hücre/mm2)' ölçümüne göre renklendirin\n"
-body << "(Measure → Show measurement maps) → yoğunluk haritası.\n"
-body << "Yumuşak ısı haritası için: [Analyze → Density maps].\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << 'HÜCRE YOĞUNLUĞU HARİTASI\n'
+body << '══════════════════════════════════\n\n'
+body << String.format(java.util.Locale.US, 'Analiz alanı          : %.3f mm²%n', analyzedAreaMm2)
+body << String.format(java.util.Locale.US, 'Hücre (toplam)        : %,d%n', n)
+body << String.format(java.util.Locale.US, 'Izgara                : %d × %d; kare ≈ %.0f µm%n', nCols, nRows, tilePxX * pw)
+body << String.format(java.util.Locale.US, 'ROI ile kesişen kare  : %,d%n', newTiles.size())
+body << String.format(java.util.Locale.US, 'Sıfır hücreli kare    : %,d%n', zeroTiles)
+body << '──────────────────────────────────\n'
+body << "Genel yoğunluk        : ${fmt(overallDensity, '%.1f hücre/mm²')}\n"
+body << "Maksimum tam karo     : ${fmt(maxFullTileDensity, '%.1f hücre/mm²')}\n"
+body << '\nGenel yoğunluk = toplam hücre / toplam analiz alanı.\n'
+body << 'Kısmi kenar karelerinde gerçek ROI-kesişim alanı payda olarak kullanılır.\n'
+body << 'Maksimum değer yalnız yaklaşık tam alanlı karolar arasında hesaplanır.\n'
+body << 'Sıfır hücreli kareler toplam analiz alanına dahildir.\n\n'
+body << 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.'
 
-showResultWindow("Yoğunluk haritası", body.toString())
-println String.format(java.util.Locale.US, "✓ %d dolu kare + özet yazıldı (maks %.0f hücre/mm²).", filledTiles, maxDensity)
+showResultWindow('Yoğunluk haritası', body.toString())
+println String.format(java.util.Locale.US, 'Yoğunluk haritası: %d kare, genel yoğunluk %.1f hücre/mm²', newTiles.size(), overallDensity)

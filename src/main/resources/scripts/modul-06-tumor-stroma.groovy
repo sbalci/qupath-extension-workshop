@@ -1,143 +1,30 @@
 /**
- * Modül 6 - Tek Tıkla Tümör vs Stroma Segmentasyonu
- * ---------------------------------------------------
- * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
- * Bu betik önceden eğitilmiş bir **piksel sınıflandırıcısını** projedeki
- * `classifiers/` klasöründen yükleyip aktif slayttaki tüm doku üzerinde
- * çalıştırır. Sonuçtan **Tumor** ve **Stroma** sınıflı anotasyonlar üretir
- * ve **Tümör/Stroma Oranı (TSR)** ölçümünü kaydeder.
+ * Modül 6 - Tümör/Stroma Alan Ölçümü
+ * -----------------------------------
+ * Hedef QuPath sürümü: 0.6.0+
  *
- * ÖNKOŞUL — sınıflandırıcı dosyası:
- *   Proje klasörünüzde şu yol bulunmalı:
- *     <proje>/classifiers/tumor-stroma-RF.json
+ * Patolog tarafından gözden geçirilmiş `Specimen` anotasyonları içinde
+ * Tumor ve Stroma piksel sınıflarının alanlarını ölçer. İsteğe bağlı
+ * `Analysis ROI` anotasyonları için aynı ölçümleri ayrı ayrı üretir.
  *
- *   Sınıflandırıcı yoksa: Modül 6'nın "Şimdi anlayalım" bölümündeki
- *   adımları izleyerek anotasyon çizip eğitin (5 dk), sonra "Save classifier"
- *   ile bu isimle kaydedin.
+ * ÜRETİLEN BETİMSEL ÖLÇÜMLER:
+ *   • Tümör alanı (%) = Tumor / (Tumor + Stroma) × 100
+ *   • Stroma alanı (%) = Stroma / (Tumor + Stroma) × 100
+ *   • Tümör/Stroma oranı = Tumor / Stroma
  *
- * KULLANIM:
- *   1. Bir H&E slaytı açın
- *   2. Tüm slaytı işlemek için anotasyon ÇİZMENIZE GEREK YOK
- *      — betik tüm görüntüye uygular
- *   3. [Automate → Project scripts → bu betik]
- *
- * ÇIKTI:
- *   Tümör/Stroma Oranı (TSR) alan temelli araştırma/eğitim ölçümüdür.
- *   Modül 7'de bu sınıflandırıcı çıktısını İHK sayımıyla birleştireceğiz.
- *
- * METODOLOJI NOTLARI (cancer-informatics eğitim 03'ten uyarlanmış):
- *   • Eğitim örnekleri farklı bölgelerden gelmeli — aynı alanın 10 katmanı
- *     yerine slayta yayılmış birkaç temsili örnek daha öğreticidir.
- *   • "Create objects" adımında minimum object size + hole size kalibrasyonu
- *     gürültü temizliği için kritiktir; bu betik `10000.0 µm² / 5000.0 µm²`
- *     varsayılanını kullanır (atölye seçimi — slayt çözünürlüğüne göre değişir).
- *   • Arayüz tarafı eğitimi (J. Cieślik et al., CC-BY-SA):
- *     cancer-informatics.org/de/docs/ai/qupath_03_tissue_segmentation
+ * Betik klinik kategori, eşik, prognoz veya tedavi yorumu üretmez.
  */
 
 import qupath.lib.gui.dialogs.Dialogs
+import qupath.lib.objects.PathObjects
+import qupath.lib.roi.RoiTools
 import qupath.lib.scripting.QP
-import qupath.lib.projects.Project
+import qupath.opencv.ml.pixel.PixelClassifierTools
 
-// ──────────────────────────────────────────────────────────────
-// Modal olmayan pencere yardımcıları
-//   - waitForConfirm    : modal hissi veren ama QuPath'i kilitlemeyen onay penceresi
-//   - showResultWindow  : sonuç penceresi — açık kalır, QuPath kullanılmaya devam edilebilir
-//
-// İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
-// parametre değiştirip betiği tekrar çalıştırabilir, sonuçları kopyalayabilir.
-// ──────────────────────────────────────────────────────────────
+import java.util.Locale
+
+// ── Kendi başına çalışabilen, modal olmayan sonuç penceresi ─────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
-
-// --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
-def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
-def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
-    def c = __wpClass(); if (c == null) return dflt
-    try { c.getMethod(m, sig).invoke(null, args) } catch (Throwable t) { dflt }
-}
-def atolyeD = { String k, double  d -> (double)  __wpCall('dbl',  [String.class, double.class]  as Class[], [k, d] as Object[], d) }
-def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class, String.class]  as Class[], [k, d] as Object[], d) }
-def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
-def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
-
-// --- Eklentiyle paketlenen örnek sınıflandırıcı (yoksa null) ---
-// Modül 6, projede aynı isimli model yoksa bu örnek modele düşer. Eklenti yüklü
-// değilse veya kaynak okunamazsa null döner (kullanıcı yönlendirilir).
-def __bundledClassifierJson = { ->
-    try {
-        Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
-            .getMethod('getTumorStromaClassifierJson')
-            .invoke(null)
-    } catch (Throwable t) { null }
-}
-
-def waitForConfirm = { String windowTitle, String windowBody ->
-    if (isHeadless) {
-        println "=== ${windowTitle} ===\n${windowBody}\n=================="
-        return true
-    }
-    def latch = new java.util.concurrent.CountDownLatch(1)
-    def confirmed = new java.util.concurrent.atomic.AtomicBoolean(false)
-
-    javafx.application.Platform.runLater {
-        try {
-            def stage = new javafx.stage.Stage()
-            stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle(windowTitle)
-            stage.setAlwaysOnTop(true)
-
-            def label = new javafx.scene.control.Label(windowBody)
-            label.setWrapText(true)
-            label.setStyle("-fx-font-size: 12px; -fx-padding: 8px;")
-
-            def scrollPane = new javafx.scene.control.ScrollPane(label)
-            scrollPane.setFitToWidth(true)
-
-            def okBtn = new javafx.scene.control.Button("Çalıştır")
-            okBtn.setDefaultButton(true)
-            okBtn.setOnAction({
-                confirmed.set(true)
-                stage.close()
-            })
-
-            def cancelBtn = new javafx.scene.control.Button("İptal")
-            cancelBtn.setCancelButton(true)
-            cancelBtn.setOnAction({
-                confirmed.set(false)
-                stage.close()
-            })
-
-            stage.setOnHidden({ latch.countDown() })
-
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
-            alwaysTop.setSelected(true)
-            alwaysTop.selectedProperty().addListener(
-                { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
-            )
-
-            def spacer = new javafx.scene.layout.Region()
-            javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-
-            def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, cancelBtn, okBtn)
-            buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
-            buttons.setPadding(new javafx.geometry.Insets(10))
-
-            def root = new javafx.scene.layout.BorderPane()
-            root.setCenter(scrollPane)
-            root.setBottom(buttons)
-
-            stage.setScene(new javafx.scene.Scene(root, 620, 460))
-            stage.show()
-        } catch (Throwable t) {
-            // FX kurulumu başarısızsa modal'a geri dön
-            confirmed.set(qupath.lib.gui.dialogs.Dialogs.showConfirmDialog(windowTitle, windowBody))
-            latch.countDown()
-        }
-    }
-
-    latch.await()
-    return confirmed.get()
-}
 
 def showResultWindow = { String windowTitle, String windowBody ->
     if (isHeadless) {
@@ -159,15 +46,15 @@ def showResultWindow = { String windowTitle, String windowBody ->
             def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
-                { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
+                { obs, oldValue, newValue -> stage.setAlwaysOnTop(newValue) } as javafx.beans.value.ChangeListener
             )
 
             def copyBtn = new javafx.scene.control.Button("Kopyala")
             copyBtn.setOnAction({
-                def cb = javafx.scene.input.Clipboard.getSystemClipboard()
+                def clipboard = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
                 content.putString(windowBody)
-                cb.setContent(content)
+                clipboard.setContent(content)
             })
 
             def closeBtn = new javafx.scene.control.Button("Kapat")
@@ -176,7 +63,6 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def spacer = new javafx.scene.layout.Region()
             javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-
             def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, copyBtn, closeBtn)
             buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
             buttons.setPadding(new javafx.geometry.Insets(8))
@@ -184,259 +70,284 @@ def showResultWindow = { String windowTitle, String windowBody ->
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
             root.setBottom(buttons)
-
-            stage.setScene(new javafx.scene.Scene(root, 760, 580))
+            stage.setScene(new javafx.scene.Scene(root, 820, 620))
             stage.show()
         } catch (Throwable t) {
-            // FX başarısızsa modal'a geri dön — kayıp olmasın
-            qupath.lib.gui.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
+            Dialogs.showMessageDialog(windowTitle, windowBody)
         }
     }
 }
 
-// ──────────────────────────────────────────────────────────────
-// 1) Ön kontroller
-// ──────────────────────────────────────────────────────────────
+// ── Eklenti tercihleri; eklenti yoksa aynı sabit varsayılanlar ─────
+def __wpClass = { ->
+    try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') }
+    catch (Throwable ignored) { null }
+}
+def __wpCall = { String method, Class[] signature, Object[] args, Object fallback ->
+    def cls = __wpClass()
+    if (cls == null) return fallback
+    try { cls.getMethod(method, signature).invoke(null, args) }
+    catch (Throwable ignored) { fallback }
+}
+def atolyeD = { String key, double fallback ->
+    (double)__wpCall('dbl', [String.class, double.class] as Class[], [key, fallback] as Object[], fallback)
+}
+def atolyeS = { String key, String fallback ->
+    (String)__wpCall('str', [String.class, String.class] as Class[], [key, fallback] as Object[], fallback)
+}
+
+def bundledClassifierJson = { ->
+    try {
+        Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
+            .getMethod('getTumorStromaClassifierJson')
+            .invoke(null)
+    } catch (Throwable ignored) { null }
+}
+
+// ── Ön kontroller ──────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage(
-        "Görüntü açık değil",
-        "Önce bir H&E slaytı açın, sonra bu betiği tekrar çalıştırın."
-    )
+    Dialogs.showErrorMessage('Görüntü açık değil', 'Önce bir H&E slaytı açın.')
     return
 }
-
 def project = QP.getProject()
 if (project == null) {
+    Dialogs.showErrorMessage('Proje açık değil', 'Bu betik bir QuPath projesi içinde çalışır.')
+    return
+}
+
+String imageTypeName = imageData.getImageType()?.toString() ?: ''
+String normalizedImageType = imageTypeName.toUpperCase(Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
+if (!normalizedImageType.contains('BRIGHTFIELD_H_E')) {
     Dialogs.showErrorMessage(
-        "Proje açık değil",
-        "Bu betik proje seviyesinde çalışır.\n" +
-        "Önce [File → Project → Create project] ile bir proje oluşturun ve slaytlarınızı ekleyin."
+        'Yanlış görüntü tipi',
+        "Tümör/stroma sınıflandırıcısı Brightfield (H&E) görüntü bekler. Şu anki: ${imageTypeName}"
     )
     return
 }
 
-def classifierName = atolyeS('atolye.classifierName', 'tumor-stroma-RF')
-def availableClassifiers = project.getPixelClassifiers().getNames()
-def hasProjectClassifier = availableClassifiers.contains(classifierName)
-
-// Sınıflandırıcı önceliği:
-//   1) Projede aynı isimli model varsa O kullanılır (kullanıcının kendi modeli).
-//   2) Yoksa eklentiyle gelen örnek modele düşülür (in-memory; projeye yazılmaz).
-//   3) İkisi de yoksa (eklenti yüklü değil) kullanıcı yönlendirilir.
-def bundledJson = hasProjectClassifier ? null : __bundledClassifierJson()
-def usingBundled = !hasProjectClassifier && bundledJson != null
-
-if (!hasProjectClassifier && bundledJson == null) {
-    Dialogs.showErrorMessage(
-        "Sınıflandırıcı bulunamadı",
-        "Bu betik '${classifierName}' adlı bir piksel sınıflandırıcı kullanır.\n\n" +
-        "Projenizde bu model yok ve eklentiyle gelen örnek modele de ulaşılamadı\n" +
-        "(atölye eklentisi yüklü olmayabilir). Bulunan sınıflandırıcılar:\n" +
-        "  ${availableClassifiers.join(', ') ?: '(hiçbiri)'}\n\n" +
-        "Çözümler:\n" +
-        "  • Atölye eklentisini yükleyin — örnek model otomatik kullanılır, veya\n" +
-        "    [Extensions → Atölye → Yardımcılar → Örnek tümör/stroma sınıflandırıcısını\n" +
-        "    projeye kaydet] ile projenize ekleyin.\n" +
-        "  • Ya da kendi modelinizi '${classifierName}' adıyla eğitip kaydedin\n" +
-        "    (Modül 6'daki adımlar)."
-    )
-    return
-}
-
-def classifierSource = hasProjectClassifier ? "projenizdeki modeliniz" : "eklentiyle gelen örnek model"
-
-def minObjectArea = atolyeD('atolye.minObjectArea', 10000.0)
-def minHoleArea   = atolyeD('atolye.minHoleArea',   5000.0)
-
-// ──────────────────────────────────────────────────────────────
-// 2) Karşılama
-// ──────────────────────────────────────────────────────────────
-def devam = waitForConfirm(
-    "Modül 6 - Tümör vs stroma segmentasyonu",
-    "Kullanılacak sınıflandırıcı: ${classifierName} (${classifierSource})\n\n" +
-    "Bu betik bu piksel sınıflandırıcıyı açık slaytın tamamına uygular ve\n" +
-    "**Tumor** + **Stroma** sınıflı anotasyon nesneleri üretir.\n\n" +
-    "Atölye varsayılan post-işlem parametreleri:\n" +
-    "  • Minimum object size  : ${minObjectArea} µm²${minObjectArea != 10000.0 ? ' (değiştirildi)' : ''}  (≈ 0.01 mm²)\n" +
-    "  • Minimum hole size    : ${minHoleArea} µm²${minHoleArea != 5000.0 ? ' (değiştirildi)' : ''}\n" +
-    "  • Split objects        : Açık (birleşik tümör adalarını ayır)\n\n" +
-    "Çıktı:\n" +
-    "  • Annotations panelinde Tumor ve Stroma sınıflı yeni anotasyonlar\n" +
-    "  • Toplam alan ve TSR (tümör/stroma oranı)\n\n" +
-    "Bu işlem tüm slaytı tarayacağı için 1–3 dakika sürebilir.\n\n" +
-    "Not: Bu betik yalnızca kendi önceki çıktısını temizler; elle çizdiğiniz\n" +
-    "diğer anotasyonlara dokunmaz. TSR yalnızca bu çalıştırmanın ürettiği\n" +
-    "Tumor/Stroma bölgelerinden hesaplanır.\n\n" +
-    "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız Çalıştır düğmesine basın."
-)
-if (!devam) { println "İptal."; return }
-
-// ──────────────────────────────────────────────────────────────
-// 3) Sınıflandırıcıyı çalıştır
-// ──────────────────────────────────────────────────────────────
-println "─────────────────────────────────────"
-println "Modül 6 - Tümör vs Stroma"
-println "─────────────────────────────────────"
-println "Sınıflandırıcı: ${classifierName}"
-println "Aktif slayt: ${QP.getProjectEntry()?.getImageName() ?: 'unnamed'}"
-println "Tüm görüntü üzerine uygulanıyor..."
-
-def t0 = System.currentTimeMillis()
-
-def generatedName = "Generated by Modül 6 - ${classifierName}"
-
-// Önceki betik çıktısını isimle temizle (re-run'da birikmesin). DELETE_EXISTING
-// artık kullanılmıyor; yalnızca bu betiğin kendi ürettiği "${generatedName}"
-// anotasyonları silinir, kullanıcının anotasyonları korunur.
-def existing = QP.getAnnotationObjects().findAll {
-    (it.getName() ?: "").startsWith("Generated by Modül 6 - ")
-}
-if (!existing.isEmpty()) {
-    QP.removeObjects(existing, true)
-    println "  Önceki ${existing.size()} betik çıktısı temizlendi."
-}
-
-def beforeAnnotations = QP.getAnnotationObjects() as Set
-
-// Sınıflandırıcıyı uygula → anotasyonlar üret.
-// minArea + minHoleArea açıkça veriliyor; QuPath varsayılanları (0/0) yüksek
-// çözünürlüklü sınıflandırıcılarda binlerce küçük parça üretir
-// (cancer-informatics ci_03: "create objects" sırasında en sık atlanan kalibrasyon).
-// DELETE_EXISTING KULLANILMIYOR: kullanıcının (veya başka modüllerin) anotasyonları
-// korunur; betik kendi önceki çıktısını yukarıda isimle temizledi ve TSR'yi yalnızca
-// bu çalıştırmada üretilen bölgelerden hesaplar (aşağıdaki generatedAnnotations).
-// usingBundled ise sınıflandırıcı nesnesi doğrudan uygulanır (projeye yazılmaz);
-// aksi halde projedeki model isimle yüklenir.
-if (usingBundled) {
-    // Pahalı ~50 MB JSON → PixelClassifier ayrıştırması burada (onaydan sonra) yapılır.
-    def bundledClassifier = qupath.lib.io.GsonTools.getInstance()
-        .fromJson(bundledJson, qupath.lib.classifiers.pixel.PixelClassifier.class)
-    if (bundledClassifier == null) {
-        Dialogs.showErrorMessage(
-            "Sınıflandırıcı yüklenemedi",
-            "Eklentiyle gelen örnek model okunamadı (JSON ayrıştırılamadı).\n" +
-            "Kendi modelinizi '${classifierName}' adıyla eğitip kaydedin."
-        )
-        return
-    }
-    QP.createAnnotationsFromPixelClassifier(
-        bundledClassifier,
-        minObjectArea,       // minimum object area (µm²)
-        minHoleArea,         // minimum hole area (µm²)
-        "SPLIT",             // split into multiple annotations
-        "SELECT_NEW"         // select newly created objects
-    )
-} else {
-    QP.createAnnotationsFromPixelClassifier(
-        classifierName,
-        minObjectArea,       // minimum object area (µm²)
-        minHoleArea,         // minimum hole area (µm²)
-        "SPLIT",             // split into multiple annotations
-        "SELECT_NEW"         // select newly created objects
-    )
-}
-
-def generatedAnnotations = QP.getAnnotationObjects().findAll {
-    !beforeAnnotations.contains(it) && (it.getPathClass()?.getName() in ["Tumor", "Stroma"])
-}
-generatedAnnotations.each { it.setName(generatedName) }
-
-def elapsed = (System.currentTimeMillis() - t0) / 1000.0
-
-// ──────────────────────────────────────────────────────────────
-// 4) Sonuçları topla
-// ──────────────────────────────────────────────────────────────
-def cal = imageData.getServer().getPixelCalibration()
-def pixelWidth  = cal.getPixelWidthMicrons()
-def pixelHeight = cal.getPixelHeightMicrons()
+def calibration = imageData.getServer().getPixelCalibration()
+double pixelWidth = calibration.getPixelWidthMicrons()
+double pixelHeight = calibration.getPixelHeightMicrons()
 if (!(pixelWidth > 0) || !(pixelHeight > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok",
-        "Slaytta piksel boyutu (µm) tanımlı değil; alan ölçümleri (mm²) ve TSR hesaplanamaz.\n\n" +
-        "Piksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar →\n" +
-        "Kalibrasyon (piksel boyutu). Sonra bu betiği tekrar çalıştırın.")
+    Dialogs.showErrorMessage(
+        'Kalibrasyon yok',
+        'Piksel boyutu tanımlı değil; mm² alan ölçümleri hesaplanamaz.\n' +
+        'Önce kalibrasyonu metadata veya bir kalibrasyon slaytıyla doğrulayın.'
+    )
     return
 }
 
-def tumorAnnotations = generatedAnnotations.findAll {
-    it.getPathClass()?.getName() == "Tumor"
-}
-def stromaAnnotations = generatedAnnotations.findAll {
-    it.getPathClass()?.getName() == "Stroma"
-}
+String classifierName = atolyeS('atolye.classifierName', 'tumor-stroma-RF')
+double minObjectArea = atolyeD('atolye.minObjectArea', 10000.0)
+double minHoleArea = atolyeD('atolye.minHoleArea', 5000.0)
 
-def areaFn = { ann ->
-    def roi = ann.getROI()
-    return roi != null ? (roi.getArea() * pixelWidth * pixelHeight) / 1_000_000.0 : 0.0
-}
-
-def tumorAreaMm2  = tumorAnnotations.sum(0.0)  { areaFn(it) }
-def stromaAreaMm2 = stromaAnnotations.sum(0.0) { areaFn(it) }
-def totalAreaMm2  = tumorAreaMm2 + stromaAreaMm2
-
-def tsr = totalAreaMm2 > 0 ? 100.0 * tumorAreaMm2 / totalAreaMm2 : 0.0  // % tumor of total tissue
-
-def warnTissueAreaMm2 = atolyeD('atolye.warnTissueAreaMm2', 1.0)
-def uyari = ""
-if (tumorAnnotations.isEmpty()) {
-    uyari = "\n⚠️ Hiç tümör bölgesi tespit edilmedi.\n" +
-            "  Sınıflandırıcı bu slayt için iyi eğitilmemiş olabilir.\n" +
-            "  Modül 6'daki aktif öğrenme iş akışıyla daha fazla anotasyon ekleyin."
-} else if (totalAreaMm2 < warnTissueAreaMm2) {
-    uyari = String.format(java.util.Locale.US, "\n⚠️ Çok küçük doku alanı (%.2f mm²) — sonuçlar güvenilir olmayabilir.", totalAreaMm2)
-}
-
-// ──────────────────────────────────────────────────────────────
-// 4b) TSR'yi ölçüm listesine yaz → Modül 9 (MeasurementExporter) dışa aktarır.
-//    Skaler TSR değeri ekranda gösterilirken hiçbir nesneye yazılmıyordu; bu
-//    nedenle Modül 9 TSV'sinde görünmüyordu. Burada tam-görüntü ROI'li tek bir
-//    "TSR Özet" anotasyonu oluşturup değerleri ölçüm listesine yazıyoruz.
-//    (Eski "TSR Özet" varsa önce silinir → tekrar çalıştırmada birikmez.)
-// ──────────────────────────────────────────────────────────────
-QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() == "TSR Özet" }, false)
-def tsrServer  = imageData.getServer()
-def tsrSummary = qupath.lib.objects.PathObjects.createAnnotationObject(
-    qupath.lib.roi.ROIs.createRectangleROI(0, 0, tsrServer.getWidth(), tsrServer.getHeight(),
-        qupath.lib.regions.ImagePlane.getDefaultPlane()))
-tsrSummary.setName("TSR Özet")
-tsrSummary.measurements['TSR (%)']                 = tsr
-tsrSummary.measurements['Tümör alanı (mm2)']       = tumorAreaMm2
-tsrSummary.measurements['Stroma alanı (mm2)']      = stromaAreaMm2
-tsrSummary.measurements['Toplam doku alanı (mm2)'] = totalAreaMm2
-tsrSummary.setLocked(true)
-QP.addObjects([tsrSummary])
-QP.fireHierarchyUpdate()
-println String.format(java.util.Locale.US,
-    "  TSR (%%) = %.1f → \"TSR Özet\" anotasyonunun ölçüm listesine yazıldı (Modül 9 dışa aktarımında görünür).", tsr)
-
-// ──────────────────────────────────────────────────────────────
-// 5) Sonucu sun
-// ──────────────────────────────────────────────────────────────
-showResultWindow(
-    "Tamamlandı 🧠",
-    String.format(java.util.Locale.US, 
-        "Tümör vs Stroma segmentasyonu bitti.\n\n" +
-        "📊 Alan dağılımı\n" +
-        "─────────────────\n" +
-        "  Tümör  : %.2f mm²  (%,d anotasyon nesnesi)\n" +
-        "  Stroma : %.2f mm²  (%,d anotasyon nesnesi)\n" +
-        "  Toplam : %.2f mm²\n\n" +
-        "🎯 Tümör/Stroma Oranı (TSR)\n" +
-        "────────────────────────────\n" +
-        "  TSR (%%tümör / toplam doku) : %%%.1f\n" +
-        "  Süre                       : %.1f sn\n" +
-        "%s\n" +
-        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
-        tumorAreaMm2, tumorAnnotations.size(),
-        stromaAreaMm2, stromaAnnotations.size(),
-        totalAreaMm2, tsr, elapsed, uyari
+def availableClassifiers = project.getPixelClassifiers().getNames()
+boolean hasProjectClassifier = availableClassifiers.contains(classifierName)
+def json = hasProjectClassifier ? null : bundledClassifierJson()
+if (!hasProjectClassifier && json == null) {
+    Dialogs.showErrorMessage(
+        'Sınıflandırıcı bulunamadı',
+        "'${classifierName}' adlı piksel sınıflandırıcı bulunamadı.\n" +
+        'Modül 6 eğitim adımıyla bir model oluşturun veya atölye eklentisini yükleyin.'
     )
-)
+    return
+}
 
-println "─────────────────────────────────────"
-println "Tamamlandı:"
-println String.format(java.util.Locale.US, "  Tümör: %.2f mm² (%d nesne)", tumorAreaMm2, tumorAnnotations.size())
-println String.format(java.util.Locale.US, "  Stroma: %.2f mm² (%d nesne)", stromaAreaMm2, stromaAnnotations.size())
-println String.format(java.util.Locale.US, "  TSR: %.1f%%  |  Süre: %.1f sn", tsr, elapsed)
-println "─────────────────────────────────────"
+def classifier = hasProjectClassifier
+    ? project.getPixelClassifiers().get(classifierName)
+    : qupath.lib.io.GsonTools.getInstance().fromJson(json, qupath.lib.classifiers.pixel.PixelClassifier.class)
+if (classifier == null) {
+    Dialogs.showErrorMessage('Sınıflandırıcı yüklenemedi', "'${classifierName}' okunamadı.")
+    return
+}
+
+// Analiz sınırı yalnızca patolog tarafından gözden geçirilmiş Specimen nesneleridir.
+def annotations = QP.getAnnotationObjects()
+def specimenObjects = annotations.findAll {
+    it.getROI()?.isArea() && it.getPathClass()?.getName() == 'Specimen'
+}
+if (specimenObjects.isEmpty()) {
+    Dialogs.showErrorMessage(
+        'Specimen anotasyonu gerekli',
+        'Slayttaki değerlendirilecek dokuyu bir veya daha fazla anotasyonla çevreleyin\n' +
+        've anotasyon sınıfını tam olarak "Specimen" yapın. Boş camı, nekrozu veya\n' +
+        'ölçüme girmemesi gereken dokuyu bu sınırın dışında bırakın.'
+    )
+    return
+}
+
+def specimenUnion = RoiTools.union(specimenObjects.collect { it.getROI() })
+if (specimenUnion == null || specimenUnion.isEmpty() || !specimenUnion.isArea()) {
+    Dialogs.showErrorMessage('Geçersiz Specimen sınırı', 'Specimen anotasyonları geçerli bir alan oluşturmuyor.')
+    return
+}
+
+def analysisObjects = annotations.findAll {
+    it.getROI()?.isArea() && it.getPathClass()?.getName() == 'Analysis ROI'
+}
+
+// ── Sınıflandırıcı alan ölçüm yöneticisi ──────────────────────────
+def manager = PixelClassifierTools.createMeasurementManager(imageData, classifier)
+def measurementNames = manager.getMeasurementNames()
+String tumorAreaName = measurementNames.find { it.startsWith('Tumor area ') }
+String stromaAreaName = measurementNames.find { it.startsWith('Stroma area ') }
+if (tumorAreaName == null || stromaAreaName == null) {
+    Dialogs.showErrorMessage(
+        'Sınıf adları uyuşmuyor',
+        "Sınıflandırıcı tam olarak 'Tumor' ve 'Stroma' çıktı sınıflarını içermeli.\n" +
+        "Bulunan ölçümler: ${measurementNames.join(', ')}"
+    )
+    return
+}
+
+def classifierAreaToMm2 = { Number value, String measurementName ->
+    if (value == null) return Double.NaN
+    double numeric = value.doubleValue()
+    String lower = measurementName.toLowerCase(Locale.ROOT)
+    if (lower.contains('µm^2') || lower.contains('μm^2') || lower.contains('um^2')) return numeric / 1_000_000.0
+    if (lower.contains('mm^2')) return numeric
+    return Double.NaN
+}
+
+def measureROI = { roi ->
+    if (roi == null || roi.isEmpty() || !roi.isArea()) {
+        return [
+            roiArea: 0.0,
+            tumorArea: 0.0,
+            stromaArea: 0.0,
+            classifiedArea: 0.0,
+            tumorPct: Double.NaN,
+            stromaPct: Double.NaN,
+            ratio: Double.NaN,
+            coveragePct: Double.NaN
+        ]
+    }
+    double roiAreaMm2 = roi.getArea() * pixelWidth * pixelHeight / 1_000_000.0
+    double tumorAreaMm2 = classifierAreaToMm2(manager.getMeasurementValue(roi, tumorAreaName), tumorAreaName)
+    double stromaAreaMm2 = classifierAreaToMm2(manager.getMeasurementValue(roi, stromaAreaName), stromaAreaName)
+    double classifiedAreaMm2 = tumorAreaMm2 + stromaAreaMm2
+    double tumorPct = classifiedAreaMm2 > 0 ? 100.0 * tumorAreaMm2 / classifiedAreaMm2 : Double.NaN
+    double stromaPct = classifiedAreaMm2 > 0 ? 100.0 * stromaAreaMm2 / classifiedAreaMm2 : Double.NaN
+    double tumorStromaRatio = stromaAreaMm2 > 0 ? tumorAreaMm2 / stromaAreaMm2 : Double.NaN
+    double coveragePct = roiAreaMm2 > 0 ? 100.0 * classifiedAreaMm2 / roiAreaMm2 : Double.NaN
+    return [
+        roiArea: roiAreaMm2,
+        tumorArea: tumorAreaMm2,
+        stromaArea: stromaAreaMm2,
+        classifiedArea: classifiedAreaMm2,
+        tumorPct: tumorPct,
+        stromaPct: stromaPct,
+        ratio: tumorStromaRatio,
+        coveragePct: coveragePct
+    ]
+}
+
+def writeMetrics = { object, metrics ->
+    object.measurements['ROI alanı (mm2)'] = metrics.roiArea
+    object.measurements['Tümör alanı (mm2)'] = metrics.tumorArea
+    object.measurements['Stroma alanı (mm2)'] = metrics.stromaArea
+    object.measurements['Sınıflandırılmış alan (mm2)'] = metrics.classifiedArea
+    object.measurements['Tümör alanı (%)'] = metrics.tumorPct
+    object.measurements['Stroma alanı (%)'] = metrics.stromaPct
+    object.measurements['Tümör/Stroma oranı'] = metrics.ratio
+    object.measurements['Sınıflandırılmış kapsam (%)'] = metrics.coveragePct
+}
+
+def formatValue = { double value, String pattern ->
+    Double.isFinite(value) ? String.format(Locale.US, pattern, value) : 'hesaplanamadı'
+}
+
+// ── Önceki betik özetini ve yalnızca onun altındaki görselleştirmeyi temizle ──
+def oldSummaries = QP.getAnnotationObjects().findAll {
+    it.getName() in ['Tümör-Stroma Özet', 'TSR Özet']
+}
+if (!oldSummaries.isEmpty()) QP.removeObjectsAndDescendants(oldSummaries)
+
+// Her Specimen parçasına kendi ölçümü yaz. Örtüşmeler agregada ayrıca sayılmaz.
+specimenObjects.each { specimen -> writeMetrics(specimen, measureROI(specimen.getROI())) }
+
+// Analysis ROI ölçümü yalnız Specimen birleşimiyle kesişen bölümde yapılır.
+def roiRows = []
+analysisObjects.eachWithIndex { analysis, index ->
+    def clipped = RoiTools.intersection([analysis.getROI(), specimenUnion])
+    def metrics = measureROI(clipped)
+    writeMetrics(analysis, metrics)
+    roiRows << [name: analysis.getName() ?: "Analysis ROI ${index + 1}", metrics: metrics]
+}
+
+// Birleşik specimen özeti: üst üste binen Specimen anotasyonları bir kez sayılır.
+def summary = PathObjects.createAnnotationObject(specimenUnion)
+summary.setName('Tümör-Stroma Özet')
+def aggregate = measureROI(specimenUnion)
+writeMetrics(summary, aggregate)
+summary.measurements['Specimen parça sayısı'] = specimenObjects.size() as double
+summary.measurements['Analysis ROI sayısı'] = analysisObjects.size() as double
+summary.setLocked(true)
+QP.addObjects([summary])
+
+// Görsel Tumor/Stroma poligonları yalnız birleşik specimen sınırı içinde oluşturulur.
+def before = QP.getAnnotationObjects() as Set
+QP.selectObjects(summary)
+QP.createAnnotationsFromPixelClassifier(
+    classifier,
+    minObjectArea,
+    minHoleArea,
+    'SPLIT',
+    'DELETE_EXISTING',
+    'SELECT_NEW'
+)
+def generated = QP.getAnnotationObjects().findAll {
+    !before.contains(it) && it.getPathClass()?.getName() in ['Tumor', 'Stroma']
+}
+generated.each { it.setName("Generated by Modül 6 - ${classifierName}") }
+QP.fireHierarchyUpdate()
+
+// ── Sonuç: yalnız ölçüm ve teknik kapsam bilgisi ───────────────────
+def body = new StringBuilder()
+body << 'TÜMÖR/STROMA ALAN ÖLÇÜMÜ\n'
+body << '════════════════════════════════════════\n\n'
+body << "Sınıflandırıcı      : ${classifierName}\n"
+body << String.format(Locale.US, 'Specimen parçaları    : %,d%n', specimenObjects.size())
+body << String.format(Locale.US, 'Analysis ROI sayısı   : %,d%n%n', analysisObjects.size())
+body << 'SPECIMEN BİRLEŞİMİ\n'
+body << '────────────────────────────────────────\n'
+body << String.format(Locale.US, 'ROI alanı             : %.3f mm²%n', aggregate.roiArea)
+body << String.format(Locale.US, 'Tümör alanı           : %.3f mm²%n', aggregate.tumorArea)
+body << String.format(Locale.US, 'Stroma alanı          : %.3f mm²%n', aggregate.stromaArea)
+body << String.format(Locale.US, 'Sınıflandırılmış alan : %.3f mm²%n', aggregate.classifiedArea)
+body << "Tümör alanı (%)      : ${formatValue(aggregate.tumorPct, '%.2f%%')}\n"
+body << "Stroma alanı (%)     : ${formatValue(aggregate.stromaPct, '%.2f%%')}\n"
+body << "Tümör/Stroma oranı   : ${formatValue(aggregate.ratio, '%.4f')}\n"
+body << "Sınıflandırılmış kapsam: ${formatValue(aggregate.coveragePct, '%.2f%%')}\n"
+
+if (!roiRows.isEmpty()) {
+    body << '\nANALYSIS ROI SONUÇLARI\n'
+    body << '────────────────────────────────────────\n'
+    roiRows.each { row ->
+        def m = row.metrics
+        body << "${row.name}\n"
+        body << String.format(Locale.US, '  Alan: %.3f mm² | Tumor: %.3f mm² | Stroma: %.3f mm²%n',
+            m.roiArea, m.tumorArea, m.stromaArea)
+        body << "  Tümör: ${formatValue(m.tumorPct, '%.2f%%')} | "
+        body << "Stroma: ${formatValue(m.stromaPct, '%.2f%%')} | "
+        body << "T/S: ${formatValue(m.ratio, '%.4f')}\n"
+    }
+}
+
+body << '\nQC NOTLARI\n'
+body << '────────────────────────────────────────\n'
+body << '• Payda yalnız Tumor + Stroma olarak sınıflandırılan alandır.\n'
+body << '• Sınıflandırılmış kapsam, ROI içinde bu iki sınıfa giren alanı gösterir.\n'
+body << '• Oran için stroma alanı sıfırsa sonuç hesaplanamaz; sıfır yazılmaz.\n'
+body << '• Analysis ROI sonuçları birbirinden bağımsızdır; örtüşen ROI alanları birleştirilmez.\n\n'
+body << 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.\n'
+body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
+
+showResultWindow('Modül 6 - Tümör/Stroma ölçümü', body.toString())
+println String.format(Locale.US,
+    'Modül 6 tamamlandı: Tumor %.3f mm², Stroma %.3f mm², Tumor %% %s, T/S %s',
+    aggregate.tumorArea,
+    aggregate.stromaArea,
+    formatValue(aggregate.tumorPct, '%.2f'),
+    formatValue(aggregate.ratio, '%.4f'))

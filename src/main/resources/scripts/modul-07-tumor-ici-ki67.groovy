@@ -1,157 +1,25 @@
 /**
- * Modül 7 - Tek Tıkla Tümör-Restricted Ki-67 Kantifikasyonu
- * -----------------------------------------------------------
- * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
- * Bu betik atölyenin birleşik analiz adımıdır: önce piksel
- * sınıflandırıcı ile tümör bölgesini ayırır, sonra **yalnızca tümör
- * alanı içinde** Ki-67 pozitif çekirdek sayımı yapar.
+ * Modül 7 - İncelenmiş Tümör ROI'sinde Ki-67 Ölçümü
+ * --------------------------------------------------
+ * Hedef QuPath sürümü: 0.6.0+
  *
- * NEDEN?
- *   Ki-67 indeksini TÜM doku üzerinde hesaplarsanız:
- *     • Stromal lenfosit ve endotel hücrelerinin Ki-67+ çekirdekleri
- *       paydaya girer → DİLÜSYON etkisi
+ * Ki-67 H-DAB slaydında patolog tarafından çizilmiş, sınıfı `Tumor` olan
+ * anotasyonların birleşimi içinde pozitif çekirdek tespiti yapar.
+ * H&E için eğitilmiş bir piksel sınıflandırıcıyı İHK slaydına uygulamaz.
  *
- *   Bu betik tümör/stroma ayrımını açık bir ölçüm adımı olarak uygular.
- *
- * KULLANIM:
- *   1. Ki-67 İHK slaytını açın (atölye için: Ki-67 slaytında piksel
- *      sınıflandırıcı İHK üzerinde de çalışabilir; gerçek hayatta
- *      H&E seri kesit kullanılır)
- *   2. Image type → "Brightfield (H-DAB)"
- *   3. [Automate → Project scripts → bu betik]
- *      (Anotasyon ÇİZMENIZE GEREK YOK — betik tüm slayttan başlar)
- *
- * ÖNKOŞUL:
- *   Projenizde `tumor-stroma-RF` adlı piksel sınıflandırıcısı olmalı
- *   (Modül 6'da kaydedilen). Yoksa betik size adımları söyler.
- *
- * İŞ AKIŞI (3 adım):
- *   1. Sınıflandırıcı → tümör anotasyonları
- *   2. Tümör anotasyonları seçili → Positive cell detection
- *   3. Ki-67 LI'yi yalnızca tümör alanında ölç
- *
- * YÖNTEM REFERANSLARI:
- *   • Nielsen TO et al. (2021), J Natl Cancer Inst — Ki-67 Working Group
- *     sayma standardı (≥500-1.000 tümör hücresi). doi:10.1093/jnci/djaa201
- *   • Bankhead P et al. (2018), Lab Invest — QuPath ile entegre tümör tanıma
- *     + İHK skorlama orijinal yayını. doi:10.1038/labinvest.2017.131
- *   • Skjervold AH et al. (2022), Diagn Pathol — manuel vs dijital uyum.
- *     doi:10.1186/s13000-022-01225-4
- *   • Acs B et al. (2018), Lab Invest 99(1):107–117 — platform/gözlemci arası
- *     Ki-67 yeniden-üretilebilirliği. doi:10.1038/s41374-018-0123-7
- *   • Catteau X et al. (2023), Technol Cancer Res Treat — dijital Ki-67 yalnızca
- *     patolog-işaretli bölgede manuel skorla uyumlu. doi:10.1177/15330338231169603
- *   • Spyretos C et al. (2026), J Neuropathol Exp Neurol 85(5):475–486 — StarDist
- *     ile tam otomatik, proje-ölçeğinde Ki-67 LI. doi:10.1093/jnen/nlaf163
- *
- * EŞİK HASSASİYETİ:
- *   • Pozitif %, aynı slaytta yalnızca tespit + DAB eşiği değiştiğinde ~%3.7 →
- *     ~%24 arası oynayabilir ve tarayıcıya göre farklılaşır (Bankhead 2022
- *     parametre-duyarlılık örneği). Karşılaştırılan tüm slaytlarda aynı
- *     parametreleri kullanın; boya vektörlerini her tarayıcı için yeniden
- *     kestirin ([Analyze → Estimate stain vectors]).
+ * Çıktılar yalnız sayım, alan, yoğunluk ve pozitif yüzdesidir.
+ * Klinik kategori, eşik veya yorum üretilmez.
  */
 
 import qupath.lib.gui.dialogs.Dialogs
+import qupath.lib.objects.PathObjects
+import qupath.lib.roi.RoiTools
 import qupath.lib.scripting.QP
 
-// ──────────────────────────────────────────────────────────────
-// Modal olmayan pencere yardımcıları
-//   - waitForConfirm    : modal hissi veren ama QuPath'i kilitlemeyen onay penceresi
-//   - showResultWindow  : sonuç penceresi — açık kalır, QuPath kullanılmaya devam edilebilir
-//
-// İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
-// parametre değiştirip betiği tekrar çalıştırabilir, sonuçları kopyalayabilir.
-// ──────────────────────────────────────────────────────────────
+import java.util.Locale
+
+// ── Sonuç penceresi ─────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
-
-// --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
-def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
-def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
-    def c = __wpClass(); if (c == null) return dflt
-    try { c.getMethod(m, sig).invoke(null, args) } catch (Throwable t) { dflt }
-}
-def atolyeD = { String k, double  d -> (double)  __wpCall('dbl',  [String.class, double.class]  as Class[], [k, d] as Object[], d) }
-def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class, String.class]  as Class[], [k, d] as Object[], d) }
-def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
-def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
-
-// --- Eklentiyle paketlenen örnek sınıflandırıcı (yoksa null) ---
-def __bundledClassifierJson = { ->
-    try {
-        Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
-            .getMethod('getTumorStromaClassifierJson')
-            .invoke(null)
-    } catch (Throwable t) { null }
-}
-
-def waitForConfirm = { String windowTitle, String windowBody ->
-    if (isHeadless) {
-        println "=== ${windowTitle} ===\n${windowBody}\n=================="
-        return true
-    }
-    def latch = new java.util.concurrent.CountDownLatch(1)
-    def confirmed = new java.util.concurrent.atomic.AtomicBoolean(false)
-
-    javafx.application.Platform.runLater {
-        try {
-            def stage = new javafx.stage.Stage()
-            stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle(windowTitle)
-            stage.setAlwaysOnTop(true)
-
-            def label = new javafx.scene.control.Label(windowBody)
-            label.setWrapText(true)
-            label.setStyle("-fx-font-size: 12px; -fx-padding: 8px;")
-
-            def scrollPane = new javafx.scene.control.ScrollPane(label)
-            scrollPane.setFitToWidth(true)
-
-            def okBtn = new javafx.scene.control.Button("Çalıştır")
-            okBtn.setDefaultButton(true)
-            okBtn.setOnAction({
-                confirmed.set(true)
-                stage.close()
-            })
-
-            def cancelBtn = new javafx.scene.control.Button("İptal")
-            cancelBtn.setCancelButton(true)
-            cancelBtn.setOnAction({
-                confirmed.set(false)
-                stage.close()
-            })
-
-            stage.setOnHidden({ latch.countDown() })
-
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
-            alwaysTop.setSelected(true)
-            alwaysTop.selectedProperty().addListener(
-                { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
-            )
-
-            def spacer = new javafx.scene.layout.Region()
-            javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-
-            def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, cancelBtn, okBtn)
-            buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
-            buttons.setPadding(new javafx.geometry.Insets(10))
-
-            def root = new javafx.scene.layout.BorderPane()
-            root.setCenter(scrollPane)
-            root.setBottom(buttons)
-
-            stage.setScene(new javafx.scene.Scene(root, 620, 460))
-            stage.show()
-        } catch (Throwable t) {
-            // FX kurulumu başarısızsa modal'a geri dön
-            confirmed.set(qupath.lib.gui.dialogs.Dialogs.showConfirmDialog(windowTitle, windowBody))
-            latch.countDown()
-        }
-    }
-
-    latch.await()
-    return confirmed.get()
-}
 
 def showResultWindow = { String windowTitle, String windowBody ->
     if (isHeadless) {
@@ -170,27 +38,26 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox('Üstte tut')
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
-                { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
+                { obs, oldValue, newValue -> stage.setAlwaysOnTop(newValue) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button('Kopyala')
             copyBtn.setOnAction({
-                def cb = javafx.scene.input.Clipboard.getSystemClipboard()
+                def clipboard = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
                 content.putString(windowBody)
-                cb.setContent(content)
+                clipboard.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button('Kapat')
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
             def spacer = new javafx.scene.layout.Region()
             javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-
             def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, copyBtn, closeBtn)
             buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
             buttons.setPadding(new javafx.geometry.Insets(8))
@@ -198,214 +65,98 @@ def showResultWindow = { String windowTitle, String windowBody ->
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
             root.setBottom(buttons)
-
-            stage.setScene(new javafx.scene.Scene(root, 760, 580))
+            stage.setScene(new javafx.scene.Scene(root, 800, 600))
             stage.show()
         } catch (Throwable t) {
-            // FX başarısızsa modal'a geri dön — kayıp olmasın
-            qupath.lib.gui.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
+            Dialogs.showMessageDialog(windowTitle, windowBody)
         }
     }
 }
 
-// ──────────────────────────────────────────────────────────────
-// 1) Ön kontroller
-// ──────────────────────────────────────────────────────────────
+// ── Eklenti tercihleri ──────────────────────────────────────────────
+def __wpClass = { ->
+    try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') }
+    catch (Throwable ignored) { null }
+}
+def __wpCall = { String method, Class[] signature, Object[] args, Object fallback ->
+    def cls = __wpClass()
+    if (cls == null) return fallback
+    try { cls.getMethod(method, signature).invoke(null, args) }
+    catch (Throwable ignored) { fallback }
+}
+def atolyeD = { String key, double fallback ->
+    (double)__wpCall('dbl', [String.class, double.class] as Class[], [key, fallback] as Object[], fallback)
+}
+def atolyeS = { String key, String fallback ->
+    (String)__wpCall('str', [String.class, String.class] as Class[], [key, fallback] as Object[], fallback)
+}
+def atolyeB = { String key, boolean fallback ->
+    (boolean)__wpCall('bool', [String.class, boolean.class] as Class[], [key, fallback] as Object[], fallback)
+}
+
+// ── Ön kontroller ──────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir Ki-67 İHK slaytı açın.")
+    Dialogs.showErrorMessage('Görüntü açık değil', 'Önce bir Ki-67 H-DAB slaytı açın.')
+    return
+}
+String imageTypeName = imageData.getImageType()?.toString() ?: ''
+String normalizedImageType = imageTypeName.toUpperCase(Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
+if (!normalizedImageType.contains('H_DAB')) {
+    Dialogs.showErrorMessage('Yanlış görüntü tipi', "Image type Brightfield (H-DAB) olmalı. Şu anki: ${imageTypeName}")
     return
 }
 
-def imageTypeName = imageData.getImageType()?.toString() ?: ""
-if (!imageTypeName.toLowerCase(java.util.Locale.ROOT).contains("brightfield")) {
+def calibration = imageData.getServer().getPixelCalibration()
+double pixelWidth = calibration.getPixelWidthMicrons()
+double pixelHeight = calibration.getPixelHeightMicrons()
+if (!(pixelWidth > 0) || !(pixelHeight > 0)) {
+    Dialogs.showErrorMessage('Kalibrasyon yok', 'Piksel boyutu tanımlı değil; alan ve yoğunluk hesaplanamaz.')
+    return
+}
+
+// Analiz sınırı yalnız patolog tarafından açıkça SEÇİLEN, sınıfı 'Tumor' olan
+// anotasyonlardır. Seçim yoksa betik durur — gözden geçirilmemiş bölgeleri
+// (ör. başka bir modülün ürettiği poligonları) sessizce ölçüme katmamak için.
+def tumorObjects = QP.getSelectedObjects().findAll {
+    it.isAnnotation() && it.getROI()?.isArea() && it.getPathClass()?.getName() == 'Tumor'
+}
+if (tumorObjects.isEmpty()) {
     Dialogs.showErrorMessage(
-        "Yanlış görüntü tipi",
-        "Image type 'Brightfield (H-DAB)' olmalı. Şu anki: ${imageTypeName}"
+        'Tumor ROI seçili değil',
+        'Ki-67 slaydında ölçülecek tümör epitelini anotasyonla çevreleyin, sınıfını tam\n' +
+        'olarak "Tumor" yapın ve bu anotasyon(lar)ı SEÇİN. Betik yalnız seçili Tumor\n' +
+        'anotasyonlarını ölçer; H&E sınıflandırıcısı bu İHK slaydına otomatik uygulanmaz.'
     )
     return
 }
 
-// "Hematoxylin OD" kanalı yalnızca H-DAB boya vektörleri ayarlanmışsa görünür.
-def stains = imageData.getColorDeconvolutionStains()
-def hasHematoxylin = false
-if (stains != null) {
-    for (int i = 1; i <= 3; i++) {
-        def name = stains.getStain(i)?.getName()?.toLowerCase(java.util.Locale.ROOT)
-        if (name != null && name.contains("hematoxylin")) { hasHematoxylin = true; break }
-    }
-}
-if (!hasHematoxylin) {
-    println "⚠ H-DAB boya vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
-    QP.setImageType('BRIGHTFIELD_H_DAB')
-}
-
-def project = QP.getProject()
-if (project == null) {
-    Dialogs.showErrorMessage("Proje açık değil", "Önce bir proje açın.")
+def tumorUnion = RoiTools.union(tumorObjects.collect { it.getROI() })
+if (tumorUnion == null || tumorUnion.isEmpty()) {
+    Dialogs.showErrorMessage('Geçersiz Tumor ROI', 'Tumor anotasyonları geçerli bir alan oluşturmuyor.')
     return
 }
 
-def classifierName = atolyeS('atolye.classifierName', 'tumor-stroma-RF')
-def hasProjectClassifier = project.getPixelClassifiers().getNames().contains(classifierName)
-def bundledJson = hasProjectClassifier ? null : __bundledClassifierJson()
-def usingBundled = !hasProjectClassifier && bundledJson != null
+// Eski özet ve alt tespitlerini temizle.
+def oldSummaries = QP.getAnnotationObjects().findAll { it.getName() == 'Ki-67 Tümör Özet' }
+if (!oldSummaries.isEmpty()) QP.removeObjects(oldSummaries, false)
 
-if (!hasProjectClassifier && bundledJson == null) {
-    Dialogs.showErrorMessage(
-        "Sınıflandırıcı bulunamadı",
-        "Bu betik '${classifierName}' adlı bir piksel sınıflandırıcı kullanır.\n\n" +
-        "Projenizde bu model yok ve eklentiyle gelen örnek modele de ulaşılamadı\n" +
-        "(atölye eklentisi yüklü olmayabilir).\n\n" +
-        "Çözümler:\n" +
-        "  • Atölye eklentisini yükleyin — örnek model otomatik kullanılır, veya\n" +
-        "    [Extensions → Atölye → Yardımcılar → Örnek tümör/stroma sınıflandırıcısını\n" +
-        "    projeye kaydet] ile projenize ekleyin.\n" +
-        "  • Ya da Modül 6 ile kendi modelinizi '${classifierName}' adıyla eğitin."
-    )
-    return
-}
+def summary = PathObjects.createAnnotationObject(tumorUnion)
+summary.setName('Ki-67 Tümör Özet')
+QP.addObjects([summary])
 
-def classifierSource = hasProjectClassifier ? "projenizdeki modeliniz" : "eklentiyle gelen örnek model"
+// ── Pozitif çekirdek tespiti ───────────────────────────────────────
+double nuclear1 = atolyeD('atolye.nuclear1', 0.20)
+double nuclear2 = atolyeD('atolye.nuclear2', 0.40)
+double nuclear3 = atolyeD('atolye.nuclear3', 0.60)
+String detectionChannel = atolyeS('atolye.detectionChannel', 'Hematoxylin OD')
 
-// ──────────────────────────────────────────────────────────────
-// 2) Karşılama — 3-adımlı iş akışı açıklaması
-// ──────────────────────────────────────────────────────────────
-def devam = waitForConfirm(
-    "Modül 7 - Tümör-Restricted Ki-67",
-    "Kullanılacak sınıflandırıcı: ${classifierName} (${classifierSource})\n\n" +
-    "Bu betik 3 adımlı bir iş akışı çalıştırır:\n\n" +
-    "  1️⃣ Piksel sınıflandırıcı '${classifierName}' → tümör bölgesi ayır\n" +
-    "  2️⃣ Tümör anotasyonları seçili → Positive cell detection\n" +
-    "  3️⃣ Yalnızca tümör hücrelerinde Ki-67 LI hesapla\n\n" +
-    "Ki-67 İHK eşikleri (Nucleus: DAB OD mean):\n" +
-    "  • 1+ / 2+ / 3+: ${atolyeD('atolye.nuclear1',0.20)} / ${atolyeD('atolye.nuclear2',0.40)} / ${atolyeD('atolye.nuclear3',0.60)} OD" +
-    (atolyeD('atolye.nuclear1',0.20)!=0.20||atolyeD('atolye.nuclear2',0.40)!=0.40||atolyeD('atolye.nuclear3',0.60)!=0.60 ? " (değiştirildi)" : "") + "\n\n" +
-    "Çıktı: tümör-içi Ki-67 LI + grup dağılımı + yoğunluk\n\n" +
-    "Bu işlem 2–5 dakika sürebilir (slayt boyutuna bağlı).\n\n" +
-    "⚠️ 1. adım (tümör segmentasyonu) slayttaki MEVCUT ANOTASYONLARI — elle\n" +
-    "çizdiğiniz Tumor/Stroma eğitim bölgeleri dahil — siler. Sınıflandırıcı\n" +
-    "kaydedildiyse yeniden çizmeniz gerekmez; saklamak isterseniz önce\n" +
-    "[File → Export objects] ile dışa aktarın.\n\n" +
-    "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız Çalıştır düğmesine basın."
-)
-if (!devam) { println "İptal."; return }
-
-// ──────────────────────────────────────────────────────────────
-// Yardımcı: pozitif/negatif/bin sayımı
-// ──────────────────────────────────────────────────────────────
-def sayHucreler = { collection ->
-    def total = collection.size()
-    def n0 = 0, n1 = 0, n2 = 0, n3 = 0
-    collection.each { c ->
-        def cls = c.getPathClass()?.getName() ?: ""
-        if (cls.contains("3+"))      n3++
-        else if (cls.contains("2+")) n2++
-        else if (cls.contains("1+")) n1++
-        else                          n0++
-    }
-    def pozitif = n1 + n2 + n3
-    def ki67LI = total > 0 ? 100.0 * pozitif / total : 0.0
-    return [total: total, n0: n0, n1: n1, n2: n2, n3: n3,
-            pozitif: pozitif, ki67LI: ki67LI]
-}
-
-// ──────────────────────────────────────────────────────────────
-// 3) Adım 1 — Tümör segmentasyonu
-// ──────────────────────────────────────────────────────────────
-println "─────────────────────────────────────"
-println "Modül 7 - Tümör-Restricted Ki-67"
-println "─────────────────────────────────────"
-println "Adım 1/3: Tümör segmentasyonu..."
-
-def t0 = System.currentTimeMillis()
-
-def generatedName = "Generated by Modül 7 - ${classifierName}"
-
-// Önceki betik çıktısını temizle. (Aşağıdaki DELETE_EXISTING zaten tüm
-// anotasyonları — eğitim çizimleri dahil — siler; başlangıç onayına bakın.)
-def existing = QP.getAnnotationObjects().findAll {
-    (it.getName() ?: "") == generatedName
-}
-if (!existing.isEmpty()) {
-    QP.removeObjects(existing, true)
-    println "  Önceki ${existing.size()} betik çıktısı temizlendi."
-}
-
-def beforeAnnotations = QP.getAnnotationObjects() as Set
-if (usingBundled) {
-    // Pahalı ~50 MB JSON → PixelClassifier ayrıştırması burada (onaydan sonra) yapılır.
-    def bundledClassifier = qupath.lib.io.GsonTools.getInstance()
-        .fromJson(bundledJson, qupath.lib.classifiers.pixel.PixelClassifier.class)
-    if (bundledClassifier == null) {
-        Dialogs.showErrorMessage(
-            "Sınıflandırıcı yüklenemedi",
-            "Eklentiyle gelen örnek model okunamadı (JSON ayrıştırılamadı).\n" +
-            "Kendi modelinizi '${classifierName}' adıyla eğitip kaydedin."
-        )
-        return
-    }
-    QP.createAnnotationsFromPixelClassifier(
-        bundledClassifier,
-        atolyeD('atolye.minObjectArea', 10000.0),            // minimum object area (µm²)
-        atolyeD('atolye.minHoleArea', 5000.0),             // minimum hole area (µm²)
-        "SPLIT",            // split into multiple annotations
-        "DELETE_EXISTING",  // deletes ALL existing child annotations (incl. training) — see confirm
-        "SELECT_NEW"        // select newly created objects
-    )
-} else {
-    QP.createAnnotationsFromPixelClassifier(
-        classifierName,
-        atolyeD('atolye.minObjectArea', 10000.0),            // minimum object area (µm²)
-        atolyeD('atolye.minHoleArea', 5000.0),             // minimum hole area (µm²)
-        "SPLIT",            // split into multiple annotations
-        "DELETE_EXISTING",  // deletes ALL existing child annotations (incl. training) — see confirm
-        "SELECT_NEW"        // select newly created objects
-    )
-}
-
-def generatedAnnotations = QP.getAnnotationObjects().findAll {
-    !beforeAnnotations.contains(it) && (it.getPathClass()?.getName() in ["Tumor", "Stroma"])
-}
-generatedAnnotations.each { it.setName(generatedName) }
-
-def tumorAnnotations = generatedAnnotations.findAll {
-    it.getPathClass()?.getName() == "Tumor"
-}
-
-if (tumorAnnotations.isEmpty()) {
-    Dialogs.showErrorMessage(
-        "Tümör bulunamadı",
-        "Sınıflandırıcı bu slaytta hiç tümör bölgesi tespit edemedi.\n\n" +
-        "Olası nedenler:\n" +
-        "  • Sınıflandırıcı İHK için değil H&E için eğitildi (tipik durum)\n" +
-        "  • Eşikler bu slayta uymuyor\n" +
-        "  • Slayt gerçekten tümör içermiyor (lenf nodu, normal doku?)\n\n" +
-        "Çözüm: Modül 6'da Ki-67 İHK üzerinde de çalışan bir sınıflandırıcı eğitin\n" +
-        "(İHK + H&E karışık eğitim seti) ya da H&E seri kesit kullanın."
-    )
-    return
-}
-
-def t1 = System.currentTimeMillis()
-def step1Time = (t1 - t0) / 1000.0
-println String.format(java.util.Locale.US, "  ✓ %d tümör nesnesi (%.1f sn)", tumorAnnotations.size(), step1Time)
-
-// ──────────────────────────────────────────────────────────────
-// 4) Adım 2 — Tümör seçili, pozitif hücre tespiti
-// ──────────────────────────────────────────────────────────────
-println "Adım 2/3: Tümör alanında Ki-67 pozitif hücre tespiti..."
-
-// Tespit kanalı — Modül 3 ile aynı yöntem notu geçerli.
-// Varsayılan: Hematoxylin OD. Yüksek-LI vakada 'Optical density sum'a geçin.
-def detectionImageBrightfield = atolyeS('atolye.detectionChannel', 'Hematoxylin OD')   // veya 'Optical density sum'
-
-QP.selectObjects(tumorAnnotations)
+def started = System.currentTimeMillis()
+QP.selectObjects(summary)
 QP.runPlugin(
     'qupath.imagej.detect.cells.PositiveCellDetection',
     '{' +
-        '"detectionImageBrightfield":"' + detectionImageBrightfield + '",' +
+        '"detectionImageBrightfield":"' + detectionChannel + '",' +
         '"requestedPixelSizeMicrons":' + atolyeD('atolye.pixelSize', 0.5) + ',' +
         '"backgroundRadiusMicrons":' + atolyeD('atolye.backgroundRadius', 8.0) + ',' +
         '"medianRadiusMicrons":' + atolyeD('atolye.medianRadius', 0.0) + ',' +
@@ -419,104 +170,99 @@ QP.runPlugin(
         '"smoothBoundaries":true,' +
         '"makeMeasurements":true,' +
         '"thresholdCompartment":"Nucleus: DAB OD mean",' +
-        '"thresholdPositive1":' + atolyeD('atolye.nuclear1', 0.20) + ',' +
-        '"thresholdPositive2":' + atolyeD('atolye.nuclear2', 0.40) + ',' +
-        '"thresholdPositive3":' + atolyeD('atolye.nuclear3', 0.60) + ',' +
+        '"thresholdPositive1":' + nuclear1 + ',' +
+        '"thresholdPositive2":' + nuclear2 + ',' +
+        '"thresholdPositive3":' + nuclear3 + ',' +
         '"singleThreshold":false' +
     '}'
 )
+double elapsed = (System.currentTimeMillis() - started) / 1000.0
 
-def t2 = System.currentTimeMillis()
-def step2Time = (t2 - t1) / 1000.0
-println String.format(java.util.Locale.US, "  ✓ Pozitif hücre tespiti bitti (%.1f sn)", step2Time)
-
-// ──────────────────────────────────────────────────────────────
-// 5) Adım 3 — Tümör hücrelerini topla
-// ──────────────────────────────────────────────────────────────
-println "Adım 3/3: Sonuçları toplama..."
-
-def tumorCells = []
-tumorAnnotations.each { ann -> tumorCells.addAll(ann.getChildObjects().findAll { it.isDetection() }) }
-def tumorStats = sayHucreler(tumorCells)
-
-// Alan hesabı
-def cal = imageData.getServer().getPixelCalibration()
-def pixelWidth  = cal.getPixelWidthMicrons()
-def pixelHeight = cal.getPixelHeightMicrons()
-if (!(pixelWidth > 0) || !(pixelHeight > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok",
-        "Slaytta piksel boyutu (µm) tanımlı değil; alan/yoğunluk ölçümleri (mm²) hesaplanamaz.\n\n" +
-        "Piksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar →\n" +
-        "Kalibrasyon (piksel boyutu). Sonra bu betiği tekrar çalıştırın.")
+def detections = summary.getChildObjects().findAll { it.isDetection() }
+if (detections.isEmpty()) {
+    QP.removeObjects([summary], false)
+    QP.fireHierarchyUpdate()
+    Dialogs.showErrorMessage('Tespit yok', 'Tumor ROI içinde çekirdek tespit edilmedi. Tespit ve boya vektörü ayarlarını kontrol edin.')
     return
 }
-def tumorAreaMm2 = tumorAnnotations.sum(0.0) { ann ->
-    def roi = ann.getROI()
-    roi != null ? (roi.getArea() * pixelWidth * pixelHeight) / 1_000_000.0 : 0.0
-}
-def density = tumorAreaMm2 > 0 ? Math.round(tumorStats.total / tumorAreaMm2) : 0
+summary.setLocked(true)
 
-// İstatistiksel güven aralığı (95% CI - Basitleştirilmiş binomial proportion)
-def nCells = tumorStats.total
-def pVal = tumorStats.ki67LI / 100.0
-def zVal = atolyeD('atolye.ciZ', 1.96) // 95% güven
-def ciMinCells = atolyeI('atolye.ciMinCells', 30)
-def errorMargin = nCells > ciMinCells ? zVal * Math.sqrt((pVal * (1 - pVal)) / nCells) * 100.0 : 0.0
-def ciMetin = nCells > ciMinCells ? String.format(java.util.Locale.US, "±%.1f%%", errorMargin) : "(n<${ciMinCells})"
-
-def totalElapsed = (System.currentTimeMillis() - t0) / 1000.0
-
-// Sayma standardı uyarısı — Nielsen 2021 (J Natl Cancer Inst, doi:10.1093/jnci/djaa201)
-// International Ki-67 in Breast Cancer Working Group: en az 500-1.000 tümör hücresi.
-def sayimUyari = ""
-def warnNuclearCount = atolyeI('atolye.warnNuclearCount', 500)
-if (tumorStats.total < warnNuclearCount) {
-    sayimUyari = String.format(java.util.Locale.US, 
-        "\n📝 Not: %,d tümör hücresi <${warnNuclearCount} — Ki-67 Working Group (Nielsen 2021) sayma\n" +
-        "  standardının altında. Tümör annotation alanını büyütmeyi değerlendirin.",
-        tumorStats.total)
+def summarize = { collection, roi ->
+    int n0 = 0, n1 = 0, n2 = 0, n3 = 0
+    collection.each { detection ->
+        String className = detection.getPathClass()?.getName() ?: ''
+        if (className.contains('3+')) n3++
+        else if (className.contains('2+')) n2++
+        else if (className.contains('1+')) n1++
+        else n0++
+    }
+    int total = collection.size()
+    int positive = n1 + n2 + n3
+    double positivePct = total > 0 ? 100.0 * positive / total : Double.NaN
+    double areaMm2 = roi == null ? 0.0 : roi.getArea() * pixelWidth * pixelHeight / 1_000_000.0
+    double density = areaMm2 > 0 ? total / areaMm2 : Double.NaN
+    return [total: total, positive: positive, n0: n0, n1: n1, n2: n2, n3: n3,
+            positivePct: positivePct, area: areaMm2, density: density]
 }
 
-// ──────────────────────────────────────────────────────────────
-// 6) Sonucu sun — tümör-içi LI'yi vurgulayalım
-// ──────────────────────────────────────────────────────────────
-def pct = { c, t -> t > 0 ? 100.0 * c / t : 0.0 }
+def writeMetrics = { object, values ->
+    object.measurements['ROI alanı (mm2)'] = values.area
+    object.measurements['Toplam çekirdek'] = values.total as double
+    object.measurements['Pozitif çekirdek'] = values.positive as double
+    object.measurements['Negatif çekirdek'] = values.n0 as double
+    object.measurements['1+ çekirdek'] = values.n1 as double
+    object.measurements['2+ çekirdek'] = values.n2 as double
+    object.measurements['3+ çekirdek'] = values.n3 as double
+    object.measurements['Ki-67 pozitif (%)'] = values.positivePct
+    object.measurements['Çekirdek yoğunluğu (hücre/mm2)'] = values.density
+}
 
-showResultWindow(
-    "Tamamlandı 🔗",
-    String.format(java.util.Locale.US, 
-        "Tümör-Restricted Ki-67 kantifikasyonu bitti.\n\n" +
-        "🧠 Adım 1 — Tümör segmentasyonu\n" +
-        "──────────────────────────────────\n" +
-        "  Tümör nesneleri  : %,d\n" +
-        "  Tümör alanı      : %.2f mm²\n\n" +
-        "🔬 Adım 2 — Ki-67 sayımı (yalnızca tümör içinde)\n" +
-        "─────────────────────────────────────────────────\n" +
-        "  Toplam tümör hücresi  : %,d\n" +
-        "  Negatif               : %,d  (%%%.1f)\n" +
-        "  1+ (zayıf)            : %,d  (%%%.1f)\n" +
-        "  2+ (orta)             : %,d  (%%%.1f)\n" +
-        "  3+ (güçlü)            : %,d  (%%%.1f)\n\n" +
-        "🎯 Metrikler (tümör-içi)\n" +
-        "─────────────────────────\n" +
-        "  Ki-67 LI               : %%%.1f %s (95%% Güven Aralığı)\n" +
-        "  Tümör içi yoğunluk     : ~%,d hücre/mm²\n" +
-        "  Toplam süre            : %.1f sn\n" +
-        "%s\n" +
-        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
-        tumorAnnotations.size(), tumorAreaMm2,
-        tumorStats.total,
-        tumorStats.n0, pct(tumorStats.n0, tumorStats.total),
-        tumorStats.n1, pct(tumorStats.n1, tumorStats.total),
-        tumorStats.n2, pct(tumorStats.n2, tumorStats.total),
-        tumorStats.n3, pct(tumorStats.n3, tumorStats.total),
-        tumorStats.ki67LI, ciMetin, density, totalElapsed, sayimUyari
-    )
-)
+// Birleşik Tumor ROI sonucu: örtüşen anotasyonlar iki kez sayılmaz.
+def aggregate = summarize(detections, tumorUnion)
+writeMetrics(summary, aggregate)
+summary.measurements['Tumor ROI sayısı'] = tumorObjects.size() as double
+summary.measurements['DAB eşiği 1+'] = nuclear1
+summary.measurements['DAB eşiği 2+'] = nuclear2
+summary.measurements['DAB eşiği 3+'] = nuclear3
 
-println "─────────────────────────────────────"
-println String.format(java.util.Locale.US, "Tamamlandı:")
-println String.format(java.util.Locale.US, "  Tümör alanı: %.2f mm² (%d nesne)", tumorAreaMm2, tumorAnnotations.size())
-println String.format(java.util.Locale.US, "  Tümör-içi hücre: %d  |  Ki-67 LI: %.1f%%", tumorStats.total, tumorStats.ki67LI)
-println String.format(java.util.Locale.US, "  Toplam süre: %.1f sn", totalElapsed)
-println "─────────────────────────────────────"
+// Her kaynak Tumor ROI için aynı tespitlerden centroid-temelli alt sonuç üret.
+tumorObjects.each { tumor ->
+    def roi = tumor.getROI()
+    def local = detections.findAll { detection ->
+        def detectionROI = detection.getROI()
+        detectionROI != null && roi.contains(detectionROI.getCentroidX(), detectionROI.getCentroidY())
+    }
+    writeMetrics(tumor, summarize(local, roi))
+}
+QP.fireHierarchyUpdate()
+
+def percent = { int count, int total -> total > 0 ? 100.0 * count / total : Double.NaN }
+def fmt = { double value, String pattern -> Double.isFinite(value) ? String.format(Locale.US, pattern, value) : 'hesaplanamadı' }
+
+def body = new StringBuilder()
+body << 'TÜMÖR ROI İÇİNDE Kİ-67 ÖLÇÜMÜ\n'
+body << '════════════════════════════════════════\n\n'
+body << String.format(Locale.US, 'Tumor ROI sayısı       : %,d%n', tumorObjects.size())
+body << String.format(Locale.US, 'Birleşik alan          : %.3f mm²%n', aggregate.area)
+body << String.format(Locale.US, 'Toplam çekirdek        : %,d%n', aggregate.total)
+body << String.format(Locale.US, 'Pozitif çekirdek       : %,d%n', aggregate.positive)
+body << "Ki-67 pozitif (%)     : ${fmt(aggregate.positivePct, '%.2f%%')}\n"
+body << "Çekirdek yoğunluğu    : ${fmt(aggregate.density, '%.1f hücre/mm²')}\n\n"
+body << 'YOĞUNLUK GRUPLARI\n'
+body << '────────────────────────────────────────\n'
+body << String.format(Locale.US, 'Negatif : %,d  (%s)%n', aggregate.n0, fmt(percent(aggregate.n0, aggregate.total), '%.2f%%'))
+body << String.format(Locale.US, '1+      : %,d  (%s)%n', aggregate.n1, fmt(percent(aggregate.n1, aggregate.total), '%.2f%%'))
+body << String.format(Locale.US, '2+      : %,d  (%s)%n', aggregate.n2, fmt(percent(aggregate.n2, aggregate.total), '%.2f%%'))
+body << String.format(Locale.US, '3+      : %,d  (%s)%n', aggregate.n3, fmt(percent(aggregate.n3, aggregate.total), '%.2f%%'))
+body << '\nTEKNİK KAYIT\n'
+body << '────────────────────────────────────────\n'
+body << "Tespit kanalı          : ${detectionChannel}\n"
+body << String.format(Locale.US, 'DAB eşikleri           : %.2f / %.2f / %.2f%n', nuclear1, nuclear2, nuclear3)
+body << String.format(Locale.US, 'İşlem süresi           : %.1f sn%n', elapsed)
+body << 'Analiz sınırı           : patolog tarafından seçilen Tumor ROI birleşimi\n\n'
+body << 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.\n'
+body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
+
+showResultWindow('Modül 7 - Ki-67 ölçümü', body.toString())
+println String.format(Locale.US, 'Modül 7 tamamlandı: n=%d, Ki-67 pozitif=%s',
+    aggregate.total, fmt(aggregate.positivePct, '%.2f%%'))

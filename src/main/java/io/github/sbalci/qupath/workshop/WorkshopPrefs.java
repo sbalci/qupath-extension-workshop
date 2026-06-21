@@ -106,8 +106,6 @@ public final class WorkshopPrefs {
     public static final IntegerProperty warnNuclearCount = regI(SEC_WARN, "atolye.warnNuclearCount", 500);
     public static final IntegerProperty warnGenericCount = regI(SEC_WARN, "atolye.warnGenericCount", 200);
     public static final DoubleProperty  warnTissueAreaMm2 = regD(SEC_WARN, "atolye.warnTissueAreaMm2", 1.0);
-    public static final IntegerProperty ciMinCells = regI(SEC_WARN, "atolye.ciMinCells", 30);
-    public static final DoubleProperty  ciZ = regD(SEC_WARN, "atolye.ciZ", 1.96);
 
     // --- Dışa aktarma (M9) ---
     public static final StringProperty exportFolder = regS(SEC_EXPORT, "atolye.exportFolder", "exports");
