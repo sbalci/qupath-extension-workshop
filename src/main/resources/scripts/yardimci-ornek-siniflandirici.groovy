@@ -55,19 +55,27 @@ def EXAMPLE_MODEL_GZ_URL =
     'https://raw.githubusercontent.com/sbalci/qupath-extension-workshop/main/src/main/resources/classifiers/tumor-stroma-RF.json.gz'
 
 def downloadGunzip = { String url ->
-    def conn = new java.net.URL(url).openConnection()
+    // URL kasıtlı olarak 'main' dalına sabitlenir: katılımcılar her zaman güncel
+    // modeli alır (sürüm sabitlemesi yerine "her zaman en yeni" tercih edildi).
+    def conn = (java.net.HttpURLConnection) new java.net.URL(url).openConnection()
     conn.setConnectTimeout(20000)
     conn.setReadTimeout(60000)
     conn.setRequestProperty('User-Agent', 'qupath-extension-workshop')
-    def out = new java.io.ByteArrayOutputStream()
-    conn.getInputStream().withCloseable { rawIn ->
-        new java.util.zip.GZIPInputStream(rawIn).withCloseable { gz ->
-            byte[] buf = new byte[1 << 16]
-            int n
-            while ((n = gz.read(buf)) != -1) out.write(buf, 0, n)
+    try {
+        int code = conn.getResponseCode()
+        if (code != 200) throw new java.io.IOException("HTTP ${code}")
+        def out = new java.io.ByteArrayOutputStream()
+        conn.getInputStream().withCloseable { rawIn ->
+            new java.util.zip.GZIPInputStream(rawIn).withCloseable { gz ->
+                byte[] buf = new byte[1 << 16]
+                int n
+                while ((n = gz.read(buf)) != -1) out.write(buf, 0, n)
+            }
         }
+        return new String(out.toByteArray(), 'UTF-8')
+    } finally {
+        conn.disconnect()
     }
-    return new String(out.toByteArray(), 'UTF-8')
 }
 
 def json = null
