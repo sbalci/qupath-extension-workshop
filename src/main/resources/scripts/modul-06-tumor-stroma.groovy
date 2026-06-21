@@ -20,6 +20,8 @@ import qupath.lib.objects.PathObjects
 import qupath.lib.roi.RoiTools
 import qupath.lib.scripting.QP
 import qupath.opencv.ml.pixel.PixelClassifierTools
+import qupath.lib.roi.ROIs
+import qupath.lib.regions.ImagePlane
 
 import java.util.Locale
 
@@ -104,6 +106,127 @@ def bundledClassifierJson = { ->
     } catch (Throwable ignored) { null }
 }
 
+// ── Paketli kardeş betikleri çalıştırma (eklenti varsa) ────────────
+def bundledScript = { String name ->
+    try {
+        Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
+            .getMethod('getBundledScript', String.class).invoke(null, name)
+    } catch (Throwable t) { null }
+}
+def launchBundled = { String name ->
+    def text = bundledScript(name)
+    if (text == null) return false
+    def runner = new Thread({
+        try { new groovy.lang.GroovyShell(this.class.classLoader).evaluate(text, name) }
+        catch (Throwable err) { println "Alt betik hatası (${name}): ${err}" }
+    }, "AtolyeLaunch-${name}")
+    runner.setDaemon(true)
+    runner.start()
+    return true
+}
+
+// ── Model seçim penceresi (hub) ────────────────────────────────────
+// Dönüş: [action:'MEASURE', models:[..], wholeSlide:bool] | [action:'CANCEL']
+def chooseModels = { List entries, String preferName, Closure launch, boolean bundledAvailable ->
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    def result = new java.util.concurrent.atomic.AtomicReference([action: 'CANCEL'])
+    javafx.application.Platform.runLater {
+        try {
+            def stage = new javafx.stage.Stage()
+            stage.initModality(javafx.stage.Modality.NONE)
+            stage.setTitle('Tümör/Stroma — model seçimi')
+            stage.setAlwaysOnTop(true)
+
+            def header = new javafx.scene.control.Label(
+                'Hangi sınıflandırıcı(lar) ile ölçüm yapılsın? Birden fazla seçerseniz\n' +
+                'sonuçlar karşılaştırmalı gösterilir.')
+            header.setWrapText(true)
+            header.setStyle('-fx-font-size: 12px; -fx-padding: 4px 0;')
+
+            def boxes = []
+            def listBox = new javafx.scene.layout.VBox(4)
+            if (entries.isEmpty()) {
+                listBox.getChildren().add(new javafx.scene.control.Label(
+                    '(Projede sınıflandırıcı yok. Aşağıdan örnek modeli kurun ya da sihirbazı açın.)'))
+            } else {
+                entries.each { e ->
+                    def label = e.source == 'BUNDLED' ? "${e.name}  (örnek, paketli)" : e.name
+                    def cb = new javafx.scene.control.CheckBox(label)
+                    cb.setUserData(e.name)
+                    if (e.name == preferName) cb.setSelected(true)
+                    boxes << cb
+                    listBox.getChildren().add(cb)
+                }
+            }
+            def listScroll = new javafx.scene.control.ScrollPane(listBox)
+            listScroll.setFitToWidth(true)
+            listScroll.setPrefHeight(180)
+
+            def scopeGroup = new javafx.scene.control.ToggleGroup()
+            def rRegion = new javafx.scene.control.RadioButton('Seçili bölge (Specimen anotasyonları)')
+            rRegion.setToggleGroup(scopeGroup); rRegion.setSelected(true)
+            def rSlide = new javafx.scene.control.RadioButton('Tüm slayt (Specimen gerekmez — kaba tahmin)')
+            rSlide.setToggleGroup(scopeGroup)
+            def scopeBox = new javafx.scene.layout.VBox(4,
+                new javafx.scene.control.Label('Kapsam:'), rRegion, rSlide)
+            scopeBox.setStyle('-fx-padding: 8px 0;')
+
+            def installBtn = new javafx.scene.control.Button('Örnek modeli kur')
+            installBtn.setOnAction({
+                if (!launch('yardimci-ornek-siniflandirici.groovy')) {
+                    qupath.lib.gui.dialogs.Dialogs.showMessageDialog('Eklenti gerekli',
+                        'Örnek modeli kurmak için: Extensions → Atölye → Yardımcılar →\n' +
+                        '"Örnek tümör/stroma sınıflandırıcısını projeye kaydet".')
+                }
+                result.set([action: 'CANCEL']); stage.close()
+            })
+            def wizardBtn = new javafx.scene.control.Button('Sihirbazı aç (yeni model)')
+            wizardBtn.setOnAction({
+                if (!launch('modul-06-sihirbaz.groovy')) {
+                    qupath.lib.gui.dialogs.Dialogs.showMessageDialog('Eklenti gerekli',
+                        'Sihirbaz için: Extensions → Atölye → Modüller →\n' +
+                        '"Modül 6 - Tümör/Stroma sihirbazı (model kur/eğit)".')
+                }
+                result.set([action: 'CANCEL']); stage.close()
+            })
+            def measureBtn = new javafx.scene.control.Button('Seçilenlerle ölç')
+            measureBtn.setDefaultButton(true)
+            measureBtn.setOnAction({
+                def picked = boxes.findAll { it.isSelected() }.collect { it.getUserData() as String }
+                result.set([action: 'MEASURE', models: picked, wholeSlide: rSlide.isSelected()])
+                stage.close()
+            })
+            def cancelBtn = new javafx.scene.control.Button('İptal')
+            cancelBtn.setCancelButton(true)
+            cancelBtn.setOnAction({ result.set([action: 'CANCEL']); stage.close() })
+
+            stage.setOnHidden({ latch.countDown() })
+
+            def actionRow = new javafx.scene.layout.HBox(8, installBtn, wizardBtn)
+            def spacer = new javafx.scene.layout.Region()
+            javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
+            def confirmRow = new javafx.scene.layout.HBox(8, spacer, cancelBtn, measureBtn)
+            def bottom = new javafx.scene.layout.VBox(8, actionRow, confirmRow)
+            bottom.setPadding(new javafx.geometry.Insets(8))
+
+            def root = new javafx.scene.layout.BorderPane()
+            root.setTop(header)
+            root.setCenter(new javafx.scene.layout.VBox(6, listScroll, scopeBox))
+            root.setBottom(bottom)
+            javafx.scene.layout.BorderPane.setMargin(header, new javafx.geometry.Insets(8))
+            javafx.scene.layout.BorderPane.setMargin(root.getCenter(), new javafx.geometry.Insets(0, 8, 0, 8))
+
+            stage.setScene(new javafx.scene.Scene(root, 560, 460))
+            stage.show()
+        } catch (Throwable t) {
+            result.set([action: 'CANCEL'])
+            latch.countDown()
+        }
+    }
+    latch.await()
+    return result.get()
+}
+
 // ── Ön kontroller ──────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
@@ -142,86 +265,87 @@ String classifierName = atolyeS('atolye.classifierName', 'tumor-stroma-RF')
 double minObjectArea = atolyeD('atolye.minObjectArea', 10000.0)
 double minHoleArea = atolyeD('atolye.minHoleArea', 5000.0)
 
-def availableClassifiers = project.getPixelClassifiers().getNames()
-boolean hasProjectClassifier = availableClassifiers.contains(classifierName)
-def json = hasProjectClassifier ? null : bundledClassifierJson()
-if (!hasProjectClassifier && json == null) {
-    Dialogs.showErrorMessage(
-        'Sınıflandırıcı bulunamadı',
-        "'${classifierName}' adlı piksel sınıflandırıcı bulunamadı.\n" +
-        'Modül 6 eğitim adımıyla bir model oluşturun veya atölye eklentisini yükleyin.'
-    )
+// ── Model keşfi ────────────────────────────────────────────────────
+def projectClassifierNames = new ArrayList(project.getPixelClassifiers().getNames())
+Collections.sort(projectClassifierNames)
+def bundledJson = bundledClassifierJson()
+boolean bundledAvailable = bundledJson != null && !projectClassifierNames.contains(classifierName)
+
+def selectable = []
+projectClassifierNames.each { selectable << [name: it, source: 'PROJECT'] }
+if (bundledAvailable) selectable << [name: classifierName, source: 'BUNDLED']
+
+def choice
+if (isHeadless) {
+    def headlessModels = []
+    if (projectClassifierNames.contains(classifierName)) headlessModels << classifierName
+    else if (bundledAvailable) headlessModels << classifierName
+    if (headlessModels.isEmpty()) {
+        println "Sınıflandırıcı yok ('${classifierName}'). Önce model eğitin/kurun."
+        return
+    }
+    choice = [action: 'MEASURE', models: headlessModels, wholeSlide: false]
+} else {
+    choice = chooseModels(selectable, classifierName, launchBundled, bundledAvailable)
+}
+if (choice.action != 'MEASURE') { println 'İptal / alt-betik başlatıldı.'; return }
+
+def selectedModelNames = choice.models
+if (selectedModelNames.isEmpty()) {
+    Dialogs.showErrorMessage('Model seçilmedi', 'En az bir sınıflandırıcı seçin.')
     return
 }
+boolean wholeSlide = choice.wholeSlide
 
-def classifier = hasProjectClassifier
-    ? project.getPixelClassifiers().get(classifierName)
-    : qupath.lib.io.GsonTools.getInstance().fromJson(json, qupath.lib.classifiers.pixel.PixelClassifier.class)
-if (classifier == null) {
-    Dialogs.showErrorMessage('Sınıflandırıcı yüklenemedi', "'${classifierName}' okunamadı.")
-    return
+def resolveClassifier = { String name ->
+    if (projectClassifierNames.contains(name)) return project.getPixelClassifiers().get(name)
+    if (bundledAvailable && name == classifierName && bundledJson != null)
+        return qupath.lib.io.GsonTools.getInstance().fromJson(bundledJson, qupath.lib.classifiers.pixel.PixelClassifier.class)
+    return null
 }
 
-// Analiz sınırı yalnızca patolog tarafından gözden geçirilmiş Specimen nesneleridir.
+// ── Kapsam ROI'leri ────────────────────────────────────────────────
 def annotations = QP.getAnnotationObjects()
-def specimenObjects = annotations.findAll {
-    it.getROI()?.isArea() && it.getPathClass()?.getName() == 'Specimen'
-}
-if (specimenObjects.isEmpty()) {
-    Dialogs.showErrorMessage(
-        'Specimen anotasyonu gerekli',
-        'Slayttaki değerlendirilecek dokuyu bir veya daha fazla anotasyonla çevreleyin\n' +
-        've anotasyon sınıfını tam olarak "Specimen" yapın. Boş camı, nekrozu veya\n' +
-        'ölçüme girmemesi gereken dokuyu bu sınırın dışında bırakın.'
-    )
-    return
-}
-
-def specimenUnion = RoiTools.union(specimenObjects.collect { it.getROI() })
-if (specimenUnion == null || specimenUnion.isEmpty() || !specimenUnion.isArea()) {
-    Dialogs.showErrorMessage('Geçersiz Specimen sınırı', 'Specimen anotasyonları geçerli bir alan oluşturmuyor.')
-    return
-}
-
-def analysisObjects = annotations.findAll {
-    it.getROI()?.isArea() && it.getPathClass()?.getName() == 'Analysis ROI'
-}
-
-// ── Sınıflandırıcı alan ölçüm yöneticisi ──────────────────────────
-def manager = PixelClassifierTools.createMeasurementManager(imageData, classifier)
-def measurementNames = manager.getMeasurementNames()
-String tumorAreaName = measurementNames.find { it.startsWith('Tumor area ') }
-String stromaAreaName = measurementNames.find { it.startsWith('Stroma area ') }
-if (tumorAreaName == null || stromaAreaName == null) {
-    Dialogs.showErrorMessage(
-        'Sınıf adları uyuşmuyor',
-        "Sınıflandırıcı tam olarak 'Tumor' ve 'Stroma' çıktı sınıflarını içermeli.\n" +
-        "Bulunan ölçümler: ${measurementNames.join(', ')}"
-    )
-    return
+def server = imageData.getServer()
+def scopeRoi
+def analysisObjects = []
+def specimenObjects = []
+if (wholeSlide) {
+    scopeRoi = ROIs.createRectangleROI(0, 0, server.getWidth(), server.getHeight(),
+        ImagePlane.getDefaultPlane())
+} else {
+    specimenObjects = annotations.findAll {
+        it.getROI()?.isArea() && it.getPathClass()?.getName() == 'Specimen'
+    }
+    if (specimenObjects.isEmpty()) {
+        Dialogs.showErrorMessage(
+            'Specimen anotasyonu gerekli',
+            'Seçili bölge modunda değerlendirilecek dokuyu sınıfı "Specimen" olan bir\n' +
+            'anotasyonla çevreleyin — ya da kapsam olarak "Tüm slayt" seçin.')
+        return
+    }
+    scopeRoi = RoiTools.union(specimenObjects.collect { it.getROI() })
+    if (scopeRoi == null || scopeRoi.isEmpty() || !scopeRoi.isArea()) {
+        Dialogs.showErrorMessage('Geçersiz Specimen sınırı', 'Specimen anotasyonları geçerli bir alan oluşturmuyor.')
+        return
+    }
+    analysisObjects = annotations.findAll {
+        it.getROI()?.isArea() && it.getPathClass()?.getName() == 'Analysis ROI'
+    }
 }
 
 def classifierAreaToMm2 = { Number value, String measurementName ->
     if (value == null) return Double.NaN
     double numeric = value.doubleValue()
-    String lower = measurementName.toLowerCase(Locale.ROOT)
+    String lower = measurementName.toLowerCase(java.util.Locale.ROOT)
     if (lower.contains('µm^2') || lower.contains('μm^2') || lower.contains('um^2')) return numeric / 1_000_000.0
     if (lower.contains('mm^2')) return numeric
     return Double.NaN
 }
-
-def measureROI = { roi ->
+def measureWith = { manager, tumorAreaName, stromaAreaName, roi ->
     if (roi == null || roi.isEmpty() || !roi.isArea()) {
-        return [
-            roiArea: 0.0,
-            tumorArea: 0.0,
-            stromaArea: 0.0,
-            classifiedArea: 0.0,
-            tumorPct: Double.NaN,
-            stromaPct: Double.NaN,
-            ratio: Double.NaN,
-            coveragePct: Double.NaN
-        ]
+        return [roiArea: 0.0, tumorArea: 0.0, stromaArea: 0.0, classifiedArea: 0.0,
+                tumorPct: Double.NaN, stromaPct: Double.NaN, ratio: Double.NaN, coveragePct: Double.NaN]
     }
     double roiAreaMm2 = roi.getArea() * pixelWidth * pixelHeight / 1_000_000.0
     double tumorAreaMm2 = classifierAreaToMm2(manager.getMeasurementValue(roi, tumorAreaName), tumorAreaName)
@@ -229,125 +353,133 @@ def measureROI = { roi ->
     double classifiedAreaMm2 = tumorAreaMm2 + stromaAreaMm2
     double tumorPct = classifiedAreaMm2 > 0 ? 100.0 * tumorAreaMm2 / classifiedAreaMm2 : Double.NaN
     double stromaPct = classifiedAreaMm2 > 0 ? 100.0 * stromaAreaMm2 / classifiedAreaMm2 : Double.NaN
-    double tumorStromaRatio = stromaAreaMm2 > 0 ? tumorAreaMm2 / stromaAreaMm2 : Double.NaN
+    double ratio = stromaAreaMm2 > 0 ? tumorAreaMm2 / stromaAreaMm2 : Double.NaN
     double coveragePct = roiAreaMm2 > 0 ? 100.0 * classifiedAreaMm2 / roiAreaMm2 : Double.NaN
-    return [
-        roiArea: roiAreaMm2,
-        tumorArea: tumorAreaMm2,
-        stromaArea: stromaAreaMm2,
-        classifiedArea: classifiedAreaMm2,
-        tumorPct: tumorPct,
-        stromaPct: stromaPct,
-        ratio: tumorStromaRatio,
-        coveragePct: coveragePct
-    ]
+    return [roiArea: roiAreaMm2, tumorArea: tumorAreaMm2, stromaArea: stromaAreaMm2,
+            classifiedArea: classifiedAreaMm2, tumorPct: tumorPct, stromaPct: stromaPct,
+            ratio: ratio, coveragePct: coveragePct]
 }
-
-def writeMetrics = { object, metrics ->
-    object.measurements['ROI alanı (mm2)'] = metrics.roiArea
-    object.measurements['Tümör alanı (mm2)'] = metrics.tumorArea
-    object.measurements['Stroma alanı (mm2)'] = metrics.stromaArea
-    object.measurements['Sınıflandırılmış alan (mm2)'] = metrics.classifiedArea
-    object.measurements['Tümör alanı (%)'] = metrics.tumorPct
-    object.measurements['Stroma alanı (%)'] = metrics.stromaPct
-    object.measurements['Tümör/Stroma oranı'] = metrics.ratio
-    object.measurements['Sınıflandırılmış kapsam (%)'] = metrics.coveragePct
-}
-
 def formatValue = { double value, String pattern ->
-    Double.isFinite(value) ? String.format(Locale.US, pattern, value) : 'hesaplanamadı'
+    Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : 'hesaplanamadı'
 }
 
-// ── Önceki betik özetini ve yalnızca onun altındaki görselleştirmeyi temizle ──
-def oldSummaries = QP.getAnnotationObjects().findAll {
-    it.getName() in ['Tümör-Stroma Özet', 'TSR Özet']
-}
+boolean multi = selectedModelNames.size() > 1
+def keyPrefix = { String model -> multi ? "[${model}] " : '' }
+
+def oldSummaries = QP.getAnnotationObjects().findAll { it.getName() in ['Tümör-Stroma Özet', 'TSR Özet'] }
 if (!oldSummaries.isEmpty()) QP.removeObjectsAndDescendants(oldSummaries)
 
-// Her Specimen parçasına kendi ölçümü yaz. Örtüşmeler agregada ayrıca sayılmaz.
-specimenObjects.each { specimen -> writeMetrics(specimen, measureROI(specimen.getROI())) }
+def summary = PathObjects.createAnnotationObject(scopeRoi)
+summary.setName('Tümör-Stroma Özet')
 
-// Analysis ROI ölçümü yalnız Specimen birleşimiyle kesişen bölümde yapılır.
-def roiRows = []
-analysisObjects.eachWithIndex { analysis, index ->
-    def clipped = RoiTools.intersection([analysis.getROI(), specimenUnion])
-    def metrics = measureROI(clipped)
-    writeMetrics(analysis, metrics)
-    roiRows << [name: analysis.getName() ?: "Analysis ROI ${index + 1}", metrics: metrics]
+def perModel = []
+selectedModelNames.each { modelName ->
+    def classifier = resolveClassifier(modelName)
+    if (classifier == null) { println "Model çözülemedi: ${modelName}"; return }
+    def manager = PixelClassifierTools.createMeasurementManager(imageData, classifier)
+    def names = manager.getMeasurementNames()
+    String tumorAreaName = names.find { it.startsWith('Tumor area ') }
+    String stromaAreaName = names.find { it.startsWith('Stroma area ') }
+    if (tumorAreaName == null || stromaAreaName == null) {
+        println "Model '${modelName}' Tumor/Stroma çıktı sınıflarını içermiyor; atlandı."
+        return
+    }
+    def aggregate = measureWith(manager, tumorAreaName, stromaAreaName, scopeRoi)
+
+    def p = keyPrefix(modelName)
+    summary.measurements["${p}ROI alanı (mm2)"] = aggregate.roiArea
+    summary.measurements["${p}Tümör alanı (mm2)"] = aggregate.tumorArea
+    summary.measurements["${p}Stroma alanı (mm2)"] = aggregate.stromaArea
+    summary.measurements["${p}Sınıflandırılmış alan (mm2)"] = aggregate.classifiedArea
+    summary.measurements["${p}Tümör alanı (%)"] = aggregate.tumorPct
+    summary.measurements["${p}Stroma alanı (%)"] = aggregate.stromaPct
+    summary.measurements["${p}Tümör/Stroma oranı"] = aggregate.ratio
+    summary.measurements["${p}Sınıflandırılmış kapsam (%)"] = aggregate.coveragePct
+
+    def analysisRows = []
+    if (!wholeSlide) {
+        specimenObjects.each { sp ->
+            def m = measureWith(manager, tumorAreaName, stromaAreaName, sp.getROI())
+            sp.measurements["${p}Tümör alanı (%)"] = m.tumorPct
+            sp.measurements["${p}Stroma alanı (%)"] = m.stromaPct
+            sp.measurements["${p}Tümör/Stroma oranı"] = m.ratio
+        }
+        analysisObjects.eachWithIndex { analysis, index ->
+            def clipped = RoiTools.intersection([analysis.getROI(), scopeRoi])
+            def m = measureWith(manager, tumorAreaName, stromaAreaName, clipped)
+            analysis.measurements["${p}Tümör alanı (%)"] = m.tumorPct
+            analysis.measurements["${p}Stroma alanı (%)"] = m.stromaPct
+            analysis.measurements["${p}Tümör/Stroma oranı"] = m.ratio
+            analysisRows << [name: analysis.getName() ?: "Analysis ROI ${index + 1}", metrics: m]
+        }
+    }
+    perModel << [model: modelName, aggregate: aggregate, analysisRows: analysisRows, classifier: classifier]
 }
 
-// Birleşik specimen özeti: üst üste binen Specimen anotasyonları bir kez sayılır.
-def summary = PathObjects.createAnnotationObject(specimenUnion)
-summary.setName('Tümör-Stroma Özet')
-def aggregate = measureROI(specimenUnion)
-writeMetrics(summary, aggregate)
-summary.measurements['Specimen parça sayısı'] = specimenObjects.size() as double
-summary.measurements['Analysis ROI sayısı'] = analysisObjects.size() as double
+if (perModel.isEmpty()) {
+    Dialogs.showErrorMessage('Ölçüm yapılamadı', 'Seçilen modellerin hiçbiri Tumor/Stroma çıktısı üretmedi.')
+    return
+}
+
+summary.measurements['Seçilen model sayısı'] = perModel.size() as double
+summary.measurements['Analysis ROI sayısı'] = (wholeSlide ? 0 : analysisObjects.size()) as double
 summary.setLocked(true)
 QP.addObjects([summary])
 
-// Görsel Tumor/Stroma poligonları yalnız birleşik specimen sınırı içinde oluşturulur.
+def primary = perModel[0]
 def before = QP.getAnnotationObjects() as Set
 QP.selectObjects(summary)
-QP.createAnnotationsFromPixelClassifier(
-    classifier,
-    minObjectArea,
-    minHoleArea,
-    'SPLIT',
-    'DELETE_EXISTING',
-    'SELECT_NEW'
-)
+QP.createAnnotationsFromPixelClassifier(primary.classifier, minObjectArea, minHoleArea,
+    'SPLIT', 'DELETE_EXISTING', 'SELECT_NEW')
 def generated = QP.getAnnotationObjects().findAll {
     !before.contains(it) && it.getPathClass()?.getName() in ['Tumor', 'Stroma']
 }
-generated.each { it.setName("Generated by Modül 6 - ${classifierName}") }
+generated.each { it.setName("Generated by Modül 6 - ${primary.model}") }
 QP.fireHierarchyUpdate()
 
-// ── Sonuç: yalnız ölçüm ve teknik kapsam bilgisi ───────────────────
 def body = new StringBuilder()
 body << 'TÜMÖR/STROMA ALAN ÖLÇÜMÜ\n'
 body << '════════════════════════════════════════\n\n'
-body << "Sınıflandırıcı      : ${classifierName}\n"
-body << String.format(Locale.US, 'Specimen parçaları    : %,d%n', specimenObjects.size())
-body << String.format(Locale.US, 'Analysis ROI sayısı   : %,d%n%n', analysisObjects.size())
-body << 'SPECIMEN BİRLEŞİMİ\n'
-body << '────────────────────────────────────────\n'
-body << String.format(Locale.US, 'ROI alanı             : %.3f mm²%n', aggregate.roiArea)
-body << String.format(Locale.US, 'Tümör alanı           : %.3f mm²%n', aggregate.tumorArea)
-body << String.format(Locale.US, 'Stroma alanı          : %.3f mm²%n', aggregate.stromaArea)
-body << String.format(Locale.US, 'Sınıflandırılmış alan : %.3f mm²%n', aggregate.classifiedArea)
-body << "Tümör alanı (%)      : ${formatValue(aggregate.tumorPct, '%.2f%%')}\n"
-body << "Stroma alanı (%)     : ${formatValue(aggregate.stromaPct, '%.2f%%')}\n"
-body << "Tümör/Stroma oranı   : ${formatValue(aggregate.ratio, '%.4f')}\n"
-body << "Sınıflandırılmış kapsam: ${formatValue(aggregate.coveragePct, '%.2f%%')}\n"
+body << "Kapsam              : ${wholeSlide ? 'Tüm slayt' : 'Seçili bölge (Specimen)'}\n"
+if (wholeSlide) body << 'Not: Tüm slayt modunda boş cam/arka plan da Tumor/Stroma sayılabilir (kaba tahmin).\n'
+body << "Slayttaki bindirme  : ${primary.model}\n\n"
 
-if (!roiRows.isEmpty()) {
-    body << '\nANALYSIS ROI SONUÇLARI\n'
-    body << '────────────────────────────────────────\n'
-    roiRows.each { row ->
+if (perModel.size() == 1) {
+    def a = primary.aggregate
+    body << "Sınıflandırıcı      : ${primary.model}\n"
+    body << String.format(java.util.Locale.US, 'ROI alanı             : %.3f mm²%n', a.roiArea)
+    body << String.format(java.util.Locale.US, 'Tümör alanı           : %.3f mm²%n', a.tumorArea)
+    body << String.format(java.util.Locale.US, 'Stroma alanı          : %.3f mm²%n', a.stromaArea)
+    body << "Tümör alanı (%)      : ${formatValue(a.tumorPct, '%.2f%%')}\n"
+    body << "Stroma alanı (%)     : ${formatValue(a.stromaPct, '%.2f%%')}\n"
+    body << "Tümör/Stroma oranı   : ${formatValue(a.ratio, '%.4f')}\n"
+    body << "Sınıflandırılmış kapsam: ${formatValue(a.coveragePct, '%.2f%%')}\n"
+    primary.analysisRows.each { row ->
         def m = row.metrics
-        body << "${row.name}\n"
-        body << String.format(Locale.US, '  Alan: %.3f mm² | Tumor: %.3f mm² | Stroma: %.3f mm²%n',
-            m.roiArea, m.tumorArea, m.stromaArea)
-        body << "  Tümör: ${formatValue(m.tumorPct, '%.2f%%')} | "
-        body << "Stroma: ${formatValue(m.stromaPct, '%.2f%%')} | "
-        body << "T/S: ${formatValue(m.ratio, '%.4f')}\n"
+        body << "\n${row.name}: Tümör ${formatValue(m.tumorPct, '%.2f%%')} | " +
+                "Stroma ${formatValue(m.stromaPct, '%.2f%%')} | T/S ${formatValue(m.ratio, '%.4f')}\n"
+    }
+} else {
+    body << 'KARŞILAŞTIRMA (kapsam birleşimi)\n'
+    body << '────────────────────────────────────────\n'
+    body << String.format(java.util.Locale.US, '%-22s %9s %9s %8s%n', 'Model', 'Tümör%', 'Stroma%', 'T/S')
+    perModel.each { pm ->
+        def a = pm.aggregate
+        body << String.format(java.util.Locale.US, '%-22s %9s %9s %8s%n',
+            (pm.model.length() > 22 ? pm.model.substring(0, 22) : pm.model),
+            formatValue(a.tumorPct, '%.2f'), formatValue(a.stromaPct, '%.2f'),
+            formatValue(a.ratio, '%.3f'))
     }
 }
 
 body << '\nQC NOTLARI\n'
 body << '────────────────────────────────────────\n'
 body << '• Payda yalnız Tumor + Stroma olarak sınıflandırılan alandır.\n'
-body << '• Sınıflandırılmış kapsam, ROI içinde bu iki sınıfa giren alanı gösterir.\n'
-body << '• Oran için stroma alanı sıfırsa sonuç hesaplanamaz; sıfır yazılmaz.\n'
-body << '• Analysis ROI sonuçları birbirinden bağımsızdır; örtüşen ROI alanları birleştirilmez.\n\n'
+body << '• Çoklu modelde nesne ölçümleri model adıyla ön-eklenir ([model] ...).\n'
+body << '• Slayttaki Tumor/Stroma poligonları yalnız birincil (ilk seçilen) modele aittir.\n\n'
 body << 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.\n'
 body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
 
 showResultWindow('Modül 6 - Tümör/Stroma ölçümü', body.toString())
-println String.format(Locale.US,
-    'Modül 6 tamamlandı: Tumor %.3f mm², Stroma %.3f mm², Tumor %% %s, T/S %s',
-    aggregate.tumorArea,
-    aggregate.stromaArea,
-    formatValue(aggregate.tumorPct, '%.2f'),
-    formatValue(aggregate.ratio, '%.4f'))
+println String.format(java.util.Locale.US, 'Modül 6 tamamlandı: %d model, kapsam=%s',
+    perModel.size(), (wholeSlide ? 'slide' : 'region'))
