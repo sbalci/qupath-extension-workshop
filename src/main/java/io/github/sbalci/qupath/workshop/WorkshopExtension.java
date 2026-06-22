@@ -62,7 +62,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
      */
     private static final List<ScriptEntry> SCRIPTS = List.of(
         new ScriptEntry("Modül 2 - Hücre tespiti",                  "modul-02-hucre-tespiti.groovy"),
-        new ScriptEntry("Modül 3 - Nükleer boya (Ki-67)",           "modul-03-nukleer-boya.groovy"),
+        new ScriptEntry("Modül 3a - Nükleer boya (Ki-67)",          "modul-03-nukleer-boya.groovy"),
         new ScriptEntry("Modül 3b - ER / PR H-score",               "modul-03b-er-pr-hscore.groovy"),
         // Modül 4 (HER2 membran skorlama) sonraki oturuma ertelendi — script JAR'da kalır
         // ve menüde görünür ama gri/disabled (tıklama etkisiz). İleride etkinleştirmek için
@@ -74,8 +74,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // açmadan tek tıkla bir 'tumor-stroma-RF' sınıflandırıcı kaydeder.
         // Sihirbaz her iki adımı bir karar ağacı ile yönlendirir.
         new ScriptEntry("Modül 6 - Tümör/Stroma sihirbazı (model kur/eğit)", "modul-06-sihirbaz.groovy"),
-        new ScriptEntry("Modül 6 - Tümör/Stroma modeli oluştur (eğit)", "modul-06-model-egit.groovy"),
-        new ScriptEntry("Modül 6 - Tümör vs stroma (uygula)",       "modul-06-tumor-stroma.groovy"),
+        new ScriptEntry("Modül 6a - Tümör/Stroma modeli oluştur (eğit)", "modul-06-model-egit.groovy"),
+        new ScriptEntry("Modül 6b - Tümör vs stroma (uygula)",      "modul-06-tumor-stroma.groovy"),
         new ScriptEntry("Modül 7 - Tümör içi Ki-67",                "modul-07-tumor-ici-ki67.groovy"),
         // Modül 8 (QuANTUM cTCF) sonraki sürümlere ertelendi — StarDist + object classifier
         // ön-gereksinimleri ilk sürüm katılımcıları için fazla. Script JAR resource olarak

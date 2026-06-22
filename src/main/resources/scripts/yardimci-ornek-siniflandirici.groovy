@@ -103,7 +103,7 @@ if (json == null) {
         "  • Modeli elle indirin: OSF veri paketi osf.io/v7mjq → atolye-eklenti/, veya\n" +
         "    GitHub: github.com/sbalci/qupath-extension-workshop (classifiers/), ve\n" +
         "    projenizin classifiers/ klasörüne koyun.\n\n" +
-        "Alternatif: kendi modelinizi 'Modül 6 - Tümör/Stroma modeli oluştur (eğit)' ile eğitin."
+        "Alternatif: kendi modelinizi 'Modül 6a - Tümör/Stroma modeli oluştur (eğit)' ile eğitin."
     )
     return
 }
