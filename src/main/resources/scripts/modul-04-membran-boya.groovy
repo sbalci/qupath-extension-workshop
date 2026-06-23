@@ -23,8 +23,10 @@
  *   1. HER2 İHK slaytını açın
  *   2. Image type → "Brightfield (H-DAB)" olduğundan emin olun
  *   3. [R] tuşu → TÜMÖR (epitel) içeren ~1×1 mm dikdörtgen anotasyon çizin
- *      (stroma dahil büyük ROI seçmek piksel H-score'u seyreltir)
- *   4. Anotasyon seçili iken → [Automate → Project scripts → bu betik]
+ *      ve SEÇİN (kenarı sarı görünür)
+ *   4. Bu betiği çalıştırın → açılan TEK pencerede "Çalıştır"
+ *   5. Pencere açık kalır: eşikleri değiştirip (Gelişmiş ayarlar) tekrar
+ *      çalıştırabilirsiniz; sonuçlar aynı pencerede güncellenir
  *
  * CELLPOSE KURULUMU (opsiyonel — ikincil hücre bazlı metrik için):
  *   • qupath-extension-cellpose JAR + Python + `cellpose` paketi
@@ -52,14 +54,6 @@ import org.bytedeco.opencv.global.opencv_core
 import org.bytedeco.opencv.opencv_core.Mat
 import groovy.transform.CompileStatic
 
-// ──────────────────────────────────────────────────────────────
-// Modal olmayan pencere yardımcıları
-//   - waitForConfirm    : modal hissi veren ama QuPath'i kilitlemeyen onay penceresi
-//   - showResultWindow  : sonuç penceresi — açık kalır, QuPath kullanılmaya devam edilebilir
-//
-// İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
-// parametre değiştirip betiği tekrar çalıştırabilir, sonuçları kopyalayabilir.
-// ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
 // --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
@@ -72,129 +66,6 @@ def atolyeD = { String k, double  d -> (double)  __wpCall('dbl',  [String.class,
 def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class, String.class]  as Class[], [k, d] as Object[], d) }
 def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
 def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
-
-def waitForConfirm = { String windowTitle, String windowBody ->
-    if (isHeadless) {
-        println "=== ${windowTitle} ===\n${windowBody}\n=================="
-        return true
-    }
-    def latch = new java.util.concurrent.CountDownLatch(1)
-    def confirmed = new java.util.concurrent.atomic.AtomicBoolean(false)
-
-    javafx.application.Platform.runLater {
-        try {
-            def stage = new javafx.stage.Stage()
-            stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle(windowTitle)
-            stage.setAlwaysOnTop(true)
-
-            def label = new javafx.scene.control.Label(windowBody)
-            label.setWrapText(true)
-            label.setStyle("-fx-font-size: 12px; -fx-padding: 8px;")
-
-            def scrollPane = new javafx.scene.control.ScrollPane(label)
-            scrollPane.setFitToWidth(true)
-
-            def okBtn = new javafx.scene.control.Button("Çalıştır")
-            okBtn.setDefaultButton(true)
-            okBtn.setOnAction({
-                confirmed.set(true)
-                stage.close()
-            })
-
-            def cancelBtn = new javafx.scene.control.Button("İptal")
-            cancelBtn.setCancelButton(true)
-            cancelBtn.setOnAction({
-                confirmed.set(false)
-                stage.close()
-            })
-
-            stage.setOnHidden({ latch.countDown() })
-
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
-            alwaysTop.setSelected(true)
-            alwaysTop.selectedProperty().addListener(
-                { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
-            )
-
-            def spacer = new javafx.scene.layout.Region()
-            javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-
-            def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, cancelBtn, okBtn)
-            buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
-            buttons.setPadding(new javafx.geometry.Insets(10))
-
-            def root = new javafx.scene.layout.BorderPane()
-            root.setCenter(scrollPane)
-            root.setBottom(buttons)
-
-            stage.setScene(new javafx.scene.Scene(root, 620, 460))
-            stage.show()
-        } catch (Throwable t) {
-            // FX kurulumu başarısızsa modal'a geri dön
-            confirmed.set(qupath.lib.gui.dialogs.Dialogs.showConfirmDialog(windowTitle, windowBody))
-            latch.countDown()
-        }
-    }
-
-    latch.await()
-    return confirmed.get()
-}
-
-def showResultWindow = { String windowTitle, String windowBody ->
-    if (isHeadless) {
-        println "=== ${windowTitle} ===\n${windowBody}\n=================="
-        return
-    }
-    javafx.application.Platform.runLater {
-        try {
-            def stage = new javafx.stage.Stage()
-            stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle(windowTitle)
-            stage.setAlwaysOnTop(true)
-
-            def textArea = new javafx.scene.control.TextArea(windowBody)
-            textArea.setEditable(false)
-            textArea.setWrapText(false)
-            textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
-
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
-            alwaysTop.setSelected(true)
-            alwaysTop.selectedProperty().addListener(
-                { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
-            )
-
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
-            copyBtn.setOnAction({
-                def cb = javafx.scene.input.Clipboard.getSystemClipboard()
-                def content = new javafx.scene.input.ClipboardContent()
-                content.putString(windowBody)
-                cb.setContent(content)
-            })
-
-            def closeBtn = new javafx.scene.control.Button("Kapat")
-            closeBtn.setDefaultButton(true)
-            closeBtn.setOnAction({ stage.close() })
-
-            def spacer = new javafx.scene.layout.Region()
-            javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-
-            def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, copyBtn, closeBtn)
-            buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
-            buttons.setPadding(new javafx.geometry.Insets(8))
-
-            def root = new javafx.scene.layout.BorderPane()
-            root.setCenter(textArea)
-            root.setBottom(buttons)
-
-            stage.setScene(new javafx.scene.Scene(root, 760, 580))
-            stage.show()
-        } catch (Throwable t) {
-            // FX başarısızsa modal'a geri dön — kayıp olmasın
-            qupath.lib.gui.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
-        }
-    }
-}
 
 // ──────────────────────────────────────────────────────────────
 // 1) Ön kontroller
@@ -237,33 +108,7 @@ if (!hasHematoxylin) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 2) Atölye parametreleri (WorkshopPrefs'ten veya varsayılan)
-// ──────────────────────────────────────────────────────────────
-// — Piksel bazlı (birincil) —
-def pixDab1       = atolyeD('atolye.pixDab1',            0.10)
-def pixDab2       = atolyeD('atolye.pixDab2',            0.30)
-def pixDab3       = atolyeD('atolye.pixDab3',            0.60)
-def pixHthreshold = atolyeD('atolye.pixHmask',           0.05)
-double pixScale   = atolyeD('atolye.pixScale',            1.0)
-
-// — Hücre bazlı (ikincil) —
-def cellposeModel      = atolyeS('atolye.cellposeModel',        'cyto3')
-def cellposeDiameter   = atolyeI('atolye.cellposeDiameter',     25)
-def pixelSize          = atolyeD('atolye.pixelSize',            0.5)
-def cellExpansion      = atolyeD('atolye.cellExpansionNuclear', 5.0)
-def backgroundRadius   = atolyeD('atolye.backgroundRadius',     8.0)
-def sigma              = atolyeD('atolye.sigma',                1.5)
-def detectionThreshold = atolyeD('atolye.detectionThreshold',   0.1)
-def minArea            = atolyeD('atolye.minArea',              10.0)
-def membrane1          = atolyeD('atolye.membrane1',            0.15)
-def membrane2          = atolyeD('atolye.membrane2',            0.40)
-def membrane3          = atolyeD('atolye.membrane3',            0.70)
-
-// — Genel —
-def warnCount = atolyeI('atolye.warnGenericCount', 200)
-
-// ──────────────────────────────────────────────────────────────
-// Karşılama — Cellpose algıla (karşılama penceresi için)
+// Cellpose algıla
 // ──────────────────────────────────────────────────────────────
 def cellposeHere = false
 try {
@@ -271,384 +116,481 @@ try {
     cellposeHere = true
 } catch (Throwable ignored) { /* not installed */ }
 
-def detectorLine = cellposeHere
-    ? "Detektör (ikincil karşılaştırma): Cellpose (cyto3 — DAB + H OD).\n" +
-      "  Görüntü H-DAB renk dekonvolüsyonundan geçirilip\n" +
-      "  DAB (membran) ve Hematoksilen (çekirdek) kanalları\n" +
-      "  Cellpose'a verilir. Çap (diameter) 25 px (~12.5 µm).\n" +
-      "  ℹ Cellpose çalıştırma anında başarısız olursa\n" +
-      "    WatershedCellMembraneDetection yedeğine otomatik düşülür."
-    : "Detektör (ikincil karşılaştırma): WatershedCellMembraneDetection (yerleşik).\n" +
-      "  ℹ Daha iyi hücre bazlı sonuç için Cellpose eklentisini kurun:\n" +
-      "    https://atolye.patoloji.dev/kaynaklar.html#ileri-kurulumlar"
-
-def devam = waitForConfirm(
-    "Modül 4 - HER2 / Membran İHK skorlaması",
-    "BİRİNCİL METRİK — Piksel bazlı H-score (Cellpose gerekmez):\n" +
-    "  Seçili anotasyon içindeki her piksel DAB OD'ye göre\n" +
-    "  Negatif / 1+ / 2+ / 3+ olarak sınıflanır → alan-ağırlıklı H-score.\n" +
-    "  Bu metrik her zaman çalışır; hücre tespitinden bağımsızdır.\n\n" +
-    "  ➤ LÜTFEN bir TÜMÖR (epitel) bölgesi seçin/çizin.\n" +
-    "    Stroma içeren büyük ROI seçmek piksel H-score'u seyreltir.\n\n" +
-    "  Piksel eşikleri (DAB OD): " +
-    "${pixDab1}${pixDab1 != 0.10 ? ' (değiştirildi)' : ''} / " +
-    "${pixDab2}${pixDab2 != 0.30 ? ' (değiştirildi)' : ''} / " +
-    "${pixDab3}${pixDab3 != 0.60 ? ' (değiştirildi)' : ''}\n" +
-    "  H maskesi (OD): ${pixHthreshold}${pixHthreshold != 0.05 ? ' (değiştirildi)' : ''}\n\n" +
-    "İKİNCİL METRİK — Hücre bazlı ring H-score (opsiyonel karşılaştırma):\n" +
-    "  Cellpose / Watershed ile hücreler tespit edilir, membran DAB OD mean\n" +
-    "  ile 0/1+/2+/3+ olarak sınıflanır. Cellpose yoksa veya hata oluşursa\n" +
-    "  bu adım atlanır — birincil piksel skoru zaten hesaplanmıştır.\n\n" +
-    "${detectorLine}\n\n" +
-    "  Hücre bazlı eşikler (Membrane: DAB OD mean):\n" +
-    "  • 1+ (zayıf):  ${membrane1}${membrane1 != 0.15 ? ' (değiştirildi)' : ''} OD\n" +
-    "  • 2+ (orta):   ${membrane2}${membrane2 != 0.40 ? ' (değiştirildi)' : ''} OD\n" +
-    "  • 3+ (güçlü):  ${membrane3}${membrane3 != 0.70 ? ' (değiştirildi)' : ''} OD\n\n" +
-    "Not: Bu betik membran boyamasının GÜCÜNÜ ölçer — membranın kaç hücrede\n" +
-    "TAM çevrelendiğini (bütünlük / completeness) ÖLÇMEZ.\n\n" +
-    "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız Çalıştır düğmesine basın."
-)
-if (!devam) {
-    println "Kullanıcı iptal etti."
-    return
-}
-
 // ──────────────────────────────────────────────────────────────
-// 3) Anotasyon kontrolü
+// 2) Tespit + sonuç toplama tek yerde — pencere kapanmadan tekrar
+//    (eşikleri değiştirip) çağrılabilir.
+//    Parametreler:
+//      m1/m2/m3   — hücre membran DAB OD eşikleri (1+/2+/3+)
+//      pd1/pd2/pd3 — piksel DAB OD eşikleri (1+/2+/3+)
+//      ph          — piksel Hematoxylin maskesi OD eşiği
+//    Dönüş: [ok:true, text:<sonuç dizisi>] | [ok:false, error:<mesaj>]
 // ──────────────────────────────────────────────────────────────
-def selected = QP.getSelectedObject()
-if (selected == null || !(selected instanceof PathAnnotationObject)) {
-    Dialogs.showErrorMessage(
-        "Anotasyon seçili değil",
-        "Tümör içeren ~1×1 mm bir dikdörtgen anotasyon çizip seçili tutun."
+def runDetection = { double m1, double m2, double m3, double pd1, double pd2, double pd3, double ph ->
+
+    def selected = QP.getSelectedObject()
+    if (selected == null || !(selected instanceof PathAnnotationObject))
+        return [ok:false, error:'Önce bir TÜMÖR (epitel) bölgesini anotasyonla çevreleyip SEÇİN (kenarı sarı görünür).']
+
+    def targetAnnotation = selected
+
+    // RE-RUN SAFETY: mevcut child detections temizle (birikim önlenir)
+    def existingDetections = targetAnnotation.getChildObjects().findAll { it.isDetection() }
+    if (!existingDetections.isEmpty()) {
+        QP.removeObjects(existingDetections, false)
+    }
+
+    // ── 4a) Piksel bazlı H-score — BİRİNCİL, her zaman çalışır ──
+    //        (Ram et al. PLoS One 2021 / Sara McArdle)
+    //        Hücre tespitinden tamamen bağımsız. Annotation içindeki her pikseli
+    //        DAB OD'ye göre 0/1+/2+/3+ olarak sınıflar; bir Hematoxylin maskesi ile
+    //        boyasız boş alanlar dışlanır. Sonuç: alan-ağırlıklı H-score (0–300).
+    println "─────────────────────────────────────"
+    println "Modül 4 - HER2 / Membran İHK"
+    println "─────────────────────────────────────"
+    println "Piksel bazlı H-score hesaplanıyor (birincil)..."
+
+    def pixT0 = System.currentTimeMillis()
+    def pixDABthresholds = [pd1, pd2, pd3] as double[]   // 1+, 2+, 3+ DAB OD
+    double pixHthreshold = ph
+
+    def imgData  = QP.getCurrentImageData()
+    def cal      = imgData.getServer().getPixelCalibration()
+    def pixStains = imgData.getColorDeconvolutionStains()
+    double pixScale = atolyeD('atolye.pixScale', 1.0)
+
+    def op = ImageOps.buildImageDataOp().appendOps(
+        ImageOps.Channels.deconvolve(pixStains),
+        ImageOps.Channels.extract(0, 1),   // H=0, DAB=1
+        new HScoreThresholdOp()
+            .lowThreshold((double) pixDABthresholds[0])
+            .mediumThreshold((double) pixDABthresholds[1])
+            .highThreshold((double) pixDABthresholds[2])
+            .minStainThreshold(pixHthreshold)
     )
-    return
-}
-def targetAnnotation = selected
 
-// ──────────────────────────────────────────────────────────────
-// 4a) Piksel bazlı H-score — BİRİNCİL, her zaman çalışır
-//     (Ram et al. PLoS One 2021 / Sara McArdle)
-//     Hücre tespitinden tamamen bağımsız. Annotation içindeki her pikseli
-//     DAB OD'ye göre 0/1+/2+/3+ olarak sınıflar; bir Hematoxylin maskesi ile
-//     boyasız boş alanlar dışlanır. Sonuç: alan-ağırlıklı H-score (0–300).
-// ──────────────────────────────────────────────────────────────
-println "─────────────────────────────────────"
-println "Modül 4 - HER2 / Membran İHK"
-println "─────────────────────────────────────"
-println "Piksel bazlı H-score hesaplanıyor (birincil)..."
+    def pixClassMap = [
+        255: PathClass.getInstance("Ignore*"),
+          0: PathClass.getInstance("Pixel-Negative"),
+          1: PathClass.getInstance("Pixel-1+"),
+          2: PathClass.getInstance("Pixel-2+"),
+          3: PathClass.getInstance("Pixel-3+")
+    ]
 
-def pixT0 = System.currentTimeMillis()
-def pixDABthresholds = [pixDab1, pixDab2, pixDab3] as double[]   // 1+, 2+, 3+ DAB OD
+    def pixClassifier = PixelClassifiers.createClassifier(op, cal.createScaledInstance(pixScale, pixScale), pixClassMap)
+    def pixServer     = PixelClassifierTools.createPixelClassificationServer(imgData, pixClassifier)
+    def pixManager    = PixelClassifierTools.createMeasurementManager(pixServer)
+    def pixPrefix     = "H-score-px"
 
-def imgData  = QP.getCurrentImageData()
-def cal      = imgData.getServer().getPixelCalibration()
-def pixStains = imgData.getColorDeconvolutionStains()
+    // Pre-fetch tiles (parallel) to speed up large annotations
+    def roi    = targetAnnotation.getROI()
+    def region = ImageRegion.createInstance(roi)
+    def tiles  = pixServer.getTileRequestManager().getAllTileRequests()
+        .findAll { t -> t.getRegionRequest().intersects(region) }
+    tiles.parallelStream().forEach { t -> pixServer.readRegion(t.getRegionRequest()) }
 
-def op = ImageOps.buildImageDataOp().appendOps(
-    ImageOps.Channels.deconvolve(pixStains),
-    ImageOps.Channels.extract(0, 1),   // H=0, DAB=1
-    new HScoreThresholdOp()
-        .lowThreshold((double) pixDABthresholds[0])
-        .mediumThreshold((double) pixDABthresholds[1])
-        .highThreshold((double) pixDABthresholds[2])
-        .minStainThreshold(pixHthreshold)
-)
+    PixelClassifierTools.addMeasurements([targetAnnotation], pixManager, pixPrefix)
 
-def pixClassMap = [
-    255: PathClass.getInstance("Ignore*"),
-      0: PathClass.getInstance("Pixel-Negative"),
-      1: PathClass.getInstance("Pixel-1+"),
-      2: PathClass.getInstance("Pixel-2+"),
-      3: PathClass.getInstance("Pixel-3+")
-]
+    def pxArea1   = (targetAnnotation.measurements["${pixPrefix}: Pixel-1+ area µm^2"]       ?: 0.0) as double
+    def pxArea2   = (targetAnnotation.measurements["${pixPrefix}: Pixel-2+ area µm^2"]       ?: 0.0) as double
+    def pxArea3   = (targetAnnotation.measurements["${pixPrefix}: Pixel-3+ area µm^2"]       ?: 0.0) as double
+    def pxAreaNeg = (targetAnnotation.measurements["${pixPrefix}: Pixel-Negative area µm^2"] ?: 0.0) as double
+    def pxAreaDenom = pxArea1 + pxArea2 + pxArea3 + pxAreaNeg
+    def pxPct1    = pxAreaDenom > 0 ? 100.0 * pxArea1   / pxAreaDenom : 0.0
+    def pxPct2    = pxAreaDenom > 0 ? 100.0 * pxArea2   / pxAreaDenom : 0.0
+    def pxPct3    = pxAreaDenom > 0 ? 100.0 * pxArea3   / pxAreaDenom : 0.0
+    def pxPctNeg  = pxAreaDenom > 0 ? 100.0 * pxAreaNeg / pxAreaDenom : 0.0
+    def pixelHScore = pxPct1 * 1 + pxPct2 * 2 + pxPct3 * 3
+    targetAnnotation.measurements['Pixelwise H-score'] = pixelHScore
 
-def pixClassifier = PixelClassifiers.createClassifier(op, cal.createScaledInstance(pixScale, pixScale), pixClassMap)
-def pixServer     = PixelClassifierTools.createPixelClassificationServer(imgData, pixClassifier)
-def pixManager    = PixelClassifierTools.createMeasurementManager(pixServer)
-def pixPrefix     = "H-score-px"
+    def pixElapsed = (System.currentTimeMillis() - pixT0) / 1000.0
 
-// Pre-fetch tiles (parallel) to speed up large annotations
-def roi    = targetAnnotation.getROI()
-def region = ImageRegion.createInstance(roi)
-def tiles  = pixServer.getTileRequestManager().getAllTileRequests()
-    .findAll { t -> t.getRegionRequest().intersects(region) }
-tiles.parallelStream().forEach { t -> pixServer.readRegion(t.getRegionRequest()) }
+    // ROI alanı ve büyük-ROI uyarısı
+    // Piksel boyutu yoksa alan NaN olur — birincil piksel H-score'u kalibrasyon
+    // gerektirmez, bu yüzden betiği durdurmayız; yalnızca alanı "kalibre değil"
+    // gösterir ve büyük-ROI uyarısını atlarız.
+    boolean pixCalibrated = cal.getPixelWidthMicrons() > 0
+    double areaMm2 = pixCalibrated
+        ? targetAnnotation.getROI().getScaledArea(cal.getPixelWidthMicrons(), cal.getPixelHeightMicrons()) / 1e6
+        : Double.NaN
+    double LARGE_ROI_MM2 = 25.0  // sezgisel; kalibre değil
+    def roiWarnStr = (pixCalibrated && areaMm2 > LARGE_ROI_MM2)
+        ? "\n⚠ Büyük ROI uyarısı: seçili alan ${String.format(java.util.Locale.US, '%.1f', areaMm2)} mm²" +
+          " (eşik ${String.format(java.util.Locale.US, '%.0f', LARGE_ROI_MM2)} mm²).\n" +
+          "  Stroma içeren büyük alanlar piksel H-score'u seyreltebilir.\n" +
+          "  Daha güvenilir sonuç için yalnızca tümör (epitel) bölgesini seçin.\n"
+        : ""
 
-PixelClassifierTools.addMeasurements([targetAnnotation], pixManager, pixPrefix)
+    println "  Piksel H-score: ${String.format(java.util.Locale.US, '%.0f', pixelHScore)} / 300  (süre: ${String.format(java.util.Locale.US, '%.1f', pixElapsed)} sn)"
 
-def pxArea1   = (targetAnnotation.measurements["${pixPrefix}: Pixel-1+ area µm^2"]       ?: 0.0) as double
-def pxArea2   = (targetAnnotation.measurements["${pixPrefix}: Pixel-2+ area µm^2"]       ?: 0.0) as double
-def pxArea3   = (targetAnnotation.measurements["${pixPrefix}: Pixel-3+ area µm^2"]       ?: 0.0) as double
-def pxAreaNeg = (targetAnnotation.measurements["${pixPrefix}: Pixel-Negative area µm^2"] ?: 0.0) as double
-def pxAreaDenom = pxArea1 + pxArea2 + pxArea3 + pxAreaNeg
-def pxPct1    = pxAreaDenom > 0 ? 100.0 * pxArea1   / pxAreaDenom : 0.0
-def pxPct2    = pxAreaDenom > 0 ? 100.0 * pxArea2   / pxAreaDenom : 0.0
-def pxPct3    = pxAreaDenom > 0 ? 100.0 * pxArea3   / pxAreaDenom : 0.0
-def pxPctNeg  = pxAreaDenom > 0 ? 100.0 * pxAreaNeg / pxAreaDenom : 0.0
-def pixelHScore = pxPct1 * 1 + pxPct2 * 2 + pxPct3 * 3
-targetAnnotation.measurements['Pixelwise H-score'] = pixelHScore
+    // ── 4b) Hücre bazlı H-score — İKİNCİL, non-blocking ──
+    //        Membran-aware hücre tespiti: Cellpose öncelikli, Watershed yedek.
+    //        Herhangi bir hata → cellBasedOk = false, atlanır. Birincil piksel
+    //        sonucu etkilenmez.
 
-def pixElapsed = (System.currentTimeMillis() - pixT0) / 1000.0
+    // Tüm hücre bazlı değişkenleri try bloğunun DIŞINDA tanımla
+    // (result window her iki durumda da bunlara erişir)
+    boolean cellBasedOk = true
+    String detector = "—"
+    int totalCells = 0, n0 = 0, n1 = 0, n2 = 0, n3 = 0
+    double hScore = 0.0
+    double cellElapsed = 0.0
 
-// ROI alanı ve büyük-ROI uyarısı
-// Piksel boyutu yoksa alan NaN olur — birincil piksel H-score'u kalibrasyon
-// gerektirmez, bu yüzden betiği durdurmayız; yalnızca alanı "kalibre değil"
-// gösterir ve büyük-ROI uyarısını atlarız.
-boolean pixCalibrated = cal.getPixelWidthMicrons() > 0
-double areaMm2 = pixCalibrated
-    ? targetAnnotation.getROI().getScaledArea(cal.getPixelWidthMicrons(), cal.getPixelHeightMicrons()) / 1e6
-    : Double.NaN
-double LARGE_ROI_MM2 = 25.0  // sezgisel; kalibre değil
-def roiWarnStr = (pixCalibrated && areaMm2 > LARGE_ROI_MM2)
-    ? "\n⚠ Büyük ROI uyarısı: seçili alan ${String.format(java.util.Locale.US, '%.1f', areaMm2)} mm²" +
-      " (eşik ${String.format(java.util.Locale.US, '%.0f', LARGE_ROI_MM2)} mm²).\n" +
-      "  Stroma içeren büyük alanlar piksel H-score'u seyreltebilir.\n" +
-      "  Daha güvenilir sonuç için yalnızca tümör (epitel) bölgesini seçin.\n"
-    : ""
+    // Atölye parametreleri (hücre bazlı)
+    def cellposeModel      = atolyeS('atolye.cellposeModel',        'cyto3')
+    def cellposeDiameter   = atolyeI('atolye.cellposeDiameter',     25)
+    def pixelSize          = atolyeD('atolye.pixelSize',            0.5)
+    def cellExpansion      = atolyeD('atolye.cellExpansionNuclear', 5.0)
+    def backgroundRadius   = atolyeD('atolye.backgroundRadius',     8.0)
+    def sigma              = atolyeD('atolye.sigma',                1.5)
+    def detectionThreshold = atolyeD('atolye.detectionThreshold',   0.1)
+    def minArea            = atolyeD('atolye.minArea',              10.0)
+    def warnCount          = atolyeI('atolye.warnGenericCount',     200)
 
-println "  Piksel H-score: ${String.format(java.util.Locale.US, '%.0f', pixelHScore)} / 300  (süre: ${String.format(java.util.Locale.US, '%.1f', pixElapsed)} sn)"
+    try {
+        def cellposeAvailable = cellposeHere
+        if (!cellposeAvailable) {
+            println "Cellpose eklentisi bulunamadı → WatershedCellMembraneDetection'a düşülüyor."
+        }
 
-// ──────────────────────────────────────────────────────────────
-// 4b) Hücre bazlı H-score — İKİNCİL, non-blocking
-//     Membran-aware hücre tespiti: Cellpose öncelikli, Watershed yedek.
-//     Herhangi bir hata → cellBasedOk = false, atlanır. Birincil piksel
-//     sonucu etkilenmez.
-// ──────────────────────────────────────────────────────────────
+        detector = cellposeAvailable ? "Cellpose (cyto3, DAB + H OD)" : "WatershedCellMembraneDetection (DAB-temelli)"
+        println "Hücre bazlı tespit başlatılıyor (ikincil)..."
+        println "  • Detektör: ${detector}"
+        println "  • Grup eşikleri (Membrane: DAB OD mean): ${m1} / ${m2} / ${m3}"
+        println "  • Hücre genişletme (cell expansion): ${cellExpansion} µm"
 
-// Tüm hücre bazlı değişkenleri try bloğunun DIŞINDA tanımla
-// (result window her iki durumda da bunlara erişir)
-boolean cellBasedOk = true
-String detector = "—"
-int totalCells = 0, n0 = 0, n1 = 0, n2 = 0, n3 = 0
-double hScore = 0.0
-double cellElapsed = 0.0
+        def t0 = System.currentTimeMillis()
 
-try {
-    def cellposeAvailable = cellposeHere
-    if (!cellposeAvailable) {
-        println "Cellpose eklentisi bulunamadı → WatershedCellMembraneDetection'a düşülüyor."
-    }
+        QP.selectObjects(targetAnnotation)
 
-    detector = cellposeAvailable ? "Cellpose (cyto3, DAB + H OD)" : "WatershedCellMembraneDetection (DAB-temelli)"
-    println "Hücre bazlı tespit başlatılıyor (ikincil)..."
-    println "  • Detektör: ${detector}"
-    println "  • Grup eşikleri (Membrane: DAB OD mean): ${membrane1} / ${membrane2} / ${membrane3}"
-    println "  • Hücre genişletme (cell expansion): ${cellExpansion} µm"
+        // Yardımcı kapatma: Watershed-tabanlı yedek detektör.
+        def runWatershedFallback = {
+            QP.runPlugin(
+                'qupath.imagej.detect.cells.WatershedCellMembraneDetection',
+                '{' +
+                    '"detectionImageBrightfield":"Hematoxylin OD",' +
+                    "\"requestedPixelSizeMicrons\":${pixelSize}," +
+                    "\"backgroundRadiusMicrons\":${backgroundRadius}," +
+                    '"medianRadiusMicrons":0.0,' +
+                    "\"sigmaMicrons\":${sigma}," +
+                    "\"minAreaMicrons\":${minArea}," +
+                    '"maxAreaMicrons":1000.0,' +
+                    "\"threshold\":${detectionThreshold}," +
+                    '"maxBackground":2.0,' +
+                    '"watershedPostProcess":true,' +
+                    '"excludeDAB":true,' +
+                    "\"cellExpansionMicrons\":${cellExpansion}," +
+                    '"limitExpansionByNucleusSize":false,' +
+                    '"includeNuclei":true,' +
+                    '"smoothBoundaries":false,' +
+                    '"makeMeasurements":true' +
+                '}'
+            )
+        }
 
-    def t0 = System.currentTimeMillis()
+        if (cellposeAvailable) {
+            // İç betiği ayrı bir GroovyShell'de çalıştır: `import qupath.ext.biop.cellpose.Cellpose2D`
+            // ifadesi yalnızca eklenti classpath'te ise parse olabildiği için, dış betik Cellpose
+            // yüklü olmayan kurulumlarda da çalışsın diye iç bloğa kapatıyoruz.
+            //
+            // KANAL HAZIRLIĞI (HER2 için kritik):
+            //   • Doğrudan RGB → Cellpose modeli "bright nuclei on dark background"
+            //     beklediği için brightfield görüntüde zayıf çalışır.
+            //   • Çözüm: önce **renk dekonvolüsyonu** uygulayıp DAB ve Hematoxylin
+            //     OD kanallarını çıkarıyoruz (boya bölgelerinde yüksek değer alan,
+            //     arka planda sıfıra yakın olan kanallar — Cellpose'un sevdiği biçim).
+            //   • ImageOps.Channels.extract(1, 0) → sırasıyla DAB (cyto/membran sinyali)
+            //     ve Hematoxylin (çekirdek sinyali) verir; Cellpose chan=DAB, chan2=H
+            //     olarak işler.
+            //
+            // PARAMETRELER:
+            //   • normalizePercentilesGlobal(0.1, 99.8, 10) — Cellpose normalize edilmiş
+            //     input bekler; bu adım atlanırsa hücreler büyük olasılıkla bulunmaz.
+            //   • diameter(25) — 0.5 µm/px'de yaklaşık 12.5 µm çaplı epitel hücreleri.
+            //     Çok küçük tümör hücreleri için 18-20, büyük apokrin hücreler için 30-35
+            //     deneyin. diameter(0) otomatik tahmin yapar (daha yavaş, daha tutarsız).
+            //   • cellExpansion(5.0) — çekirdek + sitoplazma sınırından dışarıya 5 µm
+            //     halka oluşturur; "Membrane: DAB OD mean" ölçümü bu halkadan alınır.
+            //
+            // ÇALIŞMA ZAMANI HATA YAKALAMA: Cellpose JAR'ı yüklü olabilir ama Python
+            // ortamı ayarlanmamış, model indirilmemiş veya bir tile başarısız olabilir.
+            // Bu durumda Watershed yedeğine geçiyoruz, betik kesintisiz tamamlanır.
+            def innerScript = """
+                import qupath.ext.biop.cellpose.Cellpose2D
+                import qupath.lib.scripting.QP
+                import qupath.opencv.ops.ImageOps
 
-    QP.selectObjects(targetAnnotation)
+                def stainVectors = QP.getCurrentImageData().getColorDeconvolutionStains()
 
-    // Yardımcı kapatma: Watershed-tabanlı yedek detektör.
-    def runWatershedFallback = {
-        QP.runPlugin(
-            'qupath.imagej.detect.cells.WatershedCellMembraneDetection',
-            '{' +
-                '"detectionImageBrightfield":"Hematoxylin OD",' +
-                "\"requestedPixelSizeMicrons\":${pixelSize}," +
-                "\"backgroundRadiusMicrons\":${backgroundRadius}," +
-                '"medianRadiusMicrons":0.0,' +
-                "\"sigmaMicrons\":${sigma}," +
-                "\"minAreaMicrons\":${minArea}," +
-                '"maxAreaMicrons":1000.0,' +
-                "\"threshold\":${detectionThreshold}," +
-                '"maxBackground":2.0,' +
-                '"watershedPostProcess":true,' +
-                '"excludeDAB":true,' +
-                "\"cellExpansionMicrons\":${cellExpansion}," +
-                '"limitExpansionByNucleusSize":false,' +
-                '"includeNuclei":true,' +
-                '"smoothBoundaries":false,' +
-                '"makeMeasurements":true' +
-            '}'
-        )
-    }
+                def cellpose = Cellpose2D.builder("${cellposeModel}")
+                    .pixelSize(${pixelSize})
+                    .preprocess(
+                        ImageOps.Channels.deconvolve(stainVectors),
+                        ImageOps.Channels.extract(1, 0)   // 1=DAB (cyto), 0=Hematoxylin (nuclei)
+                    )
+                    .cellposeChannels(1, 2)               // Cellpose CLI: --chan 1 (DAB) --chan2 2 (H)
+                                                          // .preprocess() çıktısı 2 kanallı TIFF olarak yazılır;
+                                                          // bu çağrı olmadan CLI grayscale'e düşer -> 0 hücre.
+                    .normalizePercentilesGlobal(0.1, 99.8, 10)
+                    .diameter(${cellposeDiameter})
+                    .cellExpansion(${cellExpansion})
+                    .measureShape()
+                    .measureIntensity()
+                    .build()
 
-    if (cellposeAvailable) {
-        // İç betiği ayrı bir GroovyShell'de çalıştır: `import qupath.ext.biop.cellpose.Cellpose2D`
-        // ifadesi yalnızca eklenti classpath'te ise parse olabildiği için, dış betik Cellpose
-        // yüklü olmayan kurulumlarda da çalışsın diye iç bloğa kapatıyoruz.
-        //
-        // KANAL HAZIRLIĞI (HER2 için kritik):
-        //   • Doğrudan RGB → Cellpose modeli "bright nuclei on dark background"
-        //     beklediği için brightfield görüntüde zayıf çalışır.
-        //   • Çözüm: önce **renk dekonvolüsyonu** uygulayıp DAB ve Hematoxylin
-        //     OD kanallarını çıkarıyoruz (boya bölgelerinde yüksek değer alan,
-        //     arka planda sıfıra yakın olan kanallar — Cellpose'un sevdiği biçim).
-        //   • ImageOps.Channels.extract(1, 0) → sırasıyla DAB (cyto/membran sinyali)
-        //     ve Hematoxylin (çekirdek sinyali) verir; Cellpose chan=DAB, chan2=H
-        //     olarak işler.
-        //
-        // PARAMETRELER:
-        //   • normalizePercentilesGlobal(0.1, 99.8, 10) — Cellpose normalize edilmiş
-        //     input bekler; bu adım atlanırsa hücreler büyük olasılıkla bulunmaz.
-        //   • diameter(25) — 0.5 µm/px'de yaklaşık 12.5 µm çaplı epitel hücreleri.
-        //     Çok küçük tümör hücreleri için 18-20, büyük apokrin hücreler için 30-35
-        //     deneyin. diameter(0) otomatik tahmin yapar (daha yavaş, daha tutarsız).
-        //   • cellExpansion(5.0) — çekirdek + sitoplazma sınırından dışarıya 5 µm
-        //     halka oluşturur; "Membrane: DAB OD mean" ölçümü bu halkadan alınır.
-        //
-        // ÇALIŞMA ZAMANI HATA YAKALAMA: Cellpose JAR'ı yüklü olabilir ama Python
-        // ortamı ayarlanmamış, model indirilmemiş veya bir tile başarısız olabilir.
-        // Bu durumda Watershed yedeğine geçiyoruz, betik kesintisiz tamamlanır.
-        def innerScript = """
-            import qupath.ext.biop.cellpose.Cellpose2D
-            import qupath.lib.scripting.QP
-            import qupath.opencv.ops.ImageOps
-
-            def stainVectors = QP.getCurrentImageData().getColorDeconvolutionStains()
-
-            def cellpose = Cellpose2D.builder("${cellposeModel}")
-                .pixelSize(${pixelSize})
-                .preprocess(
-                    ImageOps.Channels.deconvolve(stainVectors),
-                    ImageOps.Channels.extract(1, 0)   // 1=DAB (cyto), 0=Hematoxylin (nuclei)
-                )
-                .cellposeChannels(1, 2)               // Cellpose CLI: --chan 1 (DAB) --chan2 2 (H)
-                                                      // .preprocess() çıktısı 2 kanallı TIFF olarak yazılır;
-                                                      // bu çağrı olmadan CLI grayscale'e düşer -> 0 hücre.
-                .normalizePercentilesGlobal(0.1, 99.8, 10)
-                .diameter(${cellposeDiameter})
-                .cellExpansion(${cellExpansion})
-                .measureShape()
-                .measureIntensity()
-                .build()
-
-            cellpose.detectObjects(QP.getCurrentImageData(), QP.getSelectedObjects())
-        """
-        try {
-            new groovy.lang.GroovyShell(this.class.classLoader).evaluate(innerScript)
-        } catch (Throwable cellposeError) {
-            def reason = cellposeError.getMessage() ?: cellposeError.getClass().getSimpleName()
-            println "⚠ Cellpose çalıştırılamadı: ${reason}"
-            println "→ WatershedCellMembraneDetection yedeğine düşülüyor."
-            cellposeAvailable = false
-            detector = "WatershedCellMembraneDetection (Cellpose başarısız oldu)"
-            // Cellpose kısmi nesneler bırakmış olabilir — temizle.
-            def partial = targetAnnotation.getChildObjects().findAll { it.isDetection() }
-            if (!partial.isEmpty()) {
-                QP.removeObjects(partial, true)
+                cellpose.detectObjects(QP.getCurrentImageData(), QP.getSelectedObjects())
+            """
+            try {
+                new groovy.lang.GroovyShell(this.class.classLoader).evaluate(innerScript)
+            } catch (Throwable cellposeError) {
+                def reason = cellposeError.getMessage() ?: cellposeError.getClass().getSimpleName()
+                println "⚠ Cellpose çalıştırılamadı: ${reason}"
+                println "→ WatershedCellMembraneDetection yedeğine düşülüyor."
+                cellposeAvailable = false
+                detector = "WatershedCellMembraneDetection (Cellpose başarısız oldu)"
+                // Cellpose kısmi nesneler bırakmış olabilir — temizle.
+                def partial = targetAnnotation.getChildObjects().findAll { it.isDetection() }
+                if (!partial.isEmpty()) {
+                    QP.removeObjects(partial, true)
+                }
+                QP.selectObjects(targetAnnotation)
+                runWatershedFallback()
             }
-            QP.selectObjects(targetAnnotation)
+        } else {
             runWatershedFallback()
         }
+
+        // Cell-by-cell intensity binning by membrane DAB OD
+        // Creates classes: "Negative", "1+", "2+", "3+"
+        QP.setCellIntensityClassifications("Membrane: DAB OD mean", m1, m2, m3)
+
+        cellElapsed = (System.currentTimeMillis() - t0) / 1000.0
+
+        // Hücre sayımı
+        def cells = targetAnnotation.getChildObjects().findAll { it.isDetection() }
+        totalCells = cells.size()
+
+        cells.each { c ->
+            def cls = c.getPathClass()?.getName() ?: ""
+            if (cls.contains("3+"))      n3++
+            else if (cls.contains("2+")) n2++
+            else if (cls.contains("1+")) n1++
+            else                          n0++
+        }
+
+        def pct = { count -> totalCells > 0 ? 100.0 * count / totalCells : 0.0 }
+        hScore = pct(n1) + 2.0 * pct(n2) + 3.0 * pct(n3)
+
+        println "  Hücre bazlı H-score: ${String.format(java.util.Locale.US, '%.0f', hScore)} / 300  (${totalCells} hücre, ${String.format(java.util.Locale.US, '%.1f', cellElapsed)} sn)"
+
+    } catch (Throwable cellErr) {
+        cellBasedOk = false
+        def reason = cellErr.getMessage() ?: cellErr.getClass().getSimpleName()
+        println "⚠ Hücre bazlı tespit atlandı: ${reason}"
+        println "  Birincil piksel H-score sonucu etkilenmedi."
+    }
+
+    // ── 5) Sonuç dizesi ──
+    // Per-cell percentages (safe: totalCells=0 when cellBasedOk=false → all 0.0)
+    def pct0Cell = totalCells > 0 ? 100.0 * n0 / totalCells : 0.0
+    def pct1Cell = totalCells > 0 ? 100.0 * n1 / totalCells : 0.0
+    def pct2Cell = totalCells > 0 ? 100.0 * n2 / totalCells : 0.0
+    def pct3Cell = totalCells > 0 ? 100.0 * n3 / totalCells : 0.0
+
+    // Piksel bazlı blok (her zaman)
+    def pixBlock =
+        "HER2 / Membran İHK skorlaması bitti.\n\n" +
+        "═══════════════════════════════════════════════════════════\n" +
+        "  PİKSEL-BAZLI H-SCORE  (birincil · segmentasyon-bağımsız)\n" +
+        "═══════════════════════════════════════════════════════════\n" +
+        "  H-score          : ${String.format(java.util.Locale.US, '%.0f', pixelHScore)} / 300\n" +
+        "  Negatif          : %${String.format(java.util.Locale.US, '%.1f', pxPctNeg)}\n" +
+        "  1+ (zayıf)       : %${String.format(java.util.Locale.US, '%.1f', pxPct1)}\n" +
+        "  2+ (orta)        : %${String.format(java.util.Locale.US, '%.1f', pxPct2)}\n" +
+        "  3+ (güçlü)       : %${String.format(java.util.Locale.US, '%.1f', pxPct3)}\n" +
+        "  Toplam pozitif   : %${String.format(java.util.Locale.US, '%.1f', (pxPct1 + pxPct2 + pxPct3))}\n\n" +
+        "  Eşikler: DAB [${String.format(java.util.Locale.US, '%.2f', pixDABthresholds[0])} / " +
+                        "${String.format(java.util.Locale.US, '%.2f', pixDABthresholds[1])} / " +
+                        "${String.format(java.util.Locale.US, '%.2f', pixDABthresholds[2])}] OD," +
+                  "  H mask ${String.format(java.util.Locale.US, '%.2f', pixHthreshold)} OD\n" +
+        "  Alan (boyalı)    : ${String.format(java.util.Locale.US, '%,.0f', pxAreaDenom)} µm²\n" +
+        "  Bölge            : seçili ROI · " + (pixCalibrated ? "${String.format(java.util.Locale.US, '%.2f', areaMm2)} mm²" : "kalibre değil") +
+                            "  (süre: ${String.format(java.util.Locale.US, '%.1f', pixElapsed)} sn)\n\n"
+
+    // Hücre bazlı blok (koşullu)
+    def cellBlock
+    if (cellBasedOk) {
+        def uyari = totalCells < warnCount
+            ? "\n  Not: ${String.format(java.util.Locale.US, '%,d', totalCells)} hücre < ${String.format(java.util.Locale.US, '%,d', warnCount)}" +
+              " — küçük örneklem; istatistiksel güvenilirlik sınırlı."
+            : ""
+        cellBlock =
+            "═══════════════════════════════════════════════════════════\n" +
+            "  Hücre bazlı  (karşılaştırma · ring) — ${detector}\n" +
+            "═══════════════════════════════════════════════════════════\n" +
+            "  H-score          : ${String.format(java.util.Locale.US, '%.0f', hScore)} / 300\n" +
+            "  Toplam hücre     : ${String.format(java.util.Locale.US, '%,d', totalCells)}\n" +
+            "  0  (negatif)     : ${String.format(java.util.Locale.US, '%,d', n0)}  (%${String.format(java.util.Locale.US, '%.1f', pct0Cell)})\n" +
+            "  1+ (zayıf)       : ${String.format(java.util.Locale.US, '%,d', n1)}  (%${String.format(java.util.Locale.US, '%.1f', pct1Cell)})\n" +
+            "  2+ (orta)        : ${String.format(java.util.Locale.US, '%,d', n2)}  (%${String.format(java.util.Locale.US, '%.1f', pct2Cell)})\n" +
+            "  3+ (güçlü)       : ${String.format(java.util.Locale.US, '%,d', n3)}  (%${String.format(java.util.Locale.US, '%.1f', pct3Cell)})\n" +
+            "  Süre             : ${String.format(java.util.Locale.US, '%.1f', cellElapsed)} sn${uyari}\n" +
+            "  ⓘ İki yöntem farklıysa: ring sitoplazma/eksik membranı yanlış örnekleyebilir.\n\n"
     } else {
-        runWatershedFallback()
+        cellBlock = "Hücre bazlı karşılaştırma atlandı (Cellpose/Watershed yok ya da hata).\n\n"
     }
 
-    // Cell-by-cell intensity binning by membrane DAB OD
-    // Creates classes: "Negative", "1+", "2+", "3+"
-    QP.setCellIntensityClassifications("Membrane: DAB OD mean", membrane1, membrane2, membrane3)
+    // Bütünlük notu (her zaman)
+    def completenessNote =
+        "───────────────────────────────────────────────────────────\n" +
+        "Not: Bu betik membran boyamasının GÜCÜNÜ ölçer; membranın\n" +
+        "kaç hücrede TAM çevrelendiğini (bütünlük) ÖLÇMEZ. (Sode 2023)\n\n"
 
-    cellElapsed = (System.currentTimeMillis() - t0) / 1000.0
+    // Büyük ROI uyarısı (koşullu — boş string ise eklenmez)
+    def roiWarn = roiWarnStr.isEmpty() ? "" : roiWarnStr + "\n"
 
-    // Hücre sayımı
-    def cells = targetAnnotation.getChildObjects().findAll { it.isDetection() }
-    totalCells = cells.size()
+    // Son uyarı satırı
+    def finalDisclaimer = "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
-    cells.each { c ->
-        def cls = c.getPathClass()?.getName() ?: ""
-        if (cls.contains("3+"))      n3++
-        else if (cls.contains("2+")) n2++
-        else if (cls.contains("1+")) n1++
-        else                          n0++
+    def fullText = pixBlock + cellBlock + completenessNote + roiWarn + finalDisclaimer
+
+    println "─────────────────────────────────────"
+    println "Tamamlandı:"
+    println "  Piksel H-score: ${String.format(java.util.Locale.US, '%.0f', pixelHScore)} / 300"
+    println "    Neg:${String.format(java.util.Locale.US, '%.1f', pxPctNeg)}% | 1+:${String.format(java.util.Locale.US, '%.1f', pxPct1)}% | 2+:${String.format(java.util.Locale.US, '%.1f', pxPct2)}% | 3+:${String.format(java.util.Locale.US, '%.1f', pxPct3)}%"
+    if (cellBasedOk) {
+        println "  Hücre (n=${totalCells}) | H-score: ${String.format(java.util.Locale.US, '%.0f', hScore)}"
+        println "  0:${n0} (${String.format(java.util.Locale.US, '%.1f', pct0Cell)}%) | 1+:${n1} (${String.format(java.util.Locale.US, '%.1f', pct1Cell)}%) | 2+:${n2} (${String.format(java.util.Locale.US, '%.1f', pct2Cell)}%) | 3+:${n3} (${String.format(java.util.Locale.US, '%.1f', pct3Cell)}%)"
+    } else {
+        println "  Hücre bazlı: atlandı"
     }
+    println "─────────────────────────────────────"
 
-    def pct = { count -> totalCells > 0 ? 100.0 * count / totalCells : 0.0 }
-    hScore = pct(n1) + 2.0 * pct(n2) + 3.0 * pct(n3)
+    return [ok:true, text:fullText]
+}
 
-    println "  Hücre bazlı H-score: ${String.format(java.util.Locale.US, '%.0f', hScore)} / 300  (${totalCells} hücre, ${String.format(java.util.Locale.US, '%.1f', cellElapsed)} sn)"
-
-} catch (Throwable cellErr) {
-    cellBasedOk = false
-    def reason = cellErr.getMessage() ?: cellErr.getClass().getSimpleName()
-    println "⚠ Hücre bazlı tespit atlandı: ${reason}"
-    println "  Birincil piksel H-score sonucu etkilenmedi."
+// Headless: tek sefer atölye varsayılanlarıyla çalıştır + yazdır.
+if (isHeadless) {
+    def r = runDetection(
+        atolyeD('atolye.membrane1', 0.15),
+        atolyeD('atolye.membrane2', 0.40),
+        atolyeD('atolye.membrane3', 0.70),
+        atolyeD('atolye.pixDab1',   0.10),
+        atolyeD('atolye.pixDab2',   0.30),
+        atolyeD('atolye.pixDab3',   0.60),
+        atolyeD('atolye.pixHmask',  0.05)
+    )
+    println r.ok ? r.text : ("Hata: " + r.error)
+    return
 }
 
 // ──────────────────────────────────────────────────────────────
-// 5) Sonucu sun — piksel bazlı birincil, hücre bazlı ikincil
+// 3) Tek pencere: ayarla → Çalıştır → sonuç → (gerekirse) tekrar
 // ──────────────────────────────────────────────────────────────
+javafx.application.Platform.runLater {
+    try {
+        def stage = new javafx.stage.Stage()
+        stage.initModality(javafx.stage.Modality.NONE)
+        stage.setTitle('Modül 4 - HER2 / Membran İHK skorlaması')
+        stage.setAlwaysOnTop(true)
 
-// Per-cell percentages (safe: totalCells=0 when cellBasedOk=false → all 0.0)
-def pct0Cell = totalCells > 0 ? 100.0 * n0 / totalCells : 0.0
-def pct1Cell = totalCells > 0 ? 100.0 * n1 / totalCells : 0.0
-def pct2Cell = totalCells > 0 ? 100.0 * n2 / totalCells : 0.0
-def pct3Cell = totalCells > 0 ? 100.0 * n3 / totalCells : 0.0
+        def title = new javafx.scene.control.Label('HER2 / Membran İHK skorlaması')
+        title.setStyle('-fx-font-size: 14px; -fx-font-weight: bold;')
+        def info = new javafx.scene.control.Label(
+            'Bir TÜMÖR (epitel) anotasyonu çizip SEÇİN (kenarı sarı), sonra "Çalıştır".\n' +
+            'Birincil metrik piksel bazlı H-score (her zaman çalışır); hücre bazlı ring\n' +
+            'H-score opsiyoneldir (Cellpose varsa kullanılır, yoksa Watershed ile çalışır).\n' +
+            'Eşikleri değiştirip yeniden çalıştırabilirsiniz; sonuç aşağıda güncellenir.')
+        info.setWrapText(true)
 
-// Piksel bazlı blok (her zaman) — pure GString, no String.format wrapping the block
-def pixBlock =
-    "HER2 / Membran İHK skorlaması bitti.\n\n" +
-    "═══════════════════════════════════════════════════════════\n" +
-    "  PİKSEL-BAZLI H-SCORE  (birincil · segmentasyon-bağımsız)\n" +
-    "═══════════════════════════════════════════════════════════\n" +
-    "  H-score          : ${String.format(java.util.Locale.US, '%.0f', pixelHScore)} / 300\n" +
-    "  Negatif          : %${String.format(java.util.Locale.US, '%.1f', pxPctNeg)}\n" +
-    "  1+ (zayıf)       : %${String.format(java.util.Locale.US, '%.1f', pxPct1)}\n" +
-    "  2+ (orta)        : %${String.format(java.util.Locale.US, '%.1f', pxPct2)}\n" +
-    "  3+ (güçlü)       : %${String.format(java.util.Locale.US, '%.1f', pxPct3)}\n" +
-    "  Toplam pozitif   : %${String.format(java.util.Locale.US, '%.1f', (pxPct1 + pxPct2 + pxPct3))}\n\n" +
-    "  Eşikler: DAB [${String.format(java.util.Locale.US, '%.2f', pixDABthresholds[0])} / " +
-                    "${String.format(java.util.Locale.US, '%.2f', pixDABthresholds[1])} / " +
-                    "${String.format(java.util.Locale.US, '%.2f', pixDABthresholds[2])}] OD," +
-              "  H mask ${String.format(java.util.Locale.US, '%.2f', pixHthreshold)} OD\n" +
-    "  Alan (boyalı)    : ${String.format(java.util.Locale.US, '%,.0f', pxAreaDenom)} µm²\n" +
-    "  Bölge            : seçili ROI · " + (pixCalibrated ? "${String.format(java.util.Locale.US, '%.2f', areaMm2)} mm²" : "kalibre değil") +
-                        "  (süre: ${String.format(java.util.Locale.US, '%.1f', pixElapsed)} sn)\n\n"
+        // 7 spinner: Membran 1+/2+/3+, Piksel DAB 1+/2+/3+, Piksel H maskesi
+        def spM1  = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.membrane1', 0.15), 0.01)
+        def spM2  = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.membrane2', 0.40), 0.01)
+        def spM3  = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.membrane3', 0.70), 0.01)
+        def spPD1 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.pixDab1',   0.10), 0.01)
+        def spPD2 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.pixDab2',   0.30), 0.01)
+        def spPD3 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.pixDab3',   0.60), 0.01)
+        def spPH  = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.pixHmask',  0.05), 0.01)
+        [spM1, spM2, spM3, spPD1, spPD2, spPD3, spPH].each { it.setEditable(true); it.setPrefWidth(110) }
 
-// Hücre bazlı blok (koşullu) — pure GString
-def cellBlock
-if (cellBasedOk) {
-    def uyari = totalCells < warnCount
-        ? "\n  📝 Not: ${String.format(java.util.Locale.US, '%,d', totalCells)} hücre < ${String.format(java.util.Locale.US, '%,d', warnCount)}" +
-          " — küçük örneklem; istatistiksel güvenilirlik sınırlı."
-        : ""
-    cellBlock =
-        "═══════════════════════════════════════════════════════════\n" +
-        "  Hücre bazlı  (karşılaştırma · ring) — ${detector}\n" +
-        "═══════════════════════════════════════════════════════════\n" +
-        "  H-score          : ${String.format(java.util.Locale.US, '%.0f', hScore)} / 300\n" +
-        "  Toplam hücre     : ${String.format(java.util.Locale.US, '%,d', totalCells)}\n" +
-        "  0  (negatif)     : ${String.format(java.util.Locale.US, '%,d', n0)}  (%${String.format(java.util.Locale.US, '%.1f', pct0Cell)})\n" +
-        "  1+ (zayıf)       : ${String.format(java.util.Locale.US, '%,d', n1)}  (%${String.format(java.util.Locale.US, '%.1f', pct1Cell)})\n" +
-        "  2+ (orta)        : ${String.format(java.util.Locale.US, '%,d', n2)}  (%${String.format(java.util.Locale.US, '%.1f', pct2Cell)})\n" +
-        "  3+ (güçlü)       : ${String.format(java.util.Locale.US, '%,d', n3)}  (%${String.format(java.util.Locale.US, '%.1f', pct3Cell)})\n" +
-        "  Süre             : ${String.format(java.util.Locale.US, '%.1f', cellElapsed)} sn${uyari}\n" +
-        "  ⓘ İki yöntem farklıysa: ring sitoplazma/eksik membranı yanlış örnekleyebilir.\n\n"
-} else {
-    cellBlock = "Hücre bazlı karşılaştırma atlandı (Cellpose/Watershed yok ya da hata).\n\n"
+        def grid = new javafx.scene.layout.GridPane()
+        grid.setHgap(8); grid.setVgap(6); grid.setPadding(new javafx.geometry.Insets(6))
+        grid.addRow(0, new javafx.scene.control.Label('Membran 1+ (DAB OD mean)'), spM1)
+        grid.addRow(1, new javafx.scene.control.Label('Membran 2+ (DAB OD mean)'), spM2)
+        grid.addRow(2, new javafx.scene.control.Label('Membran 3+ (DAB OD mean)'), spM3)
+        grid.addRow(3, new javafx.scene.control.Label('Piksel 1+ (DAB OD)'),        spPD1)
+        grid.addRow(4, new javafx.scene.control.Label('Piksel 2+ (DAB OD)'),        spPD2)
+        grid.addRow(5, new javafx.scene.control.Label('Piksel 3+ (DAB OD)'),        spPD3)
+        grid.addRow(6, new javafx.scene.control.Label('Piksel H maskesi (OD)'),     spPH)
+        def adv = new javafx.scene.control.TitledPane('⚙ Gelişmiş ayarlar — eşikler', grid)
+        adv.setExpanded(false); adv.setAnimated(false)
+
+        def status = new javafx.scene.control.Label('Hazır.')
+        def progress = new javafx.scene.control.ProgressBar()
+        progress.setMaxWidth(Double.MAX_VALUE); progress.setVisible(false); progress.setManaged(false)
+        def resultArea = new javafx.scene.control.TextArea()
+        resultArea.setEditable(false); resultArea.setWrapText(false); resultArea.setPrefRowCount(10)
+        resultArea.setPromptText('Sonuçlar burada görünecek…')
+        resultArea.setStyle("-fx-font-family: 'Consolas','Menlo','Courier New',monospace; -fx-font-size: 12px;")
+
+        def runBtn = new javafx.scene.control.Button('Çalıştır'); runBtn.setDefaultButton(true)
+        runBtn.setOnAction({
+            runBtn.setDisable(true)
+            status.setStyle(''); status.setText('… hesaplanıyor (piksel + opsiyonel hücre)…')
+            progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
+            double m1  = spM1.getValue()  as double
+            double m2  = spM2.getValue()  as double
+            double m3  = spM3.getValue()  as double
+            double pd1 = spPD1.getValue() as double
+            double pd2 = spPD2.getValue() as double
+            double pd3 = spPD3.getValue() as double
+            double ph  = spPH.getValue()  as double
+            def worker = new Thread({
+                def res = runDetection(m1, m2, m3, pd1, pd2, pd3, ph)
+                javafx.application.Platform.runLater {
+                    progress.setVisible(false); progress.setManaged(false); runBtn.setDisable(false)
+                    if (res.ok) {
+                        status.setStyle(''); status.setText('Tamamlandı ✅ — eşikleri değiştirip tekrar çalıştırabilirsiniz.')
+                        resultArea.setText(res.text)
+                    } else {
+                        status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + res.error)
+                    }
+                }
+            }, 'Modul4Detect')
+            worker.setDaemon(true); worker.start()
+        })
+
+        def alwaysTop = new javafx.scene.control.CheckBox('Üstte tut'); alwaysTop.setSelected(true)
+        alwaysTop.selectedProperty().addListener(
+            { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
+        def copyBtn = new javafx.scene.control.Button('Kopyala')
+        copyBtn.setOnAction({
+            def cb = javafx.scene.input.Clipboard.getSystemClipboard()
+            def c = new javafx.scene.input.ClipboardContent(); c.putString(resultArea.getText()); cb.setContent(c)
+        })
+        def closeBtn = new javafx.scene.control.Button('Kapat'); closeBtn.setOnAction({ stage.close() })
+
+        def footer = new javafx.scene.control.Label('QuPath Atölye Scriptleri · araştırma/eğitim amaçlı')
+        footer.setMaxWidth(Double.MAX_VALUE)
+        footer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;')
+
+        def spacer = new javafx.scene.layout.Region()
+        javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
+        def btnRow = new javafx.scene.layout.HBox(8, alwaysTop, spacer, copyBtn, runBtn, closeBtn)
+        btnRow.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
+
+        def content = new javafx.scene.layout.VBox(10, title, info, adv, status, progress, resultArea)
+        content.setPadding(new javafx.geometry.Insets(14))
+        javafx.scene.layout.VBox.setVgrow(resultArea, javafx.scene.layout.Priority.ALWAYS)
+        def bottom = new javafx.scene.layout.VBox(8, footer, btnRow)
+        bottom.setPadding(new javafx.geometry.Insets(10))
+        def root = new javafx.scene.layout.BorderPane()
+        root.setCenter(content); root.setBottom(bottom)
+        stage.setScene(new javafx.scene.Scene(root, 600, 600))
+        stage.show()
+    } catch (Throwable t) {
+        Dialogs.showErrorMessage('Modül 4 açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+    }
 }
-
-// Bütünlük notu (her zaman)
-def completenessNote =
-    "───────────────────────────────────────────────────────────\n" +
-    "Not: Bu betik membran boyamasının GÜCÜNÜ ölçer; membranın\n" +
-    "kaç hücrede TAM çevrelendiğini (bütünlük) ÖLÇMEZ. (Sode 2023)\n\n"
-
-// Büyük ROI uyarısı (koşullu — boş string ise eklenmez)
-def roiWarn = roiWarnStr.isEmpty() ? "" : roiWarnStr + "\n"
-
-// Son uyarı satırı
-def finalDisclaimer = "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
-
-showResultWindow(
-    "Tamamlandı 🧬",
-    pixBlock + cellBlock + completenessNote + roiWarn + finalDisclaimer
-)
-
-println "─────────────────────────────────────"
-println "Tamamlandı:"
-println "  Piksel H-score: ${String.format(java.util.Locale.US, '%.0f', pixelHScore)} / 300"
-println "    Neg:${String.format(java.util.Locale.US, '%.1f', pxPctNeg)}% | 1+:${String.format(java.util.Locale.US, '%.1f', pxPct1)}% | 2+:${String.format(java.util.Locale.US, '%.1f', pxPct2)}% | 3+:${String.format(java.util.Locale.US, '%.1f', pxPct3)}%"
-if (cellBasedOk) {
-    println "  Hücre (n=${totalCells}) | H-score: ${String.format(java.util.Locale.US, '%.0f', hScore)}"
-    println "  0:${n0} (${String.format(java.util.Locale.US, '%.1f', pct0Cell)}%) | 1+:${n1} (${String.format(java.util.Locale.US, '%.1f', pct1Cell)}%) | 2+:${n2} (${String.format(java.util.Locale.US, '%.1f', pct2Cell)}%) | 3+:${n3} (${String.format(java.util.Locale.US, '%.1f', pct3Cell)}%)"
-} else {
-    println "  Hücre bazlı: atlandı"
-}
-println "─────────────────────────────────────"
 
 // ──────────────────────────────────────────────────────────────
 // Piksel H-score için custom ImageOp (Sara McArdle uyarlaması)

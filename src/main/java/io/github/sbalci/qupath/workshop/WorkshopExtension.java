@@ -21,22 +21,30 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipException;
 
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.Property;
+import javafx.beans.property.StringProperty;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 
+import org.controlsfx.control.PropertySheet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
 
+import qupath.fx.prefs.controlsfx.PropertyItemBuilder;
 import qupath.lib.common.GeneralTools;
 import qupath.lib.common.Version;
 import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.dialogs.Dialogs;
 import qupath.lib.gui.extensions.GitHubProject;
 import qupath.lib.gui.extensions.QuPathExtension;
+import qupath.lib.gui.prefs.PathPrefs;
 
 /**
  * Main entry point for the Workshop extension.
@@ -69,19 +77,23 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // aşağıdaki entry'nin sonundaki `true` (disabled) bayrağını kaldırın.
         new ScriptEntry("Modül 4 - Membran boya (HER2)",            "modul-04-membran-boya.groovy", true),
         new ScriptEntry("Modül 5 - Sitoplazmik boya (CD68)",        "modul-05-sitoplazmik-boya.groovy"),
-        // Modül 6 iki adım: önce modeli EĞİT (anotasyonlardan RF üretir), sonra UYGULA
-        // (tüm slayda uygulayıp TSR ölçer). Eğitim adımı, Train pixel classifier diyaloğunu
-        // açmadan tek tıkla bir 'tumor-stroma-RF' sınıflandırıcı kaydeder.
-        // Sihirbaz her iki adımı bir karar ağacı ile yönlendirir.
-        new ScriptEntry("Modül 6 - Tümör/Stroma sihirbazı (model kur/eğit)", "modul-06-sihirbaz.groovy"),
-        new ScriptEntry("Modül 6a - Tümör/Stroma modeli oluştur (eğit)", "modul-06-model-egit.groovy"),
-        new ScriptEntry("Modül 6b - Tümör vs stroma (uygula)",      "modul-06-tumor-stroma.groovy"),
+        // Modül 6: tek pencere sihirbaz — örnek modeli kur YA DA yeni eğit, sonra
+        // seçili bölge / tüm slayt ölçümü (Ignore* dışlama dahil) hepsi burada.
+        // Eski 6a (eğit) ve 6b (uygula) sihirbaza katlandı; scriptler JAR'da +
+        // handson/scripts'te kalır (Automate → Project scripts'ten erişilebilir).
+        // Menüye geri eklemek için aşağıdaki iki satırın yorumunu kaldırın.
+        new ScriptEntry("Modül 6 - Tümör/Stroma sihirbazı", "modul-06-sihirbaz.groovy"),
+        // new ScriptEntry("Modül 6a - Tümör/Stroma modeli oluştur (eğit)", "modul-06-model-egit.groovy"),
+        // new ScriptEntry("Modül 6b - Tümör vs stroma (uygula)",      "modul-06-tumor-stroma.groovy"),
         new ScriptEntry("Modül 7 - Tümör içi Ki-67",                "modul-07-tumor-ici-ki67.groovy"),
         // Modül 8 (QuANTUM cTCF) sonraki sürümlere ertelendi — StarDist + object classifier
         // ön-gereksinimleri ilk sürüm katılımcıları için fazla. Script JAR resource olarak
         // kalır (modul-08-quantum-ctcf.groovy) → ileride aşağıdaki satır yorum-dışı bırakılır.
         // new ScriptEntry("Modül 8 - QuANTUM cTCF",                "modul-08-quantum-ctcf.groovy"),
-        new ScriptEntry("Modül 9 - Veri dışa aktarma",              "modul-09-veri-aktarma.groovy")
+        // Modül 9 (veri dışa aktarma) sonraki oturumda ele alınacak — şimdilik gri/disabled
+        // (tıklama etkisiz). Script JAR'da + handson/scripts'te kalır (Automate → Project
+        // scripts'ten erişilebilir). Etkinleştirmek için sondaki `true` bayrağını kaldırın.
+        new ScriptEntry("Modül 9 - Veri dışa aktarma",              "modul-09-veri-aktarma.groovy", true)
     );
 
     /**
@@ -121,6 +133,14 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
 
     private boolean alreadyInstalled = false;
 
+    /**
+     * Master toggle. When off, the runnable Atölye module/utility menu items grey
+     * out (an "instructor lock" so participants can't click ahead). Persisted via
+     * PathPrefs and surfaced in QuPath's Preferences pane (see installPreferences).
+     */
+    public static final BooleanProperty enableExtensionProperty =
+            PathPrefs.createPersistentPreference("atolye.enableExtension", true);
+
     @Override
     public void installExtension(QuPathGUI qupath) {
         if (alreadyInstalled) {
@@ -145,6 +165,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                     item.setDisable(true);   // sonraki oturuma ertelendi — gri görünür, tıklama etkisiz
                 } else {
                     item.setOnAction(e -> runScriptSafely(qupath, entry));
+                    item.disableProperty().bind(enableExtensionProperty.not());
                 }
                 modulesMenu.getItems().add(item);
             }
@@ -155,6 +176,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                 for (ScriptEntry entry : UTILITY_SCRIPTS) {
                     MenuItem item = new MenuItem(entry.label);
                     item.setOnAction(e -> runScriptSafely(qupath, entry));
+                    item.disableProperty().bind(enableExtensionProperty.not());
                     utilsMenu.getItems().add(item);
                 }
                 menu.getItems().add(utilsMenu);
@@ -185,10 +207,54 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             about.setOnAction(e -> showAboutDialog());
             menu.getItems().add(about);
 
+            installPreferences(qupath);
+
             logger.info("Workshop extension installed with {} module + {} utility + {} upcoming (disabled) scripts.",
                     SCRIPTS.size(), UTILITY_SCRIPTS.size(), UPCOMING_SCRIPTS.size());
         } catch (Exception ex) {
             logger.error("Failed to install Workshop extension menu", ex);
+        }
+    }
+
+    /**
+     * Registers the master toggle and every adjustable workshop parameter in
+     * QuPath's native Preferences pane (Edit → Preferences), grouped by section
+     * under "Atölye" / "Atölye · &lt;bölüm&gt;". This mirrors the richer
+     * Extensions → Atölye → Atölye Ayarları… window for users who look in
+     * Preferences. Each numeric pref is exposed via {@code asObject()} so edits
+     * write straight back to the persisted PathPrefs property.
+     */
+    @SuppressWarnings("unchecked")
+    private void installPreferences(QuPathGUI qupath) {
+        try {
+            var items = qupath.getPreferencePane().getPropertySheet().getItems();
+
+            items.add(new PropertyItemBuilder<>(enableExtensionProperty, Boolean.class)
+                    .name("Atölye menüsü etkin")
+                    .category("Atölye")
+                    .description("Kapalıyken Atölye modül ve yardımcı menü öğeleri devre dışı olur "
+                            + "(eğitmen kilidi). Tüm eşik/parametre ayarları için ayrıca: "
+                            + "Extensions → Atölye → Atölye Ayarları…")
+                    .build());
+
+            for (String key : WorkshopPrefs.keys()) {
+                Property<?> p = WorkshopPrefs.property(key);
+                String name = key.startsWith("atolye.") ? key.substring("atolye.".length()) : key;
+                String category = "Atölye · " + WorkshopPrefs.section(key);
+                PropertySheet.Item item = null;
+                if (p instanceof DoubleProperty dp) {
+                    item = new PropertyItemBuilder<>(dp.asObject(), Double.class).name(name).category(category).build();
+                } else if (p instanceof IntegerProperty ip) {
+                    item = new PropertyItemBuilder<>(ip.asObject(), Integer.class).name(name).category(category).build();
+                } else if (p instanceof BooleanProperty bp) {
+                    item = new PropertyItemBuilder<>(bp.asObject(), Boolean.class).name(name).category(category).build();
+                } else if (p instanceof StringProperty sp) {
+                    item = new PropertyItemBuilder<>(sp, String.class).name(name).category(category).build();
+                }
+                if (item != null) items.add(item);
+            }
+        } catch (Throwable t) {
+            logger.warn("Could not register Atölye preferences in QuPath's Preferences pane", t);
         }
     }
 

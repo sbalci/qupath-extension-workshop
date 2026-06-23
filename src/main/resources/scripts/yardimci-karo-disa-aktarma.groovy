@@ -226,7 +226,12 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            root.setBottom(buttons)
+            def __footer = new javafx.scene.control.Label("QuPath Atölye Scriptleri · araştırma/eğitim amaçlı")
+            __footer.setMaxWidth(Double.MAX_VALUE)
+            __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
+            def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
+            __bottom.setPadding(new javafx.geometry.Insets(8))
+            root.setBottom(__bottom)
             stage.setScene(new javafx.scene.Scene(root, 760, 560))
             stage.show()
         } catch (Throwable t) {

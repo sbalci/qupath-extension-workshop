@@ -57,6 +57,12 @@ dependencies {
     compileOnly("io.github.qupath:qupath-gui-fx:$qupathVersion")
     compileOnly("io.github.qupath:qupath-core:$qupathVersion")
 
+    // qupath-fxtras: PropertyItemBuilder for the Preferences pane + FontAwesome glyphs.
+    // gui-fx pulls it as a RUNTIME dependency, so it isn't on our compile classpath —
+    // declare it compileOnly (QuPath supplies it at runtime; we must NOT bundle it).
+    // Version pinned to what QuPath 0.6.0 ships for binary compatibility.
+    compileOnly("io.github.qupath:qupath-fxtras:0.2.0")
+
     // Groovy — bundled with QuPath, so compileOnly
     compileOnly("org.apache.groovy:groovy:4.0.21")
 

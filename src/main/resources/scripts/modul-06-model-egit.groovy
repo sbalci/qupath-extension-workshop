@@ -6,7 +6,7 @@
  * Bu betik, slayta ÇİZDİĞİNİZ Tumor / Stroma anotasyonlarından bir **Random
  * Forest piksel sınıflandırıcı** eğitir ve projeye `tumor-stroma-RF` adıyla
  * kaydeder — `[Classify → Pixel classification → Train pixel classifier]`
- * diyaloğunu açmadan. Kaydedilen model, **Modül 6b (uygula)** tarafından
+ * diyaloğunu açmadan. Kaydedilen model, **Modül 6 sihirbazı** tarafından
  * seçili anotasyon sınırı içinde alan ölçümü için kullanılır.
  * Akış: birkaç eğitim bölgesi çiz → modeli eğit → ölçüm sınırını seç → ölç.
  *
@@ -20,9 +20,9 @@
  *
  * KULLANIM:
  *   1. H&E slaytında Tumor (kırmızı) + Stroma (yeşil) bölgeleri çizin
- *   2. [Extensions → Atölye → Modüller → Modül 6a - Tümör/Stroma modeli oluştur]
+ *   2. [Automate → Project scripts → modul-06-model-egit] (ya da Modül 6 sihirbazından 'Yeni sınıflandırıcı eğit')
  *   3. Model kaydedilir; isterseniz bu slaytta hızlı önizleme yapın
- *   4. Ölçüm sınırını seçin; Modül 6b (uygula) ile alan ölçümlerini alın
+ *   4. Ölçüm sınırını seçin; Modül 6 sihirbazı ile alan ölçümlerini alın
  *
  * MODEL (atölye varsayılanı — sabit, "küçük" model):
  *   • Sınıflandırıcı : Random Forest (OpenCV RTrees, QuPath varsayılan ağaç ayarları)
@@ -189,7 +189,12 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            root.setBottom(buttons)
+            def __footer = new javafx.scene.control.Label("QuPath Atölye Scriptleri · araştırma/eğitim amaçlı")
+            __footer.setMaxWidth(Double.MAX_VALUE)
+            __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
+            def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
+            __bottom.setPadding(new javafx.geometry.Insets(8))
+            root.setBottom(__bottom)
 
             stage.setScene(new javafx.scene.Scene(root, 760, 560))
             stage.show()
@@ -375,7 +380,7 @@ def devam = waitForConfirm(
     "  • Çözünürlük     : ${trainResolutionMicrons} µm/px\n\n" +
     "Not: Bu işlem yalnızca modeli EĞİTİP KAYDEDER — slayttaki anotasyonlarınıza\n" +
     "dokunmaz (silmez). Modeli seçili anotasyon sınırında ölçmek için sonra\n" +
-    "'Modül 6b - Tümör vs stroma (uygula)' betiğini çalıştırın.\n\n" +
+    "'Modül 6 sihirbazı' betiğini çalıştırın.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
     "Hazırsanız Çalıştır düğmesine basın."
 )
@@ -509,7 +514,7 @@ def baseResult = String.format(java.util.Locale.US,
     "  Konum     : <proje>/classifiers/%s.json\n" +
     "  Eğitim    : Tumor=%d, Stroma=%d (bu slayt)\n" +
     "  Çözünürlük: %.1f µm/px  |  Süre: %.1f sn\n\n" +
-    "Sıradaki: ölçüm sınırını seçin; 'Modül 6b - Tümör vs stroma (uygula)' ile alanları ölçün.\n" +
+    "Sıradaki: ölçüm sınırını seçin; 'Modül 6 sihirbazı' ile alanları ölçün.\n" +
     "Slaytta canlı renk haritasını görmek için: [Classify → Pixel classification →\n" +
     "Load classifier] → %s.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
@@ -536,7 +541,7 @@ if (isHeadless) {
             "Önizleme — kaba alan dağılımı",
             baseResult + "\n\n" +
             "Önizleme (seçili sınır, betimsel alan ölçümleri):\n" + pv + "\n\n" +
-            "Kalıcı ve dışa aktarılabilir ölçümler için Modül 6b (uygula) betiğini kullanın."
+            "Kalıcı ve dışa aktarılabilir ölçümler için Modül 6 sihirbazını kullanın."
         )
     } else {
         showResultWindow("Tamamlandı 🧠", baseResult)

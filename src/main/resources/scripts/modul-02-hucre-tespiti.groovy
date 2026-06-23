@@ -7,9 +7,10 @@
  *
  * KULLANIM:
  *   1. Bir H&E slaytı açın
- *   2. [R] tuşu → tümör içeren küçük bir dikdörtgen (~1×1 mm) çizin
- *   3. Anotasyon seçili iken → [Automate → Project scripts → bu betik]
- *   4. Sonuçları sonuç penceresinden okuyun
+ *   2. [R] tuşu → tümör içeren küçük bir dikdörtgen (~1×1 mm) çizin ve SEÇİN
+ *   3. Bu betiği çalıştırın → açılan TEK pencerede "Çalıştır"
+ *   4. Pencere açık kalır: eşikleri değiştirip (Gelişmiş ayarlar) tekrar
+ *      çalıştırabilir, sonuçları aynı pencerede güncel görebilirsiniz
  *
  * Bu betik atölyenin tek tıkla "wow" anı için yazılmıştır. Aynı parametrelerin
  * her birinin ne işe yaradığını ve nasıl ayarlayacağınızı öğrenmek için
@@ -26,14 +27,6 @@ import qupath.lib.gui.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import qupath.lib.objects.PathAnnotationObject
 
-// ──────────────────────────────────────────────────────────────
-// Modal olmayan pencere yardımcıları
-//   - waitForConfirm    : modal hissi veren ama QuPath'i kilitlemeyen onay penceresi
-//   - showResultWindow  : sonuç penceresi — açık kalır, QuPath kullanılmaya devam edilebilir
-//
-// İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
-// parametre değiştirip betiği tekrar çalıştırabilir, sonuçları kopyalayabilir.
-// ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 // --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
 def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
@@ -45,129 +38,6 @@ def atolyeD = { String k, double  d -> (double)  __wpCall('dbl',  [String.class,
 def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class, String.class]  as Class[], [k, d] as Object[], d) }
 def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
 def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
-
-def waitForConfirm = { String windowTitle, String windowBody ->
-    if (isHeadless) {
-        println "=== ${windowTitle} ===\n${windowBody}\n=================="
-        return true
-    }
-    def latch = new java.util.concurrent.CountDownLatch(1)
-    def confirmed = new java.util.concurrent.atomic.AtomicBoolean(false)
-
-    javafx.application.Platform.runLater {
-        try {
-            def stage = new javafx.stage.Stage()
-            stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle(windowTitle)
-            stage.setAlwaysOnTop(true)
-
-            def label = new javafx.scene.control.Label(windowBody)
-            label.setWrapText(true)
-            label.setStyle("-fx-font-size: 12px; -fx-padding: 8px;")
-
-            def scrollPane = new javafx.scene.control.ScrollPane(label)
-            scrollPane.setFitToWidth(true)
-
-            def okBtn = new javafx.scene.control.Button("Çalıştır")
-            okBtn.setDefaultButton(true)
-            okBtn.setOnAction({
-                confirmed.set(true)
-                stage.close()
-            })
-
-            def cancelBtn = new javafx.scene.control.Button("İptal")
-            cancelBtn.setCancelButton(true)
-            cancelBtn.setOnAction({
-                confirmed.set(false)
-                stage.close()
-            })
-
-            stage.setOnHidden({ latch.countDown() })
-
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
-            alwaysTop.setSelected(true)
-            alwaysTop.selectedProperty().addListener(
-                { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
-            )
-
-            def spacer = new javafx.scene.layout.Region()
-            javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-
-            def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, cancelBtn, okBtn)
-            buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
-            buttons.setPadding(new javafx.geometry.Insets(10))
-
-            def root = new javafx.scene.layout.BorderPane()
-            root.setCenter(scrollPane)
-            root.setBottom(buttons)
-
-            stage.setScene(new javafx.scene.Scene(root, 620, 460))
-            stage.show()
-        } catch (Throwable t) {
-            // FX kurulumu başarısızsa modal'a geri dön
-            confirmed.set(qupath.lib.gui.dialogs.Dialogs.showConfirmDialog(windowTitle, windowBody))
-            latch.countDown()
-        }
-    }
-
-    latch.await()
-    return confirmed.get()
-}
-
-def showResultWindow = { String windowTitle, String windowBody ->
-    if (isHeadless) {
-        println "=== ${windowTitle} ===\n${windowBody}\n=================="
-        return
-    }
-    javafx.application.Platform.runLater {
-        try {
-            def stage = new javafx.stage.Stage()
-            stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle(windowTitle)
-            stage.setAlwaysOnTop(true)
-
-            def textArea = new javafx.scene.control.TextArea(windowBody)
-            textArea.setEditable(false)
-            textArea.setWrapText(false)
-            textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
-
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
-            alwaysTop.setSelected(true)
-            alwaysTop.selectedProperty().addListener(
-                { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
-            )
-
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
-            copyBtn.setOnAction({
-                def cb = javafx.scene.input.Clipboard.getSystemClipboard()
-                def content = new javafx.scene.input.ClipboardContent()
-                content.putString(windowBody)
-                cb.setContent(content)
-            })
-
-            def closeBtn = new javafx.scene.control.Button("Kapat")
-            closeBtn.setDefaultButton(true)
-            closeBtn.setOnAction({ stage.close() })
-
-            def spacer = new javafx.scene.layout.Region()
-            javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-
-            def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, copyBtn, closeBtn)
-            buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
-            buttons.setPadding(new javafx.geometry.Insets(8))
-
-            def root = new javafx.scene.layout.BorderPane()
-            root.setCenter(textArea)
-            root.setBottom(buttons)
-
-            stage.setScene(new javafx.scene.Scene(root, 760, 580))
-            stage.show()
-        } catch (Throwable t) {
-            // FX başarısızsa modal'a geri dön — kayıp olmasın
-            qupath.lib.gui.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
-        }
-    }
-}
 
 // ──────────────────────────────────────────────────────────────
 // 1) Ön kontrol — açık görüntü var mı?
@@ -198,143 +68,157 @@ if (!hasHematoxylin) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 2) Karşılama — kullanıcıya ne yapacağımızı anlat
+// 2) Tespit + sonuç toplama tek yerde — pencere kapanmadan tekrar
+//    (eşikleri değiştirip) çağrılabilir. Dönüş: [ok, text] | [ok:false, error].
 // ──────────────────────────────────────────────────────────────
-def devam = waitForConfirm(
-    "Modül 2 - Hızlı hücre tespiti",
-    "Bu betik, seçtiğiniz anotasyon içindeki TÜM çekirdekleri otomatik olarak\n" +
-    "tespit edecek. Atölye için ayarlanmış varsayılan parametreleri kullanır.\n\n" +
-    "Şunlardan emin olun:\n" +
-    "  • Bir H&E slaytı açık\n" +
-    "  • Bir dikdörtgen anotasyon (R tuşu) çizdiniz (~1×1 mm tümör alanı)\n" +
-    "  • Anotasyon SEÇİLİ (kenarları sarı görünür)\n\n" +
-    "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız Çalıştır düğmesine basın; devam etmek istemiyorsanız İptal ile çıkın."
-)
-if (!devam) {
-    println "Kullanıcı iptal etti."
-    return
-}
-
-// ──────────────────────────────────────────────────────────────
-// 3) Anotasyon kontrolü
-// ──────────────────────────────────────────────────────────────
-def selected = QP.getSelectedObject()
-def annotations = QP.getAnnotationObjects()
-
-if (annotations.isEmpty()) {
-    Dialogs.showErrorMessage(
-        "Anotasyon bulunamadı",
-        "Önce bir anotasyon çizmelisiniz.\n\n" +
-        "Nasıl:\n" +
-        "  1. Toolbar'dan dikdörtgen aracını seçin (veya R tuşu)\n" +
-        "  2. Slayttaki tümör alanına ~1×1 mm dikdörtgen sürükleyin\n" +
-        "  3. Bu betiği tekrar çalıştırın"
+def runDetection = { double thr, double sig, double exp ->
+    def selected = QP.getSelectedObject()
+    if (selected == null || !(selected instanceof PathAnnotationObject))
+        return [ok:false, error:'Önce ölçmek istediğiniz dikdörtgen anotasyonu çizip SEÇİN (kenarı sarı görünür).']
+    def target = selected
+    def cal = imageData.getServer().getPixelCalibration()
+    double pw = cal.getPixelWidthMicrons(), ph = cal.getPixelHeightMicrons()
+    if (!(pw > 0) || !(ph > 0))
+        return [ok:false, error:'Piksel kalibrasyonu yok; mm² hesaplanamaz (Yardımcılar → Kalibrasyon).']
+    double pixelSize       = atolyeD('atolye.pixelSize', 0.5)
+    double backgroundRadius = atolyeD('atolye.backgroundRadius', 8.0)
+    double medianRadius    = atolyeD('atolye.medianRadius', 0.0)
+    double minArea         = atolyeD('atolye.minArea', 10.0)
+    double maxArea         = atolyeD('atolye.maxArea', 400.0)
+    boolean doWatershed    = atolyeB('atolye.watershed', true)
+    long t0 = System.currentTimeMillis()
+    QP.selectObjects(target)
+    QP.runPlugin(
+        'qupath.imagej.detect.cells.WatershedCellDetection',
+        '{' +
+            '"detectionImageBrightfield":"Hematoxylin OD",' +
+            '"requestedPixelSizeMicrons":' + pixelSize + ',' +
+            '"backgroundRadiusMicrons":' + backgroundRadius + ',' +
+            '"medianRadiusMicrons":' + medianRadius + ',' +
+            '"sigmaMicrons":' + sig + ',' +
+            '"minAreaMicrons":' + minArea + ',' +
+            '"maxAreaMicrons":' + maxArea + ',' +
+            '"threshold":' + thr + ',' +
+            '"watershedPostProcess":' + doWatershed + ',' +
+            '"cellExpansionMicrons":' + exp + ',' +
+            '"includeNuclei":true,' +
+            '"smoothBoundaries":true,' +
+            '"makeMeasurements":true' +
+        '}'
     )
-    return
-}
-
-if (selected == null || !(selected instanceof PathAnnotationObject)) {
-    Dialogs.showErrorMessage(
-        "Anotasyon seçili değil",
-        "Lütfen yalnızca çalıştırmak istediğiniz dikdörtgen anotasyonu seçin.\n\n" +
-        "Nasıl:\n" +
-        "  1. Slayttaki anotasyona tıklayın (kenarı sarı görünmeli)\n" +
-        "  2. Bu betiği tekrar çalıştırın"
-    )
-    return
-}
-
-def targetAnnotation = selected
-
-// ──────────────────────────────────────────────────────────────
-// 4) Hücre tespitini çalıştır (atölye varsayılanları)
-// ──────────────────────────────────────────────────────────────
-def pixelSize          = atolyeD('atolye.pixelSize', 0.5)
-def detectionThreshold = atolyeD('atolye.detectionThreshold', 0.1)
-def sigma              = atolyeD('atolye.sigma', 1.5)
-def backgroundRadius   = atolyeD('atolye.backgroundRadius', 8.0)
-def medianRadius       = atolyeD('atolye.medianRadius', 0.0)
-def minArea            = atolyeD('atolye.minArea', 10.0)
-def maxArea            = atolyeD('atolye.maxArea', 400.0)
-def cellExpansion      = atolyeD('atolye.cellExpansionNuclear', 5.0)
-def doWatershed        = atolyeB('atolye.watershed', true)
-
-println "Hücre tespiti başlatılıyor — atölye varsayılan parametreleriyle..."
-println "  • Requested pixel size: ${pixelSize} µm/px${pixelSize != 0.5 ? ' (değiştirildi)' : ''}"
-println "  • Eşik (Hematoxylin OD): ${detectionThreshold}${detectionThreshold != 0.1 ? ' (değiştirildi)' : ''}"
-println "  • Sigma: ${sigma} µm${sigma != 1.5 ? ' (değiştirildi)' : ''}"
-println "  • Min/Max area: ${minArea} / ${maxArea} µm²${(minArea != 10.0 || maxArea != 400.0) ? ' (değiştirildi)' : ''}"
-println "  • Hücre genişletme (cell expansion): ${cellExpansion} µm${cellExpansion != 5.0 ? ' (değiştirildi)' : ''}"
-
-def t0 = System.currentTimeMillis()
-
-QP.selectObjects(targetAnnotation)
-QP.runPlugin(
-    'qupath.imagej.detect.cells.WatershedCellDetection',
-    '{' +
-        '"detectionImageBrightfield":"Hematoxylin OD",' +
-        '"requestedPixelSizeMicrons":' + pixelSize + ',' +
-        '"backgroundRadiusMicrons":' + backgroundRadius + ',' +
-        '"medianRadiusMicrons":' + medianRadius + ',' +
-        '"sigmaMicrons":' + sigma + ',' +
-        '"minAreaMicrons":' + minArea + ',' +
-        '"maxAreaMicrons":' + maxArea + ',' +
-        '"threshold":' + detectionThreshold + ',' +
-        '"watershedPostProcess":' + doWatershed + ',' +
-        '"cellExpansionMicrons":' + cellExpansion + ',' +
-        '"includeNuclei":true,' +
-        '"smoothBoundaries":true,' +
-        '"makeMeasurements":true' +
-    '}'
-)
-
-def elapsed = (System.currentTimeMillis() - t0) / 1000.0
-
-// ──────────────────────────────────────────────────────────────
-// 5) Sonuçları topla
-// ──────────────────────────────────────────────────────────────
-def cal = imageData.getServer().getPixelCalibration()
-def pixelWidth  = cal.getPixelWidthMicrons()
-def pixelHeight = cal.getPixelHeightMicrons()
-if (!(pixelWidth > 0) || !(pixelHeight > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok",
-        "Slaytta piksel boyutu (µm) tanımlı değil; alan/yoğunluk ölçümleri (mm²) hesaplanamaz.\n\n" +
-        "Piksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar →\n" +
-        "Kalibrasyon (piksel boyutu). Sonra bu betiği tekrar çalıştırın.")
-    return
-}
-
-def totalCells = 0
-def totalAreaMm2 = 0.0
-
-totalCells = targetAnnotation.getChildObjects().findAll { it.isDetection() }.size()
-def roi = targetAnnotation.getROI()
-if (roi != null) {
-    def areaPx = roi.getArea()
-    totalAreaMm2 = (areaPx * pixelWidth * pixelHeight) / 1_000_000.0
-}
-
-def density = totalAreaMm2 > 0 ? Math.round(totalCells / totalAreaMm2) : 0
-
-// ──────────────────────────────────────────────────────────────
-// 6) Kullanıcıya sonucu sun
-// ──────────────────────────────────────────────────────────────
-showResultWindow(
-    "Tamamlandı 🎉",
-    String.format(java.util.Locale.US, 
-        "İlk hesaplamalı hücre sayımınız bitti.\n\n" +
-        "📊 Sonuçlar\n" +
-        "──────────\n" +
+    double elapsed = (System.currentTimeMillis() - t0) / 1000.0
+    int totalCells = target.getChildObjects().findAll { it.isDetection() }.size()
+    double areaMm2 = 0.0
+    def roi = target.getROI()
+    if (roi != null) areaMm2 = (roi.getArea() * pw * ph) / 1_000_000.0
+    long density = areaMm2 > 0 ? Math.round(totalCells / areaMm2) : 0L
+    def text = String.format(java.util.Locale.US,
+        "Parametreler : eşik=%.2f  sigma=%.2f  genişletme=%.1f µm\n" +
+        "────────────────────────────\n" +
         "  Toplam hücre        : %,d\n" +
         "  Anotasyon alanı     : %.2f mm²\n" +
         "  Hücre yoğunluğu     : ~%,d hücre/mm²\n" +
-        "  Süre                : %.1f sn\n\n" +
-        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
-        totalCells, totalAreaMm2, density, elapsed
-    )
-)
+        "  Süre                : %.1f sn",
+        thr, sig, exp, totalCells, areaMm2, density, elapsed)
+    return [ok:true, text:text]
+}
 
-println "─────────────────────────────────────"
-println "Tamamlandı: ${totalCells} hücre / ${String.format(java.util.Locale.US, '%.2f', totalAreaMm2)} mm² / ${density} hücre/mm² (${elapsed} sn)"
-println "─────────────────────────────────────"
+// Headless: tek sefer atölye varsayılanlarıyla çalıştır + yazdır.
+if (isHeadless) {
+    def r = runDetection(atolyeD('atolye.detectionThreshold', 0.1), atolyeD('atolye.sigma', 1.5), atolyeD('atolye.cellExpansionNuclear', 5.0))
+    println r.ok ? r.text : ("Hata: " + r.error)
+    return
+}
+
+// ──────────────────────────────────────────────────────────────
+// 3) Tek pencere: ayarla → Çalıştır → sonuç → (gerekirse) tekrar
+// ──────────────────────────────────────────────────────────────
+javafx.application.Platform.runLater {
+    try {
+        def stage = new javafx.stage.Stage()
+        stage.initModality(javafx.stage.Modality.NONE)
+        stage.setTitle('Modül 2 - Hızlı hücre tespiti')
+        stage.setAlwaysOnTop(true)
+
+        def title = new javafx.scene.control.Label('Hızlı hücre tespiti')
+        title.setStyle('-fx-font-size: 14px; -fx-font-weight: bold;')
+        def info = new javafx.scene.control.Label(
+            'Bir dikdörtgen anotasyon (R) çizip SEÇİN (kenarı sarı), sonra "Çalıştır".\n' +
+            'Eşikleri değiştirip yeniden çalıştırabilirsiniz; sonuç aşağıda güncellenir.')
+        info.setWrapText(true)
+
+        def spThr = new javafx.scene.control.Spinner(0.0, 1.0, atolyeD('atolye.detectionThreshold', 0.1), 0.01)
+        def spSig = new javafx.scene.control.Spinner(0.5, 5.0, atolyeD('atolye.sigma', 1.5), 0.1)
+        def spExp = new javafx.scene.control.Spinner(0.0, 20.0, atolyeD('atolye.cellExpansionNuclear', 5.0), 0.5)
+        [spThr, spSig, spExp].each { it.setEditable(true); it.setPrefWidth(110) }
+        def grid = new javafx.scene.layout.GridPane()
+        grid.setHgap(8); grid.setVgap(6); grid.setPadding(new javafx.geometry.Insets(6))
+        grid.addRow(0, new javafx.scene.control.Label('Eşik (Hematoxylin OD)'), spThr)
+        grid.addRow(1, new javafx.scene.control.Label('Sigma (µm)'), spSig)
+        grid.addRow(2, new javafx.scene.control.Label('Hücre genişletme (µm)'), spExp)
+        def adv = new javafx.scene.control.TitledPane('⚙ Gelişmiş ayarlar — eşikler', grid)
+        adv.setExpanded(false); adv.setAnimated(false)
+
+        def status = new javafx.scene.control.Label('Hazır.')
+        def progress = new javafx.scene.control.ProgressBar()
+        progress.setMaxWidth(Double.MAX_VALUE); progress.setVisible(false); progress.setManaged(false)
+        def resultArea = new javafx.scene.control.TextArea()
+        resultArea.setEditable(false); resultArea.setWrapText(false); resultArea.setPrefRowCount(8)
+        resultArea.setPromptText('Sonuçlar burada görünecek…')
+        resultArea.setStyle("-fx-font-family: 'Consolas','Menlo','Courier New',monospace; -fx-font-size: 12px;")
+
+        def runBtn = new javafx.scene.control.Button('Çalıştır'); runBtn.setDefaultButton(true)
+        runBtn.setOnAction({
+            runBtn.setDisable(true)
+            status.setStyle(''); status.setText('Hücreler tespit ediliyor…')
+            progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
+            double thr = spThr.getValue() as double
+            double sig = spSig.getValue() as double
+            double exp = spExp.getValue() as double
+            def worker = new Thread({
+                def res = runDetection(thr, sig, exp)
+                javafx.application.Platform.runLater {
+                    progress.setVisible(false); progress.setManaged(false); runBtn.setDisable(false)
+                    if (res.ok) {
+                        status.setStyle(''); status.setText('Tamamlandı ✅ — eşikleri değiştirip tekrar çalıştırabilirsiniz.')
+                        resultArea.setText(res.text)
+                    } else {
+                        status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + res.error)
+                    }
+                }
+            }, 'Modul2Detect')
+            worker.setDaemon(true); worker.start()
+        })
+
+        def alwaysTop = new javafx.scene.control.CheckBox('Üstte tut'); alwaysTop.setSelected(true)
+        alwaysTop.selectedProperty().addListener(
+            { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
+        def copyBtn = new javafx.scene.control.Button('Kopyala')
+        copyBtn.setOnAction({
+            def cb = javafx.scene.input.Clipboard.getSystemClipboard()
+            def c = new javafx.scene.input.ClipboardContent(); c.putString(resultArea.getText()); cb.setContent(c)
+        })
+        def closeBtn = new javafx.scene.control.Button('Kapat'); closeBtn.setOnAction({ stage.close() })
+
+        def footer = new javafx.scene.control.Label('QuPath Atölye Scriptleri · araştırma/eğitim amaçlı')
+        footer.setMaxWidth(Double.MAX_VALUE)
+        footer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;')
+
+        def spacer = new javafx.scene.layout.Region()
+        javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
+        def btnRow = new javafx.scene.layout.HBox(8, alwaysTop, spacer, copyBtn, runBtn, closeBtn)
+        btnRow.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
+
+        def content = new javafx.scene.layout.VBox(10, title, info, adv, status, progress, resultArea)
+        content.setPadding(new javafx.geometry.Insets(14))
+        javafx.scene.layout.VBox.setVgrow(resultArea, javafx.scene.layout.Priority.ALWAYS)
+        def bottom = new javafx.scene.layout.VBox(8, footer, btnRow)
+        bottom.setPadding(new javafx.geometry.Insets(10))
+        def root = new javafx.scene.layout.BorderPane()
+        root.setCenter(content); root.setBottom(bottom)
+        stage.setScene(new javafx.scene.Scene(root, 560, 520))
+        stage.show()
+    } catch (Throwable t) {
+        Dialogs.showErrorMessage('Modül 2 açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+    }
+}

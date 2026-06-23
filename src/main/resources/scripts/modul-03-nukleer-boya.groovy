@@ -11,9 +11,10 @@
  *   1. Ki-67 (veya başka nükleer DAB) İHK slaytını açın
  *   2. Image type → "Brightfield (H-DAB)" olduğundan emin olun
  *      ([Image → Image type → Brightfield (H-DAB)])
- *   3. [R] tuşu → tümör içeren ~1×1 mm dikdörtgen anotasyon çizin
- *   4. Anotasyon seçili iken → [Automate → Project scripts → bu betik]
- *   5. Sonuçları sonuç penceresinden okuyun
+ *   3. [R] tuşu → tümör içeren ~1×1 mm dikdörtgen anotasyon çizin ve SEÇİN
+ *   4. Bu betiği çalıştırın → açılan TEK pencerede "Çalıştır"
+ *   5. Pencere açık kalır: eşikleri değiştirip (Gelişmiş ayarlar) tekrar
+ *      çalıştırabilir, sonuçları aynı pencerede güncel görebilirsiniz
  *
  * NE YAPAR:
  *   • Atölye boya vektörleri ile çekirdek-yoğun DAB sinyalini ayırır
@@ -51,16 +52,7 @@ import qupath.lib.gui.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import qupath.lib.objects.PathAnnotationObject
 
-// ──────────────────────────────────────────────────────────────
-// Modal olmayan pencere yardımcıları
-//   - waitForConfirm    : modal hissi veren ama QuPath'i kilitlemeyen onay penceresi
-//   - showResultWindow  : sonuç penceresi — açık kalır, QuPath kullanılmaya devam edilebilir
-//
-// İkisi de always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
-// parametre değiştirip betiği tekrar çalıştırabilir, sonuçları kopyalayabilir.
-// ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
-
 // --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
 def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
 def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
@@ -71,144 +63,6 @@ def atolyeD = { String k, double  d -> (double)  __wpCall('dbl',  [String.class,
 def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class, String.class]  as Class[], [k, d] as Object[], d) }
 def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
 def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
-
-def detectionImageBrightfield = atolyeS('atolye.detectionChannel', 'Hematoxylin OD')   // veya 'Optical density sum'
-def requestedPixelSizeMicrons = atolyeD('atolye.pixelSize', 0.5)
-def backgroundRadiusMicrons   = atolyeD('atolye.backgroundRadius', 8.0)
-def medianRadiusMicrons       = atolyeD('atolye.medianRadius', 0.0)
-def sigmaMicrons              = atolyeD('atolye.sigma', 1.5)
-def minAreaMicrons            = atolyeD('atolye.minArea', 10.0)
-def maxAreaMicrons            = atolyeD('atolye.maxArea', 400.0)
-def detectionThreshold        = atolyeD('atolye.detectionThreshold', 0.1)
-def watershedPostProcess      = atolyeB('atolye.watershed', true)
-def cellExpansionMicrons      = atolyeD('atolye.cellExpansionNuclear', 5.0)
-def thresholdPositive1        = atolyeD('atolye.nuclear1', 0.20)
-def thresholdPositive2        = atolyeD('atolye.nuclear2', 0.40)
-def thresholdPositive3        = atolyeD('atolye.nuclear3', 0.60)
-def warnNuclearCount          = atolyeI('atolye.warnNuclearCount', 500)
-
-def waitForConfirm = { String windowTitle, String windowBody ->
-    if (isHeadless) {
-        println "=== ${windowTitle} ===\n${windowBody}\n=================="
-        return true
-    }
-    def latch = new java.util.concurrent.CountDownLatch(1)
-    def confirmed = new java.util.concurrent.atomic.AtomicBoolean(false)
-
-    javafx.application.Platform.runLater {
-        try {
-            def stage = new javafx.stage.Stage()
-            stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle(windowTitle)
-            stage.setAlwaysOnTop(true)
-
-            def label = new javafx.scene.control.Label(windowBody)
-            label.setWrapText(true)
-            label.setStyle("-fx-font-size: 12px; -fx-padding: 8px;")
-
-            def scrollPane = new javafx.scene.control.ScrollPane(label)
-            scrollPane.setFitToWidth(true)
-
-            def okBtn = new javafx.scene.control.Button("Çalıştır")
-            okBtn.setDefaultButton(true)
-            okBtn.setOnAction({
-                confirmed.set(true)
-                stage.close()
-            })
-
-            def cancelBtn = new javafx.scene.control.Button("İptal")
-            cancelBtn.setCancelButton(true)
-            cancelBtn.setOnAction({
-                confirmed.set(false)
-                stage.close()
-            })
-
-            stage.setOnHidden({ latch.countDown() })
-
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
-            alwaysTop.setSelected(true)
-            alwaysTop.selectedProperty().addListener(
-                { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
-            )
-
-            def spacer = new javafx.scene.layout.Region()
-            javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-
-            def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, cancelBtn, okBtn)
-            buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
-            buttons.setPadding(new javafx.geometry.Insets(10))
-
-            def root = new javafx.scene.layout.BorderPane()
-            root.setCenter(scrollPane)
-            root.setBottom(buttons)
-
-            stage.setScene(new javafx.scene.Scene(root, 620, 460))
-            stage.show()
-        } catch (Throwable t) {
-            // FX kurulumu başarısızsa modal'a geri dön
-            confirmed.set(qupath.lib.gui.dialogs.Dialogs.showConfirmDialog(windowTitle, windowBody))
-            latch.countDown()
-        }
-    }
-
-    latch.await()
-    return confirmed.get()
-}
-
-def showResultWindow = { String windowTitle, String windowBody ->
-    if (isHeadless) {
-        println "=== ${windowTitle} ===\n${windowBody}\n=================="
-        return
-    }
-    javafx.application.Platform.runLater {
-        try {
-            def stage = new javafx.stage.Stage()
-            stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle(windowTitle)
-            stage.setAlwaysOnTop(true)
-
-            def textArea = new javafx.scene.control.TextArea(windowBody)
-            textArea.setEditable(false)
-            textArea.setWrapText(false)
-            textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
-
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
-            alwaysTop.setSelected(true)
-            alwaysTop.selectedProperty().addListener(
-                { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
-            )
-
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
-            copyBtn.setOnAction({
-                def cb = javafx.scene.input.Clipboard.getSystemClipboard()
-                def content = new javafx.scene.input.ClipboardContent()
-                content.putString(windowBody)
-                cb.setContent(content)
-            })
-
-            def closeBtn = new javafx.scene.control.Button("Kapat")
-            closeBtn.setDefaultButton(true)
-            closeBtn.setOnAction({ stage.close() })
-
-            def spacer = new javafx.scene.layout.Region()
-            javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-
-            def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, copyBtn, closeBtn)
-            buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
-            buttons.setPadding(new javafx.geometry.Insets(8))
-
-            def root = new javafx.scene.layout.BorderPane()
-            root.setCenter(textArea)
-            root.setBottom(buttons)
-
-            stage.setScene(new javafx.scene.Scene(root, 760, 580))
-            stage.show()
-        } catch (Throwable t) {
-            // FX başarısızsa modal'a geri dön — kayıp olmasın
-            qupath.lib.gui.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
-        }
-    }
-}
 
 // ──────────────────────────────────────────────────────────────
 // 1) Ön kontroller
@@ -255,171 +109,117 @@ if (!hasHematoxylin) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 2) Karşılama dialog
+// 2) Tespit + sonuç toplama tek yerde — pencere kapanmadan tekrar
+//    (eşikleri değiştirip) çağrılabilir. Dönüş: [ok, text] | [ok:false, error].
 // ──────────────────────────────────────────────────────────────
-def devam = waitForConfirm(
-    "Modül 3 - Ki-67 / Nükleer İHK kantifikasyonu",
-    "Bu betik, seçtiğiniz anotasyon içindeki tüm çekirdekleri tespit edip\n" +
-    "her birini DAB yoğunluğuna göre Negative / 1+ / 2+ / 3+ olarak sınıflar.\n\n" +
-    "Atölye eşikleri (DAB OD — Nucleus mean)" + (thresholdPositive1 != 0.20 || thresholdPositive2 != 0.40 || thresholdPositive3 != 0.60 ? " (değiştirildi)" : "") + ":\n" +
-    "  • 1+ (zayıf):  " + String.format(java.util.Locale.US, '%.2f', thresholdPositive1) + " OD\n" +
-    "  • 2+ (orta):   " + String.format(java.util.Locale.US, '%.2f', thresholdPositive2) + " OD\n" +
-    "  • 3+ (güçlü):  " + String.format(java.util.Locale.US, '%.2f', thresholdPositive3) + " OD\n\n" +
-    "Çıktı:\n" +
-    "  • Ki-67 LI (Pozitif %) — ölçüm çıktısı\n" +
-    "  • Grup dağılımı (% 0 / 1+ / 2+ / 3+)\n" +
-    "  • Hücre yoğunluğu (hücre/mm²) + anotasyon alanı\n\n" +
-    "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız Çalıştır düğmesine basın; devam etmek istemiyorsanız İptal ile çıkın."
-)
-if (!devam) {
-    println "Kullanıcı iptal etti."
-    return
-}
+def runDetection = { double thr1, double thr2, double thr3 ->
+    def selected = QP.getSelectedObject()
+    if (selected == null || !(selected instanceof PathAnnotationObject))
+        return [ok:false, error:'Önce ölçmek istediğiniz dikdörtgen anotasyonu çizip SEÇİN (kenarı sarı görünür).']
+    def targetAnnotation = selected
+    def cal = imageData.getServer().getPixelCalibration()
+    def pixelWidth  = cal.getPixelWidthMicrons()
+    def pixelHeight = cal.getPixelHeightMicrons()
+    if (!(pixelWidth > 0) || !(pixelHeight > 0))
+        return [ok:false, error:'Piksel kalibrasyonu yok; mm² hesaplanamaz (Yardımcılar → Kalibrasyon).']
 
-// ──────────────────────────────────────────────────────────────
-// 3) Anotasyon kontrolü
-// ──────────────────────────────────────────────────────────────
-def selected = QP.getSelectedObject()
-def annotations = QP.getAnnotationObjects()
+    def detectionImageBrightfield = atolyeS('atolye.detectionChannel', 'Hematoxylin OD')
+    def requestedPixelSizeMicrons = atolyeD('atolye.pixelSize', 0.5)
+    def backgroundRadiusMicrons   = atolyeD('atolye.backgroundRadius', 8.0)
+    def medianRadiusMicrons       = atolyeD('atolye.medianRadius', 0.0)
+    def sigmaMicrons              = atolyeD('atolye.sigma', 1.5)
+    def minAreaMicrons            = atolyeD('atolye.minArea', 10.0)
+    def maxAreaMicrons            = atolyeD('atolye.maxArea', 400.0)
+    def detectionThreshold        = atolyeD('atolye.detectionThreshold', 0.1)
+    def watershedPostProcess      = atolyeB('atolye.watershed', true)
+    def cellExpansionMicrons      = atolyeD('atolye.cellExpansionNuclear', 5.0)
+    def warnNuclearCount          = atolyeI('atolye.warnNuclearCount', 500)
 
-if (annotations.isEmpty()) {
-    Dialogs.showErrorMessage(
-        "Anotasyon bulunamadı",
-        "Önce bir anotasyon çizmelisiniz.\n\n" +
-        "Nasıl:\n" +
-        "  1. R tuşu → tümör içeren ~1×1 mm bir dikdörtgen sürükleyin\n" +
-        "  2. Anotasyona tıklayarak seçili tutun (kenarı sarı görünmeli)\n" +
-        "  3. Bu betiği tekrar çalıştırın"
+    long t0 = System.currentTimeMillis()
+    QP.selectObjects(targetAnnotation)
+
+    // Tespit kanalı seçimi — yöntemsel not:
+    //   "Hematoxylin OD" → çekirdek tespiti hematoksilin sinyali üzerinden (varsayılan).
+    //     Yüksek-LI Ki-67'de güçlü DAB hematoksilin sinyalini bastırabilir, bazı
+    //     pozitif çekirdekler kaçabilir.
+    //   "Optical density sum" → H + DAB + Eozin OD kombinasyonu; ASCO/cancer-informatics
+    //     eğitimleri Ki-67 için bu kanalı önerir (DAB-yoğun pozitiflerde daha güvenli).
+    //     Trade-off: arka plan gürültüsüne biraz daha duyarlı; eşiklerin yeniden
+    //     kalibre edilmesi gerekebilir.
+    // Atölye varsayılanı "Hematoxylin OD" — düşük-orta LI'da daha temiz segmentasyon verir.
+    // Yüksek-LI vakada WorkshopPrefs'ten 'atolye.detectionChannel' → 'Optical density sum' yapın
+    // ve eşikleri referans hücrelerde yeniden test edin.
+    QP.runPlugin(
+        'qupath.imagej.detect.cells.PositiveCellDetection',
+        '{' +
+            '"detectionImageBrightfield":"' + detectionImageBrightfield + '",' +
+            '"requestedPixelSizeMicrons":' + requestedPixelSizeMicrons + ',' +
+            '"backgroundRadiusMicrons":' + backgroundRadiusMicrons + ',' +
+            '"medianRadiusMicrons":' + medianRadiusMicrons + ',' +
+            '"sigmaMicrons":' + sigmaMicrons + ',' +
+            '"minAreaMicrons":' + minAreaMicrons + ',' +
+            '"maxAreaMicrons":' + maxAreaMicrons + ',' +
+            '"threshold":' + detectionThreshold + ',' +
+            '"watershedPostProcess":' + watershedPostProcess + ',' +
+            '"cellExpansionMicrons":' + cellExpansionMicrons + ',' +
+            '"includeNuclei":true,' +
+            '"smoothBoundaries":true,' +
+            '"makeMeasurements":true,' +
+            '"thresholdCompartment":"Nucleus: DAB OD mean",' +
+            '"thresholdPositive1":' + thr1 + ',' +
+            '"thresholdPositive2":' + thr2 + ',' +
+            '"thresholdPositive3":' + thr3 + ',' +
+            '"singleThreshold":false' +
+        '}'
     )
-    return
-}
 
-if (selected == null || !(selected instanceof PathAnnotationObject)) {
-    Dialogs.showErrorMessage(
-        "Anotasyon seçili değil",
-        "Çalıştırmak istediğiniz dikdörtgen anotasyonu seçili tutun (kenarı sarı)."
-    )
-    return
-}
+    double elapsed = (System.currentTimeMillis() - t0) / 1000.0
 
-def targetAnnotation = selected
+    // Sonuçları topla — her bin için sayım
+    def cells = targetAnnotation.getChildObjects().findAll { it.isDetection() }
+    def totalCells = cells.size()
 
-// ──────────────────────────────────────────────────────────────
-// 4) Positive cell detection — atölye varsayılanları
-// ──────────────────────────────────────────────────────────────
-println "─────────────────────────────────────"
-println "Modül 3 - Ki-67 / Nükleer İHK"
-println "─────────────────────────────────────"
-println "Pozitif hücre tespiti başlatılıyor..."
-println "  • Image: ${QP.getProjectEntry()?.getImageName() ?: imageData.getServer().getMetadata().getName()}"
-println "  • Score compartment: Nucleus: DAB OD mean"
-println "  • Eşik 1+ / 2+ / 3+: ${thresholdPositive1} / ${thresholdPositive2} / ${thresholdPositive3} OD"
-println "  • Requested pixel size: ${requestedPixelSizeMicrons} µm/px"
-println "  • Nucleus background radius: ${backgroundRadiusMicrons} µm"
+    def numNegative = 0
+    def num1Plus = 0
+    def num2Plus = 0
+    def num3Plus = 0
 
-def t0 = System.currentTimeMillis()
+    cells.each { c ->
+        def cls = c.getPathClass()?.getName() ?: ""
+        if (cls.contains("3+"))      num3Plus++
+        else if (cls.contains("2+")) num2Plus++
+        else if (cls.contains("1+")) num1Plus++
+        else                          numNegative++
+    }
 
-// Tespit kanalı seçimi — yöntemsel not:
-//   "Hematoxylin OD" → çekirdek tespiti hematoksilin sinyali üzerinden (varsayılan).
-//     Yüksek-LI Ki-67'de güçlü DAB hematoksilin sinyalini bastırabilir, bazı
-//     pozitif çekirdekler kaçabilir.
-//   "Optical density sum" → H + DAB + Eozin OD kombinasyonu; ASCO/cancer-informatics
-//     eğitimleri Ki-67 için bu kanalı önerir (DAB-yoğun pozitiflerde daha güvenli).
-//     Trade-off: arka plan gürültüsüne biraz daha duyarlı; eşiklerin yeniden
-//     kalibre edilmesi gerekebilir.
-// Atölye varsayılanı "Hematoxylin OD" — düşük-orta LI'da daha temiz segmentasyon verir.
-// Yüksek-LI vakada WorkshopPrefs'ten 'atolye.detectionChannel' → 'Optical density sum' yapın
-// ve eşikleri referans hücrelerde yeniden test edin.
+    def numPositive = num1Plus + num2Plus + num3Plus
+    def ki67LI = totalCells > 0 ? 100.0 * numPositive / totalCells : 0.0
 
-QP.selectObjects(targetAnnotation)
-QP.runPlugin(
-    'qupath.imagej.detect.cells.PositiveCellDetection',
-    '{' +
-        '"detectionImageBrightfield":"' + detectionImageBrightfield + '",' +
-        '"requestedPixelSizeMicrons":' + requestedPixelSizeMicrons + ',' +
-        '"backgroundRadiusMicrons":' + backgroundRadiusMicrons + ',' +
-        '"medianRadiusMicrons":' + medianRadiusMicrons + ',' +
-        '"sigmaMicrons":' + sigmaMicrons + ',' +
-        '"minAreaMicrons":' + minAreaMicrons + ',' +
-        '"maxAreaMicrons":' + maxAreaMicrons + ',' +
-        '"threshold":' + detectionThreshold + ',' +
-        '"watershedPostProcess":' + watershedPostProcess + ',' +
-        '"cellExpansionMicrons":' + cellExpansionMicrons + ',' +
-        '"includeNuclei":true,' +
-        '"smoothBoundaries":true,' +
-        '"makeMeasurements":true,' +
-        '"thresholdCompartment":"Nucleus: DAB OD mean",' +
-        '"thresholdPositive1":' + thresholdPositive1 + ',' +
-        '"thresholdPositive2":' + thresholdPositive2 + ',' +
-        '"thresholdPositive3":' + thresholdPositive3 + ',' +
-        '"singleThreshold":false' +
-    '}'
-)
+    // Alan ve yoğunluk
+    def roi = targetAnnotation.getROI()
+    def totalAreaMm2 = roi != null
+        ? (roi.getArea() * pixelWidth * pixelHeight) / 1_000_000.0
+        : 0.0
+    def density = totalAreaMm2 > 0 ? Math.round(totalCells / totalAreaMm2) : 0L
 
-def elapsed = (System.currentTimeMillis() - t0) / 1000.0
+    // Örneklem boyutu uyarısı — International Ki-67 in Breast Cancer Working Group (Nielsen 2021)
+    // minimum 500-1000 tümör hücresi sayılmasını metodoloji standardı olarak önerir.
+    // Klinik yorum değil, ölçüm hassasiyeti notu.
+    def uyari = ""
+    if (totalCells < warnNuclearCount) {
+        uyari = String.format(java.util.Locale.US,
+            "\n📝 Not: %,d hücre <500 — Ki-67 Working Group (Nielsen 2021) sayma standardının altında.\n" +
+            "  Daha büyük bir ROI ile tekrar deneyin (hedef: ≥500-1.000 hücre).",
+            totalCells)
+    } else if (totalCells > 50000) {
+        uyari = String.format(java.util.Locale.US,
+            "\n📝 Not: %,d hücre çok fazla — ROI küçültmek hesaplama hızını artırır.",
+            totalCells)
+    }
 
-// ──────────────────────────────────────────────────────────────
-// 5) Sonuçları topla — her bin için sayım
-// ──────────────────────────────────────────────────────────────
-def cells = targetAnnotation.getChildObjects().findAll { it.isDetection() }
-def totalCells = cells.size()
-
-def numNegative = 0
-def num1Plus = 0
-def num2Plus = 0
-def num3Plus = 0
-
-cells.each { c ->
-    def cls = c.getPathClass()?.getName() ?: ""
-    if (cls.contains("3+"))      num3Plus++
-    else if (cls.contains("2+")) num2Plus++
-    else if (cls.contains("1+")) num1Plus++
-    else                          numNegative++
-}
-
-def numPositive = num1Plus + num2Plus + num3Plus
-def ki67LI = totalCells > 0 ? 100.0 * numPositive / totalCells : 0.0
-
-// Alan ve yoğunluk
-def cal = imageData.getServer().getPixelCalibration()
-def pixelWidth  = cal.getPixelWidthMicrons()
-def pixelHeight = cal.getPixelHeightMicrons()
-if (!(pixelWidth > 0) || !(pixelHeight > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok",
-        "Slaytta piksel boyutu (µm) tanımlı değil; alan/yoğunluk ölçümleri (mm²) hesaplanamaz.\n\n" +
-        "Piksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar →\n" +
-        "Kalibrasyon (piksel boyutu). Sonra bu betiği tekrar çalıştırın.")
-    return
-}
-def roi = targetAnnotation.getROI()
-def totalAreaMm2 = roi != null
-    ? (roi.getArea() * pixelWidth * pixelHeight) / 1_000_000.0
-    : 0.0
-def density = totalAreaMm2 > 0 ? Math.round(totalCells / totalAreaMm2) : 0
-
-// Örneklem boyutu uyarısı — International Ki-67 in Breast Cancer Working Group (Nielsen 2021)
-// minimum 500-1000 tümör hücresi sayılmasını metodoloji standardı olarak önerir.
-// Klinik yorum değil, ölçüm hassasiyeti notu.
-def uyari = ""
-if (totalCells < warnNuclearCount) {
-    uyari = String.format(java.util.Locale.US, 
-        "\n📝 Not: %,d hücre <500 — Ki-67 Working Group (Nielsen 2021) sayma standardının altında.\n" +
-        "  Daha büyük bir ROI ile tekrar deneyin (hedef: ≥500-1.000 hücre).",
-        totalCells)
-} else if (totalCells > 50000) {
-    uyari = String.format(java.util.Locale.US, 
-        "\n📝 Not: %,d hücre çok fazla — ROI küçültmek hesaplama hızını artırır.",
-        totalCells)
-}
-
-// ──────────────────────────────────────────────────────────────
-// 6) Sonucu sun
-// ──────────────────────────────────────────────────────────────
-showResultWindow(
-    "Tamamlandı 🔬",
-    String.format(java.util.Locale.US, 
-        "Ki-67 / Nükleer İHK kantifikasyonu bitti.\n\n" +
+    def text = String.format(java.util.Locale.US,
+        "Eşikler: 1+=%.2f  2+=%.2f  3+=%.2f (Nucleus: DAB OD mean)\n" +
+        "────────────────────────────────────\n" +
         "📊 Sayım sonuçları\n" +
         "────────────────────\n" +
         "  Toplam hücre        : %,d\n" +
@@ -429,12 +229,13 @@ showResultWindow(
         "  3+ (güçlü)          : %,d  (%%%.1f)\n\n" +
         "🎯 Metrikler\n" +
         "─────────────\n" +
-        "  Ki-67 LI (Pozitif %%)  : %%%.1f\n" +
-        "  Hücre yoğunluğu        : ~%,d hücre/mm²\n" +
-        "  Anotasyon alanı        : %.2f mm²\n" +
-        "  Süre                   : %.1f sn\n" +
+        "  Ki-67 LI (Pozitif%%)  : %%%.1f\n" +
+        "  Hücre yoğunluğu       : ~%,d hücre/mm²\n" +
+        "  Anotasyon alanı       : %.2f mm²\n" +
+        "  Süre                  : %.1f sn\n" +
         "%s\n" +
         "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
+        thr1, thr2, thr3,
         totalCells,
         numNegative, totalCells > 0 ? 100.0 * numNegative / totalCells : 0.0,
         num1Plus,    totalCells > 0 ? 100.0 * num1Plus / totalCells : 0.0,
@@ -442,10 +243,117 @@ showResultWindow(
         num3Plus,    totalCells > 0 ? 100.0 * num3Plus / totalCells : 0.0,
         ki67LI, density, totalAreaMm2, elapsed, uyari
     )
-)
 
-println "─────────────────────────────────────"
-println "Tamamlandı:"
-println "  Toplam: ${totalCells}  |  Pozitif: ${numPositive}  |  Ki-67 LI: ${String.format(java.util.Locale.US, '%.1f', ki67LI)}%"
-println "  Yoğunluk: ${density}/mm²  |  Süre: ${elapsed} sn"
-println "─────────────────────────────────────"
+    println "─────────────────────────────────────"
+    println "Modül 3 - Ki-67 / Nükleer İHK"
+    println "─────────────────────────────────────"
+    println "  Toplam: ${totalCells}  |  Pozitif: ${numPositive}  |  Ki-67 LI: ${String.format(java.util.Locale.US, '%.1f', ki67LI)}%"
+    println "  Yoğunluk: ${density}/mm²  |  Süre: ${elapsed} sn"
+    println "─────────────────────────────────────"
+
+    return [ok:true, text:text]
+}
+
+// Headless: tek sefer atölye varsayılanlarıyla çalıştır + yazdır.
+if (isHeadless) {
+    def r = runDetection(
+        atolyeD('atolye.nuclear1', 0.20),
+        atolyeD('atolye.nuclear2', 0.40),
+        atolyeD('atolye.nuclear3', 0.60)
+    )
+    println r.ok ? r.text : ("Hata: " + r.error)
+    return
+}
+
+// ──────────────────────────────────────────────────────────────
+// 3) Tek pencere: ayarla → Çalıştır → sonuç → (gerekirse) tekrar
+// ──────────────────────────────────────────────────────────────
+javafx.application.Platform.runLater {
+    try {
+        def stage = new javafx.stage.Stage()
+        stage.initModality(javafx.stage.Modality.NONE)
+        stage.setTitle('Modül 3 - Ki-67 / Nükleer İHK kantifikasyonu')
+        stage.setAlwaysOnTop(true)
+
+        def title = new javafx.scene.control.Label('Ki-67 / Nükleer İHK kantifikasyonu')
+        title.setStyle('-fx-font-size: 14px; -fx-font-weight: bold;')
+        def info = new javafx.scene.control.Label(
+            'Bir dikdörtgen anotasyon (R) çizip SEÇİN (kenarı sarı), sonra "Çalıştır".\n' +
+            'Eşikleri değiştirip yeniden çalıştırabilirsiniz; sonuç aşağıda güncellenir.')
+        info.setWrapText(true)
+
+        def spThr1 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.nuclear1', 0.20), 0.01)
+        def spThr2 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.nuclear2', 0.40), 0.01)
+        def spThr3 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.nuclear3', 0.60), 0.01)
+        [spThr1, spThr2, spThr3].each { it.setEditable(true); it.setPrefWidth(110) }
+        def grid = new javafx.scene.layout.GridPane()
+        grid.setHgap(8); grid.setVgap(6); grid.setPadding(new javafx.geometry.Insets(6))
+        grid.addRow(0, new javafx.scene.control.Label('1+ eşiği (zayıf, DAB OD)'), spThr1)
+        grid.addRow(1, new javafx.scene.control.Label('2+ eşiği (orta, DAB OD)'),  spThr2)
+        grid.addRow(2, new javafx.scene.control.Label('3+ eşiği (güçlü, DAB OD)'), spThr3)
+        def adv = new javafx.scene.control.TitledPane('⚙ Gelişmiş ayarlar — eşikler', grid)
+        adv.setExpanded(false); adv.setAnimated(false)
+
+        def status = new javafx.scene.control.Label('Hazır.')
+        def progress = new javafx.scene.control.ProgressBar()
+        progress.setMaxWidth(Double.MAX_VALUE); progress.setVisible(false); progress.setManaged(false)
+        def resultArea = new javafx.scene.control.TextArea()
+        resultArea.setEditable(false); resultArea.setWrapText(false); resultArea.setPrefRowCount(10)
+        resultArea.setPromptText('Sonuçlar burada görünecek…')
+        resultArea.setStyle("-fx-font-family: 'Consolas','Menlo','Courier New',monospace; -fx-font-size: 12px;")
+
+        def runBtn = new javafx.scene.control.Button('Çalıştır'); runBtn.setDefaultButton(true)
+        runBtn.setOnAction({
+            runBtn.setDisable(true)
+            status.setStyle(''); status.setText('Çalışıyor…')
+            progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
+            double thr1 = spThr1.getValue() as double
+            double thr2 = spThr2.getValue() as double
+            double thr3 = spThr3.getValue() as double
+            def worker = new Thread({
+                def res = runDetection(thr1, thr2, thr3)
+                javafx.application.Platform.runLater {
+                    progress.setVisible(false); progress.setManaged(false); runBtn.setDisable(false)
+                    if (res.ok) {
+                        status.setStyle(''); status.setText('Tamamlandı ✅ — eşikleri değiştirip tekrar çalıştırabilirsiniz.')
+                        resultArea.setText(res.text)
+                    } else {
+                        status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + res.error)
+                    }
+                }
+            }, 'Modul3Detect')
+            worker.setDaemon(true); worker.start()
+        })
+
+        def alwaysTop = new javafx.scene.control.CheckBox('Üstte tut'); alwaysTop.setSelected(true)
+        alwaysTop.selectedProperty().addListener(
+            { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
+        def copyBtn = new javafx.scene.control.Button('Kopyala')
+        copyBtn.setOnAction({
+            def cb = javafx.scene.input.Clipboard.getSystemClipboard()
+            def c = new javafx.scene.input.ClipboardContent(); c.putString(resultArea.getText()); cb.setContent(c)
+        })
+        def closeBtn = new javafx.scene.control.Button('Kapat'); closeBtn.setOnAction({ stage.close() })
+
+        def footer = new javafx.scene.control.Label('QuPath Atölye Scriptleri · araştırma/eğitim amaçlı')
+        footer.setMaxWidth(Double.MAX_VALUE)
+        footer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;')
+
+        def spacer = new javafx.scene.layout.Region()
+        javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
+        def btnRow = new javafx.scene.layout.HBox(8, alwaysTop, spacer, copyBtn, runBtn, closeBtn)
+        btnRow.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
+
+        def content = new javafx.scene.layout.VBox(10, title, info, adv, status, progress, resultArea)
+        content.setPadding(new javafx.geometry.Insets(14))
+        javafx.scene.layout.VBox.setVgrow(resultArea, javafx.scene.layout.Priority.ALWAYS)
+        def bottom = new javafx.scene.layout.VBox(8, footer, btnRow)
+        bottom.setPadding(new javafx.geometry.Insets(10))
+        def root = new javafx.scene.layout.BorderPane()
+        root.setCenter(content); root.setBottom(bottom)
+        stage.setScene(new javafx.scene.Scene(root, 560, 540))
+        stage.show()
+    } catch (Throwable t) {
+        Dialogs.showErrorMessage('Modül 3 açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+    }
+}
