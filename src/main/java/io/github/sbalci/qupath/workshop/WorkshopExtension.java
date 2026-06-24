@@ -107,7 +107,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Örnek tümör/stroma sınıflandırıcısını projeye kaydet", "yardimci-ornek-siniflandirici.groovy"),
         new ScriptEntry("Eşik ile alan ölçümü",        "yardimci-esik-alan.groovy"),
         new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy"),
-        new ScriptEntry("Makine öğrenmesi için özellik matrisi", "yardimci-ozellik-matrisi.groovy")
+        new ScriptEntry("Makine öğrenmesi için özellik matrisi", "yardimci-ozellik-matrisi.groovy"),
+        // TIA Toolbox (Python) köprüsü — bkz. Ekler → TIA Toolbox
+        new ScriptEntry("TIA Toolbox için bölge maskesi",        "yardimci-tiatoolbox-maske.groovy"),
+        new ScriptEntry("AI tahmin maskelerini içe aktar (GeoJSON)", "yardimci-tahmin-iceaktar.groovy")
     );
 
     /**
@@ -127,8 +130,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("TMA çekirdek bazlı dışa aktarım",      "yardimci-tma-cekirdek-aktarim.groovy"),
         new ScriptEntry("İmmün hücre yoğunluğu (DAB)",          "yardimci-immun-yogunluk.groovy"),
         new ScriptEntry("PHH3 mitoz kantifikasyonu",            "yardimci-mitoz-phh3.groovy"),
-        new ScriptEntry("KongNet H&E mitoz tespiti (DL)",       "yardimci-mitoz-kongnet.groovy"),
-        new ScriptEntry("AI tahmin maskelerini içe aktar (GeoJSON)", "yardimci-tahmin-iceaktar.groovy")
+        new ScriptEntry("KongNet H&E mitoz tespiti (DL)",       "yardimci-mitoz-kongnet.groovy")
+        // Not: "AI tahmin maskelerini içe aktar (GeoJSON)" UTILITY_SCRIPTS'e taşındı
+        // (TIA Toolbox round-trip'i tek-tıkla kapatmak için — bkz. Ekler → TIA Toolbox).
     );
 
     private boolean alreadyInstalled = false;
@@ -449,7 +453,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "  • Kalibrasyon (piksel boyutu — µm/px ayarla)\n" +
             "  • Örnek tümör/stroma sınıflandırıcısı (projeye kaydet)\n" +
             "  • Karo (tile) dışa aktarma (derin öğrenme için görüntü/maske karoları)\n" +
-            "  • Makine öğrenmesi için özellik matrisi (X özellik + y etiket, TSV)\n\n" +
+            "  • Makine öğrenmesi için özellik matrisi (X özellik + y etiket, TSV)\n" +
+            "  • TIA Toolbox için bölge maskesi (tek-kanallı maske, masks= için)\n" +
+            "  • AI tahmin maskelerini içe aktar (GeoJSON → kilitli anotasyon)\n\n" +
             "İleri analiz (sonraki oturum):\n" +
             "  • Menüde \"İleri analiz — sonraki oturum\" altında gri görünen\n" +
             "    " + UPCOMING_SCRIPTS.size() + " yardımcı bir sonraki oturumda etkinleşecek.\n\n" +
