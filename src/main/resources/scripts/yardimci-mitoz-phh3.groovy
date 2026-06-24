@@ -27,11 +27,14 @@
  *     "Mitoz yoğunluğu (mitoz/mm2)" + "PHH3+ nükleer %"
  *   • Kilitli "Mitoz Özet" anotasyonu (Modül 9 ile dışa aktarılır)
  *
- * YÖNTEM NOTU — neden boyut filtresi (Modül 2 ile bağlantı):
- *   Modül 2'de gördüğümüz renk→eşik→morfoloji→sayım zincirinde morfolojik
- *   "opening" küçük yapay sinyalleri ("freckle") temizler. Burada bunun QuPath
- *   karşılığı minimum çekirdek alanı (minNucleusAreaUm2) filtresidir; küçük
- *   profaz/non-mitotik PHH3+ sinyallerini azaltır.
+ * YÖNTEM NOTU — EMPAIA "Mitosis Detection" not defteri ile bağlantı:
+ *   EMPAIA ECDP2022 not defteri PHH3 mitozlarını klasik görüntü işlemeyle bulur:
+ *   RGB->HSV -> HSV eşik (inRange) -> Otsu eşik -> morfolojik açma (MORPH_OPEN;
+ *   küçük yapay sinyalleri/"freckle" eler) -> kontur sayımı (findContours). Bu betik
+ *   aynı kavramsal zinciri QuPath ile uygular: boya vektörü ayrıştırma -> nükleer DAB
+ *   OD eşiği (dabThreshold) -> watershed/morfoloji -> sayım. Not defterindeki
+ *   "opening" adımının QuPath karşılığı, küçük profaz/non-mitotik PHH3+ sinyallerini
+ *   azaltan minimum çekirdek alanı (minNucleusAreaUm2) filtresidir.
  *
  * YÖNTEM REFERANSLARI:
  *   • Hendzel MJ et al. (1997), Chromosoma 106(6):348–360 — H3 Ser10 fosforilasyonu
@@ -48,7 +51,8 @@
  *   • Kalsnes J et al. (2026), FEBS Open Bio — derin öğrenme ile mitoz/mm²,
  *     pan-kanser doğrulama. doi:10.1002/2211-5463.70210
  *   • Atölye eklentisi ve bu betik için bağlam: EMPAIA Academy, ECDP2022 uygulamalı
- *     atölyesi "Mitosis Detection" (https://www.empaia.org/hands-on-workshop-2022).
+ *     atölyesi "Mitosis Detection" (https://www.empaia.org/hands-on-workshop-2022;
+ *     Colab: https://colab.research.google.com/drive/1aPunyrBZ1rSHY3xMmL7hSpOWvpv5AKLq).
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
