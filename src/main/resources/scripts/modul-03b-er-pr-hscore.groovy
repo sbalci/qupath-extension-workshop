@@ -52,28 +52,39 @@ if (imageData == null) {
     return
 }
 
-def imageTypeName = imageData.getImageType()?.toString() ?: ""
-def normalizedImageType = imageTypeName.toUpperCase(java.util.Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
-if (!normalizedImageType.contains('H_DAB')) {
-    Dialogs.showErrorMessage(
-        "Yanlış görüntü tipi",
-        "Image type 'Brightfield (H-DAB)' olmalı. Şu anki: ${imageTypeName}"
-    )
-    return
+// Image type kontrolü (Brightfield (H-DAB) zorunlu — DAB ayrımı için).
+// Modal pencere yerine: aşağıdaki pencere her zaman açılır; tip yanlışsa kullanıcı
+// pencere içinde yönlendirilir, Image panelinden tipi düzeltip "Çalıştır"a tekrar
+// basabilir (her çalıştırmada yeniden denetlenir — pencere kapanmaz).
+def imageTypeOk = { ->
+    def n = (imageData.getImageType()?.toString() ?: "")
+        .toUpperCase(java.util.Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
+    n.contains('H_DAB')
+}
+def imageTypeGuidance = { ->
+    "Bu slayt 'Brightfield (H-DAB)' olarak ayarlı değil.\n" +
+    "Şu anki tip: ${imageData.getImageType()?.toString() ?: ''}\n\n" +
+    "Çözüm:\n" +
+    "  1. Image panelini açın (sol-üst)\n" +
+    "  2. 'Image type' → 'Brightfield (H-DAB)' seçin (DAB ayrımı için gerekli)\n" +
+    "  3. Yukarıdaki 'Çalıştır' düğmesine tekrar basın"
 }
 
-// "Hematoxylin OD" kanalı yalnızca H-DAB boya vektörleri ayarlanmışsa görünür.
-def stains = imageData.getColorDeconvolutionStains()
-def hasHematoxylin = false
-if (stains != null) {
-    for (int i = 1; i <= 3; i++) {
-        def name = stains.getStain(i)?.getName()?.toLowerCase(java.util.Locale.ROOT)
-        if (name != null && name.contains("hematoxylin")) { hasHematoxylin = true; break }
+// H-DAB ise ve boya vektörleri eksikse atölye varsayılanını uygula.
+// (Yanlış tipteki slaytları otomatik dönüştürmeyiz — yönlendirme pencerede gösterilir.)
+if (imageTypeOk()) {
+    def stains = imageData.getColorDeconvolutionStains()
+    def hasHematoxylin = false
+    if (stains != null) {
+        for (int i = 1; i <= 3; i++) {
+            def name = stains.getStain(i)?.getName()?.toLowerCase(java.util.Locale.ROOT)
+            if (name != null && name.contains("hematoxylin")) { hasHematoxylin = true; break }
+        }
     }
-}
-if (!hasHematoxylin) {
-    println "⚠ H-DAB boya vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
-    QP.setImageType('BRIGHTFIELD_H_DAB')
+    if (!hasHematoxylin) {
+        println "⚠ H-DAB boya vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
+        QP.setImageType('BRIGHTFIELD_H_DAB')
+    }
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -81,6 +92,9 @@ if (!hasHematoxylin) {
 //    (eşikleri değiştirip) çağrılabilir. Dönüş: [ok, text] | [ok:false, error].
 // ──────────────────────────────────────────────────────────────
 def runDetection = { double nuclear1, double nuclear2, double nuclear3 ->
+    // Görüntü tipini her çalıştırmada yeniden denetle (kullanıcı bu arada düzeltmiş olabilir).
+    if (!imageTypeOk())
+        return [ok:false, error: imageTypeGuidance(), imageTypeIssue:true]
     def selected = QP.getSelectedObject()
     if (selected == null || !(selected instanceof PathAnnotationObject))
         return [ok:false, error:'Önce ölçmek istediğiniz dikdörtgen anotasyonu çizip SEÇİN (kenarı sarı görünür).']
@@ -238,6 +252,13 @@ javafx.application.Platform.runLater {
         resultArea.setPromptText('Sonuçlar burada görünecek…')
         resultArea.setStyle("-fx-font-family: 'Consolas','Menlo','Courier New',monospace; -fx-font-size: 12px;")
 
+        // İlk açılışta görüntü tipi yanlışsa kullanıcıyı pencere içinde yönlendir (modal yok).
+        if (!imageTypeOk()) {
+            status.setStyle('-fx-text-fill: -qp-script-error-color;')
+            status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — adımlar aşağıda.")
+            resultArea.setText(imageTypeGuidance())
+        }
+
         def runBtn = new javafx.scene.control.Button('Çalıştır'); runBtn.setDefaultButton(true)
         runBtn.setOnAction({
             runBtn.setDisable(true)
@@ -253,6 +274,10 @@ javafx.application.Platform.runLater {
                     if (res.ok) {
                         status.setStyle(''); status.setText('Tamamlandı ✅ — eşikleri değiştirip tekrar çalıştırabilirsiniz.')
                         resultArea.setText(res.text)
+                    } else if (res.imageTypeIssue) {
+                        status.setStyle('-fx-text-fill: -qp-script-error-color;')
+                        status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — adımlar aşağıda.")
+                        resultArea.setText(res.error)
                     } else {
                         status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + res.error)
                     }

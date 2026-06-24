@@ -2,21 +2,21 @@
  * Yardımcı - Eşikleri ayarla
  * ---------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
- * Modül 3, 3b, 4, 5 veya 7'yi varsayılan eşiklerle çalıştırdıktan sonra
+ * Modül 3a, 3b, 4, 5 veya 7'yi varsayılan eşiklerle çalıştırdıktan sonra
  * sonuç beklediğiniz gibi değilse: bu betik **hücre tespitini yeniden
  * çalıştırmadan** sadece bin eşiklerini değiştirip yeniden sınıflandırma yapar.
  *
  * NE İŞE YARAR?
  *   • Mevcut tespitlerin hangi ölçüm sütununda bin'lendiğini otomatik bulur:
  *       - Membrane: DAB OD mean      → Modül 4 (HER2)
- *       - Nucleus: DAB OD mean       → Modül 3, 3b, 7 (Ki-67 / ER / PR)
+ *       - Nucleus: DAB OD mean       → Modül 3a, 3b, 7 (Ki-67 / ER / PR)
  *       - Cytoplasm: DAB OD mean     → Modül 5 (CD68)
  *   • Üç eşik (1+, 2+, 3+) için form gösterir, mevcut değerleri önceden yazar
  *   • Yeni değerlerle `setIntensityClassifications` çalıştırır
  *   • Negative / 1+ / 2+ / 3+ sayımı + yüzdeler + H-score'u yeniden hesaplar
  *
  * KULLANIM:
- *   1. Önce Modül 3/3b/4/5/7'den birini çalıştırın (hücre tespiti yapılır)
+ *   1. Önce Modül 3a/3b/4/5/7'den birini çalıştırın (hücre tespiti yapılır)
  *   2. Hücreleri içeren anotasyonu seçili tutun
  *   3. [Extensions → Atölye → Yardımcılar → Eşikleri ayarla]
  *   4. Form açılır, eşikleri değiştirip "Yeniden hesapla" → yeni özet penceresi
@@ -245,7 +245,7 @@ if (selected == null || !selected.isAnnotation()) {
     Dialogs.showErrorMessage(
         "Anotasyon seçili değil",
         "Eşik ayarlamak için hücre tespiti içeren bir anotasyonu seçin.\n" +
-        "Önce Modül 3 / 3b / 4 / 5 / 7'den birini çalıştırmış olmalısınız."
+        "Önce Modül 3a / 3b / 4 / 5 / 7'den birini çalıştırmış olmalısınız."
     )
     return
 }
@@ -255,7 +255,7 @@ if (cells.isEmpty()) {
     Dialogs.showErrorMessage(
         "Tespit yok",
         "Seçili anotasyonda hücre tespiti bulunmuyor.\n" +
-        "Önce Modül 3 / 3b / 4 / 5 / 7'den birini çalıştırın, sonra bu yardımcıyı kullanın."
+        "Önce Modül 3a / 3b / 4 / 5 / 7'den birini çalıştırın, sonra bu yardımcıyı kullanın."
     )
     return
 }
@@ -265,7 +265,7 @@ if (cells.isEmpty()) {
 // ──────────────────────────────────────────────────────────────
 def candidateColumns = [
     "Membrane: DAB OD mean",   // Modül 4 (HER2)
-    "Nucleus: DAB OD mean",    // Modül 3, 3b, 7 (Ki-67 / ER / PR)
+    "Nucleus: DAB OD mean",    // Modül 3a, 3b, 7 (Ki-67 / ER / PR)
     "Cytoplasm: DAB OD mean"   // Modül 5 (CD68)
 ]
 def sampleCell = cells[0]
@@ -306,7 +306,7 @@ cells.each { c ->
 
 def moduleHint = [
     "Membrane: DAB OD mean":  "Modül 4 (HER2)",
-    "Nucleus: DAB OD mean":   "Modül 3 / 3b / 7 (Ki-67 / ER / PR)",
+    "Nucleus: DAB OD mean":   "Modül 3a / 3b / 7 (Ki-67 / ER / PR)",
     "Cytoplasm: DAB OD mean": "Modül 5 (CD68)"
 ][measurement]
 

@@ -37,7 +37,7 @@ def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 // Görüntü tipi etiketleri ve enum karşılıkları
 // ──────────────────────────────────────────────────────────────
 def TYPE_OPTIONS = [
-    ["BRIGHTFIELD_H_DAB",  "Brightfield (H-DAB) — İHK / DAB slaytları (Modül 3, 3b, 4, 5, 7)"],
+    ["BRIGHTFIELD_H_DAB",  "Brightfield (H-DAB) — İHK / DAB slaytları (Modül 3a, 3b, 4, 5, 7)"],
     ["BRIGHTFIELD_H_E",    "Brightfield (H&E) — Hematoksilen-Eozin (Modül 2, 6)"],
     ["BRIGHTFIELD_OTHER",  "Brightfield (other) — diğer brightfield boyamaları"],
     ["FLUORESCENCE",       "Fluorescence — floresan / immünofloresan"],

@@ -198,7 +198,7 @@ def classifierAreaToMm2 = { Number value, String measurementName ->
     return Double.NaN
 }
 // Dönüş: [ok:true, text] | [ok:false, error:'NO_REGION'|<mesaj>]
-def runMeasure = { String modelName, boolean wholeSlide ->
+def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = false ->
     try {
         def imageData = QP.getCurrentImageData()
         if (imageData == null) return [ok:false, error:'Görüntü açık değil.']
@@ -213,38 +213,61 @@ def runMeasure = { String modelName, boolean wholeSlide ->
         // Kapsam: tüm slayt VEYA seçili anotasyon(lar). Kapsam dışı tutulanlar:
         // özet anotasyonu, Tumor/Stroma (çıktı/eğitim sınıfları) ve 'Ignore*'
         // (boş cam/artefakt — ölçümden çıkarılacak alanlar).
+        def summaryNames = ['Tümör-Stroma Özet', 'TSR Özet']
         def isOwnOutput = { obj ->
             String nm = obj.getName()
             def cn = obj.getPathClass()?.getName()
-            (nm != null && nm in ['Tümör-Stroma Özet', 'TSR Özet']) || cn in ['Tumor', 'Stroma', 'Ignore*']
+            (nm != null && nm in summaryNames) || cn in ['Tumor', 'Stroma', 'Ignore*']
         }
+        // Özet anotasyonu: tek bir bölge seçiliyse o anotasyon YENİDEN KULLANILIR
+        // (kopya üretilmez); çok bölge/tüm slaytta yeni bir birleşim özeti yaratılır.
         def regions = []
-        def scopeRoi
+        def summary
+        boolean reuse = false
         if (wholeSlide) {
             def server = imageData.getServer()
-            scopeRoi = qupath.lib.roi.ROIs.createRectangleROI(0, 0, server.getWidth(), server.getHeight(),
+            def fullRoi = qupath.lib.roi.ROIs.createRectangleROI(0, 0, server.getWidth(), server.getHeight(),
                 qupath.lib.regions.ImagePlane.getDefaultPlane())
+            summary = PathObjects.createAnnotationObject(fullRoi)
+            summary.setName('Tümör-Stroma Özet')
         } else {
-            regions = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getROI()?.isArea() && !isOwnOutput(it) }
-            if (regions.isEmpty()) {
-                regions = QP.getAnnotationObjects().findAll {
-                    it.getROI()?.isArea() && it.getPathClass()?.getName() == 'Region' && !isOwnOutput(it)
+            def selectedAreas = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getROI()?.isArea() }
+            if (selectedAreas.size() == 1 && selectedAreas[0].getName() in summaryNames) {
+                // Yeniden ölçüm: seçili önceki özeti olduğu gibi yeniden kullan.
+                summary = selectedAreas[0]; reuse = true
+            } else {
+                regions = selectedAreas.findAll { !isOwnOutput(it) }
+                if (regions.isEmpty()) {
+                    regions = QP.getAnnotationObjects().findAll {
+                        it.getROI()?.isArea() && it.getPathClass()?.getName() == 'Region' && !isOwnOutput(it)
+                    }
+                }
+                if (regions.isEmpty()) return [ok:false, error:'NO_REGION']
+                if (regions.size() == 1) {
+                    // Tek bölge: kullanıcının anotasyonu özet olur (kopya üretilmez).
+                    summary = regions[0]
+                    summary.setName('Tümör-Stroma Özet'); summary.setPathClass(null); reuse = true
+                } else {
+                    summary = PathObjects.createAnnotationObject(RoiTools.union(regions.collect { it.getROI() }))
+                    summary.setName('Tümör-Stroma Özet')
                 }
             }
-            if (regions.isEmpty()) return [ok:false, error:'NO_REGION']
-            scopeRoi = RoiTools.union(regions.collect { it.getROI() })
         }
-        // İsteğe bağlı: sınıfı 'Ignore*' olan alanları (boş cam/artefakt) ölçümden çıkar.
+        def scopeRoi = summary.getROI()
+
+        // İsteğe bağlı: sınıfı 'Ignore*' olan alanları ölçüm KAPSAMINDAN çıkar. Yeniden
+        // kullanılan anotasyonun ROI'sini daraltmamak için ayrı bir measureRoi kullanılır.
         def ignoreRegions = QP.getAnnotationObjects().findAll { it.getROI()?.isArea() && it.getPathClass()?.getName() == 'Ignore*' }
-        if (scopeRoi != null && !ignoreRegions.isEmpty()) {
+        def measureRoi = scopeRoi
+        if (measureRoi != null && !ignoreRegions.isEmpty()) {
             try {
                 def ig = RoiTools.union(ignoreRegions.collect { it.getROI() })
-                def diff = scopeRoi.getGeometry().difference(ig.getGeometry())
+                def diff = measureRoi.getGeometry().difference(ig.getGeometry())
                 if (diff != null && !diff.isEmpty())
-                    scopeRoi = qupath.lib.roi.GeometryTools.geometryToROI(diff, scopeRoi.getImagePlane())
+                    measureRoi = qupath.lib.roi.GeometryTools.geometryToROI(diff, measureRoi.getImagePlane())
             } catch (Throwable ignored) { }
         }
-        if (scopeRoi == null || scopeRoi.isEmpty() || !scopeRoi.isArea())
+        if (measureRoi == null || measureRoi.isEmpty() || !measureRoi.isArea())
             return [ok:false, error:'Ölçülecek alan kalmadı (Ignore* tüm bölgeyi kaplıyor olabilir).']
 
         def manager = PixelClassifierTools.createMeasurementManager(imageData, classifier)
@@ -254,18 +277,25 @@ def runMeasure = { String modelName, boolean wholeSlide ->
         if (tumorName == null || stromaName == null)
             return [ok:false, error:'Model Tumor/Stroma çıktı sınıflarını içermiyor.']
 
-        double tumorMm2 = classifierAreaToMm2(manager.getMeasurementValue(scopeRoi, tumorName), tumorName)
-        double stromaMm2 = classifierAreaToMm2(manager.getMeasurementValue(scopeRoi, stromaName), stromaName)
+        double tumorMm2 = classifierAreaToMm2(manager.getMeasurementValue(measureRoi, tumorName), tumorName)
+        double stromaMm2 = classifierAreaToMm2(manager.getMeasurementValue(measureRoi, stromaName), stromaName)
         double classified = tumorMm2 + stromaMm2
-        double roiMm2 = scopeRoi.getArea() * pw * ph / 1_000_000.0
+        double roiMm2 = measureRoi.getArea() * pw * ph / 1_000_000.0
         double tumorPct = classified > 0 ? 100.0 * tumorMm2 / classified : Double.NaN
         double stromaPct = classified > 0 ? 100.0 * stromaMm2 / classified : Double.NaN
         double ratio = stromaMm2 > 0 ? tumorMm2 / stromaMm2 : Double.NaN
         double coverage = roiMm2 > 0 ? 100.0 * classified / roiMm2 : Double.NaN
 
-        // Dışa aktarılabilir, kilitli özet anotasyonu.
-        def summary = PathObjects.createAnnotationObject(scopeRoi)
-        summary.setName('Tümör-Stroma Özet')
+        // Eski özetleri temizle (yeniden kullanılan özet HARİÇ); yeniden kullanımda
+        // önceki alt-bölgeleri ve ölçümleri sıfırla (tekrar çalıştırma idempotent olsun).
+        def oldSummaries = QP.getAnnotationObjects().findAll { it.getName() in summaryNames && it != summary }
+        if (!oldSummaries.isEmpty()) QP.removeObjectsAndDescendants(oldSummaries)
+        if (reuse) {
+            // Önceki alt-bölgeler aşağıda DELETE_EXISTING ile temizlenir; burada yalnız ölçümleri sıfırla.
+            summary.getMeasurementList().clear()
+        }
+
+        // Dışa aktarılabilir, kilitli özet anotasyonu (8 ölçüm + sayaçlar).
         summary.measurements['ROI alanı (mm2)'] = roiMm2
         summary.measurements['Tümör alanı (mm2)'] = tumorMm2
         summary.measurements['Stroma alanı (mm2)'] = stromaMm2
@@ -274,32 +304,48 @@ def runMeasure = { String modelName, boolean wholeSlide ->
         summary.measurements['Stroma alanı (%)'] = stromaPct
         summary.measurements['Tümör/Stroma oranı'] = ratio
         summary.measurements['Sınıflandırılmış kapsam (%)'] = coverage
-        summary.measurements['Ölçülen bölge sayısı'] = regions.size() as double
+        summary.measurements['Ölçülen bölge sayısı'] = (reuse ? 1 : regions.size()) as double
         summary.measurements['Çıkarılan Ignore* alan sayısı'] = ignoreRegions.size() as double
         summary.setLocked(true)
-        def oldSummaries = QP.getAnnotationObjects().findAll { it.getName() in ['Tümör-Stroma Özet', 'TSR Özet'] }
-        if (!oldSummaries.isEmpty()) QP.removeObjectsAndDescendants(oldSummaries)
-        QP.addObjects([summary])
+        if (!reuse) QP.addObjects([summary])
 
-        // Görsel kontrol için Tumor/Stroma poligonları. SELECT_NEW kullanılmaz:
-        // seçili poligonlar sarı çizilir ve sınıf rengini (Tumor kırmızı / Stroma
-        // yeşil) gizler. Seçim sonda temizlenir; poligonlar sınıf renginde görünür.
+        // Görsel kontrol için sınıf bölgeleri: piksel sınıflandırıcının ürettiği çok
+        // sayıda küçük poligon, her SINIF için TEK bölgeye birleştirilir ve sınıf adıyla
+        // (Tumor / Stroma …) ETİKETLENİR — ad = sınıf olduğundan 'Show names' sınıfı yazar.
+        // asDetections=true ise bölgeler Detections paneline (içi boş) yazılır; anotasyon
+        // listesi temiz kalır. SELECT_NEW kullanılmaz (seçim sarı çizilir, rengi gizler).
         double minObj = atolyeD('atolye.minObjectArea', 10000.0)
         double minHole = atolyeD('atolye.minHoleArea', 5000.0)
         def before = QP.getAnnotationObjects() as Set
         QP.selectObjects(summary)
         QP.createAnnotationsFromPixelClassifier(classifier, minObj, minHole, 'DELETE_EXISTING')
+        def generated = QP.getAnnotationObjects().findAll { !before.contains(it) && it.getPathClass() != null }
+        def byClass = generated.groupBy { it.getPathClass().getName() }
+        if (!generated.isEmpty()) QP.removeObjectsAndDescendants(generated)
         double smoothPx = (pw > 0 ? 3.0 / pw : 6.0)   // ~3 µm topolojik sadeleştirme (yalnız görsel)
-        QP.getAnnotationObjects().findAll { !before.contains(it) && it.getPathClass()?.getName() in ['Tumor', 'Stroma'] }
-            .each {
-                try {
-                    def simp = org.locationtech.jts.simplify.TopologyPreservingSimplifier.simplify(it.getROI().getGeometry(), smoothPx)
-                    if (simp != null && !simp.isEmpty())
-                        it.setROI(qupath.lib.roi.GeometryTools.geometryToROI(simp, it.getROI().getImagePlane()))
-                } catch (Throwable ignored) { }
-                it.setName(null)   // görüntüde etiket yazma; sınıf rengi ayrımı gösterir
-                try { it.setDescription("${it.getPathClass().getName()} — Modül 6 (${modelName})") } catch (Throwable ignored) { }
-            }
+        def plane = scopeRoi.getImagePlane()
+        def outputs = []
+        byClass.each { className, objs ->
+            try {
+                def geom = objs.collect { it.getROI().getGeometry() }.inject { a, b -> a.union(b) }
+                if (geom == null || geom.isEmpty()) return
+                if (!ignoreRegions.isEmpty()) {   // Ignore* alanlarını görsel bölgelerden de çıkar
+                    try { def clip = geom.intersection(measureRoi.getGeometry()); if (clip != null && !clip.isEmpty()) geom = clip }
+                    catch (Throwable ignored) { }
+                }
+                def simp = org.locationtech.jts.simplify.TopologyPreservingSimplifier.simplify(geom, smoothPx)
+                if (simp != null && !simp.isEmpty()) geom = simp
+                def roi = qupath.lib.roi.GeometryTools.geometryToROI(geom, plane)
+                def obj = asDetections
+                    ? PathObjects.createDetectionObject(roi, objs[0].getPathClass())
+                    : PathObjects.createAnnotationObject(roi, objs[0].getPathClass())
+                obj.setName(className)   // 'Show names' sınıf adını yazar (Tumor / Stroma)
+                try { obj.setDescription("${className} — Modül 6 (${modelName})") } catch (Throwable ignored) { }
+                if (!asDetections) obj.setLocked(true)
+                outputs << obj
+            } catch (Throwable ignored) { }
+        }
+        if (!outputs.isEmpty()) summary.addChildObjects(outputs)
         imageData.getHierarchy().getSelectionModel().clearSelection()
         QP.fireHierarchyUpdate()
 
@@ -308,7 +354,8 @@ def runMeasure = { String modelName, boolean wholeSlide ->
             "Model                : ${modelName}\n" +
             (wholeSlide
                 ? "Kapsam               : Tüm slayt (boş cam/arka plan da sayılabilir — kaba tahmin)\n"
-                : "Ölçülen bölge sayısı : ${regions.size()}\n") +
+                : "Ölçülen bölge sayısı : ${reuse ? 1 : regions.size()}\n") +
+            "Görsel çıktı         : ${asDetections ? 'sınıf tespitleri (Detections paneli)' : 'etiketli sınıf anotasyonları'}\n" +
             String.format(java.util.Locale.US, "ROI alanı            : %.3f mm²%n", roiMm2) +
             String.format(java.util.Locale.US, "Tümör alanı          : %.3f mm²%n", tumorMm2) +
             String.format(java.util.Locale.US, "Stroma alanı         : %.3f mm²%n", stromaMm2) +
@@ -342,6 +389,7 @@ def exampleName = new java.util.concurrent.atomic.AtomicReference('tumor-stroma-
 def exampleExisted = new java.util.concurrent.atomic.AtomicBoolean(false)
 def activeModel = new java.util.concurrent.atomic.AtomicReference(null)
 def activeWholeSlide = new java.util.concurrent.atomic.AtomicBoolean(false)
+def asDetections = new java.util.concurrent.atomic.AtomicBoolean(false)
 def measureResult = new java.util.concurrent.atomic.AtomicReference(null)
 def render  // forward declaration
 
@@ -364,6 +412,17 @@ def navButton = { String text, Closure action, String tooltip = null, String ico
 // Belirsiz (indeterminate) ilerleme çubuğu — uzun süren adımlarda "çalışıyor" geri bildirimi.
 def busyBar = { ->
     def pb = new javafx.scene.control.ProgressBar(); pb.setProgress(-1.0); pb.setMaxWidth(Double.MAX_VALUE); return pb
+}
+// Sınıf bölgelerini anotasyon yerine tespit (detection) olarak üretme seçeneği.
+// render() sahneyi her seferinde yeniden kurduğundan, durum asDetections'ta tutulur.
+def detectionCheckBox = { ->
+    def cb = new javafx.scene.control.CheckBox('Bölgeleri tespit (detection) olarak oluştur')
+    cb.setSelected(asDetections.get())
+    cb.selectedProperty().addListener({ obs, o, n -> asDetections.set(n) } as javafx.beans.value.ChangeListener)
+    cb.setTooltip(new javafx.scene.control.Tooltip(
+        'İşaretliyse sınıf bölgeleri Detections panelinde (içi boş) oluşturulur;\n' +
+        'işaretsizse sınıf adıyla etiketli anotasyon olarak (varsayılan).'))
+    return cb
 }
 
 // Arka planda örnek kurulum (indirme FX'i dondurmasın).
@@ -390,7 +449,7 @@ def startMeasure = { String modelName, boolean wholeSlide = false ->
     activeModel.set(modelName); activeWholeSlide.set(wholeSlide)
     step.set('MEASURING'); render()
     def worker = new Thread({
-        def res = runMeasure(modelName, wholeSlide)
+        def res = runMeasure(modelName, wholeSlide, asDetections.get())
         javafx.application.Platform.runLater { measureResult.set(res); step.set('RESULT'); render() }
     }, 'AtolyeWizardMeasure')
     worker.setDaemon(true); worker.start()
@@ -441,6 +500,7 @@ render = { ->
             '  3. Aşağıdan "Seçili bölgede ölç".\n\n' +
             'Seçim yapmazsanız sınıfı "Region" olan anotasyonlar kullanılır.\n' +
             'İsteğe bağlı: boş cam/artefakt alanlarını çizip sınıfını "Ignore*" yapın — ölçümden çıkarılır.')
+        content.getChildren().add(detectionCheckBox())
         buttons.getChildren().addAll(
             navButton('◀ Geri', { step.set('CHOICE'); render() }),
             navButton('Tüm slaytta ölç', { startMeasure(nm, true) },
@@ -552,6 +612,7 @@ render = { ->
             '  3. Aşağıdan "Seçili bölgede ölç".\n\n' +
             'Seçim yapmazsanız sınıfı "Region" olan anotasyonlar kullanılır.\n' +
             'İsteğe bağlı: boş cam/artefakt alanlarını çizip sınıfını "Ignore*" yapın — ölçümden çıkarılır.')
+        content.getChildren().add(detectionCheckBox())
         buttons.getChildren().addAll(
             navButton('Kapat', { stage.close() }),
             navButton('Tüm slaytta ölç', { startMeasure(nm, true) },
@@ -566,7 +627,9 @@ render = { ->
         def r = measureResult.get()
         if (r != null && r.ok) {
             title.setText('Ölçüm sonucu ✅')
-            bodyLbl.setText(r.text + '\n\nKilitli "Tümör-Stroma Özet" anotasyonu yazıldı (Modül 9 ile dışa aktarılabilir).')
+            bodyLbl.setText(r.text + '\n\nKilitli "Tümör-Stroma Özet" anotasyonu yazıldı (Modül 9 ile dışa aktarılabilir).\n' +
+                'İpucu: anotasyon dolgusunu Shift+F ile kapatıp H&E üzerinde sınıf sınırlarını görebilirsiniz.')
+            content.getChildren().add(detectionCheckBox())
         } else if (r != null && r.error == 'NO_REGION') {
             title.setText('Önce bir bölge seçin')
             bodyLbl.setText('Ölçmek için bir anotasyon çizip SEÇİN (ya da sınıfını "Region" yapın), sonra "↻ Tekrar ölç".')

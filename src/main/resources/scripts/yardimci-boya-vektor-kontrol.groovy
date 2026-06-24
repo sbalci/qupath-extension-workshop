@@ -9,7 +9,7 @@
  *
  * NEDEN ÖNEMLİ:
  *   • Boya vektörleri tarayıcı/laboratuvar/protokole özgüdür. Kantitatif H-DAB
- *     ölçümünde (Modül 3, 3b, 4, 5, 7) eşikler MUTLAK DAB OD üzerindendir;
+ *     ölçümünde (Modül 3a, 3b, 4, 5, 7) eşikler MUTLAK DAB OD üzerindendir;
  *     yanlış vektör her skoru kaydırır.
  *   • QuPath'in yerleşik varsayılanları bir BAŞLANGIÇ noktasıdır, sizin
  *     tarayıcınız için bir kalibrasyon değildir. Bu betik vektörlerin hâlâ
@@ -40,6 +40,34 @@ import qupath.lib.gui.dialogs.Dialogs
 import qupath.lib.scripting.QP
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
+
+// Kardeş "tahmin" betiğini classpath kaynağından yükleyip ayrı bir thread'de
+// çalıştırır. Eklenti yüklüyse doğrudan çalışır; kaynak bulunamazsa menü yolunu
+// gösterir (örn. classpath dışı bir Automate çalıştırması).
+def launchEstimate = {
+    def stream = this.getClass().getResourceAsStream("/scripts/yardimci-boya-vektor-tahmin.groovy")
+    if (stream == null) {
+        javafx.application.Platform.runLater {
+            Dialogs.showMessageDialog("Boya vektörlerini tahmin et",
+                "Tek-tıkla tahmin için:\n" +
+                "  [Extensions → Atölye → Yardımcılar → Boya vektörlerini tahmin et]\n\n" +
+                "(Bu buton doğrudan yalnızca atölye eklentisi yüklüyken çalışır.)")
+        }
+        return
+    }
+    def code = stream.getText("UTF-8")
+    def runner = new Thread({
+        try {
+            new GroovyShell(this.getClass().getClassLoader()).evaluate(code, "yardimci-boya-vektor-tahmin.groovy")
+        } catch (Throwable ex) {
+            javafx.application.Platform.runLater {
+                Dialogs.showErrorMessage("Tahmin başlatılamadı", String.valueOf(ex.getMessage()))
+            }
+        }
+    }, "WorkshopScript-tahmin")
+    runner.setDaemon(true)
+    runner.start()
+}
 
 def showResultWindow = { String windowTitle, String windowBody ->
     if (isHeadless) {
@@ -76,10 +104,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
+            def estimateBtn = new javafx.scene.control.Button("Boya vektörlerini tahmin et")
+            estimateBtn.setOnAction({ launchEstimate() })
+
             def spacer = new javafx.scene.layout.Region()
             javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
 
-            def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, copyBtn, closeBtn)
+            def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, estimateBtn, copyBtn, closeBtn)
             buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
             buttons.setPadding(new javafx.geometry.Insets(8))
 

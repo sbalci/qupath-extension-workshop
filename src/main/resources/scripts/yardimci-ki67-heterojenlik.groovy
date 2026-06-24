@@ -2,7 +2,7 @@
  * Yardımcı - Ki-67 Heterojenlik Grid
  * -----------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
- * MEVCUT Ki-67 tespitlerini (Modül 3 veya Modül 7'den) bir kareli ızgaraya
+ * MEVCUT Ki-67 tespitlerini (Modül 3a veya Modül 7'den) bir kareli ızgaraya
  * böler, her karede Ki-67 işaretleme indeksini (LI) ölçer ve karelerarası
  * **heterojenlik** ölçütleri üretir: varyasyon katsayısı (CV) ve pozitif
  * hücrelerin uzamsal kümelenmesi için Morisita dağılım indeksi (Iδ).
@@ -13,7 +13,7 @@
  *   betik bu değişkenliği bir ÖLÇÜME çevirir.
  *
  * GİRDİ (ÖNKOŞUL):
- *   • Slaytta zaten Ki-67 hücre tespitleri olmalı (Modül 3 ya da Modül 7'yi
+ *   • Slaytta zaten Ki-67 hücre tespitleri olmalı (Modül 3a ya da Modül 7'yi
  *     önce çalıştırın). Betik tespit YAPMAZ; var olanı kullanır.
  *   • Patolog tarafından gözden geçirilmiş "Tumor" anotasyonu zorunludur.
  *

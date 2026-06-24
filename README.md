@@ -22,7 +22,7 @@ Extensions
     ├── — Atölye scriptleri —
     ├── ─────────────────────
     ├── Modül 2 - Hücre tespiti
-    ├── Modül 3 - Nükleer boya (Ki-67)
+    ├── Modül 3a - Nükleer boya (Ki-67)
     ├── Modül 4 - Membranöz boya (HER2)
     ├── Modül 5 - Sitoplazmik boya (CD68)
     ├── Modül 6 - Tümör vs stroma sınıflandırıcı

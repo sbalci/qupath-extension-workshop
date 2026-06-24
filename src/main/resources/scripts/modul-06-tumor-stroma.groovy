@@ -176,6 +176,11 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
                 new javafx.scene.control.Label('Kapsam:'), rRegion, rSlide)
             scopeBox.setStyle('-fx-padding: 8px 0;')
 
+            def detCb = new javafx.scene.control.CheckBox('Bölgeleri tespit (detection) olarak oluştur')
+            detCb.setTooltip(new javafx.scene.control.Tooltip(
+                'İşaretliyse sınıf bölgeleri Detections panelinde (içi boş) oluşturulur;\n' +
+                'işaretsizse sınıf adıyla etiketli anotasyon olarak (varsayılan).'))
+
             def installBtn = new javafx.scene.control.Button('Örnek modeli kur')
             installBtn.setOnAction({
                 if (!launch('yardimci-ornek-siniflandirici.groovy')) {
@@ -199,7 +204,8 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
             measureBtn.setDisable(entries.isEmpty())
             measureBtn.setOnAction({
                 def picked = boxes.findAll { it.isSelected() }.collect { it.getUserData() as String }
-                result.set([action: 'MEASURE', models: picked, wholeSlide: rSlide.isSelected()])
+                result.set([action: 'MEASURE', models: picked, wholeSlide: rSlide.isSelected(),
+                            asDetections: detCb.isSelected()])
                 stage.close()
             })
             def cancelBtn = new javafx.scene.control.Button('İptal')
@@ -217,7 +223,7 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
 
             def root = new javafx.scene.layout.BorderPane()
             root.setTop(header)
-            root.setCenter(new javafx.scene.layout.VBox(6, listScroll, scopeBox))
+            root.setCenter(new javafx.scene.layout.VBox(6, listScroll, scopeBox, detCb))
             root.setBottom(bottom)
             javafx.scene.layout.BorderPane.setMargin(header, new javafx.geometry.Insets(8))
             javafx.scene.layout.BorderPane.setMargin(root.getCenter(), new javafx.geometry.Insets(0, 8, 0, 8))
@@ -302,6 +308,7 @@ if (selectedModelNames.isEmpty()) {
     return
 }
 boolean wholeSlide = choice.wholeSlide
+boolean asDetections = (choice.asDetections == true)
 
 def resolveClassifier = { String name ->
     if (projectClassifierNames.contains(name)) return project.getPixelClassifiers().get(name)
@@ -399,8 +406,19 @@ def formatValue = { double value, String pattern ->
 boolean multi = selectedModelNames.size() > 1
 def keyPrefix = { String model -> multi ? "[${model}] " : '' }
 
-def summary = PathObjects.createAnnotationObject(scopeRoi)
-summary.setName('Tümör-Stroma Özet')
+// Özet anotasyonu: tek bir bölge seçiliyse o anotasyon YENİDEN KULLANILIR (kopya
+// üretilmez); çok bölge/tüm slaytta yeni bir birleşim özeti yaratılır.
+boolean reuse = (!wholeSlide && scopeRegions.size() == 1)
+def summary
+if (reuse) {
+    summary = scopeRegions[0]
+    summary.setName('Tümör-Stroma Özet'); summary.setPathClass(null)
+    // Önceki alt-bölgeler aşağıda DELETE_EXISTING ile temizlenir; burada yalnız ölçümleri sıfırla.
+    summary.getMeasurementList().clear()
+} else {
+    summary = PathObjects.createAnnotationObject(scopeRoi)
+    summary.setName('Tümör-Stroma Özet')
+}
 
 def perModel = []
 selectedModelNames.each { modelName ->
@@ -428,7 +446,9 @@ selectedModelNames.each { modelName ->
 
     def analysisRows = []
     if (!wholeSlide) {
-        scopeRegions.each { sp ->
+        // Tek bölge yeniden kullanıldığında o bölge zaten özet (toplam) ölçümünü taşır;
+        // ayrıca per-bölge yazmaya gerek yok (çok bölge seçildiğinde her biri ayrı ölçülür).
+        if (!reuse) scopeRegions.each { sp ->
             def m = measureWith(manager, tumorAreaName, stromaAreaName, sp.getROI())
             sp.measurements["${p}ROI alanı (mm2)"] = m.roiArea
             sp.measurements["${p}Tümör alanı (mm2)"] = m.tumorArea
@@ -465,30 +485,48 @@ summary.measurements['Seçilen model sayısı'] = perModel.size() as double
 summary.measurements['Ölçülen bölge sayısı'] = (wholeSlide ? 0 : scopeRegions.size()) as double
 summary.measurements['Analysis ROI sayısı'] = (wholeSlide ? 0 : analysisObjects.size()) as double
 summary.setLocked(true)
-def oldSummaries = QP.getAnnotationObjects().findAll { it.getName() in ['Tümör-Stroma Özet', 'TSR Özet'] }
+// Eski özetleri temizle (yeniden kullanılan özet HARİÇ).
+def oldSummaries = QP.getAnnotationObjects().findAll { it.getName() in ['Tümör-Stroma Özet', 'TSR Özet'] && it != summary }
 if (!oldSummaries.isEmpty()) QP.removeObjectsAndDescendants(oldSummaries)
-QP.addObjects([summary])
+if (!reuse) QP.addObjects([summary])
 
+// Görsel kontrol için sınıf bölgeleri (yalnız birincil model): piksel sınıflandırıcının
+// ürettiği çok sayıda küçük poligon, her SINIF için TEK bölgeye birleştirilir ve sınıf
+// adıyla (Tumor / Stroma …) ETİKETLENİR — ad = sınıf olduğundan 'Show names' sınıfı yazar.
+// asDetections=true ise bölgeler Detections paneline (içi boş) yazılır; anotasyon listesi
+// temiz kalır. SELECT_NEW kullanılmaz (seçim sarı çizilir, sınıf rengini gizler).
 def primary = perModel[0]
 def before = QP.getAnnotationObjects() as Set
 QP.selectObjects(summary)
 QP.createAnnotationsFromPixelClassifier(primary.classifier, minObjectArea, minHoleArea,
     'DELETE_EXISTING')
-def generated = QP.getAnnotationObjects().findAll {
-    !before.contains(it) && it.getPathClass()?.getName() in ['Tumor', 'Stroma']
-}
-// SELECT_NEW kullanılmaz: seçili poligon sarı çizilir, sınıf rengini (Tumor kırmızı /
-// Stroma yeşil) gizler. Görüntüde isim yazılmaz; köken açıklamaya konur; kenar yumuşatılır.
+def generated = QP.getAnnotationObjects().findAll { !before.contains(it) && it.getPathClass() != null }
+def byClass = generated.groupBy { it.getPathClass().getName() }
+if (!generated.isEmpty()) QP.removeObjectsAndDescendants(generated)
 double smoothPx = (pixelWidth > 0 ? 3.0 / pixelWidth : 6.0)
-generated.each {
+def plane = scopeRoi.getImagePlane()
+def outputs = []
+byClass.each { className, objs ->
     try {
-        def simp = org.locationtech.jts.simplify.TopologyPreservingSimplifier.simplify(it.getROI().getGeometry(), smoothPx)
-        if (simp != null && !simp.isEmpty())
-            it.setROI(qupath.lib.roi.GeometryTools.geometryToROI(simp, it.getROI().getImagePlane()))
+        def geom = objs.collect { it.getROI().getGeometry() }.inject { a, b -> a.union(b) }
+        if (geom == null || geom.isEmpty()) return
+        if (!ignoreObjects.isEmpty()) {   // Ignore* alanlarını görsel bölgelerden de çıkar
+            try { def clip = geom.intersection(scopeRoi.getGeometry()); if (clip != null && !clip.isEmpty()) geom = clip }
+            catch (Throwable ignored) { }
+        }
+        def simp = org.locationtech.jts.simplify.TopologyPreservingSimplifier.simplify(geom, smoothPx)
+        if (simp != null && !simp.isEmpty()) geom = simp
+        def roi = qupath.lib.roi.GeometryTools.geometryToROI(geom, plane)
+        def obj = asDetections
+            ? PathObjects.createDetectionObject(roi, objs[0].getPathClass())
+            : PathObjects.createAnnotationObject(roi, objs[0].getPathClass())
+        obj.setName(className)   // 'Show names' sınıf adını yazar (Tumor / Stroma)
+        try { obj.setDescription("${className} — Modül 6 (${primary.model})") } catch (Throwable ignored) { }
+        if (!asDetections) obj.setLocked(true)
+        outputs << obj
     } catch (Throwable ignored) { }
-    it.setName(null)
-    try { it.setDescription("${it.getPathClass().getName()} — Modül 6 (${primary.model})") } catch (Throwable ignored) { }
 }
+if (!outputs.isEmpty()) summary.addChildObjects(outputs)
 imageData.getHierarchy().getSelectionModel().clearSelection()
 QP.fireHierarchyUpdate()
 
@@ -531,7 +569,10 @@ body << '\nQC NOTLARI\n'
 body << '────────────────────────────────────────\n'
 body << '• Payda yalnız Tumor + Stroma olarak sınıflandırılan alandır.\n'
 body << '• Çoklu modelde nesne ölçümleri model adıyla ön-eklenir ([model] ...).\n'
-body << '• Slayttaki Tumor/Stroma poligonları yalnız birincil (ilk seçilen) modele aittir.\n\n'
+body << '• Sınıf bölgeleri her sınıf için TEK, sınıf adıyla etiketli birleşik bölgedir\n'
+body << '  (yalnız birincil model). İçi boş tespit (detection) olarak da üretilebilir.\n'
+body << '• Tek bölge seçiliyse o anotasyon özet olur (kopya üretilmez).\n'
+body << '• İpucu: anotasyon dolgusunu Shift+F ile kapatıp sınıf sınırlarını görebilirsiniz.\n\n'
 body << 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.\n'
 body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
 

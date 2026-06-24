@@ -70,7 +70,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
      */
     private static final List<ScriptEntry> SCRIPTS = List.of(
         new ScriptEntry("Modül 2 - Hücre tespiti",                  "modul-02-hucre-tespiti.groovy"),
-        new ScriptEntry("Modül 3a - Nükleer boya (Ki-67)",          "modul-03-nukleer-boya.groovy"),
+        new ScriptEntry("Modül 3a - Nükleer boya (Ki-67)",          "modul-03a-nukleer-boya.groovy"),
         new ScriptEntry("Modül 3b - ER / PR H-score",               "modul-03b-er-pr-hscore.groovy"),
         // Modül 4 (HER2 membran skorlama) sonraki oturuma ertelendi — script JAR'da kalır
         // ve menüde görünür ama gri/disabled (tıklama etkisiz). İleride etkinleştirmek için
@@ -104,6 +104,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Eşikleri ayarla",             "yardimci-esik-ayarla.groovy"),
         new ScriptEntry("Kalibrasyon (piksel boyutu)", "yardimci-kalibrasyon.groovy"),
         new ScriptEntry("Boya vektörlerini kontrol et", "yardimci-boya-vektor-kontrol.groovy"),
+        new ScriptEntry("Boya vektörlerini tahmin et", "yardimci-boya-vektor-tahmin.groovy"),
         new ScriptEntry("Örnek tümör/stroma sınıflandırıcısını projeye kaydet", "yardimci-ornek-siniflandirici.groovy"),
         new ScriptEntry("Eşik ile alan ölçümü",        "yardimci-esik-alan.groovy"),
         new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy"),
@@ -451,6 +452,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "  • Görüntü tipi ayarla (slayt / proje)\n" +
             "  • Eşikleri ayarla (yeniden tespit etmeden re-binning)\n" +
             "  • Kalibrasyon (piksel boyutu — µm/px ayarla)\n" +
+            "  • Boya vektörlerini tahmin et (seçili bölgeden; önizle → uygula)\n" +
             "  • Örnek tümör/stroma sınıflandırıcısı (projeye kaydet)\n" +
             "  • Karo (tile) dışa aktarma (derin öğrenme için görüntü/maske karoları)\n" +
             "  • Makine öğrenmesi için özellik matrisi (X özellik + y etiket, TSV)\n" +
