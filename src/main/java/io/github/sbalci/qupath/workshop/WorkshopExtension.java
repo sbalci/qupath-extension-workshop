@@ -103,6 +103,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Görüntü tipi ayarla",         "yardimci-image-type.groovy"),
         new ScriptEntry("Eşikleri ayarla",             "yardimci-esik-ayarla.groovy"),
         new ScriptEntry("Kalibrasyon (piksel boyutu)", "yardimci-kalibrasyon.groovy"),
+        new ScriptEntry("Boya vektörlerini kontrol et", "yardimci-boya-vektor-kontrol.groovy"),
         new ScriptEntry("Örnek tümör/stroma sınıflandırıcısını projeye kaydet", "yardimci-ornek-siniflandirici.groovy"),
         new ScriptEntry("Eşik ile alan ölçümü",        "yardimci-esik-alan.groovy"),
         new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy"),
