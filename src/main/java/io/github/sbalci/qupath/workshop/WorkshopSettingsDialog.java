@@ -39,10 +39,35 @@ public final class WorkshopSettingsDialog {
     static {
         CHOICES.put("atolye.cellposeModel", new String[]{"cyto3", "cyto2", "nuclei"});
         CHOICES.put("atolye.detectionChannel", new String[]{"Hematoxylin OD", "Optical density sum"});
-        CHOICES.put("atolye.exportSeparator", new String[]{"\t", ","}); // label mapped below
+        CHOICES.put("atolye.exportSeparator", new String[]{"\t", ","});      // label mapped below
+        CHOICES.put("atolye.exportScope", new String[]{"image", "project"}); // label mapped below
+        CHOICES.put("atolye.exportColumnsMode", new String[]{"all", "subset"}); // label mapped below
     }
     private static String sepLabel(String v) { return "\t".equals(v) ? "TAB (TSV)" : "Virgül (CSV)"; }
     private static String sepValue(String label) { return label.startsWith("TAB") ? "\t" : ","; }
+
+    /** Per-key stored-value → friendly Turkish label maps for CHOICES that aren't the separator. */
+    private static final Map<String, Map<String, String>> CHOICE_LABELS = new LinkedHashMap<>();
+    static {
+        Map<String, String> scope = new LinkedHashMap<>();
+        scope.put("image", "Bu görüntü"); scope.put("project", "Tüm proje");
+        CHOICE_LABELS.put("atolye.exportScope", scope);
+        Map<String, String> cols = new LinkedHashMap<>();
+        cols.put("all", "Tüm sütunlar"); cols.put("subset", "Seçili alt küme");
+        CHOICE_LABELS.put("atolye.exportColumnsMode", cols);
+    }
+    private static String choiceLabel(String value, boolean isSep, Map<String, String> labels) {
+        if (isSep) return sepLabel(value);
+        return (labels != null && labels.containsKey(value)) ? labels.get(value) : value;
+    }
+    private static String choiceValue(String label, boolean isSep, Map<String, String> labels) {
+        if (isSep) return sepValue(label);
+        if (labels != null) {
+            for (Map.Entry<String, String> e : labels.entrySet())
+                if (e.getValue().equals(label)) return e.getKey();
+        }
+        return label;
+    }
 
     public static void show() {
         if (!Platform.isFxApplicationThread()) { Platform.runLater(WorkshopSettingsDialog::show); return; }
@@ -120,10 +145,11 @@ public final class WorkshopSettingsDialog {
         if (CHOICES.containsKey(key)) {
             ChoiceBox<String> cb = new ChoiceBox<>();
             boolean isSep = "atolye.exportSeparator".equals(key);
-            for (String opt : CHOICES.get(key)) cb.getItems().add(isSep ? sepLabel(opt) : opt);
+            Map<String, String> labels = CHOICE_LABELS.get(key);
+            for (String opt : CHOICES.get(key)) cb.getItems().add(choiceLabel(opt, isSep, labels));
             String cur = ((StringProperty) p).get();
-            cb.setValue(isSep ? sepLabel(cur) : cur);
-            cb.valueProperty().addListener((o, a, b) -> ((StringProperty) p).set(isSep ? sepValue(b) : b));
+            cb.setValue(choiceLabel(cur, isSep, labels));
+            cb.valueProperty().addListener((o, a, b) -> ((StringProperty) p).set(choiceValue(b, isSep, labels)));
             return cb;
         }
         if (p instanceof BooleanProperty bp) {
@@ -197,6 +223,15 @@ public final class WorkshopSettingsDialog {
             case "atolye.warnTissueAreaMm2": return "Uyarı: küçük doku (mm²)";
             case "atolye.exportFolder": return "Dışa aktarma klasörü";
             case "atolye.exportSeparator": return "Ayraç";
+            case "atolye.exportScope": return "Varsayılan kapsam";
+            case "atolye.exportDet": return "Dışa aktar: tespit TSV";
+            case "atolye.exportAnn": return "Dışa aktar: anotasyon TSV";
+            case "atolye.exportGeo": return "Dışa aktar: anotasyon GeoJSON";
+            case "atolye.exportColumnsMode": return "Sütun seçimi";
+            case "atolye.exportColumns": return "Seçili sütunlar (| ile)";
+            case "atolye.exportPrefix": return "Dosya adı öneki";
+            case "atolye.exportDateSubfolder": return "Tarihli alt klasör";
+            case "atolye.exportLocation": return "Kayıt yeri (boş = proje/exports)";
             default: return key;
         }
     }

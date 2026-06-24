@@ -90,10 +90,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // ön-gereksinimleri ilk sürüm katılımcıları için fazla. Script JAR resource olarak
         // kalır (modul-08-quantum-ctcf.groovy) → ileride aşağıdaki satır yorum-dışı bırakılır.
         // new ScriptEntry("Modül 8 - QuANTUM cTCF",                "modul-08-quantum-ctcf.groovy"),
-        // Modül 9 (veri dışa aktarma) sonraki oturumda ele alınacak — şimdilik gri/disabled
-        // (tıklama etkisiz). Script JAR'da + handson/scripts'te kalır (Automate → Project
-        // scripts'ten erişilebilir). Etkinleştirmek için sondaki `true` bayrağını kaldırın.
-        new ScriptEntry("Modül 9 - Veri dışa aktarma",              "modul-09-veri-aktarma.groovy", true)
+        new ScriptEntry("Modül 9 - Veri dışa aktarma",              "modul-09-veri-aktarma.groovy")
     );
 
     /**

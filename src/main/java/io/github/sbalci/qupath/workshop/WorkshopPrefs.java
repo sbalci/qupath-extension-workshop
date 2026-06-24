@@ -109,8 +109,20 @@ public final class WorkshopPrefs {
 
     // --- Dışa aktarma (M9) ---
     public static final StringProperty exportFolder = regS(SEC_EXPORT, "atolye.exportFolder", "exports");
-    // Default is a real TAB character ("\t"); UI offers TAB/CSV. Filenames keep .tsv extension regardless.
+    // Default is a real TAB character ("\t"); UI offers TAB/CSV. Filename extension follows: TAB → .tsv, virgül → .csv.
     public static final StringProperty exportSeparator = regS(SEC_EXPORT, "atolye.exportSeparator", "\t");
+    // Modül 9 etkileşimli dışa aktarma diyaloğunun hatırlanan seçimleri (oturumlar arası).
+    public static final StringProperty  exportScope = regS(SEC_EXPORT, "atolye.exportScope", "project");           // "image" | "project"
+    public static final BooleanProperty exportDet = regB(SEC_EXPORT, "atolye.exportDet", true);                    // tespit TSV
+    public static final BooleanProperty exportAnn = regB(SEC_EXPORT, "atolye.exportAnn", true);                    // anotasyon TSV
+    public static final BooleanProperty exportGeo = regB(SEC_EXPORT, "atolye.exportGeo", true);                    // anotasyon GeoJSON
+    public static final StringProperty  exportColumnsMode = regS(SEC_EXPORT, "atolye.exportColumnsMode", "all");   // "all" | "subset"
+    // Pipe ("|") ile ayrılmış seçili sütun alt kümesi; "" ⇒ betikteki tam aday liste. Pipe, virgüllü
+    // sütun adları (örn. "Cytoplasm: DAB OD, mean") için güvenlidir.
+    public static final StringProperty  exportColumns = regS(SEC_EXPORT, "atolye.exportColumns", "");
+    public static final StringProperty  exportPrefix = regS(SEC_EXPORT, "atolye.exportPrefix", "");                // dosya adı öneki
+    public static final BooleanProperty exportDateSubfolder = regB(SEC_EXPORT, "atolye.exportDateSubfolder", true);// <taban>/<tarih>/ vs <taban>/
+    public static final StringProperty  exportLocation = regS(SEC_EXPORT, "atolye.exportLocation", "");            // "" ⇒ <proje>/<exportFolder>
 
     // ---- Reflective-friendly accessors (called from Groovy scripts) ----
 
@@ -135,6 +147,18 @@ public final class WorkshopPrefs {
     public static void setDbl(String key, double value) {
         Property<?> p = PROPS.get(key);
         if (p instanceof DoubleProperty) ((DoubleProperty) p).set(value);
+    }
+
+    /** Persist a String pref from a Groovy script (e.g. Modül 9 export dialog "remember" choices). */
+    public static void setStr(String key, String value) {
+        Property<?> p = PROPS.get(key);
+        if (p instanceof StringProperty) ((StringProperty) p).set(value);
+    }
+
+    /** Persist a Boolean pref from a Groovy script (e.g. Modül 9 export dialog "remember" choices). */
+    public static void setBool(String key, boolean value) {
+        Property<?> p = PROPS.get(key);
+        if (p instanceof BooleanProperty) ((BooleanProperty) p).set(value);
     }
 
     // ---- Introspection + reset (used by the settings window and lint) ----
