@@ -6,6 +6,9 @@
  * sayıdan bilir; eksikse alan/yoğunluk/çap ölçümleri yanlış olur — "Kalibrasyon
  * yok" uyarısının çözümü budur.
  *
+ * TEK PENCERE: Tüm akış tek bir pencerede adım adım ilerler — yöntem seçimi,
+ * değer/cetvel girişi, proje-geneli sorusu ve sonuç. Ayrı pop-up dialog açılmaz.
+ *
  * İKİ MOD:
  *   A) Doğrudan değer gir — µm/px değerini elle girin.
  *      Atölye tarayıcıları: Leica Aperio GT450 (40×) ≈ 0.26 µm/px;
@@ -13,8 +16,10 @@
  *      Not: Yerel Aperio .svs dosyaları piksel boyutunu zaten gömer (QuPath
  *      otomatik kalibre eder); bu araç asıl olarak meta verisi silinmiş
  *      dönüştürülmüş/dışa aktarılmış dosyalar (ör. TIFF) içindir.
- *   B) Cetvelden ölç — bilinen uzunlukta bir çizgi anotasyonu çizin; gerçek
- *      uzunluğu (µm) girin → µm/px = gerçek_µm ÷ çizgi_uzunluğu_px.
+ *   B) Cetvelden ölç — Çizgi (Line) aracı otomatik seçilir; bilinen uzunlukta
+ *      bir çizgi çizip "Ölç"e basın (çizgi yoksa pencere açık kalır, satır-içi
+ *      uyarı çıkar — yeniden çalıştırma GEREKMEZ). Gerçek uzunluğu (µm) girin →
+ *      µm/px = gerçek_µm ÷ çizgi_uzunluğu_px.
  *
  * KAPSAM: Açık görüntü (her zaman). Mod A'da isteğe bağlı: projedeki tüm
  *         KALİBRE EDİLMEMİŞ görüntülere de uygula (kalibre olanlara dokunmaz).
@@ -28,203 +33,25 @@ import qupath.lib.images.servers.ImageServerMetadata
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
-// ── showResultWindow — diğer atölye betikleriyle aynı modal-olmayan pencere ──
-def showResultWindow = { String windowTitle, String windowBody ->
-    if (isHeadless) {
-        println "=== ${windowTitle} ===\n${windowBody}\n=================="
-        return
-    }
-    javafx.application.Platform.runLater {
-        try {
-            def stage = new javafx.stage.Stage()
-            stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle(windowTitle)
-            stage.setAlwaysOnTop(true)
-            def textArea = new javafx.scene.control.TextArea(windowBody)
-            textArea.setEditable(false)
-            textArea.setWrapText(false)
-            textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
-            alwaysTop.setSelected(true)
-            alwaysTop.selectedProperty().addListener(
-                { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
-            copyBtn.setOnAction({
-                def cb = javafx.scene.input.Clipboard.getSystemClipboard()
-                def content = new javafx.scene.input.ClipboardContent()
-                content.putString(windowBody)
-                cb.setContent(content)
-            })
-            def closeBtn = new javafx.scene.control.Button("Kapat")
-            closeBtn.setDefaultButton(true)
-            closeBtn.setOnAction({ stage.close() })
-            def spacer = new javafx.scene.layout.Region()
-            javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-            def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, copyBtn, closeBtn)
-            buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
-            buttons.setPadding(new javafx.geometry.Insets(8))
-            def root = new javafx.scene.layout.BorderPane()
-            root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Scriptleri · araştırma/eğitim amaçlı")
-            __footer.setMaxWidth(Double.MAX_VALUE)
-            __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
-            def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
-            __bottom.setPadding(new javafx.geometry.Insets(8))
-            root.setBottom(__bottom)
-            stage.setScene(new javafx.scene.Scene(root, 640, 460))
-            stage.show()
-        } catch (Throwable t) {
-            qupath.lib.gui.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
-        }
-    }
-}
-
-// ── Mod seçimi — 3 düğmeli pencere (yardimci-tespitleri-sil kalıbı) ──
-def chooseMode = { String calStatus ->
-    if (isHeadless) return "direct"
-    def latch = new java.util.concurrent.CountDownLatch(1)
-    def choice = new java.util.concurrent.atomic.AtomicReference<String>(null)
-    javafx.application.Platform.runLater {
-        try {
-            def stage = new javafx.stage.Stage()
-            stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle("Kalibrasyon — yöntem seçin")
-            stage.setAlwaysOnTop(true)
-            def label = new javafx.scene.control.Label(
-                calStatus + "\n\n" +
-                "Piksel boyutunu (µm/px) nasıl ayarlamak istersiniz?\n\n" +
-                "• Doğrudan değer: tarayıcı değerini elle girin\n" +
-                "    (GT450 40× ≈ 0.26 · AT2 40× ≈ 0.25 / 20× ≈ 0.50)\n" +
-                "• Cetvelden ölç: bilinen uzunlukta bir çizgi çizip ölçün")
-            label.setWrapText(true)
-            label.setStyle("-fx-font-size: 12px; -fx-padding: 10px;")
-            def directBtn = new javafx.scene.control.Button("Doğrudan değer gir")
-            directBtn.setDefaultButton(true)
-            directBtn.setOnAction({ choice.set("direct"); stage.close() })
-            def rulerBtn = new javafx.scene.control.Button("Cetvelden ölç")
-            rulerBtn.setOnAction({ choice.set("ruler"); stage.close() })
-            def cancelBtn = new javafx.scene.control.Button("İptal")
-            cancelBtn.setCancelButton(true)
-            cancelBtn.setOnAction({ choice.set(null); stage.close() })
-            stage.setOnHidden({ latch.countDown() })
-            def spacer = new javafx.scene.layout.Region()
-            javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-            def buttons = new javafx.scene.layout.HBox(10, cancelBtn, spacer, rulerBtn, directBtn)
-            buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
-            buttons.setPadding(new javafx.geometry.Insets(10))
-            def root = new javafx.scene.layout.BorderPane()
-            root.setCenter(label)
-            root.setBottom(buttons)
-            stage.setScene(new javafx.scene.Scene(root, 520, 290))
-            stage.show()
-        } catch (Throwable t) {
-            choice.set(null); latch.countDown()
-        }
-    }
-    latch.await()
-    return choice.get()
-}
-
-// ── 1) Ön kontrol ──
-def imageData = QP.getCurrentImageData()
-if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir slayt açın, sonra bu betiği tekrar çalıştırın.")
-    return
-}
-def server = imageData.getServer()
-def cal = server.getPixelCalibration()
-double curPx = cal.getPixelWidthMicrons()
-boolean calibrated = (curPx > 0)
-def curStr = calibrated ? String.format(java.util.Locale.US, "%.4f µm/px", curPx) : "tanımsız (NaN)"
-def calStatus = calibrated
-    ? "ℹ Bu görüntü ZATEN kalibre: ${curStr}.".toString()
-    : "⚠ Bu görüntüde kalibrasyon YOK (µm/px tanımsız)."
-
-// ── 2) Mod seçimi ──
-def mode = chooseMode(calStatus)
-if (mode == null) { println "Kalibrasyon iptal edildi."; return }
-
-double newPx = 0.0
-String methodNote = ""
-
-if (mode == "direct") {
-    def input = Dialogs.showInputDialog(
-        "Kalibrasyon — doğrudan değer",
-        "Şu anki piksel boyutu: ${curStr}\n\n" +
-        "Yeni piksel boyutu (µm/px):\n" +
-        "  • Leica Aperio GT450 (40×) ≈ 0.26\n" +
-        "  • Leica Aperio AT2 (40×) ≈ 0.25  (20× ≈ 0.50)\n\n" +
-        "Not: Yerel .svs dosyaları bu değeri zaten içerir; bu araç meta verisi\n" +
-        "eksik (ör. dışa aktarılmış TIFF) dosyalar içindir.",
-        "0.26")
-    if (input == null) { println "İptal."; return }
+// ── UI yardımcıları (modül 6/7 sihirbazlarıyla aynı) ───────────────────────
+def faIcon = { String glyphName ->
     try {
-        newPx = Double.parseDouble(input.toString().trim().replace(',' as char, '.' as char))
-    } catch (Exception e) {
-        Dialogs.showErrorMessage("Geçersiz değer", "Sayısal bir µm/px değeri girin (ör. 0.26).")
-        return
-    }
-    if (!(newPx > 0)) {
-        Dialogs.showErrorMessage("Geçersiz değer", "Piksel boyutu pozitif olmalı.")
-        return
-    }
-    if (newPx < 0.05 || newPx > 2.0) {
-        def ok = Dialogs.showConfirmDialog("Sıra dışı değer",
-            String.format(java.util.Locale.US,
-                "%.4f µm/px tipik patoloji aralığının (0.05–2.0) dışında. Yine de uygula?", newPx))
-        if (!ok) return
-    }
-    methodNote = "Doğrudan giriş"
-} else { // ruler
-    def sel = QP.getSelectedObject()
-    def roi = sel?.getROI()
-    if (sel == null || roi == null || !roi.isLine()) {
-        Dialogs.showErrorMessage("Çizgi anotasyonu yok",
-            "Cetvelden ölçmek için:\n" +
-            "  1. Araç çubuğundan Çizgi (Line) aracını seçin\n" +
-            "  2. Bilinen uzunlukta bir yapının üzerine bir çizgi çizin\n" +
-            "  3. Çizgi seçili iken bu betiği tekrar çalıştırın")
-        return
-    }
-    double lenPx = roi.getLength()   // çizgi uzunluğu — piksel cinsinden
-    if (!(lenPx > 0)) {
-        Dialogs.showErrorMessage("Sıfır uzunluk", "Çizginin uzunluğu sıfır görünüyor; daha uzun bir çizgi çizin.")
-        return
-    }
-    String defaultLen = "100"
-    String bodyMeasure
-    if (calibrated) {
-        double measuredUm = lenPx * curPx
-        defaultLen = String.format(java.util.Locale.US, "%.1f", measuredUm)
-        bodyMeasure = String.format(java.util.Locale.US,
-            "Çizgi uzunluğu: %.1f piksel.\n" +
-            "Bu görüntü zaten kalibre (%s), bu da bu çizgi için yaklaşık %.1f µm demek.\n\n" +
-            "Mevcut kalibrasyon doğruysa değeri olduğu gibi bırakıp OK'a basın (değişmez).\n" +
-            "Düzeltmek isterseniz çizginin gerçek uzunluğunu (µm) girin.",
-            lenPx, curStr, measuredUm)
-    } else {
-        bodyMeasure = String.format(java.util.Locale.US,
-            "Çizgi uzunluğu: %.1f piksel.\n\nBu çizginin gerçek uzunluğu kaç µm?\n" +
-            "(ör. 100 µm'lik bir ölçek çubuğu için 100)", lenPx)
-    }
-    def lenInput = Dialogs.showInputDialog("Kalibrasyon — cetvel", bodyMeasure, defaultLen)
-    if (lenInput == null) { println "İptal."; return }
-    double realUm
-    try {
-        realUm = Double.parseDouble(lenInput.toString().trim().replace(',' as char, '.' as char))
-    } catch (Exception e) {
-        Dialogs.showErrorMessage("Geçersiz değer", "Sayısal bir uzunluk (µm) girin.")
-        return
-    }
-    if (!(realUm > 0)) {
-        Dialogs.showErrorMessage("Geçersiz değer", "Uzunluk pozitif olmalı.")
-        return
-    }
-    newPx = realUm / lenPx
-    methodNote = String.format(java.util.Locale.US, "Cetvel: %.1f µm ÷ %.1f px", realUm, lenPx)
+        def node = org.controlsfx.glyphfont.Glyph.create('FontAwesome|' + glyphName)
+        node.setStyle('-fx-text-fill: -fx-text-base-color;')
+        return node
+    } catch (Throwable ignored) { return null }
+}
+def navButton = { String text, Closure action, String tooltip = null, String icon = null ->
+    def b = new javafx.scene.control.Button(text); b.setOnAction({ action() })
+    if (tooltip) b.setTooltip(new javafx.scene.control.Tooltip(tooltip))
+    if (icon) { def g = faIcon(icon); if (g != null) b.setGraphic(g) }
+    return b
+}
+def busyBar = { ->
+    def pb = new javafx.scene.control.ProgressBar(); pb.setProgress(-1.0); pb.setMaxWidth(Double.MAX_VALUE); return pb
 }
 
-// ── 3) Açık görüntüye uygula (bellekte) ──
+// ── İş mantığı (arka planda çağrılır) ──────────────────────────────────────
 def applyMeta = { imgData, double px ->
     def srv = imgData.getServer()
     def newMeta = new ImageServerMetadata.Builder(srv.getMetadata())
@@ -232,68 +59,382 @@ def applyMeta = { imgData, double px ->
         .build()
     imgData.updateServerMetadata(newMeta)
 }
-applyMeta(imageData, newPx)
 
-// Projedeyse açık görüntüyü diske de yaz (kalıcı olsun) — best-effort
-boolean persisted = false
-def project = QP.getProject()
-def currentEntry = (project != null) ? QP.getProjectEntry() : null
-if (currentEntry != null) {
+// Açık görüntüye uygula (bellekte) + projedeyse diske yaz (best-effort).
+def runApply = { double px ->
     try {
-        currentEntry.saveImageData(imageData)
-        persisted = true
+        def imageData = QP.getCurrentImageData()
+        if (imageData == null) return [ok:false, error:'Görüntü açık değil.']
+        applyMeta(imageData, px)
+        boolean persisted = false
+        def project = QP.getProject()
+        def currentEntry = (project != null) ? QP.getProjectEntry() : null
+        if (currentEntry != null) {
+            try { currentEntry.saveImageData(imageData); persisted = true }
+            catch (Throwable t) { println "Uyarı: açık görüntü diske yazılamadı (${t.getClass().getSimpleName()})." }
+        }
+        return [ok:true, persisted:persisted, hasProject:(project != null)]
     } catch (Throwable t) {
-        println "Uyarı: açık görüntü diske yazılamadı (${t.getClass().getSimpleName()})."
+        return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(mesaj yok)')]
     }
 }
 
-// Görüntüleyiciyi tazele (ölçek çubuğu/ruler güncellensin)
-javafx.application.Platform.runLater {
-    try { qupath.lib.gui.QuPathGUI.getInstance()?.getViewer()?.repaint() } catch (Throwable ignored) {}
-}
-
-// ── 4) İsteğe bağlı: proje genelinde kalibre edilmemişlere uygula (yalnız Mod A) ──
-int batchUpdated = 0
-int batchSkipped = 0
-boolean batchRan = false
-if (mode == "direct" && project != null && !isHeadless) {
-    def doBatch = Dialogs.showConfirmDialog("Proje geneli",
-        String.format(java.util.Locale.US,
-            "Projedeki TÜM kalibre edilmemiş görüntülere de %.4f µm/px uygulansın mı?\n" +
-            "(Zaten kalibre olan görüntülere dokunulmaz.)", newPx))
-    if (doBatch) {
-        batchRan = true
+// Proje genelinde kalibre edilmemişlere uygula (yalnız Mod A).
+def runBatch = { double px ->
+    int updated = 0, skipped = 0
+    try {
+        def project = QP.getProject()
+        if (project == null) return [ok:false, error:'Proje yok.']
+        def currentEntry = QP.getProjectEntry()
         for (entry in project.getImageList()) {
             try {
                 if (currentEntry != null && entry == currentEntry) continue
                 entry.readImageData().withCloseable { ed ->
                     if (!ed.getServer().getPixelCalibration().hasPixelSizeMicrons()) {
-                        applyMeta(ed, newPx)
-                        entry.saveImageData(ed)
-                        batchUpdated++
-                    } else {
-                        batchSkipped++
-                    }
+                        applyMeta(ed, px); entry.saveImageData(ed); updated++
+                    } else { skipped++ }
                 }
             } catch (Throwable t) {
                 println "Uyarı: ${entry.getImageName()} güncellenemedi (${t.getClass().getSimpleName()})."
             }
         }
+        return [ok:true, updated:updated, skipped:skipped]
+    } catch (Throwable t) {
+        return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(mesaj yok)')]
     }
 }
 
-// ── 5) Sonuç ──
-def body = new StringBuilder()
-body << "Kalibrasyon güncellendi.\n\n"
-body << "  Yöntem        : ${methodNote}\n"
-body << "  Önceki        : ${curStr}\n"
-body << String.format(java.util.Locale.US, "  Yeni          : %.4f µm/px\n", newPx)
-body << "  Diske yazıldı : " + (persisted ? "evet (proje)" : (project != null ? "hayır" : "proje yok — yalnız bellek")) + "\n"
-if (batchRan) {
-    body << String.format(java.util.Locale.US, "  Proje geneli  : %d güncellendi, %d zaten kalibre\n", batchUpdated, batchSkipped)
+// Her render'da görüntü/proje/kalibrasyon durumunu tazeler.
+def computeState = { ->
+    def st = [image:false, project:false, calibrated:false, curPx:0.0d, curStr:'tanımsız (NaN)']
+    def imageData = QP.getCurrentImageData()
+    st.image = imageData != null
+    if (imageData != null) {
+        def cal = imageData.getServer().getPixelCalibration()
+        double px = cal.getPixelWidthMicrons()
+        st.calibrated = (px > 0)
+        st.curPx = px
+        st.curStr = st.calibrated ? String.format(java.util.Locale.US, "%.4f µm/px", px) : "tanımsız (NaN)"
+    }
+    st.project = QP.getProject() != null
+    return st
 }
-body << "\nDoğrulama: Ruler aracıyla tipik bir tümör çekirdeği çapı ~8–12 µm görünmeli.\n"
-body << "\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
-showResultWindow("Kalibrasyon tamam", body.toString())
 
-println String.format(java.util.Locale.US, "Kalibrasyon: %s → %.4f µm/px (%s)", curStr, newPx, methodNote)
+// ── Headless (GUI yok): etkileşimsiz çalışılamaz, durumu yaz ve çık ─────────
+if (isHeadless) {
+    def s = computeState()
+    println "Kalibrasyon (headless): görüntü=${s.image} kalibre=${s.calibrated} (${s.curStr}) proje=${s.project}"
+    println "GUI olmadan kalibrasyon etkileşimi yok — µm/px değerini bir insanın girmesi gerekir."
+    return
+}
+
+// ── Tek pencere, adım adım render ──────────────────────────────────────────
+// Stage/Scene YALNIZ FX uygulama iş parçacığında oluşturulabilir; betik arka
+// planda çalıştığından stage aşağıdaki Platform.runLater içinde oluşturulur.
+def stage = null
+
+// CHOICE | DIRECT | RULER_DRAW | RULER_LEN | APPLYING | BATCH_ASK | BATCHING | RESULT
+def step = new java.util.concurrent.atomic.AtomicReference('CHOICE')
+def modeRef = new java.util.concurrent.atomic.AtomicReference(null)     // 'direct' | 'ruler'
+def newPxRef = new java.util.concurrent.atomic.AtomicReference(null)    // Double
+def methodNoteRef = new java.util.concurrent.atomic.AtomicReference('') // String
+def prevStrRef = new java.util.concurrent.atomic.AtomicReference('')    // önceki kalibrasyon (özet için)
+def lineRef = new java.util.concurrent.atomic.AtomicReference(null)     // PathObject (çizgi)
+def lenPxRef = new java.util.concurrent.atomic.AtomicReference(null)    // Double (piksel)
+def applyResultRef = new java.util.concurrent.atomic.AtomicReference(null) // Map
+def batchResultRef = new java.util.concurrent.atomic.AtomicReference(null) // Map | null
+def directWarnedRef = new java.util.concurrent.atomic.AtomicBoolean(false) // sıra-dışı değer iki-adımlı onayı
+def render  // ileri bildirim
+
+// Seçili/var olan tek çizgiyi bul: önce seçili çizgi, yoksa tam bir çizgi anotasyonu.
+def findLine = { ->
+    def sel = QP.getSelectedObject()
+    if (sel != null && sel.getROI()?.isLine()) return sel
+    def lines = QP.getAnnotationObjects().findAll { it.getROI()?.isLine() }
+    if (lines.size() == 1) return lines[0]
+    return null
+}
+
+// Sonuç özet metni (RESULT TextArea'sında gösterilir).
+def buildSummary = { ->
+    def b = new StringBuilder()
+    b << "Kalibrasyon güncellendi.\n\n"
+    b << "  Yöntem        : ${methodNoteRef.get()}\n"
+    b << "  Önceki        : ${prevStrRef.get()}\n"
+    b << String.format(java.util.Locale.US, "  Yeni          : %.4f µm/px\n", (double) newPxRef.get())
+    def ar = applyResultRef.get()
+    boolean persisted = (ar != null && ar.persisted)
+    boolean hasProject = (ar != null && ar.hasProject)
+    b << "  Diske yazıldı : " + (persisted ? "evet (proje)" : (hasProject ? "hayır" : "proje yok — yalnız bellek")) + "\n"
+    def br = batchResultRef.get()
+    if (br != null && br.ok) {
+        b << String.format(java.util.Locale.US, "  Proje geneli  : %d güncellendi, %d zaten kalibre\n", (int) br.updated, (int) br.skipped)
+    }
+    b << "\nDoğrulama: Ruler aracıyla tipik bir tümör çekirdeği çapı ~8–12 µm görünmeli.\n"
+    b << "\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    return b.toString()
+}
+
+// ── Arka plan: açık görüntüye uygula → busy → sonraki adım ──────────────────
+def startApply = { ->
+    step.set('APPLYING'); render()
+    def worker = new Thread({
+        def r = runApply((double) newPxRef.get())
+        javafx.application.Platform.runLater {
+            applyResultRef.set(r)
+            // Ölçek çubuğu/ruler tazelensin (mevcut idiomu koruyor).
+            try { qupath.lib.gui.QuPathGUI.getInstance()?.getViewer()?.repaint() } catch (Throwable ignored) {}
+            if (!r.ok) { step.set('RESULT'); render(); return }
+            if (modeRef.get() == 'direct' && r.hasProject) { step.set('BATCH_ASK'); render() }
+            else { batchResultRef.set(null); step.set('RESULT'); render() }
+        }
+    }, 'AtolyeCalApply'); worker.setDaemon(true); worker.start()
+}
+
+// ── Arka plan: proje-geneli batch → busy → sonuç ────────────────────────────
+def startBatch = { ->
+    step.set('BATCHING'); render()
+    def worker = new Thread({
+        def r = runBatch((double) newPxRef.get())
+        javafx.application.Platform.runLater { batchResultRef.set(r); step.set('RESULT'); render() }
+    }, 'AtolyeCalBatch'); worker.setDaemon(true); worker.start()
+}
+
+render = { ->
+    if (stage != null) stage.setAlwaysOnTop(true)   // her render'da üstte-kal yeniden uygulanır
+    def s = computeState()
+    def content = new javafx.scene.layout.VBox(10)
+    content.setPadding(new javafx.geometry.Insets(14))
+    def buttons = new javafx.scene.layout.HBox(8)
+    buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
+
+    def title = new javafx.scene.control.Label()
+    title.setStyle('-fx-font-size: 14px; -fx-font-weight: bold;')
+    def bodyLbl = new javafx.scene.control.Label()
+    bodyLbl.setWrapText(true)
+    content.getChildren().addAll(title, bodyLbl)
+
+    def cur = step.get()
+    if (cur == 'CHOICE') {
+        if (!s.image) {
+            title.setText('Görüntü açık değil')
+            bodyLbl.setText('Önce bir slayt açın, sonra "⟳ Yenile"ye basın.')
+            buttons.getChildren().addAll(
+                navButton('Kapat', { stage.close() }),
+                navButton('⟳ Yenile', { render() }))
+        } else {
+            title.setText('Kalibrasyon — yöntem seçin')
+            bodyLbl.setText(
+                (s.calibrated
+                    ? "ℹ Bu görüntü ZATEN kalibre: ${s.curStr}.\n\n"
+                    : "⚠ Bu görüntüde kalibrasyon YOK (µm/px tanımsız).\n\n") +
+                "Piksel boyutunu (µm/px) nasıl ayarlamak istersiniz?\n\n" +
+                "• Doğrudan değer: tarayıcı değerini elle girin\n" +
+                "    (GT450 40× ≈ 0.26 · AT2 40× ≈ 0.25 / 20× ≈ 0.50)\n" +
+                "• Cetvelden ölç: bilinen uzunlukta bir çizgi çizip ölçün")
+            buttons.getChildren().addAll(
+                navButton('Kapat', { stage.close() }),
+                navButton('Cetvelden ölç', {
+                    modeRef.set('ruler')
+                    // En-iyi-çaba: Çizgi (Line) aracına geç (FX thread; sürüm farklarına karşı iki deneme).
+                    try { qupath.lib.gui.QuPathGUI.getInstance()?.getToolManager()?.setSelectedTool(qupath.lib.gui.viewer.tools.PathTools.LINE) }
+                    catch (Throwable t1) {
+                        try { qupath.lib.gui.QuPathGUI.getInstance()?.setSelectedTool(qupath.lib.gui.viewer.tools.PathTools.LINE) } catch (Throwable t2) {}
+                    }
+                    def existing = findLine()
+                    if (existing != null && existing.getROI().getLength() > 0) {
+                        lineRef.set(existing); lenPxRef.set((Double) existing.getROI().getLength()); step.set('RULER_LEN')
+                    } else { step.set('RULER_DRAW') }
+                    render()
+                }, 'Bilinen uzunlukta bir çizgi çizip ölçerek µm/px hesaplar', 'PENCIL'),
+                navButton('Doğrudan değer ▶', {
+                    modeRef.set('direct'); directWarnedRef.set(false); step.set('DIRECT'); render()
+                }, 'Tarayıcı µm/px değerini elle girin', 'KEYBOARD_ALT'))
+        }
+    } else if (cur == 'DIRECT') {
+        title.setText('Doğrudan değer gir')
+        bodyLbl.setText(
+            "Şu anki piksel boyutu: ${s.curStr}\n\n" +
+            "Yeni piksel boyutu (µm/px):\n" +
+            "  • Leica Aperio GT450 (40×) ≈ 0.26\n" +
+            "  • Leica Aperio AT2 (40×) ≈ 0.25  (20× ≈ 0.50)\n\n" +
+            "Not: Yerel .svs dosyaları bu değeri zaten içerir; bu araç meta verisi\n" +
+            "eksik (ör. dışa aktarılmış TIFF) dosyalar içindir.")
+        def field = new javafx.scene.control.TextField('0.26'); field.setPrefColumnCount(10)
+        field.textProperty().addListener({ obs, o, n -> directWarnedRef.set(false) } as javafx.beans.value.ChangeListener)
+        def errLbl = new javafx.scene.control.Label(); errLbl.setWrapText(true)
+        content.getChildren().addAll(
+            new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('µm/px:'), field), errLbl)
+        def applyDirect = {
+            double px
+            try { px = Double.parseDouble(field.getText().toString().trim().replace(',' as char, '.' as char)) }
+            catch (Exception e) {
+                errLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
+                errLbl.setText('⚠ Sayısal bir µm/px değeri girin (ör. 0.26).'); return
+            }
+            if (!(px > 0)) {
+                errLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
+                errLbl.setText('⚠ Piksel boyutu pozitif olmalı.'); return
+            }
+            if ((px < 0.05 || px > 2.0) && !directWarnedRef.get()) {
+                directWarnedRef.set(true)
+                errLbl.setStyle('-fx-text-fill: #cc7a00;')   // amber: sıra-dışı değer onayı
+                errLbl.setText(String.format(java.util.Locale.US,
+                    '⚠ %.4f µm/px tipik patoloji aralığının (0.05–2.0) dışında. Yine de uygulamak için "Uygula"ya tekrar basın.', px))
+                return
+            }
+            newPxRef.set((Double) px); methodNoteRef.set('Doğrudan giriş'); prevStrRef.set(s.curStr)
+            startApply()
+        }
+        field.setOnAction({ applyDirect() })
+        buttons.getChildren().addAll(
+            navButton('◀ Geri', { step.set('CHOICE'); render() }),
+            navButton('Uygula ▶', { applyDirect() }, 'Bu değeri açık görüntüye uygular'))
+    } else if (cur == 'RULER_DRAW') {
+        title.setText('Cetvel — çizgi çizin')
+        bodyLbl.setText(
+            "Çizgi (Line) aracı seçili olmalı — değilse araç çubuğundan seçin.\n\n" +
+            "1. Bilinen uzunlukta bir yapının üzerine bir çizgi çizin\n" +
+            "   (ör. gömülü ölçek çubuğu ya da bilinen çaplı bir yapı)\n" +
+            "2. Aşağıdan 'Ölç ▶'e basın\n\n" +
+            "Çizgiyi yeniden çizebilirsiniz; en son/seçili çizgi kullanılır.")
+        def statusLbl = new javafx.scene.control.Label(); statusLbl.setWrapText(true)
+        content.getChildren().add(statusLbl)
+        buttons.getChildren().addAll(
+            navButton('◀ Geri', { step.set('CHOICE'); render() }),
+            navButton('Ölç ▶', {
+                def line = findLine()
+                if (line == null) {
+                    int n = QP.getAnnotationObjects().findAll { it.getROI()?.isLine() }.size()
+                    statusLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
+                    statusLbl.setText(n > 1
+                        ? '⚠ Birden fazla çizgi var — ölçmek istediğinizi SEÇİN, sonra tekrar "Ölç".'
+                        : '⚠ Henüz çizgi yok — bir çizgi çizip tekrar "Ölç"e basın.')
+                    return
+                }
+                double lenPx = line.getROI().getLength()
+                if (!(lenPx > 0)) {
+                    statusLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
+                    statusLbl.setText('⚠ Çizginin uzunluğu sıfır görünüyor; daha uzun bir çizgi çizin.')
+                    return
+                }
+                lineRef.set(line); lenPxRef.set((Double) lenPx); step.set('RULER_LEN'); render()
+            }, 'Çizdiğiniz/seçtiğiniz çizgiyi ölçer'))
+    } else if (cur == 'RULER_LEN') {
+        double lenPx = (double) lenPxRef.get()
+        String defaultLen = '100'
+        String bodyTxt
+        if (s.calibrated) {
+            double measuredUm = lenPx * (s.curPx as double)
+            defaultLen = String.format(java.util.Locale.US, '%.1f', measuredUm)
+            bodyTxt = String.format(java.util.Locale.US,
+                "Çizgi uzunluğu: %.1f piksel.\n" +
+                "Bu görüntü zaten kalibre (%s), bu da bu çizgi için yaklaşık %.1f µm demek.\n\n" +
+                "Mevcut kalibrasyon doğruysa değeri olduğu gibi bırakıp 'Uygula'ya basın (değişmez).\n" +
+                "Düzeltmek isterseniz çizginin gerçek uzunluğunu (µm) girin.",
+                lenPx, s.curStr, measuredUm)
+        } else {
+            bodyTxt = String.format(java.util.Locale.US,
+                "Çizgi uzunluğu: %.1f piksel.\n\nBu çizginin gerçek uzunluğu kaç µm?\n" +
+                "(ör. 100 µm'lik bir ölçek çubuğu için 100)", lenPx)
+        }
+        title.setText('Cetvel — gerçek uzunluk')
+        bodyLbl.setText(bodyTxt)
+        def field = new javafx.scene.control.TextField(defaultLen); field.setPrefColumnCount(10)
+        def errLbl = new javafx.scene.control.Label(); errLbl.setWrapText(true)
+        content.getChildren().addAll(
+            new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Gerçek uzunluk (µm):'), field), errLbl)
+        def applyRuler = {
+            double realUm
+            try { realUm = Double.parseDouble(field.getText().toString().trim().replace(',' as char, '.' as char)) }
+            catch (Exception e) {
+                errLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
+                errLbl.setText('⚠ Sayısal bir uzunluk (µm) girin.'); return
+            }
+            if (!(realUm > 0)) {
+                errLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
+                errLbl.setText('⚠ Uzunluk pozitif olmalı.'); return
+            }
+            double newPx = realUm / lenPx
+            newPxRef.set((Double) newPx)
+            methodNoteRef.set(String.format(java.util.Locale.US, 'Cetvel: %.1f µm ÷ %.1f px', realUm, lenPx))
+            prevStrRef.set(s.curStr)
+            startApply()
+        }
+        field.setOnAction({ applyRuler() })
+        buttons.getChildren().addAll(
+            navButton('◀ Geri', { step.set('RULER_DRAW'); render() }),
+            navButton('Uygula ▶', { applyRuler() }, 'Bu uzunluktan µm/px hesaplayıp uygular'))
+    } else if (cur == 'APPLYING') {
+        title.setText('Kalibrasyon uygulanıyor…')
+        bodyLbl.setText('Piksel boyutu açık görüntüye uygulanıyor ve (projede ise) diske yazılıyor. Lütfen bekleyin…')
+        content.getChildren().add(busyBar())
+    } else if (cur == 'BATCH_ASK') {
+        title.setText('Proje geneli uygula?')
+        bodyLbl.setText(String.format(java.util.Locale.US,
+            "Açık görüntü %.4f µm/px olarak ayarlandı.\n\n" +
+            "Projedeki TÜM kalibre edilmemiş görüntülere de aynı değeri uygulamak ister misiniz?\n" +
+            "(Zaten kalibre olan görüntülere dokunulmaz.)", (double) newPxRef.get()))
+        buttons.getChildren().addAll(
+            navButton('Hayır, atla', { batchResultRef.set(null); step.set('RESULT'); render() }),
+            navButton('Evet, uygula ▶', { startBatch() },
+                'Projedeki kalibre edilmemiş görüntülere de uygular'))
+    } else if (cur == 'BATCHING') {
+        title.setText('Proje geneli uygulanıyor…')
+        bodyLbl.setText('Kalibre edilmemiş görüntüler güncelleniyor ve diske yazılıyor. Lütfen bekleyin…')
+        content.getChildren().add(busyBar())
+    } else if (cur == 'RESULT') {
+        def ar = applyResultRef.get()
+        if (ar != null && ar.ok) {
+            title.setText('Kalibrasyon tamam ✅')
+            def resultArea = new javafx.scene.control.TextArea(buildSummary())
+            resultArea.setEditable(false); resultArea.setWrapText(false); resultArea.setPrefRowCount(10)
+            resultArea.setStyle("-fx-font-family: 'Consolas','Menlo','Courier New',monospace; -fx-font-size: 12px;")
+            content.getChildren().add(resultArea)
+            javafx.scene.layout.VBox.setVgrow(resultArea, javafx.scene.layout.Priority.ALWAYS)
+            def copyBtn = new javafx.scene.control.Button('Kopyala')
+            copyBtn.setOnAction({
+                def cb = javafx.scene.input.Clipboard.getSystemClipboard()
+                def cc = new javafx.scene.input.ClipboardContent(); cc.putString(resultArea.getText()); cb.setContent(cc)
+            })
+            // Konsola da yaz (kayıt için).
+            println String.format(java.util.Locale.US, "Kalibrasyon: %s → %.4f µm/px (%s)",
+                prevStrRef.get(), (double) newPxRef.get(), methodNoteRef.get())
+            buttons.getChildren().addAll(
+                navButton('Kapat', { stage.close() }),
+                copyBtn,
+                navButton('↻ Yeniden kalibre et', { step.set('CHOICE'); render() }, 'Baştan kalibrasyon yapar'))
+        } else {
+            title.setText('Kalibrasyon yapılamadı')
+            bodyLbl.setText((ar?.error ?: 'Bilinmeyen hata.').toString())
+            buttons.getChildren().addAll(
+                navButton('Kapat', { stage.close() }),
+                navButton('↻ Tekrar dene', { step.set('CHOICE'); render() }))
+        }
+    }
+
+    def root = new javafx.scene.layout.BorderPane()
+    root.setCenter(content)
+    // Kalıcı sorumluluk reddi notu — tema-duyarlı (açık/koyu tema).
+    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
+    disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
+        '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
+    def bottom = new javafx.scene.layout.VBox(8, disclaimer, buttons)
+    bottom.setPadding(new javafx.geometry.Insets(10))
+    root.setBottom(bottom)
+    stage.setScene(new javafx.scene.Scene(root, 600, 500))
+}
+
+javafx.application.Platform.runLater {
+    try {
+        stage = new javafx.stage.Stage()
+        stage.initModality(javafx.stage.Modality.NONE)
+        stage.setTitle('Kalibrasyon (piksel boyutu)')
+        stage.setAlwaysOnTop(true)
+        render()
+        stage.show()
+    } catch (Throwable t) {
+        Dialogs.showErrorMessage('Kalibrasyon penceresi açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+    }
+}

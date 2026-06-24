@@ -103,8 +103,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Görüntü tipi ayarla",         "yardimci-image-type.groovy"),
         new ScriptEntry("Eşikleri ayarla",             "yardimci-esik-ayarla.groovy"),
         new ScriptEntry("Kalibrasyon (piksel boyutu)", "yardimci-kalibrasyon.groovy"),
-        new ScriptEntry("Boya vektörlerini kontrol et", "yardimci-boya-vektor-kontrol.groovy"),
-        new ScriptEntry("Boya vektörlerini tahmin et", "yardimci-boya-vektor-tahmin.groovy"),
+        // Tek-pencere sihirbaz: mevcut vektörleri raporlar (kontrol) + seçili bölgeden
+        // tahmin → önizle → uygula → geri al, hepsi aynı pencerede. Eski iki ayrı
+        // yardımcı ("kontrol et" + "tahmin et") buna katlandı.
+        new ScriptEntry("Boya vektörleri sihirbazı", "yardimci-boya-vektor-sihirbaz.groovy"),
         new ScriptEntry("Örnek tümör/stroma sınıflandırıcısını projeye kaydet", "yardimci-ornek-siniflandirici.groovy"),
         new ScriptEntry("Eşik ile alan ölçümü",        "yardimci-esik-alan.groovy"),
         new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy"),
@@ -452,7 +454,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "  • Görüntü tipi ayarla (slayt / proje)\n" +
             "  • Eşikleri ayarla (yeniden tespit etmeden re-binning)\n" +
             "  • Kalibrasyon (piksel boyutu — µm/px ayarla)\n" +
-            "  • Boya vektörlerini tahmin et (seçili bölgeden; önizle → uygula)\n" +
+            "  • Boya vektörleri sihirbazı (kontrol + seçili bölgeden tahmin; önizle → uygula → geri al)\n" +
             "  • Örnek tümör/stroma sınıflandırıcısı (projeye kaydet)\n" +
             "  • Karo (tile) dışa aktarma (derin öğrenme için görüntü/maske karoları)\n" +
             "  • Makine öğrenmesi için özellik matrisi (X özellik + y etiket, TSV)\n" +
