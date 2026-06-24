@@ -114,6 +114,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // TIA Toolbox (Python) köprüsü — bkz. Ekler → TIA Toolbox
         new ScriptEntry("TIA Toolbox için bölge maskesi",        "yardimci-tiatoolbox-maske.groovy"),
         new ScriptEntry("AI tahmin maskelerini içe aktar (GeoJSON)", "yardimci-tahmin-iceaktar.groovy"),
+        // Raster maske köprüsü — indeksli/ikili PNG/TIFF maskeyi anotasyona çevirir
+        // (TIA Toolbox bölge maskesi + harici U-Net çıktısı için içe-aktarım eşi)
+        new ScriptEntry("Maske görüntüsünü içe aktar",            "yardimci-maske-iceaktar.groovy"),
         // GrandQC (Python) köprüsü — hibrit doku/artefakt KK; bkz. Ekler → Ek B § GrandQC
         new ScriptEntry("GrandQC kalite kontrol sihirbazı",      "yardimci-grandqc-sihirbaz.groovy")
     );
