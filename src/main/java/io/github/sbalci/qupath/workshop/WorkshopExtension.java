@@ -157,6 +157,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("İmmün hücre yoğunluğu (DAB)",          "yardimci-immun-yogunluk.groovy"),
         new ScriptEntry("PHH3 mitoz kantifikasyonu",            "yardimci-mitoz-phh3.groovy"),
         new ScriptEntry("KongNet H&E mitoz tespiti (DL)",       "yardimci-mitoz-kongnet.groovy"),
+        // Tümör tomurcuklanma (CK/ITBCC) — petebankhead/qupath-budding-scripts (MIT)
+        // uyarlaması; CK-DAB slaytında tomurcuk SAYAR (Bd1/2/3 derecesi üretmez).
+        // bkz. Ekler → Tümör Tomurcuklanması.
+        new ScriptEntry("Tümör tomurcuklanma kantifikasyonu (CK / ITBCC)", "yardimci-tumor-tomurcuklanma.groovy"),
         // WSI anonimleştirme — projedeki slaytların anonim KOPYALARINI yeni klasöre yazar
         // (yerinde değiştirmez) + CSV/JSON eşleştirme anahtarı; bkz. Ekler → Ek E.
         new ScriptEntry("WSI anonimleştirme sihirbazı",         "yardimci-anonim-sihirbaz.groovy")
