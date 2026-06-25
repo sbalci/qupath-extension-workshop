@@ -111,6 +111,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Eşik ile alan ölçümü",        "yardimci-esik-alan.groovy"),
         new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy"),
         new ScriptEntry("Makine öğrenmesi için özellik matrisi", "yardimci-ozellik-matrisi.groovy"),
+        // Fenotipleme round-trip eşi: küme / UMAP sonuçlarını TSV'den tespitlere geri yazar
+        // (bkz. Ekler → Hücre Fenotipleme; canlı köprü için Ekler → QuBaLab).
+        new ScriptEntry("Kümeleme/fenotip etiketlerini içe aktar (TSV)", "yardimci-kume-etiketi-iceaktar.groovy"),
         // TIA Toolbox (Python) köprüsü — bkz. Ekler → TIA Toolbox
         new ScriptEntry("TIA Toolbox için bölge maskesi",        "yardimci-tiatoolbox-maske.groovy"),
         new ScriptEntry("AI tahmin maskelerini içe aktar (GeoJSON)", "yardimci-tahmin-iceaktar.groovy"),

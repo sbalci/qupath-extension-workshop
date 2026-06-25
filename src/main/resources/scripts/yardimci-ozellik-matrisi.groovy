@@ -8,7 +8,8 @@
  * Python / R tarafında yapılır.
  *
  * Sütun grupları (veri sözlüğünde etiketlenir):
- *   • id      : image, object_type (cell/tile/detection), centroid_x_um, centroid_y_um
+ *   • id      : image, object_type (cell/tile/detection), object_id (QuPath UUID),
+ *               centroid_x_um, centroid_y_um
  *   • label   : cell_class   (tespitin PathClass'ı),
  *               region_class (hiyerarşideki üst anotasyonun PathClass'ı)
  *   • feature : her hücrenin MeasurementList'indeki tüm sayısal ölçümler
@@ -215,7 +216,7 @@ def toSlug = { String s ->
 // ──────────────────────────────────────────────────────────────
 // Matris şeması ve biçimleyiciler
 // ──────────────────────────────────────────────────────────────
-def ID_COLS    = ["image", "object_type", "centroid_x_um", "centroid_y_um"]
+def ID_COLS    = ["image", "object_type", "object_id", "centroid_x_um", "centroid_y_um"]
 def LABEL_COLS = ["cell_class", "region_class"]
 
 // Locale-bağımsız sayısal biçim: Double.toString daima '.' kullanır (Türkçe
@@ -269,6 +270,7 @@ def collectImage = { imageData, String imageName ->
         rows << [
             image        : imageName,
             object_type  : (det.isCell() ? "cell" : (det.isTile() ? "tile" : "detection")),
+            object_id    : (det.getID() != null ? det.getID().toString() : ""),
             centroid_x_um: cx,
             centroid_y_um: cy,
             cell_class   : cellClass,
@@ -291,6 +293,7 @@ def writeMatrix = { File outFile, List rows, java.util.TreeSet featureNames, cha
         def line = []
         line << r.image
         line << r.object_type
+        line << (r.object_id ?: "")
         line << fmtVal(r.centroid_x_um)
         line << fmtVal(r.centroid_y_um)
         line << (r.cell_class ?: "")
