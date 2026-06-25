@@ -133,7 +133,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("SPIDER doku sınıflandırıcı sihirbazı", "yardimci-spider-sihirbaz.groovy"),
         // metadata-qupath (sbalci, MIT) köprüsü — proje genelinde slayt/tarayıcı üst verisini
         // okur → CSV + (ops.) sıralanabilir Proje sütunları; bkz. Ekler → Kohort Metadata
-        new ScriptEntry("Kohort metadata sihirbazı", "yardimci-metadata-sihirbaz.groovy")
+        new ScriptEntry("Kohort metadata sihirbazı", "yardimci-metadata-sihirbaz.groovy"),
+        // sectra-qupath (sbalci, MIT) köprüsü — Sectra PACS DICOM (GSPS) anotasyonlarını
+        // GeoJSON'a çevirip içe aktarır; bkz. Ekler → Klinik PACS → QuPath Entegrasyonu
+        new ScriptEntry("Sectra PACS anotasyon sihirbazı", "yardimci-sectra-iceaktar.groovy")
     );
 
     /**
@@ -482,7 +485,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "  • Karo (tile) dışa aktarma (derin öğrenme için görüntü/maske karoları)\n" +
             "  • Makine öğrenmesi için özellik matrisi (X özellik + y etiket, TSV)\n" +
             "  • TIA Toolbox için bölge maskesi (tek-kanallı maske, masks= için)\n" +
-            "  • AI tahmin maskelerini içe aktar (GeoJSON → kilitli anotasyon)\n\n" +
+            "  • AI tahmin maskelerini içe aktar (GeoJSON → kilitli anotasyon)\n" +
+            "  • Sectra PACS anotasyon sihirbazı (DICOM GSPS → GeoJSON → QuPath)\n\n" +
             "İleri analiz (sonraki oturum):\n" +
             "  • Menüde \"İleri analiz — sonraki oturum\" altında gri görünen\n" +
             "    " + UPCOMING_SCRIPTS.size() + " yardımcı bir sonraki oturumda etkinleşecek.\n\n" +
