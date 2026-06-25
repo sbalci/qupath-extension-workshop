@@ -127,7 +127,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("GrandQC kalite kontrol sihirbazı",      "yardimci-grandqc-sihirbaz.groovy"),
         // Kaiko Midnight (Python) köprüsü — denetimli FM sınıflandırıcı (eğit → tahmin);
         // bkz. Ekler → Kaiko Midnight Denetimli FM Sınıflandırıcı
-        new ScriptEntry("Kaiko Midnight sınıflandırıcı sihirbazı", "yardimci-kaiko-sihirbaz.groovy")
+        new ScriptEntry("Kaiko Midnight sınıflandırıcı sihirbazı", "yardimci-kaiko-sihirbaz.groovy"),
+        // SPIDER (Python) köprüsü — organ-özelleşmiş HAZIR sınıflandırıcı (yalnız tahmin,
+        // eğitim yok; CC BY-NC, kapılı); bkz. Ekler → SPIDER Organ Doku Sınıflandırıcı
+        new ScriptEntry("SPIDER doku sınıflandırıcı sihirbazı", "yardimci-spider-sihirbaz.groovy")
     );
 
     /**
