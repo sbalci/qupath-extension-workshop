@@ -124,7 +124,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // (TIA Toolbox bölge maskesi + harici U-Net çıktısı için içe-aktarım eşi)
         new ScriptEntry("Maske görüntüsünü içe aktar",            "yardimci-maske-iceaktar.groovy"),
         // GrandQC (Python) köprüsü — hibrit doku/artefakt KK; bkz. Ekler → Ek B § GrandQC
-        new ScriptEntry("GrandQC kalite kontrol sihirbazı",      "yardimci-grandqc-sihirbaz.groovy")
+        new ScriptEntry("GrandQC kalite kontrol sihirbazı",      "yardimci-grandqc-sihirbaz.groovy"),
+        // Kaiko Midnight (Python) köprüsü — denetimli FM sınıflandırıcı (eğit → tahmin);
+        // bkz. Ekler → Kaiko Midnight Denetimli FM Sınıflandırıcı
+        new ScriptEntry("Kaiko Midnight sınıflandırıcı sihirbazı", "yardimci-kaiko-sihirbaz.groovy")
     );
 
     /**
