@@ -80,6 +80,10 @@ public final class WorkshopPrefs {
     public static final DoubleProperty  pixelSize = regD(SEC_DETECTION, "atolye.pixelSize", 0.5);
     public static final DoubleProperty  cellExpansionNuclear = regD(SEC_DETECTION, "atolye.cellExpansionNuclear", 5.0);
     public static final DoubleProperty  cellExpansionCyto = regD(SEC_DETECTION, "atolye.cellExpansionCyto", 7.0);
+    // Cellpose sihirbazı (yardimci-cellpose-sihirbaz) tunables — aynı bölümde, Modül 4 ile paylaşılır.
+    public static final StringProperty  cellposeFamily = regS(SEC_DETECTION, "atolye.cellposeFamily", "cyto3");
+    public static final DoubleProperty  cellposeFlow = regD(SEC_DETECTION, "atolye.cellposeFlow", 0.4);
+    public static final DoubleProperty  cellposeCellprob = regD(SEC_DETECTION, "atolye.cellposeCellprob", 0.0);
 
     // --- StarDist (Modül 8) ---
     public static final DoubleProperty stardistThreshold     = regD(SEC_STARDIST, "atolye.stardistThreshold", 0.5);
@@ -141,6 +145,22 @@ public final class WorkshopPrefs {
     public static boolean bool(String key, boolean dflt) {
         Property<?> p = PROPS.get(key);
         return (p instanceof BooleanProperty) ? ((BooleanProperty) p).get() : dflt;
+    }
+
+    /**
+     * Reusable path sanity check for wizards that depend on an external file
+     * (a Python interpreter, a bridge script, a model). Returns {@code null}
+     * when the path is usable, or a short Turkish message describing the
+     * problem. Modeled on BIOP {@code CellposeSetup.checkPath()} — surface a
+     * bad path at config time instead of mid-run. No side effects; callers
+     * decide how to display the message.
+     */
+    public static String pathProblem(String path, boolean mustBeFile) {
+        if (path == null || path.trim().isEmpty()) return "yol boş";
+        java.io.File f = new java.io.File(path.trim());
+        if (!f.exists()) return "yol bulunamadı: " + path;
+        if (mustBeFile && !f.isFile()) return "bir dosya değil: " + path;
+        return null;
     }
 
     /** Used by the "Bu eşikleri varsayılan yap" button in yardimci-esik-ayarla. */

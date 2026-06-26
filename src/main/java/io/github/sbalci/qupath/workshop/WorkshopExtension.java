@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipException;
 
 import javafx.application.Platform;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
@@ -100,17 +101,27 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
      */
     private static final List<ScriptEntry> UTILITY_SCRIPTS = List.of(
         new ScriptEntry("Tespitleri sil",              "yardimci-tespitleri-sil.groovy"),
-        new ScriptEntry("Görüntü tipi ayarla",         "yardimci-image-type.groovy"),
+        new ScriptEntry("Görüntü tipi ayarla",         "yardimci-image-type.groovy", false, false),  // tüm-proje kapsamı: açık slayt gerekmez
         new ScriptEntry("Eşikleri ayarla",             "yardimci-esik-ayarla.groovy"),
         new ScriptEntry("Kalibrasyon (piksel boyutu)", "yardimci-kalibrasyon.groovy"),
+        // "Analiz etmeden önce verine bak" — bioimagebook (Bankhead, CC-BY 4.0) Bölüm 1'in
+        // tek-tık karşılığı: salt-okur künye + kanal histogramı + doygunluk/clipping.
+        // bkz. Ekler → Görüntü Analizi Temelleri.
+        new ScriptEntry("Görüntü künyesi ve histogram", "yardimci-goruntu-kunye.groovy"),
         // Ekran kaydı / canlı sunum yardımcısı — bastığınız tuş ve fare işlemlerini
         // ekranda gösterir/gizler (qupath.fx.controls.InputDisplay; aç/kapa anahtarı).
-        new ScriptEntry("Tuş/fare göstergesi (kayıt için)", "yardimci-tus-fare-gostergesi.groovy"),
+        new ScriptEntry("Tuş/fare göstergesi (kayıt için)", "yardimci-tus-fare-gostergesi.groovy", false, false),  // global ekran katmanı: açık slayt gerekmez
         // Tek-pencere sihirbaz: mevcut vektörleri raporlar (kontrol) + seçili bölgeden
         // tahmin → önizle → uygula → geri al, hepsi aynı pencerede. Eski iki ayrı
         // yardımcı ("kontrol et" + "tahmin et") buna katlandı.
         new ScriptEntry("Boya vektörleri sihirbazı", "yardimci-boya-vektor-sihirbaz.groovy"),
-        new ScriptEntry("Örnek tümör/stroma sınıflandırıcısını projeye kaydet", "yardimci-ornek-siniflandirici.groovy"),
+        // Salt-okur renk denetçisi — açık slaytın dosyasında gömülü ICC profilini
+        // (standart TIFF etiketi 34675 + Aperio/GT450 taşınmış 0xFFFF) Bio-Formats ile
+        // okur; ImageScope↔QuPath renk farkını açıklar. Görüntüyü DEĞİŞTİRMEZ; profili
+        // UYGULAMAZ (QuPath 0.6/0.7 ICC uygulamayı kararlı desteklemez — qupath#982).
+        // bkz. Ekler → Renk Yönetimi (ICC).
+        new ScriptEntry("ICC renk profili denetçisi", "yardimci-icc-denetci-sihirbaz.groovy"),
+        new ScriptEntry("Örnek tümör/stroma sınıflandırıcısını projeye kaydet", "yardimci-ornek-siniflandirici.groovy", false, false),  // proje düzeyi: açık slayt gerekmez
         new ScriptEntry("Eşik ile alan ölçümü",        "yardimci-esik-alan.groovy"),
         // Çok-sınıflı / fenotip sonuçlarında her sınıfın adet + % dağılımı (FS2K Session 6–8 /
         // CellClassPct eşi). Tespit YAPMAZ; var olan sınıflandırmaları seçili bölgede sayar.
@@ -140,7 +151,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("SPIDER doku sınıflandırıcı sihirbazı", "yardimci-spider-sihirbaz.groovy"),
         // metadata-qupath (sbalci, MIT) köprüsü — proje genelinde slayt/tarayıcı üst verisini
         // okur → CSV + (ops.) sıralanabilir Proje sütunları; bkz. Ekler → Kohort Metadata
-        new ScriptEntry("Kohort metadata sihirbazı", "yardimci-metadata-sihirbaz.groovy"),
+        new ScriptEntry("Kohort metadata sihirbazı", "yardimci-metadata-sihirbaz.groovy", false, false),  // proje geneli, salt-okunur: açık slayt gerekmez
         // sectra-qupath (sbalci, MIT) köprüsü — Sectra PACS DICOM (GSPS) anotasyonlarını
         // GeoJSON'a çevirip içe aktarır; bkz. Ekler → Klinik PACS → QuPath Entegrasyonu
         new ScriptEntry("Sectra PACS anotasyon sihirbazı", "yardimci-sectra-iceaktar.groovy"),
@@ -148,10 +159,24 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // Apache-2.0, Pete Bankhead). Saf eğitim; nesne/ölçüm DEĞİŞTİRMEZ; bölge vurgusu +
         // güvenli geri çekilme. bkz. Ekler → Arayüz Turu; statik karşılığı Modül 1 — Arayüz turu.
         new ScriptEntry("Arayüz turu", "yardimci-arayuz-turu.groovy"),
+        // Görüntü işleme kavramları — Bankhead'in dijital patoloji görüntü-işleme sözlüğünü
+        // (CC-BY 4.0) KENDİ slaydında canlı önizlemelerle gezdiren tur: dekonvolüsyon → Gaussian (σ)
+        // → eşik (ikili) → mesafe + watershed. Modül 2'nin "perde arkası"; saf eğitim, salt-okur.
+        // bkz. Ekler → Görüntü Analizi Temelleri.
+        new ScriptEntry("Görüntü işleme kavramları", "yardimci-goruntu-isleme-turu.groovy"),
         // StarDist (yerel QuPath eklentisi) köprüsü — seçili ROI'de H&E çekirdek tespiti +
         // sayım/yoğunluk (Modül 8'i etkinleştirmeden no-code yol); StarDist eklentisi yoksa
         // kullanıcıyı kuruluma yönlendirir. bkz. Ekler → Ek G (StarDist Eklentisi).
-        new ScriptEntry("StarDist çekirdek tespiti sihirbazı", "yardimci-stardist-sihirbaz.groovy")
+        new ScriptEntry("StarDist çekirdek tespiti sihirbazı", "yardimci-stardist-sihirbaz.groovy"),
+        // Cellpose (BIOP qupath-extension-cellpose) köprüsü — Cellpose2D builder'ını tek
+        // pencereden kurar; cyto3/cpsam/Omnipose + brightfield İHK kanal hazırlığı. BIOP
+        // eklentisi + Python venv gerektirir (yoksa sihirbaz kuruluma yönlendirir).
+        // bkz. Ekler → Ek F (Cellpose Eklentisi).
+        new ScriptEntry("Cellpose hücre/çekirdek tespiti sihirbazı", "yardimci-cellpose-sihirbaz.groovy"),
+        // Tespit doğrulama (F1 / IoU) — otomatik tespiti ELLE çizilmiş altın standartla
+        // karşılaştırır (TP/FP/FN → precision/recall/F1). Salt Groovy/JTS, ek bağımlılık yok.
+        // Pécot WSI-QuPath eğitiminin (CC-BY) atölye karşılığı. bkz. Ekler → Tespit Doğrulama.
+        new ScriptEntry("Tespit doğrulama (F1 / IoU)", "yardimci-dogrulama-f1.groovy")
     );
 
     /**
@@ -162,10 +187,6 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
      * yet. To activate one later, move its entry into {@link #UTILITY_SCRIPTS}.
      */
     private static final List<ScriptEntry> UPCOMING_SCRIPTS = List.of(
-        // Görüntü künyesi ve histogram — bioimagebook (Bankhead, CC-BY 4.0) Bölüm 1'in
-        // tek-tık karşılığı: salt-okur künye + kanal histogramı + doygunluk/clipping.
-        // bkz. Ekler → Görüntü Analizi Temelleri.
-        new ScriptEntry("Görüntü künyesi ve histogram",  "yardimci-goruntu-kunye.groovy"),
         new ScriptEntry("Delaunay komşuluk özellikleri", "yardimci-delaunay-komsuluk.groovy"),
         new ScriptEntry("En yakın komşu mesafesi",       "yardimci-nn-mesafe.groovy"),
         new ScriptEntry("Yoğunluk haritası",             "yardimci-yogunluk-haritasi.groovy"),
@@ -221,7 +242,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                     item.setDisable(true);   // sonraki oturuma ertelendi — gri görünür, tıklama etkisiz
                 } else {
                     item.setOnAction(e -> runScriptSafely(qupath, entry));
-                    item.disableProperty().bind(enableExtensionProperty.not());
+                    item.disableProperty().bind(disableBinding(qupath, entry));
                 }
                 modulesMenu.getItems().add(item);
             }
@@ -232,7 +253,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                 for (ScriptEntry entry : UTILITY_SCRIPTS) {
                     MenuItem item = new MenuItem(entry.label);
                     item.setOnAction(e -> runScriptSafely(qupath, entry));
-                    item.disableProperty().bind(enableExtensionProperty.not());
+                    item.disableProperty().bind(disableBinding(qupath, entry));
                     utilsMenu.getItems().add(item);
                 }
                 menu.getItems().add(utilsMenu);
@@ -468,6 +489,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "  • Deep Java Library:    " + (djl ? found : missing) + "  (InstanSeg/WSInfer/StarDist-TF ortak çalışma zamanı)\n\n" +
             "Çekirdek modüller (2, 3, 3b, 5, 6, 7, 9) yalnızca QuPath gerektirir.\n" +
             "InstanSeg ayrı bir Python ortamı gerektirmez (en sade derin öğrenme seçeneği).\n" +
+            (cellpose ? "Cellpose için python.exe yolunu ayarlayın: Edit → Preferences → Cellpose/Omnipose.\n" : "") +
             "\"bulunamadı\" görünen bileşenler yalnızca ilgili ileri modül için gerekir;\n" +
             "kurulum rehberi: https://atolye.patoloji.dev/kaynaklar.html#ileri-kurulumlar\n\n" +
             "Yalnızca araştırma ve eğitim amaçlıdır."
@@ -570,20 +592,42 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
 
     // ─── helpers ───────────────────────────────────────────────────────
 
+    /**
+     * Disable-binding for a runnable menu item. Always greyed while the instructor
+     * lock is off; additionally greyed while no image is open when the script needs
+     * a slide — mirroring how sibling extensions (e.g. LiverQuant) grey their menu
+     * item via {@code imageDataProperty().isNull()}. Project-wide helpers
+     * ({@code needsImage == false}, e.g. the cohort-metadata wizard, project-scope
+     * image-type setter, sample-classifier saver) bind to the lock only, so they
+     * stay clickable with no image open.
+     */
+    private static BooleanBinding disableBinding(QuPathGUI qupath, ScriptEntry entry) {
+        BooleanBinding lock = enableExtensionProperty.not();
+        return entry.needsImage ? lock.or(qupath.imageDataProperty().isNull()) : lock;
+    }
+
     private static final class ScriptEntry {
         final String label;
         final String resource;
         /** When true the menu item is shown greyed-out / unclickable (deferred to a later session). */
         final boolean disabled;
+        /** When true the item additionally greys out while no image is open (most
+         *  analysis scripts need a slide). Project-wide helpers pass {@code false}. */
+        final boolean needsImage;
 
         ScriptEntry(String label, String resource) {
-            this(label, resource, false);
+            this(label, resource, false, true);
         }
 
         ScriptEntry(String label, String resource, boolean disabled) {
+            this(label, resource, disabled, true);
+        }
+
+        ScriptEntry(String label, String resource, boolean disabled, boolean needsImage) {
             this.label = label;
             this.resource = resource;
             this.disabled = disabled;
+            this.needsImage = needsImage;
         }
     }
 }
