@@ -41,7 +41,7 @@
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
 
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import qupath.lib.common.GeneralTools
 import java.io.File

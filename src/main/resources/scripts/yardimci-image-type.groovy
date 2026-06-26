@@ -27,7 +27,7 @@
  * edilmiş özel vektörleriniz varsa onları manuel yeniden uygulamanız gerekir.
  */
 
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import qupath.lib.images.ImageData
 
@@ -199,7 +199,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
             stage.setScene(new javafx.scene.Scene(root, 720, 520))
             stage.show()
         } catch (Throwable t) {
-            qupath.lib.gui.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
+            qupath.fx.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
         }
     }
 }

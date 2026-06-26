@@ -15,7 +15,7 @@
  * ölçülür; kilitli bir 'Tümör-Stroma Özet' anotasyonu + görsel poligonlar üretilir.
  *   ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import java.util.Locale
 

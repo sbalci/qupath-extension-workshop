@@ -38,7 +38,7 @@
  *   ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
 
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 
 import qupath.lib.images.servers.ColorTransforms
@@ -136,7 +136,7 @@ def waitForConfirm = { String windowTitle, String windowBody ->
             stage.show()
         } catch (Throwable t) {
             // FX kurulumu başarısızsa modal'a geri dön
-            confirmed.set(qupath.lib.gui.dialogs.Dialogs.showConfirmDialog(windowTitle, windowBody))
+            confirmed.set(qupath.fx.dialogs.Dialogs.showConfirmDialog(windowTitle, windowBody))
             latch.countDown()
         }
     }
@@ -200,7 +200,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
             stage.show()
         } catch (Throwable t) {
             // FX başarısızsa modal'a geri dön — kayıp olmasın
-            qupath.lib.gui.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
+            qupath.fx.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
         }
     }
 }
@@ -254,7 +254,7 @@ def askOverwrite = { String existingName, String versionedName ->
             stage.setScene(new javafx.scene.Scene(root, 600, 320))
             stage.show()
         } catch (Throwable t) {
-            choice.set(qupath.lib.gui.dialogs.Dialogs.showConfirmDialog(
+            choice.set(qupath.fx.dialogs.Dialogs.showConfirmDialog(
                 "Sınıflandırıcı zaten var",
                 "'${existingName}' var. Üzerine yazmak için Tamam, korumak (sürümlemek) için İptal.")
                 ? "OVERWRITE" : "VERSION")

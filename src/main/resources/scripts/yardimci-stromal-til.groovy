@@ -32,7 +32,7 @@
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
 
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
@@ -91,7 +91,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
             stage.setScene(new javafx.scene.Scene(root, 720, 540))
             stage.show()
         } catch (Throwable t) {
-            qupath.lib.gui.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
+            qupath.fx.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
         }
     }
 }

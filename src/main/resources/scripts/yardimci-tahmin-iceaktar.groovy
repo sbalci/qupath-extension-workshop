@@ -47,7 +47,7 @@
  * ⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.
  */
 
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import qupath.lib.objects.PathObjects
 import qupath.lib.roi.ROIs
@@ -111,7 +111,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
             stage.setScene(new javafx.scene.Scene(root, 760, 580))
             stage.show()
         } catch (Throwable t) {
-            qupath.lib.gui.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
+            qupath.fx.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
         }
     }
 }

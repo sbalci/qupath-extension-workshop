@@ -40,7 +40,7 @@
  *   • Watershed plugin: javadoc/docs/qupath/imagej/detect/cells/WatershedCellMembraneDetection
  */
 
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import qupath.lib.objects.PathAnnotationObject
 import qupath.lib.objects.classes.PathClass

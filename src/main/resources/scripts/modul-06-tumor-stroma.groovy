@@ -15,7 +15,7 @@
  * Betik klinik kategori, eşik, prognoz veya tedavi yorumu üretmez.
  */
 
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.objects.PathObjects
 import qupath.lib.roi.RoiTools
 import qupath.lib.scripting.QP
@@ -184,7 +184,7 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
             def installBtn = new javafx.scene.control.Button('Örnek modeli kur')
             installBtn.setOnAction({
                 if (!launch('yardimci-ornek-siniflandirici.groovy')) {
-                    qupath.lib.gui.dialogs.Dialogs.showMessageDialog('Eklenti gerekli',
+                    qupath.fx.dialogs.Dialogs.showMessageDialog('Eklenti gerekli',
                         'Örnek modeli kurmak için: Extensions → Atölye → Yardımcılar →\n' +
                         '"Örnek tümör/stroma sınıflandırıcısını projeye kaydet".')
                 }
@@ -193,7 +193,7 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
             def wizardBtn = new javafx.scene.control.Button('Sihirbazı aç (yeni model)')
             wizardBtn.setOnAction({
                 if (!launch('modul-06-sihirbaz.groovy')) {
-                    qupath.lib.gui.dialogs.Dialogs.showMessageDialog('Eklenti gerekli',
+                    qupath.fx.dialogs.Dialogs.showMessageDialog('Eklenti gerekli',
                         'Sihirbaz için: Extensions → Atölye → Modüller →\n' +
                         '"Modül 6 - Tümör/Stroma sihirbazı (model kur/eğit)".')
                 }

@@ -40,7 +40,7 @@
  *   içermez. İçeriyorsa sütun hizası bozulur — downstream'de temizleyin.
  */
 
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 
 import java.time.LocalDateTime
@@ -127,7 +127,7 @@ def waitForChoice = { String windowTitle, String windowBody,
             stage.setScene(new javafx.scene.Scene(root, 640, 420))
             stage.show()
         } catch (Throwable t) {
-            def yn = qupath.lib.gui.dialogs.Dialogs.showConfirmDialog(
+            def yn = qupath.fx.dialogs.Dialogs.showConfirmDialog(
                 windowTitle, "${windowBody}\n\nEvet: ${optionB}\nHayır: ${optionA}"
             )
             picked.set(yn ? "B" : "A")
@@ -193,7 +193,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
             stage.setScene(new javafx.scene.Scene(root, 820, 600))
             stage.show()
         } catch (Throwable t) {
-            qupath.lib.gui.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
+            qupath.fx.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
         }
     }
 }

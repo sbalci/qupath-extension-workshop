@@ -45,7 +45,7 @@
  * ⚠️ Yalnızca araştırma/eğitim amaçlıdır; klinik karar üretmez.
  */
 
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import groovy.json.JsonOutput
 import java.io.File
@@ -522,14 +522,14 @@ render = { ->
         prefixFieldRef.set(prefixField); outFieldRef.set(outField); pyFieldRef.set(pyField)
         namingRef.set(namingChoice); scopeAllRef.set(scopeAll); removeMetaRef.set(removeMeta); reversibleRef.set(reversible)
 
-        def browseDir = { f -> def dc = new javafx.stage.DirectoryChooser(); def x = dc.showDialog(stage); if (x != null) f.setText(x.getAbsolutePath()) }
-        def browseFile = { f -> def fc = new javafx.stage.FileChooser(); def x = fc.showOpenDialog(stage); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseDir = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Dizin seç', null); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Dosya seç'); if (x != null) f.setText(x.getAbsolutePath()) }
 
         int row = 0
-        grid.add(new javafx.scene.control.Label('Çıktı klasörü:'), 0, row); grid.add(outField, 1, row); grid.add(navButton('…', { browseDir(outField) }), 2, row); row++
-        grid.add(new javafx.scene.control.Label('Ad öneki:'), 0, row); grid.add(prefixField, 1, row); row++
-        grid.add(new javafx.scene.control.Label('Adlandırma:'), 0, row); grid.add(namingChoice, 1, row); row++
-        grid.add(new javafx.scene.control.Label('Python (ops.):'), 0, row); grid.add(pyField, 1, row); grid.add(navButton('…', { browseFile(pyField) }), 2, row); row++
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Çıktı klasörü:'), outField, navButton('…', { browseDir(outField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Ad öneki:'), prefixField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Adlandırma:'), namingChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (ops.):'), pyField, navButton('…', { browseFile(pyField) }))
         center.getChildren().add(grid)
         center.getChildren().addAll(scopeAll, removeMeta, reversible)
 

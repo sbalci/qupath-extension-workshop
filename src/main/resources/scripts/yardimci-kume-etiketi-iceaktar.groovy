@@ -47,7 +47,7 @@
  * VARSAYIM: Düz TSV/CSV (alan içi tırnak yok); ondalık ayraç '.' (nokta).
  */
 
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import java.util.regex.Pattern
 
@@ -107,7 +107,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
             stage.setScene(new javafx.scene.Scene(root, 760, 580))
             stage.show()
         } catch (Throwable t) {
-            qupath.lib.gui.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
+            qupath.fx.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
         }
     }
 }

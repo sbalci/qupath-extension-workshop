@@ -14,7 +14,7 @@
  * Not: Modül 6 ve 7, bu örnek modeli projeye kaydetmeseniz de otomatik kullanır;
  * bu yardımcı yalnızca modeli görünür/incelenebilir kılmak için vardır.
  */
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import qupath.lib.io.GsonTools
 import qupath.lib.classifiers.pixel.PixelClassifier

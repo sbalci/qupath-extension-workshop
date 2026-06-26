@@ -40,7 +40,7 @@
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
 
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import qupath.lib.regions.RegionRequest
 import java.io.File
@@ -591,19 +591,19 @@ render = { ->
         pyFieldRef.set(pyField); bridgeFieldRef.set(brField); modelFieldRef.set(mdField); workFieldRef.set(wdField)
         tileFieldRef.set(tsField); dsFieldRef.set(dsField); nEstFieldRef.set(neField); minPCFieldRef.set(mpField)
         maxTFieldRef.set(mtField); deviceChoiceRef.set(deviceChoice)
-        def browseFile = { f -> def fc = new javafx.stage.FileChooser(); def x = fc.showOpenDialog(stage); if (x != null) f.setText(x.getAbsolutePath()) }
-        def browseDir  = { f -> def dc = new javafx.stage.DirectoryChooser(); def x = dc.showDialog(stage); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Dosya seç'); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Dizin seç', null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
-        grid.add(new javafx.scene.control.Label('Python (python.exe):'), 0, row); grid.add(pyField, 1, row); grid.add(navButton('…', { browseFile(pyField) }), 2, row); row++
-        grid.add(new javafx.scene.control.Label('Kaiko köprüsü (kaiko_bridge.py):'), 0, row); grid.add(brField, 1, row); grid.add(navButton('…', { browseFile(brField) }), 2, row); row++
-        grid.add(new javafx.scene.control.Label('Model dizini (ops.):'), 0, row); grid.add(mdField, 1, row); grid.add(navButton('…', { browseDir(mdField) }), 2, row); row++
-        grid.add(new javafx.scene.control.Label('Çalışma dizini (ops.):'), 0, row); grid.add(wdField, 1, row); grid.add(navButton('…', { browseDir(wdField) }), 2, row); row++
-        grid.add(new javafx.scene.control.Label('Karo boyutu (px):'), 0, row); grid.add(tsField, 1, row); row++
-        grid.add(new javafx.scene.control.Label('Downsample:'), 0, row); grid.add(dsField, 1, row); row++
-        grid.add(new javafx.scene.control.Label('RF ağaç sayısı:'), 0, row); grid.add(neField, 1, row); row++
-        grid.add(new javafx.scene.control.Label('Sınıf başı min. anotasyon:'), 0, row); grid.add(mpField, 1, row); row++
-        grid.add(new javafx.scene.control.Label('Anotasyon başı maks. karo:'), 0, row); grid.add(mtField, 1, row); row++
-        grid.add(new javafx.scene.control.Label('Aygıt:'), 0, row); grid.add(deviceChoice, 1, row); row++
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (python.exe):'), pyField, navButton('…', { browseFile(pyField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Kaiko köprüsü (kaiko_bridge.py):'), brField, navButton('…', { browseFile(brField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model dizini (ops.):'), mdField, navButton('…', { browseDir(mdField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Çalışma dizini (ops.):'), wdField, navButton('…', { browseDir(wdField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Karo boyutu (px):'), tsField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Downsample:'), dsField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('RF ağaç sayısı:'), neField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Sınıf başı min. anotasyon:'), mpField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Anotasyon başı maks. karo:'), mtField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Aygıt:'), deviceChoice)
         center.getChildren().add(grid)
         addGuidance('Downsample: 0.5 µm/px tarayıcıda 1.0; 0.25 µm/px tarayıcıda büyük anotasyon için 2.0 deneyin. ' +
             'Model dizini boşsa Midnight ilk çalıştırmada HuggingFace\'ten indirilir (~4 GB).')

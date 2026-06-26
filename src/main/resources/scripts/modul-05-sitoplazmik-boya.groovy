@@ -23,7 +23,7 @@
  *   • Hücre genişletme (cell expansion) DAHA BÜYÜK (7 µm) — sitoplazma hacmini örneklemek için
  */
 
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import qupath.lib.objects.PathAnnotationObject
 

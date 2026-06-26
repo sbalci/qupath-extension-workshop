@@ -39,7 +39,7 @@
  * ⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.
  */
 
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import qupath.lib.objects.PathObjects
 import qupath.lib.roi.ROIs
@@ -457,12 +457,12 @@ render = { ->
         def wdField = new javafx.scene.control.TextField(cfg.workDir ?: '')
         [pyField, brField, wdField].each { it.setPrefColumnCount(34) }
         pyFieldRef.set(pyField); bridgeFieldRef.set(brField); workFieldRef.set(wdField)
-        def browseFile = { f -> def fc = new javafx.stage.FileChooser(); def x = fc.showOpenDialog(stage); if (x != null) f.setText(x.getAbsolutePath()) }
-        def browseDir  = { f -> def dc = new javafx.stage.DirectoryChooser(); def x = dc.showDialog(stage); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Dosya seç'); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Dizin seç', null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
-        grid.add(new javafx.scene.control.Label('Python (python.exe):'), 0, row); grid.add(pyField, 1, row); grid.add(navButton('…', { browseFile(pyField) }), 2, row); row++
-        grid.add(new javafx.scene.control.Label('Sectra köprüsü (sectra_dicom_to_qupath.py):'), 0, row); grid.add(brField, 1, row); grid.add(navButton('…', { browseFile(brField) }), 2, row); row++
-        grid.add(new javafx.scene.control.Label('Çıktı dizini (ops.):'), 0, row); grid.add(wdField, 1, row); grid.add(navButton('…', { browseDir(wdField) }), 2, row); row++
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (python.exe):'), pyField, navButton('…', { browseFile(pyField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Sectra köprüsü (sectra_dicom_to_qupath.py):'), brField, navButton('…', { browseFile(brField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Çıktı dizini (ops.):'), wdField, navButton('…', { browseDir(wdField) }))
         center.getChildren().add(grid)
         addGuidance('Köprünün tek bağımlılığı pydicom\'dur. "Bağımlılık kontrolü" ile ortamı doğrulayın. ' +
             'Çıktı dizini boşsa proje/slayt klasörü altında sectra_geojson kullanılır.')
@@ -512,11 +512,9 @@ render = { ->
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
             def runBtn = navButton('.dcm seç ve Aktar ▶', {
-                def fc = new javafx.stage.FileChooser()
-                fc.setTitle('Sectra DICOM (.dcm) dosyasını seçin')
-                fc.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter('DICOM (*.dcm)', '*.dcm'))
-                fc.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter('Tüm dosyalar', '*.*'))
-                def dcm = fc.showOpenDialog(stage)
+                def dcm = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Sectra DICOM (.dcm) dosyasını seçin',
+                    qupath.fx.dialogs.FileChoosers.createExtensionFilter('DICOM (*.dcm)', '*.dcm'),
+                    qupath.fx.dialogs.FileChoosers.FILTER_ALL_FILES)
                 if (dcm != null) startConvert(dcm)
             }, 'Sectra GSPS .dcm dosyasını GeoJSON\'a çevirir ve içe aktarır')
             runBtn.setDisable(!canRun)

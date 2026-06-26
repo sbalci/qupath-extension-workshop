@@ -31,7 +31,7 @@
  * ASCII-güvenli bir slug'a çevrilerek dosya adında kullanılır.
  */
 
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.gui.tools.MeasurementExporter
 import qupath.lib.io.GsonTools
 import qupath.lib.objects.PathAnnotationObject
@@ -166,12 +166,10 @@ def showExportOptions = { Map d ->
             def browseBtn = new javafx.scene.control.Button("Seç…")
             browseBtn.setOnAction({
                 try {
-                    def chooser = new javafx.stage.DirectoryChooser()
-                    chooser.setTitle("Çıktı klasörü seçin")
                     def cur = (locField.getText() ?: "").trim()
                     def init = cur ? new File(cur) : (d.defaultBaseDir ? new File(d.defaultBaseDir as String) : null)
-                    if (init != null && init.isDirectory()) chooser.setInitialDirectory(init)
-                    def chosen = chooser.showDialog(stage)
+                    def initDir = (init != null && init.isDirectory()) ? init : null
+                    def chosen = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, "Çıktı klasörü seçin", initDir)
                     if (chosen != null) locField.setText(chosen.getAbsolutePath())
                 } catch (Throwable ignored) { }
             })
@@ -257,7 +255,7 @@ def showExportOptions = { Map d ->
         } catch (Throwable t) {
             // Gelişmiş diyalog açılamadı — modal yedek: varsayılanlarla devam?
             try {
-                def yn = qupath.lib.gui.dialogs.Dialogs.showConfirmDialog(
+                def yn = qupath.fx.dialogs.Dialogs.showConfirmDialog(
                     "Modül 9 - Veri dışa aktarma",
                     "Gelişmiş seçenek penceresi açılamadı.\n\n" +
                     "Hatırlanan/varsayılan ayarlarla devam edeyim mi?\n" +
@@ -329,7 +327,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
             stage.setScene(new javafx.scene.Scene(root, 760, 580))
             stage.show()
         } catch (Throwable t) {
-            qupath.lib.gui.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
+            qupath.fx.dialogs.Dialogs.showMessageDialog(windowTitle, windowBody)
         }
     }
 }

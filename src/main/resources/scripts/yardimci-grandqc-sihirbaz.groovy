@@ -41,7 +41,7 @@
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
 
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import qupath.lib.objects.PathObjects
 import qupath.lib.roi.ROIs
@@ -565,13 +565,13 @@ render = { ->
         MPP_OPTIONS.each { mppChoice.getItems().add(it) }
         mppChoice.setValue(MPP_OPTIONS.contains(cfg.mpp) ? cfg.mpp : '1.5')
         pyFieldRef.set(pyField); scriptsFieldRef.set(scField); modelFieldRef.set(mdField); mppChoiceRef.set(mppChoice)
-        def browseFile = { f -> def fc = new javafx.stage.FileChooser(); def x = fc.showOpenDialog(stage); if (x != null) f.setText(x.getAbsolutePath()) }
-        def browseDir  = { f -> def dc = new javafx.stage.DirectoryChooser(); def x = dc.showDialog(stage); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Dosya seç'); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Dizin seç', null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
-        grid.add(new javafx.scene.control.Label('Python (python.exe):'), 0, row); grid.add(pyField, 1, row); grid.add(navButton('…', { browseFile(pyField) }), 2, row); row++
-        grid.add(new javafx.scene.control.Label('GrandQC betik dizini:'), 0, row); grid.add(scField, 1, row); grid.add(navButton('…', { browseDir(scField) }), 2, row); row++
-        grid.add(new javafx.scene.control.Label('Model dizini (ops.):'), 0, row); grid.add(mdField, 1, row); grid.add(navButton('…', { browseDir(mdField) }), 2, row); row++
-        grid.add(new javafx.scene.control.Label('Artefakt MPP modeli:'), 0, row); grid.add(mppChoice, 1, row); row++
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (python.exe):'), pyField, navButton('…', { browseFile(pyField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('GrandQC betik dizini:'), scField, navButton('…', { browseDir(scField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model dizini (ops.):'), mdField, navButton('…', { browseDir(mdField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Artefakt MPP modeli:'), mppChoice)
         center.getChildren().add(grid)
         addGuidance('Betik dizini wsi_tis_detect.py + main.py içermeli. Model dizini doku/artefakt .pth dosyalarını içerir.')
         actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))

@@ -24,7 +24,7 @@
  * Klinik kategori, eşik veya yorum üretilmez.
  */
 
-import qupath.lib.gui.dialogs.Dialogs
+import qupath.fx.dialogs.Dialogs
 import qupath.lib.objects.PathAnnotationObject
 import qupath.lib.objects.PathObjects
 import qupath.lib.roi.RoiTools

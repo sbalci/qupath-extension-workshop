@@ -37,11 +37,11 @@ import org.slf4j.LoggerFactory;
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
 
+import qupath.fx.dialogs.Dialogs;
 import qupath.fx.prefs.controlsfx.PropertyItemBuilder;
 import qupath.lib.common.GeneralTools;
 import qupath.lib.common.Version;
 import qupath.lib.gui.QuPathGUI;
-import qupath.lib.gui.dialogs.Dialogs;
 import qupath.lib.gui.extensions.GitHubProject;
 import qupath.lib.gui.extensions.QuPathExtension;
 import qupath.lib.gui.prefs.PathPrefs;
@@ -103,6 +103,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Görüntü tipi ayarla",         "yardimci-image-type.groovy"),
         new ScriptEntry("Eşikleri ayarla",             "yardimci-esik-ayarla.groovy"),
         new ScriptEntry("Kalibrasyon (piksel boyutu)", "yardimci-kalibrasyon.groovy"),
+        // Ekran kaydı / canlı sunum yardımcısı — bastığınız tuş ve fare işlemlerini
+        // ekranda gösterir/gizler (qupath.fx.controls.InputDisplay; aç/kapa anahtarı).
+        new ScriptEntry("Tuş/fare göstergesi (kayıt için)", "yardimci-tus-fare-gostergesi.groovy"),
         // Tek-pencere sihirbaz: mevcut vektörleri raporlar (kontrol) + seçili bölgeden
         // tahmin → önizle → uygula → geri al, hepsi aynı pencerede. Eski iki ayrı
         // yardımcı ("kontrol et" + "tahmin et") buna katlandı.
@@ -147,6 +150,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
      * yet. To activate one later, move its entry into {@link #UTILITY_SCRIPTS}.
      */
     private static final List<ScriptEntry> UPCOMING_SCRIPTS = List.of(
+        // Görüntü künyesi ve histogram — bioimagebook (Bankhead, CC-BY 4.0) Bölüm 1'in
+        // tek-tık karşılığı: salt-okur künye + kanal histogramı + doygunluk/clipping.
+        // bkz. Ekler → Görüntü Analizi Temelleri.
+        new ScriptEntry("Görüntü künyesi ve histogram",  "yardimci-goruntu-kunye.groovy"),
         new ScriptEntry("Delaunay komşuluk özellikleri", "yardimci-delaunay-komsuluk.groovy"),
         new ScriptEntry("En yakın komşu mesafesi",       "yardimci-nn-mesafe.groovy"),
         new ScriptEntry("Yoğunluk haritası",             "yardimci-yogunluk-haritasi.groovy"),
