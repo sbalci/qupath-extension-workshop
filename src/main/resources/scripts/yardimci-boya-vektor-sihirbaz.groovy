@@ -164,6 +164,11 @@ def buildReport = { ->
                 (isHE ? "Eosin varsayılan" : "DAB varsayılan"), fmtVec(isHE ? DEF_EOSIN : DEF_DAB))
         body << "\n"
     }
+    body << "Renk dekonvolüsyonu — bilinen sınırlar (Bankhead):\n"
+    body << "  • Yöntem 'imkânsız' sonuç verebilir: kusurlu görüntü ya da yanlış vektörde\n"
+    body << "    bir boya NEGATİF değer alabilir — kantitatif eşiklerde bunu hesaba katın.\n"
+    body << "  • Kuvvetli DAB-pozitif (kahverengi) pikseller genelde YÜKSEK hematoksilen\n"
+    body << "    değeri de taşır; H kanalı pozitif alanlarda 'saf çekirdek' değildir.\n\n"
     body << "Öneri: kantitatif H-DAB ölçümünde boya vektörlerini HER SLAYTTAN (ya da aynı\n"
     body << "boyama/tarayıcı ile doğrulanmış bir grup için bir kez) tahmin edin.\n\n"
     body << "Tahmin için: küçük ve temsilî bir bölge (iki boya + biraz arka plan) çizip seçin,\n"

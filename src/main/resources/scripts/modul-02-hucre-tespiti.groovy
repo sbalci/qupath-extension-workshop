@@ -144,13 +144,30 @@ javafx.application.Platform.runLater {
         title.setStyle('-fx-font-size: 14px; -fx-font-weight: bold;')
         def info = new javafx.scene.control.Label(
             'Bir dikdörtgen anotasyon (R) çizip SEÇİN (kenarı sarı), sonra "Çalıştır".\n' +
-            'Eşikleri değiştirip yeniden çalıştırabilirsiniz; sonuç aşağıda güncellenir.')
+            'Eşikleri değiştirip yeniden çalıştırabilirsiniz; sonuç aşağıda güncellenir.\n' +
+            'Perde arkası: dekonvolüsyon → Gaussian (σ) yumuşatma → eşik (ikili maske) → ' +
+            'mesafe dönüşümü + watershed (bitişik çekirdekleri ayır). Bu adımları kendi ' +
+            'slaydınızda görmek için: Yardımcılar → Görüntü işleme kavramları.')
         info.setWrapText(true)
 
         def spThr = new javafx.scene.control.Spinner(0.0, 1.0, atolyeD('atolye.detectionThreshold', 0.1), 0.01)
         def spSig = new javafx.scene.control.Spinner(0.5, 5.0, atolyeD('atolye.sigma', 1.5), 0.1)
         def spExp = new javafx.scene.control.Spinner(0.0, 20.0, atolyeD('atolye.cellExpansionNuclear', 5.0), 0.5)
         [spThr, spSig, spExp].each { it.setEditable(true); it.setPrefWidth(110) }
+        // Her parametrenin "perde arkası" görüntü-işleme karşılığı (Bankhead, dijital
+        // patoloji için görüntü-işleme sözlüğü) — kavramı kullanım anında açıklar.
+        spThr.setTooltip(new javafx.scene.control.Tooltip(
+            'İkili maske eşiği: Hematoxylin OD bu değerin ÜSTÜNDEKİ pikseller çekirdek\n' +
+            'adayı olur. Eşik, bulunan nesnelerin sayısını ve şeklini doğrudan değiştirir\n' +
+            '(Bankhead: binary image / eşikleme). Eşik tek başına yetmez — devamında\n' +
+            'mesafe dönüşümü + watershed bitişik çekirdekleri ayırır.'))
+        spSig.setTooltip(new javafx.scene.control.Tooltip(
+            'Gaussian filtre: σ (sigma) büyüdükçe görüntü daha çok yumuşatılır.\n' +
+            'Daha büyük σ aşırı bölünmeyi azaltır ama bitişik çekirdekleri birleştirebilir;\n' +
+            'çok küçük σ tek bir çekirdeği parçalara bölebilir.'))
+        spExp.setTooltip(new javafx.scene.control.Tooltip(
+            'ROI genişletme (µm): çekirdek maskesini dışa doğru büyüterek yaklaşık bir\n' +
+            'hücre/sitoplazma bölgesi tanımlar. 0 = yalnız çekirdek.'))
         def grid = new javafx.scene.layout.GridPane()
         grid.setHgap(8); grid.setVgap(6); grid.setPadding(new javafx.geometry.Insets(6))
         grid.addRow(0, new javafx.scene.control.Label('Eşik (Hematoxylin OD)'), spThr)

@@ -11,6 +11,10 @@
  *   Yanına ölçek bilgisini taşıyan bir `.json` (downsample, µm/px, boyutlar,
  *   sınıf→indeks) ve okunabilir bir `labels.txt` yazılır.
  *
+ *   KAVRAM (Bankhead): bu bir "etiketli görüntü"dür (labelled image) — arka plan 0,
+ *   her sınıf/nesne kendi TAMSAYI kimliğini taşır; ikili maskeden farkı nesneleri
+ *   birbirinden ayırt edebilmesidir.
+ *
  * EK X'TEN FARKI:
  *   Ek X (Karo dışa aktarma) çok sayıda KÜÇÜK karo (+ tiled maske) üretir; bu betik
  *   TEK, düşük çözünürlüklü, tüm-slayt maskesi üretir — TIA Toolbox'ın `masks=`

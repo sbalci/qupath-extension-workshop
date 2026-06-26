@@ -10,6 +10,10 @@
  *   alanından (yoksa varsayılan "Tumor") sınıflandırılmış, KİLİTLİ bir
  *   anotasyon nesnesi olarak eklenir.
  *
+ *   KAVRAM (Bankhead): GeoJSON poligonları nesneleri, raster "etiketli görüntü"ye
+ *   (labelled image) alternatif olarak POLİGON/ROI biçiminde temsil eder; QuPath
+ *   anotasyonları bu vektör (ROI) gösterimini kullanır.
+ *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Model tahminlerini yalnızca QuPath görselleştirme katmanına TAŞIR. Bu bir
  *     VERİ AKTARIM betiğidir — tahmin doğruluğu, patoloji yorumu, grade veya

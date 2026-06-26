@@ -15,6 +15,10 @@
  *   birbirini tamamlar. İlham: DBM-MCF qupath-extension-efficientv2unet'in
  *   "Load a mask image" işlevi (ikili maske → anotasyon).
  *
+ *   KAVRAM (Bankhead): tek-kanallı indeksli maske bir "etiketli görüntü"dür
+ *   (labelled image: 0 = arka plan, her sıfır-dışı tamsayı = ayrı nesne/sınıf);
+ *   ikili (binary) maske yalnız ön plan/arka plan ayırır.
+ *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Yalnız bir maskeyi QuPath görselleştirme/ölçüm katmanına TAŞIR; sınıf
  *     başına anotasyon sayısı ve alan (mm²) üretir. Patoloji yorumu, grade veya

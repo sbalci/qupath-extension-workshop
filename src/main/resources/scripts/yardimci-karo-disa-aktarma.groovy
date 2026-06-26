@@ -12,6 +12,10 @@
  *   • Görüntü + etiket maskesi   — her karo + anotasyon sınıflarından üretilen
  *                                  tek kanallı indeksli maske (segmentasyon).
  *
+ *   KAVRAM (Bankhead): etiket maskesi bir "etiketli görüntü"dür (labelled image:
+ *   0 = arka plan, her tamsayı = sınıf). Bu yüzden maske modunda JPEG değil PNG
+ *   kullanılır — kayıplı sıkıştırma tamsayı etiketlerini bozar.
+ *
  * KAPSAM (yalnızca AÇIK görüntü; diyalogdan seçilir):
  *   • Seçili anotasyon(lar)  — yalnızca seçtiğiniz ROI'lerin içindeki karolar.
  *   • Tüm anotasyonlar       — slayttaki her anotasyonun içindeki karolar.

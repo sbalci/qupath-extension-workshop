@@ -12,6 +12,10 @@
  * çizdiğiniz bölgenin alanına) bölündüğünde okunur. Bu, QuPath'in
  * "Measuring areas" yaklaşımının betimsel karşılığıdır.
  *
+ * EŞİK NOTU (Bankhead): Eşik seçimi, eşik-üstü alanın büyüklüğünü ve şeklini
+ * doğrudan değiştirir; eşik tek başına "doku/pozitif" demek değildir. Sınıflandırıcıyı
+ * GUI'de canlı önizleme (C tuşu) ile kalibre edin ve aynı çalışmada sabit tutun.
+ *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Her sınıfın ALANINI (µm² / mm²) ve bölgeye oranını (% bölge) ölçer.
  *     Bu bir ORAN/ALANdır — klinik skor, eşik veya yorum DEĞİL.

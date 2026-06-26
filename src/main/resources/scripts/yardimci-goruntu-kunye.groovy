@@ -31,7 +31,7 @@
  *
  * KULLANIM:
  *   1. Bir slayt açın (isterseniz bir bölge anotasyonu seçin).
- *   2. [Extensions → Atölye → İleri analiz → Görüntü künyesi ve histogram]
+ *   2. [Extensions → Atölye → Yardımcılar → Görüntü künyesi ve histogram]
  *   3. Künyeyi inceleyin; "Kopyala" ile panoya alın.
  *
  * İLGİLİ: Ek — Görüntü Analizi Temelleri (kavram ⇄ atölye ⇄ kitap eşlemesi);

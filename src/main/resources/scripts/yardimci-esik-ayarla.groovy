@@ -22,6 +22,10 @@
  *   4. Form açılır, eşikleri değiştirip "Yeniden hesapla" → yeni özet penceresi
  *   5. Memnun değilseniz tekrar açın, başka eşik deneyin (saniyeler içinde)
  *
+ * EŞİK NOTU (Bankhead): Eşik değerleri 1+/2+/3+ dağılımını ve H-score'u DOĞRUDAN
+ *   kaydırır; "doğru" tek bir eşik yoktur. Yöntem referansınızla tutarlı, sabit bir
+ *   eşik seçip belgeleyin — aynı çalışmada slayttan slayta değiştirmeyin.
+ *
  * NE YAPMAZ:
  *   • Cellpose / Watershed tespit adımını yeniden çalıştırmaz (hızlı tutmak için)
  *   • Hücre genişletme (cell expansion) gibi tespit parametrelerini değiştiremez

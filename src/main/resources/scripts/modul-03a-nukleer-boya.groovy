@@ -13,8 +13,10 @@
  *      ([Image → Image type → Brightfield (H-DAB)])
  *   3. [R] tuşu → tümör içeren ~1×1 mm dikdörtgen anotasyon çizin ve SEÇİN
  *   4. Bu betiği çalıştırın → açılan TEK pencerede "Çalıştır"
- *   5. Pencere açık kalır: eşikleri değiştirip (Gelişmiş ayarlar) tekrar
- *      çalıştırabilir, sonuçları aynı pencerede güncel görebilirsiniz
+ *   5. Pencere açık kalır: eşikleri değiştirip "Yeniden say (hızlı)" ile
+ *      hücre tespitini TEKRAR ÇALIŞTIRMADAN saniyeler içinde yeniden bin'leyin.
+ *      "Öğretim modu" açıkken varsayılan ↔ sizin eşik karşılaştırması da gösterilir
+ *      (parametrenin etkisini görmek için — HMS-IAC keşif yöntemiyle aynı mantık).
  *
  * NE YAPAR:
  *   • Atölye boya vektörleri ile çekirdek-yoğun DAB sinyalini ayırır
@@ -112,22 +114,137 @@ if (imageTypeOk()) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 2) Tespit + sonuç toplama tek yerde — pencere kapanmadan tekrar
-//    (eşikleri değiştirip) çağrılabilir. Dönüş: [ok, text] | [ok:false, error].
+// 2) Ölçüm + sonuç oluşturma — paylaşılan yardımcılar.
+//    Hücreler "Nucleus: DAB OD mean" sütununda bin'lenir (3a/3b/7 nükleer).
+//    Eşik değişince hücre tespitini yeniden çalıştırmak yerine sadece bu sütun
+//    üzerinden yeniden sınıflandırırız (setIntensityClassifications) — saniyeler
+//    yerine milisaniyeler. "recount" bunu kullanır, "runDetection" tam tespit yapar.
 // ──────────────────────────────────────────────────────────────
-def runDetection = { double thr1, double thr2, double thr3 ->
-    // Görüntü tipini her çalıştırmada yeniden denetle (kullanıcı bu arada düzeltmiş olabilir).
+def COMPARTMENT = 'Nucleus: DAB OD mean'
+// Atölye varsayılan eşikleri — öğretim modu "varsayılan ↔ sizin" karşılaştırması için.
+def DEF1 = atolyeD('atolye.nuclear1', 0.20)
+def DEF2 = atolyeD('atolye.nuclear2', 0.40)
+def DEF3 = atolyeD('atolye.nuclear3', 0.60)
+def warnNuclearCount = atolyeI('atolye.warnNuclearCount', 500)
+
+// Seçili dikdörtgen anotasyonu + kalibrasyonu çöz (her çalıştırmada yeniden denetlenir).
+def resolveTarget = { ->
     if (!imageTypeOk())
         return [ok:false, error: imageTypeGuidance(), imageTypeIssue:true]
     def selected = QP.getSelectedObject()
     if (selected == null || !(selected instanceof PathAnnotationObject))
         return [ok:false, error:'Önce ölçmek istediğiniz dikdörtgen anotasyonu çizip SEÇİN (kenarı sarı görünür).']
-    def targetAnnotation = selected
     def cal = imageData.getServer().getPixelCalibration()
-    def pixelWidth  = cal.getPixelWidthMicrons()
-    def pixelHeight = cal.getPixelHeightMicrons()
-    if (!(pixelWidth > 0) || !(pixelHeight > 0))
+    def pw = cal.getPixelWidthMicrons()
+    def ph = cal.getPixelHeightMicrons()
+    if (!(pw > 0) || !(ph > 0))
         return [ok:false, error:'Piksel kalibrasyonu yok; mm² hesaplanamaz (Yardımcılar → Kalibrasyon).']
+    return [ok:true, ann:selected, pw:pw, ph:ph]
+}
+
+// Verili eşiklerle (yeniden tespit YOK) seçili anotasyonun hücrelerini bin'le + say.
+def metricsAt = { targetAnnotation, double pw, double ph, double thr1, double thr2, double thr3 ->
+    def cells = targetAnnotation.getChildObjects().findAll { it.isDetection() }
+    QP.setIntensityClassifications(cells, COMPARTMENT, thr1, thr2, thr3)
+    int total = cells.size(), n0 = 0, n1 = 0, n2 = 0, n3 = 0
+    cells.each { c ->
+        def cls = c.getPathClass()?.getName() ?: ""
+        if (cls.contains("3+"))      n3++
+        else if (cls.contains("2+")) n2++
+        else if (cls.contains("1+")) n1++
+        else                          n0++
+    }
+    int pos = n1 + n2 + n3
+    double li = total > 0 ? 100.0 * pos / total : 0.0
+    def roi = targetAnnotation.getROI()
+    double areaMm2 = roi != null ? (roi.getArea() * pw * ph) / 1_000_000.0 : 0.0
+    long density = areaMm2 > 0 ? Math.round(total / areaMm2) : 0L
+    return [total:total, n0:n0, n1:n1, n2:n2, n3:n3, pos:pos, li:li, area:areaMm2, density:density]
+}
+
+// Sonuç metnini oluştur. baseline != null ise öğretim karşılaştırması eklenir.
+def buildResultText = { m, double thr1, double thr2, double thr3, double elapsed, baseline ->
+    def pctOf = { int c -> m.total > 0 ? 100.0 * c / m.total : 0.0 }
+    def uyari = ""
+    if (m.total < warnNuclearCount) {
+        uyari = String.format(java.util.Locale.US,
+            "\n📝 Not: %,d hücre <500 — Ki-67 Working Group (Nielsen 2021) sayma standardının altında.\n" +
+            "  Daha büyük bir ROI ile tekrar deneyin (hedef: ≥500-1.000 hücre).",
+            m.total)
+    } else if (m.total > 50000) {
+        uyari = String.format(java.util.Locale.US,
+            "\n📝 Not: %,d hücre çok fazla — ROI küçültmek hesaplama hızını artırır.",
+            m.total)
+    }
+    def text = String.format(java.util.Locale.US,
+        "Eşikler: 1+=%.2f  2+=%.2f  3+=%.2f (Nucleus: DAB OD mean)\n" +
+        "────────────────────────────────────\n" +
+        "📊 Sayım sonuçları\n" +
+        "────────────────────\n" +
+        "  Toplam hücre        : %,d\n" +
+        "  Negatif             : %,d  (%%%.1f)\n" +
+        "  1+ (zayıf)          : %,d  (%%%.1f)\n" +
+        "  2+ (orta)           : %,d  (%%%.1f)\n" +
+        "  3+ (güçlü)          : %,d  (%%%.1f)\n\n" +
+        "🎯 Metrikler\n" +
+        "─────────────\n" +
+        "  Ki-67 LI (Pozitif%%)  : %%%.1f\n" +
+        "  Hücre yoğunluğu       : ~%,d hücre/mm²\n" +
+        "  Anotasyon alanı       : %.2f mm²\n" +
+        "  Süre                  : %.1f sn\n",
+        thr1, thr2, thr3,
+        m.total,
+        m.n0, pctOf(m.n0),
+        m.n1, pctOf(m.n1),
+        m.n2, pctOf(m.n2),
+        m.n3, pctOf(m.n3),
+        m.li, m.density, m.area, elapsed
+    )
+    if (baseline != null) {
+        text += String.format(java.util.Locale.US,
+            "\n🎓 Öğretim — varsayılan ↔ sizin (aynı hücreler, yeniden bin'lendi)\n" +
+            "──────────────────────────────────────────────\n" +
+            "  Varsayılan %.2f/%.2f/%.2f → LI %%%.1f  (%,d/%,d pozitif)\n" +
+            "  Sizin      %.2f/%.2f/%.2f → LI %%%.1f  (%,d/%,d pozitif)\n" +
+            "  Fark: %+.1f puan  (eşik yükseldikçe LI düşer)\n",
+            DEF1, DEF2, DEF3, baseline.li, baseline.pos, baseline.total,
+            thr1, thr2, thr3, m.li, m.pos, m.total,
+            (m.li - baseline.li)
+        )
+    }
+    text += uyari + "\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    return text
+}
+
+// Bin'le + (öğretim modunda) varsayılanla karşılaştır + metni kur. Son durum daima
+// kullanıcı eşikleridir. extraElapsed = tespit süresi (recount'ta 0).
+def finishWithMetrics = { t, double thr1, double thr2, double thr3, boolean teaching, double extraElapsed ->
+    long t0 = System.currentTimeMillis()
+    def m = metricsAt(t.ann, t.pw, t.ph, thr1, thr2, thr3)
+    def baseline = null
+    if (teaching && (thr1 != DEF1 || thr2 != DEF2 || thr3 != DEF3)) {
+        baseline = metricsAt(t.ann, t.pw, t.ph, DEF1, DEF2, DEF3)
+        m = metricsAt(t.ann, t.pw, t.ph, thr1, thr2, thr3)   // son durum = sizin eşikleriniz
+    }
+    QP.fireHierarchyUpdate()
+    double elapsed = extraElapsed + (System.currentTimeMillis() - t0) / 1000.0
+    def text = buildResultText(m, thr1, thr2, thr3, elapsed, baseline)
+
+    println "─────────────────────────────────────"
+    println "Modül 3a - Ki-67 / Nükleer İHK"
+    println "─────────────────────────────────────"
+    println "  Toplam: ${m.total}  |  Pozitif: ${m.pos}  |  Ki-67 LI: ${String.format(java.util.Locale.US, '%.1f', m.li)}%"
+    println "  Yoğunluk: ${m.density}/mm²  |  Süre: ${String.format(java.util.Locale.US, '%.1f', elapsed)} sn"
+    println "─────────────────────────────────────"
+
+    return [ok:true, text:text]
+}
+
+// Tam tespit (yavaş): PositiveCellDetection çalıştırır, sonra bin'ler + özetler.
+def runDetection = { double thr1, double thr2, double thr3, boolean teaching ->
+    def t = resolveTarget()
+    if (!t.ok) return t
+    def targetAnnotation = t.ann
 
     def detectionImageBrightfield = atolyeS('atolye.detectionChannel', 'Hematoxylin OD')
     def requestedPixelSizeMicrons = atolyeD('atolye.pixelSize', 0.5)
@@ -139,7 +256,6 @@ def runDetection = { double thr1, double thr2, double thr3 ->
     def detectionThreshold        = atolyeD('atolye.detectionThreshold', 0.1)
     def watershedPostProcess      = atolyeB('atolye.watershed', true)
     def cellExpansionMicrons      = atolyeD('atolye.cellExpansionNuclear', 5.0)
-    def warnNuclearCount          = atolyeI('atolye.warnNuclearCount', 500)
 
     long t0 = System.currentTimeMillis()
     QP.selectObjects(targetAnnotation)
@@ -179,103 +295,34 @@ def runDetection = { double thr1, double thr2, double thr3 ->
         '}'
     )
 
-    double elapsed = (System.currentTimeMillis() - t0) / 1000.0
+    double detectElapsed = (System.currentTimeMillis() - t0) / 1000.0
+    return finishWithMetrics(t, thr1, thr2, thr3, teaching, detectElapsed)
+}
 
-    // Sonuçları topla — her bin için sayım
-    def cells = targetAnnotation.getChildObjects().findAll { it.isDetection() }
-    def totalCells = cells.size()
-
-    def numNegative = 0
-    def num1Plus = 0
-    def num2Plus = 0
-    def num3Plus = 0
-
-    cells.each { c ->
-        def cls = c.getPathClass()?.getName() ?: ""
-        if (cls.contains("3+"))      num3Plus++
-        else if (cls.contains("2+")) num2Plus++
-        else if (cls.contains("1+")) num1Plus++
-        else                          numNegative++
-    }
-
-    def numPositive = num1Plus + num2Plus + num3Plus
-    def ki67LI = totalCells > 0 ? 100.0 * numPositive / totalCells : 0.0
-
-    // Alan ve yoğunluk
-    def roi = targetAnnotation.getROI()
-    def totalAreaMm2 = roi != null
-        ? (roi.getArea() * pixelWidth * pixelHeight) / 1_000_000.0
-        : 0.0
-    def density = totalAreaMm2 > 0 ? Math.round(totalCells / totalAreaMm2) : 0L
-
-    // Örneklem boyutu uyarısı — International Ki-67 in Breast Cancer Working Group (Nielsen 2021)
-    // minimum 500-1000 tümör hücresi sayılmasını metodoloji standardı olarak önerir.
-    // Klinik yorum değil, ölçüm hassasiyeti notu.
-    def uyari = ""
-    if (totalCells < warnNuclearCount) {
-        uyari = String.format(java.util.Locale.US,
-            "\n📝 Not: %,d hücre <500 — Ki-67 Working Group (Nielsen 2021) sayma standardının altında.\n" +
-            "  Daha büyük bir ROI ile tekrar deneyin (hedef: ≥500-1.000 hücre).",
-            totalCells)
-    } else if (totalCells > 50000) {
-        uyari = String.format(java.util.Locale.US,
-            "\n📝 Not: %,d hücre çok fazla — ROI küçültmek hesaplama hızını artırır.",
-            totalCells)
-    }
-
-    def text = String.format(java.util.Locale.US,
-        "Eşikler: 1+=%.2f  2+=%.2f  3+=%.2f (Nucleus: DAB OD mean)\n" +
-        "────────────────────────────────────\n" +
-        "📊 Sayım sonuçları\n" +
-        "────────────────────\n" +
-        "  Toplam hücre        : %,d\n" +
-        "  Negatif             : %,d  (%%%.1f)\n" +
-        "  1+ (zayıf)          : %,d  (%%%.1f)\n" +
-        "  2+ (orta)           : %,d  (%%%.1f)\n" +
-        "  3+ (güçlü)          : %,d  (%%%.1f)\n\n" +
-        "🎯 Metrikler\n" +
-        "─────────────\n" +
-        "  Ki-67 LI (Pozitif%%)  : %%%.1f\n" +
-        "  Hücre yoğunluğu       : ~%,d hücre/mm²\n" +
-        "  Anotasyon alanı       : %.2f mm²\n" +
-        "  Süre                  : %.1f sn\n" +
-        "%s\n" +
-        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
-        thr1, thr2, thr3,
-        totalCells,
-        numNegative, totalCells > 0 ? 100.0 * numNegative / totalCells : 0.0,
-        num1Plus,    totalCells > 0 ? 100.0 * num1Plus / totalCells : 0.0,
-        num2Plus,    totalCells > 0 ? 100.0 * num2Plus / totalCells : 0.0,
-        num3Plus,    totalCells > 0 ? 100.0 * num3Plus / totalCells : 0.0,
-        ki67LI, density, totalAreaMm2, elapsed, uyari
-    )
-
-    println "─────────────────────────────────────"
-    println "Modül 3a - Ki-67 / Nükleer İHK"
-    println "─────────────────────────────────────"
-    println "  Toplam: ${totalCells}  |  Pozitif: ${numPositive}  |  Ki-67 LI: ${String.format(java.util.Locale.US, '%.1f', ki67LI)}%"
-    println "  Yoğunluk: ${density}/mm²  |  Süre: ${elapsed} sn"
-    println "─────────────────────────────────────"
-
-    return [ok:true, text:text]
+// Hızlı yeniden say (tespit YOK): yalnızca mevcut hücreleri yeni eşiklerle bin'ler.
+def recount = { double thr1, double thr2, double thr3, boolean teaching ->
+    def t = resolveTarget()
+    if (!t.ok) return t
+    def existing = t.ann.getChildObjects().findAll { it.isDetection() }
+    if (existing.isEmpty())
+        return [ok:false, error:'Bu anotasyonda hücre tespiti yok. Önce "Çalıştır" ile tespit yapın, sonra "Yeniden say (hızlı)" kullanın.']
+    return finishWithMetrics(t, thr1, thr2, thr3, teaching, 0.0)
 }
 
 // Headless: tek sefer atölye varsayılanlarıyla çalıştır + yazdır.
 if (isHeadless) {
-    def r = runDetection(
-        atolyeD('atolye.nuclear1', 0.20),
-        atolyeD('atolye.nuclear2', 0.40),
-        atolyeD('atolye.nuclear3', 0.60)
-    )
+    def r = runDetection(DEF1, DEF2, DEF3, false)
     println r.ok ? r.text : ("Hata: " + r.error)
     return
 }
 
 // ──────────────────────────────────────────────────────────────
-// 3) Tek pencere: ayarla → Çalıştır → sonuç → (gerekirse) tekrar
+// 3) Tek pencere: ayarla → Çalıştır → sonuç → (gerekirse) hızlı yeniden say
 // ──────────────────────────────────────────────────────────────
 javafx.application.Platform.runLater {
     try {
+        def hasDetections = new java.util.concurrent.atomic.AtomicBoolean(false)
+
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
         stage.setTitle('Modül 3a - Ki-67 / Nükleer İHK kantifikasyonu')
@@ -285,20 +332,35 @@ javafx.application.Platform.runLater {
         title.setStyle('-fx-font-size: 14px; -fx-font-weight: bold;')
         def info = new javafx.scene.control.Label(
             'Bir dikdörtgen anotasyon (R) çizip SEÇİN (kenarı sarı), sonra "Çalıştır".\n' +
-            'Eşikleri değiştirip yeniden çalıştırabilirsiniz; sonuç aşağıda güncellenir.')
+            'Eşik değiştirince "Yeniden say (hızlı)" tespiti tekrarlamadan saniyeler içinde günceller.')
         info.setWrapText(true)
 
-        def spThr1 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.nuclear1', 0.20), 0.01)
-        def spThr2 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.nuclear2', 0.40), 0.01)
-        def spThr3 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.nuclear3', 0.60), 0.01)
+        def spThr1 = new javafx.scene.control.Spinner(0.0, 2.0, DEF1, 0.01)
+        def spThr2 = new javafx.scene.control.Spinner(0.0, 2.0, DEF2, 0.01)
+        def spThr3 = new javafx.scene.control.Spinner(0.0, 2.0, DEF3, 0.01)
         [spThr1, spThr2, spThr3].each { it.setEditable(true); it.setPrefWidth(110) }
+        // Feature 2 — parametre açıklayıcısı: DAB optik yoğunluğu (OD) nedir, ne yapar.
+        def thrTip = new javafx.scene.control.Tooltip(
+            'DAB optik yoğunluğu (OD) eşiği: bir çekirdeğin "Nucleus: DAB OD mean" değeri\n' +
+            'bu eşiğin üzerindeyse o sınıfa (1+/2+/3+) atanır. Eşiği YÜKSELTMEK pozitif\n' +
+            'sayısını AZALTIR; düşürmek artırır. Sıra: 1+ < 2+ < 3+ olmalı.')
+        [spThr1, spThr2, spThr3].each { it.setTooltip(thrTip) }
         def grid = new javafx.scene.layout.GridPane()
         grid.setHgap(8); grid.setVgap(6); grid.setPadding(new javafx.geometry.Insets(6))
         grid.addRow(0, new javafx.scene.control.Label('1+ eşiği (zayıf, DAB OD)'), spThr1)
         grid.addRow(1, new javafx.scene.control.Label('2+ eşiği (orta, DAB OD)'),  spThr2)
         grid.addRow(2, new javafx.scene.control.Label('3+ eşiği (güçlü, DAB OD)'), spThr3)
-        def adv = new javafx.scene.control.TitledPane('⚙ Gelişmiş ayarlar — eşikler', grid)
+        def advHint = new javafx.scene.control.Label(
+            'DAB OD eşiği: çekirdeğin DAB sinyali bu değerin üzerindeyse pozitif sayılır. ' +
+            'Yükseltmek pozitif sayısını azaltır.')
+        advHint.setWrapText(true)
+        advHint.setStyle('-fx-font-style: italic; -fx-opacity: 0.7; -fx-font-size: 11px;')
+        def advBox = new javafx.scene.layout.VBox(6, grid, advHint)
+        def adv = new javafx.scene.control.TitledPane('⚙ Gelişmiş ayarlar — eşikler', advBox)
         adv.setExpanded(false); adv.setAnimated(false)
+
+        def teachChk = new javafx.scene.control.CheckBox('Öğretim modu (varsayılan ↔ sizin karşılaştırması)')
+        teachChk.setSelected(true)
 
         def status = new javafx.scene.control.Label('Hazır.')
         def progress = new javafx.scene.control.ProgressBar()
@@ -308,6 +370,9 @@ javafx.application.Platform.runLater {
         resultArea.setPromptText('Sonuçlar burada görünecek…')
         resultArea.setStyle("-fx-font-family: 'Consolas','Menlo','Courier New',monospace; -fx-font-size: 12px;")
 
+        def runBtn = new javafx.scene.control.Button('Çalıştır'); runBtn.setDefaultButton(true)
+        def recountBtn = new javafx.scene.control.Button('Yeniden say (hızlı)'); recountBtn.setDisable(true)
+
         // İlk açılışta görüntü tipi yanlışsa kullanıcıyı pencere içinde yönlendir (modal yok).
         if (!imageTypeOk()) {
             status.setStyle('-fx-text-fill: -qp-script-error-color;')
@@ -315,30 +380,50 @@ javafx.application.Platform.runLater {
             resultArea.setText(imageTypeGuidance())
         }
 
-        def runBtn = new javafx.scene.control.Button('Çalıştır'); runBtn.setDefaultButton(true)
+        def handleResult = { res ->
+            progress.setVisible(false); progress.setManaged(false)
+            runBtn.setDisable(false)
+            recountBtn.setDisable(!hasDetections.get())
+            if (res.ok) {
+                hasDetections.set(true); recountBtn.setDisable(false)
+                status.setStyle(''); status.setText('Tamamlandı ✅ — eşikleri değiştirip "Yeniden say (hızlı)" deneyin.')
+                resultArea.setText(res.text)
+            } else if (res.imageTypeIssue) {
+                status.setStyle('-fx-text-fill: -qp-script-error-color;')
+                status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — adımlar aşağıda.")
+                resultArea.setText(res.error)
+            } else {
+                status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + res.error)
+            }
+        }
+
         runBtn.setOnAction({
-            runBtn.setDisable(true)
-            status.setStyle(''); status.setText('Çalışıyor…')
+            runBtn.setDisable(true); recountBtn.setDisable(true)
+            status.setStyle(''); status.setText('Çalışıyor… (hücre tespiti)')
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             double thr1 = spThr1.getValue() as double
             double thr2 = spThr2.getValue() as double
             double thr3 = spThr3.getValue() as double
+            boolean teaching = teachChk.isSelected()
             def worker = new Thread({
-                def res = runDetection(thr1, thr2, thr3)
-                javafx.application.Platform.runLater {
-                    progress.setVisible(false); progress.setManaged(false); runBtn.setDisable(false)
-                    if (res.ok) {
-                        status.setStyle(''); status.setText('Tamamlandı ✅ — eşikleri değiştirip tekrar çalıştırabilirsiniz.')
-                        resultArea.setText(res.text)
-                    } else if (res.imageTypeIssue) {
-                        status.setStyle('-fx-text-fill: -qp-script-error-color;')
-                        status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — adımlar aşağıda.")
-                        resultArea.setText(res.error)
-                    } else {
-                        status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + res.error)
-                    }
-                }
+                def res = runDetection(thr1, thr2, thr3, teaching)
+                javafx.application.Platform.runLater { handleResult(res) }
             }, 'Modul3Detect')
+            worker.setDaemon(true); worker.start()
+        })
+
+        recountBtn.setOnAction({
+            runBtn.setDisable(true); recountBtn.setDisable(true)
+            status.setStyle(''); status.setText('Yeniden sayılıyor… (tespit yok, sadece bin)')
+            progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
+            double thr1 = spThr1.getValue() as double
+            double thr2 = spThr2.getValue() as double
+            double thr3 = spThr3.getValue() as double
+            boolean teaching = teachChk.isSelected()
+            def worker = new Thread({
+                def res = recount(thr1, thr2, thr3, teaching)
+                javafx.application.Platform.runLater { handleResult(res) }
+            }, 'Modul3Recount')
             worker.setDaemon(true); worker.start()
         })
 
@@ -358,17 +443,17 @@ javafx.application.Platform.runLater {
 
         def spacer = new javafx.scene.layout.Region()
         javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-        def btnRow = new javafx.scene.layout.HBox(8, alwaysTop, spacer, copyBtn, runBtn, closeBtn)
+        def btnRow = new javafx.scene.layout.HBox(8, alwaysTop, spacer, copyBtn, recountBtn, runBtn, closeBtn)
         btnRow.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
 
-        def content = new javafx.scene.layout.VBox(10, title, info, adv, status, progress, resultArea)
+        def content = new javafx.scene.layout.VBox(10, title, info, adv, teachChk, status, progress, resultArea)
         content.setPadding(new javafx.geometry.Insets(14))
         javafx.scene.layout.VBox.setVgrow(resultArea, javafx.scene.layout.Priority.ALWAYS)
         def bottom = new javafx.scene.layout.VBox(8, footer, btnRow)
         bottom.setPadding(new javafx.geometry.Insets(10))
         def root = new javafx.scene.layout.BorderPane()
         root.setCenter(content); root.setBottom(bottom)
-        stage.setScene(new javafx.scene.Scene(root, 560, 540))
+        stage.setScene(new javafx.scene.Scene(root, 580, 580))
         stage.show()
     } catch (Throwable t) {
         Dialogs.showErrorMessage('Modül 3a açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
