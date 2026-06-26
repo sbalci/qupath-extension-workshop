@@ -116,6 +116,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // CellClassPct eşi). Tespit YAPMAZ; var olan sınıflandırmaları seçili bölgede sayar.
         new ScriptEntry("Sınıf bazlı hücre sayımı (% dağılım)", "yardimci-sinif-sayim.groovy"),
         new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy"),
+        // OME-Zarr dışa aktarma — QuPath'in YERLEŞİK OME-Zarr (OME-NGFF) yazıcısını saran
+        // sihirbaz; açık slaytı/seçili bölgeyi parçalı + piramidal .ome.zarr deposuna yazar.
+        // Python tarafı (salt-okur inceleyici): handson/python/omezarr. bkz. Ekler → OME-Zarr / OME-NGFF.
+        new ScriptEntry("OME-Zarr dışa aktarma",       "yardimci-omezarr-disa-aktarma.groovy"),
         new ScriptEntry("Makine öğrenmesi için özellik matrisi", "yardimci-ozellik-matrisi.groovy"),
         // Fenotipleme round-trip eşi: küme / UMAP sonuçlarını TSV'den tespitlere geri yazar
         // (bkz. Ekler → Hücre Fenotipleme; canlı köprü için Ekler → QuBaLab).
@@ -139,7 +143,15 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Kohort metadata sihirbazı", "yardimci-metadata-sihirbaz.groovy"),
         // sectra-qupath (sbalci, MIT) köprüsü — Sectra PACS DICOM (GSPS) anotasyonlarını
         // GeoJSON'a çevirip içe aktarır; bkz. Ekler → Klinik PACS → QuPath Entegrasyonu
-        new ScriptEntry("Sectra PACS anotasyon sihirbazı", "yardimci-sectra-iceaktar.groovy")
+        new ScriptEntry("Sectra PACS anotasyon sihirbazı", "yardimci-sectra-iceaktar.groovy"),
+        // Arayüz turu — interaktif QuPath UI gezintisi (qupath-extension-training ilhamı,
+        // Apache-2.0, Pete Bankhead). Saf eğitim; nesne/ölçüm DEĞİŞTİRMEZ; bölge vurgusu +
+        // güvenli geri çekilme. bkz. Ekler → Arayüz Turu; statik karşılığı Modül 1 — Arayüz turu.
+        new ScriptEntry("Arayüz turu", "yardimci-arayuz-turu.groovy"),
+        // StarDist (yerel QuPath eklentisi) köprüsü — seçili ROI'de H&E çekirdek tespiti +
+        // sayım/yoğunluk (Modül 8'i etkinleştirmeden no-code yol); StarDist eklentisi yoksa
+        // kullanıcıyı kuruluma yönlendirir. bkz. Ekler → Ek G (StarDist Eklentisi).
+        new ScriptEntry("StarDist çekirdek tespiti sihirbazı", "yardimci-stardist-sihirbaz.groovy")
     );
 
     /**
@@ -419,9 +431,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
      * Diagnostic dialog for workshop-day troubleshooting. Reports the running
      * QuPath version, the current image/project state, and whether the optional
      * sibling extensions used by advanced/deferred modules (Cellpose, StarDist,
-     * InstanSeg) are present on the classpath — so a participant can see at a
-     * glance what still needs installing, instead of discovering it via a cryptic
-     * error mid-script. Core modules (2, 3, 3b, 5, 6, 7, 9) need only QuPath.
+     * InstanSeg) — plus the shared Deep Java Library (DJL) runtime they rely on —
+     * are present on the classpath, so a participant can see at a glance what
+     * still needs installing instead of discovering it via a cryptic error
+     * mid-script. Core modules (2, 3, 3b, 5, 6, 7, 9) need only QuPath.
      */
     private void showEnvironmentCheck(QuPathGUI qupath) {
         String found = "✅ bulundu";
@@ -434,6 +447,13 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                                          "qupath.ext.stardist.StarDistExtension");
         boolean instanseg = isOnClasspath("qupath.ext.instanseg.core.InstanSeg",
                                           "qupath.ext.instanseg.InstanSegExtension");
+        // DJL is the in-process inference runtime shared by InstanSeg, WSInfer
+        // and the TensorFlow build of StarDist — a missing DJL is the most common
+        // reason "InstanSeg won't run". ai.djl.engine.Engine is the stable
+        // canonical FQN; the qupath.ext.djl.* names are belt-and-suspenders.
+        boolean djl = isOnClasspath("ai.djl.engine.Engine",
+                                    "qupath.ext.djl.DjlTools",
+                                    "qupath.ext.djl.DjlExtension");
         Dialogs.showMessageDialog(
             "Atölye — Ortam kontrolü",
             "QuPath sürümü:     " + GeneralTools.getVersion() + "\n" +
@@ -444,8 +464,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "Opsiyonel bileşenler (yalnızca ileri / ertelenmiş modüller için):\n" +
             "  • Cellpose eklentisi:   " + (cellpose ? found : missing) + "\n" +
             "  • StarDist eklentisi:   " + (stardist ? found : missing) + "\n" +
-            "  • InstanSeg eklentisi:  " + (instanseg ? found : missing) + "\n\n" +
+            "  • InstanSeg eklentisi:  " + (instanseg ? found : missing) + "\n" +
+            "  • Deep Java Library:    " + (djl ? found : missing) + "  (InstanSeg/WSInfer/StarDist-TF ortak çalışma zamanı)\n\n" +
             "Çekirdek modüller (2, 3, 3b, 5, 6, 7, 9) yalnızca QuPath gerektirir.\n" +
+            "InstanSeg ayrı bir Python ortamı gerektirmez (en sade derin öğrenme seçeneği).\n" +
             "\"bulunamadı\" görünen bileşenler yalnızca ilgili ileri modül için gerekir;\n" +
             "kurulum rehberi: https://atolye.patoloji.dev/kaynaklar.html#ileri-kurulumlar\n\n" +
             "Yalnızca araştırma ve eğitim amaçlıdır."

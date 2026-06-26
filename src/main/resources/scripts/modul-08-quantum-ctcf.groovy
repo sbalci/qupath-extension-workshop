@@ -416,7 +416,16 @@ if (!oldDetections.isEmpty()) {
 def stardist = qupath.ext.stardist.StarDist2D
         .builder(modelPath)
         .threshold(stardistThreshold)
-        .normalizePercentiles(1, 99)        // sabit — aşırı ayardan kaçınmak için açılmadı
+        // Global (tüm-görüntü) normalizasyon. Karo-karo normalizasyon (normalizePercentiles)
+        // arka planda "hayalet çekirdek" üretebilir (resmî StarDist dokümanının uyardığı
+        // pitfall); küçültülmüş tüm görüntü üzerinden hesaplanan yüzdelikler bunu önler.
+        // QuPath 0.4+ ile mevcut. (Yeni sürümlerde aynı işlev .preprocessGlobal adını taşır.)
+        .preprocess(
+            qupath.ext.stardist.StarDist2D.imageNormalizationBuilder()
+                .maxDimension(4096)
+                .percentiles(0.2, 99.8)
+                .build()
+        )
         .pixelSize(stardistPixelSize)
         .cellExpansion(stardistCellExpansion)
         .constrainToParent(true)
