@@ -126,6 +126,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // Çok-sınıflı / fenotip sonuçlarında her sınıfın adet + % dağılımı (FS2K Session 6–8 /
         // CellClassPct eşi). Tespit YAPMAZ; var olan sınıflandırmaları seçili bölgede sayar.
         new ScriptEntry("Sınıf bazlı hücre sayımı (% dağılım)", "yardimci-sinif-sayim.groovy"),
+        // WSInfer (qupath-extension-wsinfer) karo tespitlerini sınıf bazında ALAN (mm²) + %'ye toplar
+        // (+ ops. sınıf başına birleştirme). Çıkarım yapmaz; var olan karoları özetler. bkz. Ekler → WSInfer.
+        new ScriptEntry("WSInfer karo özeti (sınıf alanı / %)", "yardimci-wsinfer-ozet.groovy"),
         new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy"),
         // OME-Zarr dışa aktarma — QuPath'in YERLEŞİK OME-Zarr (OME-NGFF) yazıcısını saran
         // sihirbaz; açık slaytı/seçili bölgeyi parçalı + piramidal .ome.zarr deposuna yazar.
