@@ -105,6 +105,9 @@ public final class WorkshopPrefs {
     public static final StringProperty classifierName = regS(SEC_CLASSIFIER, "atolye.classifierName", "tumor-stroma-RF");
     public static final DoubleProperty minObjectArea = regD(SEC_CLASSIFIER, "atolye.minObjectArea", 10000.0);
     public static final DoubleProperty minHoleArea = regD(SEC_CLASSIFIER, "atolye.minHoleArea", 5000.0);
+    // Eğitim örneği üst sınırı — QuPath'in yerel "Train pixel classifier" penceresinin
+    // varsayılanı (büyük anotasyonlarda RF eğitimini hızlandırır). 0 ⇒ sınır yok.
+    public static final IntegerProperty maxTrainingSamples = regI(SEC_CLASSIFIER, "atolye.maxTrainingSamples", 100000);
 
     // --- Uyarı eşikleri (display-only) ---
     public static final IntegerProperty warnNuclearCount = regI(SEC_WARN, "atolye.warnNuclearCount", 500);

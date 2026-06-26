@@ -432,9 +432,17 @@ try {
         return
     }
 
-    // Random Forest eğit (QuPath varsayılan ağaç parametreleri).
+    // Random Forest eğit (QuPath varsayılan ağaç parametreleri). QuPath'in yerel
+    // "Train pixel classifier" penceresi gibi eğitim örneklerini sınırla (Atölye
+    // ayarı 'atolye.maxTrainingSamples', varsayılan 100000; 0 ⇒ sınır yok): RF eğitim
+    // süresi örnek sayısıyla artar; sınır olmadan büyük anotasyonlarda eğitim yerel
+    // pencereden çok daha yavaş olur.
+    def trainData = trainingData.getTrainData()
+    int maxTrainingSamples = atolyeI('atolye.maxTrainingSamples', 100000)
+    if (maxTrainingSamples > 0 && trainData.getNTrainSamples() > maxTrainingSamples)
+        trainData.setTrainTestSplit(maxTrainingSamples, true)
     def model = OpenCVClassifiers.createStatModel(RTrees.class)
-    model.train(trainingData.getTrainData())
+    model.train(trainData)
 
     // Etiket haritasını ters çevir: Map<Integer, PathClass> (metadata bekler).
     def classifications = [:]

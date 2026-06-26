@@ -126,6 +126,14 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // Çok-sınıflı / fenotip sonuçlarında her sınıfın adet + % dağılımı (FS2K Session 6–8 /
         // CellClassPct eşi). Tespit YAPMAZ; var olan sınıflandırmaları seçili bölgede sayar.
         new ScriptEntry("Sınıf bazlı hücre sayımı (% dağılım)", "yardimci-sinif-sayim.groovy"),
+        // ── Uzamsal analiz (FS2K Session 12) — var olan tespitlerden doku düzenini ÖLÇER
+        // (klinik yorum üretmez). bkz. Ekler → Uzamsal Komşuluk Analizi (Ek M).
+        // Yapıya uzaklık: her hücrenin merkezinden seçili yapının (tümör sınırı, damar,
+        // invazyon kenarı) sınırına işaretli µm mesafe (− = içeride); TIL (Ek O) / TSR (Ek L)'yi besler.
+        new ScriptEntry("Yapıya uzaklık (sınıra mesafe)", "yardimci-yapi-uzaklik.groovy"),
+        new ScriptEntry("Delaunay komşuluk özellikleri",  "yardimci-delaunay-komsuluk.groovy"),
+        new ScriptEntry("En yakın komşu mesafesi",        "yardimci-nn-mesafe.groovy"),
+        new ScriptEntry("Yoğunluk haritası",              "yardimci-yogunluk-haritasi.groovy"),
         // WSInfer (qupath-extension-wsinfer) karo tespitlerini sınıf bazında ALAN (mm²) + %'ye toplar
         // (+ ops. sınıf başına birleştirme). Çıkarım yapmaz; var olan karoları özetler. bkz. Ekler → WSInfer.
         new ScriptEntry("WSInfer karo özeti (sınıf alanı / %)", "yardimci-wsinfer-ozet.groovy"),
@@ -194,9 +202,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
      * yet. To activate one later, move its entry into {@link #UTILITY_SCRIPTS}.
      */
     private static final List<ScriptEntry> UPCOMING_SCRIPTS = List.of(
-        new ScriptEntry("Delaunay komşuluk özellikleri", "yardimci-delaunay-komsuluk.groovy"),
-        new ScriptEntry("En yakın komşu mesafesi",       "yardimci-nn-mesafe.groovy"),
-        new ScriptEntry("Yoğunluk haritası",             "yardimci-yogunluk-haritasi.groovy"),
+        // Not: Uzamsal analiz yardımcıları (Yapıya uzaklık / Delaunay / En yakın komşu /
+        // Yoğunluk haritası) UTILITY_SCRIPTS'e taşındı — FS2K Session 12 sonrası etkin.
         new ScriptEntry("Ki-67 heterojenlik grid",       "yardimci-ki67-heterojenlik.groovy"),
         new ScriptEntry("Stromal TIL yoğunluğu",         "yardimci-stromal-til.groovy"),
         new ScriptEntry("Alan-bazlı pozitiflik (% positivity)", "yardimci-alan-pozitiflik.groovy"),
