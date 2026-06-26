@@ -176,7 +176,11 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // Tespit doğrulama (F1 / IoU) — otomatik tespiti ELLE çizilmiş altın standartla
         // karşılaştırır (TP/FP/FN → precision/recall/F1). Salt Groovy/JTS, ek bağımlılık yok.
         // Pécot WSI-QuPath eğitiminin (CC-BY) atölye karşılığı. bkz. Ekler → Tespit Doğrulama.
-        new ScriptEntry("Tespit doğrulama (F1 / IoU)", "yardimci-dogrulama-f1.groovy")
+        new ScriptEntry("Tespit doğrulama (F1 / IoU)", "yardimci-dogrulama-f1.groovy"),
+        // Görüntü yakala — görüntüleyiciyi (overlay'lerle) veya tüm pencereyi PNG/JPEG
+        // dosyasına/panoya alır; rapor & sunum için. QuPath GuiTools.makeSnapshot kullanır
+        // (petebankhead/qupath-extension-snapshots ilhamı). Ölçüm YAPMAZ; saf yakalama aracı.
+        new ScriptEntry("Görüntü yakala (rapor/sunum)", "yardimci-goruntu-yakala.groovy", false, false)  // açık slayt şart değil — pencere/UI de yakalanır
     );
 
     /**
@@ -203,9 +207,17 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Tümör tomurcuklanma kantifikasyonu (CK / ITBCC)", "yardimci-tumor-tomurcuklanma.groovy"),
         // WSI anonimleştirme — projedeki slaytların anonim KOPYALARINI yeni klasöre yazar
         // (yerinde değiştirmez) + CSV/JSON eşleştirme anahtarı; bkz. Ekler → Ek E.
-        new ScriptEntry("WSI anonimleştirme sihirbazı",         "yardimci-anonim-sihirbaz.groovy")
+        new ScriptEntry("WSI anonimleştirme sihirbazı",         "yardimci-anonim-sihirbaz.groovy"),
         // Not: "AI tahmin maskelerini içe aktar (GeoJSON)" UTILITY_SCRIPTS'e taşındı
         // (TIA Toolbox round-trip'i tek-tıkla kapatmak için — bkz. Ekler → TIA Toolbox).
+        // ── I2K 2024 (Bankhead) uyarlamaları — sonraki oturum (gri/disabled) ──
+        // QuPath ⇄ ImageJ köprüsü (Otsu eşik → anotasyon, spline ile sınır yumuşatma),
+        // QuPath-içi dağılım grafiği (Charts.scatterChart) ve InstanSeg tespit sihirbazı.
+        // bkz. Ekler → ImageJ/Fiji Köprüsü, Ekler → Groovy Betik Temelleri, Ekler → Ek H (InstanSeg).
+        new ScriptEntry("ImageJ ile otomatik eşik → anotasyon", "yardimci-imagej-otsu-anotasyon.groovy"),
+        new ScriptEntry("ImageJ ile sınır yumuşat (spline)",    "yardimci-imagej-spline-duzeltme.groovy"),
+        new ScriptEntry("Dağılım grafiği (scatter chart)",      "yardimci-dagilim-grafigi.groovy"),
+        new ScriptEntry("InstanSeg çekirdek/hücre tespiti sihirbazı", "yardimci-instanseg-sihirbaz.groovy")
     );
 
     private boolean alreadyInstalled = false;

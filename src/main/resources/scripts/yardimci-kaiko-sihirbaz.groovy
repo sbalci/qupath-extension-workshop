@@ -32,6 +32,8 @@
  *   3. [Extensions → Atölye → Yardımcılar → Kaiko Midnight sınıflandırıcı sihirbazı]
  *   4. İlk açılışta yapılandırın: python.exe, kaiko_bridge.py, (ops.) model dizini.
  *   5. "Eğit ve Tahmin Et" → çıktı otomatik içe aktarılır.
+ *   6. (Ops.) "Kalıcı çalışan (hızlı)" işaretliyse model bellekte tutulur; eğit→tahmin
+ *      ve tekrarlı tahminlerde yeniden yüklenmez (köprünün 'serve' modu).
  *
  * YÖNTEM / KAYNAK REFERANSLARI:
  *   • Karasikov M ve ark. (2025), arXiv:2504.05186 — Midnight. doi:10.48550/arXiv.2504.05186
@@ -66,6 +68,7 @@ def PREF_NEST   = 'nEstimators'
 def PREF_MINPC  = 'minPerClass'
 def PREF_MAXT   = 'maxTiles'
 def PREF_DEVICE = 'device'
+def PREF_PERSIST = 'persistent'   // "Kalıcı çalışan" tercihi (serve modu açık/kapalı)
 
 def loadConfig = { ->
     [ python      : prefs.get(PREF_PYTHON, ''),
@@ -462,6 +465,125 @@ def runPython = { List cmd, Closure onLine ->
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
 
+// ── Kalıcı çalışan (persistent worker) — modeli bellekte tutar ───────────────
+// SAM/samapi'nin kalıcı-sunucu dersinin uyarlaması: köprüyü 'serve' modunda BİR
+// KEZ başlat, modeli bir kez yükle, sonraki train/predict'leri aynı sürece
+// stdin/stdout JSON ile gönder. Opsiyonel; varsayılan KAPALI (alt çubuktaki onay
+// kutusu). Kapalıyken davranış eskisiyle birebir aynıdır (çağrı-başına süreç).
+def READY_MARK  = '##KAIKO-READY##'
+def RESP_PREFIX = '##KAIKO-RESP## '
+def persistentRef   = new java.util.concurrent.atomic.AtomicBoolean(prefs.getBoolean(PREF_PERSIST, false))
+def workerProcRef   = new java.util.concurrent.atomic.AtomicReference(null)
+def workerWriterRef = new java.util.concurrent.atomic.AtomicReference(null)
+def workerReadyRef  = new java.util.concurrent.atomic.AtomicBoolean(false)
+def workerSigRef    = new java.util.concurrent.atomic.AtomicReference('')
+def workerRespQueue = new java.util.concurrent.LinkedBlockingQueue()
+def workerLastLines = java.util.Collections.synchronizedList(new java.util.ArrayList())
+
+def workerSig = { cfg -> [cfg.python, cfg.bridge, cfg.modelDir, cfg.device].join('|') }
+
+def stopWorker = { ->
+    def w = workerWriterRef.getAndSet(null)
+    def p = workerProcRef.getAndSet(null)
+    workerReadyRef.set(false)
+    if (w != null) { try { w.write('{"cmd":"quit"}\n'); w.flush() } catch (Throwable ignore) {}; try { w.close() } catch (Throwable ignore) {} }
+    if (p != null) { try { p.destroyForcibly() } catch (Throwable ignore) {} }
+    workerRespQueue.clear()
+}
+
+def ensureWorker = { cfg, Closure appendLine ->
+    def existing = workerProcRef.get()
+    if (existing != null && existing.isAlive() && workerReadyRef.get() && workerSig(cfg) == workerSigRef.get())
+        return [ok: true]
+    stopWorker()
+    def cmd = [cfg.python, cfg.bridge, 'serve', '--device', (cfg.device ?: 'auto')]
+    if (cfg.modelDir?.trim()) { cmd.add('--model-dir'); cmd.add(cfg.modelDir.trim()) }
+    def pb = new ProcessBuilder(cmd)
+    pb.redirectErrorStream(true)
+    def proc
+    try { proc = pb.start() }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Kalıcı çalışan başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    workerProcRef.set(proc); workerSigRef.set(workerSig(cfg)); workerReadyRef.set(false); workerRespQueue.clear()
+    def writer = new java.io.BufferedWriter(new java.io.OutputStreamWriter(proc.getOutputStream(), java.nio.charset.StandardCharsets.UTF_8))
+    workerWriterRef.set(writer)
+    def appendLog = { String ln -> javafx.application.Platform.runLater { def la = logAreaRef.get(); if (la != null) la.appendText(ln + '\n') } }
+    def readerThread = new Thread({
+        try {
+            def reader = new java.io.BufferedReader(new java.io.InputStreamReader(proc.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))
+            String line
+            while ((line = reader.readLine()) != null) {
+                if (line.equals(READY_MARK)) { workerReadyRef.set(true) }
+                else if (line.startsWith(RESP_PREFIX)) { workerRespQueue.offer(line.substring(RESP_PREFIX.length())) }
+                else { appendLog(line); synchronized (workerLastLines) { workerLastLines.add(line); while (workerLastLines.size() > 60) workerLastLines.remove(0) } }
+            }
+            reader.close()
+        } catch (Throwable ignore) {}
+        workerReadyRef.set(false)
+    }, 'AtolyeKaiko-Worker')
+    readerThread.setDaemon(true); readerThread.start()
+    appendLine('Kalıcı çalışan başlatıldı; model yükleniyor (ilk seferde uzun sürebilir)…')
+    long deadline = System.currentTimeMillis() + PYTHON_TIMEOUT_SECONDS * 1000L
+    while (!workerReadyRef.get()) {
+        if (cancelledRef.get())      { stopWorker(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+        if (!proc.isAlive())         { return [ok: false, exitCode: -1, error: 'Kalıcı çalışan beklenmedik şekilde durdu (bağımlılıkları "Bağımlılık kontrolü" ile doğrulayın).'] }
+        if (System.currentTimeMillis() > deadline) { stopWorker(); return [ok: false, exitCode: -2, error: 'Kalıcı çalışan zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn).'] }
+        try { Thread.sleep(150) } catch (InterruptedException ie) { return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    }
+    appendLine('Kalıcı çalışan hazır (model bellekte; sonraki çağrılarda yeniden yüklenmez).')
+    return [ok: true]
+}
+
+def workerSend = { java.util.Map req ->
+    def w = workerWriterRef.get(); def p = workerProcRef.get()
+    if (w == null || p == null || !p.isAlive()) return [ok: false, exitCode: -1, error: 'Kalıcı çalışan etkin değil.']
+    workerRespQueue.clear()
+    def json = qupath.lib.io.GsonTools.getInstance(false).toJson(req)
+    try { w.write(json); w.write('\n'); w.flush() }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Komut gönderilemedi: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    String resp = null
+    long deadline = System.currentTimeMillis() + PYTHON_TIMEOUT_SECONDS * 1000L
+    while (resp == null) {
+        if (cancelledRef.get()) return [ok: false, exitCode: -3, error: 'İptal edildi']
+        if (!p.isAlive())       return [ok: false, exitCode: -1, error: 'Kalıcı çalışan durdu.']
+        if (System.currentTimeMillis() > deadline) return [ok: false, exitCode: -2, error: 'Kalıcı çalışan yanıt vermedi (zaman aşımı).']
+        try { resp = workerRespQueue.poll(200, java.util.concurrent.TimeUnit.MILLISECONDS) }
+        catch (InterruptedException ie) { return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    }
+    def tail; synchronized (workerLastLines) { tail = new ArrayList(workerLastLines).join('\n') }
+    try {
+        def o = com.google.gson.JsonParser.parseString(resp).getAsJsonObject()
+        boolean ok = o.has('ok') && o.get('ok').getAsBoolean()
+        int rc = (o.has('rc') && !o.get('rc').isJsonNull()) ? o.get('rc').getAsInt() : (ok ? 0 : 1)
+        def err = (o.has('error') && !o.get('error').isJsonNull()) ? o.get('error').getAsString() : null
+        return [ok: ok, exitCode: rc, error: err, lastLines: tail]
+    } catch (Throwable t) {
+        return [ok: false, exitCode: -1, error: 'Yanıt çözümlenemedi: ' + resp, lastLines: tail]
+    }
+}
+
+// train/predict adımını kalıcı çalışan (açıksa) veya çağrı-başına süreçle yürüt
+def doTrain = { cfg, File workDir, Closure appendLine ->
+    if (persistentRef.get()) {
+        def e = ensureWorker(cfg, appendLine); if (!e.ok) return e
+        return workerSend([cmd: 'train',
+            annotations: new File(workDir, 'train_annotations.json').getAbsolutePath(),
+            output_dir : workDir.getAbsolutePath(),
+            max_tiles_per_annotation: parseIntOr(cfg.maxTiles, 20),
+            n_estimators: parseIntOr(cfg.nEstimators, 100),
+            min_per_class: parseIntOr(cfg.minPerClass, 2)])
+    }
+    return runPython(trainCmd(cfg, workDir), appendLine)
+}
+def doPredict = { cfg, File workDir, Closure appendLine ->
+    if (persistentRef.get()) {
+        def e = ensureWorker(cfg, appendLine); if (!e.ok) return e
+        return workerSend([cmd: 'predict',
+            annotations: new File(workDir, 'predict_annotations.json').getAbsolutePath(),
+            output_dir : workDir.getAbsolutePath()])
+    }
+    return runPython(predictCmd(cfg, workDir), appendLine)
+}
+
 // ── Bağımlılık kontrolü (selftest) ──────────────────────────────────────────
 def startSelftest = {
     persistFields()
@@ -508,7 +630,7 @@ def startRun = { boolean wantTrain ->
         }
         if (wantTrain) {
             javafx.application.Platform.runLater { runPhaseRef.set('Gömme + RF eğitimi (2/3)…'); render() }
-            def r1 = runPython(trainCmd(cfg, workDir), appendLine)
+            def r1 = doTrain(cfg, workDir, appendLine)
             if (!r1.ok) {
                 javafx.application.Platform.runLater { errorTextRef.set('Eğitim başarısız (çıkış: ' + r1.exitCode + ')\n' + (r1.error ?: '') + '\n' + (r1.lastLines ?: '')); step.set('ERROR'); render() }; return
             }
@@ -517,7 +639,7 @@ def startRun = { boolean wantTrain ->
         }
         if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
         javafx.application.Platform.runLater { runPhaseRef.set(wantTrain ? 'Tahmin (3/3)…' : 'Tahmin (2/2)…'); step.set('PREDICT_RUNNING'); render() }
-        def r2 = runPython(predictCmd(cfg, workDir), appendLine)
+        def r2 = doPredict(cfg, workDir, appendLine)
         if (!r2.ok) {
             javafx.application.Platform.runLater { errorTextRef.set('Tahmin başarısız (çıkış: ' + r2.exitCode + ')\n' + (r2.error ?: '') + '\n' + (r2.lastLines ?: '')); step.set('ERROR'); render() }; return
         }
@@ -664,7 +786,7 @@ render = { ->
         title.setText(runPhaseRef.get())
         addGuidance('Python köprüsü koşuyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {}; try { if (persistentRef.get()) stopWorker() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {
         title.setText(busyLabelRef.get()); addGuidance('Lütfen bekleyin…'); center.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
@@ -686,11 +808,22 @@ render = { ->
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
     } as javafx.beans.value.ChangeListener)
+    def persistChk = new javafx.scene.control.CheckBox('Kalıcı çalışan (hızlı)')
+    persistChk.setSelected(persistentRef.get())
+    persistChk.setTooltip(new javafx.scene.control.Tooltip(
+        'Modeli bellekte tutar: eğit→tahmin ve tekrarlı tahminlerde modeli yeniden yüklemez.\n' +
+        'İlk açılışta model bir kez yüklenir (ilk sefer uzun sürebilir). Kapalıyken her çağrıda yeni süreç başlar.'))
+    persistChk.selectedProperty().addListener({ obs, o, n ->
+        persistentRef.set(n); prefs.putBoolean(PREF_PERSIST, n)
+        try { prefs.flush() } catch (Throwable ignore) {}
+        if (!n) stopWorker()
+    } as javafx.beans.value.ChangeListener)
     def spacer = new javafx.scene.layout.Region()
     javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
     def bar = new javafx.scene.layout.HBox(8)
     bar.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
     bar.getChildren().add(topChk)
+    bar.getChildren().add(persistChk)
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
@@ -716,6 +849,7 @@ javafx.application.Platform.runLater {
         stage.initModality(javafx.stage.Modality.NONE)
         stage.setTitle('Kaiko Midnight sınıflandırıcı sihirbazı')
         stage.setAlwaysOnTop(alwaysTop.get())
+        stage.setOnHidden({ e -> try { stopWorker() } catch (Throwable ignore) {} } as javafx.event.EventHandler)
         render()
         stage.show()
     } catch (Throwable t) {
