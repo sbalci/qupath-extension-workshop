@@ -54,7 +54,6 @@ import qupath.lib.scripting.QP
 import qupath.lib.objects.PathObjects
 import qupath.lib.regions.RegionRequest
 import qupath.lib.analysis.images.ContourTracing
-import groovy.json.JsonSlurper
 import java.io.File
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
@@ -148,7 +147,7 @@ def baseName = maskFile.getName().replaceAll(/\.[^.]+$/, '')
 def jsonSidecar = new File(maskFile.getParentFile(), baseName + ".json")
 Map sidecar = null
 if (jsonSidecar.isFile()) {
-    try { sidecar = (Map) new JsonSlurper().parse(jsonSidecar, "UTF-8") }
+    try { sidecar = (Map) qupath.lib.io.GsonTools.getInstance().fromJson(jsonSidecar.getText("UTF-8"), Map.class) }
     catch (Throwable t) { sidecar = null }
 }
 def labelClass = [:]   // int indeks → sınıf adı (yan dosyadan)

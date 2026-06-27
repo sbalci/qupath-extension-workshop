@@ -94,7 +94,7 @@ def PREF_GRAN   = 'granularity'
 def PREF_DEVICE = 'device'
 
 def loadConfig = { ->
-    [ python      : prefs.get(PREF_PYTHON, ''),
+    [ python      : ({ -> def __p = prefs.get(PREF_PYTHON, ''); if (__p?.trim()) return __p; def __v = new File(System.getProperty('user.home'), '.atolye/runtimes/spider/.venv'); def __w = new File(__v, 'Scripts/python.exe'); def __n = new File(__v, 'bin/python'); __w.isFile() ? __w.getAbsolutePath() : (__n.isFile() ? __n.getAbsolutePath() : '') }).call(),
       bridge      : prefs.get(PREF_BRIDGE, ''),
       modelDir    : prefs.get(PREF_MODEL,  ''),
       workDir     : prefs.get(PREF_WORK,   ''),

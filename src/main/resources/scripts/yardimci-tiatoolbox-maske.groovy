@@ -53,7 +53,6 @@ import qupath.lib.common.ColorTools
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import groovy.json.JsonOutput
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
@@ -267,7 +266,7 @@ meta.put("maskHeight", (int) maskH)
 meta.put("labels", labelMap)
 meta.put("note", "TIA Toolbox engine.run(masks=[...]) icin tek kanalli indeksli maske. " +
                  "Arka plan = 0; sifir-disi degerler cikarima dahil bolgedir. Yalnizca arastirma/egitim amacli.")
-try { jsonFile.write(JsonOutput.prettyPrint(JsonOutput.toJson(meta)), "UTF-8") } catch (Throwable ignored) {}
+try { jsonFile.write(qupath.lib.io.GsonTools.getInstance(true).toJson(meta), "UTF-8") } catch (Throwable ignored) {}
 try { new File(outDir, "labels.txt").write(legend.join("\n") + "\n", "UTF-8") } catch (Throwable ignored) {}
 
 // ──────────────────────────────────────────────────────────────

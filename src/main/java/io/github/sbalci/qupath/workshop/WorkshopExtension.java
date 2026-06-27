@@ -156,6 +156,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // Raster maske köprüsü — indeksli/ikili PNG/TIFF maskeyi anotasyona çevirir
         // (TIA Toolbox bölge maskesi + harici U-Net çıktısı için içe-aktarım eşi)
         new ScriptEntry("Maske görüntüsünü içe aktar",            "yardimci-maske-iceaktar.groovy"),
+        // Atölye Python ortam yöneticisi — uv tabanlı; aşağıdaki Python köprülerinin
+        // (TIA Toolbox / Kaiko / SPIDER / Sectra) izole venv'lerini tek tıkla kurar/onarır.
+        // Açık slayt gerekmez (proje/sistem düzeyi).
+        new ScriptEntry("Atölye Python ortam yöneticisi",        "yardimci-python-ortam-yoneticisi.groovy", false, false),
         // GrandQC (Python) köprüsü — hibrit doku/artefakt KK; bkz. Ekler → Ek B § GrandQC
         new ScriptEntry("GrandQC kalite kontrol sihirbazı",      "yardimci-grandqc-sihirbaz.groovy"),
         // Kaiko Midnight (Python) köprüsü — denetimli FM sınıflandırıcı (eğit → tahmin);
@@ -164,6 +168,11 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // SPIDER (Python) köprüsü — organ-özelleşmiş HAZIR sınıflandırıcı (yalnız tahmin,
         // eğitim yok; CC BY-NC, kapılı); bkz. Ekler → SPIDER Organ Doku Sınıflandırıcı
         new ScriptEntry("SPIDER doku sınıflandırıcı sihirbazı", "yardimci-spider-sihirbaz.groovy"),
+        // TIA Toolbox (Python) köprüsü — model çıkarımını SEÇİLİ BÖLGEYLE sınırlar (resmî
+        // TIAToolbox eklentisi bölgeye kısıtlayamaz: yalnız Current/All image). KongNet MIDOG
+        // mitoz / PanNuke / CoNIC ... ; ikili bölge maskesi → engine.run(masks=) → GeoJSON →
+        // bölgeye göre sayım. Çalışma zamanı: tiatoolbox-runtime/.venv; bkz. Ekler → TIA Toolbox.
+        new ScriptEntry("TIA Toolbox bölgede çekirdek/mitoz tespiti", "yardimci-tiatoolbox-bolge-sihirbaz.groovy"),
         // metadata-qupath (sbalci, MIT) köprüsü — proje genelinde slayt/tarayıcı üst verisini
         // okur → CSV + (ops.) sıralanabilir Proje sütunları; bkz. Ekler → Kohort Metadata
         new ScriptEntry("Kohort metadata sihirbazı", "yardimci-metadata-sihirbaz.groovy", false, false),  // proje geneli, salt-okunur: açık slayt gerekmez

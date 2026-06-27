@@ -47,7 +47,6 @@
 
 import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
-import groovy.json.JsonOutput
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -289,7 +288,7 @@ def writeKey = { File outDir, cfg, String ts, List rows ->
             mappings : mappings,
             processingLog: log
         ]
-        json.setText(JsonOutput.prettyPrint(JsonOutput.toJson(data)), 'UTF-8')
+        json.setText(qupath.lib.io.GsonTools.getInstance(true).toJson(data), 'UTF-8')
         written << json
     } else {
         // Geri alınamaz: yalnız anonim dosya listesi (orijinal ad YAZILMAZ)
