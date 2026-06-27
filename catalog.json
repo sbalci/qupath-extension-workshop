@@ -8,35 +8,38 @@
         "homepage": "https://github.com/sbalci/qupath-extension-workshop",
         "releases": [
             {
+                "name": "v0.2.2-rc4",
+                "main_url": "https://github.com/sbalci/qupath-extension-workshop/releases/download/v0.2.2-rc4/qupath-extension-workshop-0.2.2-rc4.jar",
+                "version_range": {
+                    "min": "v0.6.0"
+                }
+            },
+            {
                 "name": "v0.2.2-rc3",
                 "main_url": "https://github.com/sbalci/qupath-extension-workshop/releases/download/v0.2.2-rc3/qupath-extension-workshop-0.2.2-rc3.jar",
                 "version_range": {
-                    "min": "v0.6.0",
-                    "max": "v0.7.0"
+                    "min": "v0.6.0"
                 }
             },
             {
                 "name": "v0.2.2-rc2",
                 "main_url": "https://github.com/sbalci/qupath-extension-workshop/releases/download/v0.2.2-rc2/qupath-extension-workshop-0.2.2-rc2.jar",
                 "version_range": {
-                    "min": "v0.6.0",
-                    "max": "v0.7.0"
+                    "min": "v0.6.0"
                 }
             },
             {
                 "name": "v0.2.2-rc1",
                 "main_url": "https://github.com/sbalci/qupath-extension-workshop/releases/download/v0.2.2-rc1/qupath-extension-workshop-0.2.2-rc1.jar",
                 "version_range": {
-                    "min": "v0.6.0",
-                    "max": "v0.7.0"
+                    "min": "v0.6.0"
                 }
             },
             {
                 "name": "v0.2.1",
                 "main_url": "https://github.com/sbalci/qupath-extension-workshop/releases/download/v0.2.1/qupath-extension-workshop-0.2.1.jar",
                 "version_range": {
-                    "min": "v0.6.0",
-                    "max": "v0.7.0"
+                    "min": "v0.6.0"
                 }
             }
         ]
