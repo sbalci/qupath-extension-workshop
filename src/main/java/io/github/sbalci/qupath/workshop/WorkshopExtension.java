@@ -148,6 +148,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Kümeleme/fenotip etiketlerini içe aktar (TSV)", "yardimci-kume-etiketi-iceaktar.groovy"),
         // TIA Toolbox (Python) köprüsü — bkz. Ekler → TIA Toolbox
         new ScriptEntry("TIA Toolbox için bölge maskesi",        "yardimci-tiatoolbox-maske.groovy"),
+        // TIA Toolbox temel-işlev sihirbazı — boya normalizasyonu (Macenko/Vahadane/Reinhard;
+        // QuPath'in YAPMADIĞI işlem) + doku maskesi (Otsu/Morphological → "Doku" anotasyonu).
+        // Python köprüsü: handson/python/tiatoolbox. bkz. Ekler → TIA Toolbox § Temel işlevler.
+        new ScriptEntry("TIA Toolbox boya normalizasyonu / doku maskesi sihirbazı", "yardimci-tiatoolbox-sihirbaz.groovy"),
         new ScriptEntry("AI tahmin maskelerini içe aktar (GeoJSON)", "yardimci-tahmin-iceaktar.groovy"),
         // Raster maske köprüsü — indeksli/ikili PNG/TIFF maskeyi anotasyona çevirir
         // (TIA Toolbox bölge maskesi + harici U-Net çıktısı için içe-aktarım eşi)
