@@ -285,7 +285,8 @@ def computePreviews = { imageData ->
         double i0r = Math.max(1.0d, stains.getMaxRed())
         double i0g = Math.max(1.0d, stains.getMaxGreen())
         double i0b = Math.max(1.0d, stains.getMaxBlue())
-        float[] a1 = new float[w * h], a2 = new float[w * h]
+        float[] a1 = new float[w * h]
+        float[] a2 = new float[w * h]
         for (int p = 0; p < rgb.length; p++) {
             int c = rgb[p]
             int r = (c >> 16) & 0xff, g = (c >> 8) & 0xff, b = c & 0xff
