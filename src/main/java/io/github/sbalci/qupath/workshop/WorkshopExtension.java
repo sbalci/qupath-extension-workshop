@@ -171,6 +171,12 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // SPIDER (Python) köprüsü — organ-özelleşmiş HAZIR sınıflandırıcı (yalnız tahmin,
         // eğitim yok; CC BY-NC, kapılı); bkz. Ekler → SPIDER Organ Doku Sınıflandırıcı
         new ScriptEntry("SPIDER doku sınıflandırıcı sihirbazı", "yardimci-spider-sihirbaz.groovy"),
+        // Foundation model hazırlık ve sağlamlık sihirbazı — salt-okur FM-hazırlık denetimi
+        // (224 px karo için önerilen downsample, piramit/anotasyon durumu) + sağlamlık
+        // kontrol listesi (batch etkisi / girdi bütünlüğü-UTAP / doğrulama farkındalığı).
+        // FM ÇALIŞTIRMAZ, pertürbasyon ÜRETMEZ; salt farkındalık/rapor. bkz. Ekler →
+        // Patolojide Temel Modeller — Genel Bakış.
+        new ScriptEntry("Foundation model hazırlık ve sağlamlık sihirbazı", "yardimci-foundation-model-sihirbaz.groovy"),
         // TIA Toolbox (Python) köprüsü — model çıkarımını SEÇİLİ BÖLGEYLE sınırlar (resmî
         // TIAToolbox eklentisi bölgeye kısıtlayamaz: yalnız Current/All image). KongNet MIDOG
         // mitoz / PanNuke / CoNIC ... ; ikili bölge maskesi → engine.run(masks=) → GeoJSON →

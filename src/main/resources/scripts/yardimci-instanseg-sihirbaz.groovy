@@ -25,7 +25,7 @@
  *   2. Bir model indirin: InstanSeg arayüzünden (ör. "brightfield_nuclei") ya da
  *      instanseg.pt + rdf.yaml içeren bir model klasörünü hazır bulundurun.
  *   3. Bir slayt açın; ölçülecek bölge için bir ALAN anotasyonu çizip SEÇİN.
- *   4. [Extensions → Atölye → İleri analiz → InstanSeg çekirdek/hücre tespiti sihirbazı]
+ *   4. [Extensions → Atölye → Yardımcılar → InstanSeg çekirdek/hücre tespiti sihirbazı]
  *   5. Model klasörü + cihazı (cpu/gpu) ayarlayın → "Tespit".
  *
  * YÖNTEM / KAYNAK REFERANSLARI:
