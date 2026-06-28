@@ -290,7 +290,8 @@ body << String.format(java.util.Locale.US, 'Dışlanan kenar karosu  : %,d kısm
 body << '\nAğırlıklı genel LI, tüm hücrelerin birleşik oranıdır.\n'
 body << 'Karo ortalaması her geçerli karoya eşit ağırlık verir ve ayrı raporlanır.\n'
 body << 'Morisita hesabı eşit alan varsayımı için yalnız tam karoları kullanır; sıfır quadratlar dahildir.\n\n'
-body << 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.'
+body << 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.\n'
+body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
 
 showResultWindow('Ki-67 heterojenlik', body.toString())
 println String.format(java.util.Locale.US, 'Ki-67 heterojenlik: %d karo, genel LI %s', newTiles.size(), fmt(overallLI, '%.2f%%'))

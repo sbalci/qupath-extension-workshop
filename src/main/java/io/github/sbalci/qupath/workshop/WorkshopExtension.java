@@ -73,10 +73,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Modül 2 - Hücre tespiti",                  "modul-02-hucre-tespiti.groovy"),
         new ScriptEntry("Modül 3a - Nükleer boya (Ki-67)",          "modul-03a-nukleer-boya.groovy"),
         new ScriptEntry("Modül 3b - ER / PR H-score",               "modul-03b-er-pr-hscore.groovy"),
-        // Modül 4 (HER2 membran skorlama) sonraki oturuma ertelendi — script JAR'da kalır
-        // ve menüde görünür ama gri/disabled (tıklama etkisiz). İleride etkinleştirmek için
-        // aşağıdaki entry'nin sonundaki `true` (disabled) bayrağını kaldırın.
-        new ScriptEntry("Modül 4 - Membran boya (HER2)",            "modul-04-membran-boya.groovy", true),
+        new ScriptEntry("Modül 4 - Membran boya (HER2)",            "modul-04-membran-boya.groovy"),
         new ScriptEntry("Modül 5 - Sitoplazmik boya (CD68)",        "modul-05-sitoplazmik-boya.groovy"),
         // Modül 6: tek pencere sihirbaz — örnek modeli kur YA DA yeni eğit, sonra
         // seçili bölge / tüm slayt ölçümü (Ignore* dışlama dahil) hepsi burada.
@@ -87,10 +84,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // new ScriptEntry("Modül 6a - Tümör/Stroma modeli oluştur (eğit)", "modul-06-model-egit.groovy"),
         // new ScriptEntry("Modül 6b - Tümör vs stroma (uygula)",      "modul-06-tumor-stroma.groovy"),
         new ScriptEntry("Modül 7 - Tümör içi Ki-67",                "modul-07-tumor-ici-ki67.groovy"),
-        // Modül 8 (QuANTUM cTCF) sonraki sürümlere ertelendi — StarDist + object classifier
-        // ön-gereksinimleri ilk sürüm katılımcıları için fazla. Script JAR resource olarak
-        // kalır (modul-08-quantum-ctcf.groovy) → ileride aşağıdaki satır yorum-dışı bırakılır.
-        // new ScriptEntry("Modül 8 - QuANTUM cTCF",                "modul-08-quantum-ctcf.groovy"),
+        // Modül 8: StarDist eklentisi + sihirbaz içinde interaktif eğitilen nesne sınıflandırıcı
+        // gerektirir; StarDist yoksa sihirbaz kullanıcıyı kuruluma yönlendirir (çökmemez).
+        new ScriptEntry("Modül 8 - QuANTUM cTCF",                   "modul-08-quantum-ctcf.groovy"),
         new ScriptEntry("Modül 9 - Veri dışa aktarma",              "modul-09-veri-aktarma.groovy")
     );
 
@@ -159,6 +155,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // Raster maske köprüsü — indeksli/ikili PNG/TIFF maskeyi anotasyona çevirir
         // (TIA Toolbox bölge maskesi + harici U-Net çıktısı için içe-aktarım eşi)
         new ScriptEntry("Maske görüntüsünü içe aktar",            "yardimci-maske-iceaktar.groovy"),
+        // Hizalama dönüşümüyle anotasyon aktar — Interactive image alignment'in (qupath-extension-align)
+        // afin matrisini uygular: kaynak slaytın anotasyonlarını PathObjectTools.transformObject ile
+        // hedef slayda kilitli kopyalar (seri kesit H&E↔İHK). bkz. Ekler → Görüntü Hizalama §6.
+        new ScriptEntry("Hizalama dönüşümüyle anotasyon aktar", "yardimci-hizalama-aktarim.groovy"),
         // Atölye Python ortam yöneticisi — uv tabanlı; aşağıdaki Python köprülerinin
         // (TIA Toolbox / Kaiko / SPIDER / Sectra) izole venv'lerini tek tıkla kurar/onarır.
         // Açık slayt gerekmez (proje/sistem düzeyi).
@@ -207,7 +207,23 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // Görüntü yakala — görüntüleyiciyi (overlay'lerle) veya tüm pencereyi PNG/JPEG
         // dosyasına/panoya alır; rapor & sunum için. QuPath GuiTools.makeSnapshot kullanır
         // (petebankhead/qupath-extension-snapshots ilhamı). Ölçüm YAPMAZ; saf yakalama aracı.
-        new ScriptEntry("Görüntü yakala (rapor/sunum)", "yardimci-goruntu-yakala.groovy", false, false)  // açık slayt şart değil — pencere/UI de yakalanır
+        new ScriptEntry("Görüntü yakala (rapor/sunum)", "yardimci-goruntu-yakala.groovy", false, false),  // açık slayt şart değil — pencere/UI de yakalanır
+        // ── İleri analiz — atölye ilk oturumundan sonra etkinleştirildi (eski "sonraki oturum" grubu) ──
+        // Ölçüm/skorlama yardımcıları (var olan tespit/sınıflandırmalardan türetir):
+        new ScriptEntry("Ki-67 heterojenlik grid",              "yardimci-ki67-heterojenlik.groovy"),
+        new ScriptEntry("Stromal TIL yoğunluğu",                "yardimci-stromal-til.groovy"),
+        new ScriptEntry("Alan-bazlı pozitiflik (% positivity)", "yardimci-alan-pozitiflik.groovy"),
+        new ScriptEntry("TMA çekirdek bazlı dışa aktarım",      "yardimci-tma-cekirdek-aktarim.groovy"),
+        new ScriptEntry("İmmün hücre yoğunluğu (DAB)",          "yardimci-immun-yogunluk.groovy"),
+        new ScriptEntry("PHH3 mitoz kantifikasyonu",            "yardimci-mitoz-phh3.groovy"),
+        new ScriptEntry("KongNet H&E mitoz tespiti (DL)",       "yardimci-mitoz-kongnet.groovy"),
+        new ScriptEntry("Tümör tomurcuklanma kantifikasyonu (CK / ITBCC)", "yardimci-tumor-tomurcuklanma.groovy"),
+        new ScriptEntry("WSI anonimleştirme sihirbazı",         "yardimci-anonim-sihirbaz.groovy"),
+        // ImageJ/Fiji köprüsü + QuPath-içi grafik + InstanSeg (I2K 2024 uyarlamaları):
+        new ScriptEntry("ImageJ ile otomatik eşik → anotasyon", "yardimci-imagej-otsu-anotasyon.groovy"),
+        new ScriptEntry("ImageJ ile sınır yumuşat (spline)",    "yardimci-imagej-spline-duzeltme.groovy"),
+        new ScriptEntry("Dağılım grafiği (scatter chart)",      "yardimci-dagilim-grafigi.groovy"),
+        new ScriptEntry("InstanSeg çekirdek/hücre tespiti sihirbazı", "yardimci-instanseg-sihirbaz.groovy")
     );
 
     /**
@@ -217,33 +233,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
      * items below so participants can see what's coming without running them
      * yet. To activate one later, move its entry into {@link #UTILITY_SCRIPTS}.
      */
-    private static final List<ScriptEntry> UPCOMING_SCRIPTS = List.of(
-        // Not: Uzamsal analiz yardımcıları (Yapıya uzaklık / Delaunay / En yakın komşu /
-        // Yoğunluk haritası) UTILITY_SCRIPTS'e taşındı — FS2K Session 12 sonrası etkin.
-        new ScriptEntry("Ki-67 heterojenlik grid",       "yardimci-ki67-heterojenlik.groovy"),
-        new ScriptEntry("Stromal TIL yoğunluğu",         "yardimci-stromal-til.groovy"),
-        new ScriptEntry("Alan-bazlı pozitiflik (% positivity)", "yardimci-alan-pozitiflik.groovy"),
-        new ScriptEntry("TMA çekirdek bazlı dışa aktarım",      "yardimci-tma-cekirdek-aktarim.groovy"),
-        new ScriptEntry("İmmün hücre yoğunluğu (DAB)",          "yardimci-immun-yogunluk.groovy"),
-        new ScriptEntry("PHH3 mitoz kantifikasyonu",            "yardimci-mitoz-phh3.groovy"),
-        new ScriptEntry("KongNet H&E mitoz tespiti (DL)",       "yardimci-mitoz-kongnet.groovy"),
-        // Tümör tomurcuklanma (CK/ITBCC) — petebankhead/qupath-budding-scripts (MIT)
-        // uyarlaması; CK-DAB slaytında tomurcuk SAYAR (Bd1/2/3 derecesi üretmez).
-        // bkz. Ekler → Tümör Tomurcuklanması.
-        new ScriptEntry("Tümör tomurcuklanma kantifikasyonu (CK / ITBCC)", "yardimci-tumor-tomurcuklanma.groovy"),
-        // WSI anonimleştirme — projedeki slaytların anonim KOPYALARINI yeni klasöre yazar
-        // (yerinde değiştirmez) + CSV/JSON eşleştirme anahtarı; bkz. Ekler → Ek E.
-        new ScriptEntry("WSI anonimleştirme sihirbazı",         "yardimci-anonim-sihirbaz.groovy"),
-        // Not: "AI tahmin maskelerini içe aktar (GeoJSON)" UTILITY_SCRIPTS'e taşındı
-        // (TIA Toolbox round-trip'i tek-tıkla kapatmak için — bkz. Ekler → TIA Toolbox).
-        // ── I2K 2024 (Bankhead) uyarlamaları — sonraki oturum (gri/disabled) ──
-        // QuPath ⇄ ImageJ köprüsü (Otsu eşik → anotasyon, spline ile sınır yumuşatma),
-        // QuPath-içi dağılım grafiği (Charts.scatterChart) ve InstanSeg tespit sihirbazı.
-        // bkz. Ekler → ImageJ/Fiji Köprüsü, Ekler → Groovy Betik Temelleri, Ekler → Ek H (InstanSeg).
-        new ScriptEntry("ImageJ ile otomatik eşik → anotasyon", "yardimci-imagej-otsu-anotasyon.groovy"),
-        new ScriptEntry("ImageJ ile sınır yumuşat (spline)",    "yardimci-imagej-spline-duzeltme.groovy"),
-        new ScriptEntry("Dağılım grafiği (scatter chart)",      "yardimci-dagilim-grafigi.groovy"),
-        new ScriptEntry("InstanSeg çekirdek/hücre tespiti sihirbazı", "yardimci-instanseg-sihirbaz.groovy")
+    private static final List<ScriptEntry> UPCOMING_SCRIPTS = List.<ScriptEntry>of(
+        // Atölye ilk oturumu tamamlandı — eski "İleri analiz — sonraki oturum" yardımcılarının
+        // tümü UTILITY_SCRIPTS'e taşındı ve artık etkin. Yeni hazırlanıp henüz
+        // etkinleştirilmemiş bir yardımcı çıkarsa buraya (gri/önizleme) eklenir.
     );
 
     private boolean alreadyInstalled = false;
@@ -520,12 +513,12 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "QuPath baseline:   " + getQuPathVersion() + "+\n\n" +
             "Açık görüntü:      " + (hasImage ? "var" : "yok — File → Open ile bir slayt açın") + "\n" +
             "Açık proje:        " + (hasProject ? "var" : "yok") + "\n\n" +
-            "Opsiyonel bileşenler (yalnızca ileri / ertelenmiş modüller için):\n" +
+            "Opsiyonel bileşenler (yalnızca ileri modüller için):\n" +
             "  • Cellpose eklentisi:   " + (cellpose ? found : missing) + "\n" +
             "  • StarDist eklentisi:   " + (stardist ? found : missing) + "\n" +
             "  • InstanSeg eklentisi:  " + (instanseg ? found : missing) + "\n" +
             "  • Deep Java Library:    " + (djl ? found : missing) + "  (InstanSeg/WSInfer/StarDist-TF ortak çalışma zamanı)\n\n" +
-            "Çekirdek modüller (2, 3, 3b, 5, 6, 7, 9) yalnızca QuPath gerektirir.\n" +
+            "Çekirdek modüller (2, 3, 3b, 4, 5, 6, 7, 9) yalnızca QuPath gerektirir; Modül 8 StarDist eklentisi ister.\n" +
             "InstanSeg ayrı bir Python ortamı gerektirmez (en sade derin öğrenme seçeneği).\n" +
             (cellpose ? "Cellpose için python.exe yolunu ayarlayın: Edit → Preferences → Cellpose/Omnipose.\n" : "") +
             "\"bulunamadı\" görünen bileşenler yalnızca ilgili ileri modül için gerekir;\n" +
@@ -562,12 +555,12 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "  2 — Hücre tespiti\n" +
             "  3 — Nükleer boya (Ki-67)\n" +
             "  3b — ER / PR H-score\n" +
-            "  4 — Membran boya (HER2) (gri — sonraki oturumda)\n" +
+            "  4 — Membran boya (HER2)\n" +
             "  5 — Sitoplazmik boya (CD68)\n" +
             "  6 — Tümör/Stroma modeli oluştur (eğit) + Tümör vs stroma (uygula)\n" +
             "  7 — Tümör içi Ki-67\n" +
+            "  8 — QuANTUM cTCF (StarDist + nesne sınıflandırıcı eğitimi)\n" +
             "  9 — Veri dışa aktarma (TSV / GeoJSON)\n\n" +
-            "  (Modül 8 - QuANTUM cTCF: sonraki sürümlerde)\n\n" +
             "Yardımcılar:\n" +
             "  • Tespitleri sil (orphan / tümü)\n" +
             "  • Görüntü tipi ayarla (slayt / proje)\n" +
@@ -580,9 +573,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "  • TIA Toolbox için bölge maskesi (tek-kanallı maske, masks= için)\n" +
             "  • AI tahmin maskelerini içe aktar (GeoJSON → kilitli anotasyon)\n" +
             "  • Sectra PACS anotasyon sihirbazı (DICOM GSPS → GeoJSON → QuPath)\n\n" +
-            "İleri analiz (sonraki oturum):\n" +
-            "  • Menüde \"İleri analiz — sonraki oturum\" altında gri görünen\n" +
-            "    " + UPCOMING_SCRIPTS.size() + " yardımcı bir sonraki oturumda etkinleşecek.\n\n" +
+            "İleri analiz yardımcıları (heterojenlik, stromal TIL, alan pozitifliği, TMA,\n" +
+            "immün yoğunluk, PHH3/KongNet mitoz, tümör tomurcuklanma, anonimleştirme,\n" +
+            "ImageJ köprüsü, dağılım grafiği, InstanSeg) artık Yardımcılar menüsünde etkin.\n\n" +
             "Ayarlar:\n" +
             "  • Atölye Ayarları — parametreleri değiştir, hatırlanır, sıfırlanabilir\n\n" +
             "Versiyon: " + getVersion() + "\n" +
