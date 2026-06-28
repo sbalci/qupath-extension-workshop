@@ -115,6 +115,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // tahmin → önizle → uygula → geri al, hepsi aynı pencerede. Eski iki ayrı
         // yardımcı ("kontrol et" + "tahmin et") buna katlandı.
         new ScriptEntry("Boya vektörleri sihirbazı", "yardimci-boya-vektor-sihirbaz.groovy"),
+        // Boya KALİTESİ QC: seçili bölgede H:E OD oranı + ortalama OD + CIELAB L* (H:E L* oranı,
+        // Dunn 2025 0,94–0,99) + doku%. Tarayıcı/zaman karşılaştırma; ölçüm-only. Bkz. Ek A.
+        new ScriptEntry("Boya kalitesi QC ölçümü", "yardimci-boya-kalite-qc.groovy"),
         // Salt-okur renk denetçisi — açık slaytın dosyasında gömülü ICC profilini
         // (standart TIFF etiketi 34675 + Aperio/GT450 taşınmış 0xFFFF) Bio-Formats ile
         // okur; ImageScope↔QuPath renk farkını açıklar. Görüntüyü DEĞİŞTİRMEZ; profili
