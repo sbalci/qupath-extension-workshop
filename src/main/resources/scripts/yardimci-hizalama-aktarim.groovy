@@ -6,8 +6,8 @@
  * NE YAPAR:
  *   Aynı projedeki bir KAYNAK slaytın üst düzey anotasyonlarını, bir afin
  *   dönüşüm matrisi uygulayarak şu anki (HEDEF) slayda kopyalar. Matris,
- *   QuPath'in yerleşik [Analyze → Interactive image alignment] komutunun
- *   gösterdiği 6 sayıdır (m00 m01 m02 m10 m11 m12). Böylece H&E üzerinde
+ *   QuPath'in Align eklentisinin [Extensions → Alignment → Interactive image alignment]
+ *   komutunun gösterdiği 6 sayıdır (m00 m01 m02 m10 m11 m12). Böylece H&E üzerinde
  *   çizdiğiniz tümör/bölge anotasyonunu, hizaladığınız İHK slaydına TEK
  *   TIKLA ve YİNELENEBİLİR biçimde aktarırsınız — GUI'de elle aktarmaya
  *   gerek kalmaz.
@@ -26,8 +26,8 @@
  *
  * KULLANIM:
  *   1. Kaynak (anotasyonların çizili olduğu) ve hedef slayt AYNI projede olsun.
- *   2. Hedef slaydı açın; [Analyze → Interactive image alignment] ile hizalayıp
- *      pencerede görünen afin matrisini (6 sayı) kopyalayın.
+ *   2. Hedef slaydı açın; [Extensions → Alignment → Interactive image alignment] ile
+ *      hizalayıp pencerede görünen afin matrisini (6 sayı) kopyalayın.
  *   3. Bu yardımcıyı çalıştırın → kaynak slaydı seçin, matrisi yapıştırın, Aktar.
  *
  * ÇIKTI:
@@ -127,7 +127,8 @@ javafx.application.Platform.runLater {
         stage.setAlwaysOnTop(true)
 
         def info = new javafx.scene.control.Label(
-            'Kaynak slaytı seçin ve [Analyze → Interactive image alignment] penceresindeki afin\n' +
+            'Kaynak slaytı seçin ve [Extensions → Alignment → Interactive image alignment]\n' +
+            'penceresindeki afin\n' +
             'matrisini (6 sayı) yapıştırın. Kaynağın üst düzey anotasyonları bu slayda kilitli\n' +
             'olarak kopyalanır. Örtüşmeyi sonra opaklık kaydırıcısıyla gözle doğrulayın.')
         info.setWrapText(true)
