@@ -40,6 +40,76 @@ import qupath.lib.scripting.QP
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
+// ──────────────────────────────────────────────────────────────
+// Boya vektörü önerisi + tek-tık tahmin (tüm DAB-OD modüllerinde aynı blok).
+//   • Aktif vektörler QuPath VARSAYILANI ise uyarır: kantitatif ölçümden önce bu
+//     slayttan tahmin etmeyi önerir (eşikler mutlak DAB OD; yanlış vektör skoru kaydırır).
+//   • "Tamam" → SEÇİLİ alan anotasyonundan tahmin edip uygular (Boya vektörleri
+//     sihirbazı ile aynı yöntem). "İptal" → yine de devam. Kalibre görünüyorsa sessiz geçer.
+// ──────────────────────────────────────────────────────────────
+double SV_TOL = 0.02d
+double[] SV_DEF_HEMA = [0.651d, 0.701d, 0.290d] as double[]
+double[] SV_DEF_DAB  = [0.269d, 0.568d, 0.776d] as double[]
+try {
+    def svEnum = Class.forName('qupath.lib.color.ColorDeconvolutionStains$DefaultColorDeconvolutionStains')
+    def svDab = Class.forName('qupath.lib.color.ColorDeconvolutionStains')
+                     .getMethod('makeDefaultColorDeconvolutionStains', svEnum)
+                     .invoke(null, Enum.valueOf(svEnum, 'H_DAB'))
+    SV_DEF_HEMA = [svDab.getStain(1).getRed(), svDab.getStain(1).getGreen(), svDab.getStain(1).getBlue()] as double[]
+    SV_DEF_DAB  = [svDab.getStain(2).getRed(), svDab.getStain(2).getGreen(), svDab.getStain(2).getBlue()] as double[]
+} catch (Throwable svIgnore) { /* tablo değerleri kullanılır */ }
+def svVecOf = { s -> [s.getRed() as double, s.getGreen() as double, s.getBlue() as double] as double[] }
+def svClose = { double[] a, double[] b ->
+    Math.abs(a[0] - b[0]) <= SV_TOL && Math.abs(a[1] - b[1]) <= SV_TOL && Math.abs(a[2] - b[2]) <= SV_TOL
+}
+def suggestStainVectors = { ->
+    def svId = QP.getCurrentImageData()
+    if (svId == null) return
+    def svStains = svId.getColorDeconvolutionStains()
+    if (svStains == null) return
+    def svS2 = (svStains.getStain(2)?.getName() ?: '').toLowerCase(java.util.Locale.ROOT)
+    if (!svS2.contains('dab')) return
+    boolean svDefault = svClose(svVecOf(svStains.getStain(1)), SV_DEF_HEMA) &&
+                        svClose(svVecOf(svStains.getStain(2)), SV_DEF_DAB)
+    if (!svDefault) { println '✓ Boya vektörleri bu slayttan tahmin/kalibre edilmiş görünüyor.'; return }
+    def svMsg =
+        '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu slayttan tahmin EDİLMEMİŞ.\n\n' +
+        'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n' +
+        'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n' +
+        'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n' +
+        '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n' +
+        '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et'
+    if (isHeadless) { println svMsg; return }
+    if (!qupath.fx.dialogs.Dialogs.showConfirmDialog('Boya vektörleri — öneri', svMsg)) return
+    def svSel = QP.getSelectedObjects().findAll { it.hasROI() && it.getROI().isArea() }
+    if (svSel.isEmpty()) {
+        qupath.fx.dialogs.Dialogs.showWarningNotification('Boya vektörleri',
+            'Önce iki boya + biraz arka plan içeren temsilî bir alan anotasyonu çizip SEÇİN, sonra tekrar deneyin.')
+        return
+    }
+    try {
+        def svRoi = svSel[0].getROI()
+        def svServer = svId.getServer()
+        double svPix = (svRoi.getBoundsWidth() as double) * (svRoi.getBoundsHeight() as double)
+        double svDown = Math.max(1.0d, Math.sqrt(svPix / 16_000_000d))
+        def svImg = svServer.readRegion(
+            qupath.lib.regions.RegionRequest.createInstance(svServer.getPath(), svDown, svRoi))
+        def svOld = svId.getColorDeconvolutionStains()
+        def svNew = qupath.lib.analysis.algorithms.EstimateStainVectors.estimateStains(
+            svImg, svOld, 0.05d, 1.0d, 1.0d, true)
+        svId.setColorDeconvolutionStains(svNew.changeName('Bölgeden tahmin (Atölye)'))
+        javafx.application.Platform.runLater {
+            try { qupath.lib.gui.QuPathGUI.getInstance()?.getViewer()?.repaintEntireImage() } catch (Throwable svR) { }
+        }
+        qupath.fx.dialogs.Dialogs.showMessageDialog('Boya vektörleri',
+            'Vektörler seçili bölgeden tahmin edilip uygulandı. Modülü şimdi çalıştırabilirsiniz.')
+    } catch (Throwable svErr) {
+        qupath.fx.dialogs.Dialogs.showMessageDialog('Boya vektörleri',
+            'Tahmin yapılamadı: ' + (svErr.getMessage() ?: svErr.getClass().getSimpleName()))
+    }
+}
+suggestStainVectors()
+
 def showResultWindow = { String windowTitle, String windowBody ->
     if (isHeadless) {
         println "=== ${windowTitle} ===\n${windowBody}\n=================="
