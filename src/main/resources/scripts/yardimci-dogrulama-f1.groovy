@@ -41,9 +41,10 @@
  *
  * ÇIKTI:
  *   • Sonuç penceresinde TP / FP / FN + precision / recall / F1 (IoU modunda ayrıca
- *     SQ = ortalama eşleşen IoU ve PQ = panoptik kalite — Kirillov ve ark. 2019)
+ *     SQ = ortalama eşleşen IoU, PQ = panoptik kalite — Kirillov ve ark. 2019 — ve
+ *     alan tabanlı Dice/IoU + aşırı/yetersiz bölütleme sayımı)
  *   • Kilitli "Doğrulama Özet" anotasyonu (Modül 9 ile dışa aktarılır)
- *   • (İsteğe bağlı) tahminleri renklendir: TP / FP sınıflarına ayır
+ *   • (İsteğe bağlı) nesneleri renklendir: TP / FP (tahmin) + FN (referans) sınıflarına ayır
  *
  * YÖNTEM REFERANSLARI:
  *   • Pécot T — Whole Slide Image Analysis with QuPath (CC-BY): zenodo 6391629;
@@ -51,6 +52,9 @@
  *   • Kirillov A et al. (2019), CVPR — Panoptic Segmentation (PQ = SQ × RQ metriği).
  *     arXiv:1801.00868. Örnek-düzeyi tespit QC yaklaşımı: K. Gallik, Helsinki BioImage 2026.
  *   • Bankhead P et al. (2017), Sci Rep — QuPath. doi:10.1038/s41598-017-17204-5
+ *   • MontpellierRessourcesImagerie — BioCampus QuPath Atölyesi 2026 (qupath-bcm-workshop):
+ *     görsel TP/FP/FN katmanı + alan Dice + aşırı/yetersiz bölütleme fikirlerinin kaynağı
+ *     (teknikten ilham; depo lisanssız — koddan aktarım yapılmadı).
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
@@ -147,6 +151,10 @@ def computeMatch = { gtUnits, predUnits, mode, double thr, boolean hasMicrons, d
     def pairs = []   // [gi, pi, score] — IoU: yüksek iyi; Merkez: düşük (mesafe) iyi
     double dthrPx = hasMicrons ? (thr / avgUm) : thr   // Merkez modunda eşik px'e çevrilir
 
+    // Örtüşme kümeleri (yalnız IoU modu) — aşırı/yetersiz bölütleme sayımı için.
+    def gtOverlapSets = (mode == 'IOU') ? (0..<nGt).collect { new HashSet() } : null
+    def predOverlapSets = (mode == 'IOU') ? (0..<nPred).collect { new HashSet() } : null
+
     gtUnits.eachWithIndex { g, gi ->
         predUnits.eachWithIndex { p, pi ->
             if (mode == 'IOU') {
@@ -156,9 +164,15 @@ def computeMatch = { gtUnits, predUnits, mode, double thr, boolean hasMicrons, d
                     if (!ga.getEnvelopeInternal().intersects(pa.getEnvelopeInternal())) return
                     double inter = ga.intersection(pa).getArea()
                     if (inter <= 0) return
-                    double uni = ga.getArea() + pa.getArea() - inter
+                    double gArea = ga.getArea(); double pArea = pa.getArea()
+                    double uni = gArea + pArea - inter
                     if (uni <= 0) return
                     double iou = inter / uni
+                    double fracG = gArea > 0 ? (inter / gArea) : 0.0d
+                    double fracP = pArea > 0 ? (inter / pArea) : 0.0d
+                    if (fracG >= 0.10d || fracP >= 0.10d || iou >= 0.05d) {
+                        gtOverlapSets[gi].add(pi); predOverlapSets[pi].add(gi)
+                    }
                     if (iou >= thr) pairs << [gi: gi, pi: pi, score: iou]
                 } catch (Throwable ignore) { /* geçersiz poligon → örtüşme yok say */ }
             } else { // CENTROID
@@ -189,14 +203,40 @@ def computeMatch = { gtUnits, predUnits, mode, double thr, boolean hasMicrons, d
     int tp = usedG.size()
     int fn = nGt - tp
     int fp = nPred - usedP.size()
-    return [tp: tp, fp: fp, fn: fn, usedP: usedP, nGt: nGt, nPred: nPred, matchedIoUSum: matchedIoUSum]
+
+    // Aşırı/yetersiz bölütleme + alan tabanlı Dice/IoU (yalnız IoU modu).
+    int overSeg = 0
+    int underSeg = 0
+    double areaIoU = Double.NaN
+    double areaDice = Double.NaN
+    if (mode == 'IOU') {
+        overSeg = gtOverlapSets.count { it.size() > 1 } as int      // 1 GT ↔ >1 tahmin
+        underSeg = predOverlapSets.count { it.size() > 1 } as int   // 1 tahmin ↔ >1 GT
+        try {
+            def gGeoms = gtUnits.collect { it.geom }.findAll { it != null }
+            def pGeoms = predUnits.collect { it.geom }.findAll { it != null }
+            if (!gGeoms.isEmpty() && !pGeoms.isEmpty()) {
+                def gU = org.locationtech.jts.operation.union.UnaryUnionOp.union(gGeoms)
+                def pU = org.locationtech.jts.operation.union.UnaryUnionOp.union(pGeoms)
+                double gA = gU.getArea(); double pA = pU.getArea()
+                double iA = gU.intersection(pU).getArea()
+                double uA = gA + pA - iA
+                if (uA > 0) areaIoU = iA / uA
+                if ((gA + pA) > 0) areaDice = 2.0d * iA / (gA + pA)
+            }
+        } catch (Throwable ignore) {}
+    }
+
+    return [tp: tp, fp: fp, fn: fn, usedP: usedP, usedG: usedG, nGt: nGt, nPred: nPred,
+            matchedIoUSum: matchedIoUSum, overSeg: overSeg, underSeg: underSeg,
+            areaIoU: areaIoU, areaDice: areaDice]
 }
 
 // ── Bir doğrulama koşusu: bağlam + seçimler → sonuç metni + sayılar ─────
 // Dönüş: [ok:true, text, tp, fp, fn, precision, recall, f1, ...]
 //      | [ok:false, reason, ...]
 def runValidation = { String gtLabel, String predLabel, String mode, double thr,
-                      boolean recolor, ctx ->
+                      boolean recolor, boolean recolorFN, ctx ->
     def inPatch = ctx.inPatch
     boolean predAll = (predLabel == ALL_DET)
 
@@ -256,6 +296,10 @@ def runValidation = { String gtLabel, String predLabel, String mode, double thr,
     if (panopticOk) {
         b << "SQ (ort. eşleşen IoU) : " << fmtMetric(sq) << "   = Σ IoU(eşleşen) / TP\n"
         b << "PQ (panoptik kalite)  : " << fmtMetric(pq) << "   = SQ × F1  (Kirillov 2019)\n"
+        b << "Dice (alan tabanlı)   : " << fmtMetric((double) m.areaDice) << "   = 2·kesişim/(GT+Tahmin alanı)\n"
+        b << "IoU (alan tabanlı)    : " << fmtMetric((double) m.areaIoU) << "   = kesişim/birleşim (bölge)\n"
+        b << String.format(java.util.Locale.US, "Aşırı bölütleme (N)   : %d   (1 GT ↔ >1 tahmin)%n", m.overSeg)
+        b << String.format(java.util.Locale.US, "Yetersiz bölütleme (N): %d   (1 tahmin ↔ >1 GT)%n", m.underSeg)
     }
     b << "\n"
     b << "Eşleştirme açgözlü bire-bir; skorlar 0–1 arası (yüzde değil).\n"
@@ -279,6 +323,10 @@ def runValidation = { String gtLabel, String predLabel, String mode, double thr,
     if (!Double.isNaN(f1))        summary.measurements["Doğrulama: F1"] = f1
     if (panopticOk && !Double.isNaN(sq)) summary.measurements["Doğrulama: SQ"] = sq
     if (panopticOk && !Double.isNaN(pq)) summary.measurements["Doğrulama: PQ"] = pq
+    if (panopticOk && !Double.isNaN((double) m.areaDice)) summary.measurements["Doğrulama: Dice (alan)"] = (double) m.areaDice
+    if (panopticOk && !Double.isNaN((double) m.areaIoU))  summary.measurements["Doğrulama: IoU (alan)"] = (double) m.areaIoU
+    if (panopticOk) summary.measurements["Doğrulama: Aşırı bölütleme (N)"]   = (m.overSeg as double)
+    if (panopticOk) summary.measurements["Doğrulama: Yetersiz bölütleme (N)"] = (m.underSeg as double)
     summary.measurements["Doğrulama: Altın standart (N)"] = gtUnits.size() as double
     summary.measurements["Doğrulama: Tahmin (N)"] = predUnits.size() as double
     if (mode == 'IOU') summary.measurements["Doğrulama: IoU eşik"] = thr
@@ -286,23 +334,32 @@ def runValidation = { String gtLabel, String predLabel, String mode, double thr,
     summary.setLocked(true)
     QP.addObjects([summary])
 
-    // ── (İsteğe bağlı) tahminleri renklendir: TP / FP ──────────────────
+    // ── (İsteğe bağlı) nesneleri renklendir: TP / FP (tahmin) ve FN (referans) ──
     int recolored = 0
-    if (recolor) {
-        def makeClass = { String name, int r, int g, int bl ->
-            try {
-                return qupath.lib.objects.classes.PathClass.getInstance(name,
-                        qupath.lib.common.ColorTools.packRGB(r, g, bl))
-            } catch (Throwable t) {
-                return QP.getPathClass(name)
-            }
+    def makeClass = { String name, int r, int g, int bl ->
+        try {
+            return qupath.lib.objects.classes.PathClass.getInstance(name,
+                    qupath.lib.common.ColorTools.packRGB(r, g, bl))
+        } catch (Throwable t) {
+            return QP.getPathClass(name)
         }
+    }
+    if (recolor) {
         def tpClass = makeClass("Doğrulama: TP", 0, 160, 0)
         def fpClass = makeClass("Doğrulama: FP", 215, 45, 45)
         predUnits.eachWithIndex { p, pi ->
             if (p.source == null) return   // açılmış nokta — tek tek renklendirilemez
             p.source.setPathClass(m.usedP.contains(pi) ? tpClass : fpClass)
             recolored++
+        }
+    }
+    if (recolorFN) {
+        // Kaçırılan referanslar (FN) = eşleşmeyen altın standart nesneleri → mor.
+        // Yalnız POLİGON referanslar için çalışır (nokta/dot referansların source'u yoktur).
+        def fnClass = makeClass("Doğrulama: FN", 150, 20, 200)
+        gtUnits.eachWithIndex { g, gi ->
+            if (g.source == null) return
+            if (!m.usedG.contains(gi)) { g.source.setPathClass(fnClass); recolored++ }
         }
     }
     QP.fireHierarchyUpdate()
@@ -350,7 +407,7 @@ if (isHeadless) {
     def opt = buildOptions(ctx.inPatch)
     if (opt.gtDefault == null) { println "Bölge içinde altın standart adayı nesne yok."; return }
     double thr = (opt.modeDefault == 'IOU') ? DEFAULT_IOU : DEFAULT_CENTROID_UM
-    def res = runValidation(opt.gtDefault, ALL_DET, opt.modeDefault, thr, false, ctx)
+    def res = runValidation(opt.gtDefault, ALL_DET, opt.modeDefault, thr, false, false, ctx)
     if (!res.ok) {
         def msg = [NO_GT: "Altın standart sınıfında nesne yok.",
                    NO_PRED: "Tahmin (tespit) bulunamadı.",
@@ -378,6 +435,7 @@ def modeChoice = new AtomicReference('IOU')
 def iouThr = new AtomicReference(DEFAULT_IOU as Double)
 def centThr = new AtomicReference(DEFAULT_CENTROID_UM as Double)
 def recolor = new AtomicBoolean(false)
+def recolorFN = new AtomicBoolean(false)
 def render  // forward declaration
 
 def navButton = { String text, Closure action, String tooltip = null ->
@@ -414,12 +472,13 @@ def startCompute = {
     String mode = modeChoice.get()
     double thr = (mode == 'IOU') ? (iouThr.get() as double) : (centThr.get() as double)
     boolean rc = recolor.get()
+    boolean rcFn = recolorFN.get()
     def worker = new Thread({
-        def res = runValidation(gtL, predL, mode, thr, rc, ctx)
+        def res = runValidation(gtL, predL, mode, thr, rc, rcFn, ctx)
         javafx.application.Platform.runLater {
             if (res.ok) {
                 resultRef.set(res)
-                if (rc && res.recolored > 0) repaintViewer()
+                if ((rc || rcFn) && res.recolored > 0) repaintViewer()
                 step.set('RESULT')
             } else {
                 errorRef.set(res.reason)
@@ -543,6 +602,11 @@ render = { ->
                 rcChk.selectedProperty().addListener({ obs, o, n -> recolor.set(n) } as javafx.beans.value.ChangeListener)
                 grid.add(rcChk, 0, row, 2, 1); row++
 
+                def rcFnChk = new javafx.scene.control.CheckBox('FN referanslarını da işaretle (mor) — altın standart sınıfını değiştirir (yalnız poligon referans)')
+                rcFnChk.setSelected(recolorFN.get())
+                rcFnChk.selectedProperty().addListener({ obs, o, n -> recolorFN.set(n) } as javafx.beans.value.ChangeListener)
+                grid.add(rcFnChk, 0, row, 2, 1); row++
+
                 center.getChildren().add(grid)
                 addGuidance('Nokta (dot) ile işaretlenmiş referans için "Merkez" modunu kullanın;\n' +
                             'küçük poligonlarla işaretlediyseniz "IoU" modu daha katıdır.')
@@ -561,8 +625,9 @@ render = { ->
         title.setText('Doğrulama sonucu')
         addReportArea(res?.text)
         if (res?.recolored != null && res.recolored > 0) {
-            addGuidance('Renklendirildi: ' + res.recolored + ' tahmin TP/FP sınıfına ayrıldı. ' +
-                        'Geri almak için tespiti yeniden çalıştırın ya da sınıfları temizleyin.')
+            addGuidance('Renklendirildi: ' + res.recolored + ' nesne TP/FP/FN sınıfına ayrıldı. ' +
+                        'Geri almak için tespiti yeniden çalıştırın ya da sınıfları temizleyin ' +
+                        '(FN için altın standart sınıfını yeniden atayın).')
         }
         actions.add(navButton('◀ Forma dön', { step.set('FORM'); render() }))
         actions.add(navButton('Kopyala', { copyToClipboard(res?.text) }))

@@ -156,7 +156,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Yoğunluk haritası",              "yardimci-yogunluk-haritasi.groovy"),
             // İki sınıflı geometri örtüşmesi: kesişim alanı (µm²) + peritümöral halka (buffer/difference). bkz. Ek M.
             new ScriptEntry("Kesişim alanı (örtüşme)",        "yardimci-kesisim-alani.groovy"),
-            new ScriptEntry("Peritümöral bant (halka)",       "yardimci-peritumoral-bant.groovy")
+            new ScriptEntry("Peritümöral bant (halka)",       "yardimci-peritumoral-bant.groovy"),
+            // Nesne kümesinin dış bükey zarfı (JTS convexHull) — yayılım alanı. bkz. Ek M.
+            new ScriptEntry("Dış bükey zarf (convex hull)",   "yardimci-konveks-zarf.groovy")
         )),
         new ScriptGroup("İçe / dışa aktarma & veri", List.of(
             new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy"),
