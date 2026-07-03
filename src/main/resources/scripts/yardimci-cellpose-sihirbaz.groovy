@@ -7,8 +7,9 @@
  *   BIOP `qupath-extension-cellpose` eklentisinin `Cellpose2D` builder'ını
  *   tek bir pencereden kurar ve seçili anotasyon(lar) içinde hücre/çekirdek
  *   tespiti çalıştırır — builder betiğini elle yazmadan. Aile (cyto3 / cpsam /
- *   Omnipose), model, çap, kanal modu (brightfield İHK dekonvolüsyon ya da
- *   basit/floresan) ve flow/cellprob eşikleri pencereden seçilir.
+ *   Omnipose), model, çap, kanal modu (brightfield İHK dekonvolüsyon; basit/floresan;
+ *   ya da floresan 2-kanal = sitoplazma + çekirdek, Cellpose yerel çift-kanal) ve
+ *   flow/cellprob eşikleri pencereden seçilir.
  *   Derin öğrenme QuPath DIŞINDA, BIOP eklentisinin yapılandırdığınız Python
  *   venv'inde koşar; bu betik yalnızca builder'ı kurar ve sonucu raporlar.
  *
@@ -99,7 +100,8 @@ if (imageData == null) {
 // ──────────────────────────────────────────────────────────────
 def runDetection = { String family, String model, String channelMode,
                      int diameter, double pixelSize, double flow, double cellprob, double cellExpansion,
-                     boolean ihcBin, double t1, double t2, double t3, String compartment ->
+                     boolean ihcBin, double t1, double t2, double t3, String compartment,
+                     int cytoCh, int nucCh ->
 
     if (!cellposeHere)
         return [ok:false, error:'BIOP Cellpose eklentisi bulunamadı. Kurulum: Ek F § 2 (Extensions → Manage extension catalogs → BIOP).']
@@ -128,6 +130,9 @@ def runDetection = { String family, String model, String channelMode,
         // Brightfield H-DAB → renk dekonvolüsyonu + DAB(1)/Hematoxylin(0) çıkar.
         chain << "        .preprocess(ImageOps.Channels.deconvolve(stains), ImageOps.Channels.extract(1, 0))\n"
         chain << "        .cellposeChannels(1, 2)\n"
+    } else if (channelMode == 'floresan 2-kanal') {
+        // Cellpose YEREL çift-kanal (dual-compartment): sitoplazma + çekirdek kanalı (1-tabanlı).
+        chain << "        .cellposeChannels(${cytoCh}, ${nucCh})\n"
     }
     chain << "        .normalizePercentilesGlobal(0.1, 99.8, 10)\n"
     chain << "        .diameter(${diameter})\n"
@@ -245,12 +250,68 @@ if (isHeadless) {
 // ──────────────────────────────────────────────────────────────
 // Tek pencere: ayarla → Çalıştır → sonuç → (gerekirse) tekrar
 // ──────────────────────────────────────────────────────────────
+
+// ── Menü vurgusu (Atölye #3) — üst menü çubuğunda bir üst-menü başlığını turuncu iç
+// parıltıyla işaretler (başlık bulunamazsa tüm menü çubuğunu). SALT-GÖRSEL: menüyü
+// AÇMAZ, hiçbir şeyi tıklamaz/değiştirmez (sihirbazların salt-okur sözleşmesi). Tüm
+// setEffect çağrıları FX iş parçacığında; pencere kapanınca temizlenir (tek-pencere
+// sihirbazı: render döngüsü yoktur, ara temizlik yalnız kullanıcı toggle'ı kapatınca olur).
+def menuHiRef = new java.util.concurrent.atomic.AtomicReference(null)   // [node, origEffect] | null
+def clearMenuHighlight = { ->
+    javafx.application.Platform.runLater {
+        def cur = menuHiRef.getAndSet(null)
+        if (cur != null) { try { ((javafx.scene.Node) cur[0]).setEffect((javafx.scene.effect.Effect) cur[1]) } catch (Throwable t) {} }
+    }
+}
+def applyMenuHighlight = { String menuName ->
+    def g = qupath.lib.gui.QuPathGUI.getInstance()
+    if (g == null) return
+    javafx.application.Platform.runLater {
+        try {
+            // önce önceki vurguyu ATOMİK geri yükle (hızlı toggle'da takılı parıltı kalmasın)
+            def prev = menuHiRef.getAndSet(null)
+            if (prev != null) { try { ((javafx.scene.Node) prev[0]).setEffect((javafx.scene.effect.Effect) prev[1]) } catch (Throwable t) {} }
+            def mb = g.getMenuBar()
+            if (mb == null) return
+            javafx.scene.Node target = null
+            def want = menuName?.toLowerCase(java.util.Locale.ROOT)
+            if (want != null) {
+                // Yalnız üst-menü başlıkları (.menu-button); '.menu' alt-menülere de inip yanlış
+                // düğümü işaretleyebildiğinden kullanılmaz. Bulunamazsa tüm menü çubuğuna düşülür.
+                for (n in mb.lookupAll('.menu-button')) {
+                    try {
+                        def txt = (n instanceof javafx.scene.control.Labeled) ? ((javafx.scene.control.Labeled) n).getText() : null
+                        if (txt != null && txt.toLowerCase(java.util.Locale.ROOT).contains(want)) { target = n; break }
+                    } catch (Throwable t) {}
+                }
+            }
+            boolean spot = (target != null)
+            if (target == null) target = mb
+            def orig = target.getEffect()
+            menuHiRef.set([target, orig])
+            def glow = new javafx.scene.effect.InnerShadow()
+            glow.setColor(javafx.scene.paint.Color.web('#FF7A00'))   // turuncu (tur sihirbazıyla aynı)
+            glow.setRadius(spot ? 8.0d : 12.0d)
+            glow.setChoke(spot ? 0.85d : 0.5d)
+            target.setEffect(glow)
+        } catch (Throwable t) { menuHiRef.set(null) }
+    }
+}
+def menuHighlightToggle = { String menuName ->
+    def tb = new javafx.scene.control.ToggleButton(menuName + ' menüsünü göster')
+    tb.setTooltip(new javafx.scene.control.Tooltip(
+        'Üst menü çubuğunda "' + menuName + '" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).'))
+    tb.setOnAction({ if (tb.isSelected()) applyMenuHighlight(menuName) else clearMenuHighlight() })
+    return tb
+}
+
 javafx.application.Platform.runLater {
     try {
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
         stage.setTitle('Cellpose hücre / çekirdek tespiti sihirbazı')
         stage.setAlwaysOnTop(true)
+        stage.setOnHidden({ clearMenuHighlight() })   // #3: pencere kapanınca menü vurgusunu kaldır
 
         def title = new javafx.scene.control.Label('Cellpose hücre / çekirdek tespiti')
         title.setStyle('-fx-font-size: 14px; -fx-font-weight: bold;')
@@ -270,14 +331,21 @@ javafx.application.Platform.runLater {
         familyBox.getItems().addAll('cyto3', 'cpsam', 'omnipose'); familyBox.setValue(cfg.family)
         def modelField = new javafx.scene.control.TextField(cfg.model); modelField.setPrefWidth(160)
         def channelBox = new javafx.scene.control.ChoiceBox()
-        channelBox.getItems().addAll('brightfield', 'simple'); channelBox.setValue(cfg.channelMode)
+        channelBox.getItems().addAll('brightfield', 'simple', 'floresan 2-kanal')
+        channelBox.setValue(channelBox.getItems().contains(cfg.channelMode) ? cfg.channelMode : 'brightfield')
 
         def spDia  = new javafx.scene.control.Spinner(0, 200, parseIntOr(cfg.diameter, 25), 1)
         def spPx   = new javafx.scene.control.Spinner(0.1, 4.0, parseDoubleOr(cfg.pixelSize, 0.5), 0.05)
         def spFlow = new javafx.scene.control.Spinner(0.0, 3.0, parseDoubleOr(cfg.flow, 0.4), 0.05)
         def spProb = new javafx.scene.control.Spinner(-6.0, 6.0, parseDoubleOr(cfg.cellprob, 0.0), 0.5)
         def spExp  = new javafx.scene.control.Spinner(0.0, 20.0, parseDoubleOr(cfg.cellExpansion, 5.0), 0.5)
-        [spDia, spPx, spFlow, spProb, spExp].each { it.setEditable(true); it.setPrefWidth(110) }
+        // "floresan 2-kanal" modu: Cellpose'un YEREL çift-kanal segmentasyonu (sitoplazma + çekirdek
+        // kanalı). Brightfield modu zaten .cellposeChannels(1,2) (DAB+Hematoxylin) kullanır; bu, aynı
+        // dual-compartment yaklaşımı floresan panel için açar — çekirdek kanalı hücre segmentasyonuna
+        // yardım eder ve TEK temiz hücre topluluğu üretilir (ayrı ikinci model çalıştırmaya gerek yok).
+        def spCyto = new javafx.scene.control.Spinner(1, 12, parseIntOr(prefs.get('cytoCh', '1'), 1), 1)
+        def spNuc  = new javafx.scene.control.Spinner(1, 12, parseIntOr(prefs.get('nucCh', '2'), 2), 1)
+        [spDia, spPx, spFlow, spProb, spExp, spCyto, spNuc].each { it.setEditable(true); it.setPrefWidth(110) }
 
         def grid = new javafx.scene.layout.GridPane()
         grid.setHgap(8); grid.setVgap(6); grid.setPadding(new javafx.geometry.Insets(6))
@@ -289,6 +357,8 @@ javafx.application.Platform.runLater {
         grid.addRow(5, new javafx.scene.control.Label('flowThreshold'),     spFlow)
         grid.addRow(6, new javafx.scene.control.Label('cellprobThreshold'), spProb)
         grid.addRow(7, new javafx.scene.control.Label('Hücre genişletme (µm)'), spExp)
+        grid.addRow(8, new javafx.scene.control.Label('Floresan 2-kanal — sito · çekirdek (1-tabanlı)'),
+            new javafx.scene.layout.HBox(6, spCyto, spNuc))
 
         // İHK yoğunluk binning (opsiyonel, gelişmiş)
         def binChk = new javafx.scene.control.CheckBox('İHK yoğunluk binning uygula (0/1+/2+/3+)')
@@ -331,6 +401,8 @@ javafx.application.Platform.runLater {
             prefs.put('cellExpansion', String.valueOf(spExp.getValue()))
             prefs.put('ihcBin', String.valueOf(binChk.isSelected()))
             prefs.put('compartment', compartBox.getValue() as String)
+            prefs.put('cytoCh', String.valueOf(spCyto.getValue()))
+            prefs.put('nucCh', String.valueOf(spNuc.getValue()))
 
             String fam = familyBox.getValue() as String
             String mdl = modelField.getText()?.trim() ?: 'cyto3'
@@ -345,12 +417,14 @@ javafx.application.Platform.runLater {
             double t2 = spT2.getValue() as double
             double t3 = spT3.getValue() as double
             String comp = compartBox.getValue() as String
+            int cytoCh = spCyto.getValue() as int
+            int nucCh = spNuc.getValue() as int
 
             runBtn.setDisable(true)
             status.setStyle(''); status.setText('… Cellpose çalışıyor (ilk koşuda model indirilebilir)…')
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             def worker = new Thread({
-                def res = runDetection(fam, mdl, chan, dia, px, fl, pr, ex, bin, t1, t2, t3, comp)
+                def res = runDetection(fam, mdl, chan, dia, px, fl, pr, ex, bin, t1, t2, t3, comp, cytoCh, nucCh)
                 javafx.application.Platform.runLater {
                     progress.setVisible(false); progress.setManaged(false); runBtn.setDisable(false)
                     if (res.ok) {
@@ -380,7 +454,8 @@ javafx.application.Platform.runLater {
 
         def spacer = new javafx.scene.layout.Region()
         javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-        def btnRow = new javafx.scene.layout.HBox(8, alwaysTop, spacer, copyBtn, runBtn, closeBtn)
+        def menuToggle = menuHighlightToggle('Edit')   // #3: Edit menüsünü göster (Preferences oradadır)
+        def btnRow = new javafx.scene.layout.HBox(8, alwaysTop, menuToggle, spacer, copyBtn, runBtn, closeBtn)
         btnRow.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
 
         def content = new javafx.scene.layout.VBox(10, title, banner, info, grid, advBin, status, progress, resultArea)

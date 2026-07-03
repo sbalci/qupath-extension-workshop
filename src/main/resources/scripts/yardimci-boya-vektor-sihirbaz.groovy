@@ -338,9 +338,63 @@ def revertVectors = {
     step.set('REPORT'); render()
 }
 
+// ── Menü vurgusu (Atölye #3) — üst menü çubuğunda bir üst-menü başlığını turuncu iç
+// parıltıyla işaretler (başlık bulunamazsa tüm menü çubuğunu). SALT-GÖRSEL: menüyü
+// AÇMAZ, hiçbir şeyi tıklamaz/değiştirmez (sihirbazların salt-okur sözleşmesi). Tüm
+// setEffect çağrıları FX iş parçacığında; render başında ve pencere kapanınca temizlenir.
+def menuHiRef = new java.util.concurrent.atomic.AtomicReference(null)   // [node, origEffect] | null
+def clearMenuHighlight = { ->
+    javafx.application.Platform.runLater {
+        def cur = menuHiRef.getAndSet(null)
+        if (cur != null) { try { ((javafx.scene.Node) cur[0]).setEffect((javafx.scene.effect.Effect) cur[1]) } catch (Throwable t) {} }
+    }
+}
+def applyMenuHighlight = { String menuName ->
+    def g = qupath.lib.gui.QuPathGUI.getInstance()
+    if (g == null) return
+    javafx.application.Platform.runLater {
+        try {
+            // önce önceki vurguyu ATOMİK geri yükle (hızlı toggle'da takılı parıltı kalmasın)
+            def prev = menuHiRef.getAndSet(null)
+            if (prev != null) { try { ((javafx.scene.Node) prev[0]).setEffect((javafx.scene.effect.Effect) prev[1]) } catch (Throwable t) {} }
+            def mb = g.getMenuBar()
+            if (mb == null) return
+            javafx.scene.Node target = null
+            def want = menuName?.toLowerCase(java.util.Locale.ROOT)
+            if (want != null) {
+                // Yalnız üst-menü başlıkları (.menu-button); '.menu' alt-menülere de inip yanlış
+                // düğümü işaretleyebildiğinden kullanılmaz. Bulunamazsa tüm menü çubuğuna düşülür.
+                for (n in mb.lookupAll('.menu-button')) {
+                    try {
+                        def txt = (n instanceof javafx.scene.control.Labeled) ? ((javafx.scene.control.Labeled) n).getText() : null
+                        if (txt != null && txt.toLowerCase(java.util.Locale.ROOT).contains(want)) { target = n; break }
+                    } catch (Throwable t) {}
+                }
+            }
+            boolean spot = (target != null)
+            if (target == null) target = mb
+            def orig = target.getEffect()
+            menuHiRef.set([target, orig])
+            def glow = new javafx.scene.effect.InnerShadow()
+            glow.setColor(javafx.scene.paint.Color.web('#FF7A00'))   // turuncu (tur sihirbazıyla aynı)
+            glow.setRadius(spot ? 8.0d : 12.0d)
+            glow.setChoke(spot ? 0.85d : 0.5d)
+            target.setEffect(glow)
+        } catch (Throwable t) { menuHiRef.set(null) }
+    }
+}
+def menuHighlightToggle = { String menuName ->
+    def tb = new javafx.scene.control.ToggleButton(menuName + ' menüsünü göster')
+    tb.setTooltip(new javafx.scene.control.Tooltip(
+        'Üst menü çubuğunda "' + menuName + '" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).'))
+    tb.setOnAction({ if (tb.isSelected()) applyMenuHighlight(menuName) else clearMenuHighlight() })
+    return tb
+}
+
 render = { ->
     if (stage == null) return
     stage.setAlwaysOnTop(alwaysTop.get())   // her render'da üstte-kal yeniden uygulanır
+    clearMenuHighlight()   // #3: durum değişiminde/yenilemede takılı menü vurgusunu kaldır
     def cur = step.get()
 
     def title = new javafx.scene.control.Label()
@@ -458,6 +512,7 @@ render = { ->
     def bar = new javafx.scene.layout.HBox(8)
     bar.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
     bar.getChildren().add(topChk)
+    bar.getChildren().add(menuHighlightToggle('Analyze'))   // #3: Analyze menüsünü göster
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
@@ -480,6 +535,7 @@ javafx.application.Platform.runLater {
         stage.initModality(javafx.stage.Modality.NONE)
         stage.setTitle('Boya vektörleri sihirbazı')
         stage.setAlwaysOnTop(alwaysTop.get())
+        stage.setOnHidden({ clearMenuHighlight() })   // #3: pencere kapanınca menü vurgusunu kaldır
         render()
         stage.show()
     } catch (Throwable t) {

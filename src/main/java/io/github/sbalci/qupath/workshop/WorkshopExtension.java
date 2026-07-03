@@ -70,6 +70,11 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
      * {@code /scripts/} resource directory (ASCII for cross-platform safety).
      */
     private static final List<ScriptEntry> SCRIPTS = List.of(
+        // Modül 1: interaktif arayüz turu (modul-01-arayuz-turu). QuPath arayüzünü
+        // gezdirir; nesne/ölçüm DEĞİŞTİRMEZ ve açık slayt gerektirmez (needsImage=false)
+        // — atölyenin ilk adımı, slayt açılmadan çalıştırılabilir. Statik karşılığı
+        // Modül 1 (01-qupath-tanitim); ilham: qupath-extension-training (Apache-2.0).
+        new ScriptEntry("Modül 1 - Arayüz turu",                    "modul-01-arayuz-turu.groovy", false, false),
         new ScriptEntry("Modül 2 - Hücre tespiti",                  "modul-02-hucre-tespiti.groovy"),
         new ScriptEntry("Modül 3a - Nükleer boya (Ki-67)",          "modul-03a-nukleer-boya.groovy"),
         new ScriptEntry("Modül 3b - ER / PR H-score",               "modul-03b-er-pr-hscore.groovy"),
@@ -90,146 +95,124 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Modül 9 - Veri dışa aktarma",              "modul-09-veri-aktarma.groovy")
     );
 
+    /** A named topic group of utility scripts → renders as a sub-menu under "Yardımcılar". */
+    private record ScriptGroup(String title, List<ScriptEntry> entries) {}
+
     /**
-     * Utility (non-module) scripts displayed below a separator, after the
-     * numbered workflow modules. Add new helpers here without touching the
-     * module list.
+     * Utility (non-module) helper scripts, GROUPED BY TOPIC. Each group renders as a
+     * sub-menu under "Yardımcılar" (Extensions → Atölye → Yardımcılar → &lt;konu&gt; → script).
+     * Add a new helper to the most relevant group (or add a new group); the menu builder
+     * renders groups + entries in list order. Byte-identity with handson/scripts is enforced
+     * separately in tools/check-script-sync.ps1 (its pair list, not this structure).
      */
-    private static final List<ScriptEntry> UTILITY_SCRIPTS = List.of(
-        new ScriptEntry("Tespitleri sil",              "yardimci-tespitleri-sil.groovy"),
-        new ScriptEntry("Görüntü tipi ayarla",         "yardimci-image-type.groovy", false, false),  // tüm-proje kapsamı: açık slayt gerekmez
-        new ScriptEntry("Eşikleri ayarla",             "yardimci-esik-ayarla.groovy"),
-        new ScriptEntry("Kalibrasyon (piksel boyutu)", "yardimci-kalibrasyon.groovy"),
-        // "Analiz etmeden önce verine bak" — bioimagebook (Bankhead, CC-BY 4.0) Bölüm 1'in
-        // tek-tık karşılığı: salt-okur künye + kanal histogramı + doygunluk/clipping.
-        // bkz. Ekler → Görüntü Analizi Temelleri.
-        new ScriptEntry("Görüntü künyesi ve histogram", "yardimci-goruntu-kunye.groovy"),
-        // Ekran kaydı / canlı sunum yardımcısı — bastığınız tuş ve fare işlemlerini
-        // ekranda gösterir/gizler (qupath.fx.controls.InputDisplay; aç/kapa anahtarı).
-        new ScriptEntry("Tuş/fare göstergesi (kayıt için)", "yardimci-tus-fare-gostergesi.groovy", false, false),  // global ekran katmanı: açık slayt gerekmez
-        // Tek-pencere sihirbaz: mevcut vektörleri raporlar (kontrol) + seçili bölgeden
-        // tahmin → önizle → uygula → geri al, hepsi aynı pencerede. Eski iki ayrı
-        // yardımcı ("kontrol et" + "tahmin et") buna katlandı.
-        new ScriptEntry("Boya vektörleri sihirbazı", "yardimci-boya-vektor-sihirbaz.groovy"),
-        // Boya KALİTESİ QC: seçili bölgede H:E OD oranı + ortalama OD + CIELAB L* (H:E L* oranı,
-        // Dunn 2025 0,94–0,99) + doku%. Tarayıcı/zaman karşılaştırma; ölçüm-only. Bkz. Ek A.
-        new ScriptEntry("Boya kalitesi QC ölçümü", "yardimci-boya-kalite-qc.groovy"),
-        // Salt-okur renk denetçisi — açık slaytın dosyasında gömülü ICC profilini
-        // (standart TIFF etiketi 34675 + Aperio/GT450 taşınmış 0xFFFF) Bio-Formats ile
-        // okur; ImageScope↔QuPath renk farkını açıklar. Görüntüyü DEĞİŞTİRMEZ; profili
-        // UYGULAMAZ (QuPath 0.6/0.7 ICC uygulamayı kararlı desteklemez — qupath#982).
-        // bkz. Ekler → Renk Yönetimi (ICC).
-        new ScriptEntry("ICC renk profili denetçisi", "yardimci-icc-denetci-sihirbaz.groovy"),
-        new ScriptEntry("Örnek tümör/stroma sınıflandırıcısını projeye kaydet", "yardimci-ornek-siniflandirici.groovy", false, false),  // proje düzeyi: açık slayt gerekmez
-        new ScriptEntry("Eşik ile alan ölçümü",        "yardimci-esik-alan.groovy"),
-        // Çok-sınıflı / fenotip sonuçlarında her sınıfın adet + % dağılımı (FS2K Session 6–8 /
-        // CellClassPct eşi). Tespit YAPMAZ; var olan sınıflandırmaları seçili bölgede sayar.
-        new ScriptEntry("Sınıf bazlı hücre sayımı (% dağılım)", "yardimci-sinif-sayim.groovy"),
-        // ── Uzamsal analiz (FS2K Session 12) — var olan tespitlerden doku düzenini ÖLÇER
-        // (klinik yorum üretmez). bkz. Ekler → Uzamsal Komşuluk Analizi (Ek M).
-        // Yapıya uzaklık: her hücrenin merkezinden seçili yapının (tümör sınırı, damar,
-        // invazyon kenarı) sınırına işaretli µm mesafe (− = içeride); TIL (Ek O) / TSR (Ek L)'yi besler.
-        new ScriptEntry("Yapıya uzaklık (sınıra mesafe)", "yardimci-yapi-uzaklik.groovy"),
-        new ScriptEntry("Delaunay komşuluk özellikleri",  "yardimci-delaunay-komsuluk.groovy"),
-        new ScriptEntry("En yakın komşu mesafesi",        "yardimci-nn-mesafe.groovy"),
-        new ScriptEntry("Yoğunluk haritası",              "yardimci-yogunluk-haritasi.groovy"),
-        // WSInfer (qupath-extension-wsinfer) karo tespitlerini sınıf bazında ALAN (mm²) + %'ye toplar
-        // (+ ops. sınıf başına birleştirme). Çıkarım yapmaz; var olan karoları özetler. bkz. Ekler → WSInfer.
-        new ScriptEntry("WSInfer karo özeti (sınıf alanı / %)", "yardimci-wsinfer-ozet.groovy"),
-        new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy"),
-        // OME-Zarr dışa aktarma — QuPath'in YERLEŞİK OME-Zarr (OME-NGFF) yazıcısını saran
-        // sihirbaz; açık slaytı/seçili bölgeyi parçalı + piramidal .ome.zarr deposuna yazar.
-        // Python tarafı (salt-okur inceleyici): handson/python/omezarr. bkz. Ekler → OME-Zarr / OME-NGFF.
-        new ScriptEntry("OME-Zarr dışa aktarma",       "yardimci-omezarr-disa-aktarma.groovy"),
-        new ScriptEntry("Makine öğrenmesi için özellik matrisi", "yardimci-ozellik-matrisi.groovy"),
-        // Fenotipleme round-trip eşi: küme / UMAP sonuçlarını TSV'den tespitlere geri yazar
-        // (bkz. Ekler → Hücre Fenotipleme; canlı köprü için Ekler → QuBaLab).
-        new ScriptEntry("Kümeleme/fenotip etiketlerini içe aktar (TSV)", "yardimci-kume-etiketi-iceaktar.groovy"),
-        // TIA Toolbox (Python) köprüsü — bkz. Ekler → TIA Toolbox
-        new ScriptEntry("TIA Toolbox için bölge maskesi",        "yardimci-tiatoolbox-maske.groovy"),
-        // TIA Toolbox temel-işlev sihirbazı — boya normalizasyonu (Macenko/Vahadane/Reinhard;
-        // QuPath'in YAPMADIĞI işlem) + doku maskesi (Otsu/Morphological → "Doku" anotasyonu).
-        // Python köprüsü: handson/python/tiatoolbox. bkz. Ekler → TIA Toolbox § Temel işlevler.
-        new ScriptEntry("TIA Toolbox boya normalizasyonu / doku maskesi sihirbazı", "yardimci-tiatoolbox-sihirbaz.groovy"),
-        new ScriptEntry("AI tahmin maskelerini içe aktar (GeoJSON)", "yardimci-tahmin-iceaktar.groovy"),
-        // Raster maske köprüsü — indeksli/ikili PNG/TIFF maskeyi anotasyona çevirir
-        // (TIA Toolbox bölge maskesi + harici U-Net çıktısı için içe-aktarım eşi)
-        new ScriptEntry("Maske görüntüsünü içe aktar",            "yardimci-maske-iceaktar.groovy"),
-        // Hizalama dönüşümüyle anotasyon aktar — Interactive image alignment'in (qupath-extension-align)
-        // afin matrisini uygular: kaynak slaytın anotasyonlarını PathObjectTools.transformObject ile
-        // hedef slayda kilitli kopyalar (seri kesit H&E↔İHK). bkz. Ekler → Görüntü Hizalama §6.
-        new ScriptEntry("Hizalama dönüşümüyle anotasyon aktar", "yardimci-hizalama-aktarim.groovy"),
-        // Atölye Python ortam yöneticisi — uv tabanlı; aşağıdaki Python köprülerinin
-        // (TIA Toolbox / Kaiko / SPIDER / Sectra) izole venv'lerini tek tıkla kurar/onarır.
-        // Açık slayt gerekmez (proje/sistem düzeyi).
-        new ScriptEntry("Atölye Python ortam yöneticisi",        "yardimci-python-ortam-yoneticisi.groovy", false, false),
-        // GrandQC (Python) köprüsü — hibrit doku/artefakt KK; bkz. Ekler → Ek B § GrandQC
-        new ScriptEntry("GrandQC kalite kontrol sihirbazı",      "yardimci-grandqc-sihirbaz.groovy"),
-        // Kaiko Midnight (Python) köprüsü — denetimli FM sınıflandırıcı (eğit → tahmin);
-        // bkz. Ekler → Kaiko Midnight Denetimli FM Sınıflandırıcı
-        new ScriptEntry("Kaiko Midnight sınıflandırıcı sihirbazı", "yardimci-kaiko-sihirbaz.groovy"),
-        // SPIDER (Python) köprüsü — organ-özelleşmiş HAZIR sınıflandırıcı (yalnız tahmin,
-        // eğitim yok; CC BY-NC, kapılı); bkz. Ekler → SPIDER Organ Doku Sınıflandırıcı
-        new ScriptEntry("SPIDER doku sınıflandırıcı sihirbazı", "yardimci-spider-sihirbaz.groovy"),
-        // Foundation model hazırlık ve sağlamlık sihirbazı — salt-okur FM-hazırlık denetimi
-        // (224 px karo için önerilen downsample, piramit/anotasyon durumu) + sağlamlık
-        // kontrol listesi (batch etkisi / girdi bütünlüğü-UTAP / doğrulama farkındalığı).
-        // FM ÇALIŞTIRMAZ, pertürbasyon ÜRETMEZ; salt farkındalık/rapor. bkz. Ekler →
-        // Patolojide Temel Modeller — Genel Bakış.
-        new ScriptEntry("Foundation model hazırlık ve sağlamlık sihirbazı", "yardimci-foundation-model-sihirbaz.groovy"),
-        // TIA Toolbox (Python) köprüsü — model çıkarımını SEÇİLİ BÖLGEYLE sınırlar (resmî
-        // TIAToolbox eklentisi bölgeye kısıtlayamaz: yalnız Current/All image). KongNet MIDOG
-        // mitoz / PanNuke / CoNIC ... ; ikili bölge maskesi → engine.run(masks=) → GeoJSON →
-        // bölgeye göre sayım. Çalışma zamanı: tiatoolbox-runtime/.venv; bkz. Ekler → TIA Toolbox.
-        new ScriptEntry("TIA Toolbox bölgede çekirdek/mitoz tespiti", "yardimci-tiatoolbox-bolge-sihirbaz.groovy"),
-        // metadata-qupath (sbalci, MIT) köprüsü — proje genelinde slayt/tarayıcı üst verisini
-        // okur → CSV + (ops.) sıralanabilir Proje sütunları; bkz. Ekler → Kohort Metadata
-        new ScriptEntry("Kohort metadata sihirbazı", "yardimci-metadata-sihirbaz.groovy", false, false),  // proje geneli, salt-okunur: açık slayt gerekmez
-        // sectra-qupath (sbalci, MIT) köprüsü — Sectra PACS DICOM (GSPS) anotasyonlarını
-        // GeoJSON'a çevirip içe aktarır; bkz. Ekler → Klinik PACS → QuPath Entegrasyonu
-        new ScriptEntry("Sectra PACS anotasyon sihirbazı", "yardimci-sectra-iceaktar.groovy"),
-        // Arayüz turu — interaktif QuPath UI gezintisi (qupath-extension-training ilhamı,
-        // Apache-2.0, Pete Bankhead). Saf eğitim; nesne/ölçüm DEĞİŞTİRMEZ; bölge vurgusu +
-        // güvenli geri çekilme. bkz. Ekler → Arayüz Turu; statik karşılığı Modül 1 — Arayüz turu.
-        new ScriptEntry("Arayüz turu", "yardimci-arayuz-turu.groovy"),
-        // Görüntü işleme kavramları — Bankhead'in dijital patoloji görüntü-işleme sözlüğünü
-        // (CC-BY 4.0) KENDİ slaydında canlı önizlemelerle gezdiren tur: dekonvolüsyon → Gaussian (σ)
-        // → eşik (ikili) → mesafe + watershed. Modül 2'nin "perde arkası"; saf eğitim, salt-okur.
-        // bkz. Ekler → Görüntü Analizi Temelleri.
-        new ScriptEntry("Görüntü işleme kavramları", "yardimci-goruntu-isleme-turu.groovy"),
-        // StarDist (yerel QuPath eklentisi) köprüsü — seçili ROI'de H&E çekirdek tespiti +
-        // sayım/yoğunluk (Modül 8'i etkinleştirmeden no-code yol); StarDist eklentisi yoksa
-        // kullanıcıyı kuruluma yönlendirir. bkz. Ekler → Ek G (StarDist Eklentisi).
-        new ScriptEntry("StarDist çekirdek tespiti sihirbazı", "yardimci-stardist-sihirbaz.groovy"),
-        // Cellpose (BIOP qupath-extension-cellpose) köprüsü — Cellpose2D builder'ını tek
-        // pencereden kurar; cyto3/cpsam/Omnipose + brightfield İHK kanal hazırlığı. BIOP
-        // eklentisi + Python venv gerektirir (yoksa sihirbaz kuruluma yönlendirir).
-        // bkz. Ekler → Ek F (Cellpose Eklentisi).
-        new ScriptEntry("Cellpose hücre/çekirdek tespiti sihirbazı", "yardimci-cellpose-sihirbaz.groovy"),
-        // Tespit doğrulama (F1 / IoU) — otomatik tespiti ELLE çizilmiş altın standartla
-        // karşılaştırır (TP/FP/FN → precision/recall/F1). Salt Groovy/JTS, ek bağımlılık yok.
-        // Pécot WSI-QuPath eğitiminin (CC-BY) atölye karşılığı. bkz. Ekler → Tespit Doğrulama.
-        new ScriptEntry("Tespit doğrulama (F1 / IoU)", "yardimci-dogrulama-f1.groovy"),
-        // Görüntü yakala — görüntüleyiciyi (overlay'lerle) veya tüm pencereyi PNG/JPEG
-        // dosyasına/panoya alır; rapor & sunum için. QuPath GuiTools.makeSnapshot kullanır
-        // (petebankhead/qupath-extension-snapshots ilhamı). Ölçüm YAPMAZ; saf yakalama aracı.
-        new ScriptEntry("Görüntü yakala (rapor/sunum)", "yardimci-goruntu-yakala.groovy", false, false),  // açık slayt şart değil — pencere/UI de yakalanır
-        // ── İleri analiz — atölye ilk oturumundan sonra etkinleştirildi (eski "sonraki oturum" grubu) ──
-        // Ölçüm/skorlama yardımcıları (var olan tespit/sınıflandırmalardan türetir):
-        new ScriptEntry("Ki-67 heterojenlik grid",              "yardimci-ki67-heterojenlik.groovy"),
-        new ScriptEntry("Stromal TIL yoğunluğu",                "yardimci-stromal-til.groovy"),
-        new ScriptEntry("Alan-bazlı pozitiflik (% positivity)", "yardimci-alan-pozitiflik.groovy"),
-        new ScriptEntry("TMA çekirdek bazlı dışa aktarım",      "yardimci-tma-cekirdek-aktarim.groovy"),
-        new ScriptEntry("İmmün hücre yoğunluğu (DAB)",          "yardimci-immun-yogunluk.groovy"),
-        new ScriptEntry("PHH3 mitoz kantifikasyonu",            "yardimci-mitoz-phh3.groovy"),
-        new ScriptEntry("KongNet H&E mitoz tespiti (DL)",       "yardimci-mitoz-kongnet.groovy"),
-        new ScriptEntry("Tümör tomurcuklanma kantifikasyonu (CK / ITBCC)", "yardimci-tumor-tomurcuklanma.groovy"),
-        new ScriptEntry("WSI anonimleştirme sihirbazı",         "yardimci-anonim-sihirbaz.groovy"),
-        // ImageJ/Fiji köprüsü + QuPath-içi grafik + InstanSeg (I2K 2024 uyarlamaları):
-        new ScriptEntry("ImageJ ile otomatik eşik → anotasyon", "yardimci-imagej-otsu-anotasyon.groovy"),
-        new ScriptEntry("ImageJ ile sınır yumuşat (spline)",    "yardimci-imagej-spline-duzeltme.groovy"),
-        new ScriptEntry("Dağılım grafiği (scatter chart)",      "yardimci-dagilim-grafigi.groovy"),
-        new ScriptEntry("InstanSeg çekirdek/hücre tespiti sihirbazı", "yardimci-instanseg-sihirbaz.groovy")
+    private static final List<ScriptGroup> UTILITY_GROUPS = List.of(
+        new ScriptGroup("Temel araçlar", List.of(
+            new ScriptEntry("Tespitleri sil",              "yardimci-tespitleri-sil.groovy"),
+            new ScriptEntry("Görüntü tipi ayarla",         "yardimci-image-type.groovy", false, false),  // tüm-proje kapsamı: açık slayt gerekmez
+            new ScriptEntry("Eşikleri ayarla",             "yardimci-esik-ayarla.groovy"),
+            new ScriptEntry("Kalibrasyon (piksel boyutu)", "yardimci-kalibrasyon.groovy"),
+            // "Analiz etmeden önce verine bak" — bioimagebook Bölüm 1: salt-okur künye + kanal
+            // histogramı + doygunluk/clipping. bkz. Ekler → Görüntü Analizi Temelleri.
+            new ScriptEntry("Görüntü künyesi ve histogram", "yardimci-goruntu-kunye.groovy")
+        )),
+        new ScriptGroup("Boya & renk", List.of(
+            // Tek-pencere: mevcut vektörleri raporlar (kontrol) + seçili bölgeden tahmin → önizle → uygula → geri al.
+            new ScriptEntry("Boya vektörleri sihirbazı", "yardimci-boya-vektor-sihirbaz.groovy"),
+            // Boya KALİTESİ QC: H:E OD oranı + CIELAB L* + doku% (ölçüm-only); tarayıcı/zaman karşılaştırma. Bkz. Ek A.
+            new ScriptEntry("Boya kalitesi QC ölçümü", "yardimci-boya-kalite-qc.groovy"),
+            // Salt-okur ICC denetçisi — gömülü profili okur; UYGULAMAZ (qupath#982). bkz. Ekler → Renk Yönetimi (ICC).
+            new ScriptEntry("ICC renk profili denetçisi", "yardimci-icc-denetci-sihirbaz.groovy")
+        )),
+        new ScriptGroup("Hücre / çekirdek tespiti", List.of(
+            // StarDist (yerel eklenti) köprüsü — seçili ROI'de H&E çekirdek tespiti; yoksa kuruluma yönlendirir. Ek G.
+            new ScriptEntry("StarDist çekirdek tespiti sihirbazı", "yardimci-stardist-sihirbaz.groovy"),
+            // Cellpose (BIOP eklentisi) köprüsü — cyto3/cpsam/Omnipose + brightfield İHK; Python venv gerekir. Ek F.
+            new ScriptEntry("Cellpose hücre/çekirdek tespiti sihirbazı", "yardimci-cellpose-sihirbaz.groovy"),
+            // InstanSeg (yerel eklenti) köprüsü — I2K 2024 uyarlaması. Ek H.
+            new ScriptEntry("InstanSeg çekirdek/hücre tespiti sihirbazı", "yardimci-instanseg-sihirbaz.groovy"),
+            new ScriptEntry("KongNet H&E mitoz tespiti (DL)",       "yardimci-mitoz-kongnet.groovy"),
+            // Tespit doğrulama — otomatik tespiti ELLE altın standartla karşılaştırır (TP/FP/FN → F1; JTS IoU). Salt Groovy.
+            new ScriptEntry("Tespit doğrulama (F1 / IoU)", "yardimci-dogrulama-f1.groovy")
+        )),
+        new ScriptGroup("Skorlama & ölçüm", List.of(
+            new ScriptEntry("Eşik ile alan ölçümü",        "yardimci-esik-alan.groovy"),
+            // Var olan sınıflandırmaları seçili bölgede sayar; her sınıfın adet + % dağılımı (tespit YAPMAZ).
+            new ScriptEntry("Sınıf bazlı hücre sayımı (% dağılım)", "yardimci-sinif-sayim.groovy"),
+            new ScriptEntry("Ki-67 heterojenlik grid",              "yardimci-ki67-heterojenlik.groovy"),
+            new ScriptEntry("Stromal TIL yoğunluğu",                "yardimci-stromal-til.groovy"),
+            new ScriptEntry("Alan-bazlı pozitiflik (% positivity)", "yardimci-alan-pozitiflik.groovy"),
+            new ScriptEntry("İmmün hücre yoğunluğu (DAB)",          "yardimci-immun-yogunluk.groovy"),
+            new ScriptEntry("PHH3 mitoz kantifikasyonu",            "yardimci-mitoz-phh3.groovy"),
+            new ScriptEntry("Tümör tomurcuklanma kantifikasyonu (CK / ITBCC)", "yardimci-tumor-tomurcuklanma.groovy"),
+            // WSInfer karo tespitlerini sınıf bazında ALAN (mm²) + %'ye toplar (çıkarım yapmaz). bkz. Ekler → WSInfer.
+            new ScriptEntry("WSInfer karo özeti (sınıf alanı / %)", "yardimci-wsinfer-ozet.groovy")
+        )),
+        new ScriptGroup("Uzamsal analiz", List.of(
+            // FS2K Session 12 — var olan tespitlerden doku düzenini ÖLÇER (klinik yorum üretmez). bkz. Ek M.
+            // Yapıya uzaklık: her hücreden seçili yapının (tümör sınırı, damar) sınırına işaretli µm mesafe.
+            new ScriptEntry("Yapıya uzaklık (sınıra mesafe)", "yardimci-yapi-uzaklik.groovy"),
+            new ScriptEntry("Delaunay komşuluk özellikleri",  "yardimci-delaunay-komsuluk.groovy"),
+            new ScriptEntry("En yakın komşu mesafesi",        "yardimci-nn-mesafe.groovy"),
+            new ScriptEntry("Yoğunluk haritası",              "yardimci-yogunluk-haritasi.groovy"),
+            // İki sınıflı geometri örtüşmesi: kesişim alanı (µm²) + peritümöral halka (buffer/difference). bkz. Ek M.
+            new ScriptEntry("Kesişim alanı (örtüşme)",        "yardimci-kesisim-alani.groovy"),
+            new ScriptEntry("Peritümöral bant (halka)",       "yardimci-peritumoral-bant.groovy")
+        )),
+        new ScriptGroup("İçe / dışa aktarma & veri", List.of(
+            new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy"),
+            // QuPath'in YERLEŞİK OME-Zarr (OME-NGFF) yazıcısını saran sihirbaz; parçalı+piramidal .ome.zarr.
+            new ScriptEntry("OME-Zarr dışa aktarma",       "yardimci-omezarr-disa-aktarma.groovy"),
+            // Görüntü alanı çıkart (Extract Region) — seçili anotasyon(lar)ı bağımsız görüntü dosyasına
+            // (OME-TIFF / TIFF / PNG / JPEG, sıkıştırma/çözünürlük seçmeli). Aperio ImageScope Extract Region karşılığı.
+            new ScriptEntry("Görüntü alanı çıkart (Extract Region)", "yardimci-bolge-cikart-sihirbaz.groovy"),
+            new ScriptEntry("Makine öğrenmesi için özellik matrisi", "yardimci-ozellik-matrisi.groovy"),
+            // Küme/UMAP sonuçlarını TSV'den tespitlere geri yazar (fenotipleme round-trip). bkz. Ekler → Hücre Fenotipleme.
+            new ScriptEntry("Kümeleme/fenotip etiketlerini içe aktar (TSV)", "yardimci-kume-etiketi-iceaktar.groovy"),
+            new ScriptEntry("AI tahmin maskelerini içe aktar (GeoJSON)", "yardimci-tahmin-iceaktar.groovy"),
+            // Raster maske köprüsü — indeksli/ikili PNG/TIFF maskeyi anotasyona çevirir.
+            new ScriptEntry("Maske görüntüsünü içe aktar",            "yardimci-maske-iceaktar.groovy"),
+            // TIA Toolbox için tek-kanallı bölge maskesi (engine.run(masks=) için). bkz. Ekler → TIA Toolbox.
+            new ScriptEntry("TIA Toolbox için bölge maskesi",        "yardimci-tiatoolbox-maske.groovy"),
+            // Hizalama (qupath-extension-align) afin matrisini uygular: anotasyonları hedef slayda kilitli kopyalar. Ek → Görüntü Hizalama §6.
+            new ScriptEntry("Hizalama dönüşümüyle anotasyon aktar", "yardimci-hizalama-aktarim.groovy"),
+            new ScriptEntry("TMA çekirdek bazlı dışa aktarım",      "yardimci-tma-cekirdek-aktarim.groovy"),
+            new ScriptEntry("Örnek tümör/stroma sınıflandırıcısını projeye kaydet", "yardimci-ornek-siniflandirici.groovy", false, false)  // proje düzeyi: açık slayt gerekmez
+        )),
+        new ScriptGroup("Python köprüleri & temel modeller", List.of(
+            // uv tabanlı ortam yöneticisi — Python köprülerinin izole venv'lerini kurar/onarır (proje/sistem düzeyi).
+            new ScriptEntry("Atölye Python ortam yöneticisi",        "yardimci-python-ortam-yoneticisi.groovy", false, false),
+            // GrandQC (Python) — hibrit doku/artefakt KK. bkz. Ekler → Ek B § GrandQC.
+            new ScriptEntry("GrandQC kalite kontrol sihirbazı",      "yardimci-grandqc-sihirbaz.groovy"),
+            // TIA Toolbox: boya normalizasyonu (Macenko/Vahadane/Reinhard; QuPath'in YAPMADIĞI) + doku maskesi. handson/python/tiatoolbox.
+            new ScriptEntry("TIA Toolbox boya normalizasyonu / doku maskesi sihirbazı", "yardimci-tiatoolbox-sihirbaz.groovy"),
+            // TIA Toolbox model çıkarımını SEÇİLİ BÖLGEYLE sınırlar (KongNet MIDOG mitoz vb.); tiatoolbox-runtime/.venv.
+            new ScriptEntry("TIA Toolbox bölgede çekirdek/mitoz tespiti", "yardimci-tiatoolbox-bolge-sihirbaz.groovy"),
+            // Kaiko Midnight (Python) — denetimli FM sınıflandırıcı (eğit → tahmin). bkz. Ekler → Kaiko Midnight.
+            new ScriptEntry("Kaiko Midnight sınıflandırıcı sihirbazı", "yardimci-kaiko-sihirbaz.groovy"),
+            // SPIDER (Python) — organ-özelleşmiş HAZIR sınıflandırıcı (yalnız tahmin; CC BY-NC, kapılı). bkz. Ekler → SPIDER.
+            new ScriptEntry("SPIDER doku sınıflandırıcı sihirbazı", "yardimci-spider-sihirbaz.groovy"),
+            // Salt-okur FM-hazırlık denetimi + sağlamlık kontrol listesi (batch/UTAP/doğrulama). FM ÇALIŞTIRMAZ. bkz. Ekler → Patolojide Temel Modeller.
+            new ScriptEntry("Foundation model hazırlık ve sağlamlık sihirbazı", "yardimci-foundation-model-sihirbaz.groovy")
+        )),
+        new ScriptGroup("Klinik & kohort", List.of(
+            // metadata-qupath (sbalci, MIT) köprüsü — proje geneli slayt/tarayıcı üst verisi → CSV + Proje sütunları.
+            new ScriptEntry("Kohort metadata sihirbazı", "yardimci-metadata-sihirbaz.groovy", false, false),  // proje geneli, salt-okunur: açık slayt gerekmez
+            // sectra-qupath (sbalci, MIT) köprüsü — Sectra PACS DICOM (GSPS) → GeoJSON. bkz. Ekler → Klinik PACS.
+            new ScriptEntry("Sectra PACS anotasyon sihirbazı", "yardimci-sectra-iceaktar.groovy"),
+            new ScriptEntry("WSI anonimleştirme sihirbazı",         "yardimci-anonim-sihirbaz.groovy")
+        )),
+        new ScriptGroup("Eğitim, sunum & ImageJ", List.of(
+            // Bankhead'in görüntü-işleme sözlüğünü kendi slaydında canlı önizlemelerle gezdiren tur (Modül 2'nin perde arkası).
+            new ScriptEntry("Görüntü işleme kavramları", "yardimci-goruntu-isleme-turu.groovy"),
+            // Ekran kaydı / canlı sunum — bastığınız tuş ve fare işlemlerini gösterir (InputDisplay aç/kapa).
+            new ScriptEntry("Tuş/fare göstergesi (kayıt için)", "yardimci-tus-fare-gostergesi.groovy", false, false),  // global ekran katmanı: açık slayt gerekmez
+            // Görüntüleyiciyi/pencereyi PNG/JPEG'e veya panoya alır (rapor & sunum). GuiTools.makeSnapshot.
+            new ScriptEntry("Görüntü yakala (rapor/sunum)", "yardimci-goruntu-yakala.groovy", false, false),  // açık slayt şart değil — pencere/UI de yakalanır
+            // I2K 2024 (Bankhead) uyarlamaları — ImageJ köprüsü (Otsu eşik / spline) + QuPath-içi grafik.
+            new ScriptEntry("ImageJ ile otomatik eşik → anotasyon", "yardimci-imagej-otsu-anotasyon.groovy"),
+            new ScriptEntry("ImageJ ile sınır yumuşat (spline)",    "yardimci-imagej-spline-duzeltme.groovy"),
+            new ScriptEntry("Dağılım grafiği (scatter chart)",      "yardimci-dagilim-grafigi.groovy")
+        ))
     );
 
     /**
@@ -237,12 +220,12 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
      * bundled in the JAR and kept byte-synced with handson/scripts (see
      * tools/check-script-sync.ps1), but rendered as DISABLED (greyed-out) menu
      * items below so participants can see what's coming without running them
-     * yet. To activate one later, move its entry into {@link #UTILITY_SCRIPTS}.
+     * yet. To activate one later, move its entry into the relevant {@link #UTILITY_GROUPS} group.
      */
     private static final List<ScriptEntry> UPCOMING_SCRIPTS = List.<ScriptEntry>of(
         // Atölye ilk oturumu tamamlandı — eski "İleri analiz — sonraki oturum" yardımcılarının
-        // tümü UTILITY_SCRIPTS'e taşındı ve artık etkin. Yeni hazırlanıp henüz
-        // etkinleştirilmemiş bir yardımcı çıkarsa buraya (gri/önizleme) eklenir.
+        // tümü yardımcı gruplarına (UTILITY_GROUPS) taşındı ve artık etkin. Yeni hazırlanıp
+        // henüz etkinleştirilmemiş bir yardımcı çıkarsa buraya (gri/önizleme) eklenir.
     );
 
     private boolean alreadyInstalled = false;
@@ -285,13 +268,17 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             }
             menu.getItems().add(modulesMenu);
 
-            if (!UTILITY_SCRIPTS.isEmpty()) {
+            if (!UTILITY_GROUPS.isEmpty()) {
                 Menu utilsMenu = new Menu("Yardımcılar");
-                for (ScriptEntry entry : UTILITY_SCRIPTS) {
-                    MenuItem item = new MenuItem(entry.label);
-                    item.setOnAction(e -> runScriptSafely(qupath, entry));
-                    item.disableProperty().bind(disableBinding(qupath, entry));
-                    utilsMenu.getItems().add(item);
+                for (ScriptGroup group : UTILITY_GROUPS) {
+                    Menu groupMenu = new Menu(group.title());
+                    for (ScriptEntry entry : group.entries()) {
+                        MenuItem item = new MenuItem(entry.label);
+                        item.setOnAction(e -> runScriptSafely(qupath, entry));
+                        item.disableProperty().bind(disableBinding(qupath, entry));
+                        groupMenu.getItems().add(item);
+                    }
+                    utilsMenu.getItems().add(groupMenu);
                 }
                 menu.getItems().add(utilsMenu);
             }
@@ -323,8 +310,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
 
             installPreferences(qupath);
 
-            logger.info("Workshop extension installed with {} module + {} utility + {} upcoming (disabled) scripts.",
-                    SCRIPTS.size(), UTILITY_SCRIPTS.size(), UPCOMING_SCRIPTS.size());
+            logger.info("Workshop extension installed with {} module + {} utility (in {} groups) + {} upcoming (disabled) scripts.",
+                    SCRIPTS.size(), UTILITY_GROUPS.stream().mapToInt(g -> g.entries().size()).sum(), UTILITY_GROUPS.size(), UPCOMING_SCRIPTS.size());
         } catch (Exception ex) {
             logger.error("Failed to install Workshop extension menu", ex);
         }
@@ -558,6 +545,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "Patologlar için dijital patoloji ve yapay zekâ atölyesinin\n" +
             "tek-tıkla scriptlerini bir araya getirir.\n\n" +
             "Modüller:\n" +
+            "  1 — Arayüz turu (interaktif UI gezintisi; açık slayt gerekmez)\n" +
             "  2 — Hücre tespiti\n" +
             "  3 — Nükleer boya (Ki-67)\n" +
             "  3b — ER / PR H-score\n" +
@@ -567,21 +555,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "  7 — Tümör içi Ki-67\n" +
             "  8 — QuANTUM cTCF (StarDist + nesne sınıflandırıcı eğitimi)\n" +
             "  9 — Veri dışa aktarma (TSV / GeoJSON)\n\n" +
-            "Yardımcılar:\n" +
-            "  • Tespitleri sil (orphan / tümü)\n" +
-            "  • Görüntü tipi ayarla (slayt / proje)\n" +
-            "  • Eşikleri ayarla (yeniden tespit etmeden re-binning)\n" +
-            "  • Kalibrasyon (piksel boyutu — µm/px ayarla)\n" +
-            "  • Boya vektörleri sihirbazı (kontrol + seçili bölgeden tahmin; önizle → uygula → geri al)\n" +
-            "  • Örnek tümör/stroma sınıflandırıcısı (projeye kaydet)\n" +
-            "  • Karo (tile) dışa aktarma (derin öğrenme için görüntü/maske karoları)\n" +
-            "  • Makine öğrenmesi için özellik matrisi (X özellik + y etiket, TSV)\n" +
-            "  • TIA Toolbox için bölge maskesi (tek-kanallı maske, masks= için)\n" +
-            "  • AI tahmin maskelerini içe aktar (GeoJSON → kilitli anotasyon)\n" +
-            "  • Sectra PACS anotasyon sihirbazı (DICOM GSPS → GeoJSON → QuPath)\n\n" +
-            "İleri analiz yardımcıları (heterojenlik, stromal TIL, alan pozitifliği, TMA,\n" +
-            "immün yoğunluk, PHH3/KongNet mitoz, tümör tomurcuklanma, anonimleştirme,\n" +
-            "ImageJ köprüsü, dağılım grafiği, InstanSeg) artık Yardımcılar menüsünde etkin.\n\n" +
+            "Yardımcılar — konuya göre gruplu alt-menüler (Yardımcılar → <konu> → script):\n" +
+            "  • Temel araçlar · Boya & renk · Hücre/çekirdek tespiti\n" +
+            "  • Skorlama & ölçüm · Uzamsal analiz · İçe/dışa aktarma & veri\n" +
+            "  • Python köprüleri & temel modeller · Klinik & kohort · Eğitim, sunum & ImageJ\n\n" +
             "Ayarlar:\n" +
             "  • Atölye Ayarları — parametreleri değiştir, hatırlanır, sıfırlanabilir\n\n" +
             "Versiyon: " + getVersion() + "\n" +

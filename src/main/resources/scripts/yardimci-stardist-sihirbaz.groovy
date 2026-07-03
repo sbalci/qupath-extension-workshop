@@ -10,7 +10,9 @@
  *     1. StarDist eklentisi + he_heavy_augment.pb modeli kontrol edilir
  *        (model eksikse otomatik iner, SHA-256 doğrulanır; gerekirse elle seçim).
  *     2. ÇEKİRDEK TESPİTİ — seçili ROI içinde StarDist çalışır.
- *     3. Özet: çekirdek sayısı, ROI alanı (mm²), yoğunluk (çekirdek/mm²), süre.
+ *     3. (İsteğe bağlı) YANLIŞ-POZİTİF FİLTRESİ — kayıtlı bir nesne sınıflandırıcısı
+ *        çalıştırıp 'yanlış' sınıfına atanan tespitleri siler (artefakt temizliği).
+ *     4. Özet: çekirdek sayısı, ROI alanı (mm²), yoğunluk (çekirdek/mm²), süre.
  *   StarDist QuPath İÇİNDE OpenCV ile koşar — bu .pb modelleri için ayrıca DJL/
  *   TensorFlow kurmak GEREKMEZ.
  *
@@ -62,6 +64,8 @@ def PREF_MODEL = 'modelPath'
 def PREF_THR   = 'threshold'
 def PREF_PX    = 'pixelSize'
 def PREF_EXP   = 'cellExpansion'
+def PREF_CLS   = 'classifierFilter'
+def PREF_FALSE = 'falseClass'
 
 def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
 
@@ -217,6 +221,8 @@ def thrFieldRef   = new java.util.concurrent.atomic.AtomicReference(null)
 def pxFieldRef    = new java.util.concurrent.atomic.AtomicReference(null)
 def expFieldRef   = new java.util.concurrent.atomic.AtomicReference(null)
 def modelFieldRef = new java.util.concurrent.atomic.AtomicReference(null)
+def clsFieldRef      = new java.util.concurrent.atomic.AtomicReference(null)
+def falseClsFieldRef = new java.util.concurrent.atomic.AtomicReference(null)
 def render  // forward declaration
 
 def textOf = { ref -> def f = ref.get(); return (f != null ? f.getText() : '').trim() }
@@ -253,7 +259,10 @@ def startDetection = {
     if (!(px > 0.0d))                 { errorTextRef.set('Piksel boyutu pozitif olmalı (örn. 0.5).'); step.set('ERROR'); render(); return }
     if (exp < 0.0d)                   { errorTextRef.set('Hücre genişletme negatif olamaz (0 = yalnız çekirdek).'); step.set('ERROR'); render(); return }
     def mp = textOf(modelFieldRef)
-    prefs.put(PREF_MODEL, mp); try { prefs.flush() } catch (Throwable ig) {}
+    def clsName = textOf(clsFieldRef)
+    def falseName = textOf(falseClsFieldRef)
+    prefs.put(PREF_MODEL, mp); prefs.put(PREF_CLS, clsName); prefs.put(PREF_FALSE, falseName)
+    try { prefs.flush() } catch (Throwable ig) {}
     saveParams(thr, px, exp)
     String modelPathToUse = (mp?.trim()) ? mp.trim() : modelPathDefault()
 
@@ -320,6 +329,21 @@ def startDetection = {
             javafx.application.Platform.runLater { errorTextRef.set('StarDist tespiti başarısız:\n' + (t.getMessage() ?: t.getClass().getSimpleName()) + '\n\nMODEL_URL/SHA uyuşmazlığı, eksik DJL motoru (SavedModel modelleri için) ya da bellek olabilir. Konsolu kontrol edin.'); step.set('ERROR'); render() }
             return
         }
+
+        // (İsteğe bağlı) yanlış-pozitif filtresi (Gallik/Helsinki BioImage 2026 deseni):
+        // kayıtlı bir nesne sınıflandırıcısını çalıştır → 'yanlış' sınıfına atanan tespitleri sil.
+        // StarDist her şeyi bulur; RF sınıflandırıcı gerçek çekirdeği artefakttan ayırır; reddedilenler silinir.
+        if (clsName) {
+            try {
+                QP.runObjectClassifier(clsName)
+                if (falseName) {
+                    def fpc = QP.getPathClass(falseName)
+                    def bad = selected.getChildObjects().findAll { it.isDetection() }.findAll { it.getPathClass() == fpc }
+                    if (!bad.isEmpty()) { selected.removePathObjects(bad); appendLine('  Filtre: "' + falseName + '" sınıfından ' + bad.size() + ' yanlış-pozitif silindi.') }
+                    else { appendLine('  Filtre: "' + falseName + '" sınıfında silinecek tespit yok.') }
+                }
+            } catch (Throwable ct) { appendLine('  ⚠ Sınıflandırıcı filtresi atlandı: ' + (ct.getMessage() ?: ct.getClass().getSimpleName())) }
+        }
         def secs = (System.currentTimeMillis() - t0) / 1000.0d
 
         def dets = selected.getChildObjects().findAll { it.isDetection() }
@@ -359,9 +383,63 @@ def startDetection = {
 }
 
 // ── Render: her durum değişiminde sahneyi sıfırdan kurar ────────────────────
+// ── Menü vurgusu (Atölye #3) — üst menü çubuğunda bir üst-menü başlığını turuncu iç
+// parıltıyla işaretler (başlık bulunamazsa tüm menü çubuğunu). SALT-GÖRSEL: menüyü
+// AÇMAZ, hiçbir şeyi tıklamaz/değiştirmez (sihirbazların salt-okur sözleşmesi). Tüm
+// setEffect çağrıları FX iş parçacığında; render başında ve pencere kapanınca temizlenir.
+def menuHiRef = new java.util.concurrent.atomic.AtomicReference(null)   // [node, origEffect] | null
+def clearMenuHighlight = { ->
+    javafx.application.Platform.runLater {
+        def cur = menuHiRef.getAndSet(null)
+        if (cur != null) { try { ((javafx.scene.Node) cur[0]).setEffect((javafx.scene.effect.Effect) cur[1]) } catch (Throwable t) {} }
+    }
+}
+def applyMenuHighlight = { String menuName ->
+    def g = qupath.lib.gui.QuPathGUI.getInstance()
+    if (g == null) return
+    javafx.application.Platform.runLater {
+        try {
+            // önce önceki vurguyu ATOMİK geri yükle (hızlı toggle'da takılı parıltı kalmasın)
+            def prev = menuHiRef.getAndSet(null)
+            if (prev != null) { try { ((javafx.scene.Node) prev[0]).setEffect((javafx.scene.effect.Effect) prev[1]) } catch (Throwable t) {} }
+            def mb = g.getMenuBar()
+            if (mb == null) return
+            javafx.scene.Node target = null
+            def want = menuName?.toLowerCase(java.util.Locale.ROOT)
+            if (want != null) {
+                // Yalnız üst-menü başlıkları (.menu-button); '.menu' alt-menülere de inip yanlış
+                // düğümü işaretleyebildiğinden kullanılmaz. Bulunamazsa tüm menü çubuğuna düşülür.
+                for (n in mb.lookupAll('.menu-button')) {
+                    try {
+                        def txt = (n instanceof javafx.scene.control.Labeled) ? ((javafx.scene.control.Labeled) n).getText() : null
+                        if (txt != null && txt.toLowerCase(java.util.Locale.ROOT).contains(want)) { target = n; break }
+                    } catch (Throwable t) {}
+                }
+            }
+            boolean spot = (target != null)
+            if (target == null) target = mb
+            def orig = target.getEffect()
+            menuHiRef.set([target, orig])
+            def glow = new javafx.scene.effect.InnerShadow()
+            glow.setColor(javafx.scene.paint.Color.web('#FF7A00'))   // turuncu (tur sihirbazıyla aynı)
+            glow.setRadius(spot ? 8.0d : 12.0d)
+            glow.setChoke(spot ? 0.85d : 0.5d)
+            target.setEffect(glow)
+        } catch (Throwable t) { menuHiRef.set(null) }
+    }
+}
+def menuHighlightToggle = { String menuName ->
+    def tb = new javafx.scene.control.ToggleButton(menuName + ' menüsünü göster')
+    tb.setTooltip(new javafx.scene.control.Tooltip(
+        'Üst menü çubuğunda "' + menuName + '" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).'))
+    tb.setOnAction({ if (tb.isSelected()) applyMenuHighlight(menuName) else clearMenuHighlight() })
+    return tb
+}
+
 render = { ->
     if (stage == null) return
     stage.setAlwaysOnTop(alwaysTop.get())
+    clearMenuHighlight()   // #3: adım değişiminde/yenilemede takılı menü vurgusunu kaldır
     def cur = step.get()
     def imageData = QP.getCurrentImageData()
 
@@ -390,9 +468,13 @@ render = { ->
         def pxField  = new javafx.scene.control.TextField(String.format(java.util.Locale.US, '%.2f', loadPixelSize()))
         def expField = new javafx.scene.control.TextField(String.format(java.util.Locale.US, '%.1f', loadCellExp()))
         def mdField  = new javafx.scene.control.TextField(loadModelPath())
+        def clsField   = new javafx.scene.control.TextField(prefs.get(PREF_CLS, ''))
+        def falseField = new javafx.scene.control.TextField(prefs.get(PREF_FALSE, 'FalseNuclei'))
         [thrField, pxField, expField].each { it.setPrefColumnCount(8) }
         mdField.setPrefColumnCount(34)
+        [clsField, falseField].each { it.setPrefColumnCount(20) }
         thrFieldRef.set(thrField); pxFieldRef.set(pxField); expFieldRef.set(expField); modelFieldRef.set(mdField)
+        clsFieldRef.set(clsField); falseClsFieldRef.set(falseField)
         def browse = navButton('…', {
             def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'StarDist modeli (.pb) seç')
             if (x != null) mdField.setText(x.getAbsolutePath())
@@ -402,6 +484,10 @@ render = { ->
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Piksel boyutu (µm/px):'), pxField)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Hücre genişletme (µm, 0=yok):'), expField)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model (.pb):'), mdField, browse)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0,
+            'İsteğe bağlı: tespitten sonra kayıtlı bir nesne sınıflandırıcısını çalıştırıp aşağıdaki sınıfı siler (yanlış-pozitif temizliği). Boş = atla.',
+            new javafx.scene.control.Label('Filtre sınıflandırıcısı (ops.):'), clsField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Silinecek "yanlış" sınıf:'), falseField)
         center.getChildren().add(grid)
     }
 
@@ -413,6 +499,7 @@ render = { ->
             'Not: .pb modelleri QuPath içinde OpenCV ile koşar — ayrıca DJL/TensorFlow GEREKMEZ.')
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('⟳ Yeniden denetle', { step.set(stardistInstalled() ? 'READY' : 'NEED_INSTALL'); render() }))
+        actions.add(menuHighlightToggle('Extensions'))   // #3: Extensions menüsünü göster
     } else if (cur == 'READY') {
         title.setText('StarDist — çekirdek tespiti')
         if (imageData == null) {
@@ -492,6 +579,7 @@ javafx.application.Platform.runLater {
         stage.initModality(javafx.stage.Modality.NONE)
         stage.setTitle('StarDist çekirdek tespiti sihirbazı')
         stage.setAlwaysOnTop(alwaysTop.get())
+        stage.setOnHidden({ clearMenuHighlight() })   // #3: pencere kapanınca menü vurgusunu kaldır
         render()
         stage.show()
     } catch (Throwable t) {

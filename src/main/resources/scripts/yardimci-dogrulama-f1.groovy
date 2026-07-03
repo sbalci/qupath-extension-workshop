@@ -40,13 +40,16 @@
  *      seçip "Hesapla".
  *
  * ÇIKTI:
- *   • Sonuç penceresinde TP / FP / FN + precision / recall / F1
+ *   • Sonuç penceresinde TP / FP / FN + precision / recall / F1 (IoU modunda ayrıca
+ *     SQ = ortalama eşleşen IoU ve PQ = panoptik kalite — Kirillov ve ark. 2019)
  *   • Kilitli "Doğrulama Özet" anotasyonu (Modül 9 ile dışa aktarılır)
  *   • (İsteğe bağlı) tahminleri renklendir: TP / FP sınıflarına ayır
  *
  * YÖNTEM REFERANSLARI:
  *   • Pécot T — Whole Slide Image Analysis with QuPath (CC-BY): zenodo 6391629;
  *     compute_F1_score_for_IoU_threshold.groovy.
+ *   • Kirillov A et al. (2019), CVPR — Panoptic Segmentation (PQ = SQ × RQ metriği).
+ *     arXiv:1801.00868. Örnek-düzeyi tespit QC yaklaşımı: K. Gallik, Helsinki BioImage 2026.
  *   • Bankhead P et al. (2017), Sci Rep — QuPath. doi:10.1038/s41598-017-17204-5
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
@@ -176,15 +179,17 @@ def computeMatch = { gtUnits, predUnits, mode, double thr, boolean hasMicrons, d
 
     def usedG = new HashSet()
     def usedP = new HashSet()
+    double matchedIoUSum = 0.0d   // panoptik: yalnız IOU modunda anlamlı — eşleşen çiftlerin IoU toplamı
     pairs.each { pr ->
         if (!usedG.contains(pr.gi) && !usedP.contains(pr.pi)) {
             usedG.add(pr.gi); usedP.add(pr.pi)
+            if (mode == 'IOU') matchedIoUSum += (double) pr.score
         }
     }
     int tp = usedG.size()
     int fn = nGt - tp
     int fp = nPred - usedP.size()
-    return [tp: tp, fp: fp, fn: fn, usedP: usedP, nGt: nGt, nPred: nPred]
+    return [tp: tp, fp: fp, fn: fn, usedP: usedP, nGt: nGt, nPred: nPred, matchedIoUSum: matchedIoUSum]
 }
 
 // ── Bir doğrulama koşusu: bağlam + seçimler → sonuç metni + sayılar ─────
@@ -216,6 +221,12 @@ def runValidation = { String gtLabel, String predLabel, String mode, double thr,
     double precision = (tp + fp) > 0 ? (tp / (double) (tp + fp)) : Double.NaN
     double recall    = (tp + fn) > 0 ? (tp / (double) (tp + fn)) : Double.NaN
     double f1        = (2 * tp + fp + fn) > 0 ? ((2.0d * tp) / (2.0d * tp + fp + fn)) : Double.NaN
+    // Panoptik kalite (Kirillov ve ark. 2019) — yalnız IoU modunda (IoU tabanlı):
+    //   SQ = eşleşen çiftlerin ortalama IoU'su; RQ = TP/(TP+0.5FP+0.5FN) (= F1); PQ = SQ × RQ.
+    boolean panopticOk = (mode == 'IOU')
+    double sq = (panopticOk && tp > 0) ? (((double) m.matchedIoUSum) / tp) : Double.NaN
+    double pq = (panopticOk && (tp + 0.5d * fp + 0.5d * fn) > 0)
+        ? (((double) m.matchedIoUSum) / (tp + 0.5d * fp + 0.5d * fn)) : Double.NaN
 
     boolean gtArea = gtUnits.every { it.geom != null }
     String gtKind = gtArea ? "poligon" : "nokta/karışık"
@@ -242,6 +253,10 @@ def runValidation = { String gtLabel, String predLabel, String mode, double thr,
     b << "Precision (kesinlik)  : " << fmtMetric(precision) << "   = TP/(TP+FP)\n"
     b << "Recall (duyarlılık)   : " << fmtMetric(recall) << "   = TP/(TP+FN)\n"
     b << "F1 skoru              : " << fmtMetric(f1) << "   = 2·TP/(2·TP+FP+FN)\n"
+    if (panopticOk) {
+        b << "SQ (ort. eşleşen IoU) : " << fmtMetric(sq) << "   = Σ IoU(eşleşen) / TP\n"
+        b << "PQ (panoptik kalite)  : " << fmtMetric(pq) << "   = SQ × F1  (Kirillov 2019)\n"
+    }
     b << "\n"
     b << "Eşleştirme açgözlü bire-bir; skorlar 0–1 arası (yüzde değil).\n"
     b << "Bu bir ÖLÇÜM kalite göstergesidir (örneklenen bölgede otomatik tespit ile\n"
@@ -262,6 +277,8 @@ def runValidation = { String gtLabel, String predLabel, String mode, double thr,
     if (!Double.isNaN(precision)) summary.measurements["Doğrulama: Precision"] = precision
     if (!Double.isNaN(recall))    summary.measurements["Doğrulama: Recall"] = recall
     if (!Double.isNaN(f1))        summary.measurements["Doğrulama: F1"] = f1
+    if (panopticOk && !Double.isNaN(sq)) summary.measurements["Doğrulama: SQ"] = sq
+    if (panopticOk && !Double.isNaN(pq)) summary.measurements["Doğrulama: PQ"] = pq
     summary.measurements["Doğrulama: Altın standart (N)"] = gtUnits.size() as double
     summary.measurements["Doğrulama: Tahmin (N)"] = predUnits.size() as double
     if (mode == 'IOU') summary.measurements["Doğrulama: IoU eşik"] = thr
