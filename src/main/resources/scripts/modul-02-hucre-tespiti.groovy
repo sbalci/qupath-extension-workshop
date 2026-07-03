@@ -62,7 +62,11 @@ if (stains != null) {
         if (name != null && name.contains("hematoxylin")) { hasHematoxylin = true; break }
     }
 }
-if (!hasHematoxylin) {
+def curImageType = imageData.getImageType()
+if (curImageType == qupath.lib.images.ImageData.ImageType.FLUORESCENCE) {
+    // Floresan görüntünün tipini parlak-alana çevirmek kalıcı bir hatadır — dokunma.
+    println "⚠ Görüntü tipi FLORESAN — bu modül parlak-alan H&E/İHK içindir; tip değiştirilmedi."
+} else if (!hasHematoxylin) {
     println "⚠ Hematoxylin boyası tanımlı değil → BRIGHTFIELD_H_E varsayılanı uygulanıyor."
     QP.setImageType('BRIGHTFIELD_H_E')
 }

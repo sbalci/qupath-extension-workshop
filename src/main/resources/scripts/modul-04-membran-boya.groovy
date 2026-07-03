@@ -431,14 +431,14 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
             runWatershedFallback()
         }
 
-        // Cell-by-cell intensity binning by membrane DAB OD
+        // Cell-by-cell intensity binning by membrane DAB OD (yalnız hedef anotasyondaki hücreler)
         // Creates classes: "Negative", "1+", "2+", "3+"
-        QP.setCellIntensityClassifications("Membrane: DAB OD mean", m1, m2, m3)
+        def cells = targetAnnotation.getChildObjects().findAll { it.isDetection() }
+        QP.setIntensityClassifications(cells, "Membrane: DAB OD mean", m1, m2, m3)
 
         cellElapsed = (System.currentTimeMillis() - t0) / 1000.0
 
         // Hücre sayımı
-        def cells = targetAnnotation.getChildObjects().findAll { it.isDetection() }
         totalCells = cells.size()
 
         cells.each { c ->

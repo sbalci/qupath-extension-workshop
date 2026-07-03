@@ -206,7 +206,9 @@ def runDetection = { String family, String model, String channelMode,
 
     // ── Sonuç dizesi ──
     def famLabel = (family == 'cpsam') ? "Cellpose-SAM (cpsam)" : (family == 'omnipose' ? "Omnipose (${model})" : "Cellpose v3 (${model})")
-    def chanLabel = (channelMode == 'brightfield') ? "brightfield İHK (dekonvolüsyon · DAB/H)" : "basit (gri/floresan)"
+    def chanLabel = (channelMode == 'brightfield') ? "brightfield İHK (dekonvolüsyon · DAB/H)" :
+                    (channelMode == 'floresan 2-kanal') ? "floresan 2-kanal (sito+çekirdek, yerel çift-kanal)" :
+                    "basit (gri/floresan)"
 
     def sb = new StringBuilder()
     sb << "Cellpose tespiti tamamlandı.\n\n"

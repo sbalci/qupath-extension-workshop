@@ -164,13 +164,14 @@ if (sidecar != null && sidecar.labels instanceof Map) {
 java.awt.image.BufferedImage img = null
 try { img = javax.imageio.ImageIO.read(maskFile) } catch (Throwable t) { img = null }
 if (img == null) {
+    def ms = null
     try {
-        def ms = qupath.lib.images.servers.ImageServerProvider.buildServer(
+        ms = qupath.lib.images.servers.ImageServerProvider.buildServer(
             maskFile.toURI().toString(), java.awt.image.BufferedImage.class)
         img = ms.readRegion(RegionRequest.createInstance(
             ms.getPath(), 1.0d, 0, 0, ms.getWidth(), ms.getHeight()))
-        ms.close()
     } catch (Throwable t) { img = null }
+    finally { try { ms?.close() } catch (Throwable ignore) {} }
 }
 if (img == null) {
     Dialogs.showErrorMessage("Maske okunamadı",

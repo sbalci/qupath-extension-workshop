@@ -165,7 +165,12 @@ if (isHeadless) {
     String radStr = Dialogs.showInputDialog("Yakınlık yarıçapı (µm)",
         "Kaç µm yarıçap içindeki A hücreleri sayılsın?\n(Varsayılan: 50 µm)", "50")
     if (radStr == null) { println "İptal edildi."; return }
-    try { radiusUm = Double.parseDouble(radStr.trim()) } catch (Throwable ig) { radiusUm = 50.0 }
+    try { radiusUm = Double.parseDouble(radStr.trim().replace(',', '.')) }
+    catch (Throwable ig) {
+        Dialogs.showErrorMessage("Geçersiz yarıçap",
+            "Yarıçap bir sayı olmalı (ör. 50 ya da 75.5). Girilen: '${radStr}'.")
+        return
+    }
     if (!(radiusUm > 0)) radiusUm = 50.0
 }
 

@@ -292,8 +292,10 @@ def stats = [:]
 numCols.each { col ->
     List<Double> vals = rows.collect { r -> def v = r[col]; (v instanceof Number && !Double.isNaN((double)v)) ? (double)v : Double.NaN }
     double med = median(vals); double iq = iqr(vals)
-    double mn = vals.findAll { !Double.isNaN(it) }.min() ?: Double.NaN
-    double mx = vals.findAll { !Double.isNaN(it) }.max() ?: Double.NaN
+    // Not: Elvis (?:) kullanma — Groovy'de 0.0 "falsy"dir, gerçek 0.0 min/max NaN'a düşerdi.
+    def finiteVals = vals.findAll { !Double.isNaN(it) }
+    double mn = finiteVals.isEmpty() ? Double.NaN : (double) finiteVals.min()
+    double mx = finiteVals.isEmpty() ? Double.NaN : (double) finiteVals.max()
     stats[col] = [med: med, iqr: iq, min: mn, max: mx,
                   lo: (med - 1.5d * iq), hi: (med + 1.5d * iq)]
 }

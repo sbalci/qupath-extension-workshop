@@ -556,9 +556,12 @@ if (projectMode) {
     // Per-image dosyalar
     imageList.each { entry ->
         try {
-            def imgData = entry.readImageData()
-            exportEntry(entry, imgData)
-            imagesProcessed++
+            // ImageData 0.6'da AutoCloseable — proje döngüsünde her slaydı kapatarak
+            // sunucu/karo-önbelleği tanıtıcılarının birikmesini önle (bkz. sib. kohort betikleri).
+            entry.readImageData().withCloseable { imgData ->
+                exportEntry(entry, imgData)
+                imagesProcessed++
+            }
         } catch (Throwable t) {
             errors << "${entry.getImageName()} → readImageData: ${t.getMessage()}"
         }

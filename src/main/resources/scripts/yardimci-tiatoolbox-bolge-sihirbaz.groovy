@@ -313,6 +313,7 @@ def stage = null
 def step          = new java.util.concurrent.atomic.AtomicReference('READY')
 def alwaysTop     = new java.util.concurrent.atomic.AtomicBoolean(true)
 def cancelledRef  = new java.util.concurrent.atomic.AtomicBoolean(false)
+def selftestOkRef = new java.util.concurrent.atomic.AtomicBoolean(true)
 def processRef    = new java.util.concurrent.atomic.AtomicReference(null)
 def logAreaRef    = new java.util.concurrent.atomic.AtomicReference(null)
 def runPhaseRef   = new java.util.concurrent.atomic.AtomicReference('')
@@ -392,8 +393,8 @@ def startSelftest = {
     runPhaseRef.set('Bağımlılık kontrolü'); step.set('CHECK_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
-        runPython([cfg.python, cfg.runner, 'selftest'], appendLine)
-        javafx.application.Platform.runLater { step.set('CHECK_DONE'); render() }
+        def r = runPython([cfg.python, cfg.runner, 'selftest'], appendLine)
+        javafx.application.Platform.runLater { selftestOkRef.set(r.ok); step.set('CHECK_DONE'); render() }
     }, 'AtolyeTIABolge-Check')
     worker.setDaemon(true); worker.start()
 }
@@ -529,7 +530,8 @@ render = { ->
         center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'CHECK_DONE') {
-        title.setText('Bağımlılık kontrolü tamam'); addLiveLog()
+        title.setText(selftestOkRef.get() ? 'Bağımlılık kontrolü tamam ✅'
+            : '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın (Python / bağımlılık)'); addLiveLog()
         actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
     } else if (cur == 'READY') {
         if (imageData == null) {

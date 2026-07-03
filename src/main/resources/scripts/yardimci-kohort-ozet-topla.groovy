@@ -194,12 +194,18 @@ if (rows.isEmpty()) {
 
 // ── 4) TSV yaz (sekme ayırıcı; eksik hücre = boş string) ────────────────────
 def colList = new ArrayList<String>(["image_name"] + new ArrayList<String>(columnOrder))
-tsvFile.withWriter("UTF-8") { w ->
-    w.writeLine(colList.join("\t"))
-    rows.each { r ->
-        def line = colList.collect { col -> (r[col] ?: "") }.join("\t")
-        w.writeLine(line)
+try {
+    tsvFile.withWriter("UTF-8") { w ->
+        w.writeLine(colList.join("\t"))
+        rows.each { r ->
+            def line = colList.collect { col -> (r[col] ?: "") }.join("\t")
+            w.writeLine(line)
+        }
     }
+} catch (Throwable t) {
+    def msg = "TSV yazılamadı: ${t.getMessage() ?: t.getClass().getSimpleName()}\nHedef: ${tsvFile.getAbsolutePath()}"
+    if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage("Yazma hatası", msg)
+    return
 }
 
 // ── 5) Sonucu sun ─────────────────────────────────────────────────────────────

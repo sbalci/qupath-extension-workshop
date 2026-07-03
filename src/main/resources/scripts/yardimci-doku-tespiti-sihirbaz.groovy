@@ -180,9 +180,20 @@ println String.format(java.util.Locale.US,
 def request = RegionRequest.createInstance(server.getPath(), downsample,
     0, 0, server.getWidth(), server.getHeight())
 java.awt.image.BufferedImage img = server.readRegion(request)
+if (img == null) {
+    def msg = "Bölge okunamadı (boş görüntü). Downsample çok küçük olabilir."
+    if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage("Okuma hatası", msg)
+    return
+}
 def raster = img.getRaster()
 int W = raster.getWidth()
 int H = raster.getHeight()
+if (raster.getNumBands() < 3) {
+    def msg = "Bu araç RGB (parlak-alan) görüntü bekler; bulunan bant sayısı: ${raster.getNumBands()}.\n" +
+              "Tek kanallı/gri/floresan görüntülerde çalışmaz."
+    if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage("RGB görüntü gerekli", msg)
+    return
+}
 
 // ── 4) Skaler harita hesapla (float[][]) ────────────────────────────
 // Renk ayırma için stain bilgisini al (varsa)

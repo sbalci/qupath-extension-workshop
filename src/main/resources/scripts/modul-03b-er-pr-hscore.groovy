@@ -292,6 +292,7 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3, boolean 
     double maxArea          = atolyeD('atolye.maxArea', 400.0)
     double detectionThreshold = atolyeD('atolye.detectionThreshold', 0.1)
     double cellExpansion    = atolyeD('atolye.cellExpansionNuclear', 5.0)
+    boolean watershedPostProcess = atolyeB('atolye.watershed', true)
 
     long t0 = System.currentTimeMillis()
     QP.selectObjects(targetAnnotation)
@@ -306,7 +307,7 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3, boolean 
             '"minAreaMicrons":' + minArea + ',' +
             '"maxAreaMicrons":' + maxArea + ',' +
             '"threshold":' + detectionThreshold + ',' +
-            '"watershedPostProcess":true,' +
+            '"watershedPostProcess":' + watershedPostProcess + ',' +
             '"cellExpansionMicrons":' + cellExpansion + ',' +
             '"includeNuclei":true,' +
             '"smoothBoundaries":true,' +

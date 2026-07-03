@@ -167,8 +167,16 @@ println String.format(java.util.Locale.US,
     "Entegre DAB OD: %d sınıf · kapsam '%s' · downsample=%d...",
     classNames.size(), (scopeAnno.getName() ?: "seçili"), DOWNSAMPLE)
 
-// Stain 2 = DAB (H-DAB ayrışmasında)
+// Stain 2 = DAB (H-DAB ayrışmasında). Yanlış boya kurulumunda (ör. H&E) 2. vektör
+// DAB olmayabilir; o zaman "DAB OD" olarak etiketlemek yanıltıcı olur — önce doğrula.
 def dabStain = stains.getStain(2)
+if (dabStain == null || !((dabStain.getName() ?: '').toLowerCase(java.util.Locale.ROOT).contains('dab'))) {
+    def msg = "2. boya vektörü DAB değil (bulunan: '${dabStain?.getName() ?: '(yok)'}').\n\n" +
+              "Image type → 'Brightfield (H-DAB)' olduğundan ve boya vektörlerinin doğru\n" +
+              "ayarlandığından emin olun (Ek A · boya vektörleri sihirbazı)."
+    if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage("DAB boyası bulunamadı", msg)
+    return
+}
 double[] dabCoeffs = [dabStain.getRed(), dabStain.getGreen(), dabStain.getBlue()]
 
 // Kapsam bölgesini downsample'lı görüntü olarak oku

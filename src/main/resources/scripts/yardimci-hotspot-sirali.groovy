@@ -198,6 +198,13 @@ if (isHeadless) {
 }
 
 // ── 3) Karoları topla, sırala, top-N al ─────────────────────────────
+// Önceki koşudan kalan "Hotspot" etiketlerini seçili sınıfa geri döndür ki aday
+// havuzu koşular arasında küçülmesin (yeniden çalıştırınca tüm karolar aday kalır).
+if (assignHotspotClass) {
+    def resetPC = QP.getPathClass(chosenClass)
+    allAnnos.findAll { it.getPathClass()?.toString() == hotspotClass }
+            .each { it.setPathClass(resetPC) }
+}
 def tiles = allAnnos.findAll { it.getPathClass()?.toString() == chosenClass }
 if (tiles.isEmpty()) {
     def msg = "'${chosenClass}' sınıfında karo bulunamadı."
@@ -224,11 +231,9 @@ topTiles.eachWithIndex { entry, idx ->
 }
 
 if (assignHotspotClass) {
-    def hotspotPC  = qupath.lib.objects.classes.PathClassFactory.getPathClass(hotspotClass)
-    def originalPC = qupath.lib.objects.classes.PathClassFactory.getPathClass(chosenClass)
-    tiles.each { tile ->
-        if (tile.getPathClass()?.toString() == hotspotClass) tile.setPathClass(originalPC)
-    }
+    // Önceki "Hotspot" etiketleri (3) adımında seçili sınıfa geri döndürüldü;
+    // burada yalnız yeni top-N karolara "Hotspot" sınıfı atanır.
+    def hotspotPC = QP.getPathClass(hotspotClass)
     topTiles.each { entry -> entry.tile.setPathClass(hotspotPC) }
 }
 
