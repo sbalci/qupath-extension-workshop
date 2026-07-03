@@ -201,14 +201,15 @@ classNames.each { cn ->
 
 double pixelAreaUm2 = pw * ph * DOWNSAMPLE * DOWNSAMPLE
 
+// Tek paylaşılan GeometryFactory — piksel döngüsünde yeniden oluşturmak çok pahalı.
+def gf = new org.locationtech.jts.geom.GeometryFactory()
 pixels.eachWithIndex { rgb, idx ->
     int ix = idx % imgW
     int iy = idx / imgW
     // Görüntü koordinatına çevir
     double gx = originX + ix * DOWNSAMPLE
     double gy = originY + iy * DOWNSAMPLE
-    def pt = new org.locationtech.jts.geom.GeometryFactory().createPoint(
-        new org.locationtech.jts.geom.Coordinate(gx, gy))
+    def pt = gf.createPoint(new org.locationtech.jts.geom.Coordinate(gx, gy))
 
     // Hangi sınıf geometrisi bu noktayı içeriyor?
     String hitClass = null

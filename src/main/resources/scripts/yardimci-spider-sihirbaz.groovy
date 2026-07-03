@@ -220,6 +220,8 @@ def exportTiles = { imageData, File workDir, cfg, Closure appendLine ->
     int maxTiles = parseIntOr(cfg.maxTiles, 0)
     String mode = (cfg.granularity == 'tile-grid') ? 'tile-grid' : 'annotation'
     def tilesRoot = new File(workDir, 'tiles')
+    // Önceki çalıştırmanın karoları birikmesin — bu çalıştırmadan önce temizle.
+    if (tilesRoot.isDirectory()) tilesRoot.deleteDir()
     def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() }
     def predictList = []
     def roiMap = { double x, double y, double w, double h -> [x: x, y: y, width: w, height: h] }

@@ -118,7 +118,8 @@ def runDetection = { double thr, double sig, double exp ->
         "  Toplam hücre        : %,d\n" +
         "  Anotasyon alanı     : %.2f mm²\n" +
         "  Hücre yoğunluğu     : ~%,d hücre/mm²\n" +
-        "  Süre                : %.1f sn",
+        "  Süre                : %.1f sn\n\n" +
+        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
         thr, sig, exp, totalCells, areaMm2, density, elapsed)
     return [ok:true, text:text]
 }

@@ -194,6 +194,15 @@ stromaAnnotations.each { ann ->
 double overallCellDensity = totalStromaMm2 > 0 ? totalCells / totalStromaMm2 : 0.0
 double overallLymphoDensity = totalStromaMm2 > 0 ? totalLympho / totalStromaMm2 : 0.0
 
+// Hiç hücre çıkmadıysa sessiz "0" sonucu yanıltıcıdır — nedenini söyle.
+if (totalCells == 0) {
+    def zmsg = "Stroma alanında hiç hücre tespit edilmedi.\n" +
+        "Olası nedenler: yanlış boya vektörü / Image type (ör. H&E yerine DAB ya da tersi), " +
+        "çok yüksek tespit eşiği, ya da 'Stroma' anotasyonunun hücresiz boş alana denk gelmesi.\n" +
+        "Boya vektörlerini ve eşiği kontrol edip yeniden çalıştırın."
+    if (isHeadless) println "UYARI: ${zmsg}" else Dialogs.showWarningNotification("Hücre bulunamadı", zmsg)
+}
+
 // ── 4) Kilitli özet anotasyonu (Modül 9 dışa aktarımı için) ─────────
 QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() == "Stromal TIL Özet" }, false)
 def srv = imageData.getServer()

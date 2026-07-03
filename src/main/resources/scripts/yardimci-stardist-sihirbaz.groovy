@@ -286,7 +286,22 @@ def startDetection = {
             catch (Throwable t) { appendLine('  ✗ otomatik indirme başarısız: ' + (t.message ?: t.getClass().getSimpleName())) }
             finally { if (progress != null) javafx.application.Platform.runLater { progress.close() } }
             if (!ok) {
-                def picked = Dialogs.promptForFile("StarDist modelini seç (.pb)", null, "StarDist Model (.pb)", "pb")
+                // Dosya seçici JavaFX uygulama iş parçacığında açılmalı (arka planda
+                // IllegalStateException atar). Seçim tamamlanana dek işçiyi bekletiriz.
+                def pickedRef = new java.util.concurrent.atomic.AtomicReference()
+                def pickLatch = new java.util.concurrent.CountDownLatch(1)
+                javafx.application.Platform.runLater {
+                    try {
+                        if (stage != null) stage.setAlwaysOnTop(false)
+                        pickedRef.set(Dialogs.promptForFile("StarDist modelini seç (.pb)", null, "StarDist Model (.pb)", "pb"))
+                    } catch (Throwable ig) {
+                    } finally {
+                        if (stage != null) stage.setAlwaysOnTop(alwaysTop.get())
+                        pickLatch.countDown()
+                    }
+                }
+                pickLatch.await()
+                def picked = pickedRef.get()
                 if (picked == null) { javafx.application.Platform.runLater { errorTextRef.set('Model yok ve elle seçim iptal edildi.\nİnternet bağlıyken tekrar deneyin ya da modeli ~/.qupath/stardist/ içine koyun (bkz. Ek G).'); step.set('ERROR'); render() }; return }
                 modelFile = picked
             }

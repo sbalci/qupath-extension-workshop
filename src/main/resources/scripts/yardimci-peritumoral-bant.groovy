@@ -202,11 +202,13 @@ targets.eachWithIndex { t, i ->
             ring = orig.buffer(rPx).difference(orig)
         } else if (direction == DIR_IN) {
             def inner = orig.buffer(-rPx)
-            ring = (inner == null || inner.isEmpty()) ? orig : orig.difference(inner)
+            // İç tampon çöktüyse (bant, şekilden geniş) tüm şekli döndürme — atla.
+            ring = (inner == null || inner.isEmpty()) ? null : orig.difference(inner)
         } else {
             def inner = orig.buffer(-rPx)
             def outer = orig.buffer(rPx)
-            ring = (inner == null || inner.isEmpty()) ? outer : outer.difference(inner)
+            // İç tampon çöktüyse yalnız dış bandı ver (tüm tamponu değil).
+            ring = (inner == null || inner.isEmpty()) ? outer.difference(orig) : outer.difference(inner)
         }
     } catch (Throwable t2) {
         try {

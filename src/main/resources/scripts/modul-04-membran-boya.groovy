@@ -259,6 +259,8 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
     tiles.parallelStream().forEach { t -> pixServer.readRegion(t.getRegionRequest()) }
 
     PixelClassifierTools.addMeasurements([targetAnnotation], pixManager, pixPrefix)
+    // Piksel sınıflandırma sunucusunu kapat (tekrar çalıştırmalarda tile önbelleği sızmasın).
+    try { pixServer.close() } catch (Throwable ignored) {}
 
     def pxArea1   = (targetAnnotation.measurements["${pixPrefix}: Pixel-1+ area µm^2"]       ?: 0.0) as double
     def pxArea2   = (targetAnnotation.measurements["${pixPrefix}: Pixel-2+ area µm^2"]       ?: 0.0) as double

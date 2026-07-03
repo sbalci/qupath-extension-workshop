@@ -669,7 +669,8 @@ def resultBody =
     "  • GeoJSON dosyaları geopandas / sf paketleriyle açılır (anotasyon\n" +
     "    geometrisini başka araçlara taşımak için).\n" +
     "  • Modül 9'un web sayfasında format karşılaştırması ve örnek R/Python\n" +
-    "    kodları var."
+    "    kodları var.\n\n" +
+    "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
 showResultWindow("Veri dışa aktarma — Tamamlandı 📤", resultBody)
 
@@ -677,6 +678,7 @@ println "───────────────────────�
 println String.format(java.util.Locale.US, "Tamamlandı: %d slayt, %d dosya, %.1f sn",
     imagesProcessed, filesWritten.size(), elapsed)
 println "Çıktı: ${outDir.getAbsolutePath()}"
+println "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 if (!errors.isEmpty()) {
     println "⚠️  ${errors.size()} hata (detay sonuç penceresinde)"
 }

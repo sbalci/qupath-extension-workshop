@@ -292,8 +292,12 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                     Menu groupMenu = new Menu(group.title());
                     for (ScriptEntry entry : group.entries()) {
                         MenuItem item = new MenuItem(entry.label);
-                        item.setOnAction(e -> runScriptSafely(qupath, entry));
-                        item.disableProperty().bind(disableBinding(qupath, entry));
+                        if (entry.disabled) {
+                            item.setDisable(true);   // sonraki oturuma ertelendi — gri görünür, tıklama etkisiz
+                        } else {
+                            item.setOnAction(e -> runScriptSafely(qupath, entry));
+                            item.disableProperty().bind(disableBinding(qupath, entry));
+                        }
                         groupMenu.getItems().add(item);
                     }
                     utilsMenu.getItems().add(groupMenu);
@@ -431,7 +435,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                     "Script hatası — " + entry.label,
                     "Script çalıştırılırken bir hata oluştu:\n\n" +
                     detail +
-                    "\n\nDetaylar için View → Show log dialogue'a bakın."
+                    "\n\nDetaylar için View → Show log menüsüne bakın."
                 ));
             }
         }, "WorkshopScript-" + entry.resource);
@@ -529,9 +533,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "  • StarDist eklentisi:   " + (stardist ? found : missing) + "\n" +
             "  • InstanSeg eklentisi:  " + (instanseg ? found : missing) + "\n" +
             "  • Deep Java Library:    " + (djl ? found : missing) + "  (InstanSeg/WSInfer/StarDist-TF ortak çalışma zamanı)\n\n" +
-            "Çekirdek modüller (2, 3, 3b, 4, 5, 6, 7, 9) yalnızca QuPath gerektirir; Modül 8 StarDist eklentisi ister.\n" +
+            "Çekirdek modüller (2, 3, 3b, 5, 6, 7, 9) yalnızca QuPath gerektirir; Modül 4 (HER2) Cellpose eklentisi + Python venv, Modül 8 StarDist eklentisi ister.\n" +
             "InstanSeg ayrı bir Python ortamı gerektirmez (en sade derin öğrenme seçeneği).\n" +
-            (cellpose ? "Cellpose için python.exe yolunu ayarlayın: Edit → Preferences → Cellpose/Omnipose.\n" : "") +
+            (cellpose ? "Cellpose için python.exe yolunu ayarlayın: Edit → Preferences → Cellpose/Omnipose.\n"
+                      : "Modül 4 için Cellpose eklentisi + Python venv gerekir (bkz. kaynaklar → ileri kurulumlar).\n") +
             "\"bulunamadı\" görünen bileşenler yalnızca ilgili ileri modül için gerekir;\n" +
             "kurulum rehberi: https://atolye.patoloji.dev/kaynaklar.html#ileri-kurulumlar\n\n" +
             "Yalnızca araştırma ve eğitim amaçlıdır."

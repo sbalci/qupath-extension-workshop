@@ -239,7 +239,7 @@ def runStarDist = { regionAnno ->
 
         regionAnno.setName('TCR')
         def viewer = qupath.lib.gui.QuPathGUI.getInstance()?.getViewer()
-        if (viewer != null) javafx.application.Platform.runLater { viewer.repaint() }
+        if (viewer != null) javafx.application.Platform.runLater { viewer.repaintEntireImage() }
         QP.fireHierarchyUpdate()
         println String.format(java.util.Locale.US, 'Modül 8 StarDist: %,d çekirdek (%.1f sn)', cells.size(), elapsed)
         return [ok:true, count:cells.size()]
@@ -261,6 +261,7 @@ def applyClassifier = { regionAnno, String name ->
         return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '')]
     } finally {
         QP.fireHierarchyUpdate()
+        QP.resetSelection()   // sihirbaz sonrası hücreler seçili kalmasın
     }
     int tumor = 0, nonNeo = 0, ignore = 0
     cells.each { c ->
@@ -582,7 +583,7 @@ render = { ->
         cont.setDisable(!ready)
         buttons.getChildren().addAll(navButton('İptal', { stage.close() }), navButton('⟳ Yenile', { render() }), cont)
     } else if (cur == 'DETECT_REGION') {
-        title.setText('1/6 — TCR anotasyonunu seçin')
+        title.setText('1/5 — TCR anotasyonunu seçin')
         bodyLbl.setText(
             'TCR (Tumor-Containing Region), patoloğun çizdiği araştırma alanıdır — saf tümör konturu\n' +
             'DEĞİL, içinde tümör bulunan geniş bir bölge. [P] (Polygon) ya da Brush ile çizip SEÇİN.\n' +
@@ -603,7 +604,7 @@ render = { ->
         content.getChildren().add(busyBar())
     } else if (cur == 'TUMOR_EXAMPLES') {
         def d = detectResult.get()
-        title.setText('2/6 — Tümör hücresi örnekleri')
+        title.setText('2/5 — Tümör hücresi örnekleri')
         bodyLbl.setText(
             ((d?.ok) ? "Tespit edilen çekirdek: ${d.count}\n\n" : '') +
             'Birkaç TİPİK TÜMÖR HÜCRESİ bölgesini küçük anotasyonlarla çizin ve sınıfını tam olarak\n' +
@@ -618,7 +619,7 @@ render = { ->
                 else Dialogs.showWarningNotification('Tumor örneği yok', 'Sınıfı "Tumor" olan en az bir alan anotasyonu çizin, sonra İleri.')
             }))
     } else if (cur == 'NONNEO_EXAMPLES') {
-        title.setText('3/6 — Non-neoplastic hücre örnekleri')
+        title.setText('3/5 — Non-neoplastic hücre örnekleri')
         bodyLbl.setText(
             'Şimdi tümör DIŞI hücrelerin (lenfosit, fibroblast, endotel, normal epitel) bulunduğu\n' +
             'bölgelerden birkaç örnek çizin ve sınıfını TAM OLARAK "Non-neoplastic" yapın\n' +
@@ -634,7 +635,7 @@ render = { ->
                 else Dialogs.showWarningNotification('Non-neoplastic örneği yok', 'Sınıfı "Non-neoplastic" olan en az bir alan anotasyonu çizin, sonra İleri.')
             }))
     } else if (cur == 'TRAIN_GUIDE') {
-        title.setText("4/6 — Sınıflandırıcıyı QuPath'te eğitin")
+        title.setText("4/5 — Sınıflandırıcıyı QuPath'te eğitin")
         def instr = new javafx.scene.control.TextArea(
             '1. Üst menü:  Classify → Object classification → Train object classifier\n' +
             '2. Sınıflandırıcı türü: Random Trees (varsayılan)\n' +
@@ -673,7 +674,7 @@ render = { ->
         def ar = applyResultRef.get()
         def a = ar?.apply
         def res = ar?.result
-        title.setText('5/6 — cTCF Sonucu')
+        title.setText('5/5 — cTCF Sonucu')
         if (a?.ok) {
             def summaryLbl = new javafx.scene.control.Label(
                 String.format(java.util.Locale.US, 'Sınıflandırma: Tumor=%,d, Non-neoplastic=%,d, Ignore=%,d',

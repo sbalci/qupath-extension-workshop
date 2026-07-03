@@ -221,7 +221,7 @@ def buildRecord = { imgData, entry, project, String note ->
     // Analiz durumu
     def analysisState = new java.util.LinkedHashMap()
     try {
-        def annotations = QP.getAnnotationObjects()
+        def annotations = imgData.getHierarchy().getAnnotationObjects()
         def annoByClass = annotations.groupBy { it.getPathClass()?.toString() ?: '(sınıfsız)' }
         def annoSummary = new java.util.LinkedHashMap()
         annoByClass.each { cls, items -> annoSummary[cls] = items.size() }
@@ -229,7 +229,7 @@ def buildRecord = { imgData, entry, project, String note ->
         analysisState.annotation_count_by_class = annoSummary
     } catch (Throwable ig) { analysisState.annotation_error = ig.getMessage() ?: ig.getClass().getSimpleName() }
     try {
-        def detections = QP.getDetectionObjects()
+        def detections = imgData.getHierarchy().getDetectionObjects()
         def detByClass = detections.groupBy { it.getPathClass()?.toString() ?: '(sınıfsız)' }
         def detSummary = new java.util.LinkedHashMap()
         detByClass.each { cls, items -> detSummary[cls] = items.size() }

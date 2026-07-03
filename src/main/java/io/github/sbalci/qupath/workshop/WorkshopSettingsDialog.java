@@ -37,7 +37,10 @@ public final class WorkshopSettingsDialog {
     /** Choice options for string prefs that should render as a dropdown. */
     private static final Map<String, String[]> CHOICES = new LinkedHashMap<>();
     static {
+        // cellposeModel: Modül 4 (HER2) Cellpose detektörü okur. cellposeFamily: Cellpose sihirbazı
+        // (yardimci-cellpose-sihirbaz) okur — cpsam (Cellpose-SAM) dahil. İki ayrı anahtar; silmeyin.
         CHOICES.put("atolye.cellposeModel", new String[]{"cyto3", "cyto2", "nuclei"});
+        CHOICES.put("atolye.cellposeFamily", new String[]{"cyto3", "cyto2", "nuclei", "cpsam"});
         CHOICES.put("atolye.detectionChannel", new String[]{"Hematoxylin OD", "Optical density sum"});
         CHOICES.put("atolye.exportSeparator", new String[]{"\t", ","});      // label mapped below
         CHOICES.put("atolye.exportScope", new String[]{"image", "project"}); // label mapped below
@@ -203,6 +206,12 @@ public final class WorkshopSettingsDialog {
             case "atolye.pixHmask": return "Piksel Hematoksilin maskesi";
             case "atolye.cellposeModel": return "Cellpose modeli";
             case "atolye.cellposeDiameter": return "Cellpose çapı (px)";
+            case "atolye.cellposeFamily": return "Cellpose model ailesi";
+            case "atolye.cellposeFlow": return "Cellpose akış eşiği (flow)";
+            case "atolye.cellposeCellprob": return "Cellpose hücre olasılığı (cellprob)";
+            case "atolye.stardistThreshold": return "StarDist olasılık eşiği";
+            case "atolye.stardistPixelSize": return "StarDist piksel boyutu (µm)";
+            case "atolye.stardistCellExpansion": return "StarDist hücre genişlemesi (µm)";
             case "atolye.pixelSize": return "Piksel boyutu (µm)";
             case "atolye.cellExpansionNuclear": return "Hücre genişlemesi — nükleer (µm)";
             case "atolye.cellExpansionCyto": return "Hücre genişlemesi — sitoplazma (µm)";
@@ -218,6 +227,7 @@ public final class WorkshopSettingsDialog {
             case "atolye.classifierName": return "Sınıflandırıcı adı";
             case "atolye.minObjectArea": return "Min nesne alanı (µm²)";
             case "atolye.minHoleArea": return "Min boşluk alanı (µm²)";
+            case "atolye.maxTrainingSamples": return "Maks eğitim örneği (0 = sınırsız)";
             case "atolye.warnNuclearCount": return "Uyarı: düşük çekirdek (Nielsen)";
             case "atolye.warnGenericCount": return "Uyarı: düşük hücre";
             case "atolye.warnTissueAreaMm2": return "Uyarı: küçük doku (mm²)";

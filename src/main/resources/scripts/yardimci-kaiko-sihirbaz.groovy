@@ -197,6 +197,8 @@ def exportTiles = { imageData, File workDir, cfg, Closure appendLine, boolean in
     double downsample = parseDoubleOr(cfg.downsample, 1.0d)
     int maxTiles = parseIntOr(cfg.maxTiles, 20)
     def tilesRoot = new File(workDir, 'tiles')
+    // Önceki çalıştırmanın karoları birikmesin — bu çalıştırmadan önce temizle.
+    if (tilesRoot.isDirectory()) tilesRoot.deleteDir()
     def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() }
     def classified = anns.findAll { it.getPathClass() != null }
     def unclassified = anns.findAll { it.getPathClass() == null }

@@ -188,6 +188,7 @@ def plane = ImagePlane.getDefaultPlane()
 def newAnnotations = []
 def classCounts = new TreeMap<String, Integer>()
 int skipped = 0
+int holesDropped = 0   // içe aktarılmayan iç halkalar (delikler) — yalnız dış sınır alınır
 try {
     def reader = new java.io.InputStreamReader(
         new java.io.FileInputStream(geojsonFile), java.nio.charset.StandardCharsets.UTF_8)
@@ -209,11 +210,13 @@ try {
             if (geomType == "Polygon") {
                 def coords = geometry.getAsJsonArray("coordinates")
                 if (coords != null && coords.size() > 0) rings << coords.get(0).getAsJsonArray()
+                if (coords != null && coords.size() > 1) holesDropped += coords.size() - 1
             } else if (geomType == "MultiPolygon") {
                 def polys = geometry.getAsJsonArray("coordinates")
                 polys?.each { poly ->
                     def ringsOfPoly = poly.getAsJsonArray()
                     if (ringsOfPoly != null && ringsOfPoly.size() > 0) rings << ringsOfPoly.get(0).getAsJsonArray()
+                    if (ringsOfPoly != null && ringsOfPoly.size() > 1) holesDropped += ringsOfPoly.size() - 1
                 }
             } else {
                 skipped++; return   // Point/LineString vb. desteklenmez
@@ -262,6 +265,8 @@ body << "═══════════════════════�
 body << "Dosya: ${geojsonFile.getName()}\n\n"
 body << String.format(java.util.Locale.US, "İçe aktarılan anotasyon : %,d%n", newAnnotations.size())
 body << String.format(java.util.Locale.US, "Atlanan özellik         : %,d%n", skipped)
+if (holesDropped > 0)
+    body << String.format(java.util.Locale.US, "Atlanan iç halka (delik) : %,d  (yalnız dış sınır alındı; delikler dolu görünür)%n", holesDropped)
 body << "\nSınıf dökümü:\n"
 classCounts.each { cls, n ->
     body << String.format(java.util.Locale.US, "  %-20s : %,d%n", cls, n)

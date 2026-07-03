@@ -114,12 +114,15 @@ if (imageData == null) {
 }
 def cal = imageData.getServer().getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
+double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0)) {
     Dialogs.showErrorMessage("Kalibrasyon yok",
         "Slaytta piksel boyutu (µm) tanımlı değil.\n\n" +
         "Piksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).")
     return
 }
+// Anizotropik piksellerde (pw ≠ ph) Y ekseni ayrı ölçeklenmeli; yükseklik tanımsızsa genişliği kullan.
+if (!(ph > 0)) ph = pw
 
 // ── 2) Sınıf listesini topla ─────────────────────────────────────────────────
 def allDetections = QP.getDetectionObjects().findAll { it.getROI() != null && it.getPathClass() != null }
@@ -189,20 +192,20 @@ if (poolA.isEmpty() || poolB.isEmpty()) {
 }
 
 // ── 5) B üzerinde uzamsal hash ızgarası kur ──────────────────────────────────
-double bucketUm  = Math.max(radiusUm, 50.0)   // kova kenarı ≥ 50 µm
-double bucketPx  = bucketUm / pw
+double bucketUm  = Math.max(radiusUm, 50.0)   // kova kenarı ≥ 50 µm (µm-uzayı ızgara)
 int nb = poolB.size()
 double[] bxs = new double[nb]
 double[] bys = new double[nb]
-poolB.eachWithIndex { c, i -> def r = c.getROI(); bxs[i] = r.getCentroidX(); bys[i] = r.getCentroidY() }
+// Merkezleri µm'ye çevir: X genişlikle, Y yükseklikle ölçeklenir.
+poolB.eachWithIndex { c, i -> def r = c.getROI(); bxs[i] = r.getCentroidX() * pw; bys[i] = r.getCentroidY() * ph }
 
 def bucketsB = new HashMap<Long, List<Integer>>()
 int[] bcol = new int[nb]
 int[] brow = new int[nb]
 def keyOf = { int c, int r -> (((long) c) << 32) ^ (r & 0xffffffffL) }
 for (int i = 0; i < nb; i++) {
-    int c = (int) Math.floor(bxs[i] / bucketPx)
-    int r = (int) Math.floor(bys[i] / bucketPx)
+    int c = (int) Math.floor(bxs[i] / bucketUm)
+    int r = (int) Math.floor(bys[i] / bucketUm)
     bcol[i] = c; brow[i] = r
     bucketsB.computeIfAbsent(keyOf(c, r), { k -> new ArrayList<Integer>() }).add(i)
 }
@@ -213,8 +216,7 @@ println String.format(java.util.Locale.US,
     classA, poolA.size(), classB, poolB.size(), radiusUm)
 
 String measName  = "${classA}→${classB} en yakın komşu (µm)"
-double radiusPx  = radiusUm / pw
-double radiusPx2 = radiusPx * radiusPx
+double radiusUm2 = radiusUm * radiusUm   // µm² (mesafeler µm-uzayında hesaplanır)
 
 def nnUm      = []
 int withinRad = 0
@@ -222,10 +224,10 @@ int na        = poolA.size()
 
 for (int i = 0; i < na; i++) {
     def roi  = poolA[i].getROI()
-    double ax = roi.getCentroidX()
-    double ay = roi.getCentroidY()
-    int ac = (int) Math.floor(ax / bucketPx)
-    int ar = (int) Math.floor(ay / bucketPx)
+    double ax = roi.getCentroidX() * pw
+    double ay = roi.getCentroidY() * ph
+    int ac = (int) Math.floor(ax / bucketUm)
+    int ar = (int) Math.floor(ay / bucketUm)
 
     double best = Double.POSITIVE_INFINITY
     int ring = 0
@@ -242,17 +244,17 @@ for (int i = 0; i < na; i++) {
                 }
             }
         }
-        double guaranteed = ring * bucketPx
+        double guaranteed = ring * bucketUm
         if (best < Double.POSITIVE_INFINITY && guaranteed * guaranteed >= best) break
         ring++
         if (ring > 200) break
     }
 
     if (best < Double.POSITIVE_INFINITY) {
-        double distUm = Math.sqrt(best) * pw
+        double distUm = Math.sqrt(best)
         poolA[i].measurements[measName] = distUm
         nnUm << distUm
-        if (best <= radiusPx2) withinRad++
+        if (best <= radiusUm2) withinRad++
     }
 }
 

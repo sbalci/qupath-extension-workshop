@@ -134,6 +134,7 @@ def measureStainQC = { imageData ->
 
     def s1name = stains.getStain(1)?.getName() ?: "Boya1"
     def s2name = stains.getStain(2)?.getName() ?: "Boya2"
+    if (stains.getStain(1) == null || stains.getStain(2) == null) return null   // eksik boya vektörü → atla
     double[] svH = stains.getStain(1).getArray()
     double[] svE = stains.getStain(2).getArray()
     double maxR = stains.getMaxRed(), maxG = stains.getMaxGreen(), maxB = stains.getMaxBlue()

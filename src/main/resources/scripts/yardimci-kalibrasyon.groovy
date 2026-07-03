@@ -183,7 +183,7 @@ def startApply = { ->
         javafx.application.Platform.runLater {
             applyResultRef.set(r)
             // Ölçek çubuğu/ruler tazelensin (mevcut idiomu koruyor).
-            try { qupath.lib.gui.QuPathGUI.getInstance()?.getViewer()?.repaint() } catch (Throwable ignored) {}
+            try { qupath.lib.gui.QuPathGUI.getInstance()?.getViewer()?.repaintEntireImage() } catch (Throwable ignored) {}
             if (!r.ok) { step.set('RESULT'); render(); return }
             if (modeRef.get() == 'direct' && r.hasProject) { step.set('BATCH_ASK'); render() }
             else { batchResultRef.set(null); step.set('RESULT'); render() }

@@ -101,11 +101,15 @@ if (imageData == null) {
 }
 def cal = imageData.getServer().getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
+double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0)) {
     Dialogs.showErrorMessage("Kalibrasyon yok", "Slaytta piksel boyutu (µm) tanımlı değil." +
         "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).")
     return
 }
+// Anizotropik piksellerde (pw ≠ ph) düşey mesafeler ayrı ölçeklenmeli;
+// yükseklik tanımsızsa genişliği kullan.
+if (!(ph > 0)) ph = pw
 
 def cells = QP.getDetectionObjects().findAll { it.getROI() != null }
 int n = cells.size()
@@ -116,26 +120,28 @@ if (n < 2) {
     return
 }
 
-// ── 2) Merkez koordinatları + uzamsal hash ızgarası ─────────────────
+// ── 2) Merkez koordinatları (µm) + uzamsal hash ızgarası ────────────
+// Koordinatları baştan µm'ye çevir: x genişlikle, y yükseklikle ölçeklenir;
+// böylece mesafeler anizotropik piksellerde de doğru olur.
 double[] xs = new double[n]
 double[] ys = new double[n]
-cells.eachWithIndex { c, i -> def r = c.getROI(); xs[i] = r.getCentroidX(); ys[i] = r.getCentroidY() }
+cells.eachWithIndex { c, i -> def r = c.getROI(); xs[i] = r.getCentroidX() * pw; ys[i] = r.getCentroidY() * ph }
 
-double bucketPx = bucketMicrons / pw
+double bucketUm = bucketMicrons
 def buckets = new HashMap<Long, List<Integer>>()
 int[] bcol = new int[n]
 int[] brow = new int[n]
 def keyOf = { int c, int r -> (((long) c) << 32) ^ (r & 0xffffffffL) }
 for (int i = 0; i < n; i++) {
-    int c = (int) Math.floor(xs[i] / bucketPx)
-    int r = (int) Math.floor(ys[i] / bucketPx)
+    int c = (int) Math.floor(xs[i] / bucketUm)
+    int r = (int) Math.floor(ys[i] / bucketUm)
     bcol[i] = c; brow[i] = r
     buckets.computeIfAbsent(keyOf(c, r), { k -> new ArrayList<Integer>() }).add(i)
 }
 
 // ── 3) Her hücre için en yakın komşu (halka halka genişleyen arama) ─
 println String.format(java.util.Locale.US, "En yakın komşu hesaplanıyor (%,d hücre)...", n)
-double[] nnPx = new double[n]
+double[] nnUmArr = new double[n]
 for (int i = 0; i < n; i++) {
     double best = Double.POSITIVE_INFINITY
     int ring = 0
@@ -153,20 +159,20 @@ for (int i = 0; i < n; i++) {
                 }
             }
         }
-        // Aranmamış en yakın kova ≥ ring*bucketPx uzakta → o mesafe best'i geçemezse dur
-        double guaranteed = ring * bucketPx
+        // Aranmamış en yakın kova ≥ ring*bucketUm uzakta → o mesafe best'i geçemezse dur
+        double guaranteed = ring * bucketUm
         if (best < Double.POSITIVE_INFINITY && guaranteed * guaranteed >= best) break
         ring++
         if (ring > 200) break  // güvenlik
     }
-    nnPx[i] = best < Double.POSITIVE_INFINITY ? Math.sqrt(best) : Double.NaN
+    nnUmArr[i] = best < Double.POSITIVE_INFINITY ? Math.sqrt(best) : Double.NaN
 }
 
-// ── 4) Hücre ölçümlerini yaz + istatistik topla ─────────────────────
+// ── 4) Hücre ölçümlerini yaz + istatistik topla (mesafeler zaten µm) ─
 def nnUm = []
 for (int i = 0; i < n; i++) {
-    if (Double.isNaN(nnPx[i])) continue
-    double um = nnPx[i] * pw
+    if (Double.isNaN(nnUmArr[i])) continue
+    double um = nnUmArr[i]
     cells[i].measurements['En yakın komşu (µm)'] = um
     nnUm << um
 }

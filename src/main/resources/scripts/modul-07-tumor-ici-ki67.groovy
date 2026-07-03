@@ -252,10 +252,12 @@ def isTumorCell = { c ->
     pc != null && (pc.getName() == 'Tumor' || pc.getParentClass()?.getName() == 'Tumor')
 }
 
-// Yol B — DETECT: seçili ROI içinde yoğunluksuz hücre tespiti (önce tüm tespitleri sil).
+// Yol B — DETECT: seçili ROI içinde yoğunluksuz hücre tespiti (önce bu bölgedeki tespitleri sil).
 def runCellDetection = { regionAnno ->
     try {
-        def existing = QP.getDetectionObjects()
+        // Yalnızca bu bölgenin altındaki tespitleri sil — slayttaki diğer
+        // anotasyonların (ör. Modül 2 / 3a) tespitleri korunur.
+        def existing = regionAnno.getChildObjects().findAll { it.isDetection() }
         if (!existing.isEmpty()) QP.removeObjects(existing, false)
         String detectionChannel = atolyeS('atolye.detectionChannel', 'Hematoxylin OD')
         long t0 = System.currentTimeMillis()
@@ -279,7 +281,7 @@ def runCellDetection = { regionAnno ->
             '}'
         )
         double elapsed = (System.currentTimeMillis() - t0) / 1000.0
-        def cells = QP.getDetectionObjects()
+        def cells = regionAnno.getChildObjects().findAll { it.isDetection() }
         if (cells.isEmpty())
             return [ok:false, error:'ROI içinde çekirdek tespit edilmedi. Boya vektörü/ayarlarını kontrol edin.']
         println String.format(java.util.Locale.US, 'Modül 7 Yol B tespit: %,d çekirdek (%.1f sn)', cells.size(), elapsed)
@@ -302,10 +304,10 @@ def addSmoothedFeatures = { regionAnno ->
     }
 }
 
-// Yol B — APPLY: kayıtlı nesne sınıflandırıcıyı tüm tespitlere uygula.
-def applyClassifier = { String name ->
+// Yol B — APPLY: kayıtlı nesne sınıflandırıcıyı bu bölgenin tespitlerine uygula.
+def applyClassifier = { regionAnno, String name ->
     try {
-        def cells = QP.getDetectionObjects()
+        def cells = regionAnno.getChildObjects().findAll { it.isDetection() }
         if (cells.isEmpty()) return [ok:false, error:'Uygulanacak tespit yok.']
         QP.selectObjects(cells)
         QP.runObjectClassifier(name)
@@ -329,7 +331,7 @@ def applyClassifier = { String name ->
 // Yol B — INTENSITY: yalnız Tumor hücrelerini DAB eşiğiyle derecele → Ki-67 LI.
 def scoreIntensity = { regionAnno, double n1, double n2, double n3 ->
     try {
-        def cells = QP.getDetectionObjects()
+        def cells = regionAnno.getChildObjects().findAll { it.isDetection() }
         def tumorCells = cells.findAll(isTumorCell)
         if (tumorCells.isEmpty())
             return [ok:false, error:'Tumor sınıfında hücre yok — önce sınıflandırıcıyı uygulayın.']
@@ -586,7 +588,7 @@ def startApply = { String name ->
     savedClassifierName.set(name)
     step.set('APPLYING'); render()
     def worker = new Thread({
-        def r = applyClassifier(name)
+        def r = applyClassifier(summaryAnnotation.get(), name)
         javafx.application.Platform.runLater {
             applyResult.set(r)
             if (r.ok) { step.set('INTENSITY'); render() }

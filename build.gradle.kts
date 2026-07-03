@@ -47,7 +47,12 @@ repositories {
 val qupathVersion = "0.6.0"
 
 javafx {
-    version = "23"
+    // Compile against JavaFX 21 (LTS) — at or below the JavaFX that QuPath 0.6.0
+    // (the baseline floor) ships, so we never reference an API newer than the
+    // runtime provides. JavaFX is compileOnly (QuPath supplies it at runtime),
+    // so this only bounds the compile classpath; compiling older-than-runtime
+    // stays forward-compatible.
+    version = "21"
     modules("javafx.controls", "javafx.graphics", "javafx.fxml")
     configuration = "compileOnly"
 }

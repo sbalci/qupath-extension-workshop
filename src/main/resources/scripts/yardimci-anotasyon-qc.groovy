@@ -126,9 +126,10 @@ def toArea = { double pxArea -> calibrated ? pxArea * pw * ph : pxArea }
 // Merkez mesafesi (µm ya da px — calibrated ise µm)
 def centDist = { g1, g2 ->
     def c1 = g1.getCentroid(); def c2 = g2.getCentroid()
-    double dx = c1.getX() - c2.getX(); double dy = c1.getY() - c2.getY()
-    double dpx = Math.sqrt(dx * dx + dy * dy)
-    calibrated ? dpx * pw : dpx
+    // Anizotropik piksellerde X genişlikle, Y yükseklikle ölçeklenir (calibrated ise pw/ph > 0).
+    double dx = (c1.getX() - c2.getX()) * (calibrated ? pw : 1.0d)
+    double dy = (c1.getY() - c2.getY()) * (calibrated ? ph : 1.0d)
+    Math.sqrt(dx * dx + dy * dy)
 }
 
 def annots = QP.getAnnotationObjects()
