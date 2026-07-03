@@ -6,12 +6,17 @@
  * "Delete objects → Keep descendant objects → Yes" diyerek anotasyonu silip
  * çocuk tespitleri **slayda öksüz** bırakırsanız, bu betik onları temizler.
  *
- * İKİ MOD:
+ * ÜÇ MOD:
  *   • "Tümünü sil"           — clearDetections() çağrısı, slayttaki TÜM
  *                              detection nesnelerini siler.
  *   • "Sadece orphan'ları"   — yalnızca üst nesnesi kök (slayt) olan
  *                              tespitleri siler — bir anotasyon içinde
  *                              hâlâ ait olan tespitler korunur.
+ *   • "Küçük çekirdekleri"   — 'Nucleus: Area' ölçümü bir eşiğin (varsayılan
+ *                              π·2.5²/2 ≈ 9.82 µm²) altında kalan, biyolojik
+ *                              olarak olanaksız küçük tespitleri siler — tespit
+ *                              sonrası temizlik (HMS-IAC/stroma-spatial-analysis,
+ *                              remove_impossible_nuclei.groovy deseni; MIT).
  *
  * KULLANIM:
  *   1. [Extensions → Atölye → Yardımcılar → Tespitleri sil]
@@ -64,12 +69,15 @@ def chooseAction = { String windowTitle, String windowBody ->
             cancelBtn.setCancelButton(true)
             cancelBtn.setOnAction({ choice.set("cancel"); stage.close() })
 
+            def smallBtn = new javafx.scene.control.Button("Küçük çekirdekleri sil…")
+            smallBtn.setOnAction({ choice.set("small"); stage.close() })
+
             stage.setOnHidden({ latch.countDown() })
 
             def spacer = new javafx.scene.layout.Region()
             javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
 
-            def buttons = new javafx.scene.layout.HBox(10, cancelBtn, spacer, allBtn, orphanBtn)
+            def buttons = new javafx.scene.layout.HBox(10, cancelBtn, spacer, smallBtn, allBtn, orphanBtn)
             buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
             buttons.setPadding(new javafx.geometry.Insets(10))
 
@@ -77,7 +85,7 @@ def chooseAction = { String windowTitle, String windowBody ->
             root.setCenter(scrollPane)
             root.setBottom(buttons)
 
-            stage.setScene(new javafx.scene.Scene(root, 620, 400))
+            stage.setScene(new javafx.scene.Scene(root, 760, 400))
             stage.show()
         } catch (Throwable t) {
             choice.set("cancel")
@@ -167,6 +175,18 @@ def allDetections = QP.getDetectionObjects()
 def orphanDetections = allDetections.findAll { it.getParent()?.isRootObject() }
 def nestedDetections = allDetections.size() - orphanDetections.size()
 
+// Olanaksız küçük çekirdek eşiği: 2.5 µm yarıçaplı çekirdeğin yarı alanı (~9.82 µm²).
+double DEFAULT_MIN_AREA = Math.PI * 2.5d * 2.5d / 2.0d
+def AREA_KEYS = ['Nucleus: Area µm^2', 'Nucleus: Area µm²', 'Nucleus: Area um^2', 'Nucleus: Area']
+def nucleusArea = { d ->
+    for (k in AREA_KEYS) {
+        def v = d.measurements[k]
+        if (v != null && !Double.isNaN(v as double)) return v as double
+    }
+    return Double.NaN
+}
+int smallPreview = allDetections.count { double a = nucleusArea(it); !Double.isNaN(a) && a > 0 && a <= DEFAULT_MIN_AREA } as int
+
 if (allDetections.isEmpty()) {
     Dialogs.showMessageDialog("Silinecek tespit yok", "Bu slaytta hiç detection nesnesi bulunmuyor.")
     return
@@ -178,15 +198,18 @@ if (allDetections.isEmpty()) {
 def secim = chooseAction(
     "Tespitleri Sil — Hangileri?",
     "Bu slayttaki detection durumu:\n\n" +
-    String.format(java.util.Locale.US, "  Toplam tespit       : %,d\n", allDetections.size()) +
-    String.format(java.util.Locale.US, "  Orphan (anotasyon yok): %,d\n", orphanDetections.size()) +
-    String.format(java.util.Locale.US, "  Anotasyon altında    : %,d\n\n", nestedDetections) +
-    "İki seçenek:\n\n" +
+    String.format(java.util.Locale.US, "  Toplam tespit             : %,d\n", allDetections.size()) +
+    String.format(java.util.Locale.US, "  Orphan (anotasyon yok)    : %,d\n", orphanDetections.size()) +
+    String.format(java.util.Locale.US, "  Anotasyon altında         : %,d\n", nestedDetections) +
+    String.format(java.util.Locale.US, "  Olanaksız küçük (≤ %.2f µm²): %,d\n\n", DEFAULT_MIN_AREA, smallPreview) +
+    "Üç seçenek:\n\n" +
     "  • Sadece orphan'ları sil (varsayılan, güvenli):\n" +
-    "    Bir anotasyona ait olmayan tespitleri temizler.\n" +
-    "    Anotasyon altındaki ölçümler korunur.\n\n" +
+    "    Bir anotasyona ait olmayan tespitleri temizler.\n\n" +
     "  • Tümünü sil:\n" +
     "    Slayttaki BÜTÜN tespitleri siler — anotasyonlar dokunulmaz.\n\n" +
+    "  • Küçük çekirdekleri sil…:\n" +
+    "    'Nucleus: Area' bir eşiğin altında kalan olanaksız küçük\n" +
+    "    tespitleri siler (eşiği bir sonraki adımda girersiniz).\n\n" +
     "Anotasyonlar (ROI'ler) HİÇBİR DURUMDA silinmez."
 )
 
@@ -206,6 +229,20 @@ if (secim == "all") {
     silinen = allDetections.size()
     QP.clearDetections()
     mod = "Tüm tespitler silindi"
+} else if (secim == "small") {
+    double thr = DEFAULT_MIN_AREA
+    if (!isHeadless) {
+        def txt = Dialogs.showInputDialog("Olanaksız küçük çekirdekler",
+            "Bu alandan (µm²) KÜÇÜK çekirdekler silinsin:", String.format(java.util.Locale.US, "%.2f", DEFAULT_MIN_AREA))
+        if (txt == null) { println "İptal edildi."; return }
+        try { thr = Double.parseDouble(txt.trim().replace(',', '.')) }
+        catch (Throwable t) { Dialogs.showErrorMessage("Geçersiz sayı", "Eşik bir sayı olmalı (µm²)."); return }
+    }
+    if (!(thr > 0)) { Dialogs.showErrorMessage("Geçersiz eşik", "Eşik pozitif olmalı (µm²)."); return }
+    def toDelete = allDetections.findAll { double a = nucleusArea(it); !Double.isNaN(a) && a > 0 && a <= thr }
+    silinen = toDelete.size()
+    if (silinen > 0) QP.removeObjects(toDelete, true)
+    mod = String.format(java.util.Locale.US, "Olanaksız küçük çekirdekler silindi (Nucleus: Area ≤ %.2f µm²)", thr)
 } else { // "orphan"
     silinen = orphanDetections.size()
     if (silinen > 0) {

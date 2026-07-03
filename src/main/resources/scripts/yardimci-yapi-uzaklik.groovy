@@ -37,12 +37,18 @@
  *   • Her hücre: "Yapıya uzaklık (µm)" ölçümü (− = içeride; Modül 9 ile aktarılır)
  *   • Kilitli "Yapıya Uzaklık Özet": ortalama/medyan/min/maks, yapı içi adet,
  *     sınır bandı (|mesafe| ≤ N µm) adet ve %
+ *   • (İsteğe bağlı) bir hücre ölçümünün (DAB OD, Ki-67 vb.) uzaklıkla Pearson/
+ *     Spearman korelasyonu — yapı-içi / yapı-dışı ayrı ("belirteç yapıya
+ *     yaklaştıkça değişiyor mu?")
  *   • Sonuç penceresinde özet tablo
  *
  * YÖNTEM REFERANSLARI:
  *   • Bankhead P et al. (2017), Sci Rep — QuPath. doi:10.1038/s41598-017-17204-5
  *   • From Samples to Knowledge 2025 (FS2K), Session 12 — uzamsal analiz
  *     (yapıya işaretli mesafe → yakın/uzak): saramcardle.github.io/FS2K
+ *   • Ölçüm ↔ işaretli-mesafe korelasyonu: HMS-IAC/stroma-spatial-analysis
+ *     (Ruzette & Nørrelykke; Kozlova ve ark. 2024, Zenodo 10.5281/zenodo.13122087, MIT)
+ *     — teknikten ilham; koddan aktarım yapılmadı.
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
@@ -184,6 +190,74 @@ int bandCount   = vals.count { Math.abs(it) <= bandMicrons } as int
 double insidePct = 100.0 * insideCount / total
 double bandPct   = 100.0 * bandCount / total
 
+// ── 3b) (İsteğe bağlı) Ölçüm ↔ işaretli-mesafe korelasyonu ───────────
+// HMS-IAC/stroma-spatial-analysis (S1) deseni: bir hücre ölçümünün yapıya
+// mesafeyle Pearson/Spearman ilişkisi, yapı-içi (−) / yapı-dışı (+) ayrılarak.
+def pearson = { double[] xs, double[] ys ->
+    int n = xs.length
+    if (n < 3 || ys.length != n) return Double.NaN
+    double mx = 0.0d, my = 0.0d
+    for (int i = 0; i < n; i++) { mx += xs[i]; my += ys[i] }
+    mx /= n; my /= n
+    double sxy = 0.0d, sxx = 0.0d, syy = 0.0d
+    for (int i = 0; i < n; i++) { double dx = xs[i] - mx, dy = ys[i] - my; sxy += dx * dy; sxx += dx * dx; syy += dy * dy }
+    double den = Math.sqrt(sxx * syy)
+    return den > 0 ? (sxy / den) : Double.NaN
+}
+def rankArr = { double[] v ->
+    int n = v.length
+    def idx = (0..<n).toList()
+    idx.sort { a, b -> Double.compare(v[a], v[b]) }
+    double[] r = new double[n]
+    int i = 0
+    while (i < n) {
+        int j = i
+        while (j + 1 < n && v[idx[j + 1]] == v[idx[i]]) j++
+        double avg = (i + j) / 2.0d + 1.0d
+        for (int k = i; k <= j; k++) r[idx[k]] = avg
+        i = j + 1
+    }
+    return r
+}
+def spearman = { double[] xs, double[] ys ->
+    if (xs.length < 3 || ys.length != xs.length) return Double.NaN
+    return pearson(rankArr(xs), rankArr(ys))
+}
+def fmtR = { double v -> Double.isNaN(v) ? "—" : String.format(java.util.Locale.US, "%.3f", v) }
+
+def measNames = new java.util.TreeSet()
+detections.each { d -> try { d.getMeasurementList().getMeasurementNames().each { measNames.add(it) } } catch (Throwable ig) {} }
+measNames.remove(distMeas)
+String NONE_OPT = "(korelasyon yok)"
+String corrMeas = null
+if (!isHeadless && !measNames.isEmpty()) {
+    def opts = [NONE_OPT] + measNames.toList()
+    def sel = Dialogs.showChoiceDialog("Yapıya uzaklık — korelasyon",
+        "İsteğe bağlı: bir hücre ölçümünün mesafeyle Pearson/Spearman korelasyonu?\n" +
+        "(\"Bu belirteç yapıya yaklaştıkça değişiyor mu?\")", opts, NONE_OPT)
+    if (sel != null && sel != NONE_OPT) corrMeas = sel
+}
+
+double rAll = Double.NaN, rhoAll = Double.NaN, rIn = Double.NaN, rhoIn = Double.NaN, rOut = Double.NaN, rhoOut = Double.NaN
+int corrN = 0, corrNin = 0, corrNout = 0
+if (corrMeas != null) {
+    def aD = [], aM = [], iD = [], iM = [], oD = [], oM = []
+    detections.each { d ->
+        def dv = d.measurements[distMeas]; def mv = d.measurements[corrMeas]
+        if (dv != null && mv != null) {
+            double dd = dv as double, mm = mv as double
+            if (!Double.isNaN(dd) && !Double.isNaN(mm)) {
+                aD << dd; aM << mm
+                if (dd < 0) { iD << dd; iM << mm } else if (dd > 0) { oD << dd; oM << mm }
+            }
+        }
+    }
+    corrN = aD.size(); corrNin = iD.size(); corrNout = oD.size()
+    rAll = pearson(aD as double[], aM as double[]); rhoAll = spearman(aD as double[], aM as double[])
+    rIn  = pearson(iD as double[], iM as double[]); rhoIn  = spearman(iD as double[], iM as double[])
+    rOut = pearson(oD as double[], oM as double[]); rhoOut = spearman(oD as double[], oM as double[])
+}
+
 // ── 4) Kilitli özet anotasyonu ──────────────────────────────────────
 QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() == summaryName }, false)
 def srv = imageData.getServer()
@@ -202,6 +276,12 @@ summary.measurements['Yapı içinde (adet)']            = insideCount as double
 summary.measurements['Yapı içinde (%)']               = insidePct
 summary.measurements["Sınır bandı ≤ ${bandMicrons as int} µm (adet)"] = bandCount as double
 summary.measurements["Sınır bandı ≤ ${bandMicrons as int} µm (%)"]    = bandPct
+if (corrMeas != null) {
+    if (!Double.isNaN(rAll))   summary.measurements["Korelasyon Pearson (tüm)"]      = rAll
+    if (!Double.isNaN(rhoAll)) summary.measurements["Korelasyon Spearman (tüm)"]     = rhoAll
+    if (!Double.isNaN(rIn))    summary.measurements["Korelasyon Pearson (yapı içi)"] = rIn
+    if (!Double.isNaN(rOut))   summary.measurements["Korelasyon Pearson (yapı dışı)"] = rOut
+}
 summary.setLocked(true)
 QP.addObjects([summary])
 QP.fireHierarchyUpdate()
@@ -226,6 +306,14 @@ body << String.format(java.util.Locale.US, "Min / Maks         : %.1f / %.1f µm
 body << "──────────────────────────────────────────────\n"
 body << String.format(java.util.Locale.US, "Yapı içinde (− )   : %,d  (%.1f %%)%n", insideCount, insidePct)
 body << String.format(java.util.Locale.US, "Sınır bandı ≤%.0fµm : %,d  (%.1f %%)%n", bandMicrons, bandCount, bandPct)
+if (corrMeas != null) {
+    body << "──────────────────────────────────────────────\n"
+    body << "Korelasyon (ölçüm ↔ uzaklık): " << corrMeas << "\n"
+    body << String.format(java.util.Locale.US, "  Pearson  r  (tüm/içi/dışı) : %s / %s / %s%n", fmtR(rAll), fmtR(rIn), fmtR(rOut))
+    body << String.format(java.util.Locale.US, "  Spearman rho (tüm/içi/dışı): %s / %s / %s%n", fmtR(rhoAll), fmtR(rhoIn), fmtR(rhoOut))
+    body << String.format(java.util.Locale.US, "  N            (tüm/içi/dışı) : %,d / %,d / %,d%n", corrN, corrNin, corrNout)
+    body << "  (pozitif r: ölçüm mesafeyle artar · HMS-IAC S1 deseni)\n"
+}
 body << "\n"
 body << "İşaret kuralı: NEGATİF mesafe → hücre yapının İÇİNDE; pozitif → dışında.\n"
 body << "Her hücreye '" << distMeas << "' ölçümü yazıldı; ölçüme göre renklendirince\n"

@@ -113,7 +113,11 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Kalibrasyon (piksel boyutu)", "yardimci-kalibrasyon.groovy"),
             // "Analiz etmeden önce verine bak" — bioimagebook Bölüm 1: salt-okur künye + kanal
             // histogramı + doygunluk/clipping. bkz. Ekler → Görüntü Analizi Temelleri.
-            new ScriptEntry("Görüntü künyesi ve histogram", "yardimci-goruntu-kunye.groovy")
+            new ScriptEntry("Görüntü künyesi ve histogram", "yardimci-goruntu-kunye.groovy"),
+            // Native doku tespiti (OD-sum/hematoksilen Otsu → ContourTracing); Python/ImageJ gerekmez.
+            new ScriptEntry("Doku tespiti sihirbazı (native)", "yardimci-doku-tespiti-sihirbaz.groovy"),
+            // Salt-okur anotasyon bütünlüğü denetimi: örtüşme/kopya/boş/adsız/sınır-dışı/geçersiz geometri.
+            new ScriptEntry("Anotasyon yapısı QC (denetçi)", "yardimci-anotasyon-qc.groovy")
         )),
         new ScriptGroup("Boya & renk", List.of(
             // Tek-pencere: mevcut vektörleri raporlar (kontrol) + seçili bölgeden tahmin → önizle → uygula → geri al.
@@ -121,7 +125,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             // Boya KALİTESİ QC: H:E OD oranı + CIELAB L* + doku% (ölçüm-only); tarayıcı/zaman karşılaştırma. Bkz. Ek A.
             new ScriptEntry("Boya kalitesi QC ölçümü", "yardimci-boya-kalite-qc.groovy"),
             // Salt-okur ICC denetçisi — gömülü profili okur; UYGULAMAZ (qupath#982). bkz. Ekler → Renk Yönetimi (ICC).
-            new ScriptEntry("ICC renk profili denetçisi", "yardimci-icc-denetci-sihirbaz.groovy")
+            new ScriptEntry("ICC renk profili denetçisi", "yardimci-icc-denetci-sihirbaz.groovy"),
+            // Proje geneli boya OD drift raporu (tarayıcı/zaman karşılaştırma → CSV + IQR aykırı işareti); proje-düzeyi, açık slayt gerekmez.
+            new ScriptEntry("Kohort boya OD drift raporu", "yardimci-kohort-boya-qc.groovy", false, false)
         )),
         new ScriptGroup("Hücre / çekirdek tespiti", List.of(
             // StarDist (yerel eklenti) köprüsü — seçili ROI'de H&E çekirdek tespiti; yoksa kuruluma yönlendirir. Ek G.
@@ -145,7 +151,11 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("PHH3 mitoz kantifikasyonu",            "yardimci-mitoz-phh3.groovy"),
             new ScriptEntry("Tümör tomurcuklanma kantifikasyonu (CK / ITBCC)", "yardimci-tumor-tomurcuklanma.groovy"),
             // WSInfer karo tespitlerini sınıf bazında ALAN (mm²) + %'ye toplar (çıkarım yapmaz). bkz. Ekler → WSInfer.
-            new ScriptEntry("WSInfer karo özeti (sınıf alanı / %)", "yardimci-wsinfer-ozet.groovy")
+            new ScriptEntry("WSInfer karo özeti (sınıf alanı / %)", "yardimci-wsinfer-ozet.groovy"),
+            // Var olan karoları seçili ölçüme göre sıralayıp top-N'i çıkarır (Ki-67 LI, mitoz/mm² vb.). Rehber eşiği YOK.
+            new ScriptEntry("Sıralı hotspot seçici (top-N)", "yardimci-hotspot-sirali.groovy"),
+            // Sınıf bazlı entegre DAB OD = pozitif alan × ortalama OD (toplam kromojen yükü; kalibrasyona bağlı).
+            new ScriptEntry("Entegre DAB OD (alan × OD)", "yardimci-entegre-od.groovy")
         )),
         new ScriptGroup("Uzamsal analiz", List.of(
             // FS2K Session 12 — var olan tespitlerden doku düzenini ÖLÇER (klinik yorum üretmez). bkz. Ek M.
@@ -158,7 +168,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Kesişim alanı (örtüşme)",        "yardimci-kesisim-alani.groovy"),
             new ScriptEntry("Peritümöral bant (halka)",       "yardimci-peritumoral-bant.groovy"),
             // Nesne kümesinin dış bükey zarfı (JTS convexHull) — yayılım alanı. bkz. Ek M.
-            new ScriptEntry("Dış bükey zarf (convex hull)",   "yardimci-konveks-zarf.groovy")
+            new ScriptEntry("Dış bükey zarf (convex hull)",   "yardimci-konveks-zarf.groovy"),
+            // Çapraz-tip en yakın komşu: her A hücresinden en yakın B hücresine µm mesafe (sınıf-bağımlı NN).
+            new ScriptEntry("Çapraz-tip en yakın komşu (A→B)", "yardimci-capraz-nn-mesafe.groovy")
         )),
         new ScriptGroup("İçe / dışa aktarma & veri", List.of(
             new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy"),
@@ -201,7 +213,11 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Kohort metadata sihirbazı", "yardimci-metadata-sihirbaz.groovy", false, false),  // proje geneli, salt-okunur: açık slayt gerekmez
             // sectra-qupath (sbalci, MIT) köprüsü — Sectra PACS DICOM (GSPS) → GeoJSON. bkz. Ekler → Klinik PACS.
             new ScriptEntry("Sectra PACS anotasyon sihirbazı", "yardimci-sectra-iceaktar.groovy"),
-            new ScriptEntry("WSI anonimleştirme sihirbazı",         "yardimci-anonim-sihirbaz.groovy")
+            new ScriptEntry("WSI anonimleştirme sihirbazı",         "yardimci-anonim-sihirbaz.groovy"),
+            // Proje geneli kilitli özet anotasyon ölçümlerini tek satır/görüntü geniş TSV'ye toplar; salt-okur, açık slayt gerekmez.
+            new ScriptEntry("Kohort özet toplayıcı (proje tablosu)", "yardimci-kohort-ozet-topla.groovy", false, false),
+            // Salt-okur koşu manifesti: kimlik + boya vektörleri + sınıf bazlı sayımlar → provenance JSON; açık slayt gerekmez.
+            new ScriptEntry("Koşu manifesti (provenance JSON)", "yardimci-kosu-manifesti.groovy", false, false)
         )),
         new ScriptGroup("Eğitim, sunum & ImageJ", List.of(
             // Bankhead'in görüntü-işleme sözlüğünü kendi slaydında canlı önizlemelerle gezdiren tur (Modül 2'nin perde arkası).
