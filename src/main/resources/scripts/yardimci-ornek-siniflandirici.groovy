@@ -11,8 +11,10 @@
  * KURAL: Projede aynı isimli bir sınıflandırıcı zaten varsa (örn. kendi eğittiğiniz
  * model) ÜZERİNE YAZILMAZ — mevcut modeliniz korunur.
  *
- * Not: Modül 6 ve 7, bu örnek modeli projeye kaydetmeseniz de otomatik kullanır;
- * bu yardımcı yalnızca modeli görünür/incelenebilir kılmak için vardır.
+ * Not: Modül 6 sihirbazı, bu örnek modeli projeye kaydetmeseniz de otomatik kullanır
+ * (aynı kurulum mantığını kendi içinde tekrarlar). Modül 7 bu H&E piksel
+ * sınıflandırıcısını HİÇ kullanmaz (H-DAB slaytında domain kayması olurdu — bkz.
+ * Modül 7). Bu yardımcı yalnızca modeli görünür/incelenebilir kılmak için vardır.
  */
 import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
@@ -121,7 +123,7 @@ project.getPixelClassifiers().put(classifierName, classifier)
 Dialogs.showMessageDialog(
     "Kuruldu",
     "Örnek sınıflandırıcı '${classifierName}' projenize kaydedildi.\n\n" +
-    "[Classify → Pixel classification] listesinde görünür; Modül 6 ve 7'yi\n" +
+    "[Classify → Pixel classification] listesinde görünür; Modül 6'yı\n" +
     "artık bu modelle çalıştırabilirsiniz.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlıdır."
 )

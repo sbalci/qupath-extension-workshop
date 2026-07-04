@@ -15,8 +15,9 @@
  *      vektörleri tanımlı). Değilse: Yardımcılar → Görüntü tipi ayarla.
  *   2. Piksel boyutu (µm/px) kalibre olmalı. Değilse: Yardımcılar → Kalibrasyon.
  *   3. Slaytta en az birer **Tumor** ve **Stroma** sınıflı anotasyon olmalı
- *      (Modül 6 §2'deki gibi 3-5 küçük temsili bölge). İsterseniz Background /
- *      Necrosis gibi ek sınıflar da çizebilirsiniz; hepsi otomatik kullanılır.
+ *      (Modül 6 §2'deki gibi 3-5 küçük temsili bölge). İsterseniz Background* /
+ *      Necrosis* gibi ek sınıflar da çizebilirsiniz; sona eklenen * o sınıfı hem
+ *      nesne üretiminden hem de alan ölçümünden çıkarır (Modül 6'daki Ignore* kuralı).
  *
  * KULLANIM:
  *   1. H&E slaytında Tumor (kırmızı) + Stroma (yeşil) bölgeleri çizin
@@ -27,7 +28,7 @@
  * MODEL (atölye varsayılanı — sabit, "küçük" model):
  *   • Sınıflandırıcı : Random Forest (OpenCV RTrees, QuPath varsayılan ağaç ayarları)
  *   • Özellikler     : Hematoxylin OD + Eosin OD; ham + Gaussian σ = 1, 2, 4 µm
- *   • Çözünürlük     : 2 µm/px (Modül 6'daki "High")
+ *   • Çözünürlük     : 2 µm/px (Modül 6 §3 başlangıç değeri; doku-ölçekli, orta çözünürlük)
  *   Bu ayarlar Modül 6 §3'te öğretilen ayarlarla birebir aynıdır.
  *
  * METODOLOJI NOTU:
@@ -338,7 +339,7 @@ if (tumorCount == 0 || stromaCount == 0) {
         "  2. Brush (B) ile 3-5 farklı tümör adasına küçük Tumor anotasyonları çizin\n" +
         "  3. Sınıfı Stroma'ya çevirip 3-5 stromal bölge çizin\n" +
         "  4. Bu betiği tekrar çalıştırın\n\n" +
-        "İsterseniz Background / Necrosis gibi ek sınıflar da çizebilirsiniz; hepsi kullanılır."
+        "İsterseniz Background* / Necrosis* gibi ek sınıflar da çizebilirsiniz (sona * ekleyin: nesne ve alan ölçümü dışı kalır)."
     )
     return
 }
@@ -363,7 +364,7 @@ if (existingNames.contains(baseName)) {
 // ──────────────────────────────────────────────────────────────
 // 3) Karşılama / onay
 // ──────────────────────────────────────────────────────────────
-def trainResolutionMicrons = 2.0   // atölye sabiti — Modül 6 "High (2 µm/px)"
+def trainResolutionMicrons = 2.0   // atölye sabiti — Modül 6 §3 başlangıç çözünürlüğü (2 µm/px, doku-ölçekli)
 def extraClasses = classCounts.keySet().findAll { !(it in ['Tumor', 'Stroma']) }
 
 def devam = waitForConfirm(

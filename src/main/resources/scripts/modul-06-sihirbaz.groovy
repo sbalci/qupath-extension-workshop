@@ -621,7 +621,10 @@ render = { ->
             'Annotations paneli → sınıfı seçin → Brush (B) ile birkaç temsilî bölge çizin.\n' +
             'Zorunlu sınıflar: Tumor, Stroma, Ignore* (boş cam/arka plan — modelin dokuyu\n' +
             'Tümör/Stroma\'ya zorlamasını engeller). İsteğe bağlı sınıfları işaretlerseniz\n' +
-            'modele ayrı sınıf olarak katılır; işaretsizler eğitime girmez.')
+            'modele ayrı sınıf olarak katılır; işaretsizler eğitime girmez.\n' +
+            'Küçük ve çeşitli örnekler çizin; geniş dolu alan örnek bütçesini boşa harcar.\n' +
+            'Not: Model yalnız BU slayttan öğrenir; başka slaytlara genellemesi sınırlıdır —\n' +
+            'çoklu-slayt eğitim için Ek J §4b.')
         def grid = new javafx.scene.layout.VBox(4)
         MANDATORY_CLASSES.each { nm ->
             int c = s.counts[nm] ?: 0
