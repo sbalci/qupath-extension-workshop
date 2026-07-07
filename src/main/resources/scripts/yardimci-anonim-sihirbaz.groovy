@@ -23,7 +23,7 @@
  *     güvenli, çalışan slayt üretir.
  *   • "Metadata sil" (Python) = ImageDescription redaksiyonu (SVS/TIFF). Etiket/makro
  *     GÖRÜNTÜSÜNÜ silmez; piramidi koruyan tam temizlik için wsi-anon / tifftools /
- *     ImageDePHI kullanın (Ek E § Araç ekosistemi). tifffile yoksa kopyaya düşer.
+ *     ImageDePHI kullanın (WSI Anonimleştirme eki § Araç ekosistemi). tifffile yoksa kopyaya düşer.
  *   • Anonimleştirmeyi HER dosyada gözle DOĞRULAYIN.
  *
  * EŞLEŞTİRME ANAHTARI = PHI:
@@ -332,7 +332,7 @@ def buildResultText = { File outDir, cfg, List rows, List keyFiles ->
         sb << "⚠ Eşleştirme anahtarı (CSV/JSON) PHI içerir — güvenli saklayın, anonim slaytlarla paylaşmayın.\n"
     else
         sb << "⚠ Geri alınamaz mod: orijinal↔anonim bağlantısı YAZILMADI. Geri dönüş gerekiyorsa\n  orijinalleri + kendi anahtarınızı ayrıca güvenli tutun.\n"
-    sb << "⚠ Etiket/makro görüntü silinmedi; tam temizlik için wsi-anon/tifftools (Ek E).\n"
+    sb << "⚠ Etiket/makro görüntü silinmedi; tam temizlik için wsi-anon/tifftools (WSI Anonimleştirme eki).\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlıdır; klinik karar üretmez."
     return sb.toString()
 }
@@ -534,7 +534,7 @@ render = { ->
 
         addWarnLabel('⚠ Eşleştirme anahtarı (CSV/JSON) PHI içerir — güvenli saklayın, anonim slaytlarla paylaşmayın.')
         addGuidance('Orijinal slaytlara DOKUNULMAZ; yalnız çıktı klasörüne anonim kopyalar yazılır. ' +
-            'Etiket/makro görüntü silinmez (tam temizlik için wsi-anon/tifftools — Ek E). ' +
+            'Etiket/makro görüntü silinmez (tam temizlik için wsi-anon/tifftools — WSI Anonimleştirme eki). ' +
             'Anonimleştirmeyi her dosyada gözle doğrulayın.')
 
         actions.add(navButton('Kapat', { stage.close() }))

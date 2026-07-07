@@ -18,13 +18,13 @@
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • GrandQC çıktısı bir derin öğrenme TAHMİNİDİR; bu betik tahminleri yalnız
  *     QuPath görselleştirme/ölçüm katmanına TAŞIR ve alan/sayı/% üretir. Patoloji
- *     yorumu, grade veya klinik karar üretmez. Görsel doğrulama gerekir (Ek D, Ek W).
+ *     yorumu, grade veya klinik karar üretmez. Görsel doğrulama gerekir (Manuel Düzeltme eki, Yapay Zekâ Araçlarını Değerlendirme eki).
  *   • GeoJSON koordinatları WSI taban (level-0) piksel uzayında olmalıdır; betik
  *     yeniden ölçekleme yapmaz.
  *   • Lisans: GrandQC kodu/modelleri CC BY-NC-SA 4.0 (yalnız ticari olmayan).
  *
  * KULLANIM:
- *   1. GrandQC Python ortamını kurun (venv + modeller). Bkz. Ekler → Ek B § GrandQC.
+ *   1. GrandQC Python ortamını kurun (venv + modeller). Bkz. Ekler → Kalite Kontrol § GrandQC.
  *   2. Bir H&E slaydını açın (yerel diskte).
  *   3. [Extensions → Atölye → Yardımcılar → GrandQC kalite kontrol sihirbazı]
  *   4. İlk açılışta yapılandırın: python.exe, GrandQC betik dizini, model dizini, MPP.
@@ -350,7 +350,7 @@ def buildResultText = { slide, imp, clean ->
         if (clean != null && clean.error) sb << " — " << clean.error
         sb << "\nArtefakt/doku anotasyonları yine de eklendi.\n"
     }
-    sb << "\nGrandQC çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Ek D, Ek W).\n"
+    sb << "\nGrandQC çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Manuel Düzeltme eki, Yapay Zekâ Araçlarını Değerlendirme eki).\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
 }
@@ -548,9 +548,14 @@ render = { ->
     if (cur == 'CONFIG_INCOMPLETE') {
         title.setText('GrandQC yapılandırması gerekli')
         def miss = configMissing(cfg)
-        addGuidance('GrandQC bir Python ortamı gerektirir. Aşağıdakiler eksik/geçersiz:\n  • ' +
+        addGuidance('GrandQC bir Python ortamı + GrandQC betik/model dosyaları gerektirir. Eksik/geçersiz:\n  • ' +
             (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
-            '\n\nKurulum: Ekler → Ek B § GrandQC.')
+            '\n\nKOLAY KURULUM (2 adım):\n' +
+            '  1) Python ortamı → [Extensions → Atölye → Yardımcılar → Python köprüleri & temel modeller →\n' +
+            '     Atölye Python ortam yöneticisi] penceresinde "GrandQC" ortamını tek tıkla kurun (uv: venv + paketler).\n' +
+            '  2) GrandQC betikleri (wsi_tis_detect.py) + model ağırlıkları → Ekler → Kalite Kontrol § GrandQC\n' +
+            '     adımlarını izleyin (upstream repo + model; ortam yöneticisi model ağırlığı indirmez).\n' +
+            'Sonra bu pencerede "Yapılandır ▶" ile python.exe, betik dizini ve model dizinini seçin.')
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {

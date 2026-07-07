@@ -21,7 +21,7 @@
  *
  * KULLANIM:
  *   1. H&E slaytında Tumor (kırmızı) + Stroma (yeşil) bölgeleri çizin
- *   2. [Automate → Project scripts → modul-06-model-egit] (ya da Tümör/Stroma sihirbazından 'Yeni sınıflandırıcı eğit')
+ *   2. [Automate → Project scripts → model-egit] (ya da Tümör/Stroma sihirbazından 'Yeni sınıflandırıcı eğit')
  *   3. Model kaydedilir; isterseniz bu slaytta hızlı önizleme yapın
  *   4. Ölçüm sınırını seçin; Tümör/Stroma sihirbazı ile alan ölçümlerini alın
  *
@@ -34,7 +34,7 @@
  * METODOLOJI NOTU:
  *   Az sayıda küçük bölgeden eğitilen RF, tek slaytta iyi; başka slaytlara
  *   genelleme sınırlıdır (Tümör/Stroma modülü §4.2/§4.4). Çoklu-slayt eğitimi ve hazır
- *   modeller için Tümör/Stroma modülü §4.4 ve Ek C'ye bakın.
+ *   modeller için Tümör/Stroma modülü §4.4 ve Hazır Tümör/Stroma Modelleri ekine bakın.
  *
  *   ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */

@@ -12,8 +12,8 @@
  * "immün hücreler tümör sınırına ne kadar yakın?", "Ki-67+ hücreler invazyon
  * kenarında mı yoğun?". Bu, From Samples to Knowledge (FS2K, Session 12)
  * eğitimindeki "signed distance to annotations → yakın/uzak sınıflama"
- * iş akışının atölye karşılığıdır ve doğrudan Ek O (TIL) / Ek L (TSR)
- * bölümlerini besler.
+ * iş akışının atölye karşılığıdır ve doğrudan Stromal TIL / İmmün Skorlama
+ * ekini / TSR Metodolojisi ekini besler.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • VAR OLAN tespitlerin merkezinden seçili yapının sınırına mesafe ölçer.

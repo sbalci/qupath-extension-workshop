@@ -192,7 +192,7 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
             })
             def wizardBtn = new javafx.scene.control.Button('Sihirbazı aç (yeni model)')
             wizardBtn.setOnAction({
-                if (!launch('modul-06-sihirbaz.groovy')) {
+                if (!launch('sihirbaz.groovy')) {
                     qupath.fx.dialogs.Dialogs.showMessageDialog('Eklenti gerekli',
                         'Sihirbaz için: Extensions → Atölye → Modüller →\n' +
                         '"Tümör/Stroma sihirbazı (model kur/eğit)".')

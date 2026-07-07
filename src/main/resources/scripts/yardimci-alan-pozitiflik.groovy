@@ -11,7 +11,7 @@
  *   • Pozitif boya ALANININ doku alanına oranını ölçer (% pozitif alan).
  *     Bu bir ORAN/ALANdır — klinik skor, H-score, eşik veya yorum DEĞİL.
  *   • Eşik DEĞERLERİ sınıflandırıcının içinde tanımlıdır; kullanıcı
- *     kalibre eder (bkz. Ek R).
+ *     kalibre eder (bkz. Alan-bazlı Pozitiflik eki).
  *
  * ÖN KOŞUL — eşik sınıflandırıcısı (bir kez, GUI'de):
  *   [Classify → Pixel classification → Create thresholder]
@@ -20,7 +20,7 @@
  *     • Threshold: dokunuza göre ayarlayın (başlangıç ~0.20 DAB OD)
  *     • Above threshold sınıfı adını "Pozitif" yapın
  *     • [Save] → adı "DAB-pozitif" verin
- *   Ayrıntı: Ek R — Alan-bazlı pozitiflik.
+ *   Ayrıntı: Alan-bazlı pozitiflik eki.
  *
  * KULLANIM:
  *   1. DAB-İHK slaytını açın, Image type → "Brightfield (H-DAB)"
@@ -138,7 +138,7 @@ if (classifier == null) {
               "  [Classify → Pixel classification → Create thresholder]\n" +
               "  • Channel: DAB, eşik-üstü sınıf adı: \"${positiveClass}\"\n" +
               "  • [Save] → ad: \"${classifierName}\"\n\n" +
-              "Ayrıntı: Ek R — Alan-bazlı pozitiflik."
+              "Ayrıntı: Alan-bazlı pozitiflik eki."
     if (isHeadless) println msg else Dialogs.showErrorMessage("Sınıflandırıcı yok", msg)
     return
 }
@@ -189,7 +189,7 @@ QP.fireHierarchyUpdate()
 if (withData == 0) {
     def msg = "Sınıflandırıcı çalıştı ama beklenen alan ölçümleri bulunamadı.\n\n" +
               "Eşik sınıflandırıcısının eşik-üstü sınıf adının \"${positiveClass}\" olduğundan\n" +
-              "emin olun (Ek R). Sınıflandırıcıyı yeniden kaydedip tekrar deneyin."
+              "emin olun (Alan-bazlı Pozitiflik eki). Sınıflandırıcıyı yeniden kaydedip tekrar deneyin."
     if (isHeadless) println msg else Dialogs.showWarningNotification("Ölçüm yok", msg)
     return
 }
@@ -205,7 +205,7 @@ body << String.format(java.util.Locale.US, "Pozitif alan         : %.4f µm²%n"
 body << String.format(java.util.Locale.US, "Toplam sınıflı alan  : %.4f µm²%n", totalAllArea)
 body << String.format(java.util.Locale.US, "%% pozitif alan       : %.2f %%%n", overallPct)
 body << "\n"
-body << "Sınıflandırıcı: \"" << classifierName << "\" (eşikleri Ek R'ye göre kalibre edin)\n"
+body << "Sınıflandırıcı: \"" << classifierName << "\" (eşikleri Alan-bazlı Pozitiflik ekine göre kalibre edin)\n"
 body << "Bu bir ORAN/ALANdır — klinik skor, H-score veya yorum DEĞİL.\n"
 body << "(Gonzalez 2025; Finney 2020; Bankhead 2017)\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."

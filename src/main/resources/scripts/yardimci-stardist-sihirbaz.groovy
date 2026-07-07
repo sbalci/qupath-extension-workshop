@@ -19,13 +19,13 @@
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Yalnız sayım / alan / yoğunluk üretir; sınıflandırma, grade, alt-tip veya
  *     klinik yorum YAPMAZ. (Tümör/non-neoplastik ayrımı + cTCF için QuANTUM modülü.)
- *   • StarDist çıktısı bir DERİN ÖĞRENME TAHMİNİDİR; görsel doğrulama gerekir (Ek W).
+ *   • StarDist çıktısı bir DERİN ÖĞRENME TAHMİNİDİR; görsel doğrulama gerekir (Yapay Zekâ Araçlarını Değerlendirme eki).
  *   • Eşik / piksel boyutu / hücre genişletme değerleri QuANTUM modülü ile ORTAK kalıcı
  *     atölye ayarlarıdır (Atölye Ayarları → StarDist).
  *
  * KULLANIM:
  *   1. StarDist eklentisini kurun: [Extensions → Manage extensions] → StarDist.
- *      Ayrıntılı kurulum: Ekler → Ek G (StarDist Eklentisi).
+ *      Ayrıntılı kurulum: Ekler → StarDist (StarDist Eklentisi).
  *   2. Bir H&E slaytı açın; ölçülecek bölge için bir ALAN anotasyonu çizin ve SEÇİN.
  *   3. [Extensions → Atölye → Yardımcılar → StarDist çekirdek tespiti sihirbazı]
  *   4. (Ops.) eşik / piksel boyutu / hücre genişletmeyi ayarlayın → "Çekirdek tespiti".
@@ -189,7 +189,7 @@ def buildResultText = { String slideName, int n, double areaMm2, double density,
     }
     sb << String.format(java.util.Locale.US, "Süre            : %.1f sn%n", secs)
     sb << "\nŞekil + yoğunluk ölçümleri her hücreye yazıldı (Measurements paneli).\n"
-    sb << "StarDist çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Ek W).\n"
+    sb << "StarDist çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki).\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
 }
@@ -244,7 +244,7 @@ def copyToClipboard = { String txt ->
 
 // ── Tespit akışı (arka plan iş parçacığı) ───────────────────────────────────
 def startDetection = {
-    if (!stardistInstalled()) { errorTextRef.set('StarDist eklentisi yüklü değil.\nExtensions → Manage extensions → StarDist (bkz. Ek G).'); step.set('ERROR'); render(); return }
+    if (!stardistInstalled()) { errorTextRef.set('StarDist eklentisi yüklü değil.\nExtensions → Manage extensions → StarDist (bkz. StarDist eki).'); step.set('ERROR'); render(); return }
     def imageData = QP.getCurrentImageData()
     if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
     def selected = QP.getSelectedObject()
@@ -302,7 +302,7 @@ def startDetection = {
                 }
                 pickLatch.await()
                 def picked = pickedRef.get()
-                if (picked == null) { javafx.application.Platform.runLater { errorTextRef.set('Model yok ve elle seçim iptal edildi.\nİnternet bağlıyken tekrar deneyin ya da modeli ~/.qupath/stardist/ içine koyun (bkz. Ek G).'); step.set('ERROR'); render() }; return }
+                if (picked == null) { javafx.application.Platform.runLater { errorTextRef.set('Model yok ve elle seçim iptal edildi.\nİnternet bağlıyken tekrar deneyin ya da modeli ~/.qupath/stardist/ içine koyun (bkz. StarDist eki).'); step.set('ERROR'); render() }; return }
                 modelFile = picked
             }
         } else {
@@ -510,7 +510,7 @@ render = { ->
         title.setText('StarDist eklentisi gerekli')
         addGuidance('Bu sihirbaz yerel QuPath **StarDist eklentisini** kullanır; şu anda yüklü değil.\n\n' +
             'Kurulum:\n  1. [Extensions → Manage extensions] → StarDist → Install\n  2. QuPath\'i yeniden başlatın\n  3. Bu sihirbazı tekrar açın\n\n' +
-            'Ayrıntılı kurulum + model dosyaları: Ekler → Ek G (StarDist Eklentisi).\n' +
+            'Ayrıntılı kurulum + model dosyaları: Ekler → StarDist (StarDist Eklentisi).\n' +
             'Not: .pb modelleri QuPath içinde OpenCV ile koşar — ayrıca DJL/TensorFlow GEREKMEZ.')
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('⟳ Yeniden denetle', { step.set(stardistInstalled() ? 'READY' : 'NEED_INSTALL'); render() }))

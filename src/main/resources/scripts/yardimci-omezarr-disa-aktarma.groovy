@@ -6,7 +6,7 @@
  * OME-Zarr (OME-NGFF v0.4) yazıcısıyla parçalı (chunked), çok düzeyli (piramidal),
  * cloud-native bir `.ome.zarr` deposuna dışa aktarır. Çok büyük WSI ölçeğinde
  * düz PNG karo yığını yerine tercih edilen biçimdir (bkz. Ekler → OME-Zarr / OME-NGFF
- * ve Ek X — Karo dışa aktarma).
+ * ve Karo Dışa Aktarma eki).
  *
  * KAPSAM (diyalogdan seçilir):
  *   • Tüm görüntü          — açık slaytın tamamı (büyük slaytlarda dakikalar/GB).

@@ -15,9 +15,9 @@
  * NEDEN: Atölyede tespit/sınıflandırma adımları (Hücre tespiti / Nükleer boya modülleri,
  * StarDist sihirbazı…)
  * görsel olarak "iyi görünür" — ama otomatik tespitin patoloğun işaretlediği
- * referansla NE KADAR uyuştuğunu SAYISAL ölçen bir araç yoktu. Ek J anotasyon
- * stratejisini, Ek W değerlendirmeyi KAVRAMSAL anlatır; bu yardımcı uyumu
- * ÖLÇER. (Thierry Pécot'un "Whole Slide Image Analysis with QuPath" eğitimindeki
+ * referansla NE KADAR uyuştuğunu SAYISAL ölçen bir araç yoktu. Anotasyon
+ * stratejisini Anotasyon Stratejisi eki, değerlendirmeyi ise Yapay Zekâ Araçlarını
+ * Değerlendirme eki KAVRAMSAL anlatır; bu yardımcı uyumu ÖLÇER. (Thierry Pécot'un "Whole Slide Image Analysis with QuPath" eğitimindeki
  * compute_F1_score_for_IoU_threshold yaklaşımının atölye karşılığı.)
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
@@ -306,7 +306,7 @@ def runValidation = { String gtLabel, String predLabel, String mode, double thr,
     b << "Eşleştirme açgözlü bire-bir; skorlar 0–1 arası (yüzde değil).\n"
     b << "Bu bir ÖLÇÜM kalite göstergesidir (örneklenen bölgede otomatik tespit ile\n"
     b << "referans anotasyon UYUMU) — klinik doğruluk iddiası ya da validasyon\n"
-    b << "çalışması DEĞİL. Validasyon tasarımı için bkz. Ek U; AI değerlendirme: Ek W.\n\n"
+    b << "çalışması DEĞİL. Validasyon tasarımı için bkz. Yeniden Üretilebilirlik eki; AI değerlendirme: Yapay Zekâ Araçlarını Değerlendirme eki.\n\n"
     b << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
     // ── Kilitli özet anotasyonu (Veri dışa aktarma modülü ile dışa aktarılır) ───────────

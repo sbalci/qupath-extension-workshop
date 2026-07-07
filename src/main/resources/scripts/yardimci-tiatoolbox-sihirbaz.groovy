@@ -28,7 +28,7 @@
  * NE ÜRETİR (ve ne ÜRETMEZ):
  *   • Boya normalizasyonu: disktedeki normalize görüntü dosyaları (QuPath nesnesi değil).
  *   • Doku maskesi: "Doku" sınıflı, kilitli anotasyon + alan (mm²) ölçümü.
- *   • Hiçbir klinik eşik/alt-tip/grade/yorum üretmez. Sonuçları görsel doğrulayın (Ek W).
+ *   • Hiçbir klinik eşik/alt-tip/grade/yorum üretmez. Sonuçları görsel doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki).
  *
  * KULLANIM:
  *   1. TIA Toolbox Python ortamını kurun (venv) — Ek → TIA Toolbox § Kurulum ya da
@@ -369,7 +369,7 @@ def normTilesResultText = { File workDir, cfg, exp, int normalized ->
     sb << String.format(java.util.Locale.US, "Anotasyon : %,d   ·   dışa aktarılan karo: %,d%n", (int) (exp?.nAnns ?: 0), (int) (exp?.nTiles ?: 0))
     sb << String.format(java.util.Locale.US, "Normalize : %,d karo%n", normalized)
     sb << "\nÇıktı klasörü:\n  " << new File(workDir, 'normalized').getAbsolutePath() << "\n"
-    sb << "\nNormalize karolar bir ÖN-İŞLEME çıktısıdır (Ek Q / Kaiko / SPIDER'a beslenebilir);\n"
+    sb << "\nNormalize karolar bir ÖN-İŞLEME çıktısıdır (Foundation Model Gömme / Kaiko / SPIDER'a beslenebilir);\n"
     sb << "QuPath nesnesi/ölçümü üretmez.\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlıdır."
     return sb.toString()
@@ -386,7 +386,7 @@ def tissueResultText = { File workDir, cfg, exp, imp ->
     else
         sb << "Doku alanı: (görüntü kalibre değil — mm² verilemedi)\n"
     sb << "\nMaske açık slayda hizalı 'Doku' anotasyonu olarak eklendi.\n"
-    sb << "Maske bir tahmindir; görsel olarak doğrulayın (Ek W). Klinik yorum üretilmez.\n"
+    sb << "Maske bir tahmindir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki). Klinik yorum üretilmez.\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
 }
@@ -612,9 +612,14 @@ render = { ->
     if (cur == 'CONFIG_INCOMPLETE') {
         title.setText('TIA Toolbox yapılandırması gerekli')
         def miss = configMissing(cfg)
-        addGuidance('Bu sihirbaz bir Python ortamı (TIA Toolbox) gerektirir. Eksik/geçersiz:\n  • ' +
+        addGuidance('Bu sihirbaz bir Python ortamı (TIA Toolbox) + bir köprü betiği gerektirir. Eksik/geçersiz:\n  • ' +
             (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
-            '\n\nKurulum: Ekler → TIA Toolbox § Kurulum (ya da handson/python/tiatoolbox/README.md).')
+            '\n\nKOLAY KURULUM:\n' +
+            '  1) Python ortamı → [Extensions → Atölye → Yardımcılar → Python köprüleri & temel modeller →\n' +
+            '     Atölye Python ortam yöneticisi] penceresinde "TIA Toolbox — boya normalizasyonu / doku maskesi"\n' +
+            '     ortamını tek tıkla kurun (hafif; torch gerekmez). Model ağırlıklarını TIA Toolbox ilk kullanımda kendi indirir.\n' +
+            '  2) Köprü betiği → handson/python/tiatoolbox/tiatoolbox_bridge.py (repoda hazır gelir).\n' +
+            'Sonra bu pencerede "Yapılandır ▶" ile python.exe ve köprü yolunu seçin.')
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {

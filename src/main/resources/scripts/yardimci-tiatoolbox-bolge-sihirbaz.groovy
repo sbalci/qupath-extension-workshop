@@ -27,7 +27,8 @@
  *
  * NE ÜRETİR (ve ne ÜRETMEZ):
  *   Bölge içi tespitleri sınıf başına nokta-anotasyonu + sayı olarak üretir. Hiçbir
- *   klinik eşik/alt-tip/grade/yorum üretmez. Tahminleri görsel doğrulayın (Ek W/Ek D).
+ *   klinik eşik/alt-tip/grade/yorum üretmez. Tahminleri görsel doğrulayın (Yapay Zekâ Araçlarını
+ *   Değerlendirme eki / Manuel Düzeltme eki).
  *
  * KULLANIM:
  *   1. Resmî TIA Toolbox eklentisini bir kez kurup çalışma zamanını yükleyin

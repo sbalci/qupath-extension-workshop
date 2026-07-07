@@ -439,7 +439,7 @@ if (isHeadless) {
     def s = computeState()
     println "Sihirbaz (headless): image=${s.image} project=${s.project} H&E=${s.he} " +
             "calib=${s.calib} Tumor=${s.tumor} Stroma=${s.stroma} models=${s.classifiers}"
-    println "GUI olmadan sihirbaz etkileşimi yok. Ölçüm için modul-06-tumor-stroma.groovy çalıştırın."
+    println "GUI olmadan sihirbaz etkileşimi yok. Ölçüm için tumor-stroma.groovy çalıştırın."
     return
 }
 
@@ -624,7 +624,7 @@ render = { ->
             'modele ayrı sınıf olarak katılır; işaretsizler eğitime girmez.\n' +
             'Küçük ve çeşitli örnekler çizin; geniş dolu alan örnek bütçesini boşa harcar.\n' +
             'Not: Model yalnız BU slayttan öğrenir; başka slaytlara genellemesi sınırlıdır —\n' +
-            'çoklu-slayt eğitim için Ek J §4b.')
+            'çoklu-slayt eğitim için Anotasyon Stratejisi eki §4b.')
         def grid = new javafx.scene.layout.VBox(4)
         MANDATORY_CLASSES.each { nm ->
             int c = s.counts[nm] ?: 0

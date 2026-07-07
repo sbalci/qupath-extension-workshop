@@ -51,7 +51,7 @@ public final class WorkshopResources {
     private static final String SCRIPT_RESOURCE_ROOT = "/scripts/";
 
     /**
-     * Returns the UTF-8 text of a bundled Groovy script (e.g. "modul-06-sihirbaz.groovy"),
+     * Returns the UTF-8 text of a bundled Groovy script (e.g. "sihirbaz.groovy"),
      * or {@code null} if the resource is missing or unreadable. Used by orchestrator
      * scripts (the Modül 6 wizard / selection hub) to launch sibling scripts via GroovyShell.
      */

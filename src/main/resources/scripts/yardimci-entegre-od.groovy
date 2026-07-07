@@ -173,7 +173,7 @@ def dabStain = stains.getStain(2)
 if (dabStain == null || !((dabStain.getName() ?: '').toLowerCase(java.util.Locale.ROOT).contains('dab'))) {
     def msg = "2. boya vektörü DAB değil (bulunan: '${dabStain?.getName() ?: '(yok)'}').\n\n" +
               "Image type → 'Brightfield (H-DAB)' olduğundan ve boya vektörlerinin doğru\n" +
-              "ayarlandığından emin olun (Ek A · boya vektörleri sihirbazı)."
+              "ayarlandığından emin olun (Boya Normalizasyonu eki · boya vektörleri sihirbazı)."
     if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage("DAB boyası bulunamadı", msg)
     return
 }

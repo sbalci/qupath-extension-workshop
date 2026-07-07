@@ -23,7 +23,7 @@
  *   • Yalnız bir maskeyi QuPath görselleştirme/ölçüm katmanına TAŞIR; sınıf
  *     başına anotasyon sayısı ve alan (mm²) üretir. Patoloji yorumu, grade veya
  *     klinik karar üretmez. Maske bir derin öğrenme çıktısıysa görsel doğrulama
- *     gerekir (Ek W).
+ *     gerekir (Yapay Zekâ Araçlarını Değerlendirme eki).
  *   • Maske, açık görüntünün TABAN (level-0) piksel uzayında ölçeklenmiş kabul
  *     edilir; downsample (1 maske pikseli = kaç görüntü pikseli) yan dosyadan
  *     (<maske>.json) okunur, yoksa boyut oranından önerilip sorulur.

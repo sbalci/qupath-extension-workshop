@@ -70,29 +70,29 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
      * {@code /scripts/} resource directory (ASCII for cross-platform safety).
      */
     private static final List<ScriptEntry> SCRIPTS = List.of(
-        // Modül 1: interaktif arayüz turu (modul-01-arayuz-turu). QuPath arayüzünü
+        // Modül 1: interaktif arayüz turu (arayuz-turu). QuPath arayüzünü
         // gezdirir; nesne/ölçüm DEĞİŞTİRMEZ ve açık slayt gerektirmez (needsImage=false)
         // — atölyenin ilk adımı, slayt açılmadan çalıştırılabilir. Statik karşılığı
-        // Modül 1 (01-qupath-tanitim); ilham: qupath-extension-training (Apache-2.0).
-        new ScriptEntry("Arayüz turu",                    "modul-01-arayuz-turu.groovy", false, false),
-        new ScriptEntry("Hücre tespiti",                  "modul-02-hucre-tespiti.groovy"),
-        new ScriptEntry("Nükleer boya (Ki-67)",           "modul-03a-nukleer-boya.groovy"),
-        new ScriptEntry("ER / PR H-score",                "modul-03b-er-pr-hscore.groovy"),
-        new ScriptEntry("Membran boya (HER2)",            "modul-04-membran-boya.groovy"),
-        new ScriptEntry("Sitoplazmik boya (CD68)",        "modul-05-sitoplazmik-boya.groovy"),
+        // Modül 1 (qupath-tanitim); ilham: qupath-extension-training (Apache-2.0).
+        new ScriptEntry("Arayüz turu",                    "arayuz-turu.groovy", false, false),
+        new ScriptEntry("Hücre tespiti",                  "hucre-tespiti.groovy"),
+        new ScriptEntry("Nükleer boya (Ki-67)",           "nukleer-boya.groovy"),
+        new ScriptEntry("ER / PR H-score",                "er-pr-hscore.groovy"),
+        new ScriptEntry("Membran boya (HER2)",            "membran-boya.groovy"),
+        new ScriptEntry("Sitoplazmik boya (CD68)",        "sitoplazmik-boya.groovy"),
         // Tümör/Stroma: tek pencere sihirbaz — örnek modeli kur YA DA yeni eğit, sonra
         // seçili bölge / tüm slayt ölçümü (Ignore* dışlama dahil) hepsi burada.
         // Eski eğit/uygula adımları sihirbaza katlandı; scriptler JAR'da +
         // handson/scripts'te kalır (Automate → Project scripts'ten erişilebilir).
         // Menüye geri eklemek için aşağıdaki iki satırın yorumunu kaldırın.
-        new ScriptEntry("Tümör/Stroma sihirbazı", "modul-06-sihirbaz.groovy"),
-        // new ScriptEntry("Tümör/Stroma modeli oluştur (eğit)", "modul-06-model-egit.groovy"),
-        // new ScriptEntry("Tümör vs stroma (uygula)",      "modul-06-tumor-stroma.groovy"),
-        new ScriptEntry("Tümör içi Ki-67",                "modul-07-tumor-ici-ki67.groovy"),
+        new ScriptEntry("Tümör/Stroma sihirbazı", "sihirbaz.groovy"),
+        // new ScriptEntry("Tümör/Stroma modeli oluştur (eğit)", "model-egit.groovy"),
+        // new ScriptEntry("Tümör vs stroma (uygula)",      "tumor-stroma.groovy"),
+        new ScriptEntry("Tümör içi Ki-67",                "tumor-ici-ki67.groovy"),
         // QuANTUM: StarDist eklentisi + sihirbaz içinde interaktif eğitilen nesne sınıflandırıcı
         // gerektirir; StarDist yoksa sihirbaz kullanıcıyı kuruluma yönlendirir (çökmemez).
-        new ScriptEntry("QuANTUM cTCF",                   "modul-08-quantum-ctcf.groovy"),
-        new ScriptEntry("Veri dışa aktarma",              "modul-09-veri-aktarma.groovy")
+        new ScriptEntry("QuANTUM cTCF",                   "quantum-ctcf.groovy"),
+        new ScriptEntry("Veri dışa aktarma",              "veri-aktarma.groovy")
     );
 
     /**

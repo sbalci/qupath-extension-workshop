@@ -14,17 +14,17 @@
  *   • Tanımlı bir alandaki KongNet-tespitli mitoz NOKTALARININ sayım ve
  *     YOĞUNLUĞUNU ölçer. Bu bir SAYIM/YOĞUNLUKtur — mitoz derecesi, grade
  *     eşiği veya klinik yorum DEĞİL.
- *   • KongNet doğrudan H&E üzerinde çalışır (Ek V'deki PHH3-İHK'nın aksine
+ *   • KongNet doğrudan H&E üzerinde çalışır (PHH3 Mitoz ekindeki PHH3-İHK'nın aksine
  *     immün boya gerekmez). Çıktı bir derin öğrenme tahminidir; alan kayması /
- *     genelleme sınırları için bkz. Ek W. Görsel doğrulama gerekir.
+ *     genelleme sınırları için bkz. Yapay Zekâ Araçlarını Değerlendirme eki. Görsel doğrulama gerekir.
  *
  * GeoJSON ÜRETİMİ (önkoşul, QuPath dışında):
  *   KongNet'i resmi depo (Jiaqi-Lv/KongNet_Inference_Main) ile çalıştırın:
  *   inference_MIDOG.py → SQLite çıktı; ardından output_to_qupath.py ile mitoz
  *   merkezlerini WSI taban (level-0) piksel koordinatlarında GeoJSON
  *   FeatureCollection (her özellik bir Point) olarak dışa aktarın. Bağlam,
- *   akış ve sınırlar: Ek V — PHH3 mitoz § KongNet
- *   (atolye.patoloji.dev/ekler/V-mitoz-phh3.html#kongnet).
+ *   akış ve sınırlar: PHH3 Mitoz eki § KongNet
+ *   (atolye.patoloji.dev/ekler/mitoz-phh3.html#kongnet).
  *
  * KULLANIM:
  *   1. H&E slaytını açın; piksel boyutu (µm/px) kalibre olsun
@@ -42,7 +42,7 @@
  *     birincisi (KongNet-Det). Resmi çıkarım deposu + output_to_qupath.py:
  *     github.com/Jiaqi-Lv/KongNet_Inference_Main. Kod BSD-3; ağırlıklar
  *     CC BY-NC-SA (ticari-dışı).
- *   • Alan-tabanlı mitoz birimi (mitoz/2 mm²): bkz. Ek V (PHH3) ve oradaki
+ *   • Alan-tabanlı mitoz birimi (mitoz/2 mm²): bkz. PHH3 Mitoz eki ve oradaki
  *     Dessauvagie 2015 referansı.
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.

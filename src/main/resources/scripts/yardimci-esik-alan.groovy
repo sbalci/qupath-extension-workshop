@@ -22,7 +22,7 @@
  *   • Eşik DEĞERLERİ sınıflandırıcının içinde tanımlıdır; kullanıcı GUI'de
  *     kalibre eder (aşağıdaki ön koşul).
  *   • DAB-İHK "% pozitiflik" (pozitif ÷ sınıflı) için kardeş betik:
- *     "Alan-bazlı pozitiflik" (yardimci-alan-pozitiflik.groovy, Ek R).
+ *     "Alan-bazlı pozitiflik" (yardimci-alan-pozitiflik.groovy, Alan-bazlı Pozitiflik eki).
  *
  * ÖN KOŞUL — eşikleyici (bir kez, GUI'de):
  *   [Classify → Pixel classification → Create thresholder]
@@ -46,7 +46,7 @@
  *
  * YÖNTEM REFERANSLARI:
  *   • Bankhead P et al. (2017), Sci Rep — QuPath. doi:10.1038/s41598-017-17204-5
- *   • Alan ölçüm metodolojisi: Ek L — Tümör/Stroma alan ölçümlerinin metodolojisi.
+ *   • Alan ölçüm metodolojisi: TSR Metodolojisi eki — Tümör/Stroma alan ölçümlerinin metodolojisi.
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
@@ -274,7 +274,7 @@ body << String.format(java.util.Locale.US, "Sınıflandırılmış kapsam : %.2f
 body << "\n"
 body << "Not: sınıf alanları piksel sınıflandırıcının çözünürlüğünde sayılır;\n"
 body << "bölge alanı geometrik hesaplanır. Bu yüzden kapsam %100 olmayabilir\n"
-body << "(bkz. Ek L — alan ölçüm metodolojisi).\n\n"
+body << "(bkz. TSR Metodolojisi eki — alan ölçüm metodolojisi).\n\n"
 body << "Bu bir ALANdır — klinik skor, eşik veya yorum DEĞİL.\n"
 body << "(Bankhead 2017)\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."

@@ -25,7 +25,7 @@
  *     klinik eşik/alt-tip/grade mantığı eklemez.
  *   • Çıktı yalnız sınıf etiketi + güven + olasılık ölçümüdür; patoloji yorumu,
  *     grade veya klinik karar üretmez. SPIDER çıktısı bir DERİN ÖĞRENME
- *     TAHMİNİDİR; görsel doğrulama gerekir (Ek W).
+ *     TAHMİNİDİR; görsel doğrulama gerekir (Yapay Zekâ Araçlarını Değerlendirme eki).
  *   • Lisans: SPIDER **CC BY-NC 4.0** ve **KAPILI** (HuggingFace hesabı + erişim
  *     onayı + token). Midnight'ın (MIT/kapısız) aksine kayıt gerektirir.
  *
@@ -449,7 +449,7 @@ def buildResultText = { File workDir, exp, imp ->
     }
     sb << "\n'" << CONF_MEAS << "' ve sınıf olasılığı ölçümleri " <<
         ((imp?.mode == 'tile-grid') ? 'her alt-tespite' : 'her anotasyona') << " yazıldı (Measurements paneli).\n"
-    sb << "\nSPIDER çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Ek W).\n"
+    sb << "\nSPIDER çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki).\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
 }

@@ -16,9 +16,9 @@
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Yalnız sayım / alan / yoğunluk üretir; sınıflandırma, grade, alt-tip veya
  *     klinik yorum YAPMAZ.
- *   • InstanSeg çıktısı bir DERİN ÖĞRENME TAHMİNİDİR; görsel doğrulama gerekir (Ek W).
+ *   • InstanSeg çıktısı bir DERİN ÖĞRENME TAHMİNİDİR; görsel doğrulama gerekir (Yapay Zekâ Araçlarını Değerlendirme eki).
  *   • StarDist sihirbazına kardeş bir araçtır (bkz. Yardımcılar → StarDist
- *     çekirdek tespiti sihirbazı; ayrıntı: Ekler → Ek H InstanSeg).
+ *     çekirdek tespiti sihirbazı; ayrıntı: Ekler → InstanSeg).
  *
  * KULLANIM:
  *   1. InstanSeg eklentisini kurun: [Extensions → Manage extensions] → InstanSeg.
@@ -93,7 +93,7 @@ def buildResultText = { String slideName, int n, double areaMm2, double density,
     }
     sb << String.format(java.util.Locale.US, "Süre            : %.1f sn%n", secs)
     sb << "\nŞekil + yoğunluk ölçümleri her tespite yazıldı (Measurements paneli).\n"
-    sb << "InstanSeg çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Ek W).\n"
+    sb << "InstanSeg çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki).\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
 }
@@ -150,7 +150,7 @@ def pickDir = {
 
 // ── Tespit akışı (arka plan iş parçacığı) ───────────────────────────────────
 def startDetection = {
-    if (!instansegInstalled()) { errorTextRef.set('InstanSeg eklentisi yüklü değil.\nExtensions → Manage extensions → InstanSeg (bkz. Ek H).'); step.set('ERROR'); render(); return }
+    if (!instansegInstalled()) { errorTextRef.set('InstanSeg eklentisi yüklü değil.\nExtensions → Manage extensions → InstanSeg (bkz. InstanSeg eki).'); step.set('ERROR'); render(); return }
     def imageData = QP.getCurrentImageData()
     if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
     def selected = QP.getSelectedObject()
@@ -336,7 +336,7 @@ render = { ->
         title.setText('InstanSeg eklentisi gerekli')
         addGuidance('Bu sihirbaz yerel QuPath **InstanSeg eklentisini** kullanır; şu anda yüklü değil.\n\n' +
             'Kurulum:\n  1. [Extensions → Manage extensions] → InstanSeg → Install\n  2. QuPath\'i yeniden başlatın\n  3. Bu sihirbazı tekrar açın\n\n' +
-            'Ayrıntılı kurulum + modeller: Ekler → Ek H (InstanSeg Eklentisi).\n' +
+            'Ayrıntılı kurulum + modeller: Ekler → InstanSeg.\n' +
             'Not: InstanSeg DJL ile QuPath içinde koşar — ayrı bir Python ortamı (venv) GEREKMEZ.')
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('⟳ Yeniden denetle', { step.set(instansegInstalled() ? 'READY' : 'NEED_INSTALL'); render() }))

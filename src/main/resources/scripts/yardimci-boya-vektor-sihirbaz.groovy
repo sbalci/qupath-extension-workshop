@@ -30,7 +30,7 @@
  * BOYA AYRIMI ≠ BOYA NORMALİZASYONU:
  *   • Ayrım (bu betik): bu slaydı doğru OKUMAK için kanallara kalibre eder.
  *   • Normalizasyon: slaytları birbirine BENZETMEK için yeniden renklendirir
- *     (Macenko/Reinhard/Vahadane — bkz. Ek A).
+ *     (Macenko/Reinhard/Vahadane — bkz. Boya Normalizasyonu eki).
  *
  * KULLANIM:
  *   1. İHK/H&E slaytını açın; Image type'ı brightfield yapın
@@ -178,7 +178,7 @@ def buildReport = { ->
     body << "  • Otomatik: Analyze → Preprocessing → Estimate stain vectors\n"
     body << "  • Elle: Image sekmesinde boyaya (Stain 1/2) ya da arka plana ÇİFT TIKLAYIN\n"
     body << "  • Resmî rehber: " << DOCS_URL << "\n\n"
-    body << "Boya normalizasyonu (slaytları birbirine benzetme) ayrı bir adımdır — bkz. Ek A.\n\n"
+    body << "Boya normalizasyonu (slaytları birbirine benzetme) ayrı bir adımdır — bkz. Boya Normalizasyonu eki.\n\n"
     body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return [state: 'REPORT', text: body.toString()]
 }
@@ -268,7 +268,7 @@ if (isHeadless) {
     return
 }
 
-// ── Tek pencere, adım adım render (modul-06-sihirbaz kalıbı) ────────
+// ── Tek pencere, adım adım render (sihirbaz kalıbı) ────────
 // Stage/Scene YALNIZ FX uygulama iş parçacığında oluşturulabilir; betik arka
 // planda çalıştığından stage aşağıdaki Platform.runLater içinde oluşturulur.
 def stage = null

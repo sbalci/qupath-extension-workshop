@@ -18,7 +18,7 @@
  *   • Yalnız bir alan anotasyonu + (kalibre ise) alanı (mm²) üretir.
  *     Hücre tespiti, sınıflandırma, skor veya yorum YAPMAZ.
  *   • Otsu basit/küresel bir eşiktir; sonucu görsel olarak doğrulayın ve
- *     gerekiyorsa elle düzeltin (Ekler → Ek D: Manuel Düzeltme).
+ *     gerekiyorsa elle düzeltin (Ekler → Manuel Düzeltme).
  *
  * KULLANIM:
  *   1. Bir görüntü açın. (İsteğe bağlı) yalnız bir bölgeyi eşiklemek için bir
@@ -184,7 +184,7 @@ if (hasMicrons) {
 body << "Sınıf          : ImageJ Otsu\n"
 body << "\n"
 body << "Eşik DÜŞÜK çözünürlükte hesaplandı, ROI tam çözünürlükte oluşturuldu.\n"
-body << "Sonucu görsel olarak doğrulayın; gerekiyorsa elle düzeltin (Ek D).\n\n"
+body << "Sonucu görsel olarak doğrulayın; gerekiyorsa elle düzeltin (Manuel Düzeltme eki).\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
 showResultWindow("ImageJ otomatik eşik", body.toString())

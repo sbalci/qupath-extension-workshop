@@ -210,7 +210,7 @@ else
     body << "Zarf alanı        : (kalibrasyon yok — µm² hesaplanamadı)\n"
 body << "\n"
 body << "'${HULL_CLASS}' sınıflı bir anotasyon eklendi. İçinde hücre tespiti/piksel\n"
-body << "sınıflandırıcı çalıştırabilir, uzamsal yardımcılarla (Ek M) birlikte kullanabilirsiniz.\n\n"
+body << "sınıflandırıcı çalıştırabilir, uzamsal yardımcılarla (Uzamsal Komşuluk Analizi eki) birlikte kullanabilirsiniz.\n\n"
 body << "Not: JTS geometri alanı piksel² döner; µm²'ye pw·ph ile ölçeklenir.\n"
 body << "Bu bir GEOMETRİ üretimidir — klinik skor, eşik veya yorum DEĞİL.\n"
 body << "(Teknik esin: Bankhead/image.sc #76833; MRI BioCampus 2026)\n\n"

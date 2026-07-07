@@ -21,7 +21,7 @@
  *     bu betik hiçbir hastalık/tanı sınıfını sabitlemez (RCC/onkositom vb. yok).
  *   • Çıktı yalnız sınıf etiketi + güven + olasılık ölçümüdür; patoloji yorumu,
  *     grade veya klinik karar üretmez. Midnight çıktısı bir DERİN ÖĞRENME
- *     TAHMİNİDİR; görsel doğrulama gerekir (Ek W).
+ *     TAHMİNİDİR; görsel doğrulama gerekir (Yapay Zekâ Araçlarını Değerlendirme eki).
  *   • Lisans: Midnight MIT (kapısız, kayıt gerektirmez).
  *
  * KULLANIM:
@@ -400,7 +400,7 @@ def buildResultText = { File workDir, exp, imp, boolean trained ->
     } else {
         sb << "  (tahmin uygulanamadı)\n"
     }
-    sb << "\nMidnight çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Ek W).\n"
+    sb << "\nMidnight çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki).\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
 }

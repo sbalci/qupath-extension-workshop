@@ -12,8 +12,8 @@
  *     • İçe   — orij.difference(buffer(−r))           → iç kenar bandı
  *     • Her iki yön — buffer(+r).difference(buffer(−r)) → sınırı saran invazif kenar bandı
  *
- * NEDEN: İnvazif kenar / peritümöral bölge, TIL skorlama (Ek O), tümör-stroma
- *   (Ek L) ve immün bağlam analizlerinde standart bir ROI'dir. Bu bant, "Yapıya
+ * NEDEN: İnvazif kenar / peritümöral bölge, TIL skorlama (Stromal TIL / İmmün Skorlama eki), tümör-stroma
+ *   (TSR Metodolojisi eki) ve immün bağlam analizlerinde standart bir ROI'dir. Bu bant, "Yapıya
  *   uzaklık" yardımcısının (mesafe ile filtreleme) tamamlayıcısıdır: mesafe
  *   ölçmek yerine bölgeyi KALICI BİR ANOTASYON SINIFI olarak üretir; böylece
  *   içinde hücre tespiti/piksel sınıflandırıcı çalıştırıp birinci sınıf bir ROI

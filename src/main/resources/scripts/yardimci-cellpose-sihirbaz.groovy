@@ -17,12 +17,12 @@
  *   • Çıktı: tespit edilen hücre nesneleri + adet + (kalibreyse) yoğunluk
  *     (hücre/mm²) + (opsiyonel) İHK yoğunluk sınıflandırması (0/1+/2+/3+ adet).
  *   • Hiçbir hastalık/tanı sınıfı, grade ya da klinik karar üretmez; segmentasyon
- *     bir derin öğrenme tahminidir ve görsel doğrulama gerekir (Ek W).
+ *     bir derin öğrenme tahminidir ve görsel doğrulama gerekir (Yapay Zekâ Araçlarını Değerlendirme eki).
  *
  * KULLANIM:
  *   1. BIOP Cellpose eklentisini kurun + [Edit → Preferences → Cellpose/Omnipose]
  *      altında en az "Cellpose 'python.exe' location" alanını doldurun.
- *      Bkz. Ekler → Ek F (Cellpose) § kurulum.
+ *      Bkz. Ekler → Cellpose § kurulum.
  *   2. Bir slayt açın; tümör (epitel) içeren bir anotasyon çizip SEÇİN (sarı kenar).
  *   3. [Extensions → Atölye → Yardımcılar → Cellpose hücre/çekirdek tespiti sihirbazı]
  *   4. Parametreleri seçip "Çalıştır" → sonuç aynı pencerede güncellenir.
@@ -104,7 +104,7 @@ def runDetection = { String family, String model, String channelMode,
                      int cytoCh, int nucCh ->
 
     if (!cellposeHere)
-        return [ok:false, error:'BIOP Cellpose eklentisi bulunamadı. Kurulum: Ek F § 2 (Extensions → Manage extension catalogs → BIOP).']
+        return [ok:false, error:'BIOP Cellpose eklentisi bulunamadı. Kurulum: Cellpose eki § 2 (Extensions → Manage extension catalogs → BIOP).']
 
     def selected = QP.getSelectedObjects().findAll { it.isAnnotation() }
     if (selected.isEmpty())
@@ -320,7 +320,7 @@ javafx.application.Platform.runLater {
 
         def banner = new javafx.scene.control.Label(cellposeHere
             ? '✅ BIOP Cellpose eklentisi bulundu. Python yolu: Edit → Preferences → Cellpose/Omnipose.'
-            : '⚠ BIOP Cellpose eklentisi bulunamadı. Kurulum: Ek F § 2. Bu sihirbaz ölçüm yapamaz.')
+            : '⚠ BIOP Cellpose eklentisi bulunamadı. Kurulum: Cellpose eki § 2. Bu sihirbaz ölçüm yapamaz.')
         banner.setWrapText(true)
         banner.setStyle(cellposeHere ? '' : '-fx-text-fill: -qp-script-error-color;')
 

@@ -15,8 +15,8 @@
  *   her sınıf/nesne kendi TAMSAYI kimliğini taşır; ikili maskeden farkı nesneleri
  *   birbirinden ayırt edebilmesidir.
  *
- * EK X'TEN FARKI:
- *   Ek X (Karo dışa aktarma) çok sayıda KÜÇÜK karo (+ tiled maske) üretir; bu betik
+ * KARO DIŞA AKTARMA EKİNDEN FARKI:
+ *   Karo Dışa Aktarma eki çok sayıda KÜÇÜK karo (+ tiled maske) üretir; bu betik
  *   TEK, düşük çözünürlüklü, tüm-slayt maskesi üretir — TIA Toolbox'ın `masks=`
  *   parametresinin beklediği biçim. İki betik birbirini tamamlar, çakışmaz.
  *

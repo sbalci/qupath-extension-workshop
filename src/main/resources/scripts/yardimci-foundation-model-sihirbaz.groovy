@@ -134,16 +134,16 @@ def buildReport = { m ->
 
     // Küratörlük
     if (m.has_annotations) item('✓', 'Anotasyon mevcut — karo dışa aktarımını dokuyla sınırlayabilirsiniz (annotatedTilesOnly).')
-    else                   item('•', 'Anotasyon yok — arka plan/artefakt karoları gömmeyi/dikkati seyreltir. Önce doku maskesi/anotasyon çıkarın (bkz. Ek B kalite kontrol).')
+    else                   item('•', 'Anotasyon yok — arka plan/artefakt karoları gömmeyi/dikkati seyreltir. Önce doku maskesi/anotasyon çıkarın (bkz. Kalite Kontrol eki).')
 
     // Batch etkisi (genelleme)
-    item('•', 'Genelleme/batch etkisi: FM gömmeleri biyolojiden çok tarayıcı/merkez imzasını kodlayabilir (de Jong 2025). Çok-merkez doğrulayın; gerekirse boya normalizasyonu (Ek A) uygulayın.')
+    item('•', 'Genelleme/batch etkisi: FM gömmeleri biyolojiden çok tarayıcı/merkez imzasını kodlayabilir (de Jong 2025). Çok-merkez doğrulayın; gerekirse boya normalizasyonu (Boya Normalizasyonu eki) uygulayın.')
 
     // Düşmanca / girdi bütünlüğü (UTAP — farkındalık)
     item('•', 'Girdi bütünlüğü: FM çıktısı gözle görülmeyen düşmanca pertürbasyonlarla bozulabilir (UTAP — Wang ve ark. 2026). Yalnız güvenilir, değiştirilmemiş pikselleri besleyin; çıktıyı makullük açısından denetleyin.')
 
     // Doğrulama
-    item('•', 'Doğrulama: hiçbir FM çıktısı, Ek W makullük/doğrulama kontrollerini geçmeden klinik karara dönüşmemeli.')
+    item('•', 'Doğrulama: hiçbir FM çıktısı, Yapay Zekâ Araçlarını Değerlendirme ekinin makullük/doğrulama kontrollerini geçmeden klinik karara dönüşmemeli.')
 
     sb << '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'
     return sb.toString()

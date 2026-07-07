@@ -18,7 +18,7 @@
  *   • Model tahminlerini yalnızca QuPath görselleştirme katmanına TAŞIR. Bu bir
  *     VERİ AKTARIM betiğidir — tahmin doğruluğu, patoloji yorumu, grade veya
  *     klinik karar bu betikle üretilmez. Sonuç bir derin öğrenme tahminidir;
- *     genelleme sınırları için bkz. Ek W. Görsel doğrulama gerekir.
+ *     genelleme sınırları için bkz. Yapay Zekâ Araçlarını Değerlendirme eki. Görsel doğrulama gerekir.
  *   • GeoJSON koordinatları WSI taban (level-0) piksel uzayında olmalıdır;
  *     betik koordinat dönüşümü / yeniden ölçekleme yapmaz.
  *   • Önceki içe aktarımdan kalan "ESDIP AI tahmin" adlı anotasyonlar yeniden
@@ -27,12 +27,12 @@
  * GeoJSON ÜRETİMİ (önkoşul, QuPath dışında):
  *   Bir Python segmentasyon hattı çalıştırın — slaytı karolara bölün, U-Net ile
  *   çıkarım yapın, maskeleri birleştirip poligon GeoJSON'a dönüştürün. Tam akış,
- *   örnek kod ve sınırlar: Ek Z — Derin Öğrenme Eğitimi ve Segmentasyon
- *   (atolye.patoloji.dev/ekler/Z-derin-ogrenme-egitimi.html). Yöntem ilhamı:
+ *   örnek kod ve sınırlar: Derin Öğrenme Eğitimi ve Segmentasyon eki
+ *   (atolye.patoloji.dev/ekler/derin-ogrenme-egitimi.html). Yöntem ilhamı:
  *   ESDIP Academy — Computational Pathology dersi (önerilir).
  *
  * KULLANIM:
- *   1. Tahmin GeoJSON dosyasını hazırlayın (yukarıdaki Python hattı, Ek Z).
+ *   1. Tahmin GeoJSON dosyasını hazırlayın (yukarıdaki Python hattı, Derin Öğrenme Eğitimi eki).
  *   2. Karşılık gelen WSI'ı QuPath'te açın.
  *   3. Bu betiği çalıştırın; dosya seçim penceresi açılır, dosyayı seçin.
  *

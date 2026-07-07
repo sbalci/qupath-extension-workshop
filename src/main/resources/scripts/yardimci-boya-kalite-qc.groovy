@@ -28,7 +28,7 @@
  * YÖNTEM / KAYNAK:
  *   Dunn C, Brettle D, Hodgson C, Hughes R, Treanor D (2025) "An international study of
  *   stain variability in histopathology using qualitative and quantitative analysis."
- *   J Pathol Inform 17:100423. doi:10.1016/j.jpi.2025.100423.  (Ek A — Boya normalizasyonu)
+ *   J Pathol Inform 17:100423. doi:10.1016/j.jpi.2025.100423.  (Boya Normalizasyonu eki)
  *   API: ColorTransformer.getTransformedPixels (Stain_1/Stain_2/Optical_density_sum), QuPath 0.6.0+.
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
@@ -188,7 +188,7 @@ sb << "\n📝 Yorum (ölçüm, yorum değil)\n"
 sb << "──────────────────────────\n"
 sb << "  • OD ↑ = boya daha koyu/yoğun; OD ↓ = soluk/zayıf boyama.\n"
 sb << "  • Aynı ölçümü TARAYICI başına (GT450 ↔ AT2) ve ZAMAN içinde izleyin;\n"
-sb << "    eşik dışı slaytları işaretleyip (gerekirse) boya normalizasyonu uygulayın (Ek A §8).\n"
+sb << "    eşik dışı slaytları işaretleyip (gerekirse) boya normalizasyonu uygulayın (Boya Normalizasyonu eki §8).\n"
 sb << "  • Yönlü ΔE (dΔE) burada YOK: çok-slaytlı bir referans havuzu gerektirir (Dunn 2025).\n"
 sb << "\nYöntem: Dunn ve ark. 2025, J Pathol Inform 17:100423 (doi:10.1016/j.jpi.2025.100423).\n"
 sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik yorum içermez."
