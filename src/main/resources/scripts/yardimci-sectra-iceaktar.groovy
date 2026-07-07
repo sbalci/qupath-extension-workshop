@@ -291,7 +291,7 @@ def buildResultText = { slideName, schemeDisp, imp ->
     sb << "Sınıf (PathClass) dökümü:\n"
     imp.byClass.each { cn, n -> sb << String.format(java.util.Locale.US, "  %-22s : %,d%n", cn, n) }
     sb << "\nTüm anotasyonlar kilitli eklendi; Sectra metin etiketi anotasyon adıdır.\n"
-    sb << "Ek D ile düzeltebilir, Modül 9 ile dışa aktarabilirsiniz.\n"
+    sb << "Ek D ile düzeltebilir, Veri dışa aktarma modülü ile dışa aktarabilirsiniz.\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar."
     return sb.toString()
 }

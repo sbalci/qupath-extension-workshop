@@ -18,7 +18,8 @@
  *   • VAR OLAN tespitleri sınıfına göre SAYAR. Bu bir SAYIM/DAĞILIMdır —
  *     klinik skor, eşik veya yorum DEĞİL.
  *   • Hücre TESPİTİ veya SINIFLANDIRMA YAPMAZ. Önce bir tespit/
- *     sınıflandırma modülü çalıştırın (Modül 2/3/5/7, nesne sınıflandırıcı).
+ *     sınıflandırma modülü çalıştırın (Hücre Tespiti, Nükleer Boya, Sitoplazmik
+ *     Boya veya Tümör İçi Ki-67 modülü, ya da bir nesne sınıflandırıcı).
  *   • Sınıfsız (classification = yok) tespitler "(sınıfsız)" altında sayılır.
  *
  * KULLANIM:
@@ -31,7 +32,7 @@
  * ÇIKTI:
  *   • Her anotasyona: "Sınıf sayım: <Sınıf> (adet)" + "(%)" + (kalibre ise)
  *     "(hücre/mm2)" ölçümleri
- *   • Kilitli "Sınıf Sayım Özet" anotasyonu (Modül 9 ile dışa aktarılır)
+ *   • Kilitli "Sınıf Sayım Özet" anotasyonu (Veri Dışa Aktarma modülü ile dışa aktarılır)
  *   • Sonuç penceresinde sınıf bazlı dağılım tablosu
  *
  * YÖNTEM REFERANSLARI:
@@ -131,7 +132,7 @@ if (targets.isEmpty()) {
 
 // ── 2) Bölge içi tespitleri sınıfa göre say ─────────────────────────
 // Tüm tespitleri bir kez al; her anotasyon için centroid-içinde testiyle
-// filtrele (modül 7 / yoğunluk-haritası ile aynı kalıp; iç içe anotasyonlara
+// filtrele (Tümör İçi Ki-67 modülü / yoğunluk-haritası ile aynı kalıp; iç içe anotasyonlara
 // dayanıklı, getChildObjects'e bağlı değil).
 def allDetections = QP.getDetectionObjects()
 
@@ -182,7 +183,8 @@ targets.each { ann ->
 if (overallTotal == 0) {
     def msg = "Seçili anotasyon(lar) içinde tespit bulunamadı.\n\n" +
               "Önce bir hücre tespiti / sınıflandırma adımı çalıştırın\n" +
-              "(Modül 2/3/5/7 veya bir nesne sınıflandırıcı)."
+              "(Hücre Tespiti, Nükleer Boya, Sitoplazmik Boya veya Tümör İçi Ki-67 modülü,\n" +
+              "ya da bir nesne sınıflandırıcı)."
     if (isHeadless) println msg else Dialogs.showWarningNotification("Tespit yok", msg)
     return
 }

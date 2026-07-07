@@ -1,5 +1,5 @@
 /**
- * Modül 3a - Tek Tıkla Ki-67 / Nükleer İHK Kantifikasyonu
+ * Nükleer Boya (Ki-67) - Tek Tıkla Ki-67 / Nükleer İHK Kantifikasyonu
  * --------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Atölye için "hızlı deneme" betiği. Seçilen anotasyon içinde
@@ -301,7 +301,7 @@ def finishWithMetrics = { t, double thr1, double thr2, double thr3, boolean teac
     def text = buildResultText(m, thr1, thr2, thr3, elapsed, baseline)
 
     println "─────────────────────────────────────"
-    println "Modül 3a - Ki-67 / Nükleer İHK"
+    println "Nükleer Boya (Ki-67) - Ki-67 / Nükleer İHK"
     println "─────────────────────────────────────"
     println "  Toplam: ${m.total}  |  Pozitif: ${m.pos}  |  Ki-67 LI: ${String.format(java.util.Locale.US, '%.1f', m.li)}%"
     println "  Yoğunluk: ${m.density}/mm²  |  Süre: ${String.format(java.util.Locale.US, '%.1f', elapsed)} sn"
@@ -395,7 +395,7 @@ javafx.application.Platform.runLater {
 
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Modül 3a - Ki-67 / Nükleer İHK kantifikasyonu')
+        stage.setTitle('Nükleer Boya (Ki-67) - Ki-67 / Nükleer İHK kantifikasyonu')
         stage.setAlwaysOnTop(true)
 
         def title = new javafx.scene.control.Label('Ki-67 / Nükleer İHK kantifikasyonu')
@@ -526,6 +526,6 @@ javafx.application.Platform.runLater {
         stage.setScene(new javafx.scene.Scene(root, 580, 580))
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Modül 3a açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage('Nükleer boya modülü açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
     }
 }

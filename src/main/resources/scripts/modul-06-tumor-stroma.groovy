@@ -1,5 +1,5 @@
 /**
- * Modül 6 - Tümör/Stroma Alan Ölçümü
+ * Tümör/Stroma Alan Ölçümü
  * -----------------------------------
  * Hedef QuPath sürümü: 0.6.0+
  *
@@ -195,7 +195,7 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
                 if (!launch('modul-06-sihirbaz.groovy')) {
                     qupath.fx.dialogs.Dialogs.showMessageDialog('Eklenti gerekli',
                         'Sihirbaz için: Extensions → Atölye → Modüller →\n' +
-                        '"Modül 6 - Tümör/Stroma sihirbazı (model kur/eğit)".')
+                        '"Tümör/Stroma sihirbazı (model kur/eğit)".')
                 }
                 result.set([action: 'CANCEL']); stage.close()
             })
@@ -521,7 +521,7 @@ byClass.each { className, objs ->
             ? PathObjects.createDetectionObject(roi, objs[0].getPathClass())
             : PathObjects.createAnnotationObject(roi, objs[0].getPathClass())
         obj.setName(className)   // 'Show names' sınıf adını yazar (Tumor / Stroma)
-        try { obj.setDescription("${className} — Modül 6 (${primary.model})") } catch (Throwable ignored) { }
+        try { obj.setDescription("${className} — Tümör/Stroma modülü (${primary.model})") } catch (Throwable ignored) { }
         if (!asDetections) obj.setLocked(true)
         outputs << obj
     } catch (Throwable ignored) { }
@@ -576,6 +576,6 @@ body << '• İpucu: anotasyon dolgusunu Shift+F ile kapatıp sınıf sınırlar
 body << 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.\n'
 body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
 
-showResultWindow('Modül 6 - Tümör/Stroma ölçümü', body.toString())
-println String.format(java.util.Locale.US, 'Modül 6 tamamlandı: %d model, kapsam=%s',
+showResultWindow('Tümör/Stroma ölçümü', body.toString())
+println String.format(java.util.Locale.US, 'Tümör/Stroma modülü tamamlandı: %d model, kapsam=%s',
     perModel.size(), (wholeSlide ? 'slide' : 'region'))

@@ -14,7 +14,8 @@
  *
  * NEDEN ÖNEMLİ:
  *   • Boya vektörleri tarayıcı/laboratuvar/protokole özgüdür. Kantitatif H-DAB
- *     ölçümünde (Modül 3a, 3b, 4, 5, 7) eşikler MUTLAK DAB OD üzerindendir;
+ *     ölçümünde (Nükleer boya, ER/PR H-score, Membran boya, Sitoplazmik boya,
+ *     Tümör içi Ki-67 modülleri) eşikler MUTLAK DAB OD üzerindendir;
  *     yanlış vektör her skoru kaydırır.
  *   • QuPath'in yerleşik [Analyze → Preprocessing → Estimate stain vectors]
  *     komutunun tek-tıkla, sadeleştirilmiş (kontrol → önizle → uygula) karşılığıdır.

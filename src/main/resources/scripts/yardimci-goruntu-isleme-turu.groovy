@@ -15,7 +15,7 @@
  *     4. Gaussian (σ) — σ büyüdükçe daha çok yumuşatma.
  *     5. Eşikleme (ikili) — eşik seçimi maskeyi (nesne sayısı/şekli) doğrudan değiştirir.
  *     6. Mesafe dönüşümü + watershed — bitişik çekirdekleri ayırma fikri.
- *     7. İş akışını birleştir — bu boru hattı tam olarak Modül 2'nin yaptığı şeydir.
+ *     7. İş akışını birleştir — bu boru hattı tam olarak Hücre tespiti modülünün yaptığı şeydir.
  *
  *   Tümüyle SALT-OKUR: görüntü piksellerini, projeyi, anotasyonları veya
  *   tespitleri DEĞİŞTİRMEZ. Yalnız küçük bir bölgeyi okuyup önizleme üretir.
@@ -24,7 +24,7 @@
  *   • Bir alan anotasyonu seçiliyse o bölge; değilse görüntüleyici görünümü okunur.
  *   • Önizleme hızlı olsun diye bölge ~360 piksele inecek bir altörnekleme ile okunur;
  *     görüntüler YAKLAŞIK'tır (örneklem üzerinden). Watershed adımı kavramsal anlatımdır
- *     (gerçek bölme için Modül 2 — Hücre tespiti).
+ *     (gerçek bölme için bkz. Hücre tespiti modülü).
  *   • Dekonvolüsyon Ruifrok–Johnston yöntemini elle uygular; brightfield + tanımlı boya
  *     vektörü gerektirir. Görüntüde boya vektörü yoksa (örn. floresan) bu sayfa not gösterir;
  *     Gaussian/eşik sayfaları gri (yoğunluk) kanalı üzerinden çalışır.
@@ -39,7 +39,7 @@
  *   Pete Bankhead, "A brief overview of image processing for pathologists" (CC-BY 4.0)
  *   https://petebankhead.github.io/2022-image-processing-overview/intro.html
  *   Yöntem: Ruifrok AC, Johnston DA (2001), Anal Quant Cytol Histol 23(4):291–299.
- *   Statik karşılığı: Ek — Görüntü Analizi Temelleri. Boru hattı: Modül 2 — Hücre tespiti.
+ *   Statik karşılığı: Ek — Görüntü Analizi Temelleri. Boru hattı: Hücre tespiti modülü.
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı; ölçüm veya klinik karar üretmez.
  */
@@ -104,17 +104,17 @@ def pages = [
             'pikseline en yakın arka plana olan uzaklığı atar — çekirdek merkezleri en yüksek değeri alır. ' +
             'Bu merkezler "tohum" olur; watershed bölgeleri tohumlardan büyütüp bitişik çekirdekleri ayırır ' +
             '(hepsini değil). Aşağıda eşiklenmiş maske + tahmini merkezler (mesafe tepe noktaları) işaretli. ' +
-            'Gerçek bölme QuPath\'in watershed tespitinde olur: Modül 2 — Hücre tespiti.'],
+            'Gerçek bölme QuPath\'in watershed tespitinde olur: Hücre tespiti modülü.'],
 
     [id: 'compose', onizleme: 'COMPOSE',
-     baslik: '7 · İş akışını birleştir — bu, Modül 2\'dir',
+     baslik: '7 · İş akışını birleştir — bu, Hücre tespiti modülüdür',
      govde: 'Bu adımları birleştirince bir hücre-tespit boru hattı çıkar:\n' +
             '   dekonvolüsyon → Gaussian (σ) → eşik (ikili) → mesafe + watershed → nesneler.\n' +
-            'Modül 2 — Hücre tespiti tam olarak bunu yapar; "Gelişmiş ayarlar"daki eşik ve σ, gördüğünüz ' +
+            'Hücre tespiti modülü tam olarak bunu yapar; "Gelişmiş ayarlar"daki eşik ve σ, gördüğünüz ' +
             'adımları kontrol eder.\n\n' +
             'Bankhead\'in uyarısı: bu kadar basit bir hat yalnız birkaç görüntüde ve düşük büyütmede iyi ' +
             'görünür; yüksek büyütmede hatalar belirginleşir. Gerçek uygulamalar çok daha fazla ayarlanabilir ' +
-            'parametre gerektirir — bu yüzden Modül 2 sonrası eşikleri kendi slaydınızda kalibre edersiniz.\n\n' +
+            'parametre gerektirir — bu yüzden Hücre tespiti modülü sonrası eşikleri kendi slaydınızda kalibre edersiniz.\n\n' +
             '⚠️ Yalnızca araştırma/eğitim amaçlı; ölçüm veya klinik karar üretmez.']
 ]
 

@@ -1,5 +1,5 @@
 /**
- * Modül 4 - Tek Tıkla HER2 / Membran İHK Skorlaması
+ * Membran Boya (HER2) - Tek Tıkla HER2 / Membran İHK Skorlaması
  * ---------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Atölye için "hızlı deneme" betiği. Seçilen anotasyon içinde HER2 (veya
@@ -215,7 +215,7 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
     //        DAB OD'ye göre 0/1+/2+/3+ olarak sınıflar; bir Hematoxylin maskesi ile
     //        boyasız boş alanlar dışlanır. Sonuç: alan-ağırlıklı H-score (0–300).
     println "─────────────────────────────────────"
-    println "Modül 4 - HER2 / Membran İHK"
+    println "Membran Boya (HER2) - HER2 / Membran İHK"
     println "─────────────────────────────────────"
     println "Piksel bazlı H-score hesaplanıyor (birincil)..."
 
@@ -562,7 +562,7 @@ javafx.application.Platform.runLater {
     try {
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Modül 4 - HER2 / Membran İHK skorlaması')
+        stage.setTitle('Membran Boya (HER2) - HER2 / Membran İHK skorlaması')
         stage.setAlwaysOnTop(true)
 
         def title = new javafx.scene.control.Label('HER2 / Membran İHK skorlaması')
@@ -660,7 +660,7 @@ javafx.application.Platform.runLater {
         stage.setScene(new javafx.scene.Scene(root, 600, 600))
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Modül 4 açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage('Membran Boya (HER2) açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
     }
 }
 

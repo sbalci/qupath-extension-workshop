@@ -14,7 +14,8 @@
  *     Ör. "tümör hücresinin en yakın CD8+ T hücresine uzaklığı".
  *   • Bir mesafe/uzamsal dağılım ÖLÇÜTÜDÜR — klinik skor, eşik veya
  *     immün yeterlilik yorumu DEĞİL.
- *   • Tespit YAPMAZ; Modül 2/3/4/5/7 tespitleri sınıflı olmalıdır.
+ *   • Tespit YAPMAZ; Hücre Tespiti / Nükleer Boya / Membran Boya / Sitoplazmik Boya /
+ *     Tümör İçi Ki-67 modüllerindeki tespitler sınıflı olmalıdır.
  *
  * KULLANIM:
  *   1. Sınıflı hücre tespitleri olan, kalibre (µm) bir slayt açın.
@@ -24,7 +25,7 @@
  *
  * ÇIKTI:
  *   • Her A hücresi: "<A>→<B> en yakın komşu (µm)" ölçümü
- *     (Modül 9 ile dışa aktarılır; ölçüm haritasında görselleştirilebilir)
+ *     (Veri Dışa Aktarma modülü ile dışa aktarılır; ölçüm haritasında görselleştirilebilir)
  *   • Kilitli özet anotasyonu: ortalama / medyan / minimum çapraz NN
  *     mesafesi, N, yarıçap içindeki A hücresi sayısı ve oranı
  *   • Sonuç penceresinde özet tablo
@@ -131,7 +132,8 @@ def classNames = allDetections.collect { it.getPathClass().toString() }.unique()
 if (classNames.size() < 2) {
     def msg = "Çapraz NN için en az İKİ farklı sınıfta tespit gerekir.\n" +
               "Mevcut sınıf(lar): " + (classNames.join(', ') ?: '(yok)') + "\n\n" +
-              "Önce Modül 2/3/4/5/7 ile sınıflı hücre tespiti yapın."
+              "Önce Hücre Tespiti / Nükleer Boya / Membran Boya / Sitoplazmik Boya / " +
+              "Tümör İçi Ki-67 modülleriyle sınıflı hücre tespiti yapın."
     if (isHeadless) println msg else Dialogs.showErrorMessage("Yetersiz sınıf", msg)
     return
 }
@@ -310,7 +312,7 @@ body << String.format(java.util.Locale.US,
     "Yarıçap içinde A   : %,d / %,d  (%.1f %%)%n", withinRad, na, withinPct)
 body << "\n"
 body << "Her A hücresine '${measName}'\n"
-body << "ölçümü yazıldı (Modül 9 ile dışa aktarılır).\n"
+body << "ölçümü yazıldı (Veri Dışa Aktarma modülü ile dışa aktarılır).\n"
 body << "Ölçüme göre renklendirmek için: Measure → Show measurement maps.\n\n"
 body << "Not: Mesafe merkez-merkez piksel mesafesi × µm/px kalibrasyon faktörüdür.\n"
 body << "Bu bir UZAMSAL MESAFE ölçümüdür — klinik skor veya yorum DEĞİL.\n"

@@ -35,7 +35,7 @@
  * ÇIKTI:
  *   • Her mitoz için "Mitosis" sınıflı nokta-tespiti
  *   • Her anotasyona: "Mitoz (KongNet)" + "Mitoz yoğunluğu (mitoz/mm2)"
- *   • Kilitli "KongNet Mitoz Özet" anotasyonu (Modül 9 ile dışa aktarılır)
+ *   • Kilitli "KongNet Mitoz Özet" anotasyonu (Veri dışa aktarma modülü ile dışa aktarılır)
  *
  * YÖNTEM / KAYNAK REFERANSLARI:
  *   • Lv J ve ark. (2025) KongNet — arXiv:2510.23559; MIDOG 2025 mitoz tespiti

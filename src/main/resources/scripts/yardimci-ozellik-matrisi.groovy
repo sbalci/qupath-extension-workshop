@@ -21,7 +21,7 @@
  *
  * KULLANIM:
  *   1. Önce hücre tespiti + (isteğe bağlı) sınıflandırma üretin
- *      (örn. Modül 2 + Modül 6 tümör/stroma; ya da Modül 3a Ki-67).
+ *      (örn. Hücre tespiti modülü + Tümör/Stroma modülü; ya da Nükleer boya (Ki-67) modülü).
  *   2. [Extensions → Atölye → Yardımcılar → Makine öğrenmesi için özellik matrisi]
  *      ya da [Automate → Project scripts → yardimci-ozellik-matrisi]
  *   3. Diyalogdan mod seçin → Çalıştır
@@ -469,11 +469,11 @@ def emptyHint = ""
 def allLabelsEmpty = (cellClassCounts.keySet() == ["(boş)"].toSet() || cellClassCounts.isEmpty()) &&
                      (regionClassCounts.keySet() == ["(boş)"].toSet() || regionClassCounts.isEmpty())
 if (totalRows == 0) {
-    emptyHint = "\n\n💡 Hiç tespit bulunamadı. Önce bir modülde hücre tespiti çalıştırın (Modül 2-7)."
+    emptyHint = "\n\n💡 Hiç tespit bulunamadı. Önce ilgili modüllerde hücre tespiti çalıştırın."
 } else if (allLabelsEmpty) {
     emptyHint = "\n\n💡 cell_class ve region_class boş. Denetimli ML için etiket gerekir:\n" +
-                "  • cell_class için: hücreleri sınıflandırın (Modül 3a / 6).\n" +
-                "  • region_class için: tümör/stroma anotasyonu içinde tespit üretin (Modül 6 → Modül 7)."
+                "  • cell_class için: hücreleri sınıflandırın (Nükleer boya / Tümör-Stroma modüllerinde).\n" +
+                "  • region_class için: tümör/stroma anotasyonu içinde tespit üretin (Tümör/Stroma modülü → Tümör içi Ki-67 modülü)."
 }
 
 def calibNote = uncalibratedImages.isEmpty() ? "" :
@@ -501,7 +501,7 @@ showResultWindow(
         "  • `${exportFolder}/%s/_all_features.tsv` (ya da <slayt>__features.tsv) dosyasını\n" +
         "    Python (pandas) / R ile okuyun. X = feature sütunları, y = cell_class veya region_class.\n" +
         "  • Sütun grupları `_feature_dictionary.tsv` içinde id/label/feature olarak etiketlidir.\n" +
-        "  • Modül 9 web sayfasındaki 'Makine öğrenmesi için özellik matrisi' bölümünde\n" +
+        "  • Veri dışa aktarma modülünün web sayfasındaki 'Makine öğrenmesi için özellik matrisi' bölümünde\n" +
         "    scikit-learn örneği var. Bu betik yalnızca matrisi üretir; model eğitmez.\n\n" +
         "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
         (projectMode ? "Tüm proje" : "Sadece bu görüntü"),

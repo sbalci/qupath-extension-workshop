@@ -2,21 +2,23 @@
  * Yardımcı - Eşikleri ayarla
  * ---------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
- * Modül 3a, 3b, 4, 5 veya 7'yi varsayılan eşiklerle çalıştırdıktan sonra
+ * Nükleer boya, ER/PR H-score, Membran boya, Sitoplazmik boya veya Tümör içi Ki-67
+ * modüllerinden birini varsayılan eşiklerle çalıştırdıktan sonra
  * sonuç beklediğiniz gibi değilse: bu betik **hücre tespitini yeniden
  * çalıştırmadan** sadece bin eşiklerini değiştirip yeniden sınıflandırma yapar.
  *
  * NE İŞE YARAR?
  *   • Mevcut tespitlerin hangi ölçüm sütununda bin'lendiğini otomatik bulur:
- *       - Membrane: DAB OD mean      → Modül 4 (HER2)
- *       - Nucleus: DAB OD mean       → Modül 3a, 3b, 7 (Ki-67 / ER / PR)
- *       - Cytoplasm: DAB OD mean     → Modül 5 (CD68)
+ *       - Membrane: DAB OD mean      → Membran boya modülü (HER2)
+ *       - Nucleus: DAB OD mean       → Nükleer boya / ER-PR H-score / Tümör içi Ki-67 modülleri (Ki-67 / ER / PR)
+ *       - Cytoplasm: DAB OD mean     → Sitoplazmik boya modülü (CD68)
  *   • Üç eşik (1+, 2+, 3+) için form gösterir, mevcut değerleri önceden yazar
  *   • Yeni değerlerle `setIntensityClassifications` çalıştırır
  *   • Negative / 1+ / 2+ / 3+ sayımı + yüzdeler + H-score'u yeniden hesaplar
  *
  * KULLANIM:
- *   1. Önce Modül 3a/3b/4/5/7'den birini çalıştırın (hücre tespiti yapılır)
+ *   1. Önce Nükleer boya / ER-PR H-score / Membran boya / Sitoplazmik boya / Tümör içi Ki-67
+ *      modüllerinden birini çalıştırın (hücre tespiti yapılır)
  *   2. Hücreleri içeren anotasyonu seçili tutun
  *   3. [Extensions → Atölye → Yardımcılar → Eşikleri ayarla]
  *   4. Form açılır, eşikleri değiştirip "Yeniden hesapla" → yeni özet penceresi
@@ -30,7 +32,7 @@
  *   • Cellpose / Watershed tespit adımını yeniden çalıştırmaz (hızlı tutmak için)
  *   • Hücre genişletme (cell expansion) gibi tespit parametrelerini değiştiremez
  *     — onun için modülün kendisini yeni parametrelerle yeniden çalıştırın
- *   • Piksel-bazlı (pixel-wise) H-score eşiklerini değiştirmez — o, modül 4'ün
+ *   • Piksel-bazlı (pixel-wise) H-score eşiklerini değiştirmez — o, Membran boya modülünün
  *     pikselsel pass'ini gerektirir
  */
 
@@ -249,7 +251,7 @@ if (selected == null || !selected.isAnnotation()) {
     Dialogs.showErrorMessage(
         "Anotasyon seçili değil",
         "Eşik ayarlamak için hücre tespiti içeren bir anotasyonu seçin.\n" +
-        "Önce Modül 3a / 3b / 4 / 5 / 7'den birini çalıştırmış olmalısınız."
+        "Önce Nükleer boya / ER-PR H-score / Membran boya / Sitoplazmik boya / Tümör içi Ki-67 modüllerinden birini çalıştırmış olmalısınız."
     )
     return
 }
@@ -259,7 +261,7 @@ if (cells.isEmpty()) {
     Dialogs.showErrorMessage(
         "Tespit yok",
         "Seçili anotasyonda hücre tespiti bulunmuyor.\n" +
-        "Önce Modül 3a / 3b / 4 / 5 / 7'den birini çalıştırın, sonra bu yardımcıyı kullanın."
+        "Önce Nükleer boya / ER-PR H-score / Membran boya / Sitoplazmik boya / Tümör içi Ki-67 modüllerinden birini çalıştırın, sonra bu yardımcıyı kullanın."
     )
     return
 }
@@ -268,9 +270,9 @@ if (cells.isEmpty()) {
 // 2) Ölçüm sütununu otomatik bul (hangi modül çıktısı?)
 // ──────────────────────────────────────────────────────────────
 def candidateColumns = [
-    "Membrane: DAB OD mean",   // Modül 4 (HER2)
-    "Nucleus: DAB OD mean",    // Modül 3a, 3b, 7 (Ki-67 / ER / PR)
-    "Cytoplasm: DAB OD mean"   // Modül 5 (CD68)
+    "Membrane: DAB OD mean",   // Membran boya modülü (HER2)
+    "Nucleus: DAB OD mean",    // Nükleer boya / ER-PR H-score / Tümör içi Ki-67 modülleri (Ki-67 / ER / PR)
+    "Cytoplasm: DAB OD mean"   // Sitoplazmik boya modülü (CD68)
 ]
 def sampleCell = cells[0]
 def measKeys = sampleCell.getMeasurementList().getNames()
@@ -280,9 +282,9 @@ if (measurement == null) {
     Dialogs.showErrorMessage(
         "Uyumlu ölçüm bulunamadı",
         "Hücrelerde tanınan bir ölçüm sütunu yok:\n" +
-        "  • Membrane: DAB OD mean (M4)\n" +
-        "  • Nucleus: DAB OD mean (M3 / M3b / M7)\n" +
-        "  • Cytoplasm: DAB OD mean (M5)\n\n" +
+        "  • Membrane: DAB OD mean (Membran boya)\n" +
+        "  • Nucleus: DAB OD mean (Nükleer boya / ER-PR H-score / Tümör içi Ki-67)\n" +
+        "  • Cytoplasm: DAB OD mean (Sitoplazmik boya)\n\n" +
         "Modül scriptlerinden birini önce çalıştırın, ardından bu yardımcıyı tekrar deneyin."
     )
     return
@@ -291,9 +293,9 @@ if (measurement == null) {
 // Modüle özgü varsayılan eşikler (her zaman önce mevcut sınıf etiketlerinden
 // tahmin etmeyi denemeyiz çünkü etiketler aynı; varsayılanlar modüldeki ile aynı)
 def defaultsFor = [
-    "Membrane: DAB OD mean":  [atolyeD("atolye.membrane1", 0.15), atolyeD("atolye.membrane2", 0.40), atolyeD("atolye.membrane3", 0.70)],   // M4
-    "Nucleus: DAB OD mean":   [atolyeD("atolye.nuclear1", 0.20), atolyeD("atolye.nuclear2", 0.40), atolyeD("atolye.nuclear3", 0.60)],   // M3 / M3b / M7
-    "Cytoplasm: DAB OD mean": [atolyeD("atolye.cyto1", 0.10), atolyeD("atolye.cyto2", 0.20), atolyeD("atolye.cyto3", 0.35)]    // M5
+    "Membrane: DAB OD mean":  [atolyeD("atolye.membrane1", 0.15), atolyeD("atolye.membrane2", 0.40), atolyeD("atolye.membrane3", 0.70)],   // Membran boya modülü
+    "Nucleus: DAB OD mean":   [atolyeD("atolye.nuclear1", 0.20), atolyeD("atolye.nuclear2", 0.40), atolyeD("atolye.nuclear3", 0.60)],   // Nükleer boya / ER-PR H-score / Tümör içi Ki-67 modülleri
+    "Cytoplasm: DAB OD mean": [atolyeD("atolye.cyto1", 0.10), atolyeD("atolye.cyto2", 0.20), atolyeD("atolye.cyto3", 0.35)]    // Sitoplazmik boya modülü
 ]
 def defaults = defaultsFor[measurement]
 
@@ -309,9 +311,9 @@ cells.each { c ->
 }
 
 def moduleHint = [
-    "Membrane: DAB OD mean":  "Modül 4 (HER2)",
-    "Nucleus: DAB OD mean":   "Modül 3a / 3b / 7 (Ki-67 / ER / PR)",
-    "Cytoplasm: DAB OD mean": "Modül 5 (CD68)"
+    "Membrane: DAB OD mean":  "Membran boya modülü (HER2)",
+    "Nucleus: DAB OD mean":   "Nükleer boya / ER-PR H-score / Tümör içi Ki-67 modülleri (Ki-67 / ER / PR)",
+    "Cytoplasm: DAB OD mean": "Sitoplazmik boya modülü (CD68)"
 ][measurement]
 
 // ──────────────────────────────────────────────────────────────
@@ -378,10 +380,10 @@ def pct = { c -> total > 0 ? 100.0 * c / total : 0.0 }
 def pct0 = pct(n0), pct1 = pct(n1), pct2 = pct(n2), pct3 = pct(n3)
 def hScore = pct1 + 2.0 * pct2 + 3.0 * pct3
 
-// Bayatlamış piksel-bazlı H-score ölçümünü temizle (sadece M4 için var olur).
+// Bayatlamış piksel-bazlı H-score ölçümünü temizle (sadece Membran boya modülü için var olur).
 // Yeni hücre eşikleri uygulandıktan sonra annotation'da kalan "Pixelwise H-score"
 // ve "H-score-px: ..." ölçümleri eski eşiklerle hesaplandığı için yanıltıcıdır.
-// Piksel-bazlı H-score'u yeniden hesaplamak için kullanıcı M4'ü yeni eşiklerle
+// Piksel-bazlı H-score'u yeniden hesaplamak için kullanıcı Membran boya modülünü yeni eşiklerle
 // yeniden çalıştırmalıdır.
 def pixelStaleRemoved = false
 def annotationMeasNames = selected.getMeasurementList().getNames().toList()
@@ -396,7 +398,7 @@ if (!staleKeys.isEmpty()) {
 }
 
 def pixelNote = pixelStaleRemoved
-    ? "\nℹ Annotation'daki bayatlamış piksel-bazlı H-score ölçümleri (Pixelwise H-score, H-score-px: …) temizlendi.\n  Piksel-bazlı H-score'u güncel eşiklerle yeniden hesaplamak için Modül 4'ü yeniden çalıştırın.\n"
+    ? "\nℹ Annotation'daki bayatlamış piksel-bazlı H-score ölçümleri (Pixelwise H-score, H-score-px: …) temizlendi.\n  Piksel-bazlı H-score'u güncel eşiklerle yeniden hesaplamak için Membran boya modülünü yeniden çalıştırın.\n"
     : ""
 
 // ──────────────────────────────────────────────────────────────

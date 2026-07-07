@@ -1,5 +1,5 @@
 /**
- * Modül 6 - Tümör/Stroma Sihirbazı (tek pencere: kur/eğit + ölç)
+ * Tümör/Stroma Sihirbazı (tek pencere: kur/eğit + ölç)
  * --------------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
@@ -50,7 +50,7 @@ def MANDATORY_CLASSES = ['Tumor', 'Stroma', 'Ignore*']
 def OPTIONAL_CLASSES  = ['Muscle', 'Fat', 'Immune cells']
 def ALL_TRAIN_CLASSES = MANDATORY_CLASSES + OPTIONAL_CLASSES
 def SUMMARY_CLASS = 'TSR Özet'              // özet anotasyonun sınıfı → göz simgesiyle gizlenebilir
-def OUTPUT_TAG = 'Modül 6 ölçüm'            // üretilen sınıf bölgelerinin açıklama etiketi (idempotent temizlik)
+def OUTPUT_TAG = 'Tümör/Stroma ölçüm'       // üretilen sınıf bölgelerinin açıklama etiketi (idempotent temizlik)
 def pathClassFor = { String nm ->
     if (nm == 'Ignore*') return qupath.lib.objects.classes.PathClass.StandardPathClasses.IGNORE
     return qupath.lib.objects.classes.PathClass.fromString(nm)
@@ -165,7 +165,7 @@ def computeState = { ->
     return st
 }
 
-// ── Eğit & kaydet (eski Modül 6a trainer ile aynı atölye ayarları) ──
+// ── Eğit & kaydet (eski ayrı Tümör/Stroma eğitici betiği ile aynı atölye ayarları) ──
 // selectedNames: eğitime girecek sınıf adları (zorunlu + işaretli isteğe bağlılar).
 def trainAndSave = { String targetName, java.util.List selectedNames ->
     try {
@@ -494,12 +494,12 @@ def detectionCheckBox = { ->
 }
 // Özet anotasyonu oluşturma seçeneği — kapalıyken kalıcı özet yazılmaz (yalnız sonuç penceresi).
 def summaryCheckBox = { ->
-    def cb = new javafx.scene.control.CheckBox('Özet anotasyonu oluştur (Modül 9 dışa aktarımı için)')
+    def cb = new javafx.scene.control.CheckBox('Özet anotasyonu oluştur (Veri dışa aktarma modülü için)')
     cb.setSelected(createSummary.get())
     cb.selectedProperty().addListener({ obs, o, n -> createSummary.set(n) } as javafx.beans.value.ChangeListener)
     cb.setTooltip(new javafx.scene.control.Tooltip(
         'İşaretliyse kilitli "Tümör-Stroma Özet" anotasyonu ("TSR Özet" sınıfı) yazılır —\n' +
-        'göz simgesiyle gizlenebilir, Modül 9 ile dışa aktarılır.\n' +
+        'göz simgesiyle gizlenebilir, Veri dışa aktarma modülüyle dışa aktarılır.\n' +
         'İşaretsizse özet oluşturulmaz; sınıf bölgeleri yine görünür, sonuçlar yalnız bu pencerede.'))
     return cb
 }
@@ -762,7 +762,7 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Modül 6 - Tümör/Stroma Sihirbazı')
+        stage.setTitle('Tümör/Stroma Sihirbazı')
         stage.setAlwaysOnTop(true)
         render()
         stage.show()

@@ -33,7 +33,7 @@
  *   image / object_type / region_class sütunları yok sayılır.
  *
  * KULLANIM:
- *   1. Önce hücre tespiti üretin (Modül 2-7) ve "özellik matrisi" ile dışa aktarın.
+ *   1. Önce hücre tespiti üretin (ilgili modüllerde) ve "özellik matrisi" ile dışa aktarın.
  *   2. Python tarafında kümeleme yapıp object_id + sınıf + (UMAP vb.) sütunlu bir
  *      TSV üretin (bkz. Ek: Hücre Fenotipleme).
  *   3. Eşleşen WSI'ı QuPath'te açın → bu betiği çalıştırın → TSV'yi seçin.
@@ -126,7 +126,7 @@ if (imageData == null) {
 def dets = QP.getDetectionObjects()
 if (dets == null || dets.isEmpty()) {
     Dialogs.showErrorMessage("Tespit yok",
-        "Bu görüntüde hiç tespit yok. Önce hücre tespiti çalıştırın (Modül 2-7).")
+        "Bu görüntüde hiç tespit yok. Önce hücre tespiti çalıştırın (ilgili modüllerde).")
     return
 }
 if (isHeadless) {

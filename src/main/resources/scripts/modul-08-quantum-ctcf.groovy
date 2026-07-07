@@ -1,5 +1,5 @@
 /**
- * Modül 8 - QuANTUM cTCF (tek pencere sihirbazı)
+ * QuANTUM cTCF (tek pencere sihirbazı)
  * -----------------------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Yayınlanmış (L'Imperio ve ark., Virchows Archiv 2025) QuANTUM iş akışının
@@ -7,7 +7,7 @@
  * **cTCF** (Computational Tumor Cellular Fraction) hesaplar:
  *     cTCF = Tumor / (Tumor + Non-neoplastic) × 100   (Ignore paydadan dışlanır)
  *
- * SİHİRBAZ ADIMLARI (Modül 6/7 deseni — tek pencere, adım adım):
+ * SİHİRBAZ ADIMLARI (Tümör/Stroma ve Tümör içi Ki-67 modüllerindeki desen — tek pencere, adım adım):
  *   PREREQ          → görüntü · H&E · kalibrasyon · proje · StarDist · model
  *   DETECT_REGION   → patolog tarafından çizilmiş TCR anotasyonunu seç
  *   DETECTING       → StarDist TCR içindeki tüm çekirdekleri tespit eder
@@ -15,7 +15,7 @@
  *   NONNEO_EXAMPLES → birkaç tümör-dışı hücreyi "Non-neoplastic" ile işaretle
  *   TRAIN_GUIDE     → QuPath'in Train Object Classifier penceresinde eğit + kaydet
  *   APPLYING        → sınıflandırıcı tüm tespit edilen hücrelere uygulanır
- *   RESULT          → cTCF + sayımlar; TCR anotasyonuna 5 ölçüm yazılır (Modül 9)
+ *   RESULT          → cTCF + sayımlar; TCR anotasyonuna 5 ölçüm yazılır (Veri dışa aktarma modülü)
  *
  * ÖNKOŞULLAR:
  *   1. StarDist eklentisi yüklü (sihirbaz yoksa kuruluma yönlendirir)
@@ -230,7 +230,7 @@ def runStarDist = { regionAnno ->
             QP.runPlugin('qupath.lib.plugins.objects.SmoothFeaturesPlugin',
                 '{"fwhmMicrons":25.0,"smoothWithinClasses":false}')
         } catch (Throwable ignored) {
-            println 'Modül 8: özellik pürüzsüzleştirme atlandı.'
+            println 'QuANTUM modülü: özellik pürüzsüzleştirme atlandı.'
         }
 
         def cells = regionAnno.getChildObjects().findAll { it.isDetection() }
@@ -241,7 +241,7 @@ def runStarDist = { regionAnno ->
         def viewer = qupath.lib.gui.QuPathGUI.getInstance()?.getViewer()
         if (viewer != null) javafx.application.Platform.runLater { viewer.repaintEntireImage() }
         QP.fireHierarchyUpdate()
-        println String.format(java.util.Locale.US, 'Modül 8 StarDist: %,d çekirdek (%.1f sn)', cells.size(), elapsed)
+        println String.format(java.util.Locale.US, 'QuANTUM modülü StarDist: %,d çekirdek (%.1f sn)', cells.size(), elapsed)
         return [ok:true, count:cells.size()]
     } catch (Throwable t) {
         return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '')]
@@ -270,11 +270,11 @@ def applyClassifier = { regionAnno, String name ->
         else if (cls.contains('non-neoplastic') || cls.contains('non neoplastic') || cls.contains('nonneoplastic')) nonNeo++
         else ignore++
     }
-    println String.format(java.util.Locale.US, 'Modül 8 sınıflandırma: Tumor=%,d Non-neoplastic=%,d Ignore=%,d', tumor, nonNeo, ignore)
+    println String.format(java.util.Locale.US, 'QuANTUM modülü sınıflandırma: Tumor=%,d Non-neoplastic=%,d Ignore=%,d', tumor, nonNeo, ignore)
     return [ok:true, tumorCount:tumor, nonNeoCount:nonNeo, ignoreCount:ignore]
 }
 
-// RESULT — cTCF hesapla, TCR ölçüm listesine yaz (Modül 9 dışa aktarır), metin üret.
+// RESULT — cTCF hesapla, TCR ölçüm listesine yaz (Veri dışa aktarma modülü dışa aktarır), metin üret.
 def computeResult = { regionAnno, int tumorCount, int nonNeoCount, int ignoreCount ->
     double cTCF = Double.NaN
     String cTCFtext
@@ -296,7 +296,7 @@ def computeResult = { regionAnno, int tumorCount, int nonNeoCount, int ignoreCou
 
     int totalNuclei = tumorCount + nonNeoCount + ignoreCount
 
-    // Ölçümleri TCR anotasyonuna yaz → Modül 9 TSV'sinde görünür.
+    // Ölçümleri TCR anotasyonuna yaz → Veri dışa aktarma modülü TSV'sinde görünür.
     regionAnno.measurements['TCR alanı (mm2)'] = tcrAreaMm2
     if (!Double.isNaN(cTCF)) regionAnno.measurements['cTCF (%)'] = cTCF
     regionAnno.measurements['Tümör hücre sayısı']  = tumorCount as double
@@ -401,11 +401,11 @@ if (isHeadless) {
     def imageData = QP.getCurrentImageData()
     def sel = QP.getSelectedObject()
     if (imageData == null || !(sel instanceof PathAnnotationObject)) {
-        println 'Modül 8 (headless): bir görüntü ve seçili TCR anotasyonu gerekir.'; return
+        println 'QuANTUM modülü (headless): bir görüntü ve seçili TCR anotasyonu gerekir.'; return
     }
-    if (!stardistAvailable()) { println 'Modül 8 (headless): StarDist eklentisi yüklü değil.'; return }
+    if (!stardistAvailable()) { println 'QuANTUM modülü (headless): StarDist eklentisi yüklü değil.'; return }
     def d = runStarDist(sel)
-    if (!d.ok) { println 'Modül 8 (headless) hata: ' + d.error; return }
+    if (!d.ok) { println 'QuANTUM modülü (headless) hata: ' + d.error; return }
     def clf = 'he-tumor-nonneo'
     def names = QP.getProject()?.getObjectClassifiers()?.getNames() ?: []
     if (names.contains(clf)) {
@@ -413,13 +413,13 @@ if (isHeadless) {
         if (a.ok) println computeResult(sel, a.tumorCount, a.nonNeoCount, a.ignoreCount).text
     } else {
         println String.format(java.util.Locale.US,
-            'Modül 8 (headless): %,d çekirdek tespit edildi; "%s" sınıflandırıcısı yok, cTCF atlandı.', d.count, clf)
+            'QuANTUM modülü (headless): %,d çekirdek tespit edildi; "%s" sınıflandırıcısı yok, cTCF atlandı.', d.count, clf)
     }
     return
 }
 
 // ──────────────────────────────────────────────────────────────
-// Tek pencere, adım adım render (Modül 6/7 sihirbaz deseni)
+// Tek pencere, adım adım render (Tümör/Stroma ve Tümör içi Ki-67 modüllerindeki sihirbaz deseni)
 // ──────────────────────────────────────────────────────────────
 def stage = null   // YALNIZ FX iş parçacığında oluşturulur (aşağıda Platform.runLater)
 
@@ -713,12 +713,12 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Modül 8 - QuANTUM cTCF')
+        stage.setTitle('QuANTUM cTCF')
         stage.setAlwaysOnTop(true)
         stage.setOnHidden({ clearMenuHighlight() })   // #3: pencere kapanınca menü vurgusunu kaldır
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Modül 8 açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage('QuANTUM modülü açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
     }
 }

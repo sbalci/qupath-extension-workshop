@@ -11,10 +11,10 @@
  * KURAL: Projede aynı isimli bir sınıflandırıcı zaten varsa (örn. kendi eğittiğiniz
  * model) ÜZERİNE YAZILMAZ — mevcut modeliniz korunur.
  *
- * Not: Modül 6 sihirbazı, bu örnek modeli projeye kaydetmeseniz de otomatik kullanır
- * (aynı kurulum mantığını kendi içinde tekrarlar). Modül 7 bu H&E piksel
+ * Not: Tümör/Stroma modülünün sihirbazı, bu örnek modeli projeye kaydetmeseniz de otomatik kullanır
+ * (aynı kurulum mantığını kendi içinde tekrarlar). Tümör içi Ki-67 modülü bu H&E piksel
  * sınıflandırıcısını HİÇ kullanmaz (H-DAB slaytında domain kayması olurdu — bkz.
- * Modül 7). Bu yardımcı yalnızca modeli görünür/incelenebilir kılmak için vardır.
+ * Tümör içi Ki-67 modülü). Bu yardımcı yalnızca modeli görünür/incelenebilir kılmak için vardır.
  */
 import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
@@ -105,7 +105,7 @@ if (json == null) {
         "  • Modeli elle indirin: OSF veri paketi osf.io/v7mjq → atolye-eklenti/, veya\n" +
         "    GitHub: github.com/sbalci/qupath-extension-workshop (classifiers/), ve\n" +
         "    projenizin classifiers/ klasörüne koyun.\n\n" +
-        "Alternatif: kendi modelinizi Modül 6 sihirbazından 'Yeni sınıflandırıcı eğit' ile eğitin."
+        "Alternatif: kendi modelinizi Tümör/Stroma modülünün sihirbazından 'Yeni sınıflandırıcı eğit' ile eğitin."
     )
     return
 }
@@ -123,7 +123,7 @@ project.getPixelClassifiers().put(classifierName, classifier)
 Dialogs.showMessageDialog(
     "Kuruldu",
     "Örnek sınıflandırıcı '${classifierName}' projenize kaydedildi.\n\n" +
-    "[Classify → Pixel classification] listesinde görünür; Modül 6'yı\n" +
+    "[Classify → Pixel classification] listesinde görünür; Tümör/Stroma modülünü\n" +
     "artık bu modelle çalıştırabilirsiniz.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlıdır."
 )

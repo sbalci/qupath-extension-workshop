@@ -9,11 +9,12 @@
  * QuPath KARŞILIĞI (GUI):
  *   [Analyze → Density maps] yerleşik komutu yumuşak (Gaussian) bir ısı
  *   haritası üretir ve görsel olarak daha şıktır. Bu betik aynı fikrin
- *   eklenti gerektirmeyen, SAYISAL (kare başına hücre/mm²) ve Modül 9 ile
- *   dışa aktarılabilen karşılığıdır.
+ *   eklenti gerektirmeyen, SAYISAL (kare başına hücre/mm²) ve Veri Dışa Aktarma
+ *   modülü ile dışa aktarılabilen karşılığıdır.
  *
  * GİRDİ (ÖNKOŞUL):
- *   • Slaytta hücre tespitleri olmalı (Modül 2/3/5/7). Betik tespit YAPMAZ.
+ *   • Slaytta hücre tespitleri olmalı (Hücre Tespiti, Nükleer Boya, Sitoplazmik Boya
+ *     veya Tümör İçi Ki-67 modüllerinden biriyle üretilmiş). Betik tespit YAPMAZ.
  *
  * ÇIKTI:
  *   • Analiz sınırını kesen her kare (sıfır hücreli kareler dahil): kilitli "Yoğunluk grid r,c" +

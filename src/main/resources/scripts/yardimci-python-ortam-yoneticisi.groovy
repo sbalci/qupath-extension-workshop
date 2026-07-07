@@ -240,7 +240,10 @@ def installEnv = { spec, String uvPath, Closure appendLine ->
     boolean verifyOk = true; String verifyMsg = ''
     if (!imports.isEmpty() && !cancelledRef.get()) {
         appendLine(''); appendLine('── doğrulama: import ' + imports.join(', ') + ' ──')
-        def vr = runProc([py, '-c', 'import ' + imports.join(', ') + '; print("VERIFY_OK")'], appendLine)
+        // NOT: Python tek-satırında ÇİFT tırnak kullanma. Windows'ta Java ProcessBuilder,
+        // boşluk içeren argümanı "..." ile sarar ve içteki çift tırnakları KAÇIRMAZ; böylece
+        // print("VERIFY_OK") → print(VERIFY_OK) olur (NameError). Tek tırnak güvenlidir.
+        def vr = runProc([py, '-c', 'import ' + imports.join(', ') + "; print('VERIFY_OK')"], appendLine)
         verifyOk = vr.ok && (vr.lastLines ?: '').contains('VERIFY_OK')
         if (!verifyOk) verifyMsg = (vr.lastLines ?: '')
     }

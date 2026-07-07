@@ -33,7 +33,7 @@
  *   3. Sınıf → ölçüm → N iletişimlerini yanıtlayın.
  *
  * ÇIKTI:
- *   • Seçilen top-N karolara "Hotspot sırası" ölçümü (Modül 9 ile dışa aktarılır).
+ *   • Seçilen top-N karolara "Hotspot sırası" ölçümü (Veri dışa aktarma modülü ile dışa aktarılır).
  *   • İsteğe bağlı: top-N karolara "Hotspot" PathClass.
  *   • Kilitli "Hotspot Özet" anotasyonu: ölçüm ortalaması + SD.
  *   • Sonuç penceresi: sıralı tablo.
@@ -282,7 +282,7 @@ body << String.format(java.util.Locale.US,
     "Top-N karo SD         (%s): %s%n", chosenKey, fmt(topSD, "%.4f"))
 if (assignHotspotClass) body << String.format(java.util.Locale.US,
     "%nTop-%d karolara \"%s\" sınıfı atandı.%n", actualN, hotspotClass)
-body << "\nHer top-N karosuna '${rankMeasKey}' ölçümü yazıldı (Modül 9 ile dışa aktarılır).\n"
+body << "\nHer top-N karosuna '${rankMeasKey}' ölçümü yazıldı (Veri dışa aktarma modülü ile dışa aktarılır).\n"
 body << "Bu bir betimsel sıralama ölçümüdür; klinik kategori veya eşik üretmez.\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 

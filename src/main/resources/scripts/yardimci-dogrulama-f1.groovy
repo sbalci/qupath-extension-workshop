@@ -12,7 +12,8 @@
  *     noktasını içeriyorsa ya da merkez mesafesi eşik (µm) altındaysa eşleşir.
  * Eşleştirme açgözlü (greedy) bire-bir yapılır.
  *
- * NEDEN: Atölyede tespit/sınıflandırma adımları (Modül 2, 3a, StarDist sihirbazı…)
+ * NEDEN: Atölyede tespit/sınıflandırma adımları (Hücre tespiti / Nükleer boya modülleri,
+ * StarDist sihirbazı…)
  * görsel olarak "iyi görünür" — ama otomatik tespitin patoloğun işaretlediği
  * referansla NE KADAR uyuştuğunu SAYISAL ölçen bir araç yoktu. Ek J anotasyon
  * stratejisini, Ek W değerlendirmeyi KAVRAMSAL anlatır; bu yardımcı uyumu
@@ -29,7 +30,7 @@
  *     slaytta ÇALIŞTIRMAYIN (eşleştirme nesne sayısının karesiyle büyür).
  *
  * KULLANIM:
- *   1. Tespit içeren bir slayt açın ve bir tespit adımı çalıştırın (Modül 2 vb.)
+ *   1. Tespit içeren bir slayt açın ve bir tespit adımı çalıştırın (Hücre tespiti modülü vb.)
  *   2. Küçük bir bölge anotasyonu çizin = "doğrulama bölgesi"
  *   3. O bölgenin içindeki gerçek çekirdekleri ELLE işaretleyin: ayrı bir sınıf
  *      verin (ör. "Altın standart"). Nokta aracı ya da küçük poligon kullanın.
@@ -43,7 +44,7 @@
  *   • Sonuç penceresinde TP / FP / FN + precision / recall / F1 (IoU modunda ayrıca
  *     SQ = ortalama eşleşen IoU, PQ = panoptik kalite — Kirillov ve ark. 2019 — ve
  *     alan tabanlı Dice/IoU + aşırı/yetersiz bölütleme sayımı)
- *   • Kilitli "Doğrulama Özet" anotasyonu (Modül 9 ile dışa aktarılır)
+ *   • Kilitli "Doğrulama Özet" anotasyonu (Veri dışa aktarma modülü ile dışa aktarılır)
  *   • (İsteğe bağlı) nesneleri renklendir: TP / FP (tahmin) + FN (referans) sınıflarına ayır
  *
  * YÖNTEM REFERANSLARI:
@@ -308,7 +309,7 @@ def runValidation = { String gtLabel, String predLabel, String mode, double thr,
     b << "çalışması DEĞİL. Validasyon tasarımı için bkz. Ek U; AI değerlendirme: Ek W.\n\n"
     b << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
-    // ── Kilitli özet anotasyonu (Modül 9 ile dışa aktarılır) ───────────
+    // ── Kilitli özet anotasyonu (Veri dışa aktarma modülü ile dışa aktarılır) ───────────
     QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() == summaryName }, false)
     def srv = ctx.imageData.getServer()
     def summary = qupath.lib.objects.PathObjects.createAnnotationObject(
@@ -659,7 +660,7 @@ render = { ->
             actions.add(navButton('◀ Forma dön', { step.set('FORM'); render() }))
         } else if (reason == 'NO_PRED') {
             addGuidance('Tahmin (tespit) bulunamadı. Önce bir tespit adımı çalıştırın\n' +
-                        '(Modül 2 / 3a / StarDist sihirbazı).')
+                        '(Hücre tespiti / Nükleer boya modülleri / StarDist sihirbazı).')
             actions.add(navButton('◀ Forma dön', { step.set('FORM'); render() }))
         } else {
             addGuidance('Beklenmeyen durum: ' + (reason ?: '(bilinmiyor)'))

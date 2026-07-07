@@ -74,26 +74,39 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // gezdirir; nesne/ölçüm DEĞİŞTİRMEZ ve açık slayt gerektirmez (needsImage=false)
         // — atölyenin ilk adımı, slayt açılmadan çalıştırılabilir. Statik karşılığı
         // Modül 1 (01-qupath-tanitim); ilham: qupath-extension-training (Apache-2.0).
-        new ScriptEntry("Modül 1 - Arayüz turu",                    "modul-01-arayuz-turu.groovy", false, false),
-        new ScriptEntry("Modül 2 - Hücre tespiti",                  "modul-02-hucre-tespiti.groovy"),
-        new ScriptEntry("Modül 3a - Nükleer boya (Ki-67)",          "modul-03a-nukleer-boya.groovy"),
-        new ScriptEntry("Modül 3b - ER / PR H-score",               "modul-03b-er-pr-hscore.groovy"),
-        new ScriptEntry("Modül 4 - Membran boya (HER2)",            "modul-04-membran-boya.groovy"),
-        new ScriptEntry("Modül 5 - Sitoplazmik boya (CD68)",        "modul-05-sitoplazmik-boya.groovy"),
-        // Modül 6: tek pencere sihirbaz — örnek modeli kur YA DA yeni eğit, sonra
+        new ScriptEntry("Arayüz turu",                    "modul-01-arayuz-turu.groovy", false, false),
+        new ScriptEntry("Hücre tespiti",                  "modul-02-hucre-tespiti.groovy"),
+        new ScriptEntry("Nükleer boya (Ki-67)",           "modul-03a-nukleer-boya.groovy"),
+        new ScriptEntry("ER / PR H-score",                "modul-03b-er-pr-hscore.groovy"),
+        new ScriptEntry("Membran boya (HER2)",            "modul-04-membran-boya.groovy"),
+        new ScriptEntry("Sitoplazmik boya (CD68)",        "modul-05-sitoplazmik-boya.groovy"),
+        // Tümör/Stroma: tek pencere sihirbaz — örnek modeli kur YA DA yeni eğit, sonra
         // seçili bölge / tüm slayt ölçümü (Ignore* dışlama dahil) hepsi burada.
-        // Eski 6a (eğit) ve 6b (uygula) sihirbaza katlandı; scriptler JAR'da +
+        // Eski eğit/uygula adımları sihirbaza katlandı; scriptler JAR'da +
         // handson/scripts'te kalır (Automate → Project scripts'ten erişilebilir).
         // Menüye geri eklemek için aşağıdaki iki satırın yorumunu kaldırın.
-        new ScriptEntry("Modül 6 - Tümör/Stroma sihirbazı", "modul-06-sihirbaz.groovy"),
-        // new ScriptEntry("Modül 6a - Tümör/Stroma modeli oluştur (eğit)", "modul-06-model-egit.groovy"),
-        // new ScriptEntry("Modül 6b - Tümör vs stroma (uygula)",      "modul-06-tumor-stroma.groovy"),
-        new ScriptEntry("Modül 7 - Tümör içi Ki-67",                "modul-07-tumor-ici-ki67.groovy"),
-        // Modül 8: StarDist eklentisi + sihirbaz içinde interaktif eğitilen nesne sınıflandırıcı
+        new ScriptEntry("Tümör/Stroma sihirbazı", "modul-06-sihirbaz.groovy"),
+        // new ScriptEntry("Tümör/Stroma modeli oluştur (eğit)", "modul-06-model-egit.groovy"),
+        // new ScriptEntry("Tümör vs stroma (uygula)",      "modul-06-tumor-stroma.groovy"),
+        new ScriptEntry("Tümör içi Ki-67",                "modul-07-tumor-ici-ki67.groovy"),
+        // QuANTUM: StarDist eklentisi + sihirbaz içinde interaktif eğitilen nesne sınıflandırıcı
         // gerektirir; StarDist yoksa sihirbaz kullanıcıyı kuruluma yönlendirir (çökmemez).
-        new ScriptEntry("Modül 8 - QuANTUM cTCF",                   "modul-08-quantum-ctcf.groovy"),
-        new ScriptEntry("Modül 9 - Veri dışa aktarma",              "modul-09-veri-aktarma.groovy")
+        new ScriptEntry("QuANTUM cTCF",                   "modul-08-quantum-ctcf.groovy"),
+        new ScriptEntry("Veri dışa aktarma",              "modul-09-veri-aktarma.groovy")
     );
+
+    /**
+     * The "Doku tespiti" module — a submenu of tissue-detection methods shown in the
+     * Modüller menu right after the interface tour (before cell detection). Gathers the
+     * native Otsu wizard, the built-in pixel thresholder launcher, and the GrandQC / TIA
+     * Toolbox model bridges. Backed by the modules/02-doku-tespiti.qmd page.
+     */
+    private static final ScriptGroup TISSUE_MODULE = new ScriptGroup("Doku tespiti", List.of(
+        new ScriptEntry("Native (Otsu / ContourTracing)",              "yardimci-doku-tespiti-sihirbaz.groovy"),
+        new ScriptEntry("Piksel eşikleyici (Create thresholder)",      "yardimci-esik-siniflandirici.groovy"),
+        new ScriptEntry("GrandQC modeli (doku & artefakt, Python)",    "yardimci-grandqc-sihirbaz.groovy"),
+        new ScriptEntry("TIA Toolbox maskesi (Otsu/morfoloji, Python)", "yardimci-tiatoolbox-sihirbaz.groovy")
+    ));
 
     /** A named topic group of utility scripts → renders as a sub-menu under "Yardımcılar". */
     private record ScriptGroup(String title, List<ScriptEntry> entries) {}
@@ -114,11 +127,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             // "Analiz etmeden önce verine bak" — bioimagebook Bölüm 1: salt-okur künye + kanal
             // histogramı + doygunluk/clipping. bkz. Ekler → Görüntü Analizi Temelleri.
             new ScriptEntry("Görüntü künyesi ve histogram", "yardimci-goruntu-kunye.groovy"),
-            // Native doku tespiti (OD-sum/hematoksilen Otsu → ContourTracing); Python/ImageJ gerekmez.
-            new ScriptEntry("Doku tespiti sihirbazı (native)", "yardimci-doku-tespiti-sihirbaz.groovy"),
             // Salt-okur anotasyon bütünlüğü denetimi: örtüşme/kopya/boş/adsız/sınır-dışı/geçersiz geometri.
             new ScriptEntry("Anotasyon yapısı QC (denetçi)", "yardimci-anotasyon-qc.groovy")
         )),
+        // NOT: "Doku tespiti" artık bir MODÜL (Modüller menüsünde alt-menü) — bkz. TISSUE_MODULE.
         new ScriptGroup("Boya & renk", List.of(
             // Tek-pencere: mevcut vektörleri raporlar (kontrol) + seçili bölgeden tahmin → önizle → uygula → geri al.
             new ScriptEntry("Boya vektörleri sihirbazı", "yardimci-boya-vektor-sihirbaz.groovy"),
@@ -195,8 +207,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptGroup("Python köprüleri & temel modeller", List.of(
             // uv tabanlı ortam yöneticisi — Python köprülerinin izole venv'lerini kurar/onarır (proje/sistem düzeyi).
             new ScriptEntry("Atölye Python ortam yöneticisi",        "yardimci-python-ortam-yoneticisi.groovy", false, false),
-            // GrandQC (Python) — hibrit doku/artefakt KK. bkz. Ekler → Ek B § GrandQC.
-            new ScriptEntry("GrandQC kalite kontrol sihirbazı",      "yardimci-grandqc-sihirbaz.groovy"),
+            // NOT: GrandQC artık "Doku tespiti" grubunda (doku segmentasyonu + artefakt KK birlikte).
             // TIA Toolbox: boya normalizasyonu (Macenko/Vahadane/Reinhard; QuPath'in YAPMADIĞI) + doku maskesi. handson/python/tiatoolbox.
             new ScriptEntry("TIA Toolbox boya normalizasyonu / doku maskesi sihirbazı", "yardimci-tiatoolbox-sihirbaz.groovy"),
             // TIA Toolbox model çıkarımını SEÇİLİ BÖLGEYLE sınırlar (KongNet MIDOG mitoz vb.); tiatoolbox-runtime/.venv.
@@ -274,6 +285,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             menu.getItems().add(new SeparatorMenuItem());
 
             Menu modulesMenu = new Menu("Modüller");
+            int moduleIndex = 0;
             for (ScriptEntry entry : SCRIPTS) {
                 MenuItem item = new MenuItem(entry.label);
                 if (entry.disabled) {
@@ -283,6 +295,18 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                     item.disableProperty().bind(disableBinding(qupath, entry));
                 }
                 modulesMenu.getItems().add(item);
+                // "Doku tespiti" modülü — arayüz turundan (index 0) sonra, hücre tespitinden önce.
+                if (moduleIndex == 0) {
+                    Menu tissueMenu = new Menu(TISSUE_MODULE.title());
+                    for (ScriptEntry te : TISSUE_MODULE.entries()) {
+                        MenuItem ti = new MenuItem(te.label);
+                        ti.setOnAction(e -> runScriptSafely(qupath, te));
+                        ti.disableProperty().bind(disableBinding(qupath, te));
+                        tissueMenu.getItems().add(ti);
+                    }
+                    modulesMenu.getItems().add(tissueMenu);
+                }
+                moduleIndex++;
             }
             menu.getItems().add(modulesMenu);
 

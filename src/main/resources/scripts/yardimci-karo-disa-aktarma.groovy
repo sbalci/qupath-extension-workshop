@@ -27,7 +27,7 @@
  *
  * KULLANIM:
  *   1. Bir slayt açın; en az bir anotasyon çizin (maske modu için sınıflı
- *      anotasyon gerekir — bkz. Modül 6 tümör/stroma).
+ *      anotasyon gerekir — bkz. Tümör/Stroma modülü).
  *   2. "Seçili" kapsam için anotasyon(lar)ı seçili tutun.
  *   3. [Extensions → Atölye → Yardımcılar → Karo (tile) dışa aktarma]
  *   4. Formdan seçenekleri ayarlayıp "Dışa aktar".
@@ -263,7 +263,7 @@ if (allAnns.isEmpty()) {
         "Anotasyon yok",
         "Karo dışa aktarımı anotasyonla sınırlıdır; slayttaki hiçbir anotasyon bulunamadı.\n\n" +
         "Önce bir bölge çizin (dikdörtgen/çokgen) ya da maske için sınıflı anotasyon\n" +
-        "üretin (Modül 6 — tümör/stroma), sonra tekrar deneyin."
+        "üretin (Tümör/Stroma modülü), sonra tekrar deneyin."
     )
     return
 }
@@ -313,7 +313,7 @@ if (maskMode) {
             "Sınıflı anotasyon yok",
             "Etiket maskesi üretmek için anotasyonların bir SINIFI (PathClass) olmalı\n" +
             "(ör. Tumor, Stroma). Kapsamdaki anotasyonların hiçbiri sınıflı değil.\n\n" +
-            "Çözüm: anotasyonları sınıflandırın (Modül 6 — tümör/stroma) ya da\n" +
+            "Çözüm: anotasyonları sınıflandırın (Tümör/Stroma modülü) ya da\n" +
             "'Sadece görüntü' modunu kullanın."
         )
         return
@@ -463,7 +463,7 @@ showResultWindow(
         "%s%s%s\n" +
         "📝 Sonraki adım:\n" +
         "  • Karoları derin öğrenme / harici AI araçlarına verin.\n" +
-        "  • Yöntem ve ML'e devir notları: Ek — Karo (tile) dışa aktarma ve Modül 9.\n\n" +
+        "  • Yöntem ve ML'e devir notları: Ek — Karo (tile) dışa aktarma ve Veri dışa aktarma modülü.\n\n" +
         "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
         (maskMode ? "Görüntü + etiket maskesi" : "Sadece görüntü"),
         (selectedScope ? "Seçili anotasyon(lar)" : "Tüm anotasyonlar"), inScope.size(),

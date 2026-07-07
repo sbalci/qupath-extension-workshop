@@ -1,5 +1,5 @@
 /**
- * Modül 7 - Tümör içi Ki-67 (iki yollu sihirbaz)
+ * Tümör içi Ki-67 (iki yollu sihirbaz)
  * ----------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
@@ -13,7 +13,7 @@
  *     Ki-67+ lenfositler ve stromal hücreler indeksten dışlanır.
  *
  * Yol B'nin sınıflandırıcısı, İHK (Ki-67 H-DAB) slaydı üzerinde eğitilen ayrı bir
- * NESNE (hücre) sınıflandırıcısıdır; Modül 6'nın H&E PİKSEL sınıflandırıcısından
+ * NESNE (hücre) sınıflandırıcısıdır; Tümör/Stroma modülünün H&E PİKSEL sınıflandırıcısından
  * farklıdır. Yoğunluk derecelemesi (DAB eşiği) ayrı, alt adımdır.
  *
  * KULLANIM:
@@ -216,7 +216,7 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3 ->
     body << 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.\n'
     body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
 
-    println String.format(java.util.Locale.US, 'Modül 7 Yol A tamamlandı: n=%d, Ki-67 pozitif=%s',
+    println String.format(java.util.Locale.US, 'Tümör içi Ki-67 modülü Yol A tamamlandı: n=%d, Ki-67 pozitif=%s',
         aggregate.total, fmt(aggregate.positivePct, '%.2f%%'))
     return [ok:true, text:body.toString()]
 }
@@ -256,7 +256,7 @@ def isTumorCell = { c ->
 def runCellDetection = { regionAnno ->
     try {
         // Yalnızca bu bölgenin altındaki tespitleri sil — slayttaki diğer
-        // anotasyonların (ör. Modül 2 / 3a) tespitleri korunur.
+        // anotasyonların (ör. Hücre Tespiti / Nükleer Boya modülleri) tespitleri korunur.
         def existing = regionAnno.getChildObjects().findAll { it.isDetection() }
         if (!existing.isEmpty()) QP.removeObjects(existing, false)
         String detectionChannel = atolyeS('atolye.detectionChannel', 'Hematoxylin OD')
@@ -284,7 +284,7 @@ def runCellDetection = { regionAnno ->
         def cells = regionAnno.getChildObjects().findAll { it.isDetection() }
         if (cells.isEmpty())
             return [ok:false, error:'ROI içinde çekirdek tespit edilmedi. Boya vektörü/ayarlarını kontrol edin.']
-        println String.format(java.util.Locale.US, 'Modül 7 Yol B tespit: %,d çekirdek (%.1f sn)', cells.size(), elapsed)
+        println String.format(java.util.Locale.US, 'Tümör içi Ki-67 modülü Yol B tespit: %,d çekirdek (%.1f sn)', cells.size(), elapsed)
         return [ok:true, count:cells.size()]
     } catch (Throwable t) {
         return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '')]
@@ -299,7 +299,7 @@ def addSmoothedFeatures = { regionAnno ->
             '{"fwhmMicrons":25.0,"smoothWithinClasses":false}')
         return [ok:true]
     } catch (Throwable t) {
-        println 'Modül 7 Yol B: özellik pürüzsüzleştirme atlandı — ' + t.getClass().getSimpleName()
+        println 'Tümör içi Ki-67 modülü Yol B: özellik pürüzsüzleştirme atlandı — ' + t.getClass().getSimpleName()
         return [ok:false, error: t.getMessage() ?: '']
     }
 }
@@ -321,7 +321,7 @@ def applyClassifier = { regionAnno, String name ->
             else if (nm == 'Other' || base == 'Other') other++
             else unclassified++
         }
-        println String.format(java.util.Locale.US, 'Modül 7 Yol B sınıflandırma: Tumor=%,d Other=%,d sınıfsız=%,d', tumor, other, unclassified)
+        println String.format(java.util.Locale.US, 'Tümör içi Ki-67 modülü Yol B sınıflandırma: Tumor=%,d Other=%,d sınıfsız=%,d', tumor, other, unclassified)
         return [ok:true, tumorCount:tumor, otherCount:other, unclassified:unclassified]
     } catch (Throwable t) {
         return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '')]
@@ -391,7 +391,7 @@ def scoreIntensity = { regionAnno, double n1, double n2, double n3 ->
         body << 'Ki-67+ lenfositler/stromal hücreler paydadan çıkarılmıştır.\n'
         body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
 
-        println String.format(java.util.Locale.US, 'Modül 7 Yol B tamamlandı: Tumor n=%d, Ki-67 LI=%s',
+        println String.format(java.util.Locale.US, 'Tümör içi Ki-67 modülü Yol B tamamlandı: Tumor n=%d, Ki-67 LI=%s',
             total, fmt(li, '%.2f%%'))
         return [ok:true, text:body.toString()]
     } catch (Throwable t) {
@@ -481,7 +481,7 @@ if (isHeadless) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Tek pencere, adım adım render (Modül 6 sihirbaz deseni)
+// Tek pencere, adım adım render (Tümör/Stroma modülü sihirbaz deseni)
 // ──────────────────────────────────────────────────────────────
 def stage = null   // YALNIZ FX iş parçacığında oluşturulur (aşağıda Platform.runLater)
 
@@ -830,12 +830,12 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Modül 7 - Tümör içi Ki-67')
+        stage.setTitle('Tümör İçi Ki-67')
         stage.setAlwaysOnTop(true)
         stage.setOnHidden({ clearMenuHighlight() })   // #3: pencere kapanınca menü vurgusunu kaldır
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Modül 7 açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage('Tümör içi Ki-67 modülü açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
     }
 }

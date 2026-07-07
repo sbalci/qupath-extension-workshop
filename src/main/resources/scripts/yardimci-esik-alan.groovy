@@ -7,7 +7,7 @@
  * her sınıfının kapladığı alanı ölçer ve bölgenin **geometrik alanına**
  * normalize ederek "% bölge" üretir. Hücre tespiti YAPMAZ.
  *
- * NEDEN: Modül 6'nın "Önce en basit sınıflandırıcı: eşikleyici" bölümünün
+ * NEDEN: Tümör/Stroma modülünün "Önce en basit sınıflandırıcı: eşikleyici" bölümünün
  * ölçüm adımıdır. Bir alan tek başına anlam taşımaz; bir paydaya (burada
  * çizdiğiniz bölgenin alanına) bölündüğünde okunur. Bu, QuPath'in
  * "Measuring areas" yaklaşımının betimsel karşılığıdır.
@@ -165,7 +165,7 @@ if (names.isEmpty()) {
               "Bir kez oluşturmanız gerekir:\n" +
               "  [Classify → Pixel classification → Create thresholder]\n" +
               "  • Channel + Threshold ayarlayın, sınıfları adlandırın, [Save].\n\n" +
-              "Ayrıntı: Modül 6 — \"Önce en basit sınıflandırıcı: eşikleyici\"."
+              "Ayrıntı: Tümör/Stroma modülü — \"Önce en basit sınıflandırıcı: eşikleyici\"."
     if (isHeadless) println msg else Dialogs.showErrorMessage("Sınıflandırıcı yok", msg)
     return
 }

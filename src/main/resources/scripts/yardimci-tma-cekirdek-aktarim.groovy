@@ -12,7 +12,8 @@
  * ÖN KOŞULLAR:
  *   1. TMA dearrayer çalıştırılmış olmalı (çekirdek ızgarası var)
  *      [TMA → TMA dearrayer]
- *   2. Bir tespit modülü çalıştırılmış olmalı (Modül 2/3/4/5…) → hücreler var
+ *   2. Bir tespit modülü çalıştırılmış olmalı (Hücre Tespiti, Nükleer Boya, ER/PR H-score,
+ *      Membran Boya veya Sitoplazmik Boya modüllerinden biri) → hücreler var
  *
  * KULLANIM:
  *   [Automate → Project scripts → bu betik]
@@ -110,7 +111,7 @@ def tmaGrid = hierarchy.getTMAGrid()
 if (tmaGrid == null || tmaGrid.nCores() == 0) {
     def msg = "Bu slaytta TMA ızgarası yok.\n\n" +
               "Önce [TMA → TMA dearrayer] ile çekirdekleri ızgaraya ayırın,\n" +
-              "sonra bir tespit modülü (Modül 2/3/…) çalıştırın."
+              "sonra bir tespit modülü (Hücre Tespiti, Nükleer Boya vb.) çalıştırın."
     if (isHeadless) println msg else Dialogs.showWarningNotification("TMA bulunamadı", msg)
     return
 }
@@ -151,7 +152,7 @@ cores.each { core ->
     totalCells += n
     totalPos += nPos
 
-    // Çekirdeğe ölçüm yaz (Modül 9 ile de dışa aktarılabilir)
+    // Çekirdeğe ölçüm yaz (Veri dışa aktarma modülü ile de dışa aktarılabilir)
     core.measurements['Hücre sayısı']          = n as double
     core.measurements['Pozitif hücre']         = nPos as double
     core.measurements['Pozitif hücre %']       = pct
@@ -163,7 +164,8 @@ QP.fireHierarchyUpdate()
 
 if (!anyDetections) {
     def msg = "TMA ızgarası var ama çekirdeklerde hiç hücre tespiti yok.\n\n" +
-              "Önce bir tespit modülü (Modül 2/3/4/5…) çalıştırın, sonra bu betiği tekrar deneyin."
+              "Önce bir tespit modülü (Hücre Tespiti, Nükleer Boya, ER/PR H-score,\n" +
+              "Membran Boya veya Sitoplazmik Boya modüllerinden biri) çalıştırın, sonra bu betiği tekrar deneyin."
     if (isHeadless) println msg else Dialogs.showWarningNotification("Tespit yok", msg)
     return
 }

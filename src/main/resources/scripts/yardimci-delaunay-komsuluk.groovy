@@ -17,11 +17,12 @@
  *   tıkla otomatikleştirir ve sade bir özet yazar.
  *
  * GİRDİ (ÖNKOŞUL):
- *   • Slaytta hücre tespitleri olmalı (Modül 2/3/5/7). Betik tespit YAPMAZ.
+ *   • Slaytta hücre tespitleri olmalı (Hücre Tespiti, Nükleer Boya, Sitoplazmik
+ *     Boya veya Tümör İçi Ki-67 modüllerinde üretilmiş olabilir). Betik tespit YAPMAZ.
  *
  * ÇIKTI:
  *   • Her hücre: "Delaunay: Num neighbors" (+ kalibre ise
- *     "Delaunay: Mean neighbor distance (µm)") ölçümleri (Modül 9 ile aktarılır)
+ *     "Delaunay: Mean neighbor distance (µm)") ölçümleri (Veri Dışa Aktarma modülü ile aktarılır)
  *   • Kilitli "Delaunay Özet": ortalama komşu sayısı (+ ortalama komşu mesafesi)
  *
  * PARAMETRE:
@@ -112,7 +113,7 @@ if (imageData == null) {
 }
 def cells = QP.getDetectionObjects().findAll { it.getROI() != null }
 if (cells.size() < 3) {
-    def msg = "Delaunay üçgenlemesi için en az 3 hücre gerekir.\nÖnce Modül 2/3/5/7 ile tespit yapın."
+    def msg = "Delaunay üçgenlemesi için en az 3 hücre gerekir.\nÖnce Hücre Tespiti, Nükleer Boya, Sitoplazmik Boya veya Tümör İçi Ki-67 modüllerinden biriyle tespit yapın."
     if (isHeadless) println msg else Dialogs.showWarningNotification("Yetersiz hücre", msg)
     return
 }
@@ -191,7 +192,7 @@ body << "Her hücreye 'Delaunay: Num neighbors'"
 body << (hasMicrons ? " + 'Delaunay: Mean neighbor distance (µm)'" : "")
 body << " yazıldı.\n"
 body << "Yüksek komşu sayısı / küçük komşu mesafesi → sıkı doku (kümelenme).\n"
-body << "Modül 9 ile dışa aktarılır.\n\n"
+body << "Veri Dışa Aktarma modülü ile dışa aktarılır.\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
 showResultWindow("Delaunay komşuluk", body.toString())

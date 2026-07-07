@@ -22,7 +22,7 @@
  * ÇIKTI:
  *   • Her anotasyona: "İmmün pozitif hücre yoğunluğu (hücre/mm2)" +
  *     "Pozitif hücre %"
- *   • Kilitli "İmmün Yoğunluk Özet" anotasyonu (Modül 9 ile dışa aktarılır)
+ *   • Kilitli "İmmün Yoğunluk Özet" anotasyonu (Veri dışa aktarma modülü ile dışa aktarılır)
  *
  * YÖNTEM REFERANSLARI:
  *   • de Ruiter EJ et al. (2022), Virchows Arch 481(2):223–231 — CD57+

@@ -1,5 +1,5 @@
 /**
- * Modül 1 - QuPath Arayüz Turu (interaktif gezinti)
+ * QuPath Arayüz Turu (interaktif gezinti)
  * -------------------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
@@ -8,11 +8,23 @@
  *   (görüntüleyici, kenar paneli sekmeleri, araç çubuğu, parlaklık/kontrast,
  *   Command List...). Her sayfada ilgili ÖĞE — belirli bir sekme (Project,
  *   Image, Annotations...) ya da araç çubuğu düğmesi (parlaklık, opaklık,
- *   ölçüm tablosu...) — canlı pencerede turuncu bir çerçeveyle vurgulanabilir;
- *   öğe bulunamazsa bütün bölgeye (araç çubuğu / kenar paneli / görüntüleyici)
- *   düşer. Hiçbir öğeye erişilemezse (slayt açık değil ya da QuPath sürümü
- *   farklı) sayfa yine de metniyle çalışır; vurgu düğmesi pasifleşir.
- *   Hiçbir nesneyi, ölçümü veya hiyerarşiyi DEĞİŞTİRMEZ.
+ *   ölçüm tablosu...) — canlı pencerede turuncu bir çerçeveyle vurgulanır.
+ *   Öğeler tooltip metnine göre DEĞİL, düğmeye bağlı QuPath eyleminin (Action)
+ *   KİMLİĞİNE göre bulunur; böylece "point" gibi bir anahtar kelime yanlışlıkla
+ *   polygon/polyline gibi komşu düğmeleri vurgulamaz.
+ *
+ *   Bazı adımlarda ilgili komut örnek olarak KENDİLİĞİNDEN çalıştırılır:
+ *   çizim/points aracı etkinleştirilir, seçim modu açılır, Parlaklık/Kontrast
+ *   diyaloğu ile Betik editörü açılır, ölçüm tabloları menüsü gösterilir ve
+ *   Command List (Ctrl/⌘+L) tetiklenir. Bu eylemler yalnızca EKRANI / aktif
+ *   aracı / açık pencereleri değiştirir; hiçbir NESNEYİ, ÖLÇÜMÜ veya HİYERARŞİYİ
+ *   DEĞİŞTİRMEZ. Tur kapanınca başlangıçtaki aktif araç ve seçim modu geri yüklenir.
+ *   Görünürlük anahtarları (anotasyon/tespit göster-gizle) yalnızca vurgulanır,
+ *   çalıştırılmaz — çünkü tetiklenirse nesneleri gizlerler.
+ *
+ *   Öğe bulunamazsa (slayt açık değil ya da QuPath sürümü farklı) sayfa yine de
+ *   metniyle çalışır; erişilemeyen öğe için bütün bölgeye (araç çubuğu / kenar
+ *   paneli / görüntüleyici) düşülür veya vurgu düğmesi pasifleşir.
  *
  *   Pete Bankhead'in qupath-extension-training (Apache-2.0) eklentisinden
  *   esinlenen, atölyeye özgü hafif bir Türkçe uyarlamadır. Resmî eklenti
@@ -20,13 +32,14 @@
  *
  * KULLANIM:
  *   1. (Önerilir) Bir slayt açın — görüntüleyici/meta veri bölgeleri dolu olsun.
- *   2. [Extensions → Atölye → Modüller → Modül 1 - Arayüz turu]
- *   3. İleri / Geri ile gezinin; "Bu öğeyi vurgula" ile canlı arayüzü işaretleyin.
+ *   2. [Extensions → Atölye → Modüller → Arayüz turu]
+ *   3. İleri / Geri ile gezinin; "Otomatik göster" açıkken her sayfa ilgili öğeyi
+ *      vurgular ve (varsa) komutu çalıştırır; kapatmak için kutunun işaretini kaldırın.
  *
  * KAYNAK / İLHAM:
  *   qupath/qupath-extension-training (Apache-2.0, Pete Bankhead)
  *   https://github.com/qupath/qupath-extension-training
- *   Statik karşılığı: Modül 1 — Arayüz turu (panel tablosu + kısayollar).
+ *   Statik karşılığı: QuPath'e Giriş — Arayüz turu (panel tablosu + kısayollar).
  *
  * ⚠️ Yalnızca eğitim amaçlıdır; ölçüm veya klinik karar üretmez.
  */
@@ -36,17 +49,25 @@ import qupath.fx.dialogs.Dialogs
 def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
 
-// ── Tur sayfaları (id · vurgu bölgesi · başlık · gövde) ─────────────────────
-// bolge ∈ {TOOLBAR, SIDEBAR, VIEWER, null}. null → vurgu düğmesi gösterilmez.
+// ── Tur sayfaları (id · vurgu bölgesi · hedef · demo · başlık · gövde) ───────
+// bolge ∈ {TOOLBAR, SIDEBAR, VIEWER, null}: belirli hedef çözülemezse geri çekilme.
+// hedef: sekme -> [tab:'Annotations']; araç çubuğu -> Action KİMLİĞİ ile:
+//        [tools:'ALL'|'POINTS'] · [selectionMode:true] · [action:'BRIGHTNESS_CONTRAST']
+//        · [actions:['SHOW_ANNOTATIONS',...]] · [id:'opacitySlider'] (setId'li düğüm).
+// demo: sayfa açılınca örnek çalıştırılacak eylem (yoksa null):
+//        'TOOL_MOVE' · 'TOOL_POINTS' · 'SELECTION_MODE' · 'FIRE' (düğmeye tıkla) ·
+//        'MENU' (menü düğmesini aç) · 'COMMAND_LIST' (Ctrl/⌘+L).
 def pages = [
     [id: 'intro', bolge: null,
      baslik: 'Hoş geldiniz — QuPath arayüz turu',
      govde: 'Bu tur QuPath arayüzünü adım adım tanıtır. Her sayfada bir öğe anlatılır; ' +
-            'istediğinizde "Bu öğeyi vurgula" düğmesiyle ilgili sekme, düğme ya da bölge canlı ' +
-            'pencerede turuncu bir çerçeveyle işaretlenir. En verimli kullanım için önce bir slayt açın — böylece ' +
-            'görüntüleyici ve meta veri sekmeleri de dolu olur.\n\n' +
+            'ilgili sekme, düğme ya da bölge canlı pencerede turuncu bir çerçeveyle işaretlenir. ' +
+            'Bazı adımlarda ilgili komut örnek olarak kendiliğinden çalıştırılır (ör. Parlaklık/Kontrast ' +
+            'diyaloğu açılır, Points aracı etkinleşir). En verimli kullanım için önce bir slayt açın — ' +
+            'böylece görüntüleyici ve meta veri sekmeleri de dolu olur.\n\n' +
             'İleri / Geri düğmeleriyle gezinin; sihirbaz penceresi her zaman üstte kalsın ' +
-            'isterseniz alttaki "Üstte tut" kutusu işaretli kalsın. Bu sihirbaz Pete Bankhead\'in ' +
+            'isterseniz alttaki "Üstte tut" kutusu işaretli kalsın. "Otomatik göster" kutusu, her sayfada ' +
+            'vurgu ve örnek komutu kendiliğinden tetikler. Bu sihirbaz Pete Bankhead\'in ' +
             'qupath-extension-training eklentisinden esinlenmiştir (son sayfadaki bağlantı).'],
 
     [id: 'viewer', bolge: 'VIEWER',
@@ -86,7 +107,7 @@ def pages = [
      govde: 'Image sekmesi açık slaytın meta verisini gösterir: piksel boyutu (µm/px), görüntü ' +
             'boyutları, tarayıcı modeli ve boya tipi. Buradaki en kritik sayı piksel boyutudur — ' +
             'QuPath fiziksel ölçeği buradan bilir ve her tespit/ölçüm buna bağlıdır. 1.0 µm/px ' +
-            'görüyorsanız meta veri eksik demektir; Modül 1\'deki kalibrasyon adımına dönün. Görüntü ' +
+            'görüyorsanız meta veri eksik demektir; Giriş modülündeki kalibrasyon adımına dönün. Görüntü ' +
             'tipi (Brightfield H&E / H-DAB / Fluorescence) de bu sekmede görünür ve boya ayrımını belirler.'],
 
     [id: 'tab-annotations', bolge: 'SIDEBAR', hedef: [tab: 'Annotations'], safeActivate: true,
@@ -117,38 +138,66 @@ def pages = [
             'üzerine gelip beklerseniz adını ve kısayolunu gösteren ipucu belirir. Sonraki sayfalarda öne ' +
             'çıkan düğmeleri tanıyacağız.'],
 
-    [id: 'tools-draw', bolge: 'TOOLBAR', hedef: [ipucu: ['move', 'rectangle', 'ellipse', 'polygon', 'polyline', 'brush', 'wand']],
+    [id: 'tools-draw', bolge: 'TOOLBAR', hedef: [tools: 'ALL'], demo: 'TOOL_MOVE',
      baslik: 'Çizim araçları — Move, Rectangle, Polygon, Brush, Wand',
      govde: 'Çizim araçları araç çubuğunda yan yana durur: Move (gezinme, kısayol M), Rectangle (R), ' +
             'Ellipse (E), Polygon (P), Brush (fırça, B) ve Wand (kenar takipli sihirli değnek, W). Bir bölge ' +
             'çizmek için ilgili aracı seçip görüntüleyicide sürüklersiniz. İş bitince Move aracına dönmek iyi ' +
-            'alışkanlıktır — yoksa yanlışlıkla yeni anotasyon çizebilirsiniz.'],
+            'alışkanlıktır — yoksa yanlışlıkla yeni anotasyon çizebilirsiniz. (Bu adım örnek olarak Move aracını etkinleştirir.)'],
 
-    [id: 'tool-points', bolge: 'TOOLBAR', hedef: [ipucu: ['point']],
+    [id: 'tool-points', bolge: 'TOOLBAR', hedef: [tools: 'POINTS'], demo: 'TOOL_POINTS',
      baslik: 'Points — sayım / işaretleme aracı',
      govde: 'Points (nokta) aracı, tek tek hücreleri elle işaretleyip saymak için kullanılır — örneğin bir ' +
             'referans sayımı yaparken. Her tıklama bir nokta bırakır; farklı sınıflar için ayrı nokta ' +
-            'kümeleri oluşturabilirsiniz. Bu, otomatik tespitin doğruluğunu gözle denetlemenin pratik bir yoludur.'],
+            'kümeleri oluşturabilirsiniz. Bu, otomatik tespitin doğruluğunu gözle denetlemenin pratik bir yoludur. ' +
+            '(Bu adım örnek olarak Points aracını etkinleştirir.)'],
 
-    [id: 'selection-mode', bolge: 'TOOLBAR', hedef: [ipucu: ['selection']],
+    // ── Uygulamalı alıştırma: kullanıcı istenen şekli çizince otomatik ilerler ──
+    [id: 'practice-rectangle', bolge: 'TOOLBAR', hedef: [tools: 'RECTANGLE'], demo: 'TOOL_RECTANGLE', practice: 'RECTANGLE',
+     baslik: 'Alıştırma — bir DİKDÖRTGEN çizin',
+     govde: 'Sıra sizde! Rectangle (R) aracı sizin için seçildi. Görüntü üzerinde tıklayıp sürükleyerek bir ' +
+            'dikdörtgen anotasyon çizin. Sihirbaz çizimi algılayınca kendiliğinden bir sonraki alıştırmaya geçer. ' +
+            '(Bu alıştırma açık bir slayt ister; istemezseniz "İleri ▶" ile atlayabilirsiniz.)'],
+
+    [id: 'practice-ellipse', bolge: 'TOOLBAR', hedef: [tools: 'ELLIPSE'], demo: 'TOOL_ELLIPSE', practice: 'ELLIPSE',
+     baslik: 'Alıştırma — bir ELİPS çizin',
+     govde: 'Ellipse (E) aracı seçildi. Görüntü üzerinde tıklayıp sürükleyerek bir elips çizin. ' +
+            'Shift ile sürüklerseniz daire olur. Çizim algılanınca otomatik ilerlenir.'],
+
+    [id: 'practice-polygon', bolge: 'TOOLBAR', hedef: [tools: 'POLYGON'], demo: 'TOOL_POLYGON', practice: 'POLYGON',
+     baslik: 'Alıştırma — bir POLİGON çizin',
+     govde: 'Polygon (P) aracı seçildi. Köşelere tek tek tıklayarak bir çokgen oluşturun; çift tıklayarak ' +
+            '(ya da ilk noktaya dönerek) kapatın. İstersen tıklayıp sürükleyip bırakarak da çizebilirsin. ' +
+            'Poligon tamamlanınca otomatik ilerlenir.'],
+
+    [id: 'practice-points', bolge: 'TOOLBAR', hedef: [tools: 'POINTS'], demo: 'TOOL_POINTS', practice: 'POINTS',
+     baslik: 'Alıştırma — NOKTA ekleyin',
+     govde: 'Points aracı seçildi. Görüntüye tıklayarak bir veya birkaç nokta işaretleyin (sayım/işaretleme ' +
+            'için kullanılır). Nokta ekleyince alttaki mesaj güncellenir; "İleri ▶" ile tura devam edin. ' +
+            'Tebrikler — beş çizim aracını da denediniz!'],
+
+    [id: 'selection-mode', bolge: 'TOOLBAR', hedef: [selectionMode: true], demo: 'SELECTION_MODE',
      baslik: 'Seçim modu — çizmek yerine nesne seçmek',
      govde: 'Seçim modu (Selection mode) düğmesi, araçların davranışını "çizme"den "seçme"ye çevirir. Açıkken, ' +
             'çizim aracıyla sürüklediğiniz alan yeni bir anotasyon oluşturmaz; o alana düşen mevcut nesneleri ' +
-            'seçer. Çok sayıda hücre veya anotasyonu toplu işlemek için kullanışlıdır.'],
+            'seçer. Çok sayıda hücre veya anotasyonu toplu işlemek için kullanışlıdır. (Bu adım örnek olarak seçim ' +
+            'modunu açar; tur kapanınca eski durumu geri yükler.)'],
 
-    [id: 'brightness', bolge: 'TOOLBAR', hedef: [ipucu: ['brightness', 'contrast']],
+    [id: 'brightness', bolge: 'TOOLBAR', hedef: [action: 'BRIGHTNESS_CONTRAST'], demo: 'FIRE',
      baslik: 'Parlaklık & Kontrast — yalnızca ekranı değiştirir',
      govde: 'Parlaklık & Kontrast diyaloğu (araç çubuğundaki güneş simgesi ya da Shift+C) yalnızca ekranda ' +
             'gördüğünüzü değiştirir; analizde kullanılan piksel değerlerine dokunmaz. Kontrastı rahatça ' +
             'oynatabilirsiniz — ölçümleriniz etkilenmez. H&E\'de R/G/B kanallarını, H-DAB\'de hematoksilen/DAB ' +
-            'kanallarını açıp kapatarak sinyali ayırt edebilirsiniz.'],
+            'kanallarını açıp kapatarak sinyali ayırt edebilirsiniz. (Bu adım diyaloğu örnek olarak açar.)'],
 
-    [id: 'visibility', bolge: 'TOOLBAR', hedef: [ipucu: ['annotation', 'detection']],
+    [id: 'visibility', bolge: 'TOOLBAR',
+     hedef: [actions: ['SHOW_ANNOTATIONS', 'FILL_ANNOTATIONS', 'SHOW_DETECTIONS', 'FILL_DETECTIONS']],
      baslik: 'Görünürlük: anotasyon/tespit göster-gizle, doldur',
      govde: 'Araç çubuğundaki görünürlük anahtarları kalabalık bir slaytta neyi gördüğünüzü denetler: ' +
             'anotasyonları göster/gizle, tespitleri göster/gizle ve bunların içini doldur/boşalt. Binlerce hücre ' +
             'dış çizgisini "doldurulmuş" yapmak uzaktan dağılımı çok daha okunaklı kılar. Bağlantıları ' +
-            '(connections) ve sınıflandırma kaplamasını da buradan açıp kapatırsınız.'],
+            '(connections) ve sınıflandırma kaplamasını da buradan açıp kapatırsınız. (Bu anahtarlar yalnızca ' +
+            'vurgulanır; tetiklenirse nesneleri gizleyeceği için otomatik çalıştırılmaz.)'],
 
     [id: 'opacity', bolge: 'TOOLBAR', hedef: [id: 'opacitySlider'],
      baslik: 'Opaklık kaydırıcısı — kaplama saydamlığı',
@@ -156,32 +205,36 @@ def pages = [
             'kaplama silikleşir ve altındaki H&E daha çok görünür; sağa çekince kaplama belirginleşir. Bir piksel ' +
             'sınıflandırıcı maskesinin altındaki dokuyu kontrol ederken çok işe yarar.'],
 
-    [id: 'measurements', bolge: 'TOOLBAR', hedef: [id: 'measurementTablesMenuButton'],
+    [id: 'measurements', bolge: 'TOOLBAR', hedef: [id: 'measurementTablesMenuButton'], demo: 'MENU',
      baslik: 'Ölçüm tabloları',
      govde: 'Ölçüm tabloları düğmesi, seçili nesnelerin (anotasyon veya tespit) tüm ölçümlerini bir tabloda ' +
             'açar: alan, sayım, yoğunluk, boya optik yoğunluğu ve daha fazlası. Tablodaki bir satıra tıklamak ' +
-            'ilgili nesneyi görüntüleyicide seçer. Bu tablolar dışa aktarmanın (Modül 9) temelidir.'],
+            'ilgili nesneyi görüntüleyicide seçer. Bu tablolar dışa aktarmanın (Veri dışa aktarma modülü) temelidir. ' +
+            '(Bu adım düğmenin menüsünü örnek olarak açar.)'],
 
-    [id: 'script-editor', bolge: 'TOOLBAR', hedef: [ipucu: ['script']],
+    [id: 'script-editor', bolge: 'TOOLBAR', hedef: [action: 'SCRIPT_EDITOR'], demo: 'FIRE',
      baslik: 'Script editörü — betikler ve konsol',
      govde: 'Betik (script) editörü QuPath\'in Groovy konsoludur; tekrar eden işleri otomatikleştirmenin ' +
             'yoludur. Atölye eklentisinin tüm yardımcıları aslında buradan çalışan betiklerdir. Menüden ' +
             'Automate → Script editor ile de açılır. Korkmayın — çoğu işi menülerden yapabilirsiniz; betikler ' +
-            'yalnızca tekrar ve ölçeklenme içindir.'],
+            'yalnızca tekrar ve ölçeklenme içindir. (Bu adım editörü örnek olarak açar.)'],
 
-    [id: 'command-list', bolge: 'TOOLBAR',
+    [id: 'command-list', bolge: null, demo: 'COMMAND_LIST',
      baslik: 'Command List (Ctrl/⌘+L) — en hızlı navigasyon',
      govde: 'Command List (Ctrl+L / ⌘+L), QuPath\'in "komut paleti"dir: aratabileceğiniz bir pencere açar, ' +
             'menüleri gezmek yerine komutun adını yazıp çalıştırırsınız. "cell detection", "estimate stain ' +
             'vectors", "brightness" gibi aramalar menü yolunu ezberleme yükünü ortadan kaldırır. Bir komutu ' +
-            'hatırlamadığınızda ilk refleksiniz bu olsun.'],
+            'hatırlamadığınızda ilk refleksiniz bu olsun. (Bu adım Command List\'i örnek olarak açar — bir ' +
+            'araç çubuğu düğmesi değil, klavye kısayoludur; pencereyi kapatıp devam edin.)'],
 
     [id: 'close', bolge: null,
+     link: [text: 'qupath-extension-training — resmî tur eklentisi (GitHub) ↗',
+            url: 'https://github.com/qupath/qupath-extension-training'],
      baslik: 'Tur tamam — sıradaki adımlar',
      govde: 'Turu tamamladınız. Bu sayfaların yazılı karşılığı, panel tablosu ve klavye kısayolları için ' +
-            'Modül 1 — Arayüz turu bölümüne bakın. Daha derin, İngilizce ve buton-düzeyinde canlı vurgulu resmî ' +
-            'tur için Pete Bankhead\'in qupath-extension-training eklentisini kurabilirsiniz (Ekler → Arayüz ' +
-            'Turu bölümündeki bağlantılar). Sıradaki adım: Modül 2 — Hücre tespiti.\n\n' +
+            'QuPath\'e Giriş — Arayüz turu bölümüne bakın. Daha derin, İngilizce ve buton-düzeyinde canlı vurgulu resmî ' +
+            'tur için Pete Bankhead\'in qupath-extension-training eklentisini kurabilirsiniz (aşağıdaki bağlantı). ' +
+            'Sıradaki adım: Hücre Tespiti.\n\n' +
             '⚠️ Bu sihirbaz yalnızca eğitim amaçlıdır; ölçüm veya klinik karar üretmez.']
 ]
 
@@ -194,12 +247,15 @@ if (isHeadless) {
     return
 }
 
-// ── Durum: geçerli sayfa indeksi + canlı vurgu kaydı ────────────────────────
+// ── Durum: geçerli sayfa indeksi + canlı vurgu kaydı + geri-yükleme değerleri ─
 def stage = null
 def idx          = new java.util.concurrent.atomic.AtomicInteger(0)
 def alwaysTop    = new java.util.concurrent.atomic.AtomicBoolean(true)
-def autoHighlight = new java.util.concurrent.atomic.AtomicBoolean(true)   // #1: sayfa açılınca hedefi otomatik vurgula
+def autoShow     = new java.util.concurrent.atomic.AtomicBoolean(true)     // sayfa açılınca vurgula + örnek komutu çalıştır
 def highlightRef = new java.util.concurrent.atomic.AtomicReference(null)   // List<[node, origEffect]> | null
+def originalTool = new java.util.concurrent.atomic.AtomicReference(null)   // PathTool — tur başındaki aktif araç
+def originalSelMode = new java.util.concurrent.atomic.AtomicReference(null) // Boolean — tur başındaki seçim modu
+def practiceRef  = new java.util.concurrent.atomic.AtomicReference(null)   // aktif alıştırma dinleyicisi [hierarchy, listener] | null
 def render  // ileri bildirim
 
 // ── Coarse bölge düğümü — geri çekilme (belirli öğe çözülemezse) ─────────────
@@ -212,12 +268,68 @@ def regionNode = { String region ->
     return null
 }
 
+// ── Simgesel ad → QuPath Action (görünürlük / diyalog / betik düğmeleri) ─────
+// Buton, tam olarak bu Action örneğinden üretildiği için kimlik (==) eşleşir.
+def actionByName = { String key ->
+    try {
+        switch (key) {
+            case 'BRIGHTNESS_CONTRAST': return gui.getCommonActions().BRIGHTNESS_CONTRAST
+            case 'SCRIPT_EDITOR':       return gui.getAutomateActions().SCRIPT_EDITOR
+            case 'SHOW_ANNOTATIONS':    return gui.getOverlayActions().SHOW_ANNOTATIONS
+            case 'FILL_ANNOTATIONS':    return gui.getOverlayActions().FILL_ANNOTATIONS
+            case 'SHOW_DETECTIONS':     return gui.getOverlayActions().SHOW_DETECTIONS
+            case 'FILL_DETECTIONS':     return gui.getOverlayActions().FILL_DETECTIONS
+        }
+    } catch (Throwable t) {}
+    return null
+}
+
+// ── Araç çubuğu düğümlerini Action KİMLİĞİNE göre bul ────────────────────────
+// QuPath her düğmeye bağlı Action'ı node.getProperties() içinde saklar
+// (ActionTools.getActionProperty). Tooltip metni yerine bu kimliği eşleştirmek,
+// "point" gibi bir kelimenin polygon/polyline gibi komşu düğmeleri yakalamasını önler.
+def buttonsForActions = { List actions ->
+    def result = []
+    try {
+        def wanted = actions.findAll { it != null }
+        if (wanted.isEmpty()) return result
+        def tb = gui.getToolBar()
+        if (tb == null) return result
+        def candidates = []
+        for (item in tb.getItems()) {
+            if (item instanceof javafx.scene.Node) {
+                candidates << item
+                try { candidates.addAll(((javafx.scene.Node) item).lookupAll('*')) } catch (Throwable t) {}
+            }
+        }
+        for (node in candidates) {
+            try {
+                def a = qupath.lib.gui.actions.ActionTools.getActionProperty((javafx.scene.Node) node)
+                if (a != null && wanted.any { it.is(a) } && !result.any { it.is(node) }) result << node
+            } catch (Throwable t) {}
+        }
+    } catch (Throwable t) {}
+    return result
+}
+
+// ── Simgesel araç anahtarı → PathTool (vurgu + etkinleştirme + alıştırma) ────
+def toolByKey = { String k ->
+    def P = qupath.lib.gui.viewer.tools.PathTools
+    switch (k) {
+        case 'MOVE':      return P.MOVE
+        case 'RECTANGLE': return P.RECTANGLE
+        case 'ELLIPSE':   return P.ELLIPSE
+        case 'LINE':      return P.LINE
+        case 'POLYGON':   return P.POLYGON
+        case 'POLYLINE':  return P.POLYLINE
+        case 'BRUSH':     return P.BRUSH
+        case 'POINTS':    return P.POINTS
+    }
+    return null
+}
+
 // ── Belirli öğeyi çöz: kenar paneli sekmesi ya da araç çubuğu düğmesi ─────────
-// page.hedef ∈ { [tab:'Annotations'] | [id:'opacitySlider'] | [ipucu:['brightness',…]] }
 // Döner: [nodes: List<Node>, spot: boolean]. nodes boşsa çağıran coarse bölgeye düşer.
-// Yalnız kararlı yollar: getAnalysisTabPane + JavaFX standart skin sınıfları (.tab/.tab-label)
-// metne göre; araç çubuğunda setId'li #id (opacitySlider / measurementTablesMenuButton) ya da
-// getItems() üzerinden tooltip anahtar-sözcük eşleşmesi. Hepsi en-iyi-çaba; hata → boş → coarse.
 def resolveTargets = { page ->
     def out = []
     try {
@@ -237,36 +349,27 @@ def resolveTargets = { page ->
                     } catch (Throwable t) {}
                 }
             }
-        } else if (h.id != null || h.ipucu != null) {
-            // Araç çubuğu: önce setId'li kararlı düğüm, sonra tooltip anahtar-sözcükleri
-            // (eşleşen TÜM düğmeler → araç/görünürlük kümesi birlikte vurgulanır).
+        } else if (h.tools != null) {
+            def tm = gui.getToolManager()
+            def acts = []
+            if (h.tools == 'ALL') { for (t in tm.getTools()) acts << tm.getToolAction(t) }
+            else { def pt = toolByKey((String) h.tools); if (pt != null) acts << tm.getToolAction(pt) }
+            out.addAll(buttonsForActions(acts))
+        } else if (h.selectionMode == true) {
+            out.addAll(buttonsForActions([gui.getToolManager().getSelectionModeAction()]))
+        } else if (h.action != null) {
+            out.addAll(buttonsForActions([actionByName((String) h.action)]))
+        } else if (h.actions != null) {
+            out.addAll(buttonsForActions((h.actions as List).collect { actionByName((String) it) }))
+        } else if (h.id != null) {
             def tb = gui.getToolBar()
-            if (tb != null) {
-                if (h.id != null) {
-                    def n = tb.lookup('#' + ((String) h.id))
-                    if (n != null) out << n
-                }
-                if (out.isEmpty() && h.ipucu != null) {
-                    def keys = (h.ipucu as List).collect { ((String) it).toLowerCase(java.util.Locale.ROOT) }
-                    for (item in tb.getItems()) {
-                        try {
-                            if (item instanceof javafx.scene.control.Control) {
-                                def tt = ((javafx.scene.control.Control) item).getTooltip()
-                                def tip = (tt == null) ? null : tt.getText()
-                                if (tip != null && keys.any { tip.toLowerCase(java.util.Locale.ROOT).contains(it) }) out << item
-                            }
-                        } catch (Throwable t) {}
-                    }
-                }
-            }
+            if (tb != null) { def n = tb.lookup('#' + ((String) h.id)); if (n != null) out << n }
         }
     } catch (Throwable t) { return [nodes: [], spot: false] }
     return [nodes: out, spot: !out.isEmpty()]
 }
 
 // ── Vurgu uygula / temizle (tümü FX iş parçacığında; orijinal efektleri geri yükle) ─
-// Tüm ref mutasyonları + setEffect TEK bir runLater içinde (FX iş parçacığı) yapılır;
-// böylece hızlı gezinmede clear/apply görevleri sıralı ve atomik çalışır, takılı parıltı olmaz.
 def clearHighlight = { ->
     javafx.application.Platform.runLater {
         def cur = highlightRef.getAndSet(null)
@@ -306,11 +409,7 @@ def applyHighlight = { List nodes, boolean spot ->
     }
 }
 
-// ── Sekme etkinleştirme (#2): SADECE güvenli, salt-görünüm eylem — hedef sekmeyi seçer.
-// Yalnız page.safeActivate == true ve hedef bir SEKME ise çalışır. Araç çubuğu düğmeleri
-// ASLA fire() edilmez: görünürlük anahtarları görünümü değiştirir, düğmeler diyalog açar →
-// sihirbazın salt-okur ("hiçbir şeyi değiştirmez") sözleşmesini bozardı. Sekme seçimi ise
-// zararsız, kullanıcı tarafından tek tıkla geri alınabilir bir görünüm değişikliğidir.
+// ── Sekme etkinleştirme: güvenli, salt-görünüm — hedef sekmeyi seçer ─────────
 def activateTarget = { pg ->
     try {
         def h = pg.hedef
@@ -332,10 +431,77 @@ def activateTarget = { pg ->
     } catch (Throwable ex) {}
 }
 
-// ── Görsel yükleyici (#4): /images/tour/<sayfa-id>.{gif,png,jpg} — JAR kaynağından.
-// Eklenti sınıfının classloader'ı JAR kaynaklarını taşır; yoksa script sınıfına düşer;
-// kaynak yoksa null → sayfa metin-only kalır (Automate → Project scripts'te de sorunsuz).
-// JavaFX Image, GIF89a'yı yerel olarak (ek kütüphanesiz) canlandırır; PNG/JPEG statiktir.
+// ── Örnek komut çalıştır: araç etkinleştir / diyalog-menü aç / Ctrl+L ────────
+// Yalnızca ekranı, aktif aracı ya da açık pencereleri değiştirir; nesne/ölçüm/hiyerarşi
+// DEĞİŞMEZ. Görünürlük anahtarları (demo == null) tetiklenmez — tetiklenirse gizlerler.
+// Aç/kapa düğmeleri (seçim modu, parlaklık) yalnızca "kapalı" iken açılır (idempotent).
+def demoRun = { page, List nodes ->
+    javafx.application.Platform.runLater {
+        try {
+            def d = page.demo
+            if (d == null) return
+            if (d.startsWith('TOOL_')) {
+                try { def pt = toolByKey(d.substring(5)); if (pt != null) gui.getToolManager().setSelectedTool(pt) } catch (Throwable t) {}
+                return
+            }
+            if (d == 'SELECTION_MODE') {
+                for (n in nodes) if (n instanceof javafx.scene.control.ToggleButton) {
+                    def tb = (javafx.scene.control.ToggleButton) n
+                    if (!tb.isSelected()) tb.fire()
+                    break
+                }
+                return
+            }
+            if (d == 'FIRE') {
+                for (n in nodes) {
+                    if (n instanceof javafx.scene.control.ToggleButton) {
+                        def tb = (javafx.scene.control.ToggleButton) n
+                        if (!tb.isSelected()) tb.fire()
+                        break
+                    }
+                    if (n instanceof javafx.scene.control.ButtonBase) { ((javafx.scene.control.ButtonBase) n).fire(); break }
+                }
+                return
+            }
+            if (d == 'MENU') {
+                for (n in nodes) if (n instanceof javafx.scene.control.MenuButton) { ((javafx.scene.control.MenuButton) n).show(); break }
+                return
+            }
+            if (d == 'COMMAND_LIST') {
+                def tb = gui.getToolBar()
+                def scene = (tb == null) ? null : tb.getScene()
+                if (scene != null) {
+                    def kc = new javafx.scene.input.KeyCodeCombination(
+                        javafx.scene.input.KeyCode.L, javafx.scene.input.KeyCombination.SHORTCUT_DOWN)
+                    def rn = scene.getAccelerators().get(kc)
+                    if (rn != null) rn.run()
+                }
+                return
+            }
+        } catch (Throwable t) {}
+    }
+}
+
+// ── Tur kapanınca başlangıç durumunu geri yükle: aktif araç + seçim modu ─────
+def restoreState = { ->
+    javafx.application.Platform.runLater {
+        try {
+            def tm = gui.getToolManager()
+            def ot = originalTool.get()
+            if (ot != null) { try { tm.setSelectedTool(ot) } catch (Throwable t) {} }
+            def osm = originalSelMode.get()
+            if (osm != null) {
+                for (n in buttonsForActions([tm.getSelectionModeAction()])) if (n instanceof javafx.scene.control.ToggleButton) {
+                    def tb = (javafx.scene.control.ToggleButton) n
+                    if (tb.isSelected() != ((Boolean) osm).booleanValue()) tb.fire()
+                    break
+                }
+            }
+        } catch (Throwable t) {}
+    }
+}
+
+// ── Görsel yükleyici: /images/tour/<sayfa-id>.{gif,png,jpg} — JAR kaynağından ─
 def scriptClass = this.getClass()
 def imageUrl = { String base ->
     for (ext in ['.gif', '.png', '.jpg']) {
@@ -355,8 +521,6 @@ def imageNode = { String base ->
     def url = imageUrl(base)
     if (url == null) return null
     try {
-        // arka planda yükle (son parametre true) → FX iş parçacığını bloklamaz; yükleme
-        // başarısızsa ImageView boş kalır (sayfa yine çalışır). URL, JAR içi jar:file:… olabilir.
         def img = new javafx.scene.image.Image(url, 740d, 0d, true, true, true)
         def iv = new javafx.scene.image.ImageView(img)
         iv.setPreserveRatio(true); iv.setFitWidth(740d); iv.setSmooth(true)
@@ -364,10 +528,98 @@ def imageNode = { String base ->
     } catch (Throwable t) { return null }
 }
 
+// ── Alıştırma (uygulamalı çizim adımları) ───────────────────────────────────
+// Çizilen ROI tipini beklenen tiple eşleştir.
+def matchesRoi = { roi, String type ->
+    if (roi == null) return false
+    switch (type) {
+        case 'RECTANGLE': return roi instanceof qupath.lib.roi.RectangleROI
+        case 'ELLIPSE':   return roi instanceof qupath.lib.roi.EllipseROI
+        case 'POLYGON':   return roi instanceof qupath.lib.roi.PolygonROI
+        case 'POINTS':    return roi instanceof qupath.lib.roi.PointsROI
+        case 'LINE':      return roi instanceof qupath.lib.roi.LineROI
+    }
+    return false
+}
+def PRACTICE_HINT = [
+    RECTANGLE: 'Görüntü üzerinde tıklayıp sürükleyerek bir DİKDÖRTGEN çizin…',
+    ELLIPSE:   'Tıklayıp sürükleyerek bir ELİPS çizin…',
+    POLYGON:   'Köşelere tıklayarak bir POLİGON çizin (çift tıkla ya da ilk noktaya dönerek bitirin)…',
+    POINTS:    'Görüntüye tıklayarak bir veya birkaç NOKTA ekleyin…'
+]
+def PRACTICE_DONE = [RECTANGLE: 'Dikdörtgen', ELLIPSE: 'Elips', POLYGON: 'Poligon', POINTS: 'Nokta']
+
+// Aktif alıştırma dinleyicisini kaldır (gezinme/kapanışta).
+def detachPractice = { ->
+    def p = practiceRef.getAndSet(null)
+    if (p != null) { try { p.hierarchy.removeListener(p.listener) } catch (Throwable t) {} }
+}
+
+// Toplam nokta sayısı — Points aracı mevcut bir anotasyona da ekleyebildiği için
+// "yeni anotasyon" yerine nokta sayısı ARTIŞINI izleriz (daha güvenilir).
+def countPoints = { hierarchy ->
+    int n = 0
+    try {
+        for (a in hierarchy.getAnnotationObjects()) {
+            def r = a.getROI()
+            if (r instanceof qupath.lib.roi.PointsROI) n += ((qupath.lib.roi.PointsROI) r).getNumPoints()
+        }
+    } catch (Throwable t) {}
+    return n
+}
+
+// Kullanıcı istenen şekli çizince durum etiketini günceller.
+// NOKTA: nokta sayısı artınca "devam edin" mesajı (otomatik geçmez — son alıştırma).
+// Diğerleri: beklenen tipte YENİ bir anotasyon çizilince otomatik bir sonraki adıma geçer.
+def setupPractice = { page, javafx.scene.control.Label statusLabel, int pageIdx ->
+    def imageData = null
+    try { imageData = gui.getImageData() } catch (Throwable t) {}
+    if (imageData == null) {
+        statusLabel.setText('⚠ Bu alıştırma için önce bir slayt açın. "İleri ▶" ile atlayabilirsiniz.')
+        statusLabel.setStyle('-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: -fx-text-base-color; -fx-opacity: 0.8;')
+        return
+    }
+    def hierarchy = imageData.getHierarchy()
+    String expected = (String) page.practice
+    boolean isPoints = (expected == 'POINTS')
+    int basePoints = isPoints ? countPoints(hierarchy) : 0
+    def baseline = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap())
+    if (!isPoints) baseline.addAll(hierarchy.getAnnotationObjects())
+    statusLabel.setText('⏳ ' + (PRACTICE_HINT[expected] ?: 'Bir anotasyon çizin…'))
+    def done = new java.util.concurrent.atomic.AtomicBoolean(false)
+    def listener = ({ evt ->
+        try {
+            if (done.get()) return
+            boolean hit = isPoints ? (countPoints(hierarchy) > basePoints)
+                                   : (hierarchy.getAnnotationObjects().find { a -> !baseline.contains(a) && matchesRoi(a.getROI(), expected) } != null)
+            if (hit) {
+                done.set(true)
+                javafx.application.Platform.runLater {
+                    detachPractice()   // dinleyici tetikleme döngüsü DIŞINDA kaldır (güvenli)
+                    statusLabel.setStyle('-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #1a8a5a;')
+                    if (isPoints) {
+                        statusLabel.setText('✓ Nokta eklendi! Alıştırmalar tamam — "İleri ▶" ile tura devam edin.')
+                    } else {
+                        statusLabel.setText('✓ ' + (PRACTICE_DONE[expected] ?: 'Şekil') + ' algılandı — sonraki adıma geçiliyor…')
+                        if (idx.get() == pageIdx && pageIdx + 1 < pages.size()) {
+                            def pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(900))
+                            pause.setOnFinished({ if (idx.get() == pageIdx) { clearHighlight(); idx.set(pageIdx + 1); render() } })
+                            pause.play()
+                        }
+                    }
+                }
+            }
+        } catch (Throwable t) {}
+    } as qupath.lib.objects.hierarchy.events.PathObjectHierarchyListener)
+    try { hierarchy.addListener(listener) } catch (Throwable t) { return }
+    practiceRef.set([hierarchy: hierarchy, listener: listener])
+}
+
 // ── Render: her gezinmede sahneyi sıfırdan kurar ────────────────────────────
 render = { ->
     if (!javafx.application.Platform.isFxApplicationThread()) { javafx.application.Platform.runLater { render() }; return }
     if (stage == null) return
+    detachPractice()   // önceki sayfanın alıştırma dinleyicisini bırak
     stage.setAlwaysOnTop(alwaysTop.get())
     int i = idx.get()
     def page = pages[i]
@@ -391,12 +643,22 @@ render = { ->
     center.setPadding(new javafx.geometry.Insets(16))
     center.getChildren().addAll(title, prog, scroll)
 
-    // Görsel (#4): /images/tour/<sayfa-id> — varsa başlık ile gövde arasına ekle (yoksa yok say).
+    // Görsel: /images/tour/<sayfa-id> — varsa başlık ile gövde arasına ekle (yoksa yok say).
     def iv = imageNode('/images/tour/' + page.id)
     if (iv != null) center.getChildren().add(2, iv)
 
-    // Vurgu düğmesi — önce belirli öğe (sekme/araç çubuğu düğmesi); yoksa coarse bölge;
-    // ikisi de erişilemezse düğme pasifleşir (sayfa metni yine geçerli).
+    // Bağlantı (ör. son sayfada Bankhead referansı) — tıklanınca varsayılan tarayıcıda açılır.
+    if (page.link != null) {
+        def lk = new javafx.scene.control.Hyperlink((String) page.link.text)
+        lk.setWrapText(true)
+        lk.setStyle('-fx-font-size: 13px;')
+        def linkUrl = (String) page.link.url
+        lk.setTooltip(new javafx.scene.control.Tooltip(linkUrl))
+        lk.setOnAction({ try { qupath.lib.gui.QuPathGUI.openInBrowser(linkUrl) } catch (Throwable t) {} })
+        center.getChildren().add(lk)
+    }
+
+    // Vurgu hedefi — belirli öğe (sekme/araç çubuğu düğmesi); yoksa coarse bölge.
     def tgt = resolveTargets(page)
     def hiNodes = (List) tgt.nodes
     boolean hiSpot = (boolean) tgt.spot
@@ -404,7 +666,7 @@ render = { ->
         def rn = regionNode((String) page.bolge)
         if (rn != null) { hiNodes = [rn]; hiSpot = false }
     }
-    def hiBtn = null                 // ToggleButton | null — alt çubuktaki "Otomatik vurgula" buna erişir
+    def hiBtn = null                 // ToggleButton | null
     List nodesF = hiNodes            // geri-çekilme sonrası kesin liste
     boolean spotF = hiSpot
     if (!hiNodes.isEmpty()) {
@@ -416,7 +678,6 @@ render = { ->
             else clearHighlight()
         })
         center.getChildren().add(hiBtn)
-        // #1 uyarı: VIEWER hedefli sayfada üstte-tut pencere görüntüleyicinin önünü kapatabilir.
         if (page.bolge == 'VIEWER' && page.hedef == null) {
             def vhint = new javafx.scene.control.Label(
                 'İpucu: vurgu görüntüleyiciye uygulanır; bu pencere önünü kapatıyorsa kenara çekin.')
@@ -424,8 +685,7 @@ render = { ->
             vhint.setStyle('-fx-opacity: 0.7; -fx-font-size: 11px; -fx-font-style: italic;')
             center.getChildren().add(vhint)
         }
-        // #1: otomatik vurgu açıksa sayfa açılır açılmaz hedefi işaretle (+ güvenliyse sekmeyi aç).
-        if (autoHighlight.get()) {
+        if (autoShow.get()) {
             applyHighlight(nodesF, spotF); activateTarget(page); hiBtn.setSelected(true)
         }
     } else if (page.bolge != null) {
@@ -436,22 +696,53 @@ render = { ->
         center.getChildren().add(hi)
     }
 
-    // Alt çubuk: "Üstte tut" + "Otomatik vurgula" (sol) + disclaimer + gezinme düğmeleri (sağ)
+    // Örnek komut düğmesi — demo tanımlı (alıştırma OLMAYAN) sayfalarda komutu elle çalıştırılabilir kılar.
+    if (page.demo != null && page.practice == null) {
+        List demoNodes = nodesF
+        def demoBtn = new javafx.scene.control.Button('▶ Bu adımı çalıştır')
+        demoBtn.setOnAction({ demoRun(page, demoNodes) })
+        center.getChildren().add(demoBtn)
+        // Pencere/menü açan adımlarda kullanıcıya "kapatıp devam et" bilgisini ver.
+        boolean opensWindow = (page.demo == 'FIRE' || page.demo == 'MENU' || page.demo == 'COMMAND_LIST')
+        def demoHint = new javafx.scene.control.Label(opensWindow
+            ? 'Bu adım ilgili komutu örnek olarak açar. Açılan pencere/menü bu sihirbazın önüne gelebilir; ' +
+              'inceledikten sonra kapatın ve "İleri ▶" ile tura devam edin.'
+            : 'Bu adım ilgili aracı örnek olarak etkinleştirir; araç çubuğunda seçili duruma geçtiğini görürsünüz. ' +
+              'Tur kapanınca başlangıçtaki araç geri yüklenir. "İleri ▶" ile devam edin.')
+        demoHint.setWrapText(true); demoHint.setMaxWidth(Double.MAX_VALUE)
+        demoHint.setStyle('-fx-opacity: 0.75; -fx-font-size: 11px; -fx-font-style: italic;')
+        center.getChildren().add(demoHint)
+        if (autoShow.get()) demoRun(page, demoNodes)
+    }
+
+    // Uygulamalı alıştırma: ilgili çizim aracını seç + beklenen şekil çizilince otomatik ilerle.
+    if (page.practice != null) {
+        def practiceStatus = new javafx.scene.control.Label()
+        practiceStatus.setWrapText(true); practiceStatus.setMaxWidth(Double.MAX_VALUE)
+        practiceStatus.setStyle('-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: -fx-accent;')
+        center.getChildren().add(practiceStatus)
+        demoRun(page, nodesF)              // ilgili çizim aracını seç (alıştırma için şart)
+        setupPractice(page, practiceStatus, i)
+    }
+
+    // Alt çubuk: "Üstte tut" + "Otomatik göster" (sol) + disclaimer + gezinme düğmeleri (sağ)
     def topChk = new javafx.scene.control.CheckBox('Üstte tut')
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
     } as javafx.beans.value.ChangeListener)
 
-    // #1: "Otomatik vurgula" — açık (varsayılan) iken her sayfa hedefini kendiliğinden işaretler.
-    def autoChk = new javafx.scene.control.CheckBox('Otomatik vurgula')
-    autoChk.setSelected(autoHighlight.get())
-    autoChk.setDisable(page.bolge == null && page.hedef == null)   // yalnız hiç hedefi olmayan sayfada (intro/kapanış) kapalı
+    // "Otomatik göster" — açık (varsayılan) iken her sayfa hedefini vurgular ve örnek komutu çalıştırır.
+    def autoChk = new javafx.scene.control.CheckBox('Otomatik göster')
+    autoChk.setSelected(autoShow.get())
+    autoChk.setDisable(page.bolge == null && page.hedef == null && page.demo == null)  // intro/kapanış: hiçbir hedef yok
     autoChk.selectedProperty().addListener({ obs, o, n ->
-        autoHighlight.set(n)
-        if (hiBtn != null) {
-            if (n) { applyHighlight(nodesF, spotF); activateTarget(page); hiBtn.setSelected(true) }
-            else { clearHighlight(); hiBtn.setSelected(false) }
+        autoShow.set(n)
+        if (n) {
+            if (hiBtn != null) { applyHighlight(nodesF, spotF); activateTarget(page); hiBtn.setSelected(true) }
+            if (page.demo != null) demoRun(page, nodesF)
+        } else {
+            clearHighlight(); if (hiBtn != null) hiBtn.setSelected(false)
         }
     } as javafx.beans.value.ChangeListener)
 
@@ -496,11 +787,20 @@ render = { ->
 // ── Açılış ───────────────────────────────────────────────────────────────────
 javafx.application.Platform.runLater {
     try {
+        // Tur başındaki durumu yakala (kapanışta geri yüklemek için).
+        try { originalTool.set(gui.getToolManager().getSelectedTool()) } catch (Throwable t) {}
+        try {
+            for (n in buttonsForActions([gui.getToolManager().getSelectionModeAction()]))
+                if (n instanceof javafx.scene.control.ToggleButton) {
+                    originalSelMode.set(Boolean.valueOf(((javafx.scene.control.ToggleButton) n).isSelected())); break
+                }
+        } catch (Throwable t) {}
+
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
         stage.setTitle('QuPath arayüz turu')
         stage.setAlwaysOnTop(alwaysTop.get())
-        stage.setOnHidden({ clearHighlight() })
+        stage.setOnHidden({ clearHighlight(); restoreState(); detachPractice() })
         render()
         stage.show()
     } catch (Throwable t) {

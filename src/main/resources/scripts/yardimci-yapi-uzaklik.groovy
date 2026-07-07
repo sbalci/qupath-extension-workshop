@@ -18,7 +18,8 @@
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • VAR OLAN tespitlerin merkezinden seçili yapının sınırına mesafe ölçer.
  *     Bu bir MESAFE ölçümüdür — klinik skor, eşik veya yorum DEĞİL.
- *   • Hücre TESPİTİ YAPMAZ. Önce bir tespit modülü çalıştırın (Modül 2/3/5/7).
+ *   • Hücre TESPİTİ YAPMAZ. Önce bir tespit modülü çalıştırın (Hücre Tespiti,
+ *     Nükleer Boya, Sitoplazmik Boya ya da Tümör içi Ki-67 modülü).
  *   • Yapıyı (anotasyonu) sizin çizmeniz gerekir; betik bunu üretmez.
  *
  * QuPath KARŞILIĞI (GUI):
@@ -34,7 +35,7 @@
  *      (ya da [Automate → Project scripts → bu betik])
  *
  * ÇIKTI:
- *   • Her hücre: "Yapıya uzaklık (µm)" ölçümü (− = içeride; Modül 9 ile aktarılır)
+ *   • Her hücre: "Yapıya uzaklık (µm)" ölçümü (− = içeride; Veri dışa aktarma modülü ile aktarılır)
  *   • Kilitli "Yapıya Uzaklık Özet": ortalama/medyan/min/maks, yapı içi adet,
  *     sınır bandı (|mesafe| ≤ N µm) adet ve %
  *   • (İsteğe bağlı) bir hücre ölçümünün (DAB OD, Ki-67 vb.) uzaklıkla Pearson/
@@ -140,7 +141,7 @@ if (!(pw > 0) || !(ph > 0)) {
 
 def detections = QP.getDetectionObjects().findAll { it.getROI() != null }
 if (detections.isEmpty()) {
-    def msg = "Slaytta hücre tespiti yok.\nÖnce Modül 2/3/5/7 ile tespit yapın."
+    def msg = "Slaytta hücre tespiti yok.\nÖnce Hücre Tespiti, Nükleer Boya, Sitoplazmik Boya ya da Tümör içi Ki-67 modülü ile tespit yapın."
     if (isHeadless) println msg else Dialogs.showWarningNotification("Tespit yok", msg)
     return
 }
@@ -318,7 +319,7 @@ body << "\n"
 body << "İşaret kuralı: NEGATİF mesafe → hücre yapının İÇİNDE; pozitif → dışında.\n"
 body << "Her hücreye '" << distMeas << "' ölçümü yazıldı; ölçüme göre renklendirince\n"
 body << "yapıya yakınlık haritası görünür ([Measure → Show measurement maps]).\n"
-body << "Modül 9 ile dışa aktarılır.\n\n"
+body << "Veri dışa aktarma modülü ile dışa aktarılır.\n\n"
 body << "Bu bir MESAFE ölçümüdür — klinik skor, eşik veya yorum DEĞİL.\n"
 body << "(FS2K Session 12; Bankhead 2017)\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."

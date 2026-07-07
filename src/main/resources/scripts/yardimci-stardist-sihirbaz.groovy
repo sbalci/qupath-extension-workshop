@@ -6,7 +6,7 @@
  * NE YAPAR:
  *   Yerel QuPath **StarDist eklentisi** ile, seçili anotasyon (ROI) içinde
  *   H&E çekirdeklerini derin öğrenme ile tespit eder — tek pencereden, kod
- *   yazmadan ve (ertelenen) Modül 8'i etkinleştirmeden:
+ *   yazmadan ve (ertelenen) QuANTUM modülünü etkinleştirmeden:
  *     1. StarDist eklentisi + he_heavy_augment.pb modeli kontrol edilir
  *        (model eksikse otomatik iner, SHA-256 doğrulanır; gerekirse elle seçim).
  *     2. ÇEKİRDEK TESPİTİ — seçili ROI içinde StarDist çalışır.
@@ -18,9 +18,9 @@
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Yalnız sayım / alan / yoğunluk üretir; sınıflandırma, grade, alt-tip veya
- *     klinik yorum YAPMAZ. (Tümör/non-neoplastik ayrımı + cTCF için Modül 8 — QuANTUM.)
+ *     klinik yorum YAPMAZ. (Tümör/non-neoplastik ayrımı + cTCF için QuANTUM modülü.)
  *   • StarDist çıktısı bir DERİN ÖĞRENME TAHMİNİDİR; görsel doğrulama gerekir (Ek W).
- *   • Eşik / piksel boyutu / hücre genişletme değerleri Modül 8 ile ORTAK kalıcı
+ *   • Eşik / piksel boyutu / hücre genişletme değerleri QuANTUM modülü ile ORTAK kalıcı
  *     atölye ayarlarıdır (Atölye Ayarları → StarDist).
  *
  * KULLANIM:
@@ -51,14 +51,14 @@ def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-
 // --- StarDist modeli: kamuya açık qupath/models'ten sabitlenmiş indirme ---
 // Pin: qupath/models @ 60cc9dd (public, auth gerektirmez). İndirme sonrası
 // SHA-256 + boyut doğrulanır; uyuşmazsa elle seçim yedeğine düşülür.
-// (Modül 8 ile aynı model + aynı pin.)
+// (QuANTUM modülü ile aynı model + aynı pin.)
 final String MODEL_URL    = "https://raw.githubusercontent.com/qupath/models/60cc9dd3406871fdd4bbbe8ad76a94e759bab7dd/stardist/he_heavy_augment.pb"
 final String MODEL_SHA256 = "00033ae84b03ef82faec2ffad4dc7cd12666738ab70b339f35d3a6e5a5379bab"
 final long   MODEL_BYTES  = 5722237L
 
 // ── Kalıcı yapılandırma ──────────────────────────────────────────────────────
 //   Parametreler (eşik/px/genişletme) eklenti yüklüyse WorkshopPrefs'ten okunur
-//   (Modül 8 ile ortak); eklenti yoksa bu yerel düğümden okunur/yazılır.
+//   (QuANTUM modülü ile ortak); eklenti yoksa bu yerel düğümden okunur/yazılır.
 def prefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/stardist')
 def PREF_MODEL = 'modelPath'
 def PREF_THR   = 'threshold'
@@ -79,7 +79,7 @@ def atolyeD = { String k, double d -> (double) __wpCall('dbl', [String.class, do
 def wpPutD  = { String k, double v -> __wpCall('setDbl', [String.class, double.class] as Class[], [k, (Double) v] as Object[], null) }
 def wpPresent = (__wpClass() != null)
 
-// Parametre yükleme: WorkshopPrefs (kanonik, Modül 8 ile ortak) → yoksa yerel düğüm.
+// Parametre yükleme: WorkshopPrefs (kanonik, QuANTUM modülü ile ortak) → yoksa yerel düğüm.
 def loadThreshold = { -> wpPresent ? atolyeD('atolye.stardistThreshold', 0.5)
                                    : parseDoubleOr(prefs.get(PREF_THR, '0.5'), 0.5) }
 def loadPixelSize = { -> wpPresent ? atolyeD('atolye.stardistPixelSize', 0.5)
@@ -531,7 +531,7 @@ render = { ->
             addMonoArea(sb.toString())
             addParamGrid()
             addGuidance('Çıktı yalnız çekirdek SAYISI + alan + yoğunluktur; sınıflandırma/yorum üretmez. ' +
-                'Tümör/non-neoplastik ayrımı + cTCF için Modül 8 (QuANTUM).')
+                'Tümör/non-neoplastik ayrımı + cTCF için QuANTUM modülü.')
         }
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('⟳ Yenile', { render() }))

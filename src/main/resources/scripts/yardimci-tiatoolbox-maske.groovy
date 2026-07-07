@@ -26,7 +26,7 @@
  *
  * KULLANIM:
  *   1. Bir slayt açın; ilgi bölgesini anote edip SINIFLANDIRIN (ör. Tumor / Stroma
- *      — bkz. Modül 6). Sınıfsız anotasyonlar maskeye dâhil edilmez.
+ *      — bkz. Tümör/Stroma modülü). Sınıfsız anotasyonlar maskeye dâhil edilmez.
  *   2. [Extensions → Atölye → Yardımcılar → TIA Toolbox için bölge maskesi]
  *   3. Maske çözünürlüğünü (µm/px) girin (düşük çözünürlük = küçük dosya).
  *
@@ -157,7 +157,7 @@ if (classifiedAnns.isEmpty()) {
         "Sınıflı anotasyon yok",
         "Bölge maskesi üretmek için anotasyonların bir SINIFI (PathClass) olmalı\n" +
         "(ör. Tumor, Stroma). Slaytta sınıflı anotasyon bulunamadı.\n\n" +
-        "Çözüm: anotasyonları sınıflandırın (Modül 6 — tümör/stroma)."
+        "Çözüm: anotasyonları sınıflandırın (Tümör/Stroma modülü)."
     )
     return
 }

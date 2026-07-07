@@ -13,7 +13,7 @@
  *     • DOĞRUDAN — venv yolu ayarlıysa iki Python komutunu QuPath içinden
  *       (ProcessBuilder) çalıştırır, çıktıyı canlı akıtır, bittiğinde içe aktarır.
  *   İçe aktarımdan sonra "Temiz doku = doku − artefaktlar" anotasyonu üretir;
- *   böylece Modül 2–7 yalnız temiz dokuda çalıştırılabilir.
+ *   böylece sonraki analiz modülleri yalnız temiz dokuda çalıştırılabilir.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • GrandQC çıktısı bir derin öğrenme TAHMİNİDİR; bu betik tahminleri yalnız
@@ -344,7 +344,7 @@ def buildResultText = { slide, imp, clean ->
         } else {
             sb << "  (Görüntü kalibre değil — alanlar mm² olarak verilemedi.)\n"
         }
-        sb << "\nModül 2–7'yi bu \"Temiz doku\" anotasyonuyla sınırlayabilirsiniz.\n"
+        sb << "\nSonraki analiz modüllerini bu \"Temiz doku\" anotasyonuyla sınırlayabilirsiniz.\n"
     } else {
         sb << "Temiz doku üretilemedi"
         if (clean != null && clean.error) sb << " — " << clean.error

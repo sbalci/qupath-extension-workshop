@@ -29,7 +29,7 @@
  * ÇIKTI:
  *   • Kilitli "WSInfer Alan Özet" anotasyonu: her sınıf için
  *     "WSInfer alan: <Sınıf> (karo)" + "(mm2)" + "(%)" ölçümleri
- *     (Modül 9 ile dışa aktarılır)
+ *     (Veri dışa aktarma modülü ile dışa aktarılır)
  *   • Sonuç penceresinde sınıf bazlı alan tablosu
  *   • (Onaylarsanız) sınıf başına birleştirilmiş kilitli anotasyon
  *

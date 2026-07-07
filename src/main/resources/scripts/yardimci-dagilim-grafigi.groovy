@@ -20,7 +20,8 @@
  *     özellik matrisi, fenotipleme TSV içe aktarımı).
  *
  * KULLANIM:
- *   1. Ölçümlü tespitler içeren bir slayt açın (örn. Modül 2/3/5/7 sonrası,
+ *   1. Ölçümlü tespitler içeren bir slayt açın (örn. Hücre tespiti / Nükleer boya /
+ *      Sitoplazmik boya / Tümör içi Ki-67 modüllerinden sonra,
  *      ya da fenotip/UMAP etiketleri içe aktarıldıktan sonra).
  *   2. [Extensions → Atölye → İleri analiz → Dağılım grafiği (scatter chart)]
  *   3. X ve Y ölçümlerini seçip "Grafiği aç".
@@ -122,7 +123,8 @@ render = { ->
     if (dets.isEmpty() || names.isEmpty()) {
         def lbl = new javafx.scene.control.Label(
             "Çizilebilir ölçüm bulunamadı.\n\n" +
-            "Önce ölçümlü tespitler oluşturun (Modül 2/3/5/7), ya da fenotip/UMAP\n" +
+            "Önce ölçümlü tespitler oluşturun (Hücre tespiti / Nükleer boya / Sitoplazmik boya /\n" +
+            "Tümör içi Ki-67 modülleri), ya da fenotip/UMAP\n" +
             "etiketlerini içe aktarın (Yardımcılar → Kümeleme/fenotip etiketlerini içe aktar).\n" +
             "Sonra '⟳ Yenile'.")
         lbl.setWrapText(true)

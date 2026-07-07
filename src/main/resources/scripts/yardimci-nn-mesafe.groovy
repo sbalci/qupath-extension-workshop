@@ -13,10 +13,11 @@
  *   hesaplar (uzamsal hash ızgarası ile hızlı + tam sonuç).
  *
  * GİRDİ (ÖNKOŞUL):
- *   • Slaytta hücre tespitleri olmalı (Modül 2/3/5/7). Betik tespit YAPMAZ.
+ *   • Slaytta hücre tespitleri olmalı (Hücre Tespiti / Nükleer Boya / Sitoplazmik Boya /
+ *     Tümör İçi Ki-67 modüllerinden biriyle üretilmiş). Betik tespit YAPMAZ.
  *
  * ÇIKTI:
- *   • Her hücre: "En yakın komşu (µm)" ölçümü (Modül 9 ile dışa aktarılır)
+ *   • Her hücre: "En yakın komşu (µm)" ölçümü (Veri Dışa Aktarma modülü ile dışa aktarılır)
  *   • Kilitli "En Yakın Komşu Özet": ortalama / medyan / minimum NN mesafesi
  *
  * YÖNTEM REFERANSI:
@@ -115,7 +116,7 @@ def cells = QP.getDetectionObjects().findAll { it.getROI() != null }
 int n = cells.size()
 if (n < 2) {
     def msg = "En yakın komşu için en az 2 hücre gerekir.\n" +
-              "Önce Modül 2/3/5/7 ile hücre tespiti yapın."
+              "Önce Hücre Tespiti / Nükleer Boya / Sitoplazmik Boya / Tümör İçi Ki-67 modüllerinden biriyle hücre tespiti yapın."
     if (isHeadless) println msg else Dialogs.showWarningNotification("Yetersiz hücre", msg)
     return
 }

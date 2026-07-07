@@ -1,5 +1,5 @@
 /**
- * Modül 2 - Tek Tıkla Hücre Tespiti
+ * Tek Tıkla Hücre Tespiti
  * ----------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Atölye için "hızlı deneme" betiği. Seçilen anotasyon içindeki tüm
@@ -14,7 +14,7 @@
  *
  * Bu betik atölyenin tek tıkla "wow" anı için yazılmıştır. Aynı parametrelerin
  * her birinin ne işe yaradığını ve nasıl ayarlayacağınızı öğrenmek için
- * web sitesindeki **Modül 2 - Hücre Tespiti** bölümüne dönün.
+ * web sitesindeki **Hücre Tespiti** bölümüne dönün.
  *
  * NOT — manuel sayım alternatifi:
  *   Küçük örneklemlerde veya zor durumlarda QuPath'in **Point Tool**'u ile
@@ -142,7 +142,7 @@ javafx.application.Platform.runLater {
     try {
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Modül 2 - Hızlı hücre tespiti')
+        stage.setTitle('Hızlı hücre tespiti')
         stage.setAlwaysOnTop(true)
 
         def title = new javafx.scene.control.Label('Hızlı hücre tespiti')
@@ -241,6 +241,6 @@ javafx.application.Platform.runLater {
         stage.setScene(new javafx.scene.Scene(root, 560, 520))
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Modül 2 açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage('Hücre tespiti açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
     }
 }

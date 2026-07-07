@@ -1,5 +1,5 @@
 /**
- * Modül 3b - Tek Tıkla ER / PR Nükleer H-score
+ * Tek Tıkla ER / PR Nükleer H-score
  * ----------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Atölye için "hızlı deneme" betiği. Seçilen anotasyon içinde
@@ -272,7 +272,7 @@ def finishWithMetrics = { t, double thr1, double thr2, double thr3, boolean teac
     def text = buildResultText(m, thr1, thr2, thr3, elapsed, baseline)
 
     println "─────────────────────────────────────"
-    println "Modül 3b - ER / PR Nükleer H-score"
+    println "ER / PR Nükleer H-score"
     println "  n=${m.total} | 0:${m.n0} 1+:${m.n1} 2+:${m.n2} 3+:${m.n3} | H-score: ${String.format(java.util.Locale.US, '%.0f', m.hScore)}"
     println "─────────────────────────────────────"
 
@@ -348,7 +348,7 @@ javafx.application.Platform.runLater {
 
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Modül 3b - ER / PR Nükleer H-score')
+        stage.setTitle('ER / PR Nükleer H-score')
         stage.setAlwaysOnTop(true)
 
         def title = new javafx.scene.control.Label('ER / PR Nükleer H-score')
@@ -478,6 +478,6 @@ javafx.application.Platform.runLater {
         stage.setScene(new javafx.scene.Scene(root, 580, 580))
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Modül 3b açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage('ER / PR H-score açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
     }
 }

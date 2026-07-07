@@ -17,12 +17,12 @@
  *     renk ayrışma matriksi slayttan slayta değişir; değerleri yalnızca
  *     aynı koşullar altında karşılaştırın.
  *   • Piksel sınıflandırıcı çıktısının hiyerarşide bulunması GEREKİR
- *     (ör. Modül 6 → sınıflandırıcı çalıştırılmış + deteksiyonlar var).
+ *     (ör. Tümör/Stroma modülü → sınıflandırıcı çalıştırılmış + deteksiyonlar var).
  *
  * KULLANIM:
  *   1. DAB-İHK slaytı açın, Image type → "Brightfield (H-DAB)".
  *   2. Ölçmek istediğiniz bölgeyi alan anotasyonu olarak çizin ve SEÇİN.
- *   3. Modül 6 piksel sınıflandırıcısını önce çalıştırın (sınıflı deteksiyonlar
+ *   3. Tümör/Stroma modülü piksel sınıflandırıcısını önce çalıştırın (sınıflı deteksiyonlar
  *      hiyerarşide bulunmalı), VEYA sadece "Pozitif" sınıf adıyla devam edin.
  *   4. [Extensions → Atölye → Yardımcılar → Skorlama & ölçüm → Entegre DAB OD]
  *      (ya da [Automate → Project scripts → bu betik])
@@ -156,7 +156,7 @@ def classNames = childDetections.collect { it.getPathClass().toString() }.unique
 
 if (classNames.isEmpty()) {
     def msg = "Seçili anotasyon içinde sınıflandırılmış deteksiyon yok.\n\n" +
-              "Önce Modül 6 piksel sınıflandırıcısını 'Seçili anotasyonda çalıştır' ile\n" +
+              "Önce Tümör/Stroma modülü piksel sınıflandırıcısını 'Seçili anotasyonda çalıştır' ile\n" +
               "çalıştırın (deteksiyonlar hiyerarşide bulunmalı)."
     if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage("Deteksiyon/sınıf yok", msg)
     return

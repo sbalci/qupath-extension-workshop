@@ -3,8 +3,8 @@
  * --------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * QuPath'in **Image type** ayarını tek tıkla değiştirir — açık slayt için ya da
- * projedeki TÜM slaytlar için. Doğru image type, sonraki tüm boya analizlerinin
- * (Modül 2–7) düzgün çalışması için zorunludur:
+ * projedeki TÜM slaytlar için. Doğru image type, sonraki tüm boya analizi
+ * modüllerinin (Hücre Tespiti'nden Tümör içi Ki-67'ye kadar) düzgün çalışması için zorunludur:
  *   • H&E slaytları → BRIGHTFIELD_H_E
  *   • İHK / DAB slaytları → BRIGHTFIELD_H_DAB
  *   • Diğer brightfield → BRIGHTFIELD_OTHER
@@ -37,8 +37,8 @@ def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 // Görüntü tipi etiketleri ve enum karşılıkları
 // ──────────────────────────────────────────────────────────────
 def TYPE_OPTIONS = [
-    ["BRIGHTFIELD_H_DAB",  "Brightfield (H-DAB) — İHK / DAB slaytları (Modül 3a, 3b, 4, 5, 7)"],
-    ["BRIGHTFIELD_H_E",    "Brightfield (H&E) — Hematoksilen-Eozin (Modül 2, 6)"],
+    ["BRIGHTFIELD_H_DAB",  "Brightfield (H-DAB) — İHK / DAB slaytları (Nükleer Boya, ER/PR H-score, Membran Boya, Sitoplazmik Boya, Tümör içi Ki-67 modülleri)"],
+    ["BRIGHTFIELD_H_E",    "Brightfield (H&E) — Hematoksilen-Eozin (Hücre Tespiti, Tümör/Stroma modülleri)"],
     ["BRIGHTFIELD_OTHER",  "Brightfield (other) — diğer brightfield boyamaları"],
     ["FLUORESCENCE",       "Fluorescence — floresan / immünofloresan"],
     ["OTHER",              "Other — bilinmeyen / belirsiz"]

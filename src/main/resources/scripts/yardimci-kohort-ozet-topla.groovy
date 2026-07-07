@@ -10,7 +10,7 @@
  *   sütunlar = tüm kilitli anotasyonlardaki ölçümlerin birleşimi) TSV dosyasına
  *   yazar: <proje>/kohort-ozet/kohort_ozet_<millis>.tsv
  *
- *   Bu araç "Modül 9 dışa aktarma" ile tamamlayıcıdır: Modül 9 UZUN FORMAT
+ *   Bu araç "Veri dışa aktarma modülü" ile tamamlayıcıdır: o modül UZUN FORMAT
  *   (per-nesne satır) üretirken bu betik GENİŞ FORMAT (per-görüntü satır) üretir;
  *   her görüntünün özet skorunu tek satırda görmek isteyenler için idealdir.
  *
@@ -20,7 +20,7 @@
  *   • Hiçbir imageData'yı kaydetmez (saveImageData çağrısı yoktur).
  *
  * KULLANIM:
- *   1. Kilitli özet anotasyonları (Modül 6 piksel sınıflandırıcı, intersect, vb.)
+ *   1. Kilitli özet anotasyonları (Tümör/Stroma modülü piksel sınıflandırıcı, intersect, vb.)
  *      içeren bir QuPath projesi açın.
  *   2. [Extensions → Atölye → Yardımcılar → Kohort → Kohort özet toplayıcı]
  *      (ya da [Automate → Project scripts → bu betik])
@@ -186,7 +186,7 @@ entries.eachWithIndex { entry, idx ->
 }
 
 if (rows.isEmpty()) {
-    def msg = "Hiçbir görüntüden kilitli anotasyon okunamadı.\nÖnce bir Modül 6 piksel sınıflandırıcısı çalıştırıp sonuç anotasyonunu kilitleyin."
+    def msg = "Hiçbir görüntüden kilitli anotasyon okunamadı.\nÖnce Tümör/Stroma modülünün piksel sınıflandırıcısını çalıştırıp sonuç anotasyonunu kilitleyin."
     if (isHeadless) { println msg; return }
     Dialogs.showWarningNotification("Kohort özet toplayıcı", msg)
     return
@@ -223,7 +223,7 @@ previewCols.each { c -> body << "  • " + c + "\n" }
 if (colCount > 15) body << String.format(java.util.Locale.US, "  … ve %,d sütun daha%n", colCount - 15)
 body << "\nSütun adı formatı: \"<anotasyon adı veya sınıfı> · <ölçüm adı>\"\n"
 body << "Eksik değerler TSV'de boş hücre olarak bırakıldı (Excel/R doğrudan okur).\n"
-body << "Modül 9 ile üretilen uzun-format tablosu ile birleştirilebilir.\n\n"
+body << "Veri dışa aktarma modülünde üretilen uzun-format tablosu ile birleştirilebilir.\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
 showResultWindow("Kohort Özet Toplayıcı", body.toString())

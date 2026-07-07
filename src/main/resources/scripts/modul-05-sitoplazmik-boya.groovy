@@ -1,5 +1,5 @@
 /**
- * Modül 5 - Tek Tıkla CD68 / Sitoplazmik İHK Kantifikasyonu
+ * Sitoplazmik Boya - Tek Tıkla CD68 / Sitoplazmik İHK Kantifikasyonu
  * ----------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Atölye için "hızlı deneme" betiği. Sitoplazmik DAB boyamasını (CD68,
@@ -269,7 +269,7 @@ javafx.application.Platform.runLater {
     try {
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Modül 5 - CD68 / Sitoplazmik İHK kantifikasyonu')
+        stage.setTitle('Sitoplazmik Boya - CD68 / Sitoplazmik İHK kantifikasyonu')
         stage.setAlwaysOnTop(true)
 
         def title = new javafx.scene.control.Label('CD68 / Sitoplazmik İHK kantifikasyonu')
@@ -354,6 +354,6 @@ javafx.application.Platform.runLater {
         stage.setScene(new javafx.scene.Scene(root, 560, 540))
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Modül 5 açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage('Sitoplazmik boya modülü açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
     }
 }

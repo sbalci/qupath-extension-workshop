@@ -2,7 +2,7 @@
  * Yardımcı - Stromal TIL Yoğunluğu (morfolojik ölçüm)
  * ----------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
- * Modül 6 ile ayrılan **Stroma** alanı içinde çekirdek tespiti yapar ve
+ * Tümör/Stroma modülü ile ayrılan **Stroma** alanı içinde çekirdek tespiti yapar ve
  * küçük-çekirdekli hücreleri (lenfosit adayı) sayarak **stromal hücre
  * yoğunluğu (hücre/mm²)** üretir.
  *
@@ -15,13 +15,13 @@
  *
  * KULLANIM:
  *   1. H&E slaytını açın, Image type → "Brightfield (H&E)" veya "(H-DAB)"
- *   2. Önce Modül 6'yı çalıştırın → "Stroma" anotasyonları oluşsun
+ *   2. Önce Tümör/Stroma modülünü çalıştırın → "Stroma" anotasyonları oluşsun
  *   3. [Automate → Project scripts → bu betik]
  *
  * ÇIKTI:
  *   • Her "Stroma" anotasyonuna: "Stromal hücre yoğunluğu (hücre/mm2)" +
  *     "Lenfosit adayı yoğunluğu (hücre/mm2)"
- *   • Kilitli "Stromal TIL Özet" anotasyonu (Modül 9 ile dışa aktarılır)
+ *   • Kilitli "Stromal TIL Özet" anotasyonu (Veri dışa aktarma modülü ile dışa aktarılır)
  *
  * YÖNTEM REFERANSLARI:
  *   • Salgado R et al. (2015), Ann Oncol — IIOBWG stromal TIL skorlama
@@ -114,7 +114,7 @@ if (imageData == null) {
 def stromaAnnotations = QP.getAnnotationObjects().findAll { it.getPathClass()?.getName() == "Stroma" }
 if (stromaAnnotations.isEmpty()) {
     def msg = "Bu slaytta 'Stroma' anotasyonu yok.\n\n" +
-              "Önce Modül 6 (Tümör vs stroma sınıflandırıcı) çalıştırın; o betik\n" +
+              "Önce Tümör/Stroma modülünü (Tümör vs stroma sınıflandırıcı) çalıştırın; o betik\n" +
               "tümör/stroma alanlarını ayırır. Sonra bu betiği tekrar çalıştırın."
     if (isHeadless) println msg else Dialogs.showWarningNotification("Stroma bulunamadı", msg)
     return
@@ -203,7 +203,7 @@ if (totalCells == 0) {
     if (isHeadless) println "UYARI: ${zmsg}" else Dialogs.showWarningNotification("Hücre bulunamadı", zmsg)
 }
 
-// ── 4) Kilitli özet anotasyonu (Modül 9 dışa aktarımı için) ─────────
+// ── 4) Kilitli özet anotasyonu (Veri dışa aktarma modülü için) ─────────
 QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() == "Stromal TIL Özet" }, false)
 def srv = imageData.getServer()
 def summary = qupath.lib.objects.PathObjects.createAnnotationObject(

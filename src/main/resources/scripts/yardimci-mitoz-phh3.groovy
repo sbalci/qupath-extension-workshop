@@ -11,7 +11,7 @@
  *     YOĞUNLUĞUNU ölçer. Bu bir SAYIM/YOĞUNLUKtur — mitoz derecesi,
  *     grade eşiği veya klinik yorum DEĞİL.
  *   • PHH3 pozitifliği mitoz ile birebir eş DEĞİLDİR: PHH3 geç G2/profaz
- *     çekirdeklerini de boyar (Modül 2'deki "freckle" örneği). Boyut filtresi
+ *     çekirdeklerini de boyar (Hücre tespiti modülündeki "freckle" örneği). Boyut filtresi
  *     bunları azaltır ama tümüyle elemez — sonuç görsel doğrulama gerektirir.
  *   • Nükleer Ki-67 betiğinden (modul-03) FARKI: orada amaç pozitif FRAKSİYON
  *     (LI %); burada amaç alana göre MUTLAK SAYIM (mitoz/mm²).
@@ -25,7 +25,7 @@
  * ÇIKTI:
  *   • Her anotasyona: "PHH3-pozitif çekirdek (mitoz adayı)" +
  *     "Mitoz yoğunluğu (mitoz/mm2)" + "PHH3+ nükleer %"
- *   • Kilitli "Mitoz Özet" anotasyonu (Modül 9 ile dışa aktarılır)
+ *   • Kilitli "Mitoz Özet" anotasyonu (Veri dışa aktarma modülü ile dışa aktarılır)
  *
  * YÖNTEM NOTU — EMPAIA "Mitosis Detection" not defteri ile bağlantı:
  *   EMPAIA ECDP2022 not defteri PHH3 mitozlarını klasik görüntü işlemeyle bulur:
@@ -195,7 +195,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 double pixelSizeMicrons          = 0.5
 double dabThreshold              = 0.25    // PHH3 nükleer DAB OD eşiği — slayt/tarayıcıya göre KALİBRE EDİN
 double nucleusDetectionThreshold = 0.10    // Hematoxylin OD nükleus tespiti eşiği
-double minNucleusAreaUm2         = 12.0    // küçük profaz/freckle sinyallerini azaltır (Modül 2 "opening" karşılığı)
+double minNucleusAreaUm2         = 12.0    // küçük profaz/freckle sinyallerini azaltır (Hücre tespiti modülü "opening" karşılığı)
 double maxNucleusAreaUm2         = 400.0
 double cellExpansionUm           = 0.0     // nükleer belirteç — hücre genişletmeye gerek yok
 double whoAreaMm2                = 2.0     // WHO alan-tabanlı raporlama birimi (mitoz / 2 mm²)

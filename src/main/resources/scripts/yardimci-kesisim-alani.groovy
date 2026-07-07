@@ -17,7 +17,7 @@
  *   • VAR OLAN alan anotasyonları arasındaki örtüşme ALANINI ölçer. Bu bir ALAN
  *     ölçümüdür — klinik skor, eşik, evre veya yorum DEĞİL.
  *   • Anotasyonları (A ve B) sizin çizmeniz/üretmeniz gerekir (elle ya da piksel
- *     sınıflandırıcı — Modül 6). Betik anotasyon üretmez.
+ *     sınıflandırıcı — Tümör/Stroma modülü). Betik anotasyon üretmez.
  *   • Yalnız ALAN anotasyonlarıyla çalışır (nokta/çizgi ROI atlanır).
  *
  * QuPath KARŞILIĞI (GUI):
@@ -32,7 +32,7 @@
  *
  * ÇIKTI:
  *   • Her A anotasyonu: "Kesişen <B> alanı (µm²)" + "Kesişen <B> oranı (%)" ölçümleri
- *     (Modül 9 ile dışa aktarılır)
+ *     (Veri dışa aktarma modülü ile dışa aktarılır)
  *   • Kilitli "Kesişim Alanı Özet": A/B adet, toplam A alanı, toplam kesişim, genel
  *     ve ortalama örtüşme %, örtüşen A adedi
  *   • Sonuç penceresinde özet tablo
@@ -141,7 +141,7 @@ def classNames = QP.getAnnotationObjects()
 if (classNames.size() < 2) {
     def msg = "Kesişim için en az İKİ farklı sınıfta alan anotasyonu gerekir.\n" +
               "Mevcut sınıf(lar): " + (classNames.join(', ') ?: '(yok)') + "\n\n" +
-              "Anotasyonları elle çizip sınıflayın ya da bir piksel sınıflandırıcı (Modül 6) çalıştırın."
+              "Anotasyonları elle çizip sınıflayın ya da bir piksel sınıflandırıcı (Tümör/Stroma modülü) çalıştırın."
     if (isHeadless) println msg else Dialogs.showErrorMessage("Yetersiz sınıf", msg)
     return
 }
@@ -271,7 +271,7 @@ if (errCount > 0)
     body << String.format(java.util.Locale.US, "Atlanan (geçersiz) : %,d%n", errCount)
 body << "\n"
 body << "Her A anotasyonuna '${measArea}' ve\n"
-body << "'${measPct}' ölçümleri yazıldı (Modül 9 ile dışa aktarılır).\n"
+body << "'${measPct}' ölçümleri yazıldı (Veri dışa aktarma modülü ile dışa aktarılır).\n"
 body << "Ölçüme göre renklendirmek için: Measure → Show measurement maps.\n\n"
 body << "Not: JTS geometri alanı piksel² döner; µm²'ye pw·ph ile ölçeklenir.\n"
 body << "Bu bir ALAN ölçümüdür — klinik skor, eşik veya yorum DEĞİL.\n"

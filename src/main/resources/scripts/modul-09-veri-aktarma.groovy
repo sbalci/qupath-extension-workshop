@@ -1,5 +1,5 @@
 /**
- * Modül 9 - Etkileşimli Veri Dışa Aktarma
+ * Etkileşimli Veri Dışa Aktarma
  * ----------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Anotasyon + tespit ölçümlerini (TSV/CSV) ve anotasyon geometrisini (GeoJSON)
@@ -14,8 +14,9 @@
  *   • Kayıt yeri  — "Seç…" ile klasör seçici (boş = proje/exports)
  *
  * KULLANIM:
- *   1. Modüllerden birinde (2, 3, 3b, 4, 5, 6, 7, 8) ölçüm üretmiş olun
- *   2. [Automate → Project scripts → Modül 9 - Veri dışa aktarma]
+ *   1. Hücre tespiti, nükleer boya, ER/PR H-score, membran boya, sitoplazmik boya,
+ *      tümör/stroma, tümör içi Ki-67 veya QuANTUM modüllerinden birinde ölçüm üretmiş olun
+ *   2. [Automate → Project scripts → Veri dışa aktarma]
  *   3. Seçenekleri belirleyin → Dışa aktar
  *
  * ÇIKTI (varsayılan):
@@ -76,7 +77,7 @@ def COLUMN_MASTER = [
 // ──────────────────────────────────────────────────────────────
 def showExportOptions = { Map d ->
     if (isHeadless) {
-        println "=== Modül 9 - Veri dışa aktarma (headless) ==="
+        println "=== Veri dışa aktarma (headless) ==="
         println "Diyalog atlandı; hatırlanan/varsayılan seçimlerle devam ediliyor."
         return d
     }
@@ -87,7 +88,7 @@ def showExportOptions = { Map d ->
         try {
             def stage = new javafx.stage.Stage()
             stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle("Modül 9 - Dışa aktarma seçenekleri")
+            stage.setTitle("Dışa aktarma seçenekleri")
             stage.setAlwaysOnTop(true)
 
             def mk = { String t ->
@@ -256,7 +257,7 @@ def showExportOptions = { Map d ->
             // Gelişmiş diyalog açılamadı — modal yedek: varsayılanlarla devam?
             try {
                 def yn = qupath.fx.dialogs.Dialogs.showConfirmDialog(
-                    "Modül 9 - Veri dışa aktarma",
+                    "Veri dışa aktarma",
                     "Gelişmiş seçenek penceresi açılamadı.\n\n" +
                     "Hatırlanan/varsayılan ayarlarla devam edeyim mi?\n" +
                     "(kapsam, ayraç, içerik, sütunlar, isimlendirme, kayıt yeri)"
@@ -476,7 +477,7 @@ def outDir = (opt.dateSubfolder as boolean) ? new File(base, stamp) : base
 outDir.mkdirs()
 
 println "─────────────────────────────────────"
-println "Modül 9 - Veri dışa aktarma"
+println "Veri dışa aktarma"
 println "─────────────────────────────────────"
 println "Mod: " + (projectMode ? "Tüm proje" : "Sadece bu görüntü")
 println "Stil: " + (ext == "tsv" ? "TSV (TAB)" : "CSV (virgül)") +
@@ -635,7 +636,7 @@ if (currentSaved) {
 def emptyHint = ""
 if (annotationsTotal == 0 && detectionsTotal == 0 && currentSaveError == null) {
     emptyHint = "\n\n💡 Çıktıda 0 anotasyon / 0 tespit görünüyor. Olası nedenler:\n" +
-                "  1. Bu slaytta gerçekten hiç anotasyon / tespit yoktu — önce Modül 2-8'den birini çalıştırın.\n" +
+                "  1. Bu slaytta gerçekten hiç anotasyon / tespit yoktu — önce ilgili modüllerden birini çalıştırın.\n" +
                 "  2. Slayt betikten ÖNCE QuPath dışında değiştirildi ve .qpdata kaydedilmedi.\n" +
                 "  3. ROI seçilip içinde tespit üretildi ama anotasyon kaydedilmedi.\n" +
                 "QuPath'te [Ctrl+S] ile slaydı kaydedin ve betiği tekrar çalıştırın."
@@ -671,7 +672,7 @@ def resultBody =
     "  • R / Python / Excel ile yukarıdaki klasördeki ${fmtName} dosyalarını okuyun.\n" +
     "  • GeoJSON dosyaları geopandas / sf paketleriyle açılır (anotasyon\n" +
     "    geometrisini başka araçlara taşımak için).\n" +
-    "  • Modül 9'un web sayfasında format karşılaştırması ve örnek R/Python\n" +
+    "  • Veri dışa aktarma modülünün web sayfasında format karşılaştırması ve örnek R/Python\n" +
     "    kodları var.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
