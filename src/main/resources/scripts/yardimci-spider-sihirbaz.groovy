@@ -93,8 +93,24 @@ def PREF_ORGAN  = 'organ'
 def PREF_GRAN   = 'granularity'
 def PREF_DEVICE = 'device'
 
+// Atölye veri kökü (env yöneticisiyle PAYLAŞILAN; öntanımlı ~/.atolye — C:).
+def atolyeDataRoot = { ->
+    def p = ''
+    try { p = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('dataRoot', '') } catch (Throwable ignore) {}
+    return (p?.trim()) ? new File(p.trim()) : new File(System.getProperty('user.home'), '.atolye')
+}
+// Model önbelleğini (HF hub) de veri köküne yönlendir — SPIDER ağırlıkları HF'den iner.
+def applyCacheEnv = { pb ->
+    try {
+        def cache = new File(atolyeDataRoot(), 'cache'); cache.mkdirs()
+        def hf = new File(cache, 'huggingface'); def env = pb.environment()
+        env.put('HF_HOME', hf.getAbsolutePath()); env.put('HF_HUB_CACHE', new File(hf, 'hub').getAbsolutePath())
+        env.put('TORCH_HOME', new File(cache, 'torch').getAbsolutePath())
+    } catch (Throwable ignore) {}
+}
+
 def loadConfig = { ->
-    [ python      : ({ -> def __p = prefs.get(PREF_PYTHON, ''); if (__p?.trim()) return __p; def __v = new File(System.getProperty('user.home'), '.atolye/runtimes/spider/.venv'); def __w = new File(__v, 'Scripts/python.exe'); def __n = new File(__v, 'bin/python'); __w.isFile() ? __w.getAbsolutePath() : (__n.isFile() ? __n.getAbsolutePath() : '') }).call(),
+    [ python      : ({ -> def __p = prefs.get(PREF_PYTHON, ''); if (__p?.trim()) return __p; def __r = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('py.spider', ''); if (__r?.trim() && new File(__r.trim()).isFile()) return __r.trim(); def __v = new File(new File(atolyeDataRoot(), 'runtimes'), 'spider/.venv'); def __w = new File(__v, 'Scripts/python.exe'); def __n = new File(__v, 'bin/python'); __w.isFile() ? __w.getAbsolutePath() : (__n.isFile() ? __n.getAbsolutePath() : '') }).call(),
       bridge      : prefs.get(PREF_BRIDGE, ''),
       modelDir    : prefs.get(PREF_MODEL,  ''),
       workDir     : prefs.get(PREF_WORK,   ''),
@@ -489,6 +505,7 @@ def persistFields = {
 def runPython = { List cmd, Closure onLine ->
     def pb = new ProcessBuilder(cmd)
     pb.redirectErrorStream(true)
+    applyCacheEnv(pb)
     def proc
     try { proc = pb.start() }
     catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
@@ -583,7 +600,7 @@ render = { ->
     center.getChildren().add(title)
     def actions = new ArrayList()
 
-    def addGuidance = { String txt -> def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); center.getChildren().add(lbl) }
+    def addGuidance = { String txt -> def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE); center.getChildren().add(lbl) }
     def addMonoArea = { String txt ->
         def ta = new javafx.scene.control.TextArea(txt ?: '')
         ta.setEditable(false); ta.setWrapText(false); ta.setStyle(MONO)
@@ -591,7 +608,7 @@ render = { ->
         center.getChildren().add(ta)
     }
     def addWarnLabel = { String txt ->
-        def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true)
+        def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE)
         lbl.setStyle('-fx-text-fill: #b8860b; -fx-font-weight: bold;')
         center.getChildren().add(lbl)
     }

@@ -68,8 +68,15 @@ def PREF_BRIDGE = 'bridge'
 def PREF_SCHEME = 'scheme'
 def PREF_WORK   = 'workDir'
 
+// Atölye veri kökü (env yöneticisiyle PAYLAŞILAN; öntanımlı ~/.atolye — C:).
+def atolyeDataRoot = { ->
+    def p = ''
+    try { p = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('dataRoot', '') } catch (Throwable ignore) {}
+    return (p?.trim()) ? new File(p.trim()) : new File(System.getProperty('user.home'), '.atolye')
+}
+
 def loadConfig = { ->
-    [ python  : ({ -> def __p = prefs.get(PREF_PYTHON, ''); if (__p?.trim()) return __p; def __v = new File(System.getProperty('user.home'), '.atolye/runtimes/sectra/.venv'); def __w = new File(__v, 'Scripts/python.exe'); def __n = new File(__v, 'bin/python'); __w.isFile() ? __w.getAbsolutePath() : (__n.isFile() ? __n.getAbsolutePath() : '') }).call(),
+    [ python  : ({ -> def __p = prefs.get(PREF_PYTHON, ''); if (__p?.trim()) return __p; def __r = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('py.sectra', ''); if (__r?.trim() && new File(__r.trim()).isFile()) return __r.trim(); def __v = new File(new File(atolyeDataRoot(), 'runtimes'), 'sectra/.venv'); def __w = new File(__v, 'Scripts/python.exe'); def __n = new File(__v, 'bin/python'); __w.isFile() ? __w.getAbsolutePath() : (__n.isFile() ? __n.getAbsolutePath() : '') }).call(),
       bridge  : prefs.get(PREF_BRIDGE, ''),
       workDir : prefs.get(PREF_WORK,   ''),
       scheme  : prefs.get(PREF_SCHEME, SCHEME_GEOMETRY) ]
@@ -429,7 +436,7 @@ render = { ->
     center.getChildren().add(title)
     def actions = new ArrayList()
 
-    def addGuidance = { String txt -> def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); center.getChildren().add(lbl) }
+    def addGuidance = { String txt -> def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE); center.getChildren().add(lbl) }
     def addMonoArea = { String txt ->
         def ta = new javafx.scene.control.TextArea(txt ?: '')
         ta.setEditable(false); ta.setWrapText(false); ta.setStyle(MONO)

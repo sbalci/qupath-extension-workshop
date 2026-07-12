@@ -48,6 +48,14 @@
  *     parametre-duyarlılık örneği). Karşılaştırılan tüm slaytlarda aynı
  *     parametreleri kullanın; boya vektörlerini her tarayıcı için yeniden
  *     kestirin ([Analyze → Estimate stain vectors]).
+ *
+ * EŞİK SEÇİMİ (tahmin etmeyin, ölçün):
+ *   • Sınırda pozitif bir çekirdeği çift tıklayıp "Nucleus: DAB OD mean"
+ *     değerini okuyun ve 1+ eşiğini onun hemen altına koyun. Koyu pozitif bir
+ *     çekirdekte aynısını yapıp 3+ eşiğini belirleyin, ortası 2+. Böylece
+ *     eşikler bu slayttaki gerçek OD'ye dayanır — varsayılan bir tahmine değil.
+ *     Bu pencerede eşikleri değiştirip "Yeniden say (hızlı)" ile yeniden-tespit
+ *     olmadan doğrulayabilirsiniz.
  */
 
 import qupath.fx.dialogs.Dialogs

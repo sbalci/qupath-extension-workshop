@@ -88,8 +88,38 @@ def PREF_TILE   = 'tileSize'
 def PREF_MAXT   = 'maxTiles'
 def PREF_MDS    = 'maskDownsample'   // doku maskesi küçükresim downsample'ı
 
+// Atölye veri kökü (env yöneticisiyle PAYLAŞILAN; öntanımlı ~/.atolye — C:).
+def atolyeDataRoot = { ->
+    def p = ''
+    try { p = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('dataRoot', '') } catch (Throwable ignore) {}
+    return (p?.trim()) ? new File(p.trim()) : new File(System.getProperty('user.home'), '.atolye')
+}
+// Model önbelleğini (TIA/torch/HF) de veri köküne yönlendir. TIATOOLBOX_HOME'u
+// tiatoolbox KENDISI OKUMAZ; asıl uygulama Python köprüsünde (rcParam) yapılır —
+// bu env değişkeni yalnız değeri Python'a taşır.
+def applyCacheEnv = { pb ->
+    try {
+        def cache = new File(atolyeDataRoot(), 'cache'); cache.mkdirs()
+        def hf = new File(cache, 'huggingface'); def env = pb.environment()
+        env.put('HF_HOME', hf.getAbsolutePath()); env.put('HF_HUB_CACHE', new File(hf, 'hub').getAbsolutePath())
+        env.put('TORCH_HOME', new File(cache, 'torch').getAbsolutePath())
+        env.put('TIATOOLBOX_HOME', new File(cache, 'tiatoolbox').getAbsolutePath())
+    } catch (Throwable ignore) {}
+}
+// Env yöneticisinin kurduğu tiatoolbox-stain venv'ini bul: önce KAYITLI kesin yol
+// (veri kökü değişse bile doğru), yoksa veri kökünden tahmin.
+def detectStainPython = { ->
+    try {
+        def rec = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('py.tiatoolbox-stain', '')
+        if (rec?.trim() && new File(rec.trim()).isFile()) return rec.trim()
+    } catch (Throwable ignore) {}
+    def v = new File(new File(atolyeDataRoot(), 'runtimes'), 'tiatoolbox-stain/.venv')
+    def w = new File(v, 'Scripts/python.exe'); def n = new File(v, 'bin/python')
+    return w.isFile() ? w.getAbsolutePath() : (n.isFile() ? n.getAbsolutePath() : '')
+}
+
 def loadConfig = { ->
-    [ python         : prefs.get(PREF_PYTHON, ''),
+    [ python         : ({ -> def __p = prefs.get(PREF_PYTHON, ''); return (__p?.trim()) ? __p : detectStainPython() }).call(),
       bridge         : prefs.get(PREF_BRIDGE, ''),
       reference      : prefs.get(PREF_REF,    ''),
       useBuiltin     : prefs.get(PREF_BUILT,  'true'),
@@ -428,6 +458,7 @@ def persistFields = {
 def runPython = { List cmd, Closure onLine ->
     def pb = new ProcessBuilder(cmd)
     pb.redirectErrorStream(true)
+    applyCacheEnv(pb)
     def proc
     try { proc = pb.start() }
     catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
@@ -562,6 +593,28 @@ def startRun = {
     worker.setDaemon(true); worker.start()
 }
 
+// ── İlgili pencere/belge açıcılar (config ekranındaki butonlar) ─────────────
+def launchBundledScript = { String resourceName ->
+    new Thread({
+        try {
+            def url = null
+            try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + resourceName) } catch (Throwable t) {}
+            if (url == null) url = this.getClass().getResource('/scripts/' + resourceName)
+            if (url == null) {
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
+                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri & temel modeller → Atölye Python ortam yöneticisi') }
+                return
+            }
+            def cl = this.getClass().getClassLoader()
+            try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
+            new GroovyShell(cl).evaluate(url.getText('UTF-8'), resourceName)
+        } catch (Throwable t) {
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+        }
+    } as Runnable).start()
+}
+def openUrl = { String u -> try { qupath.lib.gui.QuPathGUI.openInBrowser(u) } catch (Throwable t) {} }
+
 // ── Render: her durum değişiminde sahneyi sıfırdan kurar ────────────────────
 render = { ->
     if (stage == null) return
@@ -577,7 +630,7 @@ render = { ->
     center.getChildren().add(title)
     def actions = new ArrayList()
 
-    def addGuidance = { String txt -> def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); center.getChildren().add(lbl) }
+    def addGuidance = { String txt -> def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE); center.getChildren().add(lbl) }
     def addMonoArea = { String txt ->
         def ta = new javafx.scene.control.TextArea(txt ?: '')
         ta.setEditable(false); ta.setWrapText(false); ta.setStyle(MONO)
@@ -585,7 +638,7 @@ render = { ->
         center.getChildren().add(ta)
     }
     def addWarnLabel = { String txt ->
-        def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true)
+        def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE)
         lbl.setStyle('-fx-text-fill: #b8860b; -fx-font-weight: bold;')
         center.getChildren().add(lbl)
     }
@@ -620,6 +673,10 @@ render = { ->
             '     ortamını tek tıkla kurun (hafif; torch gerekmez). Model ağırlıklarını TIA Toolbox ilk kullanımda kendi indirir.\n' +
             '  2) Köprü betiği → handson/python/tiatoolbox/tiatoolbox_bridge.py (repoda hazır gelir).\n' +
             'Sonra bu pencerede "Yapılandır ▶" ile python.exe ve köprü yolunu seçin.')
+        actions.add(navButton('▶ Python ortamını kur', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') },
+            'Atölye Python ortam yöneticisini açar → "TIA Toolbox — boya normalizasyonu / doku maskesi" ortamını tek tıkla kurun'))
+        actions.add(navButton('📄 Belge', { openUrl('https://atolye.patoloji.dev/ekler/tiatoolbox.html') },
+            'Ekler → TIA Toolbox kurulum sayfasını tarayıcıda açar'))
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {

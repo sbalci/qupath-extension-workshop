@@ -18,11 +18,15 @@
  *
  * ÇIKTI:
  *   • Her hücre: "En yakın komşu (µm)" ölçümü (Veri Dışa Aktarma modülü ile dışa aktarılır)
- *   • Kilitli "En Yakın Komşu Özet": ortalama / medyan / minimum NN mesafesi
+ *   • Kilitli "En Yakın Komşu Özet": ortalama / SS / medyan / MAD / minimum / maksimum
+ *     NN mesafesi (tam tanımlayıcı takımı)
  *
  * YÖNTEM REFERANSI:
  *   • Summers MA et al. (2022), Cell Rep Methods — uzamsal komşuluk/mesafe
  *     ölçütlerinin doku analizinde kullanımı. doi:10.1016/j.crmeth.2022.100348
+ *   • Tanımlayıcı takımı (ort/SS/medyan/MAD/min/maks) için esin: DANEELpath
+ *     "Distance Descriptors Cells NN" — Vieco-Martí ve ark. (2026), Sci Rep 16:6162.
+ *     doi:10.1038/s41598-026-37134-5 (bağımsız uygulama; bkz. DANEELpath eki).
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
@@ -178,13 +182,23 @@ for (int i = 0; i < n; i++) {
     nnUm << um
 }
 
-double meanNN = 0.0, medianNN = 0.0, minNN = 0.0
+double meanNN = 0.0, sdNN = 0.0, medianNN = 0.0, madNN = 0.0, minNN = 0.0, maxNN = 0.0
 if (!nnUm.isEmpty()) {
     meanNN = nnUm.sum() / nnUm.size()
     def sorted = nnUm.sort(false)
     int m = sorted.size()
     medianNN = (m % 2 == 1) ? sorted[(int) (m / 2)] : (sorted[m / 2 - 1] + sorted[m / 2]) / 2.0
     minNN = sorted[0]
+    maxNN = sorted[m - 1]
+    if (m > 1) {
+        double ss = 0.0
+        for (v in nnUm) { double dv = (v as double) - meanNN; ss += dv * dv }
+        sdNN = Math.sqrt(ss / (m - 1))   // örneklem standart sapması (N−1)
+    }
+    // Robust MAD = medyan(|xᵢ − medyan|)
+    def dev = nnUm.collect { Math.abs((it as double) - medianNN) }.sort(false)
+    int md = dev.size()
+    madNN = (md % 2 == 1) ? dev[(int) (md / 2)] : (dev[md / 2 - 1] + dev[md / 2]) / 2.0
 }
 
 // ── 5) Kilitli özet anotasyonu ──────────────────────────────────────
@@ -196,8 +210,11 @@ def summary = qupath.lib.objects.PathObjects.createAnnotationObject(
 summary.setName("En Yakın Komşu Özet")
 summary.measurements['Hücre sayısı']               = n as double
 summary.measurements['Ortalama NN mesafesi (µm)']  = meanNN
+summary.measurements['SS NN mesafesi (µm)']        = sdNN
 summary.measurements['Medyan NN mesafesi (µm)']    = medianNN
+summary.measurements['MAD NN mesafesi (µm)']       = madNN
 summary.measurements['Minimum NN mesafesi (µm)']   = minNN
+summary.measurements['Maksimum NN mesafesi (µm)']  = maxNN
 summary.setLocked(true)
 QP.addObjects([summary])
 QP.fireHierarchyUpdate()
@@ -208,8 +225,11 @@ body << "EN YAKIN KOMŞU MESAFESİ\n"
 body << "════════════════════════════\n\n"
 body << String.format(java.util.Locale.US, "Hücre sayısı     : %,d%n", n)
 body << String.format(java.util.Locale.US, "Ortalama NN      : %.1f µm%n", meanNN)
+body << String.format(java.util.Locale.US, "SS (std) NN      : %.1f µm%n", sdNN)
 body << String.format(java.util.Locale.US, "Medyan NN        : %.1f µm%n", medianNN)
+body << String.format(java.util.Locale.US, "MAD NN           : %.1f µm%n", madNN)
 body << String.format(java.util.Locale.US, "Minimum NN       : %.1f µm%n", minNN)
+body << String.format(java.util.Locale.US, "Maksimum NN      : %.1f µm%n", maxNN)
 body << "\n"
 body << "Küçük NN mesafesi → hücreler sıkı (yüksek yoğunluk/kümelenme).\n"
 body << "Her hücreye 'En yakın komşu (µm)' ölçümü yazıldı; ölçüme göre\n"

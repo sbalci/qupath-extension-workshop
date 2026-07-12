@@ -26,8 +26,8 @@
  * ÇIKTI:
  *   • Her A hücresi: "<A>→<B> en yakın komşu (µm)" ölçümü
  *     (Veri Dışa Aktarma modülü ile dışa aktarılır; ölçüm haritasında görselleştirilebilir)
- *   • Kilitli özet anotasyonu: ortalama / medyan / minimum çapraz NN
- *     mesafesi, N, yarıçap içindeki A hücresi sayısı ve oranı
+ *   • Kilitli özet anotasyonu: ortalama / SS / medyan / MAD / minimum / maksimum
+ *     çapraz NN mesafesi, N, yarıçap içindeki A hücresi sayısı ve oranı
  *   • Sonuç penceresinde özet tablo
  *
  * YÖNTEM / KAYNAK:
@@ -36,6 +36,9 @@
  *     indeks kurulur; her A için B'de arama yapılır.
  *   • Summers MA et al. (2022), Cell Rep Methods — uzamsal komşuluk ve
  *     mesafe ölçütleri doku analizinde. doi:10.1016/j.crmeth.2022.100348
+ *   • Tanımlayıcı takımı (ort/SS/medyan/MAD/min/maks) için esin: DANEELpath
+ *     "Distance Descriptors Cells NN" — Vieco-Martí ve ark. (2026), Sci Rep 16:6162.
+ *     doi:10.1038/s41598-026-37134-5 (bağımsız uygulama; bkz. DANEELpath eki).
  *   • Bankhead P et al. (2017), Sci Rep — QuPath. doi:10.1038/s41598-017-17204-5
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
@@ -266,13 +269,23 @@ for (int i = 0; i < na; i++) {
 }
 
 // ── 7) Özet istatistikler ────────────────────────────────────────────────────
-double meanNN = 0.0, medianNN = 0.0, minNN = 0.0
+double meanNN = 0.0, sdNN = 0.0, medianNN = 0.0, madNN = 0.0, minNN = 0.0, maxNN = 0.0
 if (!nnUm.isEmpty()) {
     meanNN = nnUm.sum() / nnUm.size()
     def sorted = nnUm.sort(false)
     int m = sorted.size()
     medianNN = (m % 2 == 1) ? sorted[(int)(m / 2)] : (sorted[m / 2 - 1] + sorted[m / 2]) / 2.0
     minNN    = sorted[0]
+    maxNN    = sorted[m - 1]
+    if (m > 1) {
+        double ss = 0.0
+        for (v in nnUm) { double dv = (v as double) - meanNN; ss += dv * dv }
+        sdNN = Math.sqrt(ss / (m - 1))   // örneklem standart sapması (N−1)
+    }
+    // Robust MAD = medyan(|xᵢ − medyan|)
+    def dev = nnUm.collect { Math.abs((it as double) - medianNN) }.sort(false)
+    int md = dev.size()
+    madNN = (md % 2 == 1) ? dev[(int)(md / 2)] : (dev[md / 2 - 1] + dev[md / 2]) / 2.0
 }
 double withinPct = (na > 0) ? 100.0 * withinRad / na : 0.0
 
@@ -287,8 +300,11 @@ summary.setName(summaryName)
 summary.measurements["A (${classA}) hücre sayısı"]         = na as double
 summary.measurements["B (${classB}) hücre sayısı"]         = nb as double
 summary.measurements['Ortalama çapraz NN (µm)']             = meanNN
+summary.measurements['SS çapraz NN (µm)']                   = sdNN
 summary.measurements['Medyan çapraz NN (µm)']               = medianNN
+summary.measurements['MAD çapraz NN (µm)']                  = madNN
 summary.measurements['Minimum çapraz NN (µm)']              = minNN
+summary.measurements['Maksimum çapraz NN (µm)']             = maxNN
 summary.measurements["A hücresi yarıçap içinde (adet)"]    = withinRad as double
 summary.measurements["A hücresi yarıçap içinde (%)"]       = withinPct
 summary.measurements['Yarıçap (µm)']                        = radiusUm
@@ -305,8 +321,11 @@ body << String.format(java.util.Locale.US, "B sınıfı (hedef)   : %s (%,d hüc
 body << String.format(java.util.Locale.US, "Yarıçap eşiği      : %.0f µm%n", radiusUm)
 body << "\n"
 body << String.format(java.util.Locale.US, "Ortalama NN        : %.1f µm%n", meanNN)
+body << String.format(java.util.Locale.US, "SS (std) NN        : %.1f µm%n", sdNN)
 body << String.format(java.util.Locale.US, "Medyan NN          : %.1f µm%n", medianNN)
+body << String.format(java.util.Locale.US, "MAD NN             : %.1f µm%n", madNN)
 body << String.format(java.util.Locale.US, "Minimum NN         : %.1f µm%n", minNN)
+body << String.format(java.util.Locale.US, "Maksimum NN        : %.1f µm%n", maxNN)
 body << "───────────────────────────────────────────\n"
 body << String.format(java.util.Locale.US,
     "Yarıçap içinde A   : %,d / %,d  (%.1f %%)%n", withinRad, na, withinPct)

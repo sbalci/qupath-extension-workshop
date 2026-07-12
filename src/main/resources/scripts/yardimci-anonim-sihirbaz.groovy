@@ -479,7 +479,7 @@ render = { ->
     def actions = new ArrayList()
 
     def addGuidance = { String txt ->
-        def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); center.getChildren().add(lbl)
+        def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE); center.getChildren().add(lbl)
     }
     def addMonoArea = { String txt ->
         def ta = new javafx.scene.control.TextArea(txt ?: '')
@@ -488,7 +488,7 @@ render = { ->
         center.getChildren().add(ta)
     }
     def addWarnLabel = { String txt ->
-        def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true)
+        def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE)
         lbl.setStyle('-fx-text-fill: #b8860b; -fx-font-weight: bold;')
         center.getChildren().add(lbl)
     }

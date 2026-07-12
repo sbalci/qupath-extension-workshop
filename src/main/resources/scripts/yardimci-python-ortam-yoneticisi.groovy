@@ -11,11 +11,19 @@
  *
  *   PYTHON ÖN-KOŞUL DEĞİLDİR: yönetici saf Groovy'dir ve kendi kendine yeten **uv**
  *   ikilisini çağırır; uv gerekirse Python 3.11'i kendisi indirir. uv yoksa resmî
- *   sürümü `<kullanıcı>/.atolye/uv/`'a indirilir (PATH'te uv varsa o kullanılır).
+ *   sürümü `<veri-kökü>/uv/`'a indirilir (PATH'te uv varsa o kullanılır).
+ *
+ * VERİ KÖKÜ (yapılandırılabilir — C: dolmasın diye):
+ *   Öntanımlı `<kullanıcı>/.atolye`. LIST ekranındaki "Veri kökü → Değiştir…" ile
+ *   başka bir sürücü/klasör seçilebilir (ör. D:\atolye). Paylaşılan prefs düğümünde
+ *   (`/qupath/atolye/common` → `dataRoot`) saklanır; TÜM atölye sihirbazları (GrandQC,
+ *   Kaiko, SPIDER, Sectra, TIA) aynı kökü okur. uv/pip önbelleği + indirilen model
+ *   ağırlıkları (HF/torch) da bu köke yönlendirilir. Değişiklik yalnız YENİ kurulumları
+ *   etkiler — mevcut ortamlar taşınmaz.
  *
  * KURULUM HEDEFLERİ (kural):
- *   <kullanıcı>/.atolye/runtimes/<id>/.venv/Scripts/python.exe   (Windows)
- *   <kullanıcı>/.atolye/runtimes/<id>/.venv/bin/python           (macOS/Linux)
+ *   <veri-kökü>/runtimes/<id>/.venv/Scripts/python.exe   (Windows)
+ *   <veri-kökü>/runtimes/<id>/.venv/bin/python           (macOS/Linux)
  *   Sihirbazlar python'u önce resmî eklenti ortamından, sonra bu dizinden, sonra
  *   manuel ayardan bulur.
  *
@@ -52,9 +60,20 @@ def uvAsset = { ->
 }
 def uvExeName = IS_WIN ? 'uv.exe' : 'uv'
 
-def atolyeDir   = new File(System.getProperty('user.home'), '.atolye')
-def uvDir       = new File(atolyeDir, 'uv')
-def runtimesDir = new File(atolyeDir, 'runtimes')
+// ── Atölye veri kökü (venv/uv/repo/model) ────────────────────────────────────
+// Öntanımlı: ~/.atolye  (C: sürücüsü). Kullanıcı başka bir sürücü/klasör seçebilir
+// (ör. D:\atolye) — C: dolmasın diye. PAYLAŞILAN prefs düğümünde saklanır, böylece
+// TÜM atölye sihirbazları (env yöneticisi, GrandQC, Kaiko, SPIDER, Sectra, TIA)
+// AYNI kökü kullanır. `java.util.prefs` → eklenti JAR'ı olmadan da çalışır.
+def commonPrefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common')
+def PREF_DATA_ROOT = 'dataRoot'
+def atolyeDataRoot = { ->
+    def p = ''
+    try { p = commonPrefs.get(PREF_DATA_ROOT, '') } catch (Throwable ignore) {}
+    return (p?.trim()) ? new File(p.trim()) : new File(System.getProperty('user.home'), '.atolye')
+}
+def uvDir       = { -> new File(atolyeDataRoot(), 'uv') }
+def runtimesDir = { -> new File(atolyeDataRoot(), 'runtimes') }
 
 // ── Ortam kataloğu ───────────────────────────────────────────────────────────
 // torchBackend: uv --torch-backend (auto = CUDA sürümünü tespit et); null = torch yok.
@@ -65,10 +84,10 @@ def CATALOG = [
     [id:'tiatoolbox-stain', label:'TIA Toolbox — boya normalizasyonu / doku maskesi', python:'3.11',
      packages:['tiatoolbox>=2.0','numpy','pillow'], torchBackend:null, reuseOfficial:null,
      note:'Hafif (torch gerekmez). Boya-normalizasyonu / doku-maskesi sihirbazı.'],
-    [id:'grandqc', label:'GrandQC — doku & artefakt segmentasyonu', python:'3.11',
-     packages:['torch>=2.1','torchvision','segmentation-models-pytorch','opencv-python','numpy','Pillow','tiatoolbox>=2.0'],
+    [id:'grandqc', label:'GrandQC — doku & artefakt segmentasyonu', python:'3.10',
+     packages:['torch>=2.0','torchvision','segmentation-models-pytorch==0.3.1','timm','six','opencv-python','numpy','Pillow','scipy','scikit-image','tifffile','tqdm','zarr','rasterio','imagecodecs','openslide-python','openslide-bin'],
      torchBackend:'auto', reuseOfficial:null,
-     note:'⚠️ Yalnızca Python ortamı. GrandQC betikleri (wsi_tis_detect.py) + model ağırlıkları AYRICA gerekir — bkz. Ekler → Kalite Kontrol § GrandQC.'],
+     note:'⚠️ Yalnızca Python ortamı. GrandQC betikleri + model ağırlıkları AYRICA gerekir (GrandQC sihirbazının ②③ butonları). openslide-bin, OpenSlide ikililerini pip ile getirir (conda gerekmez). smp 0.3.1 GrandQC kodunun beklediği sürümdür. six: pretrainedmodels (smp 0.3.1 bağımlılığı) six\'i bildirmeden kullanır — açıkça eklenir.'],
     [id:'kaiko', label:'Kaiko Midnight — denetimli FM sınıflandırıcı', python:'3.11',
      packages:['torch>=2.1','torchvision>=0.16','transformers>=4.38','safetensors>=0.4','scikit-learn>=1.3','Pillow>=10.0','numpy>=1.24'],
      torchBackend:'auto', reuseOfficial:null, note:'Kaiko sınıflandırıcı sihirbazı (eğit → tahmin).'],
@@ -78,11 +97,17 @@ def CATALOG = [
     [id:'sectra', label:'Sectra PACS — DICOM → GeoJSON', python:'3.11',
      packages:['pydicom>=2.4','shapely','numpy'], torchBackend:null, reuseOfficial:null,
      note:'Hafif. Sectra PACS içe-aktarma sihirbazı.'],
+    [id:'hepatocyte', label:'Hepatocyte — karaciğer segmentasyon köprüsü', python:'3.11',
+     packages:['torch==2.7.0','numpy~=2.2.6','pandas==2.2.3','pillow==11.2.1',
+               'openslide-python==1.4.3','openslide-bin==4.0.0.13','opencv-python-headless==4.13.0.92',
+               'albumentations~=2.0.8','shapely==2.1.2','openpyxl==3.1.5'],
+     torchBackend:'auto', reuseOfficial:null,
+     note:'⚠️ Yalnızca Python ortamı. hepatocyte-app deposu + model ağırlığı (🔒 talep üzerine) AYRICA gerekir — Hepatosit sihirbazının ②③ butonları. openslide-bin, OpenSlide ikililerini pip ile getirir (conda gerekmez).'],
 ]
 def specById = { String id -> CATALOG.find { it.id == id } }
 
 // ── venv yol yardımcıları ────────────────────────────────────────────────────
-def venvDirOf  = { String id -> new File(new File(runtimesDir, id), '.venv') }
+def venvDirOf  = { String id -> new File(new File(runtimesDir(), id), '.venv') }
 def venvPython = { String id -> def v = venvDirOf(id); IS_WIN ? new File(v, 'Scripts/python.exe') : new File(v, 'bin/python') }
 
 // Resmî eklenti ortamını tara: <kullanıcı>/QuPath/v*/<name>/.venv
@@ -115,6 +140,49 @@ def logAreaRef    = new java.util.concurrent.atomic.AtomicReference(null)
 def runPhaseRef   = new java.util.concurrent.atomic.AtomicReference('')
 def resultTextRef = new java.util.concurrent.atomic.AtomicReference('')
 def errorTextRef  = new java.util.concurrent.atomic.AtomicReference('')
+def selectedDeviceRef = new java.util.concurrent.atomic.AtomicReference('auto')   // 'auto'|'cuda'|'mps'|'cpu'
+
+// ── Hızlandırıcı (GPU) algıla ve torch-backend'e çevir ───────────────────────
+// Apple Silicon → mps; nvidia-smi çalışıyorsa → cuda; yoksa cpu.
+// BİR KEZ algılanır ve önbelleğe alınır — render() (FX iş parçacığı) içinden
+// çağrılsa bile `nvidia-smi` süreci tekrar tekrar başlatılmaz. Çıktı DISCARD'a
+// yönlendirilir (asılı akışta bloklanmayı önler); waitFor zaman aşımıyla sınırlı.
+def _accelCache = new java.util.concurrent.atomic.AtomicReference(null)
+def detectAccelerator = { ->
+    def cached = _accelCache.get()
+    if (cached != null) return cached
+    def result = 'cpu'
+    def osn  = System.getProperty('os.name', '').toLowerCase(java.util.Locale.ROOT)
+    def arch = System.getProperty('os.arch', '').toLowerCase(java.util.Locale.ROOT)
+    if (osn.contains('mac') && (arch.contains('aarch64') || arch.contains('arm'))) {
+        result = 'mps'
+    } else {
+        def p = null
+        try {
+            p = new ProcessBuilder('nvidia-smi')
+                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                    .redirectError(ProcessBuilder.Redirect.DISCARD)
+                    .start()
+            if (p.waitFor(8, java.util.concurrent.TimeUnit.SECONDS)) {
+                if (p.exitValue() == 0) result = 'cuda'
+            } else { try { p.destroyForcibly() } catch (Throwable ignore) {} }
+        } catch (Throwable t) {
+            try { if (p != null) p.destroyForcibly() } catch (Throwable ig) {}
+        }
+    }
+    _accelCache.set(result)
+    return result
+}
+// Seçilen cihazı uv --torch-backend değerine çevir (yalnız torch İÇEREN specler için).
+// cuda → 'auto' (uv CUDA sürümünü seçer); cpu → 'cpu'; mps → null (mac wheel'de MPS gömülü).
+def effectiveTorchBackend = { spec ->
+    if (spec.torchBackend == null) return null
+    def dev = selectedDeviceRef.get() ?: 'auto'
+    if (dev == 'auto') dev = detectAccelerator()
+    if (dev == 'cpu') return 'cpu'
+    if (dev == 'mps') return null
+    return 'auto'
+}
 def render
 
 def navButton = { String text, Closure action, String tooltip = null ->
@@ -131,6 +199,14 @@ def openFolder = { File f -> try { if (f != null && f.isDirectory() && java.awt.
 // ── Süreç akışı ──────────────────────────────────────────────────────────────
 def runProc = { List cmd, Closure onLine ->
     def pb = new ProcessBuilder(cmd); pb.redirectErrorStream(true)
+    // uv/pip tekerlek (wheel) önbelleğini de veri köküne yönlendir — aksi hâlde
+    // uv, wheel'leri ~/.cache/uv (C:) altında tutar ve GB'larca yer kaplar.
+    try {
+        def cacheDir = new File(atolyeDataRoot(), 'uv-cache'); cacheDir.mkdirs()
+        def env = pb.environment()
+        env.put('UV_CACHE_DIR', cacheDir.getAbsolutePath())
+        env.put('PIP_CACHE_DIR', new File(atolyeDataRoot(), 'pip-cache').getAbsolutePath())
+    } catch (Throwable ignore) {}
     def proc; try { proc = pb.start() } catch (Throwable e) { return [ok:false, exitCode:-1, error:'Başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
     processRef.set(proc)
     def last = new java.util.ArrayDeque()
@@ -150,7 +226,7 @@ def runProc = { List cmd, Closure onLine ->
 
 // uv'yi bul; yoksa indir + aç
 def findUv = { ->
-    def local = new File(uvDir, uvExeName); if (local.isFile()) return local.getAbsolutePath()
+    def local = new File(uvDir(), uvExeName); if (local.isFile()) return local.getAbsolutePath()
     try {
         def cmd = IS_WIN ? ['where', 'uv'] : ['which', 'uv']
         def p = new ProcessBuilder(cmd).redirectErrorStream(true).start()
@@ -164,15 +240,15 @@ def ensureUv = { Closure appendLine ->
     if (existing) { appendLine('uv bulundu: ' + existing); return [ok:true, uv:existing] }
     def asset = uvAsset()
     appendLine('uv indiriliyor: ' + UV_BASE + asset)
-    uvDir.mkdirs()
-    def dl = new File(uvDir, asset)
+    def ud = uvDir(); ud.mkdirs()
+    def dl = new File(ud, asset)
     try {
         def client = java.net.http.HttpClient.newBuilder()
             .followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
             .connectTimeout(java.time.Duration.ofSeconds(30)).build()
         def req = java.net.http.HttpRequest.newBuilder(java.net.URI.create(UV_BASE + asset)).GET().build()
         def resp = client.send(req, java.net.http.HttpResponse.BodyHandlers.ofFile(dl.toPath()))
-        if (resp.statusCode() != 200) return [ok:false, error:'uv indirilemedi (HTTP ' + resp.statusCode() + '). Çevrimdışıysanız uv\'yi elle ' + uvDir.getAbsolutePath() + ' içine koyun.']
+        if (resp.statusCode() != 200) return [ok:false, error:'uv indirilemedi (HTTP ' + resp.statusCode() + '). Çevrimdışıysanız uv\'yi elle ' + ud.getAbsolutePath() + ' içine koyun.']
     } catch (Throwable t) { return [ok:false, error:'uv indirme hatası: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
     try {
         if (asset.endsWith('.zip')) {
@@ -182,18 +258,18 @@ def ensureUv = { Closure appendLine ->
                     if (e.isDirectory()) return
                     def nm = new File(e.getName()).getName()
                     if (!nm) return
-                    def o = new File(uvDir, nm)
+                    def o = new File(ud, nm)
                     zf.getInputStream(e).withStream { is -> o.withOutputStream { os -> os << is } }
                 }
             } finally {
                 zf.close()
             }
         } else {
-            def p = new ProcessBuilder(['tar','-xzf', dl.getAbsolutePath(), '-C', uvDir.getAbsolutePath(), '--strip-components=1']).redirectErrorStream(true).start()
+            def p = new ProcessBuilder(['tar','-xzf', dl.getAbsolutePath(), '-C', ud.getAbsolutePath(), '--strip-components=1']).redirectErrorStream(true).start()
             p.getInputStream().getText('UTF-8'); p.waitFor()
         }
     } catch (Throwable t) { return [ok:false, error:'uv açma hatası: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
-    def uv = new File(uvDir, uvExeName)
+    def uv = new File(ud, uvExeName)
     if (!uv.isFile()) return [ok:false, error:'uv açıldı ama bulunamadı: ' + uv.getAbsolutePath()]
     if (!IS_WIN) { try { uv.setExecutable(true) } catch (Throwable ignore) {} }
     appendLine('uv hazır: ' + uv.getAbsolutePath())
@@ -204,8 +280,10 @@ def ensureUv = { Closure appendLine ->
 def importNameOf = { String pkg ->
     def b = pkg.replaceAll(/[<>=!~\[].*$/, '').trim().toLowerCase(java.util.Locale.ROOT)
     if (b == 'scikit-learn') return 'sklearn'
+    if (b == 'scikit-image') return 'skimage'
     if (b == 'pillow') return 'PIL'
-    if (b == 'opencv-python') return 'cv2'
+    if (b == 'opencv-python' || b == 'opencv-python-headless') return 'cv2'
+    if (b == 'openslide-python') return 'openslide'
     return b.replace('-', '_')
 }
 
@@ -217,19 +295,25 @@ def installEnv = { spec, String uvPath, Closure appendLine ->
     if (cancelledRef.get()) return [ok:false, error:'İptal edildi']
     def py = venvPython(spec.id).getAbsolutePath()
     def base = [uvPath, 'pip', 'install', '--python', py]
-    appendLine(''); appendLine('── paketler kuruluyor: ' + spec.packages.join(', ') + (spec.torchBackend ? ('  [torch-backend=' + spec.torchBackend + ']') : '') + ' ──')
+    // Seçilen cihaza göre torch-backend: cuda→'auto', cpu→'cpu', mps→null (mac wheel).
+    def bk = effectiveTorchBackend(spec)
+    def devSel = selectedDeviceRef.get() ?: 'auto'
+    def devEff = (devSel == 'auto') ? detectAccelerator() : devSel
+    appendLine(''); appendLine('── paketler kuruluyor: ' + spec.packages.join(', ') +
+        (spec.torchBackend != null ? ('  [cihaz=' + devEff + (bk ? (', torch-backend=' + bk) : ', standart wheel') + ']') : '') + ' ──')
     def r2
-    if (spec.torchBackend) {
-        // 1) uv --torch-backend (CUDA otomatik). Eski uv tanımazsa cu128 indexine düş.
-        def cmd = new ArrayList(base); cmd.add('--torch-backend=' + spec.torchBackend); cmd.addAll(spec.packages)
+    if (bk) {
+        // 1) uv --torch-backend. Eski uv tanımazsa cihaza uygun --extra-index-url'e düş.
+        def cmd = new ArrayList(base); cmd.add('--torch-backend=' + bk); cmd.addAll(spec.packages)
         r2 = runProc(cmd, appendLine)
         if (!r2.ok && !cancelledRef.get()) {
             def ll = (r2.lastLines ?: '').toLowerCase(java.util.Locale.ROOT)
             if (ll.contains('torch-backend') && (ll.contains('unexpected') || ll.contains('unrecognized') || ll.contains('invalid value') || ll.contains('found argument'))) {
-                appendLine(''); appendLine('uv bu sürüm --torch-backend desteklemiyor; --extra-index-url (cu128) ile yeniden deneniyor…')
+                def idx = (bk == 'cpu') ? 'https://download.pytorch.org/whl/cpu' : 'https://download.pytorch.org/whl/cu128'
+                appendLine(''); appendLine('uv bu sürüm --torch-backend desteklemiyor; --extra-index-url (' + (bk == 'cpu' ? 'cpu' : 'cu128') + ') ile yeniden deneniyor…')
                 def cmd2 = new ArrayList(base)
                 cmd2.add('--index-strategy'); cmd2.add('unsafe-best-match')
-                cmd2.add('--extra-index-url'); cmd2.add('https://download.pytorch.org/whl/cu128')
+                cmd2.add('--extra-index-url'); cmd2.add(idx)
                 cmd2.addAll(spec.packages)
                 r2 = runProc(cmd2, appendLine)
             }
@@ -256,18 +340,23 @@ def installEnv = { spec, String uvPath, Closure appendLine ->
         marker.setText(qupath.lib.io.GsonTools.getInstance(true).toJson(
             [id: spec.id, python: spec.python, packages: spec.packages, torchBackend: spec.torchBackend, verifyOk: verifyOk]), 'UTF-8')
     } catch (Throwable ignore) {}
+    // Kurulan python'un TAM yolunu paylaşılan düğüme yaz — ilgili sihirbazlar
+    // veri kökünü "tahmin etmek" yerine bu KESİN adresi okur (veri kökü sonradan
+    // değişse bile kurulu ortam bulunur). Anahtar: py.<id>.
+    try { commonPrefs.put('py.' + spec.id, py); commonPrefs.flush() } catch (Throwable ignore) {}
     return [ok:true, python: py, verifyOk: verifyOk, verifyMsg: verifyMsg, imports: imports]
 }
 
 def startInstall = { spec ->
     // Torch (çok-GB) ortamları için disk uyarısı + onay
     if (spec.torchBackend) {
-        try { runtimesDir.mkdirs() } catch (Throwable ignore) {}
-        long freeBytes = 0L; try { freeBytes = runtimesDir.getUsableSpace() } catch (Throwable ignore) {}
+        def rtDir = runtimesDir()
+        try { rtDir.mkdirs() } catch (Throwable ignore) {}
+        long freeBytes = 0L; try { freeBytes = rtDir.getUsableSpace() } catch (Throwable ignore) {}
         double freeGB = freeBytes / (1024.0d * 1024.0d * 1024.0d)
         def msg = spec.label + ' ortamı torch + CUDA içerir → yaklaşık 3–5 GB indirilir ve kurulur.\n\n' +
             String.format(java.util.Locale.US, 'Hedef    : %s%nBoş alan : %.1f GB%s%n%nDevam edilsin mi?',
-                runtimesDir.getAbsolutePath(), freeGB, (freeGB > 0 && freeGB < 6.0d ? '  ⚠ düşük (≥6 GB önerilir)' : ''))
+                rtDir.getAbsolutePath(), freeGB, (freeGB > 0 && freeGB < 6.0d ? '  ⚠ düşük (≥6 GB önerilir)' : ''))
         if (!Dialogs.showConfirmDialog('Disk alanı — ' + spec.id, msg)) return
     }
     cancelledRef.set(false)
@@ -321,6 +410,15 @@ render = { ->
     def center = new javafx.scene.layout.VBox(10); center.setPadding(new javafx.geometry.Insets(14))
     center.getChildren().add(title)
     def actions = new ArrayList()
+    // Sarma (wrap): setMaxWidth(MAX_VALUE) tek başına yetmiyor (kapsayıcı VBox pencereden
+    // geniş olabiliyor). Etiketin maxWidth'ini SAHNE genişliğine bağla — sahne daima pencere
+    // içi genişliğidir, böylece etiket her koşulda pencerede sarılır.
+    def wrapBind = { javafx.scene.control.Label lbl ->
+        lbl.setWrapText(true)
+        lbl.sceneProperty().addListener({ obs, o, sc ->
+            if (sc != null) { try { lbl.maxWidthProperty().unbind() } catch (Throwable ig) {}; lbl.maxWidthProperty().bind(sc.widthProperty().subtract(38)) }
+        } as javafx.beans.value.ChangeListener)
+    }
     def addMonoArea = { String txt ->
         def ta = new javafx.scene.control.TextArea(txt ?: ''); ta.setEditable(false); ta.setWrapText(false); ta.setStyle(MONO)
         javafx.scene.layout.VBox.setVgrow(ta, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(ta)
@@ -332,6 +430,77 @@ render = { ->
         def uvFound = findUv()
         def uvLbl = new javafx.scene.control.Label('uv: ' + (uvFound ?: '(yok — ilk kurulumda otomatik indirilecek)'))
         uvLbl.setStyle('-fx-opacity: 0.8;'); center.getChildren().add(uvLbl)
+
+        // ── Veri kökü (venv/uv/model) — C: dolmasın diye başka sürücü seçilebilir ──
+        def dataRoot = atolyeDataRoot()
+        boolean isCustom = false
+        try { isCustom = (commonPrefs.get(PREF_DATA_ROOT, '') ?: '').trim() as boolean } catch (Throwable ignore) {}
+        long drFree = 0L; try { drFree = dataRoot.exists() ? dataRoot.getUsableSpace() : (dataRoot.getParentFile()?.getUsableSpace() ?: 0L) } catch (Throwable ignore) {}
+        double drFreeGB = drFree / (1024.0d * 1024.0d * 1024.0d)
+        def rootLbl = new javafx.scene.control.Label(String.format(java.util.Locale.US,
+            'Veri kökü: %s%s   (boş alan: %.1f GB)', dataRoot.getAbsolutePath(), (isCustom ? '' : '  [varsayılan]'), drFreeGB))
+        rootLbl.setStyle('-fx-opacity: 0.85; -fx-font-weight: bold;'); rootLbl.setWrapText(true)
+        def chooseRoot = navButton('Değiştir…', {
+            def start = dataRoot.exists() ? dataRoot : dataRoot.getParentFile()
+            def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Atölye veri klasörü — içine bir ".atolye" klasörü oluşturulur', start)
+            if (x != null) {
+                // Seçilen klasörü PARENT kabul et; içine '.atolye' koy (varsayılan ~/.atolye
+                // ile tutarlı — sürücü kökü D:\ seçilirse D:\.atolye olur; doğrudan D:\ kirlenmez).
+                // Zaten '.atolye' adlı bir klasör seçildiyse tekrar ekleme (yeniden seçimde idempotent).
+                def target = '.atolye'.equalsIgnoreCase(x.getName()) ? x : new File(x, '.atolye')
+                // Yazılabilirlik ön-kontrolü — salt-okunur ağ paylaşımı / yazma korumalı
+                // sürücü seçilirse, geç ve anlaşılmaz bir uv/pip hatası yerine burada uyar.
+                boolean writable = false
+                try {
+                    if (!target.exists()) target.mkdirs()
+                    def t = new File(target, '.atolye-write-test.tmp')
+                    t.text = 'ok'; writable = t.isFile(); try { t.delete() } catch (Throwable ig2) {}
+                } catch (Throwable pe) { writable = false }
+                if (!writable) {
+                    Dialogs.showErrorMessage('Veri kökü', 'Seçilen klasöre yazılamıyor:\n' + target.getAbsolutePath() +
+                        '\n\nYazma izni olan bir klasör seçin (salt-okunur ağ paylaşımı / korumalı sürücü olmasın).')
+                    return
+                }
+                commonPrefs.put(PREF_DATA_ROOT, target.getAbsolutePath()); try { commonPrefs.flush() } catch (Throwable ig) {}
+                render()
+            }
+        }, 'Yeni kurulumların yazılacağı klasörü seç — içine ".atolye" oluşturulur (ör. D:\\ → D:\\.atolye)')
+        def resetRoot = navButton('↺ Varsayılan', {
+            commonPrefs.remove(PREF_DATA_ROOT); try { commonPrefs.flush() } catch (Throwable ig) {}
+            render()
+        }, 'Veri kökünü ~/.atolye yap')
+        rootLbl.setMaxWidth(Double.MAX_VALUE); javafx.scene.layout.HBox.setHgrow(rootLbl, javafx.scene.layout.Priority.ALWAYS)
+        def rootRow = new javafx.scene.layout.HBox(8, rootLbl, chooseRoot); rootRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
+        if (isCustom) rootRow.getChildren().add(resetRoot)
+        center.getChildren().add(rootRow)
+        def rootHint = new javafx.scene.control.Label(
+            'Tüm atölye Python ortamları, uv/pip önbelleği ve indirilen model ağırlıkları bu köke yazılır (Kaiko/SPIDER/GrandQC/TIA/Sectra ortak). ' +
+            'Seçtiğiniz klasörün İÇİNE bir ".atolye" klasörü oluşturulur (ör. D:\\ seçerseniz kök D:\\.atolye olur). ' +
+            'Değiştirmek YALNIZ yeni kurulumları etkiler — mevcut ortamlar eski yerinde kalır (taşınmaz); gerekirse ilgili ortamı yeniden kurun. ' +
+            '(cellpose/resmî TIAToolbox kendi klasörlerini kullanır; bunları bu ayar taşımaz.)')
+        wrapBind(rootHint); rootHint.setStyle('-fx-opacity: 0.7; -fx-font-size: 11px;')
+        center.getChildren().add(rootHint)
+
+        // ── Cihaz (torch hızlandırıcı) seçimi — GPU otomatik algılanır ──────────
+        def detected = detectAccelerator()
+        def isMac = System.getProperty('os.name', '').toLowerCase(java.util.Locale.ROOT).contains('mac')
+        def devOpts = []
+        devOpts << ['auto', 'Otomatik (algılanan: ' + detected.toUpperCase(java.util.Locale.ROOT) + ')']
+        if (isMac) devOpts << ['mps', 'MPS — Apple GPU']
+        else devOpts << ['cuda', 'CUDA — NVIDIA GPU']
+        devOpts << ['cpu', 'CPU — GPU yok (yavaş)']
+        def devBox = new javafx.scene.control.ComboBox(javafx.collections.FXCollections.observableArrayList(devOpts.collect { it[1] }))
+        int curIdx = devOpts.findIndexOf { it[0] == (selectedDeviceRef.get() ?: 'auto') }; if (curIdx < 0) curIdx = 0
+        devBox.getSelectionModel().select(curIdx)
+        devBox.setOnAction({ int i = devBox.getSelectionModel().getSelectedIndex(); if (i >= 0) selectedDeviceRef.set(devOpts[i][0]) })
+        def devRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Cihaz (torch):'), devBox)
+        devRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
+        center.getChildren().add(devRow)
+        def devHint = new javafx.scene.control.Label(
+            'torch içeren ortamlar bu cihaza göre kurulur: CUDA→GPU wheel, MPS→Apple wheel, CPU→cpu wheel. ' +
+            'nvidia-smi bulunursa CUDA otomatik algılanır. (Modeli çalıştırma cihazı ilgili sihirbazda seçilir.)')
+        wrapBind(devHint); devHint.setStyle('-fx-opacity: 0.7; -fx-font-size: 11px;')
+        center.getChildren().add(devHint)
 
         def listBox = new javafx.scene.layout.VBox(8)
         CATALOG.each { spec ->
@@ -346,7 +515,7 @@ render = { ->
             chip.setStyle(st.state == 'missing' ? '-fx-text-fill: #b8860b;' : '-fx-text-fill: #2e8b57;')
             def spacer = new javafx.scene.layout.Region(); javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
             head.getChildren().addAll(name, spacer, chip)
-            def note = new javafx.scene.control.Label(spec.note ?: ''); note.setWrapText(true); note.setStyle('-fx-opacity: 0.75; -fx-font-size: 11px;')
+            def note = new javafx.scene.control.Label(spec.note ?: ''); note.setWrapText(true); note.setMaxWidth(Double.MAX_VALUE); note.setStyle('-fx-opacity: 0.75; -fx-font-size: 11px;')
             def btnRow = new javafx.scene.layout.HBox(6); btnRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
             if (st.state == 'official') {
                 btnRow.getChildren().add(navButton('Yine de kur', { startInstall(spec) }, 'Resmî ortam yerine ayrı bir atölye ortamı kur'))
@@ -366,7 +535,7 @@ render = { ->
         actions.add(navButton('⟳ Yenile', { render() }))
     } else if (cur == 'RUNNING') {
         title.setText(runPhaseRef.get())
-        def g = new javafx.scene.control.Label('uv Python + paketleri indiriyor (torch ortamları birkaç dakika sürer). İlk kurulum büyük olabilir.'); g.setWrapText(true)
+        def g = new javafx.scene.control.Label('uv Python + paketleri indiriyor (torch ortamları birkaç dakika sürer). İlk kurulum büyük olabilir.'); wrapBind(g)
         center.getChildren().add(g); center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'RESULT') {
@@ -394,6 +563,9 @@ render = { ->
 }
 
 // ── Açılış ────────────────────────────────────────────────────────────────────
+// Hızlandırıcıyı ARKA PLAN (betik) iş parçacığında bir kez algıla/önbelleğe al —
+// böylece render() (FX) içinden çağrı `nvidia-smi` başlatıp arayüzü dondurmaz.
+detectAccelerator()
 javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()

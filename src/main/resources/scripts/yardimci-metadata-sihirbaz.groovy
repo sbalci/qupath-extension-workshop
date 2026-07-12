@@ -433,7 +433,7 @@ render = { ->
     center.getChildren().add(title)
     def actions = new ArrayList()
 
-    def addGuidance = { String txt -> def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); center.getChildren().add(lbl) }
+    def addGuidance = { String txt -> def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE); center.getChildren().add(lbl) }
     def addMonoArea = { String txt ->
         def ta = new javafx.scene.control.TextArea(txt ?: '')
         ta.setEditable(false); ta.setWrapText(false); ta.setStyle(MONO)

@@ -5,11 +5,15 @@
  *
  * NE YAPAR:
  *   Warwick TIA Centre'in **TIA Toolbox** model motorlarını (KongNet MIDOG mitoz,
- *   PanNuke / CoNIC / MONKEY / PUMA çekirdek, MapDe) bir WSI üzerinde ama YALNIZCA
- *   QuPath'te çizdiğiniz BÖLGE içinde çalıştırır. Bölge, ikili (binary) bir maske
- *   PNG'sine rasterlenir → Python köprüsü (region_runner.py) `engine.run(masks=[...],
- *   auto_get_mask=False)` ile yalnız maske bölgesinde çıkarım yapar → sonuç GeoJSON
- *   olarak QuPath'e geri alınır, bölgeye göre filtrelenip sınıf başına sayılır.
+ *   PanNuke / CoNIC / MONKEY / PUMA çekirdek, MapDe) bir WSI üzerinde çalıştırır.
+ *   Üç KAPSAM seçilebilir:
+ *     • Anotasyon bölgesi — yalnız QuPath'te çizdiğiniz alan içinde (tek bölge),
+ *     • Tüm görüntü       — açık slaydın tamamında (tüm-görüntü maskesi),
+ *     • Tüm proje         — projedeki her görüntüde tek tek (sonuç her girdiye kaydedilir).
+ *   Kapsam ikili (binary) bir maske PNG'sine rasterlenir → Python köprüsü
+ *   (region_runner.py) `engine.run(masks=[...], auto_get_mask=False)` ile yalnız maske
+ *   bölgesinde çıkarım yapar → sonuç GeoJSON olarak QuPath'e geri alınır, kapsam içinde
+ *   filtrelenip sınıf başına sayılır.
  *
  * NEDEN BU SİHİRBAZ:
  *   Resmî TIA Toolbox QuPath eklentisi (v0.5.0) çıkarımı bir BÖLGEYE kısıtlayamaz —
@@ -99,6 +103,25 @@ def PREF_MODEL  = 'model'
 def PREF_DEVICE = 'device'
 def PREF_MDS    = 'maskDownsample'
 def PREF_BATCH  = 'batchSize'
+def PREF_SCOPE  = 'scope'          // annotation | image | project
+
+// Atölye veri kökü (env yöneticisiyle PAYLAŞILAN; öntanımlı ~/.atolye — C:).
+def atolyeDataRoot = { ->
+    def p = ''
+    try { p = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('dataRoot', '') } catch (Throwable ignore) {}
+    return (p?.trim()) ? new File(p.trim()) : new File(System.getProperty('user.home'), '.atolye')
+}
+// Model önbelleğini (TIA/torch/HF) de veri köküne yönlendir — tiatoolbox model
+// ağırlıklarını ~/.tiatoolbox (C:) altına, encoder'ları torch/HF hub'a indirir.
+def applyCacheEnv = { pb ->
+    try {
+        def cache = new File(atolyeDataRoot(), 'cache'); cache.mkdirs()
+        def hf = new File(cache, 'huggingface'); def env = pb.environment()
+        env.put('HF_HOME', hf.getAbsolutePath()); env.put('HF_HUB_CACHE', new File(hf, 'hub').getAbsolutePath())
+        env.put('TORCH_HOME', new File(cache, 'torch').getAbsolutePath())
+        env.put('TIATOOLBOX_HOME', new File(cache, 'tiatoolbox').getAbsolutePath())
+    } catch (Throwable ignore) {}
+}
 
 // ── Otomatik tespit: (1) resmî tiatoolbox-runtime, (2) atölye ortam yöneticisi venv ─
 def detectPython = { ->
@@ -116,8 +139,13 @@ def detectPython = { ->
             if (!cands.isEmpty()) return cands.last().getAbsolutePath()   // en yeni v* sürümü
         }
     }
-    // (2) Atölye ortam yöneticisi venv'i: <kullanıcı>/.atolye/runtimes/tiatoolbox-region/.venv
-    def at = new File(System.getProperty('user.home'), '.atolye/runtimes/tiatoolbox-region/.venv')
+    // (2) Env yöneticisinin kaydettiği KESİN yol (veri kökü değişse bile doğru).
+    try {
+        def rec = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('py.tiatoolbox-region', '')
+        if (rec?.trim() && new File(rec.trim()).isFile()) return rec.trim()
+    } catch (Throwable ignore) {}
+    // (3) Yedek: Atölye ortam yöneticisi venv'ini veri kökünden tahmin et.
+    def at = new File(new File(atolyeDataRoot(), 'runtimes'), 'tiatoolbox-region/.venv')
     def aw = new File(at, 'Scripts/python.exe'); def an = new File(at, 'bin/python')
     if (aw.isFile()) return aw.getAbsolutePath()
     if (an.isFile()) return an.getAbsolutePath()
@@ -147,7 +175,8 @@ def loadConfig = { ->
       model          : prefs.get(PREF_MODEL,  'KongNet_Det_MIDOG_1'),
       device         : prefs.get(PREF_DEVICE, 'cuda'),
       maskDownsample : prefs.get(PREF_MDS,    '16.0'),
-      batchSize      : prefs.get(PREF_BATCH,  '8') ]
+      batchSize      : prefs.get(PREF_BATCH,  '8'),
+      scope          : prefs.get(PREF_SCOPE,  'annotation') ]
 }
 
 def configMissing = { cfg ->
@@ -201,6 +230,17 @@ def regionRoisOf = { imageData ->
     def sel = h.getSelectionModel().getSelectedObjects().findAll { it.isAnnotation() && it.hasROI() && it.getROI().isArea() }
     if (!sel.isEmpty()) return sel.collect { it.getROI() }
     return h.getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() }.collect { it.getROI() }
+}
+
+// Tüm görüntüyü kaplayan tek dikdörtgen ROI (kapsam = tüm görüntü / tüm proje)
+def fullImageRois = { imageData ->
+    def server = imageData.getServer()
+    return [ROIs.createRectangleROI(0, 0, server.getWidth(), server.getHeight(), ImagePlane.getDefaultPlane())]
+}
+
+// Kapsama göre çıkarım bölgesi: anotasyon → çizili alanlar; image/project → tüm görüntü
+def regionsForScope = { imageData, String scope ->
+    (scope == 'image' || scope == 'project') ? fullImageRois(imageData) : regionRoisOf(imageData)
 }
 
 // ── Bölgeyi TÜM-slayt ikili maskesine rasterle (sınıf gerektirmez) ──────────
@@ -260,7 +300,10 @@ def importAndFilter = { File geojson, imageData, List regionRois ->
         if (!byClass.containsKey(cls)) byClass.put(cls, new ArrayList())
         byClass.get(cls).add(new Point2(x, y))
     }
-    QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() != null && it.getName().startsWith(SENTINEL_PREFIX) }, false)
+    // Verilen imageData'nın kendi hiyerarşisine yaz (proje kapsamı için ZORUNLU:
+    // QP.* statikleri AÇIK görüntüye yazar, bu görüntüye değil).
+    def hier = imageData.getHierarchy()
+    hier.removeObjects(hier.getAnnotationObjects().findAll { it.getName() != null && it.getName().startsWith(SENTINEL_PREFIX) }, false)
     def newAnns = []
     byClass.each { cls, pts ->
         if (pts.isEmpty()) return
@@ -270,27 +313,51 @@ def importAndFilter = { File geojson, imageData, List regionRois ->
         ann.setLocked(true)
         newAnns << ann
     }
-    QP.addObjects(newAnns)
-    QP.fireHierarchyUpdate()
+    hier.addObjects(newAnns)
+    hier.fireHierarchyChangedEvent(hier)
     def counts = new LinkedHashMap(); byClass.each { k, v -> counts.put(k, v.size()) }
     return [ok: true, total: total, inside: inside, counts: counts]
 }
 
 // ── Sonuç metni ─────────────────────────────────────────────────────────────
-def resultText = { imageData, cfg, model, exp, imp ->
+def resultText = { imageData, cfg, model, exp, imp, scope = 'annotation' ->
+    def scopeLbl = (scope == 'image') ? 'Tüm görüntü' : 'Anotasyon bölgesi'
     def sb = new StringBuilder()
-    sb << "TIA TOOLBOX — BÖLGEDE TESPİT\n"
-    sb << "════════════════════════════\n\n"
+    sb << "TIA TOOLBOX — TESPİT\n"
+    sb << "════════════════════\n\n"
     sb << "Slayt   : " << imageNameOf(imageData) << "\n"
+    sb << "Kapsam  : " << scopeLbl << "\n"
     sb << "Model   : " << model.name << "  (" << model.task << ")\n"
     sb << "Cihaz   : " << (cfg.device ?: 'cuda') << "\n"
     sb << String.format(java.util.Locale.US, "Maske   : %,d × %,d px (downsample %s)%n", (int)(exp?.w ?: 0), (int)(exp?.h ?: 0), (cfg.maskDownsample ?: '16.0'))
-    sb << String.format(java.util.Locale.US, "Tespit  : toplam %,d   ·   BÖLGE İÇİ %,d%n", (int)(imp?.total ?: 0), (int)(imp?.inside ?: 0))
-    sb << "\nSınıf başına (bölge içi):\n"
+    sb << String.format(java.util.Locale.US, "Tespit  : toplam %,d   ·   KAPSAM İÇİ %,d%n", (int)(imp?.total ?: 0), (int)(imp?.inside ?: 0))
+    sb << "\nSınıf başına (kapsam içi):\n"
     if (imp?.counts && !imp.counts.isEmpty()) imp.counts.each { k, v -> sb << String.format(java.util.Locale.US, "  • %-18s %,d%n", k.toString(), (int) v) }
-    else sb << "  (bölge içinde tespit yok)\n"
-    sb << "\nBölge içi tespitler sınıf başına kilitli nokta-anotasyonu olarak eklendi\n"
+    else sb << "  (kapsam içinde tespit yok)\n"
+    sb << "\nTespitler sınıf başına kilitli nokta-anotasyonu olarak eklendi\n"
     sb << "(Annotations sekmesi: '" << SENTINEL_PREFIX << "…'). Tahminleri görsel doğrulayın.\n"
+    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    return sb.toString()
+}
+
+// ── Proje kapsamı sonuç metni ────────────────────────────────────────────────
+def projectResultText = { cfg, model, summary ->
+    def sb = new StringBuilder()
+    sb << "TIA TOOLBOX — TÜM PROJE\n"
+    sb << "═══════════════════════\n\n"
+    sb << "Model   : " << model.name << "  (" << model.task << ")\n"
+    sb << "Cihaz   : " << (cfg.device ?: 'cuda') << "\n"
+    sb << String.format(java.util.Locale.US, "Görüntü : %,d toplam · %,d denendi  (başarılı %,d · atlanan %,d · hata %,d)%n",
+        (int)(summary.total ?: 0), (int)(summary.attempted ?: 0), (int)(summary.ok ?: 0), (int)(summary.skipped ?: 0), (int)(summary.failed ?: 0))
+    if (summary.cancelled)
+        sb << String.format(java.util.Locale.US, "İPTAL edildi — %,d görüntü hiç işlenmedi.%n", (int)(summary.notAttempted ?: 0))
+    sb << String.format(java.util.Locale.US, "Toplam tespit: %,d%n", (long)(summary.grandTotal ?: 0))
+    sb << "\nGörüntü başına (tespit):\n"
+    if (summary.perImage && !summary.perImage.isEmpty())
+        summary.perImage.each { e -> sb << String.format(java.util.Locale.US, "  • %-34s %,d%n", (e.name ?: '?').toString(), (int)(e.count ?: 0)) }
+    else sb << "  (kaydedilmiş sonuç yok)\n"
+    sb << "\nHer görüntünün sonuçları o girdiye kaydedildi (nokta-anotasyonu '" << SENTINEL_PREFIX << "…').\n"
+    sb << "Atlananlar: yerel WSI yolu olmayan görüntüler (tiatoolbox slaytı doğrudan açamaz).\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
 }
@@ -300,7 +367,7 @@ if (isHeadless) {
     def imageData = QP.getCurrentImageData()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
-    println "TIA Toolbox bölge sihirbazı: python=${cfg.python ?: '(ayarsız)'} runner=${cfg.runner ?: '(ayarsız)'} model=${cfg.model} cihaz=${cfg.device}"
+    println "TIA Toolbox bölge sihirbazı: python=${cfg.python ?: '(ayarsız)'} runner=${cfg.runner ?: '(ayarsız)'} model=${cfg.model} cihaz=${cfg.device} kapsam=${cfg.scope}"
     if (!miss.isEmpty()) println "Eksik yapılandırma: ${miss.join(', ')}"
     if (imageData != null) println "Alan anotasyonu: ${regionRoisOf(imageData).size()}"
     else println "Açık görüntü yok."
@@ -329,6 +396,7 @@ def workFieldRef   = new java.util.concurrent.atomic.AtomicReference(null)
 def deviceChoiceRef= new java.util.concurrent.atomic.AtomicReference(null)
 def mdsFieldRef    = new java.util.concurrent.atomic.AtomicReference(null)
 def batchFieldRef  = new java.util.concurrent.atomic.AtomicReference(null)
+def scopeChoiceRef = new java.util.concurrent.atomic.AtomicReference(null)   // annotation/image/project
 def render
 
 def navButton = { String text, Closure action, String tooltip = null ->
@@ -358,6 +426,7 @@ def persistFields = {
 // ── Python süreci → satır akışı ──────────────────────────────────────────────
 def runPython = { List cmd, Closure onLine ->
     def pb = new ProcessBuilder(cmd); pb.redirectErrorStream(true)
+    applyCacheEnv(pb)
     def proc
     try { proc = pb.start() }
     catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
@@ -400,19 +469,51 @@ def startSelftest = {
     worker.setDaemon(true); worker.start()
 }
 
-// ── Çalıştırma akışı ─────────────────────────────────────────────────────────
-def startRun = {
+// ── Tek görüntü için çıkarım (senkron; bir worker iş parçacığından çağrılır) ──
+// Dönüş: [ok, error?, exp?, imp?]. appendLine ile ilerleme yazar; setPhase ile faz.
+def runOnImageData = { imageData, cfg, model, List regionRois, Closure appendLine, Closure setPhase ->
+    def wsi = wsiPathOf(imageData)
+    if (wsi == null) return [ok: false, error: 'Slaytın yerel dosya yolu yok (WSI tiatoolbox tarafından açılamaz).']
+    if (regionRois == null || regionRois.isEmpty()) return [ok: false, error: 'Çıkarım bölgesi yok.']
+    def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs()
+    def base    = imageNameOf(imageData)
+    def saveDir = new File(workDir, 'region_out_' + base)
+    def outGeo  = new File(workDir, base + '_bolge.geojson')
+    double mds = parseDoubleOr(cfg.maskDownsample, 16.0d)
+    setPhase('Bölge maskesi yazılıyor (1/2)…')
+    def exp = exportRegionMask(imageData, workDir, mds, regionRois, appendLine)
+    if (!exp.ok) return [ok: false, error: exp.error]
+    if (cancelledRef.get()) return [ok: false, error: 'İptal edildi.']
+    def cmd = [cfg.python, cfg.runner, 'detect',
+               '--wsi', wsi,
+               '--mask', exp.file.getAbsolutePath(),
+               '--model', model.name,
+               '--engine', model.engine,
+               '--out', outGeo.getAbsolutePath(),
+               '--save-dir', saveDir.getAbsolutePath(),
+               '--device', (cfg.device ?: 'cuda'),
+               '--batch-size', String.valueOf(parseIntOr(cfg.batchSize, 8)),
+               '--classes', model.classes.join(',')]
+    setPhase('Çıkarım koşuyor (2/2) — ' + model.name + '…')
+    def r = runPython(cmd, appendLine)
+    if (!r.ok) return [ok: false, error: 'Çıkarım başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')]
+    def geo = outGeo
+    try { def m = (r.lastLines ?: '') =~ /RESULT geojson=(.+)/; if (m.find()) { def gp = new File(m.group(1).trim()); if (gp.isFile()) geo = gp } } catch (Throwable ignore) {}
+    def imp = importAndFilter(geo, imageData, regionRois)
+    if (!imp.ok) return [ok: false, error: imp.error]
+    return [ok: true, exp: exp, imp: imp, geo: geo]
+}
+
+// ── Çalıştırma akışı — açık görüntü (kapsam: annotation | image) ─────────────
+def startRun = { String scope ->
     def imageData = QP.getCurrentImageData()
     if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
     def model = modelByName(cfg.model)
-    def wsi = wsiPathOf(imageData)
-    if (wsi == null) { errorTextRef.set('Slaytın yerel dosya yolu yok (WSI tiatoolbox tarafından açılamaz).'); step.set('ERROR'); render(); return }
-    def regionRois = regionRoisOf(imageData)
-    if (regionRois.isEmpty()) { errorTextRef.set('Bölge yok.\nÖnce bir alan anotasyonu çizin/seçin.'); step.set('ERROR'); render(); return }
-    def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs()
-    def saveDir = new File(workDir, 'region_out_' + imageNameOf(imageData))
-    def outGeo  = new File(workDir, imageNameOf(imageData) + '_bolge.geojson')
+    def regionRois = regionsForScope(imageData, scope)
+    if (scope == 'annotation' && regionRois.isEmpty()) {
+        errorTextRef.set('Bölge yok.\nÖnce bir alan anotasyonu çizin/seçin (ya da kapsamı "Tüm görüntü" yapın).'); step.set('ERROR'); render(); return
+    }
     cancelledRef.set(false); geojsonRef.set(null)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
@@ -420,46 +521,105 @@ def startRun = {
 
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
-        appendLine('Çalışma dizini: ' + workDir.getAbsolutePath())
+        def setPhase   = { String ph -> javafx.application.Platform.runLater { runPhaseRef.set(ph); render() } }
+        appendLine('Kapsam: ' + (scope == 'image' ? 'Tüm görüntü' : 'Anotasyon bölgesi'))
         try {
-            double mds = parseDoubleOr(cfg.maskDownsample, 16.0d)
-            javafx.application.Platform.runLater { runPhaseRef.set('Bölge maskesi yazılıyor (1/2)…'); render() }
-            def exp = exportRegionMask(imageData, workDir, mds, regionRois, appendLine)
-            if (!exp.ok) { javafx.application.Platform.runLater { errorTextRef.set(exp.error); step.set('ERROR'); render() }; return }
-            if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
-
-            def cmd = [cfg.python, cfg.runner, 'detect',
-                       '--wsi', wsi,
-                       '--mask', exp.file.getAbsolutePath(),
-                       '--model', model.name,
-                       '--engine', model.engine,
-                       '--out', outGeo.getAbsolutePath(),
-                       '--save-dir', saveDir.getAbsolutePath(),
-                       '--device', (cfg.device ?: 'cuda'),
-                       '--batch-size', String.valueOf(parseIntOr(cfg.batchSize, 8)),
-                       '--classes', model.classes.join(',')]
-            javafx.application.Platform.runLater { runPhaseRef.set('Çıkarım koşuyor (2/2) — ' + model.name + '…'); render() }
-            def r = runPython(cmd, appendLine)
-            if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set('Çıkarım başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return }
-
-            // RESULT geojson=<path> satırından çıktı yolunu al, yoksa --out
-            def geo = outGeo
-            try { def m = (r.lastLines ?: '') =~ /RESULT geojson=(.+)/; if (m.find()) { def gp = new File(m.group(1).trim()); if (gp.isFile()) geo = gp } } catch (Throwable ignore) {}
-            geojsonRef.set(geo)
-
-            javafx.application.Platform.runLater { busyLabelRef.set('Sonuçlar içe aktarılıyor…'); step.set('BUSY'); render() }
-            def imp = importAndFilter(geo, QP.getCurrentImageData(), regionRois)
+            def res = runOnImageData(imageData, cfg, model, regionRois, appendLine, setPhase)
             javafx.application.Platform.runLater {
-                if (!imp.ok) { errorTextRef.set(imp.error); step.set('ERROR'); render() }
+                if (!res.ok) { errorTextRef.set(res.error); step.set('ERROR'); render() }
                 else {
+                    geojsonRef.set(res.geo)
                     try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {}
-                    resultTextRef.set(resultText(QP.getCurrentImageData(), cfg, model, exp, imp)); step.set('RESULT'); render()
+                    resultTextRef.set(resultText(QP.getCurrentImageData(), cfg, model, res.exp, res.imp, scope)); step.set('RESULT'); render()
                 }
             }
         } catch (Throwable t) {
             javafx.application.Platform.runLater { errorTextRef.set('Beklenmeyen hata:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
         }
     }, 'AtolyeTIABolge-Run')
+    worker.setDaemon(true); worker.start()
+}
+
+// ── Çalıştırma akışı — tüm proje (her görüntüde tüm-görüntü kapsamı) ─────────
+def startProjectRun = {
+    def project = QP.getProject()
+    if (project == null) { errorTextRef.set('Açık proje yok. "Tüm proje" kapsamı için bir QuPath projesi gerekir.'); step.set('ERROR'); render(); return }
+    def entries = new ArrayList(project.getImageList())
+    if (entries.isEmpty()) { errorTextRef.set('Projede görüntü yok.'); step.set('ERROR'); render(); return }
+    def cfg = loadConfig()
+    def model = modelByName(cfg.model)
+    cancelledRef.set(false)
+    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
+    logAreaRef.set(la)
+    runPhaseRef.set('Proje işleniyor…'); step.set('RUN_RUNNING'); render()
+
+    def worker = new Thread({
+        def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
+        int done = 0, ok = 0, skipped = 0, failed = 0
+        long grandTotal = 0
+        boolean cancelled = false
+        def perImage = new ArrayList()
+        appendLine('Proje kapsamı: ' + entries.size() + ' görüntü · model ' + model.name + ' · cihaz ' + (cfg.device ?: 'cuda'))
+        for (entry in entries) {
+            if (cancelledRef.get()) { cancelled = true; appendLine('İptal edildi — kalan görüntüler işlenmedi.'); break }
+            done++
+            def nm = entry.getImageName() ?: ('görüntü ' + done)
+            javafx.application.Platform.runLater { runPhaseRef.set('Proje ' + done + '/' + entries.size() + ' — ' + nm); render() }
+            appendLine('')
+            appendLine('── [' + done + '/' + entries.size() + '] ' + nm + ' ──')
+            // CANLI veriyi YALNIZ, KULLANIM ANINDA açık görüntü gerçekten bu girdiyse kullan.
+            // Pencere kipsiz (Modality.NONE) — kullanıcı koşu sürerken görüntü değiştirebilir;
+            // bu yüzden koşu başındaki bir anlık görüntüye GÜVENME. project.getEntry(liveCur)
+            // ile, elde ettiğimiz ImageData nesnesinin gerçekten `entry`'ye ait olduğunu doğrula
+            // (nesne referansını yakaladıktan sonra kullanıcı değiştirse bile referans sabittir).
+            def liveData = null
+            try {
+                def liveCur = QP.getCurrentImageData()
+                if (liveCur != null) {
+                    def liveEntry = project.getEntry(liveCur)
+                    if (liveEntry != null && liveEntry.getID() != null && liveEntry.getID() == entry.getID()) liveData = liveCur
+                }
+            } catch (Throwable ignore) {}
+            def imgData = null
+            boolean opened = false
+            try {
+                if (liveData != null) { imgData = liveData; appendLine('   (açık görüntü — canlı veri kullanılıyor)') }
+                else { imgData = entry.readImageData(); opened = true }
+                def regionRois = fullImageRois(imgData)
+                def res = runOnImageData(imgData, cfg, model, regionRois, appendLine, { String ph -> appendLine('   ' + ph) })
+                if (!res.ok) {
+                    if ((res.error ?: '').contains('yerel dosya yolu yok')) { skipped++; appendLine('   ⏭ atlandı: yerel WSI yolu yok') }
+                    else { failed++; appendLine('   ✗ hata: ' + (res.error ?: '').readLines().take(2).join(' ')) }
+                } else {
+                    int inside = (int)(res.imp?.inside ?: 0)
+                    // Sayaçları YALNIZ başarılı kayıttan sonra artır (kaydedilemeyen = başarısız).
+                    boolean saved = true
+                    try { entry.saveImageData(imgData) }
+                    catch (Throwable se) { saved = false; appendLine('   ✗ KAYDEDİLEMEDİ: ' + (se.getMessage() ?: se.getClass().getSimpleName())) }
+                    if (saved) {
+                        ok++; grandTotal += inside; perImage << [name: nm, count: inside]
+                        appendLine('   ✓ tespit: ' + inside + ' (kaydedildi)')
+                    } else {
+                        failed++
+                        appendLine('   ✗ ' + inside + ' tespit yapıldı ama girdiye yazılamadı')
+                    }
+                }
+            } catch (Throwable t) {
+                failed++; appendLine('   ✗ hata: ' + (t.getMessage() ?: t.getClass().getSimpleName()))
+            } finally {
+                // Yalnız BİZİM açtığımız kopyanın sunucusunu kapat; açık görüntününkini ASLA.
+                try { if (opened && imgData != null) imgData.getServer()?.close() } catch (Throwable ignore) {}
+            }
+        }
+        int attempted = done
+        int notAttempted = Math.max(0, entries.size() - attempted)
+        def summary = [total: entries.size(), attempted: attempted, notAttempted: notAttempted, cancelled: cancelled,
+                       ok: ok, skipped: skipped, failed: failed, grandTotal: grandTotal, perImage: perImage]
+        javafx.application.Platform.runLater {
+            try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {}
+            resultTextRef.set(projectResultText(cfg, model, summary)); step.set('RESULT'); render()
+        }
+    }, 'AtolyeTIABolge-Project')
     worker.setDaemon(true); worker.start()
 }
 
@@ -476,13 +636,13 @@ render = { ->
     center.getChildren().add(title)
     def actions = new ArrayList()
 
-    def addGuidance = { String txt -> def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); center.getChildren().add(lbl) }
+    def addGuidance = { String txt -> def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE); center.getChildren().add(lbl) }
     def addMonoArea = { String txt ->
         def ta = new javafx.scene.control.TextArea(txt ?: ''); ta.setEditable(false); ta.setWrapText(false); ta.setStyle(MONO)
         javafx.scene.layout.VBox.setVgrow(ta, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(ta)
     }
     def addWarnLabel = { String txt ->
-        def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true)
+        def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE)
         lbl.setStyle('-fx-text-fill: #b8860b; -fx-font-weight: bold;'); center.getChildren().add(lbl)
     }
     def addLiveLog = { -> def la = logAreaRef.get(); if (la != null) { javafx.scene.layout.VBox.setVgrow(la, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(la) } }
@@ -543,12 +703,38 @@ render = { ->
             actions.add(navButton('⟳ Yenile', { render() }))
         } else {
             def rois = regionRoisOf(imageData)
-            title.setText('TIA Toolbox — bölgede tespit')
+            def scope = cfg.scope ?: 'annotation'
+            def project = QP.getProject()
+            title.setText('TIA Toolbox — tespit')
             def sb = new StringBuilder()
             sb << "Slayt          : " << imageNameOf(imageData) << "\n"
             sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
             sb << String.format(java.util.Locale.US, "Bölge anotasyonu: %,d   (seçili → seçili kullanılır)%n", rois.size())
+            sb << "Projedeki görüntü: " << ((project != null) ? project.getImageList().size().toString() : '(proje yok)') << "\n"
             addMonoArea(sb.toString())
+
+            // ── Kapsam seçici: anotasyon bölgesi / tüm görüntü / tüm proje ──
+            def SCOPE_LABELS = ['Anotasyon bölgesi', 'Tüm görüntü', 'Tüm proje']
+            def SCOPE_KEYS   = ['annotation', 'image', 'project']
+            def scopeChoice = new javafx.scene.control.ChoiceBox()
+            SCOPE_LABELS.each { scopeChoice.getItems().add(it) }
+            int si = SCOPE_KEYS.indexOf(scope); if (si < 0) si = 0
+            scopeChoice.setValue(SCOPE_LABELS[si])
+            scopeChoiceRef.set(scopeChoice)
+            scopeChoice.valueProperty().addListener({ obs, o, n ->
+                if (n != null) {
+                    int k = SCOPE_LABELS.indexOf(n.toString()); def key = (k >= 0) ? SCOPE_KEYS[k] : 'annotation'
+                    prefs.put(PREF_SCOPE, key); try { prefs.flush() } catch (Throwable ig) {}
+                    render()
+                }
+            } as javafx.beans.value.ChangeListener)
+            def scopeRow = new javafx.scene.layout.HBox(8); scopeRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
+            scopeRow.getChildren().addAll(new javafx.scene.control.Label('Kapsam:'), scopeChoice)
+            center.getChildren().add(scopeRow)
+            def scopeHint = (scope == 'annotation') ? 'Yalnız çizili/seçili alan(lar) içinde çalışır (tek bölge tespiti).'
+                          : (scope == 'image')      ? 'Açık slaydın TAMAMINDA çalışır (tüm-görüntü maskesi).'
+                          :                            'Projedeki TÜM görüntülerde tek tek çalışır; sonuç her girdiye kaydedilir.'
+            addGuidance('Kapsam — ' + scopeHint)
 
             // ── Aranabilir model seçici (TIA Toolbox model-arama penceresi taklidi) ──
             def curModel = modelByName(cfg.model)
@@ -589,15 +775,21 @@ render = { ->
             def comboRow = new javafx.scene.layout.HBox(8); comboRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
             comboRow.getChildren().addAll(modelCombo, new javafx.scene.control.Label('   cihaz: ' + (cfg.device ?: 'cuda')))
             center.getChildren().addAll(filterRow, comboRow, infoLbl)
-            addGuidance('Modeli ad/görev/sınıf yazarak filtreleyin (' + MODELS.size() + ' model). Seçili model YALNIZCA bölge içinde çalışır; sonuç sınıf başına nokta-anotasyonu olarak içe alınır ve bölgeye göre sayılır.')
+            addGuidance('Modeli ad/görev/sınıf yazarak filtreleyin (' + MODELS.size() + ' model). Sonuç sınıf başına kilitli nokta-anotasyonu olarak içe alınır.')
 
-            boolean canRun = configComplete(cfg) && rois.size() >= 1
+            boolean needsAnn  = (scope == 'annotation')
+            boolean needsProj = (scope == 'project')
+            boolean canRun = configComplete(cfg) &&
+                             (!needsAnn  || rois.size() >= 1) &&
+                             (!needsProj || (project != null && !project.getImageList().isEmpty()))
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
-            def runBtn = navButton('Bölgede çalıştır ▶', { startRun() }, 'Seçili modeli bölgede çalıştırır')
+            def runLabel = needsProj ? 'Projede çalıştır ▶' : (scope == 'image' ? 'Görüntüde çalıştır ▶' : 'Bölgede çalıştır ▶')
+            def runBtn = navButton(runLabel, { needsProj ? startProjectRun() : startRun(scope) }, 'Seçili modeli seçilen kapsamda çalıştırır')
             runBtn.setDisable(!canRun)
-            if (!canRun && rois.size() < 1) addWarnLabel('⚠ Önce en az 1 alan anotasyonu çizin/seçin.')
+            if (needsAnn  && rois.size() < 1) addWarnLabel('⚠ "Anotasyon bölgesi" kapsamı için önce en az 1 alan anotasyonu çizin/seçin (ya da kapsamı değiştirin).')
+            if (needsProj && (project == null || project.getImageList().isEmpty())) addWarnLabel('⚠ "Tüm proje" kapsamı için görüntü içeren bir QuPath projesi gerekir.')
             actions.add(runBtn)
         }
     } else if (cur == 'RUN_RUNNING') {

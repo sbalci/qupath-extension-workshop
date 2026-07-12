@@ -504,7 +504,7 @@ render = { ->
     def actions = new ArrayList()
 
     def addGuidance = { String txt ->
-        def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true)
+        def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE)
         center.getChildren().add(lbl)
     }
     def addReportArea = { String txt ->

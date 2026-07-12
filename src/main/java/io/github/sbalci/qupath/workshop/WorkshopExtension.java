@@ -148,6 +148,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Cellpose hücre/çekirdek tespiti sihirbazı", "yardimci-cellpose-sihirbaz.groovy"),
             // InstanSeg (yerel eklenti) köprüsü — I2K 2024 uyarlaması. Ek H.
             new ScriptEntry("InstanSeg çekirdek/hücre tespiti sihirbazı", "yardimci-instanseg-sihirbaz.groovy"),
+            // hepatocyte-app (Python) köprüsü — karaciğer hepatosit segmentasyonu; "kendi modelini QuPath'te
+            // çalıştırma" örneği. Depo + model 🔒 talep üzerine (sihirbazın ①②③ butonları). Ek → Hepatosit Segmentasyonu.
+            new ScriptEntry("Hepatosit segmentasyonu sihirbazı (Python)", "yardimci-hepatosit-sihirbaz.groovy"),
             new ScriptEntry("KongNet H&E mitoz tespiti (DL)",       "yardimci-mitoz-kongnet.groovy"),
             // Tespit doğrulama — otomatik tespiti ELLE altın standartla karşılaştırır (TP/FP/FN → F1; JTS IoU). Salt Groovy.
             new ScriptEntry("Tespit doğrulama (F1 / IoU)", "yardimci-dogrulama-f1.groovy")
@@ -182,7 +185,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             // Nesne kümesinin dış bükey zarfı (JTS convexHull) — yayılım alanı. bkz. Ek M.
             new ScriptEntry("Dış bükey zarf (convex hull)",   "yardimci-konveks-zarf.groovy"),
             // Çapraz-tip en yakın komşu: her A hücresinden en yakın B hücresine µm mesafe (sınıf-bağımlı NN).
-            new ScriptEntry("Çapraz-tip en yakın komşu (A→B)", "yardimci-capraz-nn-mesafe.groovy")
+            new ScriptEntry("Çapraz-tip en yakın komşu (A→B)", "yardimci-capraz-nn-mesafe.groovy"),
+            // Eşit-alan merkez/çevre: bir alanı şekilden bağımsız ~eşit-alanlı iç/dış bölgelere böler.
+            // DANEELpath "Centre-Periphery"den esinlenildi (Vieco-Martí 2026, Sci Rep); temiz-oda uygulama. bkz. Ek: daneelpath.
+            new ScriptEntry("Eşit-alan merkez/çevre",         "yardimci-merkez-cevre.groovy")
         )),
         new ScriptGroup("İçe / dışa aktarma & veri", List.of(
             new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy"),
@@ -446,8 +452,15 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                 // a project script context.
                 binding.setVariable("EXTENSION_NAME", "qupath-extension-workshop");
 
+                // Use the EXTENSION's classloader (a child of QuPath's, so it still
+                // resolves all qupath.* classes) rather than QuPath's own — this is what
+                // lets a running script reach sibling bundled resources under /scripts/
+                // (e.g. one wizard launching the Python env manager) and /images/ (tour GIFs)
+                // via Class.forName("...WorkshopExtension").getResource(...) or
+                // this.getClass().getResource("/scripts/..."). With QuPath's classloader
+                // those lookups return null because the extension loads in a child loader.
                 GroovyShell shell = new GroovyShell(
-                    qupath.getClass().getClassLoader(),
+                    WorkshopExtension.class.getClassLoader(),
                     binding
                 );
                 shell.evaluate(scriptBody, entry.resource);

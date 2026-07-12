@@ -84,12 +84,80 @@ def PREF_PYTHON  = 'python'
 def PREF_SCRIPTS = 'scriptsDir'
 def PREF_MODEL   = 'modelDir'
 def PREF_MPP     = 'mppModel'
+def PREF_DEVICE  = 'device'
+
+// ── Hızlandırıcı algılama (mps/cuda/cpu) ────────────────────────────────────
+// GrandQC betikleri cihazı KAYNAKTA sabitler (DEVICE = 'cuda'); komut satırı
+// bayrağı yoktur. Bu yüzden çalıştırmadan önce iki .py dosyasındaki DEVICE
+// satırını seçilen cihaza göre yamalarız (bkz. patchDevice).
+// Algılama BİR KEZ yapılır (session boyunca değişmez) ve önbelleğe alınır;
+// böylece render() içinden çağrılsa bile FX iş parçacığında `nvidia-smi`
+// süreci tekrar tekrar başlatılmaz. `nvidia-smi` bir zaman aşımıyla sınırlanır.
+def _accelCache = new java.util.concurrent.atomic.AtomicReference(null)
+def detectAccelerator = { ->
+    def cached = _accelCache.get()
+    if (cached != null) return cached
+    def result = 'cpu'
+    try {
+        def os   = (System.getProperty('os.name') ?: '').toLowerCase(java.util.Locale.ROOT)
+        def arch = (System.getProperty('os.arch') ?: '').toLowerCase(java.util.Locale.ROOT)
+        if (os.contains('mac') && (arch.contains('aarch64') || arch.contains('arm'))) {
+            result = 'mps'
+        } else {
+            def p = null
+            try {
+                // Çıktıyı OKUMA — DISCARD'a yönlendir; böylece asılı bir süreçte
+                // akış okurken (readLines) sonsuza dek bloklanmayız. Yalnız çıkış
+                // kodu gerekli; waitFor bir zaman aşımıyla sınırlı.
+                p = new ProcessBuilder(['nvidia-smi'])
+                        .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                        .redirectError(ProcessBuilder.Redirect.DISCARD)
+                        .start()
+                if (p.waitFor(4L, java.util.concurrent.TimeUnit.SECONDS)) {
+                    if (p.exitValue() == 0) result = 'cuda'
+                } else {
+                    try { p.destroyForcibly() } catch (Throwable ignore) {}   // asılı kalırsa öldür
+                }
+            } catch (Throwable ignore) {
+                try { if (p != null) p.destroyForcibly() } catch (Throwable ig2) {}
+            }
+        }
+    } catch (Throwable ignore) {}
+    _accelCache.set(result)
+    return result
+}
 
 def loadConfig = { ->
     [ python   : prefs.get(PREF_PYTHON,  ''),
       scripts  : prefs.get(PREF_SCRIPTS, ''),
       modelDir : prefs.get(PREF_MODEL,   ''),
-      mpp      : prefs.get(PREF_MPP,     '1.5') ]
+      mpp      : prefs.get(PREF_MPP,     '1.5'),
+      device   : prefs.get(PREF_DEVICE,  '') ]   // boş = otomatik algıla
+}
+
+// Seçili (ya da boşsa algılanan) cihazı döndür.
+def effectiveDevice = { cfg -> (cfg?.device?.trim()) ?: detectAccelerator() }
+
+// wsi_tis_detect.py + main.py içindeki  DEVICE = 'cuda'  satırını yamala.
+// Dönüş: [patched:[...], errors:[...]]  — errors GERÇEK bir okuma/yazma hatasını
+// (izin/kilit) "zaten doğru"/"satır yok" iyi-huylu durumundan ayırır.
+def patchDevice = { String scriptsDir, String device ->
+    def patched = []; def errors = []
+    if (!scriptsDir?.trim()) { errors << 'betik dizini ayarsız'; return [patched: patched, errors: errors] }
+    def dev = (device?.trim()) ?: 'cpu'
+    ['wsi_tis_detect.py', 'main.py'].each { fn ->
+        def f = new File(scriptsDir, fn)
+        if (!f.isFile()) return   // dosya yoksa configMissing zaten yakalar; burada sessiz
+        String txt
+        try { txt = f.getText('UTF-8') }
+        catch (Throwable re) { errors << (fn + ' okunamadı: ' + (re.getMessage() ?: re.getClass().getSimpleName())); return }
+        // ^ (isteğe bağlı boşluk) DEVICE = 'xxx'  |  "xxx:0"  → DEVICE = '<dev>'
+        def out = txt.replaceAll(/(?m)^([ \t]*DEVICE[ \t]*=[ \t]*)['"][^'"\r\n]*['"]/, '$1\'' + dev + '\'')
+        if (out == txt) return    // DEVICE satırı yok ya da zaten doğru — iyi huylu
+        try { f.setText(out, 'UTF-8'); patched << (fn + " → DEVICE='" + dev + "'") }
+        catch (Throwable we) { errors << (fn + ' yazılamadı: ' + (we.getMessage() ?: we.getClass().getSimpleName())) }
+    }
+    return [patched: patched, errors: errors]
 }
 
 // Zorunlu: python.exe + betik dizininde wsi_tis_detect.py & main.py.
@@ -101,6 +169,13 @@ def configMissing = { cfg ->
         miss << 'GrandQC betik dizini (wsi_tis_detect.py)'
     if (cfg.scripts?.trim() && !(new File(cfg.scripts, 'main.py')).isFile())
         miss << 'GrandQC betik dizini (main.py)'
+    // Model ağırlıkları: betik dizinindeki (ya da modelDir) models/td ve models/qc altında en az birer .pth
+    if (cfg.scripts?.trim()) {
+        def md = cfg.modelDir?.trim() ? new File(cfg.modelDir) : new File(cfg.scripts, 'models')
+        def hasPth = { File d -> d.isDirectory() && (((d.listFiles({ f, n -> n.toLowerCase(java.util.Locale.ROOT).endsWith('.pth') } as java.io.FilenameFilter))?.length) ?: 0) > 0 }
+        if (!hasPth(new File(md, 'td')) || !hasPth(new File(md, 'qc')))
+            miss << 'Model ağırlıkları (models/td + models/qc altında .pth)'
+    }
     return miss
 }
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
@@ -126,11 +201,15 @@ def resolveSlide = { imageData ->
     return [file: slideFile, folder: folder, name: baseName, geojson: geojson, local: (slideFile != null)]
 }
 
-// geojson_qc içinde tam ad yoksa makul bir yedeğe düş
+// geojson_qc içinde tam ad yoksa makul bir yedeğe düş.
+// NOT: `manualFolder` çağıranlarca effectiveFolder(slide) geçilir (elle seçilen
+// klasör → yoksa slaytın klasörü). O yüzden BURADA da aynı öncelik: manualFolder ÖNCE.
 def findGeoJSON = { slide, manualFolder ->
-    def folder = slide.folder ?: manualFolder
+    def folder = manualFolder ?: slide.folder
     if (folder == null) return null
-    def exact = (slide.geojson != null && slide.geojson.isFile())
+    // slide.geojson kısayolu YALNIZ etkin klasör slaydın kendi klasörüyse geçerli
+    // (klasör geçersiz kılındıysa slide.geojson eski/yanlış klasörü işaret eder).
+    def exact = (folder == slide.folder && slide.geojson != null && slide.geojson.isFile())
         ? slide.geojson : new File(new File(folder, 'geojson_qc'), slide.name + '.geojson')
     if (exact.isFile()) return exact
     def dir = new File(folder, 'geojson_qc')
@@ -159,7 +238,10 @@ def cmdText = { cfg, folder, slideName ->
     def s1 = new File(cfg.scripts, 'wsi_tis_detect.py').getAbsolutePath()
     def s2 = new File(cfg.scripts, 'main.py').getAbsolutePath()
     def sb = new StringBuilder()
-    sb << "# GrandQC — bu klasördeki TÜM slaytları işler: " << folder << "\n\n"
+    sb << "# GrandQC — bu klasördeki TÜM slaytları işler: " << folder << "\n"
+    sb << "# NOT: GrandQC cihazı kaynakta sabitler. Bu iki .py dosyasında\n"
+    sb << "#      DEVICE = '...' satırını cihazınıza göre ayarlayın (cuda / mps / cpu).\n"
+    sb << "#      'Doğrudan çalıştır' bu yamayı sizin için otomatik yapar (seçili cihaz: " << effectiveDevice(cfg) << ").\n\n"
     sb << "# 1) Doku tespiti (MPP10)\n"
     sb << q(py) << ' ' << q(s1) << ' --slide_folder ' << q(folder) << ' --output_dir ' << q(folder) << "\n\n"
     sb << "# 2) Artefakt kalite kontrolü (MPP " << cfg.mpp << ")\n"
@@ -390,7 +472,11 @@ def pyFieldRef     = new java.util.concurrent.atomic.AtomicReference(null)
 def scriptsFieldRef= new java.util.concurrent.atomic.AtomicReference(null)
 def modelFieldRef  = new java.util.concurrent.atomic.AtomicReference(null)
 def mppChoiceRef   = new java.util.concurrent.atomic.AtomicReference(null)
+def deviceChoiceRef= new java.util.concurrent.atomic.AtomicReference(null)   // cuda/mps/cpu/Otomatik
 def manualFolderRef= new java.util.concurrent.atomic.AtomicReference(null)   // yerel olmayan slayt için
+def installLog     = new StringBuilder()                                     // ①②③ kurulum ilerleme günlüğü
+def installLogAreaRef = new java.util.concurrent.atomic.AtomicReference(null)
+def installBusyRef = new java.util.concurrent.atomic.AtomicBoolean(false)
 def render  // forward declaration
 
 def navButton = { String text, Closure action, String tooltip = null ->
@@ -409,11 +495,12 @@ def copyToClipboard = { String txt ->
     cb.setContent(content)
 }
 
-// Çalışan klasörü çöz (yerel slayt klasörü ya da elle girilen)
+// Çalışan klasörü çöz — elle seçilen klasör (kapsam) öncelikli, yoksa slayt klasörü.
+// GrandQC daima bir KLASÖRDEKİ tüm slaytları işler; "kapsam" = hangi klasör.
 def effectiveFolder = { slide ->
-    if (slide.folder != null) return slide.folder
     def mf = manualFolderRef.get()
-    return (mf != null && mf.toString().trim()) ? mf.toString().trim() : null
+    if (mf != null && mf.toString().trim()) return mf.toString().trim()
+    return slide.folder
 }
 
 // ── Arka plan: import + temiz doku ──────────────────────────────────────────
@@ -439,10 +526,32 @@ def runImportClean = { slide, manualFolder ->
     worker.setDaemon(true); worker.start()
 }
 
+// ── Atölye veri kökü (env yöneticisiyle PAYLAŞILAN) ─────────────────────────
+// Öntanımlı ~/.atolye; kullanıcı env yöneticisinden başka bir sürücü seçebilir
+// (C: dolmasın diye). GrandQC deposu + model ağırlıkları + venv bu köke yazılır.
+// NOT: runPython'dan ÖNCE tanımlanmalı — Groovy closure'ı daha sonra tanımlanan
+// bir def-closure'ı yakalayamaz (aksi hâlde MissingMethodException: applyCacheEnv).
+def atolyeDataRoot = { ->
+    def p = ''
+    try { p = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('dataRoot', '') } catch (Throwable ignore) {}
+    return (p?.trim()) ? new File(p.trim()) : new File(System.getProperty('user.home'), '.atolye')
+}
+// Model önbelleklerini (torch hub / HF timm) de veri köküne yönlendir; smp+timm
+// kodlayıcı ağırlıklarını torch/HF hub'dan indirir → varsayılan ~/.cache (C:).
+def applyCacheEnv = { pb ->
+    try {
+        def cache = new File(atolyeDataRoot(), 'cache'); cache.mkdirs()
+        def hf = new File(cache, 'huggingface'); def env = pb.environment()
+        env.put('HF_HOME', hf.getAbsolutePath()); env.put('HF_HUB_CACHE', new File(hf, 'hub').getAbsolutePath())
+        env.put('TORCH_HOME', new File(cache, 'torch').getAbsolutePath())
+    } catch (Throwable ignore) {}
+}
+
 // ── Arka plan: Python hattı (ProcessBuilder) → import ───────────────────────
 def runPython = { List cmd, Closure onLine ->
     def pb = new ProcessBuilder(cmd)
     pb.redirectErrorStream(true)
+    applyCacheEnv(pb)
     def proc
     try { proc = pb.start() }
     catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
@@ -483,6 +592,12 @@ def startDirectRun = { slide ->
         def appendLine = { String ln ->
             javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') }
         }
+        // GrandQC betikleri cihazı kaynakta sabitler — çalıştırmadan önce yamala.
+        def dev = effectiveDevice(cfg)
+        def pd = patchDevice(cfg.scripts, dev)
+        if (pd.patched) appendLine('# Cihaz: ' + dev + '  (yamalandı: ' + pd.patched.join(', ') + ')')
+        else appendLine('# Cihaz: ' + dev + '  (DEVICE satırı zaten uygun ya da bulunamadı)')
+        if (pd.errors) appendLine('# ⚠ Cihaz yaması BAŞARISIZ — betik dosyaları yazılamadı; DEVICE hâlâ eski değerde olabilir:\n#   ' + pd.errors.join('\n#   '))
         def r1 = runPython(tissueCmd(cfg, folder), appendLine)
         if (!r1.ok) {
             javafx.application.Platform.runLater {
@@ -506,13 +621,193 @@ def startDirectRun = { slide ->
 }
 
 def saveConfig = {
-    def py = pyFieldRef.get(); def sc = scriptsFieldRef.get(); def md = modelFieldRef.get(); def mp = mppChoiceRef.get()
+    def py = pyFieldRef.get(); def sc = scriptsFieldRef.get(); def md = modelFieldRef.get(); def mp = mppChoiceRef.get(); def dv = deviceChoiceRef.get()
     prefs.put(PREF_PYTHON,  (py != null ? py.getText() : '').trim())
     prefs.put(PREF_SCRIPTS, (sc != null ? sc.getText() : '').trim())
     prefs.put(PREF_MODEL,   (md != null ? md.getText() : '').trim())
     prefs.put(PREF_MPP,     (mp != null && mp.getValue() != null) ? mp.getValue() : '1.5')
+    def dvVal = (dv != null && dv.getValue() != null) ? dv.getValue().toString() : ''
+    prefs.put(PREF_DEVICE,  ['cuda', 'mps', 'cpu'].contains(dvVal) ? dvVal : '')   // Otomatik = boş
     try { prefs.flush() } catch (Throwable ignore) {}
     step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render()
+}
+
+// ── İlgili pencere/belge açıcılar (config ekranındaki butonlar) ─────────────
+// Paketli başka bir Atölye betiğini (ör. Python ortam yöneticisi) kendi penceresinde açar.
+def launchBundledScript = { String resourceName ->
+    new Thread({
+        try {
+            def url = null
+            try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + resourceName) } catch (Throwable t) {}
+            if (url == null) url = this.getClass().getResource('/scripts/' + resourceName)
+            if (url == null) {
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
+                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri & temel modeller → Atölye Python ortam yöneticisi') }
+                return
+            }
+            def cl = this.getClass().getClassLoader()
+            try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
+            new GroovyShell(cl).evaluate(url.getText('UTF-8'), resourceName)
+        } catch (Throwable t) {
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+        }
+    } as Runnable).start()
+}
+def openUrl = { String u -> try { qupath.lib.gui.QuPathGUI.openInBrowser(u) } catch (Throwable t) {} }
+
+
+// ── GrandQC dosya/model kaynakları (WebFetch ile doğrulandı 2026-07) ─────────
+def grandqcBase       = { -> new File(atolyeDataRoot(), 'grandqc') }
+def GRANDQC_REPO_ZIP  = 'https://github.com/cpath-ukk/grandqc/archive/refs/heads/main.zip'
+def GRANDQC_ZIP_TOP   = 'grandqc-main'
+def GRANDQC_SCRIPTSUB = '01_WSI_inference_OPENSLIDE_QC'   // wsi_tis_detect.py & main.py & models/ burada
+def GRANDQC_MODELS = [
+    [url:'https://zenodo.org/records/14507273/files/Tissue_Detection_MPP10.pth?download=1', sub:'td', name:'Tissue_Detection_MPP10.pth'],
+    [url:'https://zenodo.org/records/14041538/files/GrandQC_MPP1.pth?download=1',  sub:'qc', name:'GrandQC_MPP1.pth'],
+    [url:'https://zenodo.org/records/14041538/files/GrandQC_MPP15.pth?download=1', sub:'qc', name:'GrandQC_MPP15.pth'],
+    [url:'https://zenodo.org/records/14041538/files/GrandQC_MPP2.pth?download=1',  sub:'qc', name:'GrandQC_MPP2.pth'],
+]
+def grandqcScriptDir  = { -> new File(new File(grandqcBase(), GRANDQC_ZIP_TOP), GRANDQC_SCRIPTSUB) }
+def grandqcVenvPython = { ->
+    // 1) Env yöneticisinin kaydettiği KESİN yol (veri kökü değişse bile doğru).
+    try {
+        def rec = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('py.grandqc', '')
+        if (rec?.trim()) { def rf = new File(rec.trim()); if (rf.isFile()) return rf }
+    } catch (Throwable ignore) {}
+    // 2) Yedek: veri kökünden tahmin et.
+    def v = new File(new File(new File(atolyeDataRoot(), 'runtimes'), 'grandqc'), '.venv')
+    def w = new File(v, 'Scripts/python.exe'); def n = new File(v, 'bin/python')
+    return w.isFile() ? w : (n.isFile() ? n : null)
+}
+def installLogSnapshot = { -> synchronized (installLog) { return installLog.toString() } }
+def appendInstallLog = { String line ->
+    String snap
+    synchronized (installLog) { installLog.append(line).append('\n'); snap = installLog.toString() }
+    javafx.application.Platform.runLater {
+        def a = installLogAreaRef.get()
+        if (a != null) { a.setText(snap); a.setScrollTop(Double.MAX_VALUE) }
+    }
+}
+// Yönlendirmeli HTTPS indirici (Zenodo → S3, GitHub → codeload'a yönlendirir).
+// Yalnız https'e izin verir (indirme düşürme saldırısını engeller); göreli Location'ı çözer;
+// Content-Length ile karşılaştırıp eksik indirmeyi yakalar; hata/yarım dosyayı siler.
+def httpDownload = { String urlStr, File dest ->
+    if (dest.getParentFile() != null) dest.getParentFile().mkdirs()
+    String cur = urlStr; int hops = 0
+    while (true) {
+        if (hops++ > 8) throw new RuntimeException('Çok fazla yönlendirme')
+        def base = new java.net.URL(cur)
+        if (!'https'.equalsIgnoreCase(base.getProtocol()))
+            throw new RuntimeException('Güvensiz (https değil) bağlantı reddedildi: ' + cur)
+        def conn = (java.net.HttpURLConnection) base.openConnection()
+        conn.setInstanceFollowRedirects(false)
+        conn.setConnectTimeout(30000); conn.setReadTimeout(120000)
+        conn.setRequestProperty('User-Agent', 'atolye-grandqc-installer')
+        int code
+        try { code = conn.getResponseCode() } catch (Throwable t) { conn.disconnect(); throw t }
+        if (code >= 300 && code < 400) {
+            def loc = conn.getHeaderField('Location'); conn.disconnect()
+            if (!loc) throw new RuntimeException('Yönlendirme konumu yok')
+            cur = new java.net.URL(base, loc).toString()   // göreli Location'ı taban URL'ye göre çöz
+            continue
+        }
+        if (code != 200) { conn.disconnect(); throw new RuntimeException('HTTP ' + code + ' — ' + cur) }
+        long total = conn.getContentLengthLong()
+        boolean ok = false
+        try {
+            def ins = conn.getInputStream()
+            try {
+                def os = new java.io.BufferedOutputStream(new java.io.FileOutputStream(dest))
+                long done = 0
+                try {
+                    byte[] buf = new byte[65536]; long last = 0; int r
+                    while ((r = ins.read(buf)) > 0) {
+                        os.write(buf, 0, r); done += r
+                        if (done - last >= 4_000_000L) { last = done
+                            appendInstallLog(String.format(java.util.Locale.US, '    %.1f MB%s', done / 1048576.0d, total > 0 ? String.format(java.util.Locale.US, ' / %.1f MB', total / 1048576.0d) : '')) }
+                    }
+                } finally { os.close() }
+                if (total > 0 && done != total)
+                    throw new RuntimeException('Eksik indirme (' + done + '/' + total + ' bayt): ' + dest.getName())
+                ok = true
+            } finally { ins.close() }
+        } finally {
+            conn.disconnect()
+            if (!ok) { try { dest.delete() } catch (Throwable t) {} }   // yarım/bozuk dosyayı sil
+        }
+        return
+    }
+}
+// Zip-slip korumalı çıkarıcı
+def unzipTo = { File zipFile, File destDir ->
+    destDir.mkdirs()
+    def destCanon = destDir.getCanonicalPath()
+    def zis = new java.util.zip.ZipInputStream(new java.io.BufferedInputStream(new java.io.FileInputStream(zipFile)))
+    try {
+        def e; int cnt = 0
+        while ((e = zis.getNextEntry()) != null) {
+            def out = new File(destDir, e.getName())
+            def oc = out.getCanonicalPath()
+            if (oc != destCanon && !oc.startsWith(destCanon + File.separator)) throw new RuntimeException('Güvensiz zip girdisi: ' + e.getName())
+            if (e.isDirectory()) out.mkdirs()
+            else {
+                if (out.getParentFile() != null) out.getParentFile().mkdirs()
+                def os = new java.io.BufferedOutputStream(new java.io.FileOutputStream(out))
+                try { byte[] b = new byte[65536]; int r; while ((r = zis.read(b)) > 0) os.write(b, 0, r) } finally { os.close() }
+                cnt++
+            }
+            zis.closeEntry()
+        }
+        appendInstallLog('    ' + cnt + ' dosya açıldı')
+    } finally { zis.close() }
+}
+// ② GrandQC deposunu indir + çıkar + betik dizinini otomatik ayarla
+def installRepo = {
+    if (installBusyRef.getAndSet(true)) { appendInstallLog('(Kurulum sürüyor — bekleyin.)'); return }
+    new Thread({
+        try {
+            appendInstallLog(''); appendInstallLog('② GrandQC deposu indiriliyor…'); appendInstallLog('    ' + GRANDQC_REPO_ZIP)
+            def gqBase = grandqcBase(); gqBase.mkdirs()
+            def zipF = new File(gqBase, 'grandqc-main.zip')
+            httpDownload(GRANDQC_REPO_ZIP, zipF)
+            appendInstallLog('    açılıyor → ' + gqBase.getAbsolutePath())
+            unzipTo(zipF, gqBase)
+            try { zipF.delete() } catch (Throwable t) {}
+            def sd = grandqcScriptDir()
+            if (new File(sd, 'wsi_tis_detect.py').isFile()) {
+                prefs.put(PREF_SCRIPTS, sd.getAbsolutePath()); try { prefs.flush() } catch (Throwable t) {}
+                appendInstallLog('✓ Betik dizini ayarlandı: ' + sd.getAbsolutePath())
+            } else appendInstallLog('⚠ wsi_tis_detect.py beklenen yerde yok: ' + sd.getAbsolutePath())
+            javafx.application.Platform.runLater { if (step.get() == 'CONFIG_INCOMPLETE') { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() } }
+        } catch (Throwable t) {
+            appendInstallLog('✗ Depo indirilemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName()))
+            appendInstallLog('   Elle indirin: ' + GRANDQC_REPO_ZIP)
+        } finally { installBusyRef.set(false) }
+    } as Runnable).start()
+}
+// ③ Model ağırlıklarını indir → betik dizinindeki models/td, models/qc
+def installModels = {
+    if (installBusyRef.getAndSet(true)) { appendInstallLog('(Kurulum sürüyor — bekleyin.)'); return }
+    new Thread({
+        try {
+            def sd = loadConfig().scripts?.trim() ? new File(loadConfig().scripts) : grandqcScriptDir()
+            if (!new File(sd, 'wsi_tis_detect.py').isFile()) {
+                appendInstallLog(''); appendInstallLog('⚠ Önce ② ile GrandQC deposunu indirin (modeller repo içine yerleşir).'); return
+            }
+            def modelsRoot = new File(sd, 'models')
+            appendInstallLog(''); appendInstallLog('③ Model ağırlıkları indiriliyor (' + GRANDQC_MODELS.size() + ' dosya, ~100 MB)…')
+            for (m in GRANDQC_MODELS) {
+                def dest = new File(new File(modelsRoot, m.sub), m.name)
+                appendInstallLog('  ' + m.name + ' → models/' + m.sub + '/')
+                httpDownload(m.url, dest)
+            }
+            prefs.put(PREF_MODEL, modelsRoot.getAbsolutePath()); try { prefs.flush() } catch (Throwable t) {}
+            appendInstallLog('✓ Modeller indirildi; model dizini: ' + modelsRoot.getAbsolutePath())
+            javafx.application.Platform.runLater { if (step.get() == 'CONFIG_INCOMPLETE') { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() } }
+        } catch (Throwable t) {
+            appendInstallLog('✗ Model indirilemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName()))
+        } finally { installBusyRef.set(false) }
+    } as Runnable).start()
 }
 
 // ── Render: her durum değişiminde sahneyi sıfırdan kurar ────────────────────
@@ -522,6 +817,11 @@ render = { ->
     def cur = step.get()
     def imageData = QP.getCurrentImageData()
     def cfg = loadConfig()
+    // ① Ortam yöneticisi GrandQC venv'ini kurmuşsa python'u kalıcı olarak otomatik doldur.
+    if (!cfg.python?.trim()) {
+        def vp = grandqcVenvPython()
+        if (vp != null) { prefs.put(PREF_PYTHON, vp.getAbsolutePath()); try { prefs.flush() } catch (Throwable t) {}; cfg = loadConfig() }
+    }
 
     def title = new javafx.scene.control.Label()
     title.setStyle('-fx-font-size: 14px; -fx-font-weight: bold;')
@@ -531,7 +831,7 @@ render = { ->
     def actions = new ArrayList()
 
     def addGuidance = { String txt ->
-        def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); center.getChildren().add(lbl)
+        def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE); center.getChildren().add(lbl)
     }
     def addMonoArea = { String txt ->
         def ta = new javafx.scene.control.TextArea(txt ?: '')
@@ -540,7 +840,7 @@ render = { ->
         center.getChildren().add(ta)
     }
     def addWarnLabel = { String txt ->
-        def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true)
+        def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE)
         lbl.setStyle('-fx-text-fill: #b8860b; -fx-font-weight: bold;')
         center.getChildren().add(lbl)
     }
@@ -548,16 +848,34 @@ render = { ->
     if (cur == 'CONFIG_INCOMPLETE') {
         title.setText('GrandQC yapılandırması gerekli')
         def miss = configMissing(cfg)
-        addGuidance('GrandQC bir Python ortamı + GrandQC betik/model dosyaları gerektirir. Eksik/geçersiz:\n  • ' +
-            (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
-            '\n\nKOLAY KURULUM (2 adım):\n' +
-            '  1) Python ortamı → [Extensions → Atölye → Yardımcılar → Python köprüleri & temel modeller →\n' +
-            '     Atölye Python ortam yöneticisi] penceresinde "GrandQC" ortamını tek tıkla kurun (uv: venv + paketler).\n' +
-            '  2) GrandQC betikleri (wsi_tis_detect.py) + model ağırlıkları → Ekler → Kalite Kontrol § GrandQC\n' +
-            '     adımlarını izleyin (upstream repo + model; ortam yöneticisi model ağırlığı indirmez).\n' +
-            'Sonra bu pencerede "Yapılandır ▶" ile python.exe, betik dizini ve model dizinini seçin.')
+        addGuidance('GrandQC ÜÇ ayrı kurulum adımı gerektirir; aşağıdaki ①②③ butonları bu adımları ÇALIŞTIRIR ' +
+            '(indirir/kurar). Eksik/geçersiz:\n  • ' + (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')))
+        def gqPy = grandqcVenvPython()   // kayıtlı KESİN yol varsa onu göster, yoksa tahmin
+        def resArea = new javafx.scene.control.TextArea(
+            'KAYNAKLAR — ne · nereden · nereye:\n' +
+            '① Python ortamı : ' + (gqPy != null ? gqPy.getAbsolutePath() + '  (kurulu)' :
+                'uv venv + paketler → ' + new File(new File(atolyeDataRoot(), 'runtimes'), 'grandqc/.venv').getAbsolutePath()) + '\n' +
+            '   (buton Atölye Python ortam yöneticisini açar; "GrandQC"yi kurun — python otomatik algılanır)\n' +
+            '   (veri kökünü değiştirmek için ortam yöneticisindeki "Veri kökü → Değiştir…")\n' +
+            '② GrandQC deposu: ' + GRANDQC_REPO_ZIP + '\n' +
+            '   → ' + grandqcScriptDir().getAbsolutePath() + '\n' +
+            '③ Model (Zenodo · CC BY-NC-SA 4.0):\n' +
+            '   • Tissue_Detection_MPP10.pth  (~27 MB) → models/td/   [zenodo 14507273]\n' +
+            '   • GrandQC_MPP1 / 15 / 2.pth   (3×~25 MB) → models/qc/  [zenodo 14041538]')
+        resArea.setEditable(false); resArea.setWrapText(false); resArea.setStyle(MONO); resArea.setPrefRowCount(9); resArea.setMaxHeight(190)
+        center.getChildren().add(resArea)
+        actions.add(navButton('① Python ortamı', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') },
+            'Atölye Python ortam yöneticisini açar → "GrandQC"yi kurun; python otomatik algılanır'))
+        actions.add(navButton('② GrandQC deposu indir', { installRepo() },
+            'GitHub ZIP indirir + açar, betik dizinini otomatik ayarlar'))
+        actions.add(navButton('③ Model indir', { installModels() },
+            'Zenodo model ağırlıklarını models/td & models/qc içine indirir (önce ②)'))
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
+        def ilog = new javafx.scene.control.TextArea(installLogSnapshot())
+        ilog.setEditable(false); ilog.setWrapText(false); ilog.setStyle(MONO); ilog.setPrefRowCount(7)
+        javafx.scene.layout.VBox.setVgrow(ilog, javafx.scene.layout.Priority.ALWAYS)
+        installLogAreaRef.set(ilog); center.getChildren().add(ilog)
     } else if (cur == 'CONFIG') {
         title.setText('GrandQC yapılandırması')
         def grid = new javafx.scene.layout.GridPane()
@@ -569,7 +887,11 @@ render = { ->
         def mppChoice = new javafx.scene.control.ChoiceBox()
         MPP_OPTIONS.each { mppChoice.getItems().add(it) }
         mppChoice.setValue(MPP_OPTIONS.contains(cfg.mpp) ? cfg.mpp : '1.5')
-        pyFieldRef.set(pyField); scriptsFieldRef.set(scField); modelFieldRef.set(mdField); mppChoiceRef.set(mppChoice)
+        def detDev = detectAccelerator()
+        def deviceChoice = new javafx.scene.control.ChoiceBox()
+        ['Otomatik (' + detDev + ')', 'cuda', 'mps', 'cpu'].each { deviceChoice.getItems().add(it) }
+        deviceChoice.setValue(['cuda', 'mps', 'cpu'].contains(cfg.device) ? cfg.device : ('Otomatik (' + detDev + ')'))
+        pyFieldRef.set(pyField); scriptsFieldRef.set(scField); modelFieldRef.set(mdField); mppChoiceRef.set(mppChoice); deviceChoiceRef.set(deviceChoice)
         def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Dosya seç'); if (x != null) f.setText(x.getAbsolutePath()) }
         def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Dizin seç', null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
@@ -577,8 +899,9 @@ render = { ->
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('GrandQC betik dizini:'), scField, navButton('…', { browseDir(scField) }))
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model dizini (ops.):'), mdField, navButton('…', { browseDir(mdField) }))
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Artefakt MPP modeli:'), mppChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Cihaz (hızlandırıcı):'), deviceChoice)
         center.getChildren().add(grid)
-        addGuidance('Betik dizini wsi_tis_detect.py + main.py içermeli. Model dizini doku/artefakt .pth dosyalarını içerir.')
+        addGuidance('Betik dizini wsi_tis_detect.py + main.py içermeli. Model dizini doku/artefakt .pth dosyalarını içerir.\nCihaz: GrandQC betikleri cihazı kaynakta sabitler; seçiminiz çalıştırmadan önce .py dosyalarına yamalanır. CUDA yoksa cpu seçin (yavaş ama çalışır).')
         actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
         actions.add(navButton('Kaydet ▶', { saveConfig() }))
     } else if (cur == 'READY') {
@@ -590,27 +913,32 @@ render = { ->
             actions.add(navButton('⟳ Yenile', { render() }))
         } else {
             def slide = resolveSlide(imageData)
+            def scopeFolder = effectiveFolder(slide)
+            boolean overridden = (manualFolderRef.get() != null && manualFolderRef.get().toString().trim())
             def typeName = (imageData.getImageType()?.name() ?: '').toUpperCase(java.util.Locale.ROOT)
             boolean isHE = typeName.contains('BRIGHTFIELD_H_E')
             title.setText('GrandQC — hazır')
             def sb = new StringBuilder()
             sb << "Slayt        : " << slide.name << "\n"
-            sb << "Klasör       : " << (slide.folder ?: '(yerel disk değil — elle girin)') << "\n"
+            sb << "Kapsam       : " << (scopeFolder ?: '(yerel disk değil — klasör seçin)')
+            sb << (overridden ? '   [seçilen klasör]' : (scopeFolder != null ? '   [slaytın klasörü]' : '')) << "\n"
             sb << "Python       : " << (cfg.python ?: '(ayarsız)') << "\n"
             sb << "MPP modeli   : " << cfg.mpp << "\n"
-            def gj = findGeoJSON(slide, effectiveFolder(slide))
+            sb << "Cihaz        : " << effectiveDevice(cfg) << (cfg.device?.trim() ? '' : ' (otomatik)') << "\n"
+            def gj = findGeoJSON(slide, scopeFolder)
             sb << "GeoJSON      : " << ((gj != null && gj.isFile()) ? ('mevcut — ' + gj.getName()) : 'yok (henüz çalıştırılmadı)') << "\n"
             addMonoArea(sb.toString())
+            addGuidance('Kapsam: GrandQC seçili KLASÖRDEKİ tüm slaytları işler (tek slayt / anotasyon modu yoktur). ' +
+                        'Öntanımlı olarak açık slaydın klasörü kullanılır; tüm projeyi/başka bir klasörü işlemek için "Klasör seç…".')
             if (!isHE) addWarnLabel('⚠ Görüntü tipi H&E değil (' + typeName + '). GrandQC H&E için tasarlanmıştır; yine de deneyebilirsiniz.')
-            if (slide.folder == null) {
-                addGuidance('Slayt yerel diskte çözülemedi. Slayt klasörünü elle girin:')
-                def mf = new javafx.scene.control.TextField(manualFolderRef.get()?.toString() ?: '')
-                mf.setPrefColumnCount(34)
-                mf.textProperty().addListener({ o, ov, nv -> manualFolderRef.set(nv) } as javafx.beans.value.ChangeListener)
-                center.getChildren().add(mf)
-            }
-            boolean canRun = configComplete(cfg) && (effectiveFolder(slide) != null)
+            boolean canRun = configComplete(cfg) && (scopeFolder != null)
             actions.add(navButton('Kapat', { stage.close() }))
+            actions.add(navButton('Klasör seç…', {
+                def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'İşlenecek slayt klasörü (kapsam)', scopeFolder != null ? new File(scopeFolder) : null)
+                if (x != null) { manualFolderRef.set(x.getAbsolutePath()); render() }
+            }, 'İşlenecek klasörü değiştir — o klasördeki tüm slaytlar işlenir'))
+            if (overridden)
+                actions.add(navButton('↺ Slaytın klasörü', { manualFolderRef.set(null); render() }, 'Kapsamı açık slaydın klasörüne döndür'))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('Komut üret ▶', { cmdTextRef.set(cmdText(cfg, (effectiveFolder(slide) ?: '<slayt-klasörü>'), slide.name)); step.set('CMD_READY'); render() }))
             if (gj != null && gj.isFile())
@@ -689,6 +1017,9 @@ render = { ->
 }
 
 // ── Açılış durumu ───────────────────────────────────────────────────────────
+// Hızlandırıcıyı ARKA PLAN (betik) iş parçacığında bir kez algıla/önbelleğe al —
+// böylece sonraki render() çağrıları FX iş parçacığında `nvidia-smi` başlatmaz.
+detectAccelerator()
 step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE')
 
 javafx.application.Platform.runLater {
