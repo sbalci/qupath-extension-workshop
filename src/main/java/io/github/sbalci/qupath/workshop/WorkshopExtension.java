@@ -92,6 +92,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         // QuANTUM: StarDist eklentisi + sihirbaz içinde interaktif eğitilen nesne sınıflandırıcı
         // gerektirir; StarDist yoksa sihirbaz kullanıcıyı kuruluma yönlendirir (çökmemez).
         new ScriptEntry("QuANTUM cTCF",                   "quantum-ctcf.groovy"),
+        // Mitoz tespiti artık bir ALT MENÜ (MITOSIS_MODULE) — QuANTUM cTCF'den sonra,
+        // Veri dışa aktarmadan önce eklenir (birden çok mitoz modeli + "Modelleri karşılaştır").
         new ScriptEntry("Veri dışa aktarma",              "veri-aktarma.groovy")
     );
 
@@ -106,6 +108,26 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Piksel eşikleyici (Create thresholder)",      "yardimci-esik-siniflandirici.groovy"),
         new ScriptEntry("GrandQC modeli (doku & artefakt, Python)",    "yardimci-grandqc-sihirbaz.groovy"),
         new ScriptEntry("TIA Toolbox maskesi (Otsu/morfoloji, Python)", "yardimci-tiatoolbox-sihirbaz.groovy")
+    ));
+
+    /**
+     * The "Mitoz tespiti" module — a submenu of mitosis-model wizards shown in the Modüller
+     * menu right after QuANTUM cTCF. Each entry runs one mitosis model region-restricted on
+     * the selected area; the last entry runs several detectors on the same area and scores
+     * inter-model agreement. Backed by the modules/mitoz-tespiti.qmd page. Detectors emit
+     * base-pixel "Mitosis" point annotations; classifiers re-subclass them typical/atypical.
+     * Model weights are downloaded at runtime (never bundled); research/education only.
+     * Entries are added phase-by-phase as each model's bridge+wizard lands.
+     */
+    private static final ScriptGroup MITOSIS_MODULE = new ScriptGroup("Mitoz tespiti", List.of(
+        new ScriptEntry("KongNet MIDOG (TIA Toolbox)", "yardimci-mitoz-tiatoolbox.groovy"),
+        new ScriptEntry("MIDOG25 FCOS (torchvision)",  "yardimci-mitoz-fcos.groovy"),
+        new ScriptEntry("MIDOG DA-RetinaNet (2021, eski)", "yardimci-mitoz-retinanet.groovy"),
+        new ScriptEntry("Atipik sınıflama — MIDOG25 EffNetV2", "yardimci-mitoz-atipik-effnet.groovy"),
+        // Sanofi EFTD: DINOv3-H+ omurgası KAPILI (Meta lisansı + hf login gerekir) → varsayılan
+        // DEVRE DIŞI (disabled=true). Kullanıcı gated erişim edinince etkinleştirilir.
+        new ScriptEntry("Atipik sınıflama — Sanofi EFTD (kapılı)", "yardimci-mitoz-atipik-sanofi.groovy", true),
+        new ScriptEntry("Modelleri karşılaştır (aynı bölge)", "yardimci-mitoz-karsilastir.groovy")
     ));
 
     /** A named topic group of utility scripts → renders as a sub-menu under "Yardımcılar". */
@@ -311,6 +333,22 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                         tissueMenu.getItems().add(ti);
                     }
                     modulesMenu.getItems().add(tissueMenu);
+                }
+                // "Mitoz tespiti" modülü — QuANTUM cTCF'den sonra, Veri dışa aktarmadan önce.
+                // Sıra kaymalarına dayanıklı olması için index yerine betik adına göre eklenir.
+                if ("quantum-ctcf.groovy".equals(entry.resource)) {
+                    Menu mitosisMenu = new Menu(MITOSIS_MODULE.title());
+                    for (ScriptEntry me : MITOSIS_MODULE.entries()) {
+                        MenuItem mi = new MenuItem(me.label);
+                        if (me.disabled) {
+                            mi.setDisable(true);   // henüz gelmemiş model — gri görünür
+                        } else {
+                            mi.setOnAction(e -> runScriptSafely(qupath, me));
+                            mi.disableProperty().bind(disableBinding(qupath, me));
+                        }
+                        mitosisMenu.getItems().add(mi);
+                    }
+                    modulesMenu.getItems().add(mitosisMenu);
                 }
                 moduleIndex++;
             }

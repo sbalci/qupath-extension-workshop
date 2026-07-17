@@ -103,6 +103,22 @@ def CATALOG = [
                'albumentations~=2.0.8','shapely==2.1.2','openpyxl==3.1.5'],
      torchBackend:'auto', reuseOfficial:null,
      note:'⚠️ Yalnızca Python ortamı. hepatocyte-app deposu + model ağırlığı (🔒 talep üzerine) AYRICA gerekir — Hepatosit sihirbazının ②③ butonları. openslide-bin, OpenSlide ikililerini pip ile getirir (conda gerekmez).'],
+    [id:'midog-fcos', label:'MIDOG25 FCOS — mitoz dedektörü (torchvision)', python:'3.11',
+     packages:['torch>=2.1','torchvision>=0.16','numpy','Pillow','tifffile'],
+     torchBackend:'auto', reuseOfficial:null,
+     note:'⚠️ Yalnızca Python ortamı. FCOS_x101.ckpt ağırlığı AYRICA gerekir — mitoz sihirbazının "Modeli yerel indir" butonu ağırlığı çalışma anında v1.0.0 yayınından çeker (paketlenmez; LİSANS dosyası yok → araştırma/eğitim, kullanıcı sorumluluğunda).'],
+    [id:'midog-retinanet-legacy', label:'MIDOG DA-RetinaNet (eski, DOĞRULANMAMIŞ)', python:'3.8',
+     packages:['fastai==1.0.61','torch>=1.6,<1.10','torchvision>=0.10,<0.11','opencv-python==4.5.1.48','scikit-learn','scipy','tqdm','numpy','Pillow'],
+     torchBackend:'auto', reuseOfficial:null,
+     note:'⚠️ ESKİ/DOĞRULANMAMIŞ ortam. fastai 1.0.61 + modern torch bilinen bir kırılgan kombinasyondur; çözülmeyebilir ya da import hatası verebilir. Referans depo kodu + ağırlık çalışma anında indirilir (paketlenmez, LİSANS yok). Aşılmış — bunun yerine MIDOG25 FCOS önerilir.'],
+    [id:'midog-atypical', label:'MIDOG25 EffNetV2 — atipik sınıflandırıcı (timm)', python:'3.11',
+     packages:['torch>=2.1','torchvision>=0.16','timm>=1.0','numpy','Pillow'],
+     torchBackend:'auto', reuseOfficial:null,
+     note:'⚠️ Yalnızca Python ortamı. Tipik/atipik SINIFLANDIRICI (dedektör değil — önce bir mitoz dedektörü çalıştırın). efficientnetv2_m_fold3_best.pth çalışma anında v1.0.0 yayınından indirilir (paketlenmez, LİSANS yok → araştırma/eğitim).'],
+    [id:'sanofi-eftd', label:'Sanofi EFTD — atipik sınıflandırıcı (DINOv3-H+, KAPILI)', python:'3.11',
+     packages:['torch>=2.1','torchvision>=0.16','transformers>=4.56','peft>=0.11','safetensors>=0.4','omegaconf','huggingface_hub>=0.23','numpy','Pillow'],
+     torchBackend:'auto', reuseOfficial:null,
+     note:'⚠️ Tipik/atipik SINIFLANDIRICI (MIDOG25 T2 birincisi). KISMEN KAPILI: LoRA adaptörleri açık ama DINOv3-H+ omurgası (facebook/dinov3-vith16plus) HF\'te KAPILIDIR — Meta lisansı + `huggingface-cli login` gerekir (otomatik DEĞİL). QuPath menüsünde varsayılan DEVRE DIŞI. Ticari-olmayan araştırma lisansı.'],
 ]
 def specById = { String id -> CATALOG.find { it.id == id } }
 

@@ -68,7 +68,7 @@ def SENTINEL_PREFIX = 'TIA bölge tespiti · '
 // Atölye model kataloğu (TIA Toolbox nucleus_detector — patoloji nokta-tespiti).
 def MODELS = [
     [name:'KongNet_Det_MIDOG_1', engine:'nucleus_detector', task:'Mitoz tespiti',
-     classes:['Mitotic figure'], desc:'MIDOG mitotik figür dedektörü (H&E, ~0.25 µm/px).'],
+     classes:['Mitotic figure'], desc:'MIDOG mitotik figür dedektörü (H&E, 0.5 µm/px — registry ioconfig).'],
     [name:'KongNet_PanNuke_1', engine:'nucleus_detector', task:'Çekirdek tespiti',
      classes:['Neoplastic','Inflammatory','Connective','Dead','Epithelial'],
      desc:'PanNuke 5-sınıf çekirdek (19 doku tipi, 0.25 µm/px).'],
