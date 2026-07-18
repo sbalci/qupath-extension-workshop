@@ -216,6 +216,20 @@ def render
 def navButton = { String text, Closure action, String tooltip = null -> def b = new javafx.scene.control.Button(text); b.setOnAction({ action() }); if (tooltip) b.setTooltip(new javafx.scene.control.Tooltip(tooltip)); return b }
 def busyBar = { -> def pb = new javafx.scene.control.ProgressBar(); pb.setProgress(-1.0); pb.setMaxWidth(Double.MAX_VALUE); return pb }
 def copyToClipboard = { String txt -> def cb = javafx.scene.input.Clipboard.getSystemClipboard(); def content = new javafx.scene.input.ClipboardContent(); content.putString(txt ?: ""); cb.setContent(content) }
+// Python ortamı kurulu değilse: Atölye Python ortam yöneticisini kendi penceresinde aç.
+def launchBundledScript = { String resourceName ->
+    new Thread({
+        try {
+            def url = null
+            try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + resourceName) } catch (Throwable t) {}
+            if (url == null) url = this.getClass().getResource('/scripts/' + resourceName)
+            if (url == null) { javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri & temel modeller → Atölye Python ortam yöneticisi') }; return }
+            def cl = this.getClass().getClassLoader()
+            try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
+            new GroovyShell(cl).evaluate(url.getText('UTF-8'), resourceName)
+        } catch (Throwable t) { javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) } }
+    } as Runnable).start()
+}
 
 def runLog = new StringBuilder()
 def logFileRef = new java.util.concurrent.atomic.AtomicReference(null)
@@ -402,7 +416,7 @@ render = { ->
         def miss = configMissing(cfg)
         addGuidance('Bu modül torch + timm ortamını (env id: midog-atypical) gerektirir.\nEksik/geçersiz:\n  • ' + (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
             '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi → "MIDOG25 EffNetV2 — atipik sınıflandırıcı".\nKöprü: handson/python/midog/atypical_effnet.py')
-        actions.add(navButton('Kapat', { stage.close() })); actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
+        actions.add(navButton('Kapat', { stage.close() })); actions.add(navButton('⚙ Python ortamını kur/aç', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') }, 'Atölye Python ortam yöneticisini açar → "MIDOG25 EffNetV2"yi kurun')); actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
         title.setText('Atipik sınıflama — yapılandırma')
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
@@ -428,6 +442,7 @@ render = { ->
         mcLbl.setWrapText(true); mcLbl.setMaxWidth(Double.MAX_VALUE); mcLbl.setStyle('-fx-opacity: 0.85; -fx-font-size: 11px;'); center.getChildren().add(mcLbl)
         addGuidance('Bu bir DEDEKTÖR değildir: mevcut "Mitosis"/"Mitoz (konsensüs)" noktalarını tipik/atipik olarak sınıflar. Ağırlık paketlenmez; "Modeli yerel indir" v1.0.0 yayınından çeker (LİSANS yok → araştırma/eğitim). Yama boyutu: her mitoz çevresinde kırpılan alan (µm); referans ~32 µm (≈128 px @ 40x). Hedef çözünürlük varsayılanı 0.25 (T2 eğitim ölçeği).')
         actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton('⚙ Python ortamı', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') }, 'Atölye Python ortam yöneticisini aç'))
         actions.add(navButton('Modeli yerel indir', { startModelDownload() }))
         actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }))
         actions.add(navButton('Kaydet ▶', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
@@ -465,7 +480,10 @@ render = { ->
             addGuidance('Bu bir DEDEKTÖR değildir: seçili bölgedeki mevcut mitoz noktalarını (dedektör çıktısı / konsensüs) tipik vs atipik olarak sınıflar. Sonuç: noktalar KIRMIZI (atipik) / YEŞİL (tipik) yeniden renklenir + "Atipik olasılık" ölçümü.')
             if (points.isEmpty()) addWarnLabel('⚠ Sınıflanacak mitoz noktası yok — önce bir mitoz dedektörü (KongNet / FCOS / RetinaNet ya da Karşılaştır) çalıştırın.')
             boolean canRun = configComplete(cfg) && points.size() >= 1
-            actions.add(navButton('Kapat', { stage.close() })); actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() })); actions.add(navButton('⟳ Yenile', { render() }))
+            if (!configComplete(cfg)) addWarnLabel('⚠ Python ortamı (midog-atypical) kurulu değil — "⚙ Python ortamını kur/aç" ile kurun.')
+            actions.add(navButton('Kapat', { stage.close() }))
+            if (!configComplete(cfg)) actions.add(navButton('⚙ Python ortamını kur/aç', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') }, 'Atölye Python ortam yöneticisini açar'))
+            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() })); actions.add(navButton('⟳ Yenile', { render() }))
             def runBtn = navButton('Sınıfla ▶', { startRun() }, 'Seçili bölgedeki mitoz noktalarını tipik/atipik sınıfla'); runBtn.setDisable(!canRun)
             actions.add(runBtn)
         }

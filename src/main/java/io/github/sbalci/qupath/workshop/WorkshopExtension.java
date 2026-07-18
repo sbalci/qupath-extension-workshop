@@ -596,8 +596,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         boolean djl = isOnClasspath("ai.djl.engine.Engine",
                                     "qupath.ext.djl.DjlTools",
                                     "qupath.ext.djl.DjlExtension");
-        Dialogs.showMessageDialog(
-            "Atölye — Ortam kontrolü",
+        String envMessage =
             "QuPath sürümü:     " + GeneralTools.getVersion() + "\n" +
             "Atölye eklentisi:  v" + getVersion() + "  (derlenme " + BUILD_TIMESTAMP + ")\n" +
             "QuPath baseline:   " + getQuPathVersion() + "+\n\n" +
@@ -614,8 +613,28 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                       : "Modül 4 için Cellpose eklentisi + Python venv gerekir (bkz. kaynaklar → ileri kurulumlar).\n") +
             "\"bulunamadı\" görünen bileşenler yalnızca ilgili ileri modül için gerekir;\n" +
             "kurulum rehberi: https://atolye.patoloji.dev/kaynaklar.html#ileri-kurulumlar\n\n" +
-            "Yalnızca araştırma ve eğitim amaçlıdır."
-        );
+            "Yalnızca araştırma ve eğitim amaçlıdır.";
+        // Diyalog + "Python ortam yöneticisi…" düğmesi: kullanıcı buradan doğrudan Python
+        // yapılandırma/kurulum alanını (env yöneticisi) açabilir.
+        var envArea = new javafx.scene.control.TextArea(envMessage);
+        envArea.setEditable(false);
+        envArea.setWrapText(false);
+        envArea.setStyle("-fx-font-family: 'Consolas','Menlo','Courier New',monospace; -fx-font-size: 12px;");
+        envArea.setPrefColumnCount(56);
+        envArea.setPrefRowCount(24);
+        var envAlert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+        envAlert.setTitle("Atölye — Ortam kontrolü");
+        envAlert.setHeaderText(null);
+        envAlert.setResizable(true);
+        envAlert.getDialogPane().setContent(envArea);
+        var openEnvBtn = new javafx.scene.control.ButtonType(
+                "Python ortam yöneticisi…", javafx.scene.control.ButtonBar.ButtonData.LEFT);
+        envAlert.getButtonTypes().setAll(openEnvBtn, javafx.scene.control.ButtonType.OK);
+        var envChoice = envAlert.showAndWait();
+        if (envChoice.isPresent() && envChoice.get() == openEnvBtn) {
+            runScriptSafely(qupath, new ScriptEntry(
+                    "Atölye Python ortam yöneticisi", "yardimci-python-ortam-yoneticisi.groovy", false, false));
+        }
     }
 
     /**

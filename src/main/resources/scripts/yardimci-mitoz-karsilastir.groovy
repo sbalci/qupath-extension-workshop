@@ -340,6 +340,20 @@ def busyBar = { -> def pb = new javafx.scene.control.ProgressBar(); pb.setProgre
 def copyToClipboard = { String txt ->
     def cb = javafx.scene.input.Clipboard.getSystemClipboard(); def content = new javafx.scene.input.ClipboardContent(); content.putString(txt ?: ""); cb.setContent(content)
 }
+// Python ortamı kurulu değilse: Atölye Python ortam yöneticisini kendi penceresinde aç.
+def launchBundledScript = { String resourceName ->
+    new Thread({
+        try {
+            def url = null
+            try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + resourceName) } catch (Throwable t) {}
+            if (url == null) url = this.getClass().getResource('/scripts/' + resourceName)
+            if (url == null) { javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri & temel modeller → Atölye Python ortam yöneticisi') }; return }
+            def cl = this.getClass().getClassLoader()
+            try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
+            new GroovyShell(cl).evaluate(url.getText('UTF-8'), resourceName)
+        } catch (Throwable t) { javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) } }
+    } as Runnable).start()
+}
 
 // ── Çalıştırma günlüğü ──
 def runLog = new StringBuilder()
@@ -548,6 +562,7 @@ render = { ->
                 chks[d.id] = cb; box.getChildren().add(cb)
             }
             selChkRefs.set(chks); center.getChildren().add(box)
+            if (DETECTORS.any { !detectorReady(it) }) addWarnLabel('⚠ "kurulu değil" görünen model(ler) için "⚙ Python ortamı" ile ilgili ortamı kurun.')
             def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(6)
             def deviceChoice = new javafx.scene.control.ChoiceBox(); ['cuda', 'cpu'].each { deviceChoice.getItems().add(it) }; deviceChoice.setValue(prefs.get(PREF_DEVICE, 'cuda') == 'cpu' ? 'cpu' : 'cuda'); deviceChoiceRef.set(deviceChoice)
             def radiusField = new javafx.scene.control.TextField(prefs.get(PREF_RADIUS, '')); radiusField.setPromptText('boş = 10'); radiusField.setPrefColumnCount(6); radiusFieldRef.set(radiusField)
@@ -563,6 +578,7 @@ render = { ->
             if (targets.size() < 1) addWarnLabel('⚠ Önce en az 1 alan anotasyonu çizin/seçin.')
             if (cal == null) addWarnLabel('⚠ Kalibrasyon yok — FCOS native çözünürlükte çalışır ve yarıçap piksel varsayımıyla hesaplanır.')
             actions.add(navButton('Kapat', { stage.close() }))
+            if (DETECTORS.any { !detectorReady(it) }) actions.add(navButton('⚙ Python ortamı', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') }, 'Atölye Python ortam yöneticisini aç (eksik modelleri kur)'))
             actions.add(navButton('⟳ Yenile', { render() }))
             def runBtn = navButton('Karşılaştır ▶', {
                 persistFields()

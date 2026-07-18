@@ -368,6 +368,20 @@ def navButton = { String text, Closure action, String tooltip = null ->
 }
 def busyBar = { -> def pb = new javafx.scene.control.ProgressBar(); pb.setProgress(-1.0); pb.setMaxWidth(Double.MAX_VALUE); return pb }
 def copyToClipboard = { String txt -> def cb = javafx.scene.input.Clipboard.getSystemClipboard(); def content = new javafx.scene.input.ClipboardContent(); content.putString(txt ?: ""); cb.setContent(content) }
+// Python ortamı kurulu değilse: Atölye Python ortam yöneticisini kendi penceresinde aç.
+def launchBundledScript = { String resourceName ->
+    new Thread({
+        try {
+            def url = null
+            try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + resourceName) } catch (Throwable t) {}
+            if (url == null) url = this.getClass().getResource('/scripts/' + resourceName)
+            if (url == null) { javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri & temel modeller → Atölye Python ortam yöneticisi') }; return }
+            def cl = this.getClass().getClassLoader()
+            try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
+            new GroovyShell(cl).evaluate(url.getText('UTF-8'), resourceName)
+        } catch (Throwable t) { javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) } }
+    } as Runnable).start()
+}
 
 def runLog = new StringBuilder()
 def logFileRef = new java.util.concurrent.atomic.AtomicReference(null)
@@ -522,7 +536,7 @@ render = { ->
         addGuidance('Bu modül ESKİ fastai 1.0.61 ortamını (env id: midog-retinanet-legacy, CPU) gerektirir.\nEksik/geçersiz:\n  • ' + (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
             '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi → "MIDOG DA-RetinaNet (eski, CPU)".\n' +
             'Köprü betiği: handson/python/midog/retinanet_runner.py\n\n⚠ Bu eski model FCOS ile AŞILMIŞTIR; modern GPU\'lu tespit için MIDOG25 FCOS sihirbazını kullanın.')
-        actions.add(navButton('Kapat', { stage.close() })); actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
+        actions.add(navButton('Kapat', { stage.close() })); actions.add(navButton('⚙ Python ortamını kur/aç', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') }, 'Atölye Python ortam yöneticisini açar → "MIDOG DA-RetinaNet"i kurun')); actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
         title.setText('Mitoz tespiti (RetinaNet) — yapılandırma')
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
@@ -554,6 +568,7 @@ render = { ->
         addWarnLabel('⚠ ESKİ/DOĞRULANMAMIŞ ORTAM: fastai 1.0.61 + eski torch stack. Modern torch/GPU ile uyumsuzluk olası (ortam import bile edemeyebilir); çözülürse GPU kullanabilir ama kırılgan/yavaştır. Aşılmış model — MIDOG25 FCOS önerilir.')
         addGuidance('Model: 2021/22 MIDOG referans DA-RetinaNet, sabit. "Modeli yerel indir" referans deposunun KODUNU + ağırlığını v1 yayınından çeker (LİSANS yok → araştırma/eğitim). Hedef çözünürlük: ROI bu µm/px\'e örneklenir (varsayılan 0.5). Duyarlılık eşiği: referans 0.64.')
         actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton('⚙ Python ortamı', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') }, 'Atölye Python ortam yöneticisini aç'))
         actions.add(navButton('Modeli yerel indir', { startModelDownload() }, 'Referans depo + RetinaNetDA.pth ağırlığını bir kez indir'))
         actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }, 'retinanet_runner.py selftest'))
         actions.add(navButton('Kaydet ▶', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
@@ -598,7 +613,10 @@ render = { ->
             if (!isHE) addWarnLabel('⚠ Görüntü tipi H&E değil (' + typeName + ').')
             if (ci.warn != null) addWarnLabel('⚠ Kalibrasyon: ' + ci.warn)
             boolean canRun = configComplete(cfg) && targets.size() >= 1
-            actions.add(navButton('Kapat', { stage.close() })); actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() })); actions.add(navButton('⟳ Yenile', { render() }))
+            if (!configComplete(cfg)) addWarnLabel('⚠ Python ortamı (midog-retinanet-legacy) kurulu değil — "⚙ Python ortamını kur/aç" ile kurun.')
+            actions.add(navButton('Kapat', { stage.close() }))
+            if (!configComplete(cfg)) actions.add(navButton('⚙ Python ortamını kur/aç', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') }, 'Atölye Python ortam yöneticisini açar'))
+            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() })); actions.add(navButton('⟳ Yenile', { render() }))
             def runBtn = navButton('Bölgede çalıştır ▶', { startRun() }, 'RetinaNet mitoz dedektörünü seçili bölgede çalıştırır (CPU, yavaş)'); runBtn.setDisable(!canRun)
             if (!canRun && targets.size() < 1) addWarnLabel('⚠ Önce en az 1 alan anotasyonu çizin/seçin.')
             actions.add(runBtn)
