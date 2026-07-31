@@ -26,7 +26,7 @@
  * KULLANIM:
  *   1. GrandQC Python ortamını kurun (venv + modeller). Bkz. Ekler → Kalite Kontrol § GrandQC.
  *   2. Bir H&E slaydını açın (yerel diskte).
- *   3. [Extensions → Atölye → Yardımcılar → GrandQC kalite kontrol sihirbazı]
+ *   3. [Extensions → Atölye → Modüller → Doku tespiti → GrandQC modeli (doku & artefakt, Python)]
  *   4. İlk açılışta yapılandırın: python.exe, GrandQC betik dizini, model dizini, MPP.
  *   5. "Komut üret" (kopyala-çalıştır) ya da "Doğrudan çalıştır"; sonra otomatik içe aktarım.
  *
@@ -59,6 +59,23 @@ def GRANDQC_SENTINEL = 'GrandQC KK'           // yeniden-içe-aktarımda idempot
 long PYTHON_TIMEOUT_SECONDS = 600L            // büyük WSI için cömert üst sınır
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
 def MPP_OPTIONS = ['1.0', '1.5', '2.0']
+
+// Ortam doğrulama için Python içe-aktarma testi (çok satırlı -c programı). TEK tırnaklı
+// python literalleri kullanılır → Windows ProcessBuilder çift-tırnak mangling'ini önler
+// (lint Check 17; bkz. yardimci-python-ortam-yoneticisi regresyonu). Yalnız bilgilendirici.
+def PY_DIAG = "import importlib, sys\n" +
+    "print('  python ' + sys.version.split()[0])\n" +
+    "for m in ['numpy', 'cv2', 'torch', 'openslide']:\n" +
+    "    try:\n" +
+    "        importlib.import_module(m)\n" +
+    "        print('  ' + m + ': OK')\n" +
+    "    except Exception as e:\n" +
+    "        print('  ' + m + ': HATA (' + type(e).__name__ + ')')\n" +
+    "try:\n" +
+    "    import torch\n" +
+    "    print('  cuda kullanilabilir: ' + str(torch.cuda.is_available()))\n" +
+    "except Exception:\n" +
+    "    pass\n"
 
 // GrandQC artefakt sınıfları (geojson properties.classification ile eşleşir)
 def CLEAN_CLASS    = 'Temiz doku'
@@ -222,6 +239,31 @@ def findGeoJSON = { slide, manualFolder ->
     return exact
 }
 
+// ── Batch (proje geneli) GeoJSON çözümü: YALNIZ tam ad eşleşmesi ─────────────
+// Bulanık yedek (startsWith / tek-dosya) tek-slayt kolaylığıdır; proje döngüsünde
+// paylaşılan bir klasörde bir slaydın GeoJSON'unu YANLIŞ slayda yazma (ve kaydetme)
+// riskini taşır. Batch bu yüzden asla bulanık eşleşme kullanmaz.
+def exactGeoJSON = { slide, folder ->
+    if (folder == null || slide?.name == null) return null
+    def f = new File(new File(folder.toString(), 'geojson_qc'), slide.name + '.geojson')
+    return f.isFile() ? f : null
+}
+
+// GrandQC'nin main.py'sinin ürettiği slayt-başı istatistik raporu (salt-okur):
+//   <output_dir>/report_<klasörAdı>_<baş>_<son>_stats_per_slide.txt
+// output_dir = kapsam klasörü; en yeni eşleşeni döndür (yoksa null).
+def findReportFile = { String folder ->
+    if (folder == null) return null
+    def dir = new File(folder)
+    if (!dir.isDirectory()) return null
+    def cand = dir.listFiles({ d, n ->
+        def ln = n.toLowerCase(java.util.Locale.ROOT)
+        ln.startsWith('report_') && ln.endsWith('stats_per_slide.txt')
+    } as java.io.FilenameFilter)
+    if (cand == null || cand.length == 0) return null
+    return cand.toList().sort { -it.lastModified() }.first()
+}
+
 // ── Komut üretimi ───────────────────────────────────────────────────────────
 def tissueCmd = { cfg, folder ->
     [cfg.python, new File(cfg.scripts, 'wsi_tis_detect.py').getAbsolutePath(),
@@ -287,24 +329,55 @@ def ensureClass = { String name ->
 }
 
 // ── GeoJSON içe aktarma (yardimci-tahmin-iceaktar kalıbından) ───────────────
-def importGeoJSON = { File geojsonFile ->
+// hierarchy: hedef hiyerarşi (canlı görüntü ya da proje girdisi) — QP.* yerine bunu
+// kullanır; böylece hem tek slayt hem proje geneli (batch) yol aynı kodu paylaşır.
+def importGeoJSON = { File geojsonFile, hierarchy ->
     if (geojsonFile == null || !geojsonFile.isFile())
         return [ok: false, error: 'GeoJSON bulunamadı:\n' + (geojsonFile?.getAbsolutePath() ?: '(yol yok)') +
                 '\n\nÖnce GrandQC hattını çalıştırın (Komut üret / Doğrudan çalıştır).']
     int minVertex = 4
     def plane = ImagePlane.getDefaultPlane()
-    def ringToRoi = { ring ->
+    def gf = new org.locationtech.jts.geom.GeometryFactory()
+    // Bir GeoJSON halkasını (linear ring) kapalı JTS Coordinate[] dizisine çevir; geçersizse null.
+    def ringCoords = { ring ->
         if (ring == null || ring.size() < minVertex) return null
-        def pts = new ArrayList<Point2>(ring.size())
+        def cs = new ArrayList<org.locationtech.jts.geom.Coordinate>(ring.size() + 1)
         for (int i = 0; i < ring.size(); i++) {
             def c = ring.get(i).getAsJsonArray()
             if (c.size() < 2) return null
             double x = c.get(0).getAsDouble(); double y = c.get(1).getAsDouble()
             if (!Double.isFinite(x) || !Double.isFinite(y)) return null
-            pts.add(new Point2(x, y))
+            cs.add(new org.locationtech.jts.geom.Coordinate(x, y))
         }
-        if (pts.size() < minVertex) return null
-        return ROIs.createPolygonROI(pts, plane)
+        if (cs.size() < minVertex) return null
+        def f = cs.get(0); def l = cs.get(cs.size() - 1)      // JTS LinearRing kapalı olmalı (ilk == son)
+        if (f.x != l.x || f.y != l.y) cs.add(new org.locationtech.jts.geom.Coordinate(f.x, f.y))
+        if (cs.size() < 4) return null
+        return cs.toArray(new org.locationtech.jts.geom.Coordinate[0])
+    }
+    // Bir GeoJSON poligonunu (halka 0 = dış kabuk, halka 1..n = DELİKLER) delikleri KORUYARAK JTS Polygon'a çevir.
+    // (Eski sürüm yalnız dış kabuğu alıp delikleri düşürüyordu → alanlar delik kadar şişiyordu.)
+    def polyFromRingArray = { ringArr ->
+        if (ringArr == null || ringArr.size() == 0) return null
+        def shellC
+        try { shellC = ringCoords(ringArr.get(0).getAsJsonArray()) } catch (Throwable t) { return null }   // kabuk dizisi değilse: bu poligonu at
+        if (shellC == null) return null
+        org.locationtech.jts.geom.LinearRing shell
+        try { shell = gf.createLinearRing(shellC) } catch (Throwable t) { return null }
+        def holes = new ArrayList<org.locationtech.jts.geom.LinearRing>()
+        for (int i = 1; i < ringArr.size(); i++) {
+            // Bozuk bir delik halkası TÜM içe aktarımı iptal etmesin — yalnız o deliği atla.
+            try {
+                def hc = ringCoords(ringArr.get(i).getAsJsonArray())
+                if (hc == null) continue
+                holes.add(gf.createLinearRing(hc))
+            } catch (Throwable t) {}
+        }
+        try { return gf.createPolygon(shell, holes.toArray(new org.locationtech.jts.geom.LinearRing[0])) }
+        catch (Throwable t) { return null }
+    }
+    def polyToRoi = { poly ->
+        try { return qupath.lib.roi.GeometryTools.geometryToROI(poly, plane) } catch (Throwable t) { return null }
     }
     def classNameOf = { feature ->
         if (!feature.has('properties') || feature.get('properties').isJsonNull()) return 'Background'
@@ -326,32 +399,36 @@ def importGeoJSON = { File geojsonFile ->
             if (!root.has('features'))
                 return [ok: false, error: "Geçersiz GeoJSON: 'features' dizisi yok (FeatureCollection bekleniyor)."]
             root.getAsJsonArray('features').each { fe ->
+              // Bozuk tek bir özellik TÜM dosyanın içe aktarımını iptal etmesin: say ve devam et.
+              try {
                 def feature = fe.getAsJsonObject()
                 if (!feature.has('geometry') || feature.get('geometry').isJsonNull()) { skipped++; return }
                 def geom = feature.getAsJsonObject('geometry')
                 if (!geom.has('type') || !geom.has('coordinates')) { skipped++; return }
                 String gt = geom.get('type').getAsString()
-                def rings = []
+                def polys = []   // bu özelliğin JTS poligonları (delikler dahil)
                 if (gt == 'Polygon') {
-                    def coords = geom.getAsJsonArray('coordinates')
-                    if (coords != null && coords.size() > 0) rings << coords.get(0).getAsJsonArray()
+                    def p = polyFromRingArray(geom.getAsJsonArray('coordinates'))
+                    if (p != null) polys << p
                 } else if (gt == 'MultiPolygon') {
                     geom.getAsJsonArray('coordinates')?.each { poly ->
-                        def rr = poly.getAsJsonArray()
-                        if (rr != null && rr.size() > 0) rings << rr.get(0).getAsJsonArray()
+                        def p = polyFromRingArray(poly.getAsJsonArray())
+                        if (p != null) polys << p
                     }
                 } else { skipped++; return }
+                if (polys.isEmpty()) { skipped++; return }   // hiç geçerli JTS poligonu üretilemedi
                 String cn = classNameOf(feature)
                 def pc = ensureClass(cn)
-                rings.each { ring ->
-                    def roi = ringToRoi(ring)
-                    if (roi == null || roi.isEmpty()) { skipped++; return }
+                polys.each { poly ->
+                    def roi = polyToRoi(poly)
+                    if (roi == null || roi.isEmpty()) { skipped++; return }   // parse edildi ama ROI'ye çevrilemedi → say (sessiz düşürme yok)
                     def ann = PathObjects.createAnnotationObject(roi, pc)
                     ann.setName(GRANDQC_SENTINEL)
                     ann.setLocked(true)
                     newAnns << ann
                     counts[cn] = (counts.getOrDefault(cn, 0)) + 1
                 }
+              } catch (Throwable feErr) { skipped++ }
             }
         } finally { reader.close() }
     } catch (Throwable t) {
@@ -359,15 +436,42 @@ def importGeoJSON = { File geojsonFile ->
     }
     if (newAnns.isEmpty())
         return [ok: false, error: 'GeoJSON dosyasında geçerli Polygon/MultiPolygon özelliği bulunamadı (atlanan: ' + skipped + ').']
-    // Önceki içe aktarımı temizle → idempotent
-    QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() == GRANDQC_SENTINEL }, false)
-    QP.addObjects(newAnns)
-    QP.fireHierarchyUpdate()
+    // Önceki içe aktarımı temizle → idempotent (verilen hiyerarşi üzerinde)
+    hierarchy.removeObjects(hierarchy.getAnnotationObjects().findAll { it.getName() == GRANDQC_SENTINEL }, false)
+    hierarchy.addObjects(newAnns)
+    hierarchy.fireHierarchyUpdate()
     return [ok: true, annotations: newAnns, counts: counts, skipped: skipped, file: geojsonFile]
 }
 
+// ── Parça (bağlı bileşen) istatistiği — JTS geometrisinden; salt sayı/alan ──
+// Bir ROI'nin kaç ayrık parçadan oluştuğunu (bağlı bileşen) ve parça alanlarını verir.
+// difference() sonucu dejenere sliver'lar (çizgi/nokta, alan≈0) üretebildiğinden
+// alanı ≤1 px² olan bileşenler sayılmaz. Yalnız ölçü; derece/eşik/yorum ÜRETMEZ.
+def fragmentStats = { roi, double pw, double ph, boolean calibrated ->
+    def out = [count: 0, maxMm2: Double.NaN, minMm2: Double.NaN, meanMm2: Double.NaN]
+    if (roi == null) return out
+    org.locationtech.jts.geom.Geometry g = null
+    try { g = roi.getGeometry() } catch (Throwable t) { return out }
+    if (g == null) return out
+    def areas = []
+    int n = g.getNumGeometries()
+    for (int i = 0; i < n; i++) {
+        double aPx
+        try { aPx = g.getGeometryN(i).getArea() } catch (Throwable t) { aPx = 0.0d }
+        if (aPx <= 1.0d) continue
+        areas << (calibrated ? (aPx * pw * ph / 1_000_000.0d) : aPx)
+    }
+    out.count = areas.size()
+    if (!areas.isEmpty() && calibrated) {
+        out.maxMm2 = areas.max(); out.minMm2 = areas.min()
+        out.meanMm2 = (areas.sum() as double) / areas.size()
+    }
+    return out
+}
+
 // ── Temiz doku = doku − artefaktlar ─────────────────────────────────────────
-def computeCleanTissue = { imageData, importedAnns ->
+// hierarchy: hedef hiyerarşi (canlı ya da proje girdisi) — QP.* yerine kullanılır.
+def computeCleanTissue = { imageData, importedAnns, hierarchy ->
     def tissueAnns   = importedAnns.findAll { it.getPathClass()?.getName() == TISSUE_CLASS }
     def artifactAnns = importedAnns.findAll { ARTIFACT_CLASSES.contains(it.getPathClass()?.getName()) }
     if (tissueAnns.isEmpty())
@@ -392,14 +496,19 @@ def computeCleanTissue = { imageData, importedAnns ->
     def cleanAnn = PathObjects.createAnnotationObject(cleanRoi, ensureClass(CLEAN_CLASS))
     cleanAnn.setName(GRANDQC_SENTINEL)
     cleanAnn.setLocked(true)
-    QP.addObjects([cleanAnn])
-    QP.fireHierarchyUpdate()
+    hierarchy.addObjects([cleanAnn])
+    hierarchy.fireHierarchyUpdate()
 
     double tissueMm2 = areaMm2(tissueUnion)
     double cleanMm2  = areaMm2(cleanRoi)
     double artMm2    = (!Double.isNaN(tissueMm2) && !Double.isNaN(cleanMm2)) ? Math.max(0.0d, tissueMm2 - cleanMm2) : Double.NaN
     double artPct    = (tissueMm2 > 0 && !Double.isNaN(artMm2)) ? (artMm2 / tissueMm2 * 100.0d) : Double.NaN
-    return [ok: true, calibrated: calibrated, tissueMm2: tissueMm2, cleanMm2: cleanMm2, artMm2: artMm2, artPct: artPct]
+    // Parçalanma (bağlı bileşen) — salt sayı/alan; derece/eşik yok.
+    def tFrag = fragmentStats(tissueUnion, pw, ph, calibrated)
+    def cFrag = fragmentStats(cleanRoi, pw, ph, calibrated)
+    return [ok: true, calibrated: calibrated, tissueMm2: tissueMm2, cleanMm2: cleanMm2, artMm2: artMm2, artPct: artPct,
+            tissueFrag: tFrag.count, cleanFrag: cFrag.count,
+            fragMaxMm2: tFrag.maxMm2, fragMinMm2: tFrag.minMm2, fragMeanMm2: tFrag.meanMm2]
 }
 
 // ── Özet metni ──────────────────────────────────────────────────────────────
@@ -416,7 +525,7 @@ def buildResultText = { slide, imp, clean ->
         total += n
     }
     sb << String.format(java.util.Locale.US, "  %-30s : %,d%n", '(toplam)', total)
-    sb << String.format(java.util.Locale.US, "  atlanan özellik : %,d%n%n", (imp.skipped ?: 0))
+    sb << String.format(java.util.Locale.US, "  atlanan geometri: %,d%n%n", (imp.skipped ?: 0))
     if (clean != null && clean.ok) {
         sb << "Temiz doku (Temiz doku) eklendi.\n"
         if (clean.calibrated) {
@@ -425,6 +534,13 @@ def buildResultText = { slide, imp, clean ->
             sb << String.format(java.util.Locale.US, "  Artefakt alanı   : %.3f mm² (doku içi %.1f%%)%n", clean.artMm2, clean.artPct)
         } else {
             sb << "  (Görüntü kalibre değil — alanlar mm² olarak verilemedi.)\n"
+        }
+        if (clean.tissueFrag != null) {
+            sb << String.format(java.util.Locale.US, "  Doku parça sayısı: %,d   (temiz doku parçası: %,d)%n",
+                (clean.tissueFrag ?: 0), (clean.cleanFrag ?: 0))
+            if (clean.calibrated && (clean.tissueFrag ?: 0) > 0 && !Double.isNaN(clean.fragMeanMm2))
+                sb << String.format(java.util.Locale.US, "  Parça alanı (mm²): en büyük %.3f · en küçük %.3f · ortalama %.3f%n",
+                    clean.fragMaxMm2, clean.fragMinMm2, clean.fragMeanMm2)
         }
         sb << "\nSonraki analiz modüllerini bu \"Temiz doku\" anotasyonuyla sınırlayabilirsiniz.\n"
     } else {
@@ -455,11 +571,12 @@ if (isHeadless) {
 }
 
 // ── Durum makinesi ──────────────────────────────────────────────────────────
-// CONFIG_INCOMPLETE | CONFIG | READY | CMD_READY | RUNNING | BUSY | RESULT | ERROR
+// CONFIG_INCOMPLETE | CONFIG | READY | CMD_READY | RUNNING | BUSY | RESULT | REPORT | DIAG | ERROR
 def stage = null
 def step           = new java.util.concurrent.atomic.AtomicReference('READY')
 def alwaysTop      = new java.util.concurrent.atomic.AtomicBoolean(true)
 def cancelledRef   = new java.util.concurrent.atomic.AtomicBoolean(false)
+def batchBusyRef   = new java.util.concurrent.atomic.AtomicBoolean(false)   // proje-geneli içe aktarım sürüyor mu (BUSY'de İptal butonu için)
 def processRef     = new java.util.concurrent.atomic.AtomicReference(null)
 def logAreaRef     = new java.util.concurrent.atomic.AtomicReference(null)
 def runPhaseRef    = new java.util.concurrent.atomic.AtomicReference('')
@@ -467,6 +584,10 @@ def busyLabelRef   = new java.util.concurrent.atomic.AtomicReference('')
 def cmdTextRef     = new java.util.concurrent.atomic.AtomicReference('')
 def resultTextRef  = new java.util.concurrent.atomic.AtomicReference('')
 def errorTextRef   = new java.util.concurrent.atomic.AtomicReference('')
+def resultFolderRef= new java.util.concurrent.atomic.AtomicReference(null)   // tek-slayt sonucu: rapor bu klasörde aranır (batch'te null)
+def reportTextRef  = new java.util.concurrent.atomic.AtomicReference('')     // REPORT durumu metni
+def reportPathRef  = new java.util.concurrent.atomic.AtomicReference(null)   // dışa aktarım için rapor dosyası
+def diagTextRef    = new java.util.concurrent.atomic.AtomicReference('')     // DIAG durumu metni
 // CONFIG düzenleme alanları (Kaydet bunları okur)
 def pyFieldRef     = new java.util.concurrent.atomic.AtomicReference(null)
 def scriptsFieldRef= new java.util.concurrent.atomic.AtomicReference(null)
@@ -507,22 +628,183 @@ def effectiveFolder = { slide ->
 def runImportClean = { slide, manualFolder ->
     busyLabelRef.set('GeoJSON içe aktarılıyor…'); step.set('BUSY'); render()
     def worker = new Thread({
+        def curData0 = QP.getCurrentImageData()
+        if (curData0 == null) {
+            javafx.application.Platform.runLater { errorTextRef.set('Açık görüntü yok — içe aktarım için bir slayt açın.'); step.set('ERROR'); render() }
+            return
+        }
+        // Kimlik denetimi: pencere kipsiz (Modality.NONE) ve "Doğrudan çalıştır" koşusu dakikalarca
+        // sürebilir; bu arada kullanıcı açık slaydı değiştirebilir. Yakalanan `slide` ≠ şu an açık
+        // görüntü ise YANLIŞ hiyerarşiye yazma (batch'teki getID denetiminin tek-slayt karşılığı).
+        def curSlide0 = resolveSlide(curData0)
+        boolean sameSlide = (slide.file != null && curSlide0.file != null) ?
+            (slide.file.getAbsolutePath() == curSlide0.file.getAbsolutePath()) :
+            (slide.name == curSlide0.name)
+        if (!sameSlide) {
+            javafx.application.Platform.runLater {
+                errorTextRef.set('Açık görüntü değişti — içe aktarım "' + slide.name + '" için başlatıldı ama şu an "' + curSlide0.name + '" açık.\n\n"' + slide.name + '" slaydını yeniden açıp tekrar deneyin.')
+                step.set('ERROR'); render()
+            }
+            return
+        }
         def geojson = findGeoJSON(slide, manualFolder)
-        def imp = importGeoJSON(geojson)
+        def imp = importGeoJSON(geojson, curData0.getHierarchy())
         if (!imp.ok) {
             javafx.application.Platform.runLater { errorTextRef.set(imp.error); step.set('ERROR'); render() }
             return
         }
         javafx.application.Platform.runLater { busyLabelRef.set('Temiz doku hesaplanıyor…'); render() }
         def clean
-        try { clean = computeCleanTissue(QP.getCurrentImageData(), imp.annotations) }
+        try { clean = computeCleanTissue(curData0, imp.annotations, curData0.getHierarchy()) }
         catch (Throwable t) { clean = [ok: false, error: (t.getMessage() ?: t.getClass().getSimpleName())] }
         javafx.application.Platform.runLater {
             try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {}
+            // Tek-slayt: istatistik raporu kapsam klasöründe (main.py output_dir) aranır.
+            resultFolderRef.set(manualFolder?.toString()?.trim() ? manualFolder.toString().trim() : slide.folder)
             resultTextRef.set(buildResultText(slide, imp, clean))
             step.set('RESULT'); render()
         }
     }, 'AtolyeGrandQC-Import')
+    worker.setDaemon(true); worker.start()
+}
+
+// ── Kısa yardımcı süreç (ortam doğrulama için) — birleşik çıktıyı toplar ─────
+def runQuick = { List cmd, long tSec ->
+    def pb = new ProcessBuilder(cmd); pb.redirectErrorStream(true)
+    def proc
+    try { proc = pb.start() }
+    catch (Throwable e) { return [ok: false, out: 'başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    def sb = new StringBuilder()
+    try {
+        def reader = new java.io.BufferedReader(new java.io.InputStreamReader(proc.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))
+        String line; while ((line = reader.readLine()) != null) { sb.append(line).append('\n') }
+        reader.close()
+    } catch (Throwable ignore) {}
+    boolean fin
+    try { fin = proc.waitFor(tSec, java.util.concurrent.TimeUnit.SECONDS) }
+    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, out: sb.toString() + '(kesildi)'] }
+    if (!fin) { proc.destroyForcibly(); return [ok: false, out: sb.toString() + '(zaman aşımı)'] }
+    return [ok: (proc.exitValue() == 0), out: sb.toString()]
+}
+
+// ── Ön uçuş: ortam doğrulama (python + paketler + model dosyaları) — SALT bilgi ──
+def runDiag = { ->
+    def cfg = loadConfig()
+    busyLabelRef.set('Ortam doğrulanıyor…'); step.set('BUSY'); render()
+    def worker = new Thread({
+        def sb = new StringBuilder()
+        sb << "GrandQC ORTAM DOĞRULAMA\n"
+        sb << "═══════════════════════════════\n\n"
+        def py = cfg.python
+        if (!py?.trim() || !(new File(py)).isFile()) {
+            sb << "✗ python.exe : ayarlı değil ya da bulunamadı\n"
+        } else {
+            sb << "✓ python.exe : " << py << "\n"
+            def v = runQuick([py, '--version'], 20L)
+            sb << "  sürüm : " << ((v.out ?: '').trim() ?: '(okunamadı)') << "\n\n"
+            sb << "Paketler / cihaz (import testi, ~torch soğuk başlatma nedeniyle biraz sürebilir):\n"
+            def imp = runQuick([py, '-c', PY_DIAG], 120L)
+            (imp.out ?: '').readLines().each { sb << it << "\n" }
+        }
+        def md = cfg.modelDir?.trim() ? new File(cfg.modelDir) : (cfg.scripts?.trim() ? new File(cfg.scripts, 'models') : null)
+        sb << "\n"
+        if (md == null) {
+            sb << "✗ model dizini belirsiz (betik/model dizini ayarlı değil)\n"
+        } else {
+            def countPth = { File d -> (d.isDirectory() ? (((d.listFiles({ f, n -> n.toLowerCase(java.util.Locale.ROOT).endsWith('.pth') } as java.io.FilenameFilter))?.length) ?: 0) : 0) }
+            int td = countPth(new File(md, 'td')); int qc = countPth(new File(md, 'qc'))
+            sb << ((td > 0 && qc > 0) ? "✓ " : "✗ ") << String.format(java.util.Locale.US, "model dosyaları : models/td %d .pth · models/qc %d .pth%n", td, qc)
+        }
+        sb << "\nBu kontrol yalnız bilgilendiricidir; çalıştırmayı engellemez.\n"
+        sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+        def txt = sb.toString()
+        javafx.application.Platform.runLater { diagTextRef.set(txt); step.set('DIAG'); render() }
+    }, 'AtolyeGrandQC-Diag')
+    worker.setDaemon(true); worker.start()
+}
+
+// ── Proje geneli içe aktarım (batch) — HER girdinin KENDİ GeoJSON'unu içe aktarır ──
+// tiatoolbox-bolge kalıbı: canlı veriyi yalnız gerçekten o girdiyse kullan (getEntry/getID),
+// diğerlerini readImageData → import → temiz doku → saveImageData → server.close().
+// GeoJSON çözümü YALNIZ tam ad (exactGeoJSON) — yanlış slayda yazmayı önler.
+def runBatchImport = { manualFolder ->
+    def project = QP.getProject()
+    if (project == null) { errorTextRef.set('Proje açık değil — proje geneli içe aktarım için bir QuPath projesi açın.'); step.set('ERROR'); render(); return }
+    def entries = project.getImageList()
+    if (entries == null || entries.isEmpty()) { errorTextRef.set('Projede görüntü yok.'); step.set('ERROR'); render(); return }
+    cancelledRef.set(false); batchBusyRef.set(true)   // cancelledRef Python-iptaliyle paylaşılır → burada sıfırla
+    busyLabelRef.set('Proje geneli GeoJSON içe aktarılıyor…'); step.set('BUSY'); render()
+    def worker = new Thread({
+        int okN = 0, skipN = 0, failN = 0
+        def lines = []
+        boolean currentTouched = false
+        boolean cancelled = false
+        int idx = 0
+        for (entry in entries) {
+            idx++
+            if (cancelledRef.get()) { cancelled = true; lines << '  ⏹ (iptal edildi — kalan görüntüler işlenmedi)'; break }
+            def nm = null
+            try { nm = entry.getImageName() } catch (Throwable ignore) {}
+            if (nm == null) nm = ('görüntü ' + idx)
+            javafx.application.Platform.runLater { busyLabelRef.set('Proje ' + idx + '/' + entries.size() + ' — ' + nm + '…'); render() }
+            // Canlı veriyi YALNIZ gerçekten bu girdiyse kullan (referans yakalandıktan sonra sabittir).
+            def liveData = null
+            try {
+                def liveCur = QP.getCurrentImageData()
+                if (liveCur != null) {
+                    def liveEntry = project.getEntry(liveCur)
+                    if (liveEntry != null && liveEntry.getID() != null && liveEntry.getID() == entry.getID()) liveData = liveCur
+                }
+            } catch (Throwable ignore) {}
+            def data = null; boolean opened = false
+            try {
+                data = (liveData != null) ? liveData : entry.readImageData()
+                opened = (liveData == null)
+                def slide = resolveSlide(data)
+                // SADECE tam ad: önce slaydın kendi klasörü, sonra (varsa) elle kapsam klasörü.
+                def gj = exactGeoJSON(slide, slide.folder)
+                if (gj == null && manualFolder != null && manualFolder.toString().trim())
+                    gj = exactGeoJSON(slide, manualFolder.toString().trim())
+                if (gj == null) { skipN++; lines << ('  • ' + nm + ' — atlandı (GeoJSON yok)'); continue }
+                def hier = data.getHierarchy()
+                def imp = importGeoJSON(gj, hier)
+                if (!imp.ok) { failN++; lines << ('  ✗ ' + nm + ' — ' + (imp.error ?: '').readLines().take(1).join(' ')); continue }
+                // Temiz doku başarısız olsa bile doku/artefakt anotasyonları KAYDEDİLİR (tek-slayt yolu da böyle).
+                def clean = null
+                try { clean = computeCleanTissue(data, imp.annotations, hier) }
+                catch (Throwable ct) { clean = [ok: false, error: (ct.getMessage() ?: ct.getClass().getSimpleName())] }
+                boolean saved = true
+                try { entry.saveImageData(data) }
+                catch (Throwable se) { saved = false; failN++; lines << ('  ✗ ' + nm + ' — kaydedilemedi: ' + (se.getMessage() ?: se.getClass().getSimpleName())) }
+                if (saved) {
+                    okN++
+                    def cleanNote = (clean != null && !clean.ok) ? (' [Temiz doku üretilemedi: ' + (clean.error ?: '-') + ']') : ''
+                    lines << ('  ✓ ' + nm + ' — ' + imp.annotations.size() + ' nesne' + cleanNote)
+                    if (liveData != null) currentTouched = true
+                }
+            } catch (Throwable t) {
+                failN++; lines << ('  ✗ ' + nm + ' — ' + (t.getMessage() ?: t.getClass().getSimpleName()))
+            } finally {
+                try { if (opened && data != null) data.getServer()?.close() } catch (Throwable ignore) {}
+            }
+        }
+        batchBusyRef.set(false)
+        javafx.application.Platform.runLater {
+            if (currentTouched) { try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {} }
+            def rb = new StringBuilder()
+            rb << "GrandQC — PROJE GENELİ İÇE AKTARIM" << (cancelled ? " (İPTAL EDİLDİ)" : "") << "\n"
+            rb << "═══════════════════════════════\n\n"
+            rb << String.format(java.util.Locale.US, "Görüntü: %,d   içe aktarıldı: %,d   atlandı: %,d   hata: %,d%n%n", entries.size(), okN, skipN, failN)
+            lines.each { rb << it << "\n" }
+            rb << "\nHer görüntünün GeoJSON'u KENDİ klasöründeki geojson_qc/ içinde TAM ADLA arandı.\n"
+            rb << (currentTouched ? "Açık slaydın TÜM güncel hâli diske kaydedildi (yalnız GrandQC nesneleri değil); görüntüleyici yenilendi.\n"
+                                  : "Açık slaytta değişiklik olduysa görmek için slaydı yeniden açın.\n")
+            rb << "\nGrandQC çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın.\n"
+            rb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+            resultFolderRef.set(null)   // batch: çok klasör olabilir → tek rapor butonu gösterme
+            resultTextRef.set(rb.toString()); step.set('RESULT'); render()
+        }
+    }, 'AtolyeGrandQC-BatchImport')
     worker.setDaemon(true); worker.start()
 }
 
@@ -903,6 +1185,7 @@ render = { ->
         center.getChildren().add(grid)
         addGuidance('Betik dizini wsi_tis_detect.py + main.py içermeli. Model dizini doku/artefakt .pth dosyalarını içerir.\nCihaz: GrandQC betikleri cihazı kaynakta sabitler; seçiminiz çalıştırmadan önce .py dosyalarına yamalanır. CUDA yoksa cpu seçin (yavaş ama çalışır).')
         actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton('Ortamı doğrula', { runDiag() }, 'python + paketler (torch/cv2/openslide) + model dosyalarını kontrol eder (yalnız bilgi)'))
         actions.add(navButton('Kaydet ▶', { saveConfig() }))
     } else if (cur == 'READY') {
         if (imageData == null) {
@@ -946,6 +1229,19 @@ render = { ->
             def runBtn = navButton('Doğrudan çalıştır ▶', { startDirectRun(slide) }, 'Python hattını QuPath içinden çalıştırır (venv gerekli)')
             runBtn.setDisable(!canRun)
             actions.add(runBtn)
+            // Proje geneli içe aktarım — Python/model gerektirmez (yalnız var olan GeoJSON'u okur).
+            // Yüksek etki alanı (tüm proje + diske kayıt) → onay iste.
+            if (QP.getProject() != null)
+                actions.add(navButton('Proje geneli içe aktar', {
+                    int nImg = 0
+                    try { nImg = QP.getProject().getImageList().size() } catch (Throwable ignore) {}
+                    boolean go = Dialogs.showConfirmDialog('Proje geneli içe aktarım',
+                        'Projedeki ' + nImg + ' görüntünün her biri için var olan GrandQC GeoJSON\'u içe aktarılacak:\n\n' +
+                        '• Her görüntüdeki önceki "GrandQC KK" anotasyonları (varsa elle düzeltmeler dahil) silinip yeniden üretilir.\n' +
+                        '• Sonuç HER görüntü için diske KAYDEDİLİR (geri alınamaz); açık slaydın tüm güncel hâli de kaydedilir.\n\n' +
+                        'Devam edilsin mi?')
+                    if (go) runBatchImport(manualFolderRef.get())
+                }, 'Projedeki TÜM görüntüler için her birinin KENDİ klasöründeki GeoJSON çıktısını içe aktarır ve diske kaydeder (tam ad eşleşmesi)'))
         }
     } else if (cur == 'CMD_READY') {
         title.setText('GrandQC komut satırları')
@@ -976,12 +1272,48 @@ render = { ->
         title.setText(busyLabelRef.get())
         addGuidance('Lütfen bekleyin…')
         center.getChildren().add(busyBar())
+        // Proje geneli içe aktarım uzun sürebilir → durdurma imkânı (işlenmiş görüntüler kaydedilmiş kalır).
+        if (batchBusyRef.get())
+            actions.add(navButton('İptal et', { cancelledRef.set(true) }, 'Proje geneli içe aktarımı durdur — o ana dek işlenen görüntüler kaydedilmiştir'))
     } else if (cur == 'RESULT') {
         title.setText('Tamamlandı ✅')
         addMonoArea(resultTextRef.get())
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
+        // İstatistik raporu yalnız tek-slayt sonucunda (kapsam klasörü bilinir) gösterilir.
+        def rf = resultFolderRef.get()
+        def reportFile = (rf != null) ? findReportFile(rf.toString()) : null
+        if (reportFile != null)
+            actions.add(navButton('Rapor görüntüle', {
+                String rtxt
+                try { rtxt = reportFile.getText('UTF-8') }
+                catch (Throwable t) { rtxt = 'Rapor okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName()) }
+                reportPathRef.set(reportFile)
+                reportTextRef.set('Dosya: ' + reportFile.getAbsolutePath() + '\n\n' + rtxt)
+                step.set('REPORT'); render()
+            }, 'GrandQC per-slayt istatistik raporu (büyütme/MPP, karo sayısı, boyut, süre)'))
         actions.add(navButton('↻ Yeniden çalıştır', { step.set('READY'); render() }))
+    } else if (cur == 'REPORT') {
+        title.setText('GrandQC istatistik raporu')
+        addGuidance('main.py çıktısı: slayt başına büyütme/MPP, karo sayıları, görüntü boyutu ve işlem süresi. Salt-okur — kalite notu/derece üretmez.')
+        addMonoArea(reportTextRef.get())
+        actions.add(navButton('◀ Geri', { step.set('RESULT'); render() }))
+        actions.add(navButton('Kopyala', { copyToClipboard(reportTextRef.get()) }))
+        actions.add(navButton('Dışa aktar…', {
+            def src = reportPathRef.get()
+            def suggested = new File(src != null ? src.getName() : 'grandqc_rapor.txt')
+            def dest = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, 'Raporu kaydet', suggested,
+                new javafx.stage.FileChooser.ExtensionFilter('Metin (*.txt)', '*.txt'))
+            if (dest != null) {
+                try { dest.setText(reportTextRef.get(), 'UTF-8'); Dialogs.showInfoNotification('Rapor kaydedildi', dest.getName()) }
+                catch (Throwable t) { Dialogs.showErrorMessage('Kaydedilemedi', (t.getMessage() ?: t.getClass().getSimpleName())) }
+            }
+        }))
+    } else if (cur == 'DIAG') {
+        title.setText('GrandQC ortam doğrulama')
+        addMonoArea(diagTextRef.get())
+        actions.add(navButton('◀ Geri', { step.set('CONFIG'); render() }))
+        actions.add(navButton('Kopyala', { copyToClipboard(diagTextRef.get()) }))
     } else { // ERROR
         title.setText('Hata')
         addMonoArea(errorTextRef.get())

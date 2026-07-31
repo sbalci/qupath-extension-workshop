@@ -255,6 +255,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("WSI anonimleştirme sihirbazı",         "yardimci-anonim-sihirbaz.groovy"),
             // Proje geneli kilitli özet anotasyon ölçümlerini tek satır/görüntü geniş TSV'ye toplar; salt-okur, açık slayt gerekmez.
             new ScriptEntry("Kohort özet toplayıcı (proje tablosu)", "yardimci-kohort-ozet-topla.groovy", false, false),
+            // GrandQC sentinel anotasyonlarını (doku/temiz/artefakt alan + parça) proje geneli geniş TSV'ye toplar; salt-okur, açık slayt gerekmez.
+            new ScriptEntry("GrandQC kohort KK özeti", "yardimci-grandqc-kohort-ozet.groovy", false, false),
             // Salt-okur koşu manifesti: kimlik + boya vektörleri + sınıf bazlı sayımlar → provenance JSON; açık slayt gerekmez.
             new ScriptEntry("Koşu manifesti (provenance JSON)", "yardimci-kosu-manifesti.groovy", false, false)
         )),
