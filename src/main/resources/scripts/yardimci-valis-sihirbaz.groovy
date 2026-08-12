@@ -31,7 +31,7 @@
  *      yerel venv (Python 3.10 + libvips + Java). Bkz. Kaynaklar → İleri kurulumlar § VALIS.
  *   2. Kaynak (anotasyonlu) ve hedef slaytları AYNI QuPath projesine ekleyin ve
  *      slayt DOSYALARINI ortak bir "çalışma klasörü" altına koyun (Docker tek-kök şartı).
- *   3. [Extensions → Atölye → Yardımcılar → Python köprüleri & temel modeller → VALIS hizalama sihirbazı (Docker/native)]
+ *   3. [Extensions → Atölye → Modüller → Görüntü Hizalama → VALIS (Docker/native)]
  *   4. Yapılandırın, kaynak/hedef slaydı ve warp'lanacak anotasyonu seçin,
  *      "Komut üret" (kopyala-çalıştır) ya da "Doğrudan çalıştır"; sonra sonuçları içe aktarın.
  *
@@ -55,6 +55,11 @@ def VALIS_SENTINEL = 'VALIS'                  // warp'lı içe aktarımda idempo
 def DOCKER_IMAGE   = 'cdgatenbee/valis-wsi'
 def CONTAINER_MOUNT= '/work'                  // çalışma kökü konteynerde buraya bağlanır
 def CROP_OPTIONS   = ['overlap', 'reference', 'all']
+// Warp içe aktarımında ÖLÇEK TUTARLILIK kontrolü (hedef/kaynak anotasyon alanı oranı) — bu bir
+// örtüşme/Dice doğruluk ölçüsü DEĞİLDİR, yalnız ölçek/seviye karışıklığı gibi kaba hataları yakalar
+// (bkz. importWarpedToTarget). Değerler başlangıç sezgiseli; gerçek atölye verisiyle ayarlanabilir.
+double WARP_SCALE_RATIO_MIN = 0.5d
+double WARP_SCALE_RATIO_MAX = 2.0d
 long PYTHON_TIMEOUT_SECONDS = 21600L          // 6 saat: WSI kaydı uzun sürebilir
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
 
@@ -111,8 +116,27 @@ os.environ.setdefault("TORCH_HOME", os.path.join(_ATOLYE_DATA_ROOT, "cache", "to
 os.environ.setdefault("HF_HOME", os.path.join(_ATOLYE_DATA_ROOT, "cache", "huggingface"))
 
 
+_EMIT_PREFIX = [""]  # tek-elemanli degistirilebilir konteyner: cmd_batch her vaka icin buraya
+                      # "[vaka i/n: ad] " yazar (SIRALI calisir - ayni anda tek vaka aktif oldugundan
+                      # her emit() cagrisina (heartbeat/merge/warp alt-fonksiyonlari dahil) TEK YERDEN
+                      # ayirt edici bir onek eklemenin en az mudahaleci yolu; her cagri yerini
+                      # emit_fn parametresiyle degistirmekten kacinir).
+
+
 def emit(msg):
-    print(msg, flush=True)
+    print(_EMIT_PREFIX[0] + msg, flush=True)
+
+
+# Kaba asama isaretleri (yalniz cmd_run'in KENDI kontrol ettigi asamalar - VALIS'in ic
+# adimlarina (rigid/non-rigid/hata-olcumu) BOLUNMEZ, cunku bunlar registrar.register()
+# icinde TEK bloklayici cagridir ve dogrulanmamis ic API varsayimi riskli olur). QuPath
+# tarafi bu satirlari ayristirip bir ilerleme etiketi surer; log akisini DEGISTIRMEZ.
+def _stage_begin(key, label):
+    emit("ASAMA_BASLA: " + key + " | " + label)
+
+
+def _stage_end(key):
+    emit("ASAMA_BITTI: " + key)
 
 
 def _start_heartbeat(label, seconds=20):
@@ -511,6 +535,103 @@ def _merge_slides_composite(registrar, dst_f, level, non_rigid, crop, mode, name
     return ["Kirmizi", "Yesil", "Mavi"]
 
 
+# ── Otomatik referans secimi (YALNIZ OLCUM - kayit YAPMAZ, piksel COZMEZ) ──────────────────
+_WSI_EXTS = (".svs", ".ndpi", ".tif", ".tiff", ".scn", ".mrxs", ".vsi", ".czi")
+
+
+def _slide_dims_and_mpp(path):
+    """Slayt genislik/yukseklik + (varsa) mikron/piksel (mpp) degerlerini BASLIKTAN oku - pyvips
+    sequential-erisimle acar (piksel COZMEZ, agir degil; ayni yaklasim dosyanin baska yerinde
+    Windows best-page yamasinda da kullanilir). MPP okunamazsa (mx/my None) yine de boyut-tabanli
+    kaba alan kestirimi yapilabilir. Basarisizsa None doner."""
+    try:
+        import pyvips
+        vi = pyvips.Image.new_from_file(path, access="sequential")
+        w, h = float(vi.width), float(vi.height)
+        mx = my = None
+        try:
+            if vi.get_typeof("openslide.mpp-x") != 0:
+                mx = float(vi.get("openslide.mpp-x"))
+            if vi.get_typeof("openslide.mpp-y") != 0:
+                my = float(vi.get("openslide.mpp-y"))
+        except Exception:
+            pass
+        return w, h, mx, my
+    except Exception:
+        return None
+
+
+def _pick_reference(image_paths, emit_fn):
+    """Aday slaytlar arasindan OLCUM-TABANLI bir referans (kayit ceker) sec: doku-orani (Otsu esikleme,
+    kucultulmus onizleme uzerinde) x baslik-alani (genislik*yukseklik*mpp_x*mpp_y - farkli mpp'li
+    taramalari adil kiyaslar). Kayit YAPMAZ, piksel COZMEZ (yalniz pyvips thumbnail + baslik okur).
+    Ilk iki adayin skoru YAKINSA (fark < %5) ORB anahtar-nokta yogunlugu ile ayirt eder (yalniz o
+    adaylarda - varsayilan yolu ucuz tutmak icin). Her aday icin bir SATIR loglar (denetlenebilir
+    secim - sessiz kara-kutu degil). Doner: (en_iyi_yol_veya_None, {tam_yol: {olcumler}}) - anahtar
+    TAM YOLDUR (dosya adi degil): iki farkli klasordeki ayni-adli slaytlar anahtari CARPISTIRMASIN
+    diye (sadece log satirlarinda okunabilirlik icin dosya adi kullanilir)."""
+    import numpy as np
+    scores = {}
+    for p in image_paths:
+        info = {"tissue_fraction": None, "score": 0.0, "keypoints": None, "error": None}
+        try:
+            import pyvips
+            thumb = pyvips.Image.thumbnail(p, 512)
+            gray = thumb.colourspace("b-w")
+            arr = np.ndarray(buffer=gray.write_to_memory(), dtype=np.uint8,
+                              shape=[gray.height, gray.width, gray.bands])[:, :, 0]
+            from skimage.filters import threshold_otsu
+            thr = threshold_otsu(arr)
+            tissue_fraction = float(np.mean(arr < thr))  # acik-zemin varsayimi (standart parlak-alan WSI)
+            info["tissue_fraction"] = tissue_fraction
+            dims = _slide_dims_and_mpp(p)
+            if dims:
+                w0, h0, mx, my = dims
+                area_factor = (mx * my) if (mx and my) else 1.0
+                info["score"] = tissue_fraction * w0 * h0 * area_factor
+            else:
+                info["score"] = tissue_fraction  # baslik okunamadi -> yalniz oran (kaba kiyas)
+        except Exception as e:
+            info["error"] = str(e)
+        scores[p] = info
+        emit_fn("  aday: " + os.path.basename(p) + " doku-orani=" +
+                 ("%.3f" % info["tissue_fraction"] if info["tissue_fraction"] is not None else "?") +
+                 " skor=" + ("%.6g" % info["score"]) +
+                 (" (HATA: " + info["error"] + ")" if info["error"] else ""))
+    ranked = [p for p in image_paths if p in scores]
+    ranked.sort(key=lambda p: scores[p]["score"], reverse=True)
+    if not ranked:
+        return None, scores
+    if len(ranked) >= 2:
+        s0 = scores[ranked[0]]["score"]
+        s1 = scores[ranked[1]]["score"]
+        if s0 > 0 and abs(s0 - s1) / s0 < 0.05:
+            emit_fn("  ilk iki aday skoru yakin (fark < %5) - anahtar-nokta yogunlugu ile ayirt ediliyor...")
+            for p in (ranked[0], ranked[1]):
+                nm = os.path.basename(p)
+                try:
+                    import cv2
+                    import pyvips
+                    thumb = pyvips.Image.thumbnail(p, 512)
+                    gray = thumb.colourspace("b-w")
+                    arr = np.ndarray(buffer=gray.write_to_memory(), dtype=np.uint8,
+                                      shape=[gray.height, gray.width, gray.bands])[:, :, 0]
+                    orb = cv2.ORB_create(nfeatures=800)
+                    kp = orb.detect(arr, None)
+                    kpn = len(kp) if kp is not None else 0
+                    scores[p]["keypoints"] = kpn
+                    emit_fn("    " + nm + ": anahtar-nokta=" + str(kpn))
+                except Exception as e:
+                    emit_fn("    " + nm + ": anahtar-nokta hesaplanamadi (" + str(e) + ") - siralama degismedi.")
+            k0 = scores[ranked[0]].get("keypoints")
+            k1 = scores[ranked[1]].get("keypoints")
+            if k0 is not None and k1 is not None and k1 > k0:
+                ranked[0], ranked[1] = ranked[1], ranked[0]
+    best = ranked[0]
+    emit_fn("Otomatik referans secildi: " + os.path.basename(best))
+    return best, scores
+
+
 def _find_registrar_pickle(dst):
     """dst altinda VALIS'in kaydettigi *_registrar.pickle'i bul (en yeni). Yoksa None."""
     import glob
@@ -541,6 +662,25 @@ def _write_src_sidecar(pkl_path, orig_src, emit_fn):
             fh.write(orig_src or "")
     except Exception:
         pass  # yan-dosya en-iyi-caba; yazilamamasi kayit/merge'i bozmamali
+
+
+# Slayt-listesi yan-dosyasi: pickle'in yaninda registrar'daki slayt DOSYA ADLARINI tutar (satir basina bir).
+# Groovy tarafi "bu hedef kayitli hizalamada var mi" on-kontrolunu (multi-hedef warp icin) dosya-tabanli,
+# RESULT_JSON ayristirmadan yapabilsin diye. Eski (yan-dosyasiz) pickle'larda yumusak "bilinmiyor"a duser.
+_SLIDES_SIDECAR_SUFFIX = "_atolye_slides.txt"
+
+
+def _write_slides_sidecar(pkl_path, registrar, emit_fn):
+    """pkl_path'in yaninda <ad>_atolye_slides.txt yaz (registrar slaytlarinin basename'leri)."""
+    try:
+        d = os.path.dirname(pkl_path)
+        base = os.path.basename(pkl_path)
+        stem = base[:-len("_registrar.pickle")] if base.endswith("_registrar.pickle") else base
+        names = [os.path.basename(f) for f in registrar.get_sorted_img_f_list()]
+        with open(os.path.join(d, stem + _SLIDES_SIDECAR_SUFFIX), "w", encoding="utf-8") as fh:
+            fh.write("\n".join(names))
+    except Exception:
+        pass  # en-iyi-caba; yazilamamasi kayit'i bozmamali
 
 
 def _check_src_sidecar(pkl_path, orig_src, emit_fn):
@@ -579,10 +719,11 @@ def _ensure_registrar_pickle(registrar, orig_src, emit_fn):
             return
         pkl = os.path.join(data_dir, str(name) + "_registrar.pickle")
         if os.path.isfile(pkl):
-            _write_src_sidecar(pkl, orig_src, emit_fn)  # VALIS kaydetti; yalniz yan-dosyayi ekle
+            _write_src_sidecar(pkl, orig_src, emit_fn)      # VALIS kaydetti; yalniz yan-dosyalari ekle
+            _write_slides_sidecar(pkl, registrar, emit_fn)
             return
         emit_fn("Not: VALIS registrar'i otomatik saklamadi (muhtemelen rigid-only olcum adimi); reuse icin en-iyi-caba ile kaydediliyor...")
-        try:
+/$ + $/        try:
             registrar.cleanup()  # picklelenemeyen nesneleri temizle (cleanup zaten kosmadiysa)
         except Exception:
             pass
@@ -594,6 +735,7 @@ def _ensure_registrar_pickle(registrar, orig_src, emit_fn):
         except Exception:
             pass
         _write_src_sidecar(pkl, orig_src, emit_fn)
+        _write_slides_sidecar(pkl, registrar, emit_fn)
         emit_fn("Registrar saklandi (reuse etkin): " + pkl)
     except Exception as e:
         emit_fn("UYARI: registrar saklanamadi - bu calisma reuse EDILEMEZ (tam non-rigid calisma reuse'u etkinlestirir): " + str(e))
@@ -621,9 +763,24 @@ def _stage_images(images, stage_root, emit_fn):
     return stage_map
 
 
-def cmd_run(args):
+def _run_one_case(args):
+    """Tek 'vaka' calistir: kayit (veya kayitli registrar'i yeniden-kullan) + anotasyon warp + OME
+    yazma + merge. result dict DONER (basari: ok=True; hata: ok=False + error) - HATAYI FIRLATMAZ,
+    boylece cmd_batch bir vaka basarisiz olsa bile digerlerine SIRALI devam edebilir (her vaka kendi
+    HATA dalinda yakalanir, tipki tek-calisma cmd_run'daki gibi).
+
+    ONEMLI: _kill_jvm() BURADA CAGRILMAZ. VALIS'in paylasilan Bio-Formats JVM'ini kapatmak CAGIRANIN
+    (cmd_run: TEK calisma sonunda bir kez; cmd_batch: TUM vakalar bittikten SONRA bir kez) isidir.
+    Bu fonksiyonu bir dongude cagirip HER vakadan sonra _kill_jvm() cagirmak JVM'i bozar/yavaslatir -
+    bu refaktorun EN KRITIK tuzagi budur (bkz. cmd_batch)."""
     result = {"ok": False, "cmd": "run", "ome_files": []}
     try:
+        # QuPath tarafinin (WSL modunda) surecin GERCEK PID'ini bulup dogrulanmis bir
+        # kill -TERM/-KILL gonderebilmesi icin: wsl.exe cephesini oldurmek ic surecin
+        # olumunu GARANTI ETMEZ (bilinen WSL2 mimari acigi). Ayirt edici onek (ATOLYE_PID)
+        # kullan; genel bir 'PID:' alt-dizgesi gelecekte baska bir satirla YANLIS eslesmesin.
+        emit("ATOLYE_PID: " + str(os.getpid()))
+        _stage_begin("HAZIRLIK", "Hazirlik (ortam ayarlari + klasorler)")
         if getattr(args, "cpu", False):
             # VALIS 1.2.0 DiskFD, CUDA'da res.keypoints.detach().numpy() ile coker (Tensor.cpu() cagirmaz).
             # torch import'undan ONCE gizle → torch.cuda.is_available()=False → VALIS CPU kullanir.
@@ -643,6 +800,7 @@ def cmd_run(args):
             emit("Yama uygulandi (0xC0000005 onlenir): is_pyvips_22=" + str(_p1) + ", sequential-slayt-okuma=" + str(_p2) + ".")
         os.makedirs(args.dst, exist_ok=True)
         os.makedirs(args.ome, exist_ok=True)
+        _stage_end("HAZIRLIK")
 
         # Orijinal --src (staging args.src'yi degistirmeden ONCE): registrar kaynak-kimlik yan-dosyasi ve reuse
         # dogrulamasi bunu kullanir. Paylasilan cikti klasorunde ayni govde adli iki seriyi ayirt eder.
@@ -657,10 +815,14 @@ def cmd_run(args):
         if getattr(args, "stage", False) and not getattr(args, "reuse_registrar", False):
             _stage_root = os.path.join(_ATOLYE_DATA_ROOT, "stage", _src_token, os.path.basename(args.src.rstrip("/\\")))
             _imgs = list(args.images) if getattr(args, "images", None) else []
-            for _extra in (getattr(args, "reference", None), getattr(args, "src_slide", None), getattr(args, "target_slide", None)):
+            for _extra in (getattr(args, "reference", None), getattr(args, "src_slide", None)):  # skalar
                 if _extra and _extra not in _imgs:
                     _imgs.append(_extra)
+            for _t in (getattr(args, "target_slide", None) or []):  # target_slide artik LISTE
+                if _t and _t not in _imgs:
+                    _imgs.append(_t)
             if _imgs:
+                _stage_begin("STAGING", "Slaytlar hizli (WSL-yerel) diske kopyalaniyor")
                 emit("Slaytlar hizli (WSL-yerel) diske stage'leniyor: " + _stage_root)
                 _smap = _stage_images(_imgs, _stage_root, emit)
                 if getattr(args, "images", None):
@@ -670,18 +832,35 @@ def cmd_run(args):
                 if getattr(args, "src_slide", None):
                     args.src_slide = _smap.get(args.src_slide, args.src_slide)
                 if getattr(args, "target_slide", None):
-                    args.target_slide = _smap.get(args.target_slide, args.target_slide)
+                    args.target_slide = [_smap.get(t, t) for t in args.target_slide]  # LISTE olarak remap
                 args.src = _stage_root
                 emit("Stage tamam. Kayit stage klasorunden okuyacak.")
+                _stage_end("STAGING")
 
         emit("VALIS kayit basliyor. Girdi klasoru: " + args.src)
         emit("Not: 'Processing images' asamasi (ozellik eslestirme + rigid/non-rigid kayit) SESSIZ olabilir;")
         emit("     asagida her ~20 sn bir nabiz basilir. " + ("Kayit CPU'da kosuyor (--cpu) — nvidia-smi bos gorunur, normaldir." if getattr(args, "cpu", False) else "Ilerleme cogunlukla GPU'da olur (nvidia-smi dmon ile izlenebilir)."))
+
+        # ── Otomatik referans (yalniz OLCUM - kayit YAPMAZ). Acik --reference DAIMA kazanir; bu blok
+        # yalniz --auto-reference istenmis VE --reference verilmemisse calisir. ──
+        if not getattr(args, "reference", None) and getattr(args, "auto_reference", False):
+            _ref_cands = list(args.images) if getattr(args, "images", None) else sorted(
+                os.path.join(args.src, _f) for _f in os.listdir(args.src) if _f.lower().endswith(_WSI_EXTS))
+            if len(_ref_cands) >= 2:
+                emit("Otomatik referans hesaplaniyor (doku-orani x baslik-alani; yalniz olcum)...")
+                _auto_ref, _ref_scores = _pick_reference(_ref_cands, emit)
+                if _auto_ref:
+                    args.reference = _auto_ref
+                    result["reference_scores"] = _ref_scores
+            else:
+                emit("Otomatik referans atlandi (2'den az aday slayt bulundu); VALIS kendi varsayilanini kullanacak.")
+
         vkwargs = {}
         if getattr(args, "images", None):
             vkwargs["img_list"] = list(args.images)
         if getattr(args, "reference", None):
             vkwargs["reference_img_f"] = args.reference
+            result["reference_used"] = os.path.basename(args.reference)
             emit("Referans slayt: " + os.path.basename(args.reference))
         if getattr(args, "max_processed_dim", None):
             vkwargs["max_processed_image_dim_px"] = int(args.max_processed_dim)
@@ -698,6 +877,7 @@ def cmd_run(args):
         if getattr(args, "reuse_registrar", False):
             _pkl = _find_registrar_pickle(args.dst)
             if _pkl:
+                _stage_begin("YUKLEME", "Kayitli hizalama (registrar) yukleniyor")
                 emit("Kayitli registrar kullaniliyor (YENIDEN KAYIT YOK): " + _pkl)
                 registrar = registration.load_registrar(_pkl)
                 if getattr(args, "images", None):
@@ -711,11 +891,13 @@ def cmd_run(args):
                             "Tam (yeniden) kayit icin --reuse-registrar bayragini kaldirin.")
                 # Slayt adlari CAKISABILIR (iki seride ayni dosya adlari) -> kaynak-kimlik yan-dosyasiyla da dogrula.
                 _check_src_sidecar(_pkl, _orig_src, emit)
+                _stage_end("YUKLEME")
             else:
                 emit("UYARI: --reuse-registrar istendi ama kayitli registrar bulunamadi (" + args.dst + "); TAM kayit yapilacak.")
         if registrar is None:
             if getattr(args, "images", None):
                 emit("Kayda dahil slaytlar (%d): %s" % (len(args.images), ", ".join(os.path.basename(x) for x in args.images)))
+            _stage_begin("KAYIT", "Kayit (donusturme + ozellik eslestirme + rigid/non-rigid + hata olcumu)")
             registrar = registration.Valis(args.src, args.dst, **vkwargs)
             hb = _start_heartbeat("Kayit")
             try:
@@ -726,6 +908,7 @@ def cmd_run(args):
             # VALIS register() bir hatayi YUTUP pickle kaydini atlayabilir (ozellikle rigid-only); reuse icin
             # pickle'i garantile + kaynak-kimlik yan-dosyasini yaz.
             _ensure_registrar_pickle(registrar, _orig_src, emit)
+            _stage_end("KAYIT")
         else:
             emit("Kayit atlandi (kayitli registrar) - yeniden birlestirme.")
         # Merge/warp'ta non-rigid: varsayilan --rigid-only'e gore (sifirdan koşuyla AYNI -> orijinal merge'i eslesir).
@@ -752,25 +935,47 @@ def cmd_run(args):
         # Anotasyon warp'i ONCE yap: kullanicinin BIRINCIL ciktisidir + hizlidir (yalniz koordinat donusumu).
         # OME-TIFF yazimi (tam-res hizalanmis slaytlar) YAVAS + ikincildir; sonra ve --no-ome ile istege
         # bagli yapilir. Boylece OME yavas/basarisiz olsa bile warp'li anotasyon zaten yazilmis olur.
-        want_warp = bool(args.geojson_in) and bool(args.src_slide) and bool(args.target_slide) and bool(args.geojson_out)
+        # BIR kaynaktan BIR VEYA DAHA FAZLA hedefe warp: target_slide/geojson_out artik LISTE (sirali eslesir).
+        _targets = args.target_slide or []
+        _gjouts = args.geojson_out or []
+        want_warp = bool(args.geojson_in) and bool(args.src_slide) and bool(_targets) and bool(_gjouts)
+        if want_warp and len(_targets) != len(_gjouts):
+            emit("UYARI: --target-slide sayisi (%d) --geojson-out sayisi (%d) ile eslesmiyor; warp atlaniyor." % (len(_targets), len(_gjouts)))
+            want_warp = False
         if want_warp:
-            emit("Anotasyon warp: " + str(args.src_slide) + " -> " + str(args.target_slide))
+            _stage_begin("WARP", "Anotasyon warp (koordinat donusumu)")
             src_slide = registrar.get_slide(args.src_slide)
-            tgt_slide = registrar.get_slide(args.target_slide)
-            warped = src_slide.warp_geojson_from_to(args.geojson_in, tgt_slide)
-            gj_dir = os.path.dirname(args.geojson_out)
-            if gj_dir:
-                os.makedirs(gj_dir, exist_ok=True)
-            with open(args.geojson_out, "w", encoding="utf-8") as fh:
-                json.dump(warped, fh)
-            result["geojson_out"] = args.geojson_out
-            emit("Warp'lanmis GeoJSON yazildi: " + args.geojson_out)
+            _warp_results = []
+            _ok = 0
+            for _tgt, _gjo in zip(_targets, _gjouts):
+                # her hedef KENDI try/except'inde: biri patlarsa digerleri + merge/OME asamalari etkilenmez.
+                try:
+                    emit("Anotasyon warp: " + str(args.src_slide) + " -> " + str(_tgt))
+                    tgt_slide = registrar.get_slide(_tgt)
+                    warped = src_slide.warp_geojson_from_to(args.geojson_in, tgt_slide)
+                    gj_dir = os.path.dirname(_gjo)
+                    if gj_dir:
+                        os.makedirs(gj_dir, exist_ok=True)
+                    with open(_gjo, "w", encoding="utf-8") as fh:
+                        json.dump(warped, fh)
+                    _ok += 1
+                    _warp_results.append({"target": _tgt, "geojson_out": _gjo, "ok": True})
+                    emit("Warp'lanmis GeoJSON yazildi: " + _gjo)
+                except Exception as _we:
+                    _warp_results.append({"target": _tgt, "geojson_out": _gjo, "ok": False, "error": str(_we)})
+                    emit("HATA (bu hedef atlandi): " + str(_tgt) + " - " + str(_we))
+            result["warp_results"] = _warp_results
+            if _warp_results:
+                result["geojson_out"] = _warp_results[0]["geojson_out"]  # geriye-donuk tek-hedef alani
+            emit("Anotasyon warp ozeti: %d/%d hedef basarili." % (_ok, len(_targets)))
+            _stage_end("WARP")
         else:
             emit("Anotasyon warp atlandi (geojson/slayt argumanlari verilmedi).")
 
         if getattr(args, "no_ome", False):
             emit("OME-TIFF yazimi atlandi (--no-ome). Yalniz warp'li anotasyon uretildi.")
         else:
+            _stage_begin("OME", "Hizalanmis slaytlari OME-TIFF olarak yazma")
             emit("Hizalanmis slaytlar OME-TIFF olarak yaziliyor (crop=" + str(args.crop) + "): " + args.ome)
             hb2 = _start_heartbeat("OME yazma")
             try:
@@ -784,8 +989,10 @@ def cmd_run(args):
                     ome_files.append(os.path.join(args.ome, f))
             result["ome_files"] = ome_files
             emit("OME-TIFF sayisi: " + str(len(ome_files)))
+            _stage_end("OME")
 
         if getattr(args, "merge", False):
+            _stage_begin("MERGE", "Birlesik/cok-kanalli cikti yazma")
             merge_out = args.merge_out or os.path.join(args.ome, "merged_overlay.ome.tiff")
             md = os.path.dirname(merge_out)
             if md:
@@ -867,14 +1074,126 @@ def cmd_run(args):
             result["merge_out"] = merge_out
             result["merge_mode"] = mmode
             emit("Merge yazildi (QuPath'te cok-kanalli/multiplex olarak acilir): " + merge_out)
+            _stage_end("MERGE")
 
         result["ok"] = True
     except Exception as e:
+        _stage_begin("HATA", "Hata isleniyor")
         result["error"] = str(e)
         emit("HATA: " + repr(e))
         traceback.print_exc()
+        _stage_end("HATA")
+    return result
+
+
+def cmd_run(args):
+    try:
+        result = _run_one_case(args)
     finally:
-        _kill_jvm()
+        _kill_jvm()   # tek calisma: bir vaka -> bir kez kapat (bkz. _run_one_case docstring)
+    emit("RESULT_JSON: " + json.dumps(result))
+    return 0 if result["ok"] else 1
+
+
+# ── Toplu isleme (batch): birden cok vaka klasoru tek surecte, SIRALI ──────────────────────────
+# Manifest JSON dosyasi ('--manifest'): {"common": {...ortak bayraklar...}, "cases": [{"name","src",
+# "dst","ome",...}, ...]}. common + her vakanin kendi alanlari (case ONCELIKLI) birlestirilip
+# _run_one_case'in bekledigi ad alanlariyla (--src -> "src" vb, argparse dest adlariyla AYNI) bir
+# Namespace olusturulur. TUM yollar (src/dst/ome/images/...) Groovy tarafinca ZATEN doğru bicimde
+# (container /work/..., WSL /mnt/x/... veya host) yazilir - burada donusum YAPILMAZ.
+_RUN_ARG_DEFAULTS = {
+    "src": None, "dst": None, "ome": None, "crop": "overlap",
+    "geojson_in": None, "src_slide": None, "target_slide": None, "geojson_out": None,
+    "images": None, "reference": None, "auto_reference": False,
+    "max_processed_dim": None, "max_nonrigid_dim": None,
+    "cpu": False, "rigid_only": False, "reuse_registrar": False, "stage": False, "no_ome": False,
+    "merge": False, "merge_out": None, "merge_level": 0, "merge_mode": "hed",
+    "merge_name": None, "merge_stain": None, "merge_color": None, "composite": False,
+}
+
+
+def cmd_batch(args):
+    """--manifest JSON'daki vakalari SIRALI calistir (paralel DEGIL - VALIS'in paylasilan JVM/GPU
+    durumu birden cok es-zamanli kayitla guvenli degildir). Bir vakanin hatasi digerlerini ETKILEMEZ
+    (her vaka kendi try/except'inde). skip_existing (varsayilan True) + '<ad>.done.json' isaretcisi
+    ile YARIM KALMIS bir toplu isi kaldigi yerden devam ettirir (bir onceki BASARILI _run_one_case
+    SONUNDA yazilir - salt bir cikti-dosyasi glob'una gore DEGIL, kismi/yarim-kalmis bir onceki
+    yazimda YANLIS 'tamamlanmis' sanmayi onler)."""
+    result = {"ok": False, "cmd": "batch", "cases": []}
+    try:
+        with open(args.manifest, "r", encoding="utf-8") as fh:
+            manifest = json.load(fh)
+        common = dict(manifest.get("common") or {})
+        cases = manifest.get("cases") or []
+        n = len(cases)
+        emit("Toplu isleme basliyor: " + str(n) + " vaka.")
+        skip_existing = bool(common.pop("skip_existing", True))
+        # Model agirliklarini BIR KEZ, ilk vakadan ONCE hazirla - ilk vakanin suresine bu gecikme eklenmesin.
+        try:
+            from valis import registration  # noqa: F401
+            emit("Model agirliklari hazir (onbellekten veya az once indirildi).")
+        except Exception as _pe:
+            emit("UYARI: model on-yukleme basarisiz oldu (ilk vaka sirasinda tekrar denenecek): " + str(_pe))
+        overall_ok = True
+        for i, case in enumerate(cases, 1):
+            case = dict(case or {})
+            name = str(case.pop("name", None) or ("vaka" + str(i)))
+            merged = dict(_RUN_ARG_DEFAULTS)
+            merged.update(common)
+            merged.update(case)
+            case_args = argparse.Namespace(**merged)
+            done_marker = (os.path.join(case_args.ome, name + ".done.json")
+                           if case_args.ome else None)
+            if skip_existing and done_marker and os.path.isfile(done_marker):
+                emit("Vaka atlandi (onceden tamamlanmis isaretcisi bulundu): " + name)
+                emit("BATCH_ILERLEME: " + json.dumps(
+                    {"index": i, "total": n, "ad": name, "durum": "atlandi", "sure_sn": 0}))
+                result["cases"].append({"name": name, "ok": True, "skipped": True})
+                continue
+            t0 = time.time()
+            _EMIT_PREFIX[0] = "[vaka " + str(i) + "/" + str(n) + ": " + name + "] "
+            emit("BATCH_ILERLEME: " + json.dumps(
+                {"index": i, "total": n, "ad": name, "durum": "basladi", "sure_sn": 0}))
+            try:
+                case_result = _run_one_case(case_args)
+            except Exception as _ce:
+                # _run_one_case normalde hatayi YUTUP result['ok']=False doner; bu except beklenmedik
+                # (guard disi) bir istisnaya karsi savunma - batch dongusu YINE DE devam etmelidir.
+                case_result = {"ok": False, "error": str(_ce)}
+                emit("HATA (bu vaka atlandi, digerleri devam ediyor): " + str(_ce))
+                traceback.print_exc()
+            finally:
+                _EMIT_PREFIX[0] = ""
+            elapsed = time.time() - t0
+            case_result["name"] = name
+            case_result["elapsed_sec"] = round(elapsed, 1)
+            if case_result.get("ok"):
+                if done_marker:
+                    try:
+                        dd = os.path.dirname(done_marker)
+                        if dd:
+                            os.makedirs(dd, exist_ok=True)
+                        with open(done_marker, "w", encoding="utf-8") as fh:
+                            json.dump({"name": name, "ok": True, "elapsed_sec": elapsed}, fh)
+                    except Exception:
+                        pass  # isaretci en-iyi-caba; yazilamamasi vakayi basarisiz saymamali
+            else:
+                overall_ok = False
+            emit("BATCH_ILERLEME: " + json.dumps({
+                "index": i, "total": n, "ad": name,
+                "durum": ("tamam" if case_result.get("ok") else "hata"),
+                "sure_sn": case_result["elapsed_sec"],
+                "cikti": case_result.get("merge_out"),
+                "referans": case_result.get("reference_used"),
+            }))
+            result["cases"].append(case_result)
+        result["ok"] = overall_ok
+    except Exception as e:
+        result["error"] = str(e)
+        emit("HATA (toplu isleme): " + repr(e))
+        traceback.print_exc()
+    finally:
+        _kill_jvm()   # TUM vakalar (basarili/basarisiz) bittikten SONRA bir kez - per-vaka DEGIL
     emit("RESULT_JSON: " + json.dumps(result))
     return 0 if result["ok"] else 1
 
@@ -950,10 +1269,11 @@ def build_parser():
     pr.add_argument("--crop", default="overlap", choices=["overlap", "reference", "all"])
     pr.add_argument("--geojson-in", dest="geojson_in", default=None)
     pr.add_argument("--src-slide", dest="src_slide", default=None)
-    pr.add_argument("--target-slide", dest="target_slide", default=None)
-    pr.add_argument("--geojson-out", dest="geojson_out", default=None)
+    pr.add_argument("--target-slide", dest="target_slide", action="append", default=None)  # bir VEYA daha fazla hedef
+    pr.add_argument("--geojson-out", dest="geojson_out", action="append", default=None)     # her hedef icin bir cikti (sirali)
     pr.add_argument("--images", dest="images", action="append", default=None)
     pr.add_argument("--reference", dest="reference", default=None)
+    pr.add_argument("--auto-reference", dest="auto_reference", action="store_true")  # --reference verilmisse yok sayilir (o daima kazanir)
     pr.add_argument("--max-processed-dim", dest="max_processed_dim", type=int, default=None)
     pr.add_argument("--max-nonrigid-dim", dest="max_nonrigid_dim", type=int, default=None)
     pr.add_argument("--cpu", dest="cpu", action="store_true")
@@ -969,6 +1289,8 @@ def build_parser():
     pr.add_argument("--merge-stain", dest="merge_stain", action="append", default=None)
     pr.add_argument("--merge-color", dest="merge_color", action="append", default=None)
     pr.add_argument("--composite", dest="composite", action="store_true")
+    pb = sub.add_parser("batch")
+    pb.add_argument("--manifest", dest="manifest", required=True)  # {"common":{...}, "cases":[{"name","src","dst","ome",...}, ...]}
     return p
 
 
@@ -980,6 +1302,8 @@ def main():
         return cmd_prefetch(args)
     if args.cmd == "run":
         return cmd_run(args)
+    if args.cmd == "batch":
+        return cmd_batch(args)
     build_parser().print_help()
     return 2
 
@@ -997,6 +1321,7 @@ def PREF_WORKDIR= 'workDir'     // tek-kök çalışma klasörü
 def PREF_OUTDIR = 'outDir'      // çıktı kökü (boşsa = workDir); native'de bağımsız olabilir
 def PREF_MEM    = 'dockerMem'   // GB
 def PREF_CROP   = 'crop'
+def PREF_AUTOADD= 'autoAdd'     // 'Bittiğinde projeye otomatik ekle' (READY ekranı) — varsayılan AÇIK
 
 // ── Atölye veri kökü (env yöneticisiyle PAYLAŞILAN) ─────────────────────────
 def atolyeDataRoot = { ->
@@ -1004,6 +1329,9 @@ def atolyeDataRoot = { ->
     try { p = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('dataRoot', '') } catch (Throwable ignore) {}
     return (p?.trim()) ? new File(p.trim()) : new File(System.getProperty('user.home'), '.atolye')
 }
+// Uzun (30-75 dk) koşuların TAM günlüğü — pencere kapansa/çökse bile geriye kalır. UTF-8 ZORUNLU
+// (Türkçe Windows'ta platform varsayılanı windows-1254'tür; süreç akışı zaten UTF-8 okunuyor).
+def logsDir = { -> def d = new File(new File(atolyeDataRoot(), 'logs'), 'valis'); d.mkdirs(); return d }
 // Env yöneticisinin kaydettiği valis venv python'u (native mod otomatik doldurma).
 def valisVenvPython = { ->
     try {
@@ -1022,7 +1350,8 @@ def loadConfig = { ->
       workDir  : prefs.get(PREF_WORKDIR, new File(atolyeDataRoot(), 'valis').getAbsolutePath()),
       outDir   : prefs.get(PREF_OUTDIR, ''),
       mem      : prefs.get(PREF_MEM,    '20'),
-      crop     : prefs.get(PREF_CROP,   'overlap') ]
+      crop     : prefs.get(PREF_CROP,   'overlap'),
+      autoAdd  : prefs.getBoolean(PREF_AUTOADD, true) ]
 }
 def workRootOf   = { cfg -> new File((cfg.workDir?.trim()) ? cfg.workDir.trim() : new File(atolyeDataRoot(), 'valis').getAbsolutePath()) }
 // Çıktı kökü — boşsa çalışma köküne düşer. Native'de bağımsız sürücü/klasör olabilir (ör. büyük OME-TIFF'ler
@@ -1105,15 +1434,22 @@ def runArgs = { cfg, String srcDir, String dstDir, String omeDir, String crop, L
     // CPU'da da hızlı olduğundan CPU'ya zorlarız (GPU kurulu olsa bile). VALIS düzeltince kaldırılabilir.
     def a = ['run', '--cpu', '--src', srcDir, '--dst', dstDir, '--ome', omeDir, '--crop', crop]
     (imagesList ?: []).each { if (it) a += ['--images', it] }
+    // Açık referans DAİMA kazanır; yalnız verilmemişse VE otomatik istenmişse --auto-reference eklenir
+    // (ölçüm-tabanlı seçim runner tarafında — bkz. _pick_reference).
     if (reference) a += ['--reference', reference]
+    else if (opts?.autoReference) a += ['--auto-reference']
     if (!writeOme) a += ['--no-ome']   // ayrı hizalı OME slaytları YAVAŞ; merge birincil çıktı olduğunda atla
     // ── Hız seçenekleri (opts) ──
     if (opts?.rigidOnly) a += ['--rigid-only']                                  // non-rigid'i atla (hızlı, daha az hassas)
     if (opts?.maxProcessedDim) a += ['--max-processed-dim', opts.maxProcessedDim.toString()]   // kayıt çözünürlüğü
     if (opts?.stage) a += ['--stage']                                           // slaytları WSL-yerel diske kopyala (ilk kayıt hızlı)
     if (opts?.reuseRegistrar) a += ['--reuse-registrar']                        // kayıtlı hizalamadan yeniden birleştir (yeniden KAYIT yok)
+    // Warp: BIR kaynak (srcSlide) → BIR VEYA DAHA FAZLA hedef. tgtSlide/geojsonOut String YA DA List olabilir.
     if (geojsonIn && srcSlide && tgtSlide && geojsonOut) {
-        a += ['--geojson-in', geojsonIn, '--src-slide', srcSlide, '--target-slide', tgtSlide, '--geojson-out', geojsonOut]
+        a += ['--geojson-in', geojsonIn, '--src-slide', srcSlide]
+        def _tl = (tgtSlide instanceof List) ? tgtSlide : [tgtSlide]
+        def _gl = (geojsonOut instanceof List) ? geojsonOut : [geojsonOut]
+        [_tl, _gl].transpose().each { pr -> if (pr[0] && pr[1]) a += ['--target-slide', pr[0].toString(), '--geojson-out', pr[1].toString()] }
     }
     if (merge?.enabled) {
         a += ['--merge', '--merge-mode', (merge.mode ?: 'hed'), '--merge-level', (merge.level ?: '2').toString()]
@@ -1168,6 +1504,21 @@ def entrySlideFileVia = { entry ->
     finally { try { data?.getServer()?.close() } catch (Throwable ig) {} }
 }
 
+// ── Dışa aktarılan nesnelerin toplam alanı (µm²) — kalibre değilse 0.0 döner ("hesaplanamadı") ──
+// Ölçek-tutarlılık kontrolünde (importWarpedToTarget) KAYNAK tarafı için kullanılır; HEDEF tarafı
+// kendi piksel kalibrasyonuyla ayrıca hesaplanır (GT450≈0.26 vs AT2≈0.25 µm/px farkları yanlış-pozitif üretmesin diye).
+def roiAreaUm2 = { imageData, objs ->
+    try {
+        def cal = imageData?.getServer()?.getPixelCalibration()
+        if (cal == null || !cal.hasPixelSizeMicrons()) return 0.0d
+        double pw = cal.getPixelWidthMicrons(); double ph = cal.getPixelHeightMicrons()
+        if (!(pw > 0) || !(ph > 0)) return 0.0d
+        double sum = 0.0d
+        (objs ?: []).each { o -> try { def roi = o.getROI(); if (roi != null) sum += roi.getScaledArea(pw, ph) } catch (Throwable ignore) {} }
+        return sum
+    } catch (Throwable t) { return 0.0d }
+}
+
 // ── QuPath: seçili anotasyonları GeoJSON'a dışa aktar (VALIS girdisi) ────────
 def exportAnnotations = { imageData, File outFile, anns ->
     try {
@@ -1182,7 +1533,11 @@ def exportAnnotations = { imageData, File outFile, anns ->
 }
 
 // ── QuPath: warp'lı GeoJSON'u HEDEF slayda içe aktar (sentinel + kilit; idempotent) ──
-def importWarpedToTarget = { project, targetEntry, File warpedFile ->
+// srcAreaUm2 (opsiyonel, >0): kaynaktaki dışa aktarılan anotasyonun alanı (µm²) — verilirse hedefin
+// KENDİ piksel kalibrasyonuyla hesaplanan alanla oranlanır; oran [WARP_SCALE_RATIO_MIN, WARP_SCALE_RATIO_MAX]
+// dışındaysa dönüşte 'scaleWarn' doldurulur. Bu bir ÖRTÜŞME/Dice DOĞRULUĞU ölçüsü DEĞİLDİR — yalnız
+// ölçek/piramit-seviyesi karışıklığı gibi kaba hataları yakalayan bir tutarlılık kontrolüdür.
+def importWarpedToTarget = { project, targetEntry, File warpedFile, double srcAreaUm2 = 0.0d ->
     if (warpedFile == null || !warpedFile.isFile())
         return [ok: false, error: 'Warp\'lı GeoJSON bulunamadı:\n' + (warpedFile?.getAbsolutePath() ?: '-')]
     def objs = null
@@ -1204,9 +1559,29 @@ def importWarpedToTarget = { project, targetEntry, File warpedFile ->
         hier.removeObjects(hier.getAnnotationObjects().findAll { it.getName() == VALIS_SENTINEL }, false)
         hier.addObjects(objs)
         hier.fireHierarchyUpdate()
+        // ── Ölçek tutarlılık kontrolü — HEDEFİN KENDİ kalibrasyonuyla (kaynağınkiyle DEĞİL) ──
+        String scaleWarn = null
+        if (srcAreaUm2 > 0) {
+            try {
+                def cal2 = data.getServer()?.getPixelCalibration()
+                if (cal2 != null && cal2.hasPixelSizeMicrons()) {
+                    double pw2 = cal2.getPixelWidthMicrons(); double ph2 = cal2.getPixelHeightMicrons()
+                    double tgtAreaUm2 = 0.0d
+                    objs.each { o -> try { def roi = o.getROI(); if (roi != null) tgtAreaUm2 += roi.getScaledArea(pw2, ph2) } catch (Throwable ignore) {} }
+                    if (tgtAreaUm2 > 0) {
+                        double ratio = tgtAreaUm2 / srcAreaUm2
+                        if (ratio < WARP_SCALE_RATIO_MIN || ratio > WARP_SCALE_RATIO_MAX)
+                            scaleWarn = String.format(java.util.Locale.US,
+                                'Ölçek tutarsızlığı olabilir: hedef/kaynak alan oranı %.2f (beklenen ~%.1f–%.1f). ' +
+                                'Bu bir örtüşme/doğruluk ölçüsü DEĞİL, kaba ölçek/seviye karışıklığı kontrolüdür — GÖRSEL doğrulayın.',
+                                ratio, WARP_SCALE_RATIO_MIN, WARP_SCALE_RATIO_MAX)
+                    }
+                }
+            } catch (Throwable ignore) {}
+        }
         if (isLive) { javafx.application.Platform.runLater { try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {} } }
         else { targetEntry.saveImageData(data) }
-        return [ok: true, count: objs.size(), live: isLive]
+        return [ok: true, count: objs.size(), live: isLive, scaleWarn: scaleWarn]
     } catch (Throwable t) {
         return [ok: false, error: (t.getMessage() ?: t.getClass().getSimpleName())]
     } finally {
@@ -1214,32 +1589,96 @@ def importWarpedToTarget = { project, targetEntry, File warpedFile ->
     }
 }
 
-// ── QuPath: hizalanmış OME-TIFF'leri projeye ekle (FX thread; idempotent; syncChanges) ──
-def addOmeToProject = { project, List omeFiles, Closure onDone ->
-    javafx.application.Platform.runLater {
+// ── QuPath: hizalanmış OME-TIFF'leri projeye ekle ──────────────────────────────
+// Ağır iş (buildServer/ekleme/tür doğrulama/kanal+QC okuma) ARKA PLAN iş parçacığında yapılır;
+// yalnız syncChanges/refreshProject/onDone FX iş parçacığında (Platform.runLater) çalışır — bu
+// da (b)/(c) altındaki kanal/QC okumasını "hafif" tutan asıl şeydir (aksi halde UI donar).
+// TİP açıkça verilir VE eklendikten sonra readImageData()/setImageType()/saveImageData() ile
+// DOĞRULANIR/DÜZELTİLİR — addSingleImageToProject'in tür parametresi her zaman kalıcı olacağı
+// VARSAYILMAZ; sonuç notu GERÇEKTE ne olduğunu bildirir (istenen değil).
+// Dedup artık AD ALT-DİZGE eşleşmesi değil, her girdinin getURIs() (ucuz, readImageData YOK) ile
+// eklenecek dosyanın URI'sini karşılaştırır.
+// withPreview=true ise (yalnız birincil/merge çıktısı için kullanılır) her dosyanın kanal adı+RGB
+// rengi okunur ve (çok-kanallıysa) Hematoksilen-kanal ÇAKIŞMA önizlemesi üretilir — bu bir hizalama
+// TAHMİNİ görselleştirmesidir, örtüşme/Dice DOĞRULUK ölçüsü DEĞİLDİR.
+def addOmeToProject = { project, List omeFiles, qupath.lib.images.ImageData.ImageType type, boolean withPreview, Closure onDone ->
+    new Thread({
         int added = 0, skipped = 0, failed = 0
         def notes = []
-        def existingNames = new HashSet<String>()
-        try { project.getImageList().each { e -> def n = e.getImageName(); if (n) existingNames.add(n) } } catch (Throwable ignore) {}
+        def perFile = []   // withPreview ise: [file:, channels: [String...], qc: BufferedImage|null]
+        def existingUris = new HashSet<String>()
+        try {
+            project.getImageList().each { e -> try { e.getURIs()?.each { u -> existingUris.add(u.toString()) } } catch (Throwable ignore) {} }
+        } catch (Throwable ignore) {}
         omeFiles.each { String p ->
             def f = new File(p)
             if (!f.isFile()) { failed++; notes << ('  • yok: ' + f.getName()); return }
-            if (existingNames.any { it.contains(f.getName()) }) { skipped++; notes << ('  = zaten projede: ' + f.getName()); return }
+            String fUri = null
+            try { fUri = f.toURI().toString() } catch (Throwable ignore) {}
+            if (fUri != null && existingUris.contains(fUri)) { skipped++; notes << ('  = zaten projede: ' + f.getName()); return }
             def server = null
             try {
                 server = qupath.lib.images.servers.ImageServers.buildServer(f.toURI())
-                qupath.lib.gui.commands.ProjectCommands.addSingleImageToProject(project, server, qupath.lib.images.ImageData.ImageType.UNSET)
-                added++; notes << ('  ✓ eklendi: ' + f.getName())
+                def entry = qupath.lib.gui.commands.ProjectCommands.addSingleImageToProject(project, server, type)
+                boolean typeOk = false
+                if (entry != null) {
+                    def d2 = null
+                    try {
+                        d2 = entry.readImageData()
+                        if (d2.getImageType() != type) { d2.setImageType(type); entry.saveImageData(d2) }
+                        typeOk = (d2.getImageType() == type)
+                    } catch (Throwable te) { typeOk = false }
+                    finally { try { d2?.getServer()?.close() } catch (Throwable ignore) {} }
+                }
+                added++
+                notes << ('  ✓ eklendi: ' + f.getName() + (typeOk ? (' (Tür: ' + type + ')') : ' (Tür ayarlanamadı — elle seçin)'))
+                if (withPreview) {
+                    def chans = []
+                    java.awt.image.BufferedImage qc = null
+                    try {
+                        server.getMetadata().getChannels().each { ch ->
+                            def rgb = ch.getColor()
+                            if (rgb == null) chans << (ch.getName() + ' — UYARI: kanal rengi okunamadı')
+                            else {
+                                def col = new java.awt.Color(rgb)
+                                chans << String.format(java.util.Locale.US, '%s — RGB(%d,%d,%d)', ch.getName(), col.getRed(), col.getGreen(), col.getBlue())
+                            }
+                        }
+                    } catch (Throwable ignore) {}
+                    boolean isComp = (type == qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_OTHER || type == qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_H_E)
+                    try {
+                        if (isComp) {
+                            // Doğal-renk bileşik zaten gerçek bir RGB görüntü — ekstra iş gerekmez.
+                            qc = server.getDefaultThumbnail(0, 0)
+                        } else {
+                            // Çok-kanallı: yalnız "...Hematoksilen" ile biten kanalları seç + otomatik aralık +
+                            // COLOR modunda uygula. Her slaytın Hematoksilen kanalı AYNI renktedir (_HEM_COLOR,
+                            // runner tarafında) → bu, seri kesitlerin doku/çekirdek konturlarının bir ÇAKIŞMA
+                            // (coincidence) kontrolüdür; keskin = hizalı, çift/hayalet görünüm = olası kayma.
+                            def qd = new qupath.lib.images.ImageData(server, type)
+                            def disp = qupath.lib.display.ImageDisplay.create(qd)
+                            def hemInfos = disp.availableChannels().findAll { ci -> (ci.getName() ?: '').toLowerCase(java.util.Locale.ROOT).endsWith('hematoksilen') }
+                            if (!hemInfos.isEmpty()) {
+                                hemInfos.each { ci -> disp.setChannelSelected(ci, true); disp.autoSetDisplayRange(ci) }
+                                def raw = server.getDefaultThumbnail(0, 0)
+                                qc = qupath.lib.display.ImageDisplay.applyTransforms(raw, null, hemInfos, qupath.lib.display.ChannelDisplayMode.COLOR)
+                            }
+                        }
+                    } catch (Throwable ignore) {}
+                    perFile << [file: f, channels: chans, qc: qc]
+                }
             } catch (Throwable t) {
                 failed++; notes << ('  ✗ eklenemedi: ' + f.getName() + ' — ' + (t.getMessage() ?: t.getClass().getSimpleName()))
             } finally { try { server?.close() } catch (Throwable ignore) {} }
         }
-        boolean syncOk = true
-        try { project.syncChanges() }
-        catch (Throwable t) { syncOk = false; notes << ('  ✗ proje diske KAYDEDİLEMEDİ (syncChanges): ' + (t.getMessage() ?: t.getClass().getSimpleName())) }
-        try { gui.refreshProject() } catch (Throwable ignore) {}
-        onDone([added: added, skipped: skipped, failed: failed, syncOk: syncOk, notes: notes])
-    }
+        javafx.application.Platform.runLater {
+            boolean syncOk = true
+            try { project.syncChanges() }
+            catch (Throwable t) { syncOk = false; notes << ('  ✗ proje diske KAYDEDİLEMEDİ (syncChanges): ' + (t.getMessage() ?: t.getClass().getSimpleName())) }
+            try { gui.refreshProject() } catch (Throwable ignore) {}
+            onDone([added: added, skipped: skipped, failed: failed, syncOk: syncOk, notes: notes, perFile: perFile])
+        }
+    }, 'AtolyeVALIS-AddOme').start()
 }
 
 // ── Arka plan: Python/Docker süreci (stream + timeout + iptal) ───────────────
@@ -1300,13 +1739,29 @@ def runProcess = { List cmd, java.util.concurrent.atomic.AtomicReference procRef
         }
         reader.close()
     } catch (Throwable ignore) {}
+    // İptal edilmişse (killProc() paralel bir iş parçacığında zaten çalışıyor olabilir) 6 saatlik
+    // zaman aşımı süresince BEKLEME — kısa sınırlı bekle, hâlâ bitmediyse zorla sonlandır ve hemen dön.
+    // Aksi halde WSL modunda (wsl.exe cephesi öldürülse bile iç Linux süreci canlı kalabilir — bilinen
+    // WSL2 mimari açığı) sihirbaz "İptal ediliyor…" durumunda saatlerce takılı kalabilirdi.
+    long waitSeconds = cancelledRef.get() ? 20L : PYTHON_TIMEOUT_SECONDS
     boolean finished
-    try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    try { finished = proc.waitFor(waitSeconds, java.util.concurrent.TimeUnit.SECONDS) }
+    catch (InterruptedException ie) { try { proc.destroyForcibly() } catch (Throwable ignore) {}; return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    if (cancelledRef.get()) {
+        if (!finished) { try { proc.destroyForcibly() } catch (Throwable ignore) {} }
+        return [ok: false, exitCode: -3, error: 'İptal edildi']
+    }
     if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
-    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
     int code = proc.exitValue()
-    return [ok: (code == 0), exitCode: code, lastLines: last.join('\n'), resultJson: resultJson.get()]
+    // RESULT_JSON zaten yakalanıyordu ama 'error' alanı hiç OKUNMUYORDU — Python'un kendi except
+    // Exception as e: result["error"]=str(e) çıktısı 60 satırlık günlük tamponunu desen-eşlemekten
+    // çok daha güvenilir bir kök-neden kaynağıdır (bkz. explainFailure).
+    def rj = resultJson.get()
+    String pyErr = null
+    if (rj) {
+        try { pyErr = qupath.lib.io.GsonTools.getInstance().fromJson(rj, Map.class)?.get('error') } catch (Throwable ignore) {}
+    }
+    return [ok: (code == 0), exitCode: code, lastLines: last.join('\n'), resultJson: rj, error: pyErr]
 }
 
 // ── Headless ─────────────────────────────────────────────────────────────────
@@ -1334,13 +1789,25 @@ def errorTextRef  = new java.util.concurrent.atomic.AtomicReference('')
 def dockerTextRef = new java.util.concurrent.atomic.AtomicReference('')
 def nativeTextRef = new java.util.concurrent.atomic.AtomicReference('')
 def dockerUsableRef = new java.util.concurrent.atomic.AtomicBoolean(false)   // Docker komutu bu slayt konumu için geçerli mi (tek-kök mount'a sığıyor mu)
-def targetEntryRef= new java.util.concurrent.atomic.AtomicReference(null)   // seçili hedef ProjectImageEntry (ada göre DEĞİL — kimlik/getID)
+def targetIdsRef  = new java.util.concurrent.atomic.AtomicReference(new java.util.LinkedHashSet())   // seçili warp hedefi entry-ID'leri (ÇOKLU; ada göre DEĞİL — kimlik/getID)
+def referenceModeRef = new java.util.concurrent.atomic.AtomicReference('open')   // 'open' (açık slayt — varsayılan) | 'auto' (ölçüm-tabanlı, runner seçer)
 def dockerNameRef = new java.util.concurrent.atomic.AtomicReference(null)   // çalışan docker konteyner adı (iptal/zaman aşımında durdurmak için)
-def lastGeojsonOutRef = new java.util.concurrent.atomic.AtomicReference(null)
+// ── Uzun koşu güvenilirliği: ilerleme + iptal + günlük dosyası (bkz. startRun/killProc) ──────
+def wslModeRef     = new java.util.concurrent.atomic.AtomicBoolean(false)    // bu koşu WSL modunda mı (cmd[0]=='wsl') — PID yalnız o zaman WSL-içi anlam taşır
+def wslPidRef      = new java.util.concurrent.atomic.AtomicReference(null)   // ATOLYE_PID: satırından — YALNIZ WSL modunda dolar (native/docker'da aynı sayı FARKLI bir isim-uzayına ait olur)
+def stageKeyRef    = new java.util.concurrent.atomic.AtomicReference(null)   // ASAMA_BASLA anahtarı (HAZIRLIK/STAGING/YUKLEME/KAYIT/WARP/OME/MERGE/HATA)
+def stageLabelRef  = new java.util.concurrent.atomic.AtomicReference(null)   // aynı satırın okunabilir Türkçe etiketi
+def stageStartRef  = new java.util.concurrent.atomic.AtomicReference(null)   // mevcut aşamanın başladığı epoch-ms
+def runStartRef    = new java.util.concurrent.atomic.AtomicReference(null)   // tüm koşunun başladığı epoch-ms
+def progressLabelRef = new java.util.concurrent.atomic.AtomicReference(null) // RUNNING ekranındaki ilerleme Label'i — render() DEĞİL, doğrudan setText ile güncellenir
+def logFileRef     = new java.util.concurrent.atomic.AtomicReference(null)
+def logWriterRef   = new java.util.concurrent.atomic.AtomicReference(null)
+def lastWarpPlanRef = new java.util.concurrent.atomic.AtomicReference(new ArrayList())   // her warp hedefi için [entry:, targetName:, geojsonOut: File, file: File]
+def lastWarpSrcAreaUm2Ref = new java.util.concurrent.atomic.AtomicReference(0.0d)        // kaynak anotasyon alanı (µm², kaynağın kendi kalibrasyonuyla) — ölçek tutarlılık kontrolü için
 def lastOmeDirRef     = new java.util.concurrent.atomic.AtomicReference(null)
 def lastMergeOutRef   = new java.util.concurrent.atomic.AtomicReference(null)   // üretilen birleşik multipleks OME-TIFF
 def lastCompositeRef  = new java.util.concurrent.atomic.AtomicBoolean(false)    // son merge doğal-renk bileşik miydi (Brightfield) yoksa çok-kanallı mı (Fluorescence)
-def lastTargetEntryRef= new java.util.concurrent.atomic.AtomicReference(null)
+def qcThumbRef        = new java.util.concurrent.atomic.AtomicReference(null)   // RESULT'ta gösterilen hafif hizalama QC önizlemesi (javafx.scene.image.Image) — her koşu başında sıfırlanır (bkz. startRun)
 def lastCmdRef        = new java.util.concurrent.atomic.AtomicReference(null)   // Doğrudan çalıştır için seçili komut
 def wslTextRef        = new java.util.concurrent.atomic.AtomicReference('')     // üretilen WSL komutu (CMD_READY)
 // Çok-slayt seçimi + marker adları + merge seçenekleri (render'lar arası KALICI; entry-ID anahtarlı)
@@ -1356,6 +1823,19 @@ def compositeRef  = new java.util.concurrent.atomic.AtomicBoolean(false)        
 def rigidOnlyRef  = new java.util.concurrent.atomic.AtomicBoolean(false)        // HIZLI: yalnız rigid kayıt (non-rigid atla)
 def stageSlidesRef= new java.util.concurrent.atomic.AtomicBoolean(false)        // slaytları WSL-yerel diske kopyala (ilk kayıt I/O ~6x hızlı) — 'stage' adı JavaFX Stage ile çakışır, kullanma
 def maxProcDimRef = new java.util.concurrent.atomic.AtomicReference('')         // kayıt için maks. kenar (px); boş = VALIS varsayılanı
+
+// ── Toplu işlem (batch — çoklu vaka) durumu ──
+def batchCasesRootRef        = new java.util.concurrent.atomic.AtomicReference(null)             // File: seçilen "vaka klasörü kökü"
+def batchCaseDirsRef         = new java.util.concurrent.atomic.AtomicReference(new ArrayList())   // List<File>: kökün altında keşfedilen vaka klasörleri (ada göre sıralı)
+def batchIncludeNamesRef     = new java.util.concurrent.atomic.AtomicReference(new java.util.LinkedHashSet())  // işaretli vaka klasörü adları
+def batchReferencePatternRef = new java.util.concurrent.atomic.AtomicReference('')                // ör. 'HE' — dosya adında (küçük/büyük harf duyarsız) geçen TEK slaytı o vakanın referansı yapar; eşleşmezse otomatik referans
+def batchSkipExistingRef     = new java.util.concurrent.atomic.AtomicBoolean(true)                // <ad>.done.json işaretçisi varsa vakayı atla (yarım kalmış toplu işi sürdürür)
+def batchCaseTimeoutRef      = new java.util.concurrent.atomic.AtomicReference('7200')            // saniye/vaka — toplam zaman aşımı = vaka_sayısı × bu + pay
+def batchReuseRegistrarRef   = new java.util.concurrent.atomic.AtomicBoolean(false)                // TÜM vakalar için kayıtlı registrar'ı yeniden kullan (toplu "yeniden birleştir")
+def batchCasesResultRef      = new java.util.concurrent.atomic.AtomicReference(new ArrayList())   // son toplu işin RESULT_JSON'undaki 'cases' listesi (BATCH_RESULT ekranı için)
+def activeTimeoutSecondsRef  = new java.util.concurrent.atomic.AtomicReference(PYTHON_TIMEOUT_SECONDS)  // startRun'a bu koşuda GEÇİLEN zaman aşımı (RUNNING ekranı bunu gösterir — sabit DEĞİL, batch'te daha uzun olabilir)
+def lastResultJsonRef        = new java.util.concurrent.atomic.AtomicReference(null)              // son koşunun ham RESULT_JSON'u (batch onSuccess'in 'cases' okuması için — mevcut çağrı yerlerini bozmadan)
+def batchProgressRef         = new java.util.concurrent.atomic.AtomicReference(new java.util.LinkedHashMap())  // BATCH_ILERLEME satırlarından index->{ad,durum,sure_sn,...} (RUNNING ekranında canlı tablo)
 // CONFIG alan referansları
 def modeChoiceRef = new java.util.concurrent.atomic.AtomicReference(null)
 def pyFieldRef    = new java.util.concurrent.atomic.AtomicReference(null)
@@ -1419,7 +1899,9 @@ def colorToHex = { javafx.scene.paint.Color c -> String.format(java.util.Locale.
 def hexToColor = { String hex -> try { javafx.scene.paint.Color.web('#' + (hex ?: 'AA6E28')) } catch (Throwable t) { javafx.scene.paint.Color.web('#AA6E28') } }
 
 // ── Çalıştırma planı (dışa aktar + komutları kur) ───────────────────────────
-def prepareRun = { cfg, boolean reuseRegistrar = false ->
+// warpOnly: HIZLI yol — kayıtlı registrar'dan SADECE anotasyon warp'ı (register setine hedefleri
+// EKLEMEZ, --images HİÇ verilmez, merge/OME zorla KAPALI). Bkz. doWarpOnlyTransfer.
+def prepareRun = { cfg, boolean reuseRegistrar = false, boolean warpOnly = false ->
     def project = QP.getProject()
     if (project == null) return [ok: false, error: 'Proje açık değil — slaytları AYNI projeye ekleyin.']
     def imageData = QP.getCurrentImageData()
@@ -1439,13 +1921,21 @@ def prepareRun = { cfg, boolean reuseRegistrar = false ->
         def id = e?.getID()?.toString()
         if (id != null && id != srcId && includeIds.contains(id)) selectedEntries << e
     }
-    // Warp hedefi seçildiyse register setine de dahil et (anotasyon warp'ı için gerekli).
-    def targetEntry = targetEntryRef.get()
-    if (targetEntry != null && targetEntry.getID() != null) {
-        def tid = targetEntry.getID().toString()
-        if (tid != srcId && !selectedEntries.any { it.getID()?.toString() == tid }) selectedEntries << targetEntry
+    // Warp hedefleri (ÇOKLU) seçildiyse register setine de dahil et (anotasyon warp'ı için gerekli) —
+    // warpOnly'de ATLA: hızlı yol kayıtlı registrar'ı DEĞİŞTİRMEZ, --images hiç verilmeyecek (bkz. buildArgs),
+    // bu yüzden register setine dahil etmenin bir anlamı yok (ve badFolder kontrolünü de gereksiz yere tetikler).
+    def targetIds = targetIdsRef.get() ?: new java.util.LinkedHashSet()
+    def targetEntries = []
+    if (!targetIds.isEmpty()) {
+        project.getImageList().each { e -> def id = e?.getID()?.toString(); if (id != null && targetIds.contains(id)) targetEntries << e }
     }
-    if (selectedEntries.isEmpty())
+    if (!warpOnly) {
+        targetEntries.each { te ->
+            def tid = te.getID()?.toString()
+            if (tid != null && tid != srcId && !selectedEntries.any { it.getID()?.toString() == tid }) selectedEntries << te
+        }
+    }
+    if (selectedEntries.isEmpty() && !warpOnly)
         return [ok: false, error: 'En az bir EK slayt seçin ("Hizalanacak slaytlar" listesinden işaretleyin) — VALIS ≥2 slaytı birlikte hizalar.']
 
     // Her seçilinin yerel dosyasını çöz + KAYNAKLA AYNI klasör doğrula (karışık klasör/büyütme = extract_area hatası).
@@ -1498,45 +1988,53 @@ def prepareRun = { cfg, boolean reuseRegistrar = false ->
     def mergeColors = [colorFor(srcEntry, srcFile)]
     selFiles.each { mergeColors << colorFor(it.entry, it.file) }
 
-    // ── Anotasyon warp — YALNIZ warp hedefi seçildiyse (opsiyonel). Aksi halde sadece kayıt+merge. ──
-    def tgtFile = null; def gjIn = null; def gjOut = null; int annCount = 0
-    if (targetEntry != null && targetEntry.getID() != null) {
-        if (srcId != null && targetEntry.getID().toString() == srcId)
-            return [ok: false, error: 'Warp hedefi kaynakla aynı olamaz — farklı bir hedef seçin ya da hedefi boş bırakın.']
-        tgtFile = entrySlideFileVia(targetEntry)
-        if (tgtFile == null) return [ok: false, error: 'Warp hedefi yerel dosyası çözülemedi.']
+    // ── Anotasyon warp — YALNIZ bir/daha fazla hedef seçildiyse (opsiyonel; ÇOKLU). Aksi halde sadece kayıt+merge. ──
+    // BİR kaynak GeoJSON (gjIn) dışa aktarılır (kaç hedef olursa olsun tek export); HER hedef için AYRI bir
+    // warp çıktı yolu hesaplanır (warpPlan) — çalıştırıldığında runner tek süreçte hepsini warp eder (bkz. runArgs).
+    def gjIn = null; int annCount = 0
+    def warpPlan = []
+    double srcAreaUm2 = 0.0d
+    if (!targetEntries.isEmpty()) {
+        if (targetEntries.any { it.getID()?.toString() == srcId })
+            return [ok: false, error: 'Warp hedefi kaynakla aynı olamaz — farklı bir hedef seçin ya da hedefi kaldırın.']
         def sanitize = { String s -> (s ?: 'x').replaceAll('[^A-Za-z0-9._-]', '_') }
-        def pairKey = srcDir.getAbsolutePath() + '|' + srcFile.getName() + '|' + tgtFile.getName()
-        def pairId = sanitize(srcFile.getName()) + '__' + sanitize(tgtFile.getName()) + '__' + Integer.toHexString(pairKey.hashCode())
-        gjIn  = new File(gjDir, 'kaynak_' + pairId + '.geojson')
-        gjOut = new File(gjDir, 'warp_' + pairId + '.geojson')
-        try { if (gjOut.isFile()) gjOut.delete() } catch (Throwable ignore) {}
         def sel = imageData.getHierarchy().getSelectionModel().getSelectedObjects().findAll { it.isAnnotation() }
+        def expObjs = (sel != null && !sel.isEmpty()) ? sel : imageData.getHierarchy().getAnnotationObjects()
+        def srcOnlyKey = srcDir.getAbsolutePath() + '|' + srcFile.getName()
+        gjIn = new File(gjDir, 'kaynak_' + sanitize(srcFile.getName()) + '__' + Integer.toHexString(srcOnlyKey.hashCode()) + '.geojson')
         def exp = exportAnnotations(imageData, gjIn, sel)
         if (!exp.ok) return [ok: false, error: exp.error]
         annCount = exp.count
+        srcAreaUm2 = roiAreaUm2(imageData, expObjs)
+        for (te in targetEntries) {
+            def tf = entrySlideFileVia(te)
+            if (tf == null) return [ok: false, error: 'Warp hedefi yerel dosyası çözülemedi: ' + (te.getImageName() ?: '?')]
+            def pairKey = srcDir.getAbsolutePath() + '|' + srcFile.getName() + '|' + tf.getName()
+            def pairId = sanitize(srcFile.getName()) + '__' + sanitize(tf.getName()) + '__' + Integer.toHexString(pairKey.hashCode())
+            def gjo = new File(gjDir, 'warp_' + pairId + '.geojson')
+            try { if (gjo.isFile()) gjo.delete() } catch (Throwable ignore) {}
+            warpPlan << [entry: te, targetName: (te.getImageName() ?: '?'), geojsonOut: gjo, file: tf]
+        }
     }
 
     def wr = writeRunner(cfg)
     if (!wr.ok) return [ok: false, error: 'Köprü betiği yazılamadı: ' + wr.error]
 
-    // ── Merge seçenekleri ──
-    boolean mergeEnabled = mergeEnabledRef.get()
+    // ── Merge seçenekleri ── warpOnly'de HER ZAMAN kapalı (hızlı yol yalnız anotasyon warp'ı yapar; --images
+    // hiç verilmediğinden merge/OME zaten çalışamaz — bu, o niyeti mergeOutFile/writeOme'e de yansıtır).
+    boolean mergeEnabled = warpOnly ? false : mergeEnabledRef.get()
     def mergeMode = mergeModeRef.get() ?: 'hed'
     def mergeLevel = (mergeLevelRef.get() ?: '2')
     boolean composite = compositeRef.get()
     def _mergeBase = composite ? 'multiplex_composite' : ('multiplex_' + mergeMode)
-    // Yeniden birleştirmede SÜRÜMLÜ ad (_r<millis>): QuPath önceki dosyayı açık tutarken bile çakışmaz/kilitlenmez.
-    def mergeOutFile = mergeEnabled ? new File(outRootOf(cfg), _mergeBase + (reuseRegistrar ? ('_r' + System.currentTimeMillis()) : '') + '.ome.tiff') : null
-    // Normal koşuda üstüne yaz; silinemiyorsa (QuPath'te açık) NET hata ver (save_ome_tiff'te sessiz başarısızlık yerine).
-    if (!reuseRegistrar && mergeOutFile != null && mergeOutFile.isFile()) {
-        try {
-            if (!mergeOutFile.delete())
-                return [ok: false, error: 'Önceki birleşik dosya silinemedi (QuPath\'te açık olabilir):\n' + mergeOutFile.getAbsolutePath() + '\nProjeden kaldırın / QuPath\'te kapatın ya da "Yeniden birleştir" (sürümlü dosya yazar) kullanın.']
-        } catch (Throwable t) { return [ok: false, error: 'Önceki birleşik dosya silinemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
-    }
-    // Yeniden birleştirmede ayrı hizalı OME yazma HER ZAMAN kapalı (amaç: yalnız merge; aynı kilit tuzağı + gereksiz).
-    boolean writeOme = reuseRegistrar ? false : writeOmeRef.get()
+    // Her çıktı ZAMAN DAMGALI: multiplex_<mod>_<yyyyMMdd-HHmmss>.ome.tiff (bileşikte multiplex_composite_<...>).
+    // Böylece her koşu AYRI dosya yazar (üstüne yazmaz) ve QuPath önceki dosyayı açık tutsa bile çakışma/kilit olmaz.
+    // (Sayısal desen locale-bağımsızdır; SimpleDateFormat için Locale gerekmez.)
+    def _stamp = new java.text.SimpleDateFormat('yyyyMMdd-HHmmss').format(new java.util.Date())
+    def mergeOutFile = mergeEnabled ? new File(outRootOf(cfg), _mergeBase + '_' + _stamp + '.ome.tiff') : null
+    // Yeniden birleştirmede / hızlı warp-only yolunda ayrı hizalı OME yazma HER ZAMAN kapalı (amaç: yalnız
+    // merge ya da yalnız warp; aynı kilit tuzağı + gereksiz).
+    boolean writeOme = (reuseRegistrar || warpOnly) ? false : writeOmeRef.get()
     def _maxProc = (maxProcDimRef.get() ?: '').toString().trim()
     if (_maxProc && !(_maxProc ==~ /\d+/)) return [ok: false, error: 'Kayıt için maks. kenar SAYI olmalı (px) ya da boş: "' + _maxProc + '"']
 
@@ -1547,17 +2045,28 @@ def prepareRun = { cfg, boolean reuseRegistrar = false ->
             if (kind == 'wsl') return toWsl(f.getAbsolutePath())
             return f.getAbsolutePath()
         }
-        def imgs = imageFiles.collect { conv(it) }
+        // warpOnly: --images HİÇ verilmez (kritik — runner'ın kayıtlı-registrar slayt-seti eşitlik denetimi
+        // yalnız --images verildiğinde çalışır; boş bırakınca hızlı yol "Hizalanacak slaytlar" listesindeki
+        // güncel işaretlerden BAĞIMSIZ olur, yanlışlıkla 'slayt seti farklı' hatası vermez).
+        def imgs = warpOnly ? [] : imageFiles.collect { conv(it) }
         def mrg = mergeEnabled ? [enabled: true, mode: mergeMode, level: mergeLevel, out: conv(mergeOutFile), names: mergeNames, stains: mergeStains, colors: mergeColors, composite: composite] : [enabled: false]
+        // Referans: 'open' (varsayılan — bugünkü davranış, açık slayt) ya da 'auto' (ölçüm-tabanlı, runner
+        // seçer — bkz. _pick_reference). warpOnly/reuseRegistrar'da anlamsız (YENİDEN KAYIT yapılmaz,
+        // registrar zaten var) — o yollarda her zaman kapalı tutulur, gereksiz aday-tarama koşulmasın.
+        boolean useAutoRef = (referenceModeRef.get() == 'auto') && !reuseRegistrar && !warpOnly
         def opts = [rigidOnly: rigidOnlyRef.get(), maxProcessedDim: (_maxProc ?: null),
-                    stage: (stageSlidesRef.get() && cfg.mode == 'wsl' && !reuseRegistrar), reuseRegistrar: reuseRegistrar]
-        runArgs(cfg, conv(srcDir), conv(resultsDir), conv(omeDir), cfg.crop, imgs, conv(srcFile),
-                conv(gjIn), conv(srcFile), conv(tgtFile), conv(gjOut), mrg, writeOme, opts)
+                    stage: (stageSlidesRef.get() && cfg.mode == 'wsl' && !reuseRegistrar), reuseRegistrar: reuseRegistrar,
+                    autoReference: useAutoRef]
+        // tgtSlide/geojsonOut LİSTE olarak geçilir — runArgs zaten Liste'yi destekler (birden çok --target-slide/--geojson-out çifti).
+        def tgtList  = warpPlan.collect { conv(it.file) }
+        def gjOutList= warpPlan.collect { conv(it.geojsonOut) }
+        runArgs(cfg, conv(srcDir), conv(resultsDir), conv(omeDir), cfg.crop, imgs, (useAutoRef ? null : conv(srcFile)),
+                conv(gjIn), conv(srcFile), tgtList, gjOutList, mrg, writeOme, opts)
     }
 
     def dockerName = 'atolye-valis-' + System.currentTimeMillis()
     dockerNameRef.set(cfg.mode == 'docker' ? dockerName : null)
-    lastGeojsonOutRef.set(gjOut); lastOmeDirRef.set(omeDir); lastTargetEntryRef.set(targetEntry); lastMergeOutRef.set(mergeOutFile); lastCompositeRef.set(composite)
+    lastWarpPlanRef.set(warpPlan); lastWarpSrcAreaUm2Ref.set(srcAreaUm2); lastOmeDirRef.set(omeDir); lastMergeOutRef.set(mergeOutFile); lastCompositeRef.set(composite)
 
     def containerArgs = buildArgs('container')
     def dockerUsable = !containerArgs.any { it == null }
@@ -1570,65 +2079,275 @@ def prepareRun = { cfg, boolean reuseRegistrar = false ->
     return [ok: true, dockerCmd: (dockerUsable ? dockerCmd(cfg, workRoot, dockerName, containerArgs) : null),
             dockerUsable: dockerUsable, dockerBlock: dockerBlock, nativeCmd: nativeCmd(cfg, buildArgs('host')),
             wslCmd: wslCmd(cfg, buildArgs('wsl')), dockerName: dockerName, srcDir: srcDir, annCount: annCount,
-            omeDir: omeDir, gjOut: gjOut, mergeOut: mergeOutFile, imageCount: imageFiles.size(), mergeEnabled: mergeEnabled]
+            omeDir: omeDir, warpPlan: warpPlan, mergeOut: mergeOutFile, imageCount: imageFiles.size(), mergeEnabled: mergeEnabled]
 }
 
-// Süreci durdur: önce SIGTERM (docker CLI iletir), docker modunda AYRICA `docker stop/kill <name>`
-// (yalnız yerel docker CLI'yı öldürmek konteyneri durdurmaz → yetim konteyner riskini kapatır).
+// ── Süreç ilerleme + günlük dosyası yardımcıları (uzun 30-75 dk koşular için) ────────────────
+def fmtDur = { long ms ->
+    long s = (long) (ms / 1000L); long m = s / 60L; long ss = s % 60L
+    return String.format(java.util.Locale.US, '%d:%02d', m, ss)
+}
+// RUNNING ekranındaki ilerleme Label'ini GÜNCELLER — render() ÇAĞIRMAZ (render() sahneyi yeniden
+// kurup pencere boyutunu/kaydırma konumunu sıfırlar). ASAMA_BASLA satırlarında ve ~20 sn'lik nabız
+// satırlarında (phaseAppend) tetiklenir; FX iş parçacığından çağrılmalıdır.
+def updateProgressLabel = { ->
+    def lbl = progressLabelRef.get(); if (lbl == null) return
+    def now = System.currentTimeMillis()
+    def label = stageLabelRef.get()
+    def ss = stageStartRef.get(); def rs = runStartRef.get()
+    long stageMs = (ss != null) ? (now - (ss as long)) : 0L
+    long totalMs = (rs != null) ? (now - (rs as long)) : 0L
+    def txt = (label ? ('Aşama: ' + label) : 'Başlıyor…') + '\n' +
+              'Bu aşamada geçen süre: ' + fmtDur(stageMs) + '   ·   Toplam geçen süre: ' + fmtDur(totalMs)
+    lbl.setText(txt)
+}
+// Günlük klasörünü Gezgin'de aç — RUNNING/ERROR/RESULT ekranlarında ortak buton.
+def openLogFolder = { ->
+    def f = logFileRef.get()
+    def dir = (f != null) ? f.getParentFile() : logsDir()
+    try {
+        if (java.awt.Desktop.isDesktopSupported() && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.OPEN)) {
+            java.awt.Desktop.getDesktop().open(dir)
+        } else {
+            Dialogs.showInfoNotification('Günlük klasörü', dir.getAbsolutePath())
+        }
+    } catch (Throwable t) {
+        Dialogs.showWarningNotification('Günlük klasörü açılamadı', dir.getAbsolutePath())
+    }
+}
+// Bilinen çökme/hata imzalarını Türkçe 'olası neden + öneri' ipucuna çevirir — ham dökümün YERİNE
+// değil, ÜSTÜNE eklenir (ham ayrıntı köklü tanı için tutulur). Yalnız 'run' akışında (prefetch'e VALIS
+// -kayıt ipuçları uygulanmaz) ve kullanıcı zaten iptal etmediyse gösterilir.
+def explainFailure = { Map r, String flowKind ->
+    if (flowKind != 'run') return null
+    if (cancelledRef.get()) return null
+    def hay = (((r.error ?: '') as String) + ' ' + ((r.lastLines ?: '') as String)).toLowerCase(java.util.Locale.ROOT)
+    int code = (r.exitCode instanceof Number) ? (r.exitCode as int) : 0
+    // 0xC0000005 (Windows erişim ihlali) imzasız 3221225477 = işaretli 32-bit -1073741819; native çökmede
+    // (faulthandler traceback basar ama HEX KODU ASLA basmaz) tek güvenilir sinyal çıkış koduDUR.
+    if (hay.contains('0xc0000005') || hay.contains('access violation') || code == 139 || code == -1073741819) {
+        return 'Olası neden: yerli (native) çökme — bellek erişim ihlali (0xC0000005 / segfault). Genelde libvips/JVM ' +
+               'DLL çakışması ya da çok büyük bir görüntünün belleğe materyalize edilmesinden kaynaklanır.\n' +
+               'Öneri: WSL modunu deneyin (Windows\'ta önerilen yol), "Yalnız rigid kayıt" işaretleyin ya da ' +
+               '"maks. işlenen boyut (px)" değerini küçültün.'
+    }
+    if (hay.contains('killed') || hay.contains('out of memory') || hay.contains('cannot allocate memory') || code == 137) {
+        return 'Olası neden: bellek yetersizliği (OOM) — süreç sistem tarafından sonlandırılmış olabilir.\n' +
+               'Öneri: WSL kullanıyorsanız .wslconfig içindeki bellek sınırını artırın; "maks. işlenen boyut (px)" ' +
+               'değerini küçültün ya da aynı anda daha az slaytla çalışın.'
+    }
+    if (hay.contains('no space left on device') || hay.contains('errno 28')) {
+        return 'Olası neden: disk dolu.\n' +
+               'Öneri: çalışma/çıktı klasöründe yer açın; WSL modundaysanız WSL sanal diskinin (vhdx) boyutunu da kontrol edin.'
+    }
+    if (hay.contains('modulenotfounderror') && hay.contains('valis')) {
+        return 'Olası neden: VALIS Python ortamı (venv) bulunamadı ya da yanlış yapılandırılmış.\n' +
+               'Öneri: "Yapılandır" ekranındaki Python yolunu doğrulayın; kurulum adımları için Kaynaklar → İleri kurulumlar § VALIS.'
+    }
+    if (hay.contains('no such file or directory') && (hay.contains('.svs') || hay.contains('.ndpi') || hay.contains('.tif') || hay.contains('.czi'))) {
+        return 'Olası neden: bir slayt dosyası taşınmış/silinmiş/erişilemiyor.\n' +
+               'Öneri: proje slayt yollarını doğrulayın; gerekirse QuPath\'te "⟳ Yenile" ile yeniden bağlayın.'
+    }
+    if (hay.contains('bio-formats') || hay.contains('loci') || (hay.contains('jvm') && hay.contains('java'))) {
+        return 'Olası neden: Java/Bio-Formats motoruyla ilgili bir sorun.\n' +
+               'Öneri: WSL modunu deneyin; sorun sürerse günlük dosyasının tamamını inceleyin ("Günlük klasörünü aç").'
+    }
+    return null
+}
+
+// Süreci durdur: önce SIGTERM (docker CLI iletir), docker modunda AYRICA `docker stop/kill <name>`,
+// WSL modunda AYRICA ATOLYE_PID ile İÇ Linux sürecine doğrudan kill -TERM/-KILL — yalnız wsl.exe
+// cephesini öldürmek iç sürecin ölümünü GARANTİ ETMEZ (bilinen WSL2 mimari açığı). descendants()
+// destroy'DAN ÖNCE anlık görüntülenir (sonradan çağrılırsa ağaç zaten söküldüğü için boş/bayat döner).
 def killProc = { ->
-    try { processRef.get()?.destroy() } catch (Throwable ignore) {}
+    def p = processRef.get()
+    def kids = []
+    try { kids = p?.descendants()?.collect { it } ?: [] } catch (Throwable ignore) {}
+    try { p?.destroy() } catch (Throwable ignore) {}
     def dn = dockerNameRef.get()
     if (dn) { try { new ProcessBuilder(['docker', 'stop', dn.toString()]).redirectErrorStream(true).start() } catch (Throwable ignore) {} }
+    def wpid = wslPidRef.get()
+    if (wpid) {
+        try {
+            new ProcessBuilder(['wsl', 'bash', '-lc',
+                'kill -TERM ' + wpid + ' 2>/dev/null; sleep 2; kill -KILL ' + wpid + ' 2>/dev/null; true'])
+                .redirectErrorStream(true).start()
+        } catch (Throwable ignore) {}
+    }
     try { Thread.sleep(1500) } catch (Throwable ignore) {}
-    try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {}
+    kids.each { try { it.destroyForcibly() } catch (Throwable ignore) {} }
+    try { p?.destroyForcibly() } catch (Throwable ignore) {}
     if (dn) { try { new ProcessBuilder(['docker', 'kill', dn.toString()]).redirectErrorStream(true).start() } catch (Throwable ignore) {} }
 }
 
-def startRun = { List cmd, String busyLabel, Closure onSuccess ->
+// flowKind: 'run' | 'prefetch' — explainFailure'a VALIS-kayıt ipuçlarının yanlış akışa (prefetch)
+// uygulanmasını önlemek için taşınır; resultKindRef'i BAŞARISIZLIKTA BİLE doğru tutmak için burada
+// da set edilir (öncesinde yalnız onSuccess içinde set ediliyordu).
+def startRun = { List cmd, String busyLabel, String flowKind, Closure onSuccess, long timeoutSeconds = PYTHON_TIMEOUT_SECONDS ->
     cancelledRef.set(false)
+    // cmd[0]=='wsl' -> wslCmd() üretimi; ATOLYE_PID satırı YALNIZ bu durumda WSL-içi gerçek PID'dir.
+    // Native modda o sayı bir Windows PID'i, Docker modunda konteyner isim-uzayına ait bir PID'dir —
+    // ikisinde de 'wsl bash -lc kill -TERM <sayı>' YANLIŞ bir sürece gidebilir; PID'i YAKALAMA bile.
+    wslModeRef.set(cmd != null && !cmd.isEmpty() && 'wsl'.equalsIgnoreCase(cmd[0]?.toString()))
+    wslPidRef.set(null); stageKeyRef.set(null); stageLabelRef.set(null); stageStartRef.set(null)
+    qcThumbRef.set(null)   // önceki koşunun QC önizlemesi yeni koşuya SIZMASIN
+    batchProgressRef.set(new java.util.LinkedHashMap())   // önceki toplu işin tablosu yeni koşuya SIZMASIN
+    resultKindRef.set(flowKind)
+    activeTimeoutSecondsRef.set(timeoutSeconds)   // RUNNING ekranı + zaman aşımı bekçisi bu koşuya ÖZGÜ süreyi kullanır (varsayılan: PYTHON_TIMEOUT_SECONDS — mevcut çağrı yerleri değişmez)
+    runStartRef.set(System.currentTimeMillis())
     def timedOut = new java.util.concurrent.atomic.AtomicBoolean(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO); logAreaRef.set(la)
+    def progLabel = new javafx.scene.control.Label('Başlıyor…'); progLabel.setWrapText(true); progLabel.setMaxWidth(Double.MAX_VALUE)
+    progressLabelRef.set(progLabel)
+    // Tam günlük dosyası (UTF-8 ZORUNLU — windows-1254 platform varsayılanı Türkçe karakterleri
+    // bozar; süreç akışı zaten UTF-8 okunuyor). Pencere kapansa/çökse bile diskte kalır.
+    def logFile = new File(logsDir(), 'valis_' + new java.text.SimpleDateFormat('yyyyMMdd-HHmmss').format(new Date()) + '_' + flowKind + '.log')
+    logFileRef.set(logFile)
+    try {
+        def w = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(logFile, true), java.nio.charset.StandardCharsets.UTF_8))
+        w.write('=== VALIS ' + flowKind + ' - ' + new Date().toString() + ' ===')
+        w.newLine(); w.write('Komut: ' + cmdToText(cmd)); w.newLine(); w.flush()
+        logWriterRef.set(w)
+    } catch (Throwable ignore) { logWriterRef.set(null) }
     busyLabelRef.set(busyLabel); step.set('RUNNING'); render()
     // Zaman aşımı bekçisi — engelli readLine'a BAĞLI DEĞİL: süreç sessizce takılsa bile süreyi doldurunca öldürür.
     def watchdog = new Thread({
-        try { Thread.sleep(PYTHON_TIMEOUT_SECONDS * 1000L) } catch (InterruptedException ie) { return }
+        try { Thread.sleep(timeoutSeconds * 1000L) } catch (InterruptedException ie) { return }
         timedOut.set(true); cancelledRef.set(true); killProc()
     }, 'AtolyeVALIS-Watchdog')
     watchdog.setDaemon(true); watchdog.start()
     def worker = new Thread({
-        def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
-        def r = runProcess(cmd, processRef, cancelledRef, appendLine)
+        // Her satır: (1) günlük dosyasına yaz+flush (2) ASAMA_BASLA/ATOLYE_PID/nabız satırlarını ayrıştırıp
+        // ilerleme Label'ini günceller (3) ham satırı TextArea'ya ekler — işaret satırları GİZLENMEZ.
+        def phaseAppend = { String ln ->
+            def w = logWriterRef.get()
+            if (w != null) {
+                try {
+                    def ts = new java.text.SimpleDateFormat('HH:mm:ss').format(new Date())
+                    w.write('[' + ts + '] ' + ln); w.newLine(); w.flush()
+                } catch (Throwable ignore) {}
+            }
+            boolean tick = false
+            // Toplu işlemde cmd_batch her satırı '[vaka i/n: ad] ' ile öneklendirir (_EMIT_PREFIX) —
+            // işaret satırları (ATOLYE_PID/ASAMA_BASLA/nabız/BATCH_ILERLEME) da bu öneki taşır, o yüzden
+            // startsWith/contains eşleşmeleri öneksiz kopya üzerinden yapılır; TextArea/günlük dosyasına
+            // yazılan ham 'ln' değişmez (kullanıcı hangi vakadan geldiğini görsün).
+            def stripped = ln.replaceFirst(/^\[vaka [^\]]*\] /, '')
+            if (stripped.startsWith('ATOLYE_PID: ')) {
+                def v = stripped.substring('ATOLYE_PID: '.length()).trim()
+                if (wslModeRef.get() && v ==~ /\d+/ && (v as long) > 1L) wslPidRef.set(v)
+            } else if (stripped.startsWith('ASAMA_BASLA: ')) {
+                def rest = stripped.substring('ASAMA_BASLA: '.length())
+                int bar = rest.indexOf('|')
+                def key = (bar >= 0 ? rest.substring(0, bar) : rest).trim()
+                def label = (bar >= 0 ? rest.substring(bar + 1) : rest).trim()
+                stageKeyRef.set(key); stageLabelRef.set(label); stageStartRef.set(System.currentTimeMillis())
+                tick = true
+            } else if (stripped.contains('hala calisiyor')) {
+                tick = true
+            } else if (stripped.startsWith('BATCH_ILERLEME: ')) {
+                try {
+                    def j = qupath.lib.io.GsonTools.getInstance().fromJson(stripped.substring('BATCH_ILERLEME: '.length()), Map.class)
+                    def idx = (j?.index ?: 0) as int
+                    batchProgressRef.get()[idx] = j
+                } catch (Throwable ignore) {}
+                tick = true
+            }
+            javafx.application.Platform.runLater {
+                def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n')
+                if (tick) updateProgressLabel()
+            }
+        }
+        def r = runProcess(cmd, processRef, cancelledRef, phaseAppend)
         try { watchdog.interrupt() } catch (Throwable ignore) {}
+        def w = logWriterRef.get()
+        if (w != null) {
+            try { w.write('=== bitti: ok=' + r.ok + ' exitCode=' + r.exitCode + ' ==='); w.newLine(); w.flush(); w.close() } catch (Throwable ignore) {}
+        }
         javafx.application.Platform.runLater {
+            def logPath = logFileRef.get()?.getAbsolutePath() ?: '-'
             if (timedOut.get()) {
-                errorTextRef.set('Zaman aşımı (' + (PYTHON_TIMEOUT_SECONDS / 3600) + ' saat) — süreç durduruldu' + (dockerNameRef.get() ? ' (docker stop denendi).' : '.'))
+                errorTextRef.set('Zaman aşımı (' + (timeoutSeconds / 3600) + ' saat) — süreç durduruldu' + (dockerNameRef.get() ? ' (docker stop denendi).' : '.') +
+                    '\n\nGünlük dosyası: ' + logPath)
                 step.set('ERROR'); render(); return
             }
             if (!r.ok) {
-                errorTextRef.set('VALIS başarısız / iptal (çıkış kodu: ' + r.exitCode + ')\n\n' + (r.error ?: '') + '\n' + (r.lastLines ?: ''))
+                def hint = explainFailure(r, flowKind)
+                def sb = new StringBuilder('VALIS başarısız / iptal (çıkış kodu: ' + r.exitCode + ')\n\n')
+                if (hint) sb << hint << '\n\n'
+                sb << (r.error ?: '') << '\n' << (r.lastLines ?: '') << '\n\nGünlük dosyası: ' << logPath
+                errorTextRef.set(sb.toString())
                 step.set('ERROR'); render(); return
             }
+            lastResultJsonRef.set(r.resultJson)   // batch onSuccess 'cases' listesini buradan okur (onSuccess parametresiz — mevcut çağrı yerleri değişmez)
             onSuccess()
         }
     }, 'AtolyeVALIS-Run')
     worker.setDaemon(true); worker.start()
 }
 // Ana hizalama akışı — startRun'ı OME/GeoJSON sonuç ekranıyla sarar (mevcut çağrı yerleri değişmez).
+// "Bittiğinde projeye otomatik ekle" AÇIKSA (READY ekranı, varsayılan AÇIK; /qupath/atolye/valis
+// → autoAdd kalıcı): birleşik multipleks ÖNCE projeye eklenir, SONRA sonuç raporlanır (ekle-sonra-
+// bildir) — kanal adı/rengi + (varsa) Hematoksilen-çakışma QC önizlemesi bu eklemenin parçasıdır.
+// KAPALIYSA (ör. "↻ Yeniden birleştir" ile hızlı deneme-yanılma — her deneme ayrı zaman damgalı
+// dosya üretir, otomatik eklemek projeyi şişirir) eski davranış: yalnız rapor, elle "ekle" düğmesi.
 def startDirectRun = { List cmd ->
-    startRun(cmd, 'VALIS çalışıyor', {
-        def sb = new StringBuilder()
+    startRun(cmd, 'VALIS çalışıyor', 'run', {
         def mo = lastMergeOutRef.get(); boolean isComp = lastCompositeRef.get()
-        sb << "VALIS TAMAMLANDI\n═══════════════════════════════\n\n"
-        sb << (isComp ? "Doğal-renk bileşik (RGB): " : "Çok-kanallı multipleks  : ") << (mo?.getAbsolutePath() ?: '(üretilmedi)') << "\n"
-        sb << "Warp'lı GeoJSON        : " << (lastGeojsonOutRef.get()?.getAbsolutePath() ?: '-') << "\n\n"
-        sb << "Aşağıdan sonuçları QuPath'e aktarın:\n"
-        sb << (isComp
-            ? " • \"Birleşik multipleksi ekle\" → doğal-renk RGB'yi projeye ekler. Tür: BRIGHTFIELD; tek görünüm, kanal seçilemez (\"slayt gibi\").\n"
-            : " • \"Birleşik multipleksi ekle\" → çok-kanallı hizalı görüntüyü ekler. Tür: FLUORESCENCE; Ctrl+Shift+C ile 2–3 kanalı aç/kapat.\n")
-        sb << " • \"Warp'lı anotasyonu içe aktar\" → hedef slayda (VALIS adlı, kilitli) anotasyon ekler.\n\n"
-        sb << "Çıktı türleri: Ekler → Görüntü Hizalama § 7.2 (hangisini ne zaman/hangi tür).\n"
-        sb << "Hizalamayı GÖRSEL doğrulayın.\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
-        resultKindRef.set('run'); resultTextRef.set(sb.toString()); step.set('RESULT'); render()
+        def wp = lastWarpPlanRef.get() ?: []
+        def buildResultText = { List extraNotes ->
+            def sb = new StringBuilder()
+            sb << "VALIS TAMAMLANDI\n═══════════════════════════════\n\n"
+            sb << (isComp ? "Doğal-renk bileşik (RGB): " : "Çok-kanallı multipleks  : ") << (mo?.getAbsolutePath() ?: '(üretilmedi)') << "\n"
+            if (extraNotes) extraNotes.each { sb << it << "\n" }
+            if (wp.isEmpty()) {
+                sb << "Warp'lı GeoJSON        : - (hedef seçilmedi)\n\n"
+            } else {
+                sb << "Warp'lı GeoJSON (" << wp.size() << " hedef):\n"
+                wp.each { p -> def gj = p.geojsonOut; boolean got = (gj instanceof File && gj.isFile()); sb << "  " << (got ? '✓ ' : '✗ ') << (p.targetName ?: '?') << " → " << (gj?.getAbsolutePath() ?: '-') << "\n" }
+                sb << "\n"
+            }
+            sb << "Aşağıdan sonuçları QuPath'e aktarın:\n"
+            sb << (isComp
+                ? " • \"Birleşik multipleksi ekle\" → doğal-renk RGB'yi projeye ekler. Tür: BRIGHTFIELD; tek görünüm, kanal seçilemez (\"slayt gibi\").\n"
+                : " • \"Birleşik multipleksi ekle\" → çok-kanallı hizalı görüntüyü ekler. Tür: FLUORESCENCE; Ctrl+Shift+C ile 2–3 kanalı aç/kapat.\n")
+            sb << " • \"Warp'lı anotasyonu içe aktar\" → hedef slayt(lar)a (VALIS adlı, kilitli) anotasyon ekler.\n\n"
+            sb << "Çıktı türleri: Ekler → Görüntü Hizalama § 7.2 (hangisini ne zaman/hangi tür).\n"
+            sb << "Hizalamayı GÖRSEL doğrulayın.\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+            return sb.toString()
+        }
+        // perFile (varsa): kanal adı/rengi metne eklenir, QC önizlemesi qcThumbRef'e yazılır (RESULT'ta gösterilir).
+        def finishWithPreview = { List extraNotes, List perFile ->
+            resultKindRef.set('run')
+            def txt = buildResultText(extraNotes)
+            if (perFile) {
+                def withCh = perFile.find { it.channels && !it.channels.isEmpty() }
+                if (withCh != null) {
+                    def sb2 = new StringBuilder(txt)
+                    sb2 << "\nKanallar (" << withCh.file.getName() << "):\n"
+                    withCh.channels.each { sb2 << "  " << it << "\n" }
+                    txt = sb2.toString()
+                }
+                def withQc = perFile.find { it.qc != null }
+                if (withQc != null) {
+                    try { qcThumbRef.set(javafx.embed.swing.SwingFXUtils.toFXImage(withQc.qc, null)) } catch (Throwable ignore) {}
+                }
+            }
+            resultTextRef.set(txt); step.set('RESULT'); render()
+        }
+        def project = QP.getProject()
+        boolean autoAdd = prefs.getBoolean(PREF_AUTOADD, true)
+        if (autoAdd && project != null && mo instanceof File && mo.isFile()) {
+            def type = isComp ? qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_OTHER : qupath.lib.images.ImageData.ImageType.FLUORESCENCE
+            addOmeToProject(project, [mo.getAbsolutePath()], type, true, { res ->
+                def msg = String.format(java.util.Locale.US, 'Otomatik ekleme: %d eklendi, %d zaten vardı, %d hata.', (res.added ?: 0), (res.skipped ?: 0), (res.failed ?: 0))
+                def extra = ['', msg]
+                if ((res.failed ?: 0) > 0 && res.notes) extra << ('Ayrıntı: ' + res.notes.join('; '))
+                finishWithPreview(extra, res.perFile)
+            })
+        } else {
+            finishWithPreview(null, null)
+        }
     })
 }
 // VALIS varsayılan model ağırlıklarını (DISK + LightGlue, ~50 MB) yerel önbelleğe indir — native modda
@@ -1649,7 +2368,7 @@ def doPrefetch = { cfg ->
     def wr = writeRunner(cfg)
     if (!wr.ok) { Dialogs.showErrorMessage('Model ağırlıkları', 'Köprü betiği yazılamadı: ' + (wr.error ?: '?')); return }
     def ck = new File(new File(new File(new File(atolyeDataRoot(), 'cache'), 'torch'), 'hub'), 'checkpoints')
-    startRun(nativeCmd(cfg, ['prefetch']), 'Model ağırlıkları indiriliyor', {
+    startRun(nativeCmd(cfg, ['prefetch']), 'Model ağırlıkları indiriliyor', 'prefetch', {
         def sb = new StringBuilder()
         sb << "MODEL AĞIRLIKLARI HAZIR ✅\n═══════════════════════════════\n\n"
         sb << "VALIS varsayılan modelleri (DISK + LightGlue) yerel önbelleğe indirildi/doğrulandı.\n"
@@ -1661,40 +2380,122 @@ def doPrefetch = { cfg ->
     })
 }
 
+// Kayıtlı warpPlan'daki HER hedefi içe aktarır (ÇOKLU) — dosya-varlığı, önceki tek-hedef davranışıyla
+// AYNI şekilde, per-hedef başarının zemin gerçeğidir. Tek özet bildirimle sonuç raporlanır.
 def doImportWarped = {
-    def project = QP.getProject(); def te = lastTargetEntryRef.get(); def gj = lastGeojsonOutRef.get()
-    if (project == null || te == null) { Dialogs.showErrorMessage('İçe aktarım', 'Proje/hedef bilgisi yok — önce "Komut üret" ya da "Doğrudan çalıştır".'); return }
-    if (gj == null || !gj.isFile()) { Dialogs.showWarningNotification('İçe aktarım', 'Warp\'lı GeoJSON henüz yok — önce üretilen VALIS komutunu çalıştırın, bittiğinde tekrar deneyin.'); return }
-    def r = importWarpedToTarget(project, te, gj)
-    if (r.ok) Dialogs.showInfoNotification('Warp\'lı anotasyon', r.count + ' nesne hedef slayda aktarıldı' + (r.live ? ' (açık slayt).' : ' (diske kaydedildi).'))
-    else Dialogs.showErrorMessage('İçe aktarım başarısız', r.error ?: '?')
+    def project = QP.getProject()
+    def plan = lastWarpPlanRef.get() ?: []
+    if (project == null || plan.isEmpty()) { Dialogs.showErrorMessage('İçe aktarım', 'Proje/hedef bilgisi yok — önce en az bir warp hedefi işaretleyip "Komut üret" ya da "Doğrudan çalıştır".'); return }
+    def srcAreaUm2 = (lastWarpSrcAreaUm2Ref.get() ?: 0.0d) as double
+    int ok = 0, fail = 0
+    def notes = []
+    def warns = []
+    plan.each { p ->
+        def gj = p.geojsonOut
+        if (gj == null || !(gj instanceof File) || !gj.isFile()) {
+            fail++; notes << ('  ✗ ' + (p.targetName ?: '?') + ': warp\'lı GeoJSON henüz yok')
+            return
+        }
+        def r = importWarpedToTarget(project, p.entry, gj, srcAreaUm2)
+        if (r.ok) {
+            ok++
+            notes << ('  ✓ ' + (p.targetName ?: '?') + ': ' + r.count + ' nesne' + (r.live ? ' (açık slayt)' : ' (diske kaydedildi)'))
+            if (r.scaleWarn) warns << (p.targetName + ' — ' + r.scaleWarn)
+        } else {
+            fail++; notes << ('  ✗ ' + (p.targetName ?: '?') + ': ' + (r.error ?: '?'))
+        }
+    }
+    def head = String.format(java.util.Locale.US, '%d/%d hedefe aktarıldı.', ok, plan.size())
+    def full = head + '\n' + notes.join('\n') + (warns.isEmpty() ? '' : ('\n\n' + warns.join('\n')))
+    if (fail > 0 || !warns.isEmpty()) Dialogs.showWarningNotification('Warp\'lı anotasyon', full)
+    else Dialogs.showInfoNotification('Warp\'lı anotasyon', full)
 }
+// addOmeToProject sonucundaki (withPreview=true ile üretilen, varsa) kanal adı+renk okumasını ve
+// hizalama QC önizlemesini RESULT ekranına ekler — yalnız HÂLÂ RESULT ekranındaysak (CMD_READY'nin
+// "Sonuçları içe aktar" akışında dokunmaz; o ekranda resultTextRef zaten gösterilmiyor).
+def applyAddPreview = { Map res ->
+    if (step.get() != 'RESULT') return
+    def perFile = res.perFile ?: []
+    boolean changed = false
+    def withCh = perFile.find { it.channels && !it.channels.isEmpty() }
+    def curTxt = resultTextRef.get() ?: ''
+    if (withCh != null && !curTxt.contains('Kanallar (')) {
+        def sb = new StringBuilder(curTxt)
+        sb << "\nKanallar (" << withCh.file.getName() << "):\n"
+        withCh.channels.each { sb << "  " << it << "\n" }
+        resultTextRef.set(sb.toString()); changed = true
+    }
+    def withQc = perFile.find { it.qc != null }
+    if (withQc != null && qcThumbRef.get() == null) {
+        try { qcThumbRef.set(javafx.embed.swing.SwingFXUtils.toFXImage(withQc.qc, null)); changed = true } catch (Throwable ignore) {}
+    }
+    if (changed) render()
+}
+// Ayrı hizalı OME slaytlarını projeye ekler — HER dosyanın TÜRÜ kaynak slaydın boya tipinden
+// (stainMapRef override > ad çıkarımı > global mod; effectiveStain) türetilir, eşleşme proje
+// girdilerinin CHEAP getURIs() dosya adı ile yapılır (readImageData TARAMASI YOK). Kanal/QC
+// yalnız BİRİNCİL merge çıktısı için anlamlıdır, burada üretilmez (withPreview=false).
 def doAddOme = {
     def project = QP.getProject(); def od = lastOmeDirRef.get()
     if (project == null || od == null) return   // sessiz — merge birincil; ayrı OME opsiyonel
     def files = []
-    try { od.listFiles({ d, n -> def ln = n.toLowerCase(java.util.Locale.ROOT); ln.endsWith('.ome.tiff') || ln.endsWith('.ome.tif') } as java.io.FilenameFilter)?.each { files << it.getAbsolutePath() } } catch (Throwable ignore) {}
+    try { od.listFiles({ d, n -> def ln = n.toLowerCase(java.util.Locale.ROOT); ln.endsWith('.ome.tiff') || ln.endsWith('.ome.tif') } as java.io.FilenameFilter)?.each { files << it } } catch (Throwable ignore) {}
     if (files.isEmpty()) return   // ayrı hizalı OME üretilmemiş (--no-ome) → sessiz geç; merge doAddMergeOut ile eklenir
-    addOmeToProject(project, files, { res ->
-        def msg = String.format(java.util.Locale.US, '%d eklendi, %d zaten vardı, %d hata.', (res.added ?: 0), (res.skipped ?: 0), (res.failed ?: 0))
-        boolean bad = ((res.failed ?: 0) > 0) || (res.syncOk == false)
-        if (bad) Dialogs.showErrorMessage('OME-TIFF — kısmen/hata', msg + '\n\n' + ((res.notes) ? res.notes.join('\n') : ''))
-        else Dialogs.showInfoNotification('OME-TIFF (ayrı hizalı slaytlar)', msg)
-    })
+    def stemOfOut = { File f -> def n = f.getName(); def i = n.toLowerCase(java.util.Locale.ROOT).indexOf('.'); (i > 0 ? n.substring(0, i) : n) }
+    def gMode = mergeModeRef.get() ?: 'hed'
+    def stemToEntryId = [:]
+    try {
+        project.getImageList().each { e ->
+            def fn = null
+            try { def uris = e.getURIs(); if (uris != null && !uris.isEmpty()) { def u = uris.iterator().next(); if ('file'.equals(u.getScheme())) fn = new File(u).getName() } } catch (Throwable ignore) {}
+            if (fn != null) { def i = fn.toLowerCase(java.util.Locale.ROOT).indexOf('.'); def st = (i > 0 ? fn.substring(0, i) : fn); stemToEntryId[st] = e.getID()?.toString() }
+        }
+    } catch (Throwable ignore) {}
+    def typeFor = { File f ->
+        def st = stemOfOut(f)
+        def eid = stemToEntryId[st]
+        if (eid == null) return qupath.lib.images.ImageData.ImageType.UNSET
+        switch (effectiveStain(eid, st, gMode)) {
+            case 'he':  return qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_H_E
+            case 'dab':
+            case 'hed': return qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_H_DAB
+            case 'rgb': return qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_OTHER
+            default:    return qupath.lib.images.ImageData.ImageType.UNSET
+        }
+    }
+    def groups = [:]   // ImageType -> List<String path>
+    files.each { f -> def t = typeFor(f); (groups[t] = groups[t] ?: []) << f.getAbsolutePath() }
+    int added = 0, skipped = 0, failed = 0
+    def allNotes = []
+    def pending = new java.util.concurrent.atomic.AtomicInteger(groups.size())
+    groups.each { type, paths ->
+        addOmeToProject(project, paths, type, false, { res ->
+            added += (res.added ?: 0); skipped += (res.skipped ?: 0); failed += (res.failed ?: 0)
+            if (res.notes) allNotes.addAll(res.notes)
+            if (pending.decrementAndGet() == 0) {
+                def msg = String.format(java.util.Locale.US, '%d eklendi, %d zaten vardı, %d hata.', added, skipped, failed)
+                if (failed > 0) Dialogs.showErrorMessage('OME-TIFF — kısmen/hata', msg + '\n\n' + allNotes.join('\n'))
+                else Dialogs.showInfoNotification('OME-TIFF (ayrı hizalı slaytlar)', msg)
+            }
+        })
+    }
 }
-// Birleşik multipleks OME-TIFF'i projeye ekle (merge birincil çıktı; wizard koşusundan sonra).
+// Birleşik multipleks OME-TIFF'i projeye ekle (merge birincil çıktı; wizard koşusundan sonra ya da
+// elle). Tür OTOMATİK ayarlanır: doğal-renk bileşik → BRIGHTFIELD_OTHER, çok-kanallı → FLUORESCENCE.
 def doAddMergeOut = {
     def project = QP.getProject(); def mf = lastMergeOutRef.get()
     if (project == null || mf == null) return
     if (!(mf instanceof File)) { try { mf = new File(mf.toString()) } catch (Throwable ignore) { return } }
     if (!mf.isFile()) { Dialogs.showWarningNotification('Multipleks ekle', 'Birleşik multipleks henüz yok — önce üretilen VALIS komutunu çalıştırın:\n' + mf.getAbsolutePath()); return }
     boolean isComp = lastCompositeRef.get()
-    addOmeToProject(project, [mf.getAbsolutePath()], { res ->
+    def type = isComp ? qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_OTHER : qupath.lib.images.ImageData.ImageType.FLUORESCENCE
+    addOmeToProject(project, [mf.getAbsolutePath()], type, true, { res ->
         def msg = String.format(java.util.Locale.US, '%d eklendi, %d zaten vardı, %d hata.', (res.added ?: 0), (res.skipped ?: 0), (res.failed ?: 0))
         boolean bad = ((res.failed ?: 0) > 0) || (res.syncOk == false)
         def hint = isComp
-            ? '\nDoğal-renk parlak-alan bileşiği → tür sorulursa "Brightfield" seçin. Tek pişmiş RGB görüntüdür; kanal seçilemez ("slayt gibi" görünüm).'
-            : '\nÇok kanallı → tür sorulursa "Fluorescence" seçin. Ctrl+Shift+C ile 2–3 kanalı (ör. marker-DAB + marker-Hematoksilen) "Göster" ile aç/kapat; beyaz zemin için "Invert background".'
+            ? '\nDoğal-renk parlak-alan bileşiği → tür OTOMATİK "Brightfield" olarak ayarlandı. Tek pişmiş RGB görüntüdür; kanal seçilemez ("slayt gibi" görünüm).'
+            : '\nÇok kanallı → tür OTOMATİK "Fluorescence" olarak ayarlandı. Ctrl+Shift+C ile 2–3 kanalı (ör. marker-DAB + marker-Hematoksilen) "Göster" ile aç/kapat; beyaz zemin için "Invert background".'
+        applyAddPreview(res)
         if (bad) Dialogs.showErrorMessage('Birleşik görüntü — kısmen/hata', msg + '\n\n' + ((res.notes) ? res.notes.join('\n') : ''))
         else Dialogs.showInfoNotification('Birleşik görüntü', msg + hint)
     })
@@ -1702,7 +2503,7 @@ def doAddMergeOut = {
 
 // ── DIŞARIDAN içe aktar (CLI/WSL çıktısı) ────────────────────────────────────
 // Wizard'ın "Sonuçları içe aktar" butonları YALNIZ wizard'ın kendi ürettiği koşunun
-// referanslarını (lastOmeDirRef/lastGeojsonOutRef) kullanır → WSL/terminalde elle koşulmuş
+// referanslarını (lastOmeDirRef/lastWarpPlanRef) kullanır → WSL/terminalde elle koşulmuş
 // bir sonuç bunlarla aktarılamaz. Bu iki yol herhangi bir GeoJSON/OME-TIFF dosyasını seçtirip
 // aktarır (importWarpedToTarget/addOmeToProject mantığını yeniden kullanır; değiştirmez).
 def importGeojsonToCurrent = { File gjFile ->
@@ -1740,11 +2541,46 @@ def doAddOmeFromFile = {
     if (!(ln.endsWith('.ome.tiff') || ln.endsWith('.ome.tif') || ln.endsWith('.tiff') || ln.endsWith('.tif'))) {
         Dialogs.showWarningNotification('OME ekle', 'Seçilen dosya bir OME-TIFF/TIFF değil:\n' + f.getName()); return
     }
-    addOmeToProject(project, [f.getAbsolutePath()], { res ->
+    // Elle disk-seçimi: koşu bağlamı yok (hangi tip olduğu bilinmiyor) → UNSET, kullanıcı QuPath'te seçer.
+    addOmeToProject(project, [f.getAbsolutePath()], qupath.lib.images.ImageData.ImageType.UNSET, false, { res ->
         def msg = String.format(java.util.Locale.US, '%d eklendi, %d zaten vardı, %d hata.', (res.added ?: 0), (res.skipped ?: 0), (res.failed ?: 0))
         boolean bad = ((res.failed ?: 0) > 0) || (res.syncOk == false)
         if (bad) Dialogs.showErrorMessage('OME-TIFF — kısmen/hata', msg + '\n\n' + ((res.notes) ? res.notes.join('\n') : ''))
         else Dialogs.showInfoNotification('OME-TIFF', msg + '\nÇok kanallı birleşik görüntü ise tür sorulur → "Fluorescence" seçin; sonra Brightness/Contrast (Ctrl+Shift+C) ile kanallara renk atayın.')
+    })
+}
+
+// ── Hızlı yol: kayıtlı hizalamadan SADECE anotasyon warp'ı (yeniden KAYIT yok, merge/OME yok) ──
+// TEK TIK: warp'lı GeoJSON üretilir üretilmez OTOMATİK içe aktarılır (ayrı manuel "içe aktar" gerekmez).
+// "↻ Yeniden birleştir"in warp karşılığıdır: registrar'ı DEĞİŞTİRMEZ, yalnız koordinat dönüşümünü tekrar çalıştırır.
+def doWarpOnlyTransfer = { cfg ->
+    def targetIds = targetIdsRef.get() ?: new java.util.LinkedHashSet()
+    if (targetIds.isEmpty()) { Dialogs.showErrorMessage('Hızlı warp', 'Önce en az bir hedef işaretleyin ("Warp hedefleri" listesinden).'); return }
+    def srcDirForCheck = null
+    try { def d = QP.getCurrentImageData(); def sf = (d != null) ? slideFileOf(d) : null; srcDirForCheck = sf?.getParentFile() } catch (Throwable ignore) {}
+    def pkl = registrarPickleFor(resultsDirOf(cfg), srcDirForCheck)
+    if (pkl == null) { Dialogs.showErrorMessage('Hızlı warp', 'Henüz kayıtlı hizalama yok — önce "Doğrudan çalıştır" ile bir kez tam kayıt yapın.'); return }
+    def plan = prepareRun(cfg, true, true)
+    if (!plan.ok) { errorTextRef.set(plan.error); step.set('ERROR'); render(); return }
+    def cmd = (cfg.mode == 'wsl') ? plan.wslCmd : ((cfg.mode == 'native') ? plan.nativeCmd : plan.dockerCmd)
+    startRun(cmd, 'Anotasyon warp ediliyor (kayıtlı hizalamadan)', 'run', {
+        def wp = lastWarpPlanRef.get() ?: []
+        boolean anyOk = wp.any { p -> p.geojsonOut instanceof File && p.geojsonOut.isFile() }
+        if (!anyOk) {
+            def tail = ''
+            try { tail = logAreaRef.get()?.getText() ?: '' } catch (Throwable ignore) {}
+            errorTextRef.set('Hızlı warp: hiçbir hedef için warp\'lı GeoJSON üretilmedi.\n\n' + tail)
+            step.set('ERROR'); render(); return
+        }
+        doImportWarped()
+        def sb = new StringBuilder()
+        sb << "HIZLI WARP TAMAMLANDI ✅\n═══════════════════════════════\n\n"
+        sb << "Kayıtlı hizalamadan (yeniden KAYIT yok) " << wp.size() << " hedef için anotasyon warp edildi ve içe aktarıldı:\n\n"
+        wp.each { p -> def gj = p.geojsonOut; boolean got = (gj instanceof File && gj.isFile()); sb << "  " << (got ? '✓ ' : '✗ ') << (p.targetName ?: '?') << "\n" }
+        sb << "\nKoordinat uzayı: taban (level-0) piksel, köşe sol-üst, yeniden ölçekleme yapılmaz.\n"
+        sb << "Seri kesitler AYNI hücreleri İÇERMEZ — bu bir YAKLAŞIK VEKİLDİR, hücre-düzeyinde birebir eşleşme değildir; her hedefte GÖRSEL doğrulayın.\n"
+        sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+        resultKindRef.set('run'); resultTextRef.set(sb.toString()); step.set('RESULT'); render()
     })
 }
 
@@ -1771,6 +2607,125 @@ def addRemergeAction = { cfg, actions ->
         Dialogs.showInfoNotification('Yeniden birleştir', 'WSL yeniden-birleştir komutu panoya kopyalandı (yeniden KAYIT yok). Bir terminalde çalıştırın.')
     }, tip)
     copyBtn.setDisable(pkl == null); actions.add(copyBtn)
+}
+
+// ── Toplu işlem (batch — çoklu vaka) ────────────────────────────────────────
+// Kapsam: yalnız kayıt+birleştirme (+ isteğe bağlı ayrı OME). Vaka-başına anotasyon warp bu ilk
+// sürümde YOK — her klasörde farklı bir kaynak/hedef/seçili-anotasyon seçimi gerektirir, tek-vaka
+// akışının doğrudan genellemesi değildir; ayrı vakalar için "Doğrudan çalıştır"/"⚡ …" kullanılmaya
+// devam eder. Arka-plan staging hattı (bir sonraki vakayı ÖNCEDEN kopyalama) de bu sürümde YOK
+// (Faz 2 — iş parçacığı ömrü karmaşıklığı ilk gönderimi geciktirmemeli).
+def WSI_EXTS = ['.svs', '.ndpi', '.tif', '.tiff', '.scn', '.mrxs', '.vsi', '.czi']
+def isWsiFile = { File f -> f.isFile() && WSI_EXTS.any { ext -> f.getName().toLowerCase(java.util.Locale.ROOT).endsWith(ext) } }
+def caseSlideFiles = { File d -> ((d.listFiles({ f -> isWsiFile(f) } as java.io.FileFilter) ?: ([] as File[])) as List).sort { it.getName() } }
+// Vaka adı -> HOST (Windows) çıktı klasörü/dosyası — TEK doğruluk kaynağı, prepareBatchRun'ın manifest
+// yazarken kullandığı YOLLA (kind'e göre çevrilmiş) AYNI temel yolu üretir. BATCH_RESULT ekranı (Python
+// tarafının RESULT_JSON'da bildirdiği, WSL/container FORMUNDA olabilecek yol yerine) DAİMA bunu kullanır —
+// aksi halde "Tümünü projeye ekle" WSL-biçimli bir '/mnt/...' yolunu Windows File olarak açmaya çalışırdı.
+def batchCaseOmeDir = { cfg, String name -> new File(new File(new File(outRootOf(cfg), 'batch'), name), 'ome') }
+def batchCaseMergeOutFile = { cfg, String name -> new File(batchCaseOmeDir(cfg, name), 'merged_overlay.ome.tiff') }
+// Kökün BİR DÜZEY altındaki alt-klasörleri tara — her biri ≥2 slayt içeriyorsa bir "vaka" adayıdır.
+def discoverBatchCases = { File root ->
+    if (root == null || !root.isDirectory()) return []
+    def subs = (root.listFiles({ f -> f.isDirectory() } as java.io.FileFilter) ?: ([] as File[])) as List
+    subs.sort { it.getName().toLowerCase(java.util.Locale.ROOT) }.findAll { d -> caseSlideFiles(d).size() >= 2 }
+}
+
+// Manifest (JSON) kurar + moda göre (container/wsl/host) yolları çevirir; startBatch bunu ÇAĞIRIR.
+// reuseRegistrar=true: TÜM vakalar için kayıtlı registrar kullanılır (toplu "↻ yeniden birleştir").
+def prepareBatchRun = { cfg, List caseDirs, boolean reuseRegistrar ->
+    if (caseDirs == null || caseDirs.isEmpty()) return [ok: false, error: 'En az bir vaka klasörü işaretleyin.']
+    def workRoot = workRootOf(cfg)
+    if (cfg.mode == 'docker') {
+        def badCase = caseDirs.find { toContainer(it.getAbsolutePath(), workRoot) == null }
+        if (badCase != null || toContainer(outRootOf(cfg).getAbsolutePath(), workRoot) == null)
+            return [ok: false, error: 'Docker modu TEK KÖK gerektirir: TÜM vaka klasörleri VE çıktı kökü çalışma klasörünün ALTINDA olmalı.\n  çalışma kökü: ' + workRoot.getAbsolutePath() + '\nWSL ya da native modu kullanın (bu kısıt yok).']
+    }
+    def wr = writeRunner(cfg)
+    if (!wr.ok) return [ok: false, error: 'Köprü betiği yazılamadı: ' + wr.error]
+
+    def refPattern = (batchReferencePatternRef.get() ?: '').toString().trim().toLowerCase(java.util.Locale.ROOT)
+    def mergeMode = mergeModeRef.get() ?: 'hed'
+    def mergeLevel = (mergeLevelRef.get() ?: '2')
+    boolean composite = compositeRef.get()
+    boolean mergeEnabled = mergeEnabledRef.get()
+    boolean writeOme = writeOmeRef.get()
+    def _maxProc = (maxProcDimRef.get() ?: '').toString().trim()
+    boolean rigidOnly = rigidOnlyRef.get()
+    // Yeniden birleştirmede (reuseRegistrar=true) skip_existing HER ZAMAN kapalı: aksi halde önceki
+    // <ad>.done.json işaretçisi bulunan her vaka SESSİZCE atlanır — cmd_batch yine de ok:true sayar
+    // ("N/N başarılı" banner'ı), ama çıktı kullanıcının YENİ boya/renk/level/composite seçimleriyle
+    // yeniden birleştirilmez, ESKİ kalır. Normal (yeniden kayıt eden) toplu işte kullanıcı tercihi geçerli.
+    boolean skipExisting = reuseRegistrar ? false : batchSkipExistingRef.get()
+
+    // buildManifest(kind): 'container' | 'wsl' | 'host' — TÜM yollar burada moda göre çevrilir
+    // (tek-vaka prepareRun'daki conv() ile AYNI ilke; runner tarafında dönüşüm YAPILMAZ).
+    def buildManifest = { String kind ->
+        def conv = { File f -> if (f == null) return null
+            if (kind == 'container') return toContainer(f.getAbsolutePath(), workRoot)
+            if (kind == 'wsl') return toWsl(f.getAbsolutePath())
+            return f.getAbsolutePath() }
+        def cases = []
+        caseDirs.each { d ->
+            def files = caseSlideFiles(d)
+            def caseRoot = new File(new File(outRootOf(cfg), 'batch'), d.getName())
+            def caseResults = new File(caseRoot, 'results'); caseResults.mkdirs()
+            def caseOme = batchCaseOmeDir(cfg, d.getName()); caseOme.mkdirs()
+            def explicitRef = refPattern ? files.findAll { it.getName().toLowerCase(java.util.Locale.ROOT).contains(refPattern) } : []
+            def m = [name: d.getName(), src: conv(d), dst: conv(caseResults), ome: conv(caseOme),
+                     images: files.collect { conv(it) },
+                     // Sabit dosya adı -> Groovy tarafı (BATCH_RESULT) HOST yolu Python'un yazdığı yolla
+                     // YENIDEN HESAPLAYABILIR (RESULT_JSON'daki merge_out alanı kind'e göre WSL/container
+                     // formunda olabilir; ona GÜVENME — bkz. batchCaseMergeOutFile).
+                     merge_out: conv(batchCaseMergeOutFile(cfg, d.getName()))]
+            if (explicitRef.size() == 1) m.reference = conv(explicitRef[0])
+            else m.auto_reference = true   // desen boş/eşleşmedi/BİRDEN ÇOK eşleşti -> ölçüm-tabanlı otomatik seçime düş
+            cases << m
+        }
+        // cpu:true — tek-vaka runArgs()'daki '--cpu' zorlamasıyla AYNI neden (VALIS 1.2.0 DiskFD CUDA'da
+        // çöküyor, bkz. runArgs yorumu); manifest tabanlı toplu işlem bu bayrağı kendi --cpu argümanı
+        // olarak KURMAZ, yalnız buradaki common map'ten miras alır (_RUN_ARG_DEFAULTS["cpu"]=False).
+        def common = [crop: cfg.crop, rigid_only: rigidOnly, no_ome: !writeOme, cpu: true,
+                      merge: mergeEnabled, merge_mode: mergeMode, merge_level: (mergeLevel.toString().isInteger() ? (mergeLevel as int) : 2),
+                      composite: composite, reuse_registrar: reuseRegistrar, stage: false, skip_existing: skipExisting]
+        if (_maxProc ==~ /\d+/) common.max_processed_dim = (_maxProc as int)
+        return [common: common, cases: cases]
+    }
+    def manifestFile = new File(workRoot, 'valis_batch_manifest.json')
+    def perCaseTxt = (batchCaseTimeoutRef.get() ?: '7200').toString().trim()
+    long perCaseSec = (perCaseTxt ==~ /\d+/) ? (perCaseTxt as long) : 7200L
+    long totalTimeout = (caseDirs.size() as long) * perCaseSec + 600L
+    return [ok: true, buildManifest: buildManifest, manifestFile: manifestFile,
+            timeoutSeconds: totalTimeout, caseCount: caseDirs.size()]
+}
+
+// Manifesti yaz + moda göre komutu kur + startRun'ı ÇOKLU-vaka zaman aşımıyla çağırır. BATCH_SETUP'ın
+// "Başlat" düğmesi + BATCH_RESULT'ın "yeniden dene"/"↻ toplu yeniden birleştir" düğmeleri PAYLAŞIR.
+def startBatch = { cfg, List caseDirs, boolean reuseRegistrar ->
+    def plan = prepareBatchRun(cfg, caseDirs, reuseRegistrar)
+    if (!plan.ok) { errorTextRef.set(plan.error); step.set('ERROR'); render(); return }
+    def kind = (cfg.mode == 'wsl') ? 'wsl' : (cfg.mode == 'native' ? 'host' : 'container')
+    def manifest = plan.buildManifest(kind)
+    try { plan.manifestFile.setText(qupath.lib.io.GsonTools.getInstance().toJson(manifest), 'UTF-8') }
+    catch (Throwable t) { errorTextRef.set('Manifest yazılamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render(); return }
+    def manifestArg = (kind == 'container') ? toContainer(plan.manifestFile.getAbsolutePath(), workRootOf(cfg))
+        : (kind == 'wsl') ? toWsl(plan.manifestFile.getAbsolutePath()) : plan.manifestFile.getAbsolutePath()
+    def batchArgs = ['batch', '--manifest', manifestArg]
+    // prepareRun ile AYNI ilke (bkz. buildArgs sonrası dockerNameRef.set): konteyner adı BİR KEZ
+    // hesaplanır, dockerCmd'ye VE dockerNameRef'e AYNI değer geçirilir — aksi halde killProc()'un
+    // 'docker stop/kill <ad>' çağrısı yanlış/eksik bir adı hedefler (iptal düğmesi toplu işi durduramaz).
+    def dockerName = 'atolye-valis-batch-' + System.currentTimeMillis()
+    dockerNameRef.set(cfg.mode == 'docker' ? dockerName : null)
+    def cmd = (cfg.mode == 'wsl') ? wslCmd(cfg, batchArgs)
+        : (cfg.mode == 'native') ? nativeCmd(cfg, batchArgs)
+        : dockerCmd(cfg, workRootOf(cfg), dockerName, batchArgs)
+    startRun(cmd, 'Toplu işlem çalışıyor (' + plan.caseCount + ' vaka)', 'batch', {
+        def rj = lastResultJsonRef.get()
+        def parsed = null
+        try { parsed = rj ? qupath.lib.io.GsonTools.getInstance().fromJson(rj, Map.class) : null } catch (Throwable ignore) {}
+        batchCasesResultRef.set((parsed?.cases ?: []) as ArrayList)
+        step.set('BATCH_RESULT'); render()
+    }, plan.timeoutSeconds)
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
@@ -1931,9 +2886,20 @@ render = { ->
                 stageCb.selectedProperty().addListener({ o, ov, nv -> stageSlidesRef.set(nv) } as javafx.beans.value.ChangeListener)
                 center.getChildren().add(stageCb)
             }
+            // Referans (kayıt çeker): 'Açık slayt' (varsayılan — bugünkü davranış) ya da 'Otomatik' (runner
+            // doku-oranı x baslik-alani ile ÖLÇER, kayıt/piksel-çözme YAPMAZ; yakın adaylarda anahtar-nokta
+            // yoğunluğuyla ayırt eder). warpOnly/"↻ Yeniden birleştir" yollarında zaten kayıt YAPILMADIĞI için
+            // (kayıtlı registrar kullanılır) bu seçim o yollarda etkisizdir.
+            def refChoice = new javafx.scene.control.ChoiceBox()
+            ['Açık slayt (kaynak)', 'Otomatik (en geniş doku alanı)'].each { refChoice.getItems().add(it) }
+            refChoice.setValue(referenceModeRef.get() == 'auto' ? 'Otomatik (en geniş doku alanı)' : 'Açık slayt (kaynak)')
+            refChoice.valueProperty().addListener({ o, ov, nv -> referenceModeRef.set((nv?.toString() ?: '').startsWith('Otomatik') ? 'auto' : 'open') } as javafx.beans.value.ChangeListener)
+            def refRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Referans:'), refChoice)
+            refRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT); center.getChildren().add(refRow)
             addGuidance('Hız: "Yalnız rigid" non-rigid aşamasını (~40 dk olabilir) atlar — seri kesitlerde çoğu zaman yeterli, hassasiyet biraz düşer. ' +
                 (cfg.mode == 'wsl' ? '"WSL-yerel diske kopyala" slaytları yavaş /mnt sürücüsünden hızlı diske alır (ilk kayıt çok hızlanır). ' : '') +
-                'Bir kez tam kayıt yaptıktan sonra boya/renk/seviye/composite değiştirmek için "↻ Yeniden birleştir" ile ~5 dk\'da yeniden birleştirin (yeniden KAYIT yok). Ayrıntı: Ekler → Görüntü Hizalama § 7.4.')
+                '"Referans": kayıt hangi slayda göre hizalanır — "Otomatik" en çok doku içeren slaydı seçer (ölçüm-tabanlı, kayıt YAPMAZ; günlükte her aday puanıyla loglanır). ' +
+                'Bir kez tam kayıt yaptıktan sonra boya/renk/seviye/composite değiştirmek için "↻ Yeniden birleştir" ile ~5 dk\'da yeniden birleştirin (yeniden KAYIT yok). Ayrıntı: Ekler → Görüntü Hizalama § 7.4/§ 7.5.')
 
             // ── Birleşik multipleks (merge) seçenekleri ──
             def mergeCb = new javafx.scene.control.CheckBox('Birleşik multipleks (merge) üret'); mergeCb.setSelected(mergeEnabledRef.get())
@@ -1950,6 +2916,14 @@ render = { ->
             def omeCb = new javafx.scene.control.CheckBox('Ayrı hizalanmış slaytlar (OME-TIFF) da üret (YAVAŞ; merge yeterliyse gerekmez)'); omeCb.setSelected(writeOmeRef.get())
             omeCb.selectedProperty().addListener({ o, ov, nv -> writeOmeRef.set(nv) } as javafx.beans.value.ChangeListener)
             center.getChildren().add(omeCb)
+            // Birleşik multipleks bittiğinde OTOMATİK projeye eklensin mi (tür de otomatik ayarlanır) —
+            // KALICI tercih (/qupath/atolye/valis → autoAdd), varsayılan AÇIK. Her çıktı zaman damgalı
+            // olduğundan "↻ Yeniden birleştir" ile hızlı deneme-yanılma yapan kullanıcı bunu kapatıp
+            // yalnız keeper çalışmayı elle "Birleşik multipleksi ekle" ile eklemeyi tercih edebilir.
+            def autoAddCb = new javafx.scene.control.CheckBox('Bittiğinde birleşik multipleksi projeye otomatik ekle (tür otomatik ayarlanır)')
+            autoAddCb.setSelected(cfg.autoAdd)
+            autoAddCb.selectedProperty().addListener({ o, ov, nv -> prefs.putBoolean(PREF_AUTOADD, nv); try { prefs.flush() } catch (Throwable ignore) {} } as javafx.beans.value.ChangeListener)
+            center.getChildren().add(autoAddCb)
             addGuidance('Varsayılan kanal modu, yukarıda "Boya"su elle seçilmemiş ve adından H&E çıkarılamayan İHK slaytlarına uygulanır: ' +
                 'hed = Hematoksilen + DAB (ÖNERİLEN) · dab = yalnız DAB · rgb = ham RGB. ' +
                 'H&E slaytları satırdaki "Boya = H&E" ile Hematoksilen + Eozin üretir. Seviye 0 = tam çözünürlük (yavaş/büyük), 2 ≈ görüntüleme için iyi denge; ' +
@@ -1957,23 +2931,72 @@ render = { ->
             addGuidance('İKİ ÇIKTI TÜRÜ — amacınıza göre seçin (ayrıntı: Ekler → Görüntü Hizalama § 7.2):\n' +
                 '  • BİLEŞİK KAPALI (varsayılan) → ÇOK-KANALLI multipleks (multiplex_*.ome.tiff). QuPath\'te tür = FLUORESCENCE; ' +
                 'her kanalı ayrı aç/kapat, 2–3 markerı üst üste bindir. Markerları AYIRT/KARŞILAŞTIR için budur.\n' +
-                '  • BİLEŞİK AÇIK → DOĞAL-RENK parlak-alan RGB (multiplex_composite.ome.tiff, Beer-Lambert). QuPath\'te tür = BRIGHTFIELD; ' +
+                '  • BİLEŞİK AÇIK → DOĞAL-RENK parlak-alan RGB (multiplex_composite_*.ome.tiff, Beer-Lambert). QuPath\'te tür = BRIGHTFIELD; ' +
                 'beyaz zemin, doğal boya renkleri, "SLAYT GİBİ" görünür — ama TEK görüntüdür, kanal seçilemez. Tek slaytta doğal görünüm; ' +
                 'çok slaytta sentetik bileşik (çakışan boyalar koyulaşır).')
 
-            // ── Anotasyon warp hedefi (opsiyonel) ──
-            def targetChoice = new javafx.scene.control.ChoiceBox(); targetChoice.getItems().add(null); others.each { targetChoice.getItems().add(it) }
-            targetChoice.setConverter(new javafx.util.StringConverter() {
-                String toString(Object e) { e == null ? '(yok — yalnız hizala + merge)' : (((qupath.lib.projects.ProjectImageEntry) e).getImageName() ?: '(adsız)') }
-                Object fromString(String s) { return null }
-            })
-            def prevT = targetEntryRef.get()
-            def restore = (prevT != null) ? others.find { it.getID()?.toString() == prevT.getID()?.toString() } : null
-            targetChoice.setValue(restore); if (restore == null) targetEntryRef.set(null)
-            targetChoice.valueProperty().addListener({ o, ov, nv -> targetEntryRef.set(nv) } as javafx.beans.value.ChangeListener)
-            def hb = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Anotasyon warp hedefi (ops.):'), targetChoice); hb.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
-            center.getChildren().add(hb)
-            addGuidance('"Komut üret" seçili modun (Docker/native/WSL) komutunu hazırlar; "Doğrudan çalıştır" QuPath içinden koşar. Warp hedefi seçilirse kaynağın anotasyonu o slayda taşınır.')
+            // ── Anotasyon warp hedefleri (opsiyonel; ÇOK-SEÇİM) — kaynağın anotasyonu işaretli HER hedefe warp edilir ──
+            def targetIds = targetIdsRef.get() ?: new java.util.LinkedHashSet()
+            def otherIds0 = others.collect { it.getID()?.toString() }.findAll { it != null }
+            targetIds.retainAll(otherIds0)   // artık listede olmayan (silinmiş/kaynağa dönüşmüş) ID'leri sessizce temizle
+            def srcDirForPickle = srcFile?.getParentFile()
+            def pklCandidate = registrarPickleFor(resultsDirOf(cfg), srcDirForPickle)
+            def sidecarNames = null
+            if (pklCandidate != null) {
+                try {
+                    def pklBase = pklCandidate.getName()
+                    def pklStem = pklBase.endsWith('_registrar.pickle') ? pklBase.substring(0, pklBase.length() - '_registrar.pickle'.length()) : pklBase
+                    def sc = new File(pklCandidate.getParentFile(), pklStem + '_atolye_slides.txt')
+                    if (sc.isFile()) sidecarNames = sc.readLines('UTF-8').collect { it?.trim() }.findAll { it }
+                } catch (Throwable ignore) {}
+            }
+            def entryFileNameCheap = { e ->
+                try {
+                    def uris = e.getURIs()
+                    if (uris != null && !uris.isEmpty()) {
+                        def u = uris.iterator().next()
+                        if ('file'.equals(u.getScheme())) return new File(u).getName()
+                    }
+                } catch (Throwable ignore) {}
+                return null
+            }
+            // "⚡ …" düğmesi burada (kontrol listesinden ÖNCE) yaratılır ki checkbox dinleyicileri onu
+            // render() beklemeden CANLI etkin/pasif güncelleyebilsin (aşağıda actions.add ile eklenecek).
+            def warpOnlyBtn = navButton('⚡ Anotasyonu hedeflere aktar (kayıtlı hizalamadan)', { doWarpOnlyTransfer(cfg) },
+                'Yeniden KAYIT YAPMAZ — yalnız kayıtlı hizalamadan (varsa) işaretli hedeflere anotasyon warp eder ve OTOMATİK içe aktarır (merge/OME üretmez).')
+            def refreshWarpOnlyBtn = { warpOnlyBtn.setDisable(pklCandidate == null || targetIds.isEmpty()) }
+            refreshWarpOnlyBtn()
+            addGuidance('Warp hedefleri (ops., ÇOK-SEÇİM): kaynağın anotasyonu işaretli HER hedefe warp edilir (tek Python sürecinde, ' +
+                'yeniden kayıt gerekmez). Kayıtlı bir hizalama varsa aşağıdaki "⚡ …" düğmesi yeniden KAYIT yapmadan yalnız warp\'ı ' +
+                'tekrar çalıştırıp OTOMATİK içe aktarır (merge/OME üretmez).' +
+                (sidecarNames == null && pklCandidate != null ? ' (Not: kayıtlı hizalama eski bir çalışmadan — hangi hedeflerin içinde olduğu doğrulanamıyor.)' : ''))
+            def tgtRowsBox = new javafx.scene.layout.VBox(4)
+            others.each { e ->
+                def id = e.getID()?.toString(); def nm = e.getImageName() ?: '(adsız)'
+                def cb = new javafx.scene.control.CheckBox()
+                cb.setSelected(id != null && targetIds.contains(id))
+                cb.selectedProperty().addListener({ o, ov, nv -> if (id != null) { if (nv) targetIds.add(id) else targetIds.remove(id) }; refreshWarpOnlyBtn() } as javafx.beans.value.ChangeListener)
+                def warnTxt = ''
+                if (sidecarNames != null) {
+                    def fn = entryFileNameCheap(e)
+                    if (fn != null && !sidecarNames.contains(fn)) warnTxt = '   ⚠ kayıtlı hizalamada yok'
+                }
+                def lbl = new javafx.scene.control.Label(nm + warnTxt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE)
+                def row = new javafx.scene.layout.HBox(8, cb, lbl); row.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
+                tgtRowsBox.getChildren().add(row)
+            }
+            def tgtScroll = new javafx.scene.control.ScrollPane(tgtRowsBox); tgtScroll.setFitToWidth(true)
+            tgtScroll.setPrefHeight(Math.min(160, 30 + others.size() * 26) as double)
+            def tgtBtnRow = new javafx.scene.layout.HBox(8,
+                navButton('Tümünü seç', { others.each { e -> def id = e.getID()?.toString(); if (id != null) targetIds.add(id) }; render() }),
+                navButton('Tümünü kaldır', { targetIds.clear(); render() }))
+            tgtBtnRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
+            center.getChildren().add(tgtBtnRow)
+            center.getChildren().add(tgtScroll)
+            addGuidance('Warp yönü: ' + srcName + ' → ' + targetIds.size() + ' hedef seçili.\n' +
+                'Koordinat uzayı: taban (level-0) piksel, köşe sol-üst, yeniden ölçekleme yapılmaz.\n' +
+                'Seri kesitler AYNI hücreleri İÇERMEZ — bu bir YAKLAŞIK VEKİLDİR, hücre-düzeyinde birebir eşleşme değildir; her hedefte GÖRSEL doğrulayın.')
+            addGuidance('"Komut üret" seçili modun (Docker/native/WSL) komutunu hazırlar; "Doğrudan çalıştır" QuPath içinden koşar. Hedef işaretlenirse kaynağın anotasyonu o slaytlara taşınır.')
             // Dış (CLI/WSL) sonuçlarını içe aktar — wizard koşusu gerektirmez; herhangi bir dosyayı seçtirir.
             def impSep = new javafx.scene.control.Separator()
             center.getChildren().add(impSep)
@@ -2036,7 +3059,10 @@ render = { ->
                 if (!plan.ok) { errorTextRef.set(plan.error); step.set('ERROR'); render(); return }
                 startDirectRun(cfg.mode == 'wsl' ? plan.wslCmd : (cfg.mode == 'native' ? plan.nativeCmd : plan.dockerCmd))
             }, 'Yapılandırılmış modu (Docker/native/WSL) QuPath içinden çalıştırır — uzun sürebilir'))
+            actions.add(warpOnlyBtn)   // yukarıda (kontrol listesinden önce) yaratıldı — bkz. refreshWarpOnlyBtn
             addRemergeAction(cfg, actions)
+            actions.add(navButton('Toplu işlem (çoklu vaka) ▶', { step.set('BATCH_SETUP'); render() },
+                'Bir klasör kökü altındaki BİRDEN ÇOK vaka alt-klasörünü (her biri ≥2 slayt) tek Python sürecinde SIRALI kayıt+birleştirir — kaynak/hedef anotasyon warp\'ı bu ekranda YOK, her vaka için ayrı çalıştırın.'))
         }
     } else if (cur == 'CMD_READY') {
         title.setText('VALIS komutları (kopyala-çalıştır)')
@@ -2061,14 +3087,54 @@ render = { ->
         actions.add(navButton('Sonuçları içe aktar', { doImportWarped(); doAddOme(); doAddMergeOut() }, 'Warp\'lı anotasyonu hedefe + OME-TIFF\'leri + birleşik multipleksi projeye ekler'))
     } else if (cur == 'RUNNING') {
         title.setText(busyLabelRef.get() + '…')
-        addGuidance('VALIS koşuyor (kayıt uzun sürebilir; günlük aşağıda akıyor). Zaman aşımı: ' + (PYTHON_TIMEOUT_SECONDS / 3600) + ' saat.')
+        addGuidance('VALIS koşuyor (kayıt uzun sürebilir; günlük aşağıda akıyor). Zaman aşımı: ' + (activeTimeoutSecondsRef.get() / 3600.0d) + ' saat.')
         center.getChildren().add(busyBar())
+        def prog = progressLabelRef.get()
+        if (prog != null) { prog.setStyle('-fx-font-weight: bold;'); center.getChildren().add(prog) }
+        if (resultKindRef.get() == 'batch') {
+            def bp = batchProgressRef.get() ?: [:]
+            def tbl = new javafx.scene.layout.VBox(2)
+            bp.keySet().sort().each { idx ->
+                def j = bp[idx]
+                def txt = String.format(java.util.Locale.US, '%s/%s  %-24s  %-8s  %.1f sn  %s',
+                    (j?.index ?: '?').toString(), (j?.total ?: '?').toString(), (j?.ad ?: '')?.toString(),
+                    (j?.durum ?: '')?.toString(), ((j?.sure_sn ?: 0) as double), (j?.referans ? ('ref: ' + j.referans) : ''))
+                def rowLbl = new javafx.scene.control.Label(txt); rowLbl.setStyle(MONO)
+                tbl.getChildren().add(rowLbl)
+            }
+            if (!tbl.getChildren().isEmpty()) {
+                def tblScroll = new javafx.scene.control.ScrollPane(tbl); tblScroll.setFitToWidth(true); tblScroll.setPrefHeight(140)
+                center.getChildren().add(tblScroll)
+            }
+        }
         def la = logAreaRef.get(); if (la != null) { javafx.scene.layout.VBox.setVgrow(la, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(la) }
-        actions.add(navButton('İptal et', { cancelledRef.set(true); new Thread({ killProc() } as Runnable).start() }, 'Süreci durdurur; docker modunda konteyneri de durdurur (docker stop/kill)'))
+        def cancelBtn = navButton('İptal et', { }, 'Süreci durdurur; docker modunda konteyneri de durdurur (docker stop/kill), WSL modunda iç süreç de PID ile sonlandırılır')
+        cancelBtn.setOnAction({
+            cancelBtn.setText('İptal ediliyor…'); cancelBtn.setDisable(true)
+            cancelledRef.set(true); new Thread({ killProc() } as Runnable).start()
+        })
+        actions.add(cancelBtn)
+        actions.add(navButton('Günlük klasörünü aç', { openLogFolder() }, 'Tam çalışma günlüğünün (UTF-8) bulunduğu klasörü açar'))
     } else if (cur == 'RESULT') {
         def rkind = resultKindRef.get()
         title.setText(rkind == 'prefetch' ? 'Model ağırlıkları hazır ✅' : 'Tamamlandı ✅')
-        addMono(resultTextRef.get())
+        // Metin alanı burada YÜKSEKLİĞİ SINIRLANDIRILMIŞ (addMono'nun aksine Vgrow:ALWAYS DEĞİL) —
+        // aşağıdaki QC önizleme görüntüsüne (varsa) 900×720 sahnede yer kalsın diye.
+        def resultTa = new javafx.scene.control.TextArea(resultTextRef.get() ?: '')
+        resultTa.setEditable(false); resultTa.setWrapText(false); resultTa.setStyle(MONO); resultTa.setPrefRowCount(8)
+        javafx.scene.layout.VBox.setVgrow(resultTa, javafx.scene.layout.Priority.NEVER)
+        center.getChildren().add(resultTa)
+        def qcImg = qcThumbRef.get()
+        if (rkind != 'prefetch' && qcImg != null) {
+            def qcLbl = new javafx.scene.control.Label('Hizalama önizlemesi — yalnız Hematoksilen kanalları (her slaytta AYNI renk): kontürler ' +
+                'ÇAKIŞIYOR mu? Bu bir kaba ÇAKIŞMA/koinsidans kontrolüdür — örtüşme/Dice DOĞRULUK ölçüsü DEĞİL; her zaman GÖRSEL doğrulayın.')
+            qcLbl.setWrapText(true); qcLbl.setMaxWidth(Double.MAX_VALUE)
+            center.getChildren().add(qcLbl)
+            def qcView = new javafx.scene.image.ImageView(qcImg)
+            qcView.setPreserveRatio(true); qcView.setFitWidth(560)
+            javafx.scene.layout.VBox.setVgrow(qcView, javafx.scene.layout.Priority.NEVER)
+            center.getChildren().add(qcView)
+        }
         // Model indirmeden sonra ilk pencereye (READY) dönüp komut üret/çalıştır; hizalama sonrası içe-aktarma butonları.
         actions.add(navButton('◀ Ana ekrana dön', { step.set('READY'); render() }, 'İlk pencereye döner — "Komut üret" / "Doğrudan çalıştır"'))
         if (rkind != 'prefetch') {
@@ -2077,11 +3143,137 @@ render = { ->
             actions.add(navButton('Ayrı OME slaytları ekle', { doAddOme() }, 'Varsa ayrı hizalanmış slaytları ekler (yalnız "ayrı OME de üret" seçiliyse)'))
             addRemergeAction(cfg, actions)
         }
+        if (logFileRef.get() != null) actions.add(navButton('Günlük klasörünü aç', { openLogFolder() }, 'Bu koşunun tam çalışma günlüğünün (UTF-8) bulunduğu klasörü açar'))
+        actions.add(navButton('Kapat', { stage.close() }))
+    } else if (cur == 'BATCH_SETUP') {
+        title.setText('VALIS — toplu işlem (çoklu vaka)')
+        addGuidance('Bir "vaka klasörü kökü" seçin — kökün HEMEN ALTINDAKİ her alt-klasör (≥2 slayt içerenler) bir "vaka" sayılır ' +
+            '(ör. kök/hasta-01/{HE,MUC2,MUC5AC}.svs). Her vaka KENDİ kayıt+birleştirmesini alır; kayıt/birleştirme seçenekleri (hız, boya modu, seviye, composite, ' +
+            'ayrı OME) yukarıdaki READY ekranında ayarladıklarınızla AYNIDIR (tüm vakalara uygulanır). Vaka-başına anotasyon warp burada YOK.')
+        def rootBtn = navButton('Vaka klasörü kökü seç…', {
+            def d = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Vaka klasörü kökünü seçin', batchCasesRootRef.get())
+            if (d != null) {
+                batchCasesRootRef.set(d)
+                def found = discoverBatchCases(d)
+                batchCaseDirsRef.set(found as ArrayList)
+                def names = new java.util.LinkedHashSet(); found.each { names.add(it.getName()) }
+                batchIncludeNamesRef.set(names)   // varsayılan: TÜMÜ işaretli
+            }
+            render()
+        })
+        center.getChildren().add(rootBtn)
+        def root = batchCasesRootRef.get()
+        def found = batchCaseDirsRef.get() ?: []
+        if (root != null) {
+            addMono('Kök: ' + root.getAbsolutePath() + '\nBulunan vaka klasörü: ' + found.size())
+        }
+        if (root != null && found.isEmpty()) {
+            addGuidance('Bu kökün altında ≥2 slayt içeren alt-klasör bulunamadı. Beklenen düzen: kök/vaka-adı/{slayt1, slayt2, ...}.')
+        }
+        def includeNames = batchIncludeNamesRef.get() ?: new java.util.LinkedHashSet()
+        def caseRowsBox = new javafx.scene.layout.VBox(4)
+        found.each { d ->
+            def n = caseSlideFiles(d).size()
+            def cb = new javafx.scene.control.CheckBox()
+            cb.setSelected(includeNames.contains(d.getName()))
+            cb.selectedProperty().addListener({ o, ov, nv -> if (nv) includeNames.add(d.getName()) else includeNames.remove(d.getName()) } as javafx.beans.value.ChangeListener)
+            def lbl = new javafx.scene.control.Label(d.getName() + '  (' + n + ' slayt)'); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE)
+            def row = new javafx.scene.layout.HBox(8, cb, lbl); row.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
+            caseRowsBox.getChildren().add(row)
+        }
+        if (!found.isEmpty()) {
+            def caseScroll = new javafx.scene.control.ScrollPane(caseRowsBox); caseScroll.setFitToWidth(true)
+            caseScroll.setPrefHeight(Math.min(200, 30 + found.size() * 26) as double)
+            def caseBtnRow = new javafx.scene.layout.HBox(8,
+                navButton('Tümünü seç', { found.each { includeNames.add(it.getName()) }; render() }),
+                navButton('Tümünü kaldır', { includeNames.clear(); render() }))
+            caseBtnRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
+            center.getChildren().add(caseBtnRow)
+            center.getChildren().add(caseScroll)
+        }
+        def refPatField = new javafx.scene.control.TextField(batchReferencePatternRef.get() ?: '')
+        refPatField.setPromptText('ör. HE'); refPatField.setPrefColumnCount(10)
+        refPatField.textProperty().addListener({ o, ov, nv -> batchReferencePatternRef.set(nv) } as javafx.beans.value.ChangeListener)
+        def skipCb = new javafx.scene.control.CheckBox('Tamamlanmış vakaları atla (kaldığı yerden sürdür)'); skipCb.setSelected(batchSkipExistingRef.get())
+        skipCb.selectedProperty().addListener({ o, ov, nv -> batchSkipExistingRef.set(nv) } as javafx.beans.value.ChangeListener)
+        def toField = new javafx.scene.control.TextField(batchCaseTimeoutRef.get() ?: '7200'); toField.setPrefColumnCount(6)
+        toField.textProperty().addListener({ o, ov, nv -> batchCaseTimeoutRef.set(nv) } as javafx.beans.value.ChangeListener)
+        def optRow1 = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Referans deseni (dosya adında geçen, ops.):'), refPatField)
+        optRow1.setAlignment(javafx.geometry.Pos.CENTER_LEFT); center.getChildren().add(optRow1)
+        center.getChildren().add(skipCb)
+        def optRow2 = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Vaka başına zaman aşımı (sn):'), toField)
+        optRow2.setAlignment(javafx.geometry.Pos.CENTER_LEFT); center.getChildren().add(optRow2)
+        addGuidance('Referans deseni: bir vaka klasöründe adı bu deseni İÇEREN (küçük/büyük harf duyarsız) TAM OLARAK BİR slayt varsa o, o vakanın referansı olur; ' +
+            'yoksa/birden çoksa "Otomatik" (ölçüm-tabanlı) referans seçime düşer. "Tamamlanmış vakaları atla": önceki bir toplu koşuda BAŞARIYLA biten vakalar ' +
+            '(<ad>.done.json işaretçisi) yeniden ÇALIŞTIRILMAZ — kesintiye uğrayan bir gece koşusunu kaldığı yerden sürdürmek içindir.')
+        def startBtn = navButton('Başlat ▶', {
+            def sel = found.findAll { includeNames.contains(it.getName()) }
+            if (sel.isEmpty()) { Dialogs.showErrorMessage('Toplu işlem', 'En az bir vaka işaretleyin.'); return }
+            startBatch(cfg, sel, batchReuseRegistrarRef.get())
+        }, 'Manifest JSON yazar + tüm işaretli vakaları TEK Python sürecinde SIRALI çalıştırır')
+        startBtn.setDisable(found.isEmpty() || includeNames.isEmpty())
+        actions.add(startBtn)
+        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
+    } else if (cur == 'BATCH_RESULT') {
+        title.setText('Toplu işlem tamamlandı')
+        def cases = batchCasesResultRef.get() ?: []
+        int okN = cases.count { it?.ok }
+        int totalN = cases.size()
+        def sb = new StringBuilder()
+        sb << 'TOPLU İŞLEM TAMAMLANDI\n═══════════════════════════════\n\n'
+        sb << String.format(java.util.Locale.US, '%d/%d vaka başarılı.\n\n', okN, totalN)
+        cases.each { c ->
+            def status = c?.skipped ? 'atlandı (önceden tamam)' : (c?.ok ? 'tamam' : 'HATA')
+            sb << '  ' << (c?.ok ? '✓ ' : '✗ ') << (c?.name ?: '?') << '  [' << status << ']'
+            if (c?.reference_used) sb << '  referans: ' << c.reference_used
+            if (c?.elapsed_sec) sb << String.format(java.util.Locale.US, '  (%.1f sn)', (c.elapsed_sec as double))
+            sb << '\n'
+            if (!c?.ok && !c?.skipped && c?.error) sb << '      hata: ' << c.error << '\n'
+            // Python'un bildirdiği (kind'e göre WSL/container FORMUNDA olabilecek) yol yerine HOST yolu
+            // burada yeniden hesapla (bkz. batchCaseMergeOutFile) — Windows'ta doğrudan açılabilir olsun.
+            if (c?.ok && c?.name) {
+                def hf = batchCaseMergeOutFile(cfg, c.name.toString())
+                if (hf.isFile()) sb << '      çıktı: ' << hf.getAbsolutePath() << '\n'
+            }
+        }
+        sb << '\nHer vaka klasörü kendi çıktısını taşır (çalışma kökü/batch/<vaka adı>/). ' +
+            'Hizalamayı GÖRSEL doğrulayın.\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
+        addMono(sb.toString())
+        actions.add(navButton('Tümünü projeye ekle', {
+            def project = QP.getProject()
+            if (project == null) { Dialogs.showErrorMessage('Toplu işlem', 'Proje açık değil.'); return }
+            def files = cases.findAll { it?.ok && it?.name }
+                .collect { batchCaseMergeOutFile(cfg, it.name.toString()) }
+                .findAll { it.isFile() }.collect { it.getAbsolutePath() }
+            if (files.isEmpty()) { Dialogs.showErrorMessage('Toplu işlem', 'Eklenecek birleşik çıktı yok.'); return }
+            def type = compositeRef.get() ? qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_OTHER : qupath.lib.images.ImageData.ImageType.FLUORESCENCE
+            addOmeToProject(project, files, type, false, { res ->
+                Dialogs.showInfoNotification('Toplu işlem', String.format(java.util.Locale.US, 'Projeye eklendi: %d eklendi, %d zaten vardı, %d hata.', (res.added ?: 0), (res.skipped ?: 0), (res.failed ?: 0)))
+            })
+        }, 'Başarılı TÜM vakaların birleşik multipleks çıktısını tek seferde projeye ekler'))
+        def failedNames = cases.findAll { !it?.ok && !it?.skipped }.collect { it?.name?.toString() }.findAll { it }
+        def retryBtn = navButton('Hatalı vakaları yeniden dene', {
+            def all = batchCaseDirsRef.get() ?: []
+            def sel = all.findAll { failedNames.contains(it.getName()) }
+            if (sel.isEmpty()) return
+            startBatch(cfg, sel, batchReuseRegistrarRef.get())
+        }, 'Yalnız HATA veren vakaları (yukarıdaki AYNI seçeneklerle) yeniden çalıştırır')
+        retryBtn.setDisable(failedNames.isEmpty())
+        actions.add(retryBtn)
+        actions.add(navButton('↻ Toplu yeniden birleştir', {
+            def all = batchCaseDirsRef.get() ?: []
+            def sel = all.findAll { (batchIncludeNamesRef.get() ?: new java.util.LinkedHashSet()).contains(it.getName()) }
+            if (sel.isEmpty()) sel = all
+            startBatch(cfg, sel, true)
+        }, 'AYNI vaka klasörleri için TÜM registrar\'ları yeniden kullanır (yeniden KAYIT yok) — boya/renk/seviye/composite değiştirdikten sonra hızlı toplu yeniden birleştirme'))
+        if (logFileRef.get() != null) actions.add(navButton('Günlük klasörünü aç', { openLogFolder() }))
+        actions.add(navButton('◀ Ana ekrana dön', { step.set('READY'); render() }))
         actions.add(navButton('Kapat', { stage.close() }))
     } else { // ERROR
         title.setText('Hata')
         addMono(errorTextRef.get())
         actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
+        if (logFileRef.get() != null) actions.add(navButton('Günlük klasörünü aç', { openLogFolder() }, 'Tam çalışma günlüğünün (UTF-8) bulunduğu klasörü açar'))
         actions.add(navButton('Kapat', { stage.close() }))
     }
 
@@ -2095,7 +3287,7 @@ render = { ->
     // READY ekranı (çok-slayt listesi + merge + içe-aktarma) uzun → yalnız o ekranda merkezi kaydırılabilir yap
     // (RUNNING/CMD_READY/RESULT ekranları VBox.Vgrow ile büyüyen log/komut alanı kullandığından sarılmaz).
     def rootCenter = center
-    if (cur == 'READY') {
+    if (cur == 'READY' || cur == 'BATCH_SETUP') {
         def centerScroll = new javafx.scene.control.ScrollPane(center); centerScroll.setFitToWidth(true)
         centerScroll.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER)
         rootCenter = centerScroll

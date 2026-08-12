@@ -130,6 +130,19 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Modelleri karşılaştır (aynı bölge)", "yardimci-mitoz-karsilastir.groovy")
     ));
 
+    /**
+     * The "Görüntü Hizalama" module — a submenu of slide-registration + annotation-transfer
+     * wizards shown in the Modüller menu right after Mitoz tespiti (before Veri dışa aktarma).
+     * Gathers all three alignment paths: VALIS (automatic whole-series non-rigid, Python bridge),
+     * Warpy (elastic/non-rigid via Fiji), and the native affine wizard (AutoAligner auto-align OR
+     * pasted matrix, then annotation transfer). Backed by the ekler/goruntu-hizalama.qmd chapter.
+     */
+    private static final ScriptGroup ALIGNMENT_MODULE = new ScriptGroup("Görüntü Hizalama", List.of(
+        new ScriptEntry("VALIS (Docker/native)",  "yardimci-valis-sihirbaz.groovy"),
+        new ScriptEntry("Warpy (esnek; Fiji)",    "yardimci-warpy-sihirbaz.groovy"),
+        new ScriptEntry("Afin (otomatik/elle)",   "yardimci-hizalama-aktarim.groovy")
+    ));
+
     /** A named topic group of utility scripts → renders as a sub-menu under "Yardımcılar". */
     private record ScriptGroup(String title, List<ScriptEntry> entries) {}
 
@@ -227,8 +240,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Maske görüntüsünü içe aktar",            "yardimci-maske-iceaktar.groovy"),
             // TIA Toolbox için tek-kanallı bölge maskesi (engine.run(masks=) için). bkz. Ekler → TIA Toolbox.
             new ScriptEntry("TIA Toolbox için bölge maskesi",        "yardimci-tiatoolbox-maske.groovy"),
-            // Hizalama (qupath-extension-align) afin matrisini uygular: anotasyonları hedef slayda kilitli kopyalar. Ek → Görüntü Hizalama §6.
-            new ScriptEntry("Hizalama dönüşümüyle anotasyon aktar", "yardimci-hizalama-aktarim.groovy"),
+            // NOT: hizalama sihirbazları (Afin/Warpy/VALIS) artık Modüller → "Görüntü Hizalama" alt menüsünde (ALIGNMENT_MODULE).
             new ScriptEntry("TMA çekirdek bazlı dışa aktarım",      "yardimci-tma-cekirdek-aktarim.groovy"),
             new ScriptEntry("Örnek tümör/stroma sınıflandırıcısını projeye kaydet", "yardimci-ornek-siniflandirici.groovy", false, false)  // proje düzeyi: açık slayt gerekmez
         )),
@@ -244,9 +256,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Kaiko Midnight sınıflandırıcı sihirbazı", "yardimci-kaiko-sihirbaz.groovy"),
             // SPIDER (Python) — organ-özelleşmiş HAZIR sınıflandırıcı (yalnız tahmin; CC BY-NC, kapılı). bkz. Ekler → SPIDER.
             new ScriptEntry("SPIDER doku sınıflandırıcı sihirbazı", "yardimci-spider-sihirbaz.groovy"),
-            // VALIS (Python, MIT) köprüsü — OTOMATİK tüm-seri non-rigid hizalama; Docker (önerilen) veya native venv.
-            // Hizalanmış OME-TIFF'leri projeye ekler + QuPath anotasyonunu GeoJSON ile kaynak→hedef warp eder. bkz. Ekler → Görüntü Hizalama § VALIS.
-            new ScriptEntry("VALIS hizalama sihirbazı (Docker/native)", "yardimci-valis-sihirbaz.groovy"),
+            // NOT: VALIS hizalama sihirbazı artık Modüller → "Görüntü Hizalama" alt menüsünde (ALIGNMENT_MODULE).
             // Salt-okur FM-hazırlık denetimi + sağlamlık kontrol listesi (batch/UTAP/doğrulama). FM ÇALIŞTIRMAZ. bkz. Ekler → Patolojide Temel Modeller.
             new ScriptEntry("Foundation model hazırlık ve sağlamlık sihirbazı", "yardimci-foundation-model-sihirbaz.groovy")
         )),
@@ -354,6 +364,19 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                         mitosisMenu.getItems().add(mi);
                     }
                     modulesMenu.getItems().add(mitosisMenu);
+                    // "Görüntü Hizalama" modülü — Mitoz tespitinden hemen sonra, Veri dışa aktarmadan önce.
+                    Menu alignMenu = new Menu(ALIGNMENT_MODULE.title());
+                    for (ScriptEntry ae : ALIGNMENT_MODULE.entries()) {
+                        MenuItem ai = new MenuItem(ae.label);
+                        if (ae.disabled) {
+                            ai.setDisable(true);
+                        } else {
+                            ai.setOnAction(e -> runScriptSafely(qupath, ae));
+                            ai.disableProperty().bind(disableBinding(qupath, ae));
+                        }
+                        alignMenu.getItems().add(ai);
+                    }
+                    modulesMenu.getItems().add(alignMenu);
                 }
                 moduleIndex++;
             }
