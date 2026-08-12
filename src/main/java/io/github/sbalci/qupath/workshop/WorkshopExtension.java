@@ -244,6 +244,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Kaiko Midnight sınıflandırıcı sihirbazı", "yardimci-kaiko-sihirbaz.groovy"),
             // SPIDER (Python) — organ-özelleşmiş HAZIR sınıflandırıcı (yalnız tahmin; CC BY-NC, kapılı). bkz. Ekler → SPIDER.
             new ScriptEntry("SPIDER doku sınıflandırıcı sihirbazı", "yardimci-spider-sihirbaz.groovy"),
+            // VALIS (Python, MIT) köprüsü — OTOMATİK tüm-seri non-rigid hizalama; Docker (önerilen) veya native venv.
+            // Hizalanmış OME-TIFF'leri projeye ekler + QuPath anotasyonunu GeoJSON ile kaynak→hedef warp eder. bkz. Ekler → Görüntü Hizalama § VALIS.
+            new ScriptEntry("VALIS hizalama sihirbazı (Docker/native)", "yardimci-valis-sihirbaz.groovy"),
             // Salt-okur FM-hazırlık denetimi + sağlamlık kontrol listesi (batch/UTAP/doğrulama). FM ÇALIŞTIRMAZ. bkz. Ekler → Patolojide Temel Modeller.
             new ScriptEntry("Foundation model hazırlık ve sağlamlık sihirbazı", "yardimci-foundation-model-sihirbaz.groovy")
         )),

@@ -119,6 +119,9 @@ def CATALOG = [
      packages:['torch>=2.1','torchvision>=0.16','transformers>=4.56','peft>=0.11','safetensors>=0.4','omegaconf','huggingface_hub>=0.23','numpy','Pillow'],
      torchBackend:'auto', reuseOfficial:null,
      note:'⚠️ Tipik/atipik SINIFLANDIRICI (MIDOG25 T2 birincisi). KISMEN KAPILI: LoRA adaptörleri açık ama DINOv3-H+ omurgası (facebook/dinov3-vith16plus) HF\'te KAPILIDIR — Meta lisansı + `huggingface-cli login` gerekir (otomatik DEĞİL). QuPath menüsünde varsayılan DEVRE DIŞI. Ticari-olmayan araştırma lisansı.'],
+    [id:'valis', label:'VALIS — WSI hizalama (native; JDK/Java AYRICA gerekir)', python:'3.10',
+     packages:['valis-wsi', 'pyvips[binary]', 'openslide-python', 'openslide-bin'], torchBackend:'auto', reuseOfficial:null,
+     note:'⚠️ Yalnız NATIVE mod içindir. valis-wsi + pyvips[binary] (libvips ikilisi) + openslide-python & openslide-bin (OpenSlide ikilisi → .svs/.ndpi HIZLI okunur; yoksa VALIS yavaş Bio-Formats yoluna düşer) pip ile kurulur; torch CUDA wheel\'i --torch-backend=auto ile otomatik seçilir (RTX A4000; GPU özellik-eşleştirmeyi hızlandırır — SLAYT OKUMA/DÖNÜŞTÜRME ise disk/IO bağımlıdır, GPU kullanmaz). AYRICA bir JDK (Bio-Formats/JPype) gerekir — sistemde Java varsa yeterlidir. ÖNERİLEN yol: Docker (cdgatenbee/valis-wsi; tüm bağımlılıklar hazır). Bkz. Kaynaklar → İleri kurulumlar → VALIS. Lisans: VALIS = MIT.'],
 ]
 def specById = { String id -> CATALOG.find { it.id == id } }
 
