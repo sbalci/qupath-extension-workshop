@@ -866,6 +866,16 @@ def _run_one_case(args):
             vkwargs["max_processed_image_dim_px"] = int(args.max_processed_dim)
         if getattr(args, "max_nonrigid_dim", None):
             vkwargs["max_non_rigid_registration_dim_px"] = int(args.max_nonrigid_dim)
+        if getattr(args, "correct_scale", False):
+            # VALIS varsayilan rigid'i EuclideanTransform'dur (olcek DUZELTMEZ). Farkli tarayicilar
+            # (or. Aperio AT2 ~0.25 vs GT450 ~0.26 um/px) arasindaki olcek farkini rigid'in KENDISI
+            # goruntulerden tahmin edip duzeltsin diye benzerlik (similarity) donusumu kullan.
+            try:
+                from skimage.transform import SimilarityTransform as _SimTf
+                vkwargs["rigid_reg_kwargs"] = {"transformer": _SimTf()}
+                emit("Olcek duzeltme ACIK (--correct-scale): rigid kayit benzerlik (olcek tahminli) donusumu kullanacak.")
+            except Exception as _sce:
+                emit("UYARI: olcek duzeltme kurulamadi (" + str(_sce) + "); varsayilan (olceksiz) rigid ile devam.")
         if getattr(args, "rigid_only", False):
             # VALIS varsayilan non-rigid'i OpenCV optical flow (OpticalFlowWarper) kullanir; bu makinede
             # native olarak 0xC0000005 ile coker. Yalniz rigid kayit -> calisir; anotasyon warp'i rigid
@@ -931,6 +941,20 @@ def _run_one_case(args):
                 # cokmesini onle. Sessizce riskli varsayilanda birakma (_check_warp_wh fail-safe felsefesi).
                 non_rigid_merge = False
                 emit("Not: kayitli registrar'da non-rigid varligi belirlenemedi (" + str(_e) + ") - guvenli rigid warp kullanilacak.")
+
+        # ── um/px + (olcek duzeltmede) tahmini olcek raporu + istege bagli ince hizalama (register_micro) ──
+        try:
+            _report_resolution_and_scale(registrar, getattr(args, "correct_scale", False), emit)
+        except Exception as _rre:
+            emit("Not: um/px-olcek raporu uretilemedi (" + str(_rre) + ").")
+        if getattr(args, "micro", False):
+            if getattr(args, "rigid_only", False):
+                emit("UYARI: ince hizalama (--micro) non-rigid gerektirir; --rigid-only ile birlikte KULLANILAMAZ - atlaniyor.")
+            elif getattr(args, "reuse_registrar", False):
+                emit("UYARI: ince hizalama (--micro) kayitli registrar ile bu surumde atlaniyor; TAZE kayit (--reuse-registrar'siz) ile kullanin.")
+            else:
+                _run_micro(registrar, args, emit)
+                non_rigid_merge = True   # micro non-rigid deformasyon ekler -> merge/warp non-rigid kullanmali
 
         # Anotasyon warp'i ONCE yap: kullanicinin BIRINCIL ciktisidir + hizlidir (yalniz koordinat donusumu).
         # OME-TIFF yazimi (tam-res hizalanmis slaytlar) YAVAS + ikincildir; sonra ve --no-ome ile istege
@@ -1086,6 +1110,71 @@ def _run_one_case(args):
     return result
 
 
+def _report_resolution_and_scale(registrar, correct_scale, emit):
+    """Her slaydin um/px (fiziksel piksel boyutu) degerini raporlar; farkli/eksik olanlari UYARIR.
+    Olcek duzeltme aciksa (--correct-scale) her slaydin rigid asamada TAHMIN EDILEN olcegini de yazar
+    (kullanici olcegin ~1.0 civari mi yoksa asiri mi duzeltildigini gorebilir; max_scaling=3.0 bir
+    guvenlik siniri, dogrulayici DEGIL)."""
+    try:
+        ref = registrar.get_ref_slide().name
+    except Exception:
+        ref = None
+    res_list = []
+    for name in registrar.slide_dict:
+        slide = registrar.slide_dict[name]
+        res = getattr(slide, "resolution", None)
+        units = getattr(slide, "units", "") or "um"
+        try:
+            resf = float(res)
+        except (TypeError, ValueError):
+            resf = None
+        res_list.append((name, resf))
+        line = "  " + name + ": " + (("%.4f " % resf) + str(units) + "/px" if (resf is not None and resf == resf) else "um/px OKUNAMADI")
+        if correct_scale and name != ref:
+            try:
+                from skimage import transform as _sktf
+                s = float(_sktf.SimilarityTransform(slide.M).scale)
+                line += "  (tahmini olcek: %.3f)" % s
+            except Exception:
+                pass
+        emit(line)
+    vals = [v for _, v in res_list if v is not None and v == v and v > 0]
+    if len(vals) >= 2:
+        lo, hi = min(vals), max(vals)
+        if (hi / lo) > 1.02:
+            emit("UYARI: slaytlarin um/px degerleri FARKLI (en dusuk %.4f, en yuksek %.4f; fark ~%.1f%%). "
+                 "Farkli tarayicilar (or. AT2 vs GT450) olabilir - '--correct-scale' (Olcek/um-px farkini duzelt) "
+                 "ile rigid asama olcegi kendisi tahmin edip duzeltir." % (lo, hi, (hi / lo - 1.0) * 100.0))
+    missing = [n for n, v in res_list if v is None or v != v]
+    if missing:
+        emit("UYARI: su slaytlarda um/px KALIBRASYONU okunamadi: " + ", ".join(missing)
+             + " - kalibrasyon eksikse olcek/hizalama guvenilmez (QuPath Image sekmesinden ayarlayin).")
+
+
+def _run_micro(registrar, args, emit):
+    """register_micro: ana hizalamadan sonra, DAHA YUKSEK cozunurlukte 2. bir non-rigid gecis yaparak
+    'az kaymis' hizalamayi sikilastirir. Micro kenari, baslangic non-rigid kenarindan (registrar'in
+    max_non_rigid_registration_dim_px'i; VALIS varsayilani 2048) BUYUK olMALI - degilse VALIS sessizce
+    None dondurur (islem yapilmamis gibi gorunur), o yuzden burada ACIKCA dogrulanir."""
+    init_nr = getattr(registrar, "max_non_rigid_registration_dim_px", 2048) or 2048
+    micro_dim = getattr(args, "micro_dim", None)
+    micro_dim = int(micro_dim) if micro_dim else 4096   # VALIS DEFAULT_MAX_MICRO_REG_SIZE
+    if micro_dim <= int(init_nr):
+        emit("UYARI: ince hizalama kenari (%d px) baslangic non-rigid kenarindan (%d px) BUYUK olmali; "
+             "ince hizalama ATLANIYOR (--micro-dim degerini artirin)." % (micro_dim, int(init_nr)))
+        return
+    _stage_begin("INCE", "Ince hizalama (register_micro %d px - yuksek cozunurluklu 2. non-rigid gecis)" % micro_dim)
+    hb = _start_heartbeat("Ince hizalama")
+    try:
+        registrar.register_micro(max_non_rigid_registration_dim_px=micro_dim)
+        emit("Ince hizalama tamamlandi (register_micro, kenar=%d px)." % micro_dim)
+    except Exception as _me:
+        emit("UYARI: ince hizalama basarisiz (" + str(_me) + "); ana hizalama ile devam.")
+    finally:
+        hb.set()
+    _stage_end("INCE")
+
+
 def cmd_run(args):
     try:
         result = _run_one_case(args)
@@ -1106,6 +1195,7 @@ _RUN_ARG_DEFAULTS = {
     "geojson_in": None, "src_slide": None, "target_slide": None, "geojson_out": None,
     "images": None, "reference": None, "auto_reference": False,
     "max_processed_dim": None, "max_nonrigid_dim": None,
+    "micro": False, "micro_dim": None, "correct_scale": False,
     "cpu": False, "rigid_only": False, "reuse_registrar": False, "stage": False, "no_ome": False,
     "merge": False, "merge_out": None, "merge_level": 0, "merge_mode": "hed",
     "merge_name": None, "merge_stain": None, "merge_color": None, "composite": False,
@@ -1276,6 +1366,9 @@ def build_parser():
     pr.add_argument("--auto-reference", dest="auto_reference", action="store_true")  # --reference verilmisse yok sayilir (o daima kazanir)
     pr.add_argument("--max-processed-dim", dest="max_processed_dim", type=int, default=None)
     pr.add_argument("--max-nonrigid-dim", dest="max_nonrigid_dim", type=int, default=None)
+    pr.add_argument("--micro", dest="micro", action="store_true")               # register_micro: yuksek-cozunurluklu 2. non-rigid gecis
+    pr.add_argument("--micro-dim", dest="micro_dim", type=int, default=None)     # micro pass max kenar (baslangic non-rigid'ten BUYUK olmali; bos=4096)
+    pr.add_argument("--correct-scale", dest="correct_scale", action="store_true")  # rigid'i benzerlik (olcek tahminli) yap -> tarayici um/px farkini duzelt
     pr.add_argument("--cpu", dest="cpu", action="store_true")
     pr.add_argument("--rigid-only", dest="rigid_only", action="store_true")
     pr.add_argument("--reuse-registrar", dest="reuse_registrar", action="store_true")
@@ -1444,6 +1537,11 @@ def runArgs = { cfg, String srcDir, String dstDir, String omeDir, String crop, L
     if (opts?.maxProcessedDim) a += ['--max-processed-dim', opts.maxProcessedDim.toString()]   // kayıt çözünürlüğü
     if (opts?.stage) a += ['--stage']                                           // slaytları WSL-yerel diske kopyala (ilk kayıt hızlı)
     if (opts?.reuseRegistrar) a += ['--reuse-registrar']                        // kayıtlı hizalamadan yeniden birleştir (yeniden KAYIT yok)
+    if (opts?.correctScale) a += ['--correct-scale']                            // tarayıcı µm/px farkını düzelt (benzerlik rigid; ölçeği görüntülerden tahmin eder)
+    if (opts?.micro) {                                                          // ince hizalama: register_micro (yüksek çözünürlüklü 2. non-rigid geçiş)
+        a += ['--micro']
+        if (opts?.microDim) a += ['--micro-dim', opts.microDim.toString()]
+    }
     // Warp: BIR kaynak (srcSlide) → BIR VEYA DAHA FAZLA hedef. tgtSlide/geojsonOut String YA DA List olabilir.
     if (geojsonIn && srcSlide && tgtSlide && geojsonOut) {
         a += ['--geojson-in', geojsonIn, '--src-slide', srcSlide]
@@ -1457,7 +1555,7 @@ def runArgs = { cfg, String srcDir, String dstDir, String omeDir, String crop, L
         (merge.names ?: []).each { if (it) a += ['--merge-name', it] }
         (merge.stains ?: []).each { if (it) a += ['--merge-stain', it] }   // slayt-başı boya tipi (İHK/H&E)
         (merge.colors ?: []).each { if (it) a += ['--merge-color', it] }   // marker işaret (DAB/Eozin) rengi (MARKER=RRGGBB)
-        if (merge.composite) a += ['--composite']                          // doğal-renk parlak-alan RGB bileşik
+        if (merge.composite) a += ['--composite']                          // doğal-renk parlak alan RGB bileşik
     }
     return a
 }
@@ -1599,7 +1697,7 @@ def importWarpedToTarget = { project, targetEntry, File warpedFile, double srcAr
 // Dedup artık AD ALT-DİZGE eşleşmesi değil, her girdinin getURIs() (ucuz, readImageData YOK) ile
 // eklenecek dosyanın URI'sini karşılaştırır.
 // withPreview=true ise (yalnız birincil/merge çıktısı için kullanılır) her dosyanın kanal adı+RGB
-// rengi okunur ve (çok-kanallıysa) Hematoksilen-kanal ÇAKIŞMA önizlemesi üretilir — bu bir hizalama
+// rengi okunur ve (çok kanallıysa) Hematoksilen-kanal ÇAKIŞMA önizlemesi üretilir — bu bir hizalama
 // TAHMİNİ görselleştirmesidir, örtüşme/Dice DOĞRULUK ölçüsü DEĞİLDİR.
 def addOmeToProject = { project, List omeFiles, qupath.lib.images.ImageData.ImageType type, boolean withPreview, Closure onDone ->
     new Thread({
@@ -1806,7 +1904,7 @@ def lastWarpPlanRef = new java.util.concurrent.atomic.AtomicReference(new ArrayL
 def lastWarpSrcAreaUm2Ref = new java.util.concurrent.atomic.AtomicReference(0.0d)        // kaynak anotasyon alanı (µm², kaynağın kendi kalibrasyonuyla) — ölçek tutarlılık kontrolü için
 def lastOmeDirRef     = new java.util.concurrent.atomic.AtomicReference(null)
 def lastMergeOutRef   = new java.util.concurrent.atomic.AtomicReference(null)   // üretilen birleşik multipleks OME-TIFF
-def lastCompositeRef  = new java.util.concurrent.atomic.AtomicBoolean(false)    // son merge doğal-renk bileşik miydi (Brightfield) yoksa çok-kanallı mı (Fluorescence)
+def lastCompositeRef  = new java.util.concurrent.atomic.AtomicBoolean(false)    // son merge doğal-renk bileşik miydi (Brightfield) yoksa çok kanallı mı (Fluorescence)
 def qcThumbRef        = new java.util.concurrent.atomic.AtomicReference(null)   // RESULT'ta gösterilen hafif hizalama QC önizlemesi (javafx.scene.image.Image) — her koşu başında sıfırlanır (bkz. startRun)
 def lastCmdRef        = new java.util.concurrent.atomic.AtomicReference(null)   // Doğrudan çalıştır için seçili komut
 def wslTextRef        = new java.util.concurrent.atomic.AtomicReference('')     // üretilen WSL komutu (CMD_READY)
@@ -1819,10 +1917,13 @@ def mergeEnabledRef = new java.util.concurrent.atomic.AtomicBoolean(true)
 def mergeModeRef  = new java.util.concurrent.atomic.AtomicReference('hed')      // 'hed' | 'dab' | 'rgb'
 def mergeLevelRef = new java.util.concurrent.atomic.AtomicReference('2')
 def writeOmeRef   = new java.util.concurrent.atomic.AtomicBoolean(false)        // ayrı hizalı OME slaytları da yaz (yavaş)
-def compositeRef  = new java.util.concurrent.atomic.AtomicBoolean(false)        // çok-kanallı yerine doğal-renk parlak-alan RGB bileşik
+def compositeRef  = new java.util.concurrent.atomic.AtomicBoolean(false)        // çok kanallı yerine doğal-renk parlak alan RGB bileşik
 def rigidOnlyRef  = new java.util.concurrent.atomic.AtomicBoolean(false)        // HIZLI: yalnız rigid kayıt (non-rigid atla)
 def stageSlidesRef= new java.util.concurrent.atomic.AtomicBoolean(false)        // slaytları WSL-yerel diske kopyala (ilk kayıt I/O ~6x hızlı) — 'stage' adı JavaFX Stage ile çakışır, kullanma
-def maxProcDimRef = new java.util.concurrent.atomic.AtomicReference('')         // kayıt için maks. kenar (px); boş = VALIS varsayılanı
+def maxProcDimRef = new java.util.concurrent.atomic.AtomicReference('')         // kayıt için maks. kenar (px); boş = VALIS varsayılanı (512)
+def correctScaleRef = new java.util.concurrent.atomic.AtomicBoolean(false)      // rigid'i benzerlik yap → tarayıcı µm/px (ölçek) farkını düzelt (VALIS varsayılan rigid=Euclidean, ölçek düzeltmez)
+def microRef      = new java.util.concurrent.atomic.AtomicBoolean(false)        // ince hizalama (register_micro — yüksek çözünürlüklü 2. non-rigid geçiş)
+def microDimRef   = new java.util.concurrent.atomic.AtomicReference('')         // ince hizalama kenarı (px); boş = 4096. Başlangıç non-rigid'ten (2048) BÜYÜK olmalı
 
 // ── Toplu işlem (batch — çoklu vaka) durumu ──
 def batchCasesRootRef        = new java.util.concurrent.atomic.AtomicReference(null)             // File: seçilen "vaka klasörü kökü"
@@ -2037,6 +2138,14 @@ def prepareRun = { cfg, boolean reuseRegistrar = false, boolean warpOnly = false
     boolean writeOme = (reuseRegistrar || warpOnly) ? false : writeOmeRef.get()
     def _maxProc = (maxProcDimRef.get() ?: '').toString().trim()
     if (_maxProc && !(_maxProc ==~ /\d+/)) return [ok: false, error: 'Kayıt için maks. kenar SAYI olmalı (px) ya da boş: "' + _maxProc + '"']
+    def _microDim = (microDimRef.get() ?: '').toString().trim()
+    if (_microDim && !(_microDim ==~ /\d+/)) return [ok: false, error: 'İnce hizalama kenarı SAYI olmalı (px) ya da boş: "' + _microDim + '"']
+    // register_micro kenarı, başlangıç non-rigid kenarından (VALIS varsayılanı 2048) BÜYÜK olmalı; değilse
+    // VALIS sessizce (hiçbir şey yapmadan) döner → sessiz-yanlış önlenir. Boş = 4096 (>2048) güvenli.
+    if (microRef.get() && _microDim && (_microDim as int) <= 2048)
+        return [ok: false, error: 'İnce hizalama kenarı (register_micro) başlangıç non-rigid çözünürlüğünden (2048) BÜYÜK olmalı. En az 2049 (önerilen 4096) girin ya da boş bırakın.']
+    if (microRef.get() && rigidOnlyRef.get())
+        return [ok: false, error: 'İnce hizalama (register_micro) non-rigid gerektirir; "Yalnız rigid kayıt" ile birlikte kullanılamaz. Birini kapatın.']
 
     def buildArgs = { String kind ->
         def conv = { File f ->
@@ -2056,7 +2165,11 @@ def prepareRun = { cfg, boolean reuseRegistrar = false, boolean warpOnly = false
         boolean useAutoRef = (referenceModeRef.get() == 'auto') && !reuseRegistrar && !warpOnly
         def opts = [rigidOnly: rigidOnlyRef.get(), maxProcessedDim: (_maxProc ?: null),
                     stage: (stageSlidesRef.get() && cfg.mode == 'wsl' && !reuseRegistrar), reuseRegistrar: reuseRegistrar,
-                    autoReference: useAutoRef]
+                    autoReference: useAutoRef,
+                    // Ölçek düzeltme + ince hizalama YALNIZ taze kayıtta anlamlı (warpOnly/reuse'da YENİDEN KAYIT yok).
+                    correctScale: (correctScaleRef.get() && !reuseRegistrar && !warpOnly),
+                    micro: (microRef.get() && !reuseRegistrar && !warpOnly && !rigidOnlyRef.get()),
+                    microDim: (_microDim ?: null)]
         // tgtSlide/geojsonOut LİSTE olarak geçilir — runArgs zaten Liste'yi destekler (birden çok --target-slide/--geojson-out çifti).
         def tgtList  = warpPlan.collect { conv(it.file) }
         def gjOutList= warpPlan.collect { conv(it.geojsonOut) }
@@ -2310,7 +2423,7 @@ def startDirectRun = { List cmd ->
             sb << "Aşağıdan sonuçları QuPath'e aktarın:\n"
             sb << (isComp
                 ? " • \"Birleşik multipleksi ekle\" → doğal-renk RGB'yi projeye ekler. Tür: BRIGHTFIELD; tek görünüm, kanal seçilemez (\"slayt gibi\").\n"
-                : " • \"Birleşik multipleksi ekle\" → çok-kanallı hizalı görüntüyü ekler. Tür: FLUORESCENCE; Ctrl+Shift+C ile 2–3 kanalı aç/kapat.\n")
+                : " • \"Birleşik multipleksi ekle\" → çok kanallı hizalı görüntüyü ekler. Tür: FLUORESCENCE; Ctrl+Shift+C ile 2–3 kanalı aç/kapat.\n")
             sb << " • \"Warp'lı anotasyonu içe aktar\" → hedef slayt(lar)a (VALIS adlı, kilitli) anotasyon ekler.\n\n"
             sb << "Çıktı türleri: Ekler → Görüntü Hizalama § 7.2 (hangisini ne zaman/hangi tür).\n"
             sb << "Hizalamayı GÖRSEL doğrulayın.\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
@@ -2481,7 +2594,7 @@ def doAddOme = {
     }
 }
 // Birleşik multipleks OME-TIFF'i projeye ekle (merge birincil çıktı; wizard koşusundan sonra ya da
-// elle). Tür OTOMATİK ayarlanır: doğal-renk bileşik → BRIGHTFIELD_OTHER, çok-kanallı → FLUORESCENCE.
+// elle). Tür OTOMATİK ayarlanır: doğal-renk bileşik → BRIGHTFIELD_OTHER, çok kanallı → FLUORESCENCE.
 def doAddMergeOut = {
     def project = QP.getProject(); def mf = lastMergeOutRef.get()
     if (project == null || mf == null) return
@@ -2493,7 +2606,7 @@ def doAddMergeOut = {
         def msg = String.format(java.util.Locale.US, '%d eklendi, %d zaten vardı, %d hata.', (res.added ?: 0), (res.skipped ?: 0), (res.failed ?: 0))
         boolean bad = ((res.failed ?: 0) > 0) || (res.syncOk == false)
         def hint = isComp
-            ? '\nDoğal-renk parlak-alan bileşiği → tür OTOMATİK "Brightfield" olarak ayarlandı. Tek pişmiş RGB görüntüdür; kanal seçilemez ("slayt gibi" görünüm).'
+            ? '\nDoğal-renk parlak alan bileşiği → tür OTOMATİK "Brightfield" olarak ayarlandı. Tek pişmiş RGB görüntüdür; kanal seçilemez ("slayt gibi" görünüm).'
             : '\nÇok kanallı → tür OTOMATİK "Fluorescence" olarak ayarlandı. Ctrl+Shift+C ile 2–3 kanalı (ör. marker-DAB + marker-Hematoksilen) "Göster" ile aç/kapat; beyaz zemin için "Invert background".'
         applyAddPreview(res)
         if (bad) Dialogs.showErrorMessage('Birleşik görüntü — kısmen/hata', msg + '\n\n' + ((res.notes) ? res.notes.join('\n') : ''))
@@ -2578,7 +2691,7 @@ def doWarpOnlyTransfer = { cfg ->
         sb << "Kayıtlı hizalamadan (yeniden KAYIT yok) " << wp.size() << " hedef için anotasyon warp edildi ve içe aktarıldı:\n\n"
         wp.each { p -> def gj = p.geojsonOut; boolean got = (gj instanceof File && gj.isFile()); sb << "  " << (got ? '✓ ' : '✗ ') << (p.targetName ?: '?') << "\n" }
         sb << "\nKoordinat uzayı: taban (level-0) piksel, köşe sol-üst, yeniden ölçekleme yapılmaz.\n"
-        sb << "Seri kesitler AYNI hücreleri İÇERMEZ — bu bir YAKLAŞIK VEKİLDİR, hücre-düzeyinde birebir eşleşme değildir; her hedefte GÖRSEL doğrulayın.\n"
+        sb << "Seri kesitler AYNI hücreleri İÇERMEZ — bu bir YAKLAŞIK VEKİLDİR, hücre düzeyinde birebir eşleşme değildir; her hedefte GÖRSEL doğrulayın.\n"
         sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
         resultKindRef.set('run'); resultTextRef.set(sb.toString()); step.set('RESULT'); render()
     })
@@ -2881,6 +2994,56 @@ render = { ->
             maxProcField.textProperty().addListener({ o, ov, nv -> maxProcDimRef.set(nv) } as javafx.beans.value.ChangeListener)
             def hrow = new javafx.scene.layout.HBox(8, rigidCb, new javafx.scene.control.Label('Kayıt için maks. kenar (px, boş=varsayılan):'), maxProcField)
             hrow.setAlignment(javafx.geometry.Pos.CENTER_LEFT); center.getChildren().add(hrow)
+
+            // ── Ölçek düzeltme (farklı tarayıcı µm/px) + İnce hizalama (register_micro) ──
+            def scaleCb = new javafx.scene.control.CheckBox('Ölçek/µm-px farkını düzelt (farklı tarayıcı — ör. AT2 vs GT450; benzerlik rigid, ölçeği görüntülerden tahmin eder)'); scaleCb.setSelected(correctScaleRef.get()); scaleCb.setWrapText(true)
+            scaleCb.selectedProperty().addListener({ o, ov, nv -> correctScaleRef.set(nv) } as javafx.beans.value.ChangeListener)
+            center.getChildren().add(scaleCb)
+            def microCb = new javafx.scene.control.CheckBox('İnce hizalama (register_micro — yüksek çözünürlüklü 2. non-rigid geçiş; "az kaymış"ı sıkılaştırır, yavaş)'); microCb.setSelected(microRef.get()); microCb.setWrapText(true)
+            def microField = new javafx.scene.control.TextField(microDimRef.get() ?: ''); microField.setPrefColumnCount(5)
+            microField.textProperty().addListener({ o, ov, nv -> microDimRef.set(nv) } as javafx.beans.value.ChangeListener)
+            microField.disableProperty().bind(microCb.selectedProperty().not())
+            def microRow = new javafx.scene.layout.HBox(8, microCb, new javafx.scene.control.Label('kenar (px, boş=4096; >2048):'), microField)
+            microRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT); center.getChildren().add(microRow)
+            // Karşılıklı dışlama: register_micro NON-RIGID'dir → "Yalnız rigid" ile birlikte anlamsız (VALIS None döner). Biri açılınca diğeri kapanır.
+            microCb.selectedProperty().addListener({ o, ov, nv -> microRef.set(nv); if (nv && rigidCb.isSelected()) rigidCb.setSelected(false) } as javafx.beans.value.ChangeListener)
+            rigidCb.selectedProperty().addListener({ o, ov, nv -> if (nv && microCb.isSelected()) microCb.setSelected(false) } as javafx.beans.value.ChangeListener)
+
+            // ── µm/px (piksel boyutu) oku — farklı tarayıcı ölçek farkını çalıştırmadan ÖNCE görmek için ──
+            def mppLabel = new javafx.scene.control.Label('µm/px: (okumak için düğmeye basın)'); mppLabel.setWrapText(true); mppLabel.setMaxWidth(Double.MAX_VALUE)
+            def mppBtn = new javafx.scene.control.Button('µm/px oku (seçili slaytlar)')
+            mppBtn.setOnAction({
+                mppBtn.setDisable(true); mppLabel.setText('µm/px okunuyor…')
+                def openCal = imageData?.getServer()?.getPixelCalibration()
+                def sel = []
+                sel << [name: srcName, cal: openCal, entry: null]
+                others.each { e -> def id = e.getID()?.toString(); if (id != null && includeIds.contains(id)) sel << [name: (e.getImageName() ?: '(adsız)'), cal: null, entry: e] }
+                new Thread({
+                    def out = []; def vals = []
+                    sel.each { s ->
+                        Double um = null
+                        try {
+                            def cal = s.cal
+                            if (cal == null && s.entry != null) {
+                                def server = s.entry.getServerBuilder()?.build()
+                                try { cal = server?.getPixelCalibration() } finally { try { server?.close() } catch (ignore) {} }
+                            }
+                            if (cal != null && cal.hasPixelSizeMicrons()) um = cal.getPixelWidthMicrons()
+                        } catch (Throwable t) { um = null }
+                        if (um != null) { vals << um; out << (s.name + ': ' + String.format(java.util.Locale.US, '%.4f', um)) }
+                        else out << (s.name + ': ?')
+                    }
+                    String warn = ''
+                    if (vals.size() >= 2) {
+                        def lo = vals.min(); def hi = vals.max()
+                        if ((hi / lo) > 1.02) warn = '  ⚠ Farklı µm/px (~%' + String.format(java.util.Locale.US, '%.1f', (hi / lo - 1.0) * 100.0) + ' fark) — "Ölçek/µm-px farkını düzelt"i açın.'
+                    }
+                    def txt = 'µm/px — ' + out.join(' · ') + warn
+                    javafx.application.Platform.runLater({ mppLabel.setText(txt); mppBtn.setDisable(false) })
+                }, 'valis-mpp-read').start()
+            } as javafx.event.EventHandler)
+            def mppRow = new javafx.scene.layout.HBox(8, mppBtn, mppLabel)
+            mppRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT); center.getChildren().add(mppRow)
             if (cfg.mode == 'wsl') {
                 def stageCb = new javafx.scene.control.CheckBox('Slaytları WSL-yerel diske kopyala (ilk kaydı ~6× hızlandırır; ~2.5 GB/slayt yer gerekir)'); stageCb.setSelected(stageSlidesRef.get())
                 stageCb.selectedProperty().addListener({ o, ov, nv -> stageSlidesRef.set(nv) } as javafx.beans.value.ChangeListener)
@@ -2910,7 +3073,7 @@ render = { ->
             lvlField.textProperty().addListener({ o, ov, nv -> mergeLevelRef.set(nv) } as javafx.beans.value.ChangeListener)
             def mrow = new javafx.scene.layout.HBox(8, mergeCb, new javafx.scene.control.Label('varsayılan kanal modu:'), mmChoice, new javafx.scene.control.Label('piramit seviyesi:'), lvlField)
             mrow.setAlignment(javafx.geometry.Pos.CENTER_LEFT); center.getChildren().add(mrow)
-            def compCb = new javafx.scene.control.CheckBox('Doğal-renk parlak-alan bileşiği (RGB, "slayt gibi" — QuPath\'te Brightfield; TEK görünüm, kanal seçilemez)'); compCb.setSelected(compositeRef.get())
+            def compCb = new javafx.scene.control.CheckBox('Doğal-renk parlak alan bileşiği (RGB, "slayt gibi" — QuPath\'te Brightfield; TEK görünüm, kanal seçilemez)'); compCb.setSelected(compositeRef.get())
             compCb.selectedProperty().addListener({ o, ov, nv -> compositeRef.set(nv) } as javafx.beans.value.ChangeListener)
             center.getChildren().add(compCb)
             def omeCb = new javafx.scene.control.CheckBox('Ayrı hizalanmış slaytlar (OME-TIFF) da üret (YAVAŞ; merge yeterliyse gerekmez)'); omeCb.setSelected(writeOmeRef.get())
@@ -2931,7 +3094,7 @@ render = { ->
             addGuidance('İKİ ÇIKTI TÜRÜ — amacınıza göre seçin (ayrıntı: Ekler → Görüntü Hizalama § 7.2):\n' +
                 '  • BİLEŞİK KAPALI (varsayılan) → ÇOK-KANALLI multipleks (multiplex_*.ome.tiff). QuPath\'te tür = FLUORESCENCE; ' +
                 'her kanalı ayrı aç/kapat, 2–3 markerı üst üste bindir. Markerları AYIRT/KARŞILAŞTIR için budur.\n' +
-                '  • BİLEŞİK AÇIK → DOĞAL-RENK parlak-alan RGB (multiplex_composite_*.ome.tiff, Beer-Lambert). QuPath\'te tür = BRIGHTFIELD; ' +
+                '  • BİLEŞİK AÇIK → DOĞAL-RENK parlak alan RGB (multiplex_composite_*.ome.tiff, Beer-Lambert). QuPath\'te tür = BRIGHTFIELD; ' +
                 'beyaz zemin, doğal boya renkleri, "SLAYT GİBİ" görünür — ama TEK görüntüdür, kanal seçilemez. Tek slaytta doğal görünüm; ' +
                 'çok slaytta sentetik bileşik (çakışan boyalar koyulaşır).')
 
@@ -2995,7 +3158,7 @@ render = { ->
             center.getChildren().add(tgtScroll)
             addGuidance('Warp yönü: ' + srcName + ' → ' + targetIds.size() + ' hedef seçili.\n' +
                 'Koordinat uzayı: taban (level-0) piksel, köşe sol-üst, yeniden ölçekleme yapılmaz.\n' +
-                'Seri kesitler AYNI hücreleri İÇERMEZ — bu bir YAKLAŞIK VEKİLDİR, hücre-düzeyinde birebir eşleşme değildir; her hedefte GÖRSEL doğrulayın.')
+                'Seri kesitler AYNI hücreleri İÇERMEZ — bu bir YAKLAŞIK VEKİLDİR, hücre düzeyinde birebir eşleşme değildir; her hedefte GÖRSEL doğrulayın.')
             addGuidance('"Komut üret" seçili modun (Docker/native/WSL) komutunu hazırlar; "Doğrudan çalıştır" QuPath içinden koşar. Hedef işaretlenirse kaynağın anotasyonu o slaytlara taşınır.')
             // Dış (CLI/WSL) sonuçlarını içe aktar — wizard koşusu gerektirmez; herhangi bir dosyayı seçtirir.
             def impSep = new javafx.scene.control.Separator()

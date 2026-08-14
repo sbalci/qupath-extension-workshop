@@ -1,5 +1,5 @@
 /**
- * Yardımcı - Görüntü işleme kavramları (kendi slaydınızda interaktif tur)
+ * Yardımcı - Görüntü işleme kavramları (kendi slaydınızda etkileşimli tur)
  * ----------------------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
@@ -17,7 +17,7 @@
  *     6. Mesafe dönüşümü + watershed — bitişik çekirdekleri ayırma fikri.
  *     7. İş akışını birleştir — bu boru hattı tam olarak Hücre tespiti modülünün yaptığı şeydir.
  *
- *   Tümüyle SALT-OKUR: görüntü piksellerini, projeyi, anotasyonları veya
+ *   Tümüyle SALT OKUNUR: görüntü piksellerini, projeyi, anotasyonları veya
  *   tespitleri DEĞİŞTİRMEZ. Yalnız küçük bir bölgeyi okuyup önizleme üretir.
  *
  * NASIL ÖRNEKLER (ve sınırları):
@@ -59,7 +59,7 @@ def pages = [
      govde: 'Bu tur, dijital patolojide hücre tespitinin "perde arkasını" kendi açık slaydınız ' +
             'üzerinde adım adım gösterir. En verimli kullanım için çekirdek içeren KÜÇÜK bir bölge ' +
             '(R aracı) çizip seçin; bir seçim yoksa görüntüleyici görünümü kullanılır. Önizlemeler ' +
-            'salt-okurdur — slaydınızı değiştirmez.\n\n' +
+            'salt okunurdur — slaydınızı değiştirmez.\n\n' +
             'Kaynak: Pete Bankhead\'in dijital patoloji için görüntü-işleme sözlüğü (CC-BY 4.0). ' +
             'Aynı kavramların atölyedeki karşılıkları için: Ek — Görüntü Analizi Temelleri.'],
 
@@ -128,7 +128,7 @@ if (isHeadless) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  Görüntü işleme çekirdeği — tümü salt-okur, küçük örnek bölge üzerinde
+//  Görüntü işleme çekirdeği — tümü salt okunur, küçük örnek bölge üzerinde
 // ════════════════════════════════════════════════════════════════════════════
 
 // 3×3 matris tersi (dekonvolüsyon için)

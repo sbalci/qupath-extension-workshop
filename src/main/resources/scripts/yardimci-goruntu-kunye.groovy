@@ -1,5 +1,5 @@
 /**
- * Yardımcı - Görüntü künyesi ve histogram (salt-okur görüntü temel kontrolü)
+ * Yardımcı - Görüntü künyesi ve histogram (salt okunur görüntü temel kontrolü)
  * --------------------------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
@@ -7,14 +7,14 @@
  *   "Analiz etmeden önce verine bak." Açık slaydın (veya seçili bir ROI'nin)
  *   temel görüntü künyesini tek pencerede gösterir — Pete Bankhead'in ücretsiz
  *   kitabı *Introduction to Bioimage Analysis* (CC-BY 4.0) Bölüm 1'in QuPath
- *   içindeki tek-tık karşılığı:
+ *   içindeki tek tıklamalı karşılığı:
  *     1. KÜNYE  — görüntü tipi/piksel tipi (bit derinliği), kanal sayısı, RGB,
  *        piksel boyutu (µm/px), boyut, kestirilen büyütme, piramit seviyesi.
  *     2. HİSTOGRAM — örneklenen pikseller üzerinden kanal başına en düşük /
  *        en yüksek / ortalama değer ve metin-tabanlı (ASCII) histogram.
  *     3. DOYGUNLUK — kanal başına %@0 ve %@max (kırpılma/clipping göstergesi).
  *
- *   Tümüyle SALT-OKUR: görüntü piksellerini, projeyi, anotasyonları veya
+ *   Tümüyle SALT OKUNUR: görüntü piksellerini, projeyi, anotasyonları veya
  *   tespitleri DEĞİŞTİRMEZ. Yalnızca okur ve raporlar.
  *
  * NASIL ÖRNEKLER (ve sınırları):
@@ -35,7 +35,7 @@
  *   3. Künyeyi inceleyin; "Kopyala" ile panoya alın.
  *
  * İLGİLİ: Ek — Görüntü Analizi Temelleri (kavram ⇄ atölye ⇄ kitap eşlemesi);
- *   Kalibrasyon (piksel boyutu) ve Kohort metadata sihirbazı yardımcıları.
+ *   Kalibrasyon (piksel boyutu) ve Kohort üst veri sihirbazı yardımcıları.
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
@@ -52,7 +52,7 @@ def isHeadless = gui == null
 def fmt = { double d, int dec -> Double.isNaN(d) ? '—' : String.format(java.util.Locale.US, '%.' + dec + 'f', d) }
 def fmtInt = { long v -> String.format(java.util.Locale.US, '%,d', v) }
 
-// ── Kanal etiketi (RGB için renk adı; çok-kanallıda metadata adı ya da Kanal N) ─
+// ── Kanal etiketi (RGB için renk adı; çok kanallıda metadata adı ya da Kanal N) ─
 def channelLabel = { int idx, boolean rgb, int nb, server ->
     if (rgb && nb == 3) return (['Kırmızı (R)', 'Yeşil (G)', 'Mavi (B)'] as List)[idx]
     try {
@@ -257,7 +257,7 @@ def buildReport = { imageData ->
     return sb.toString()
 }
 
-// ── Sonuç penceresi (salt-okur; headless'ta konsola yazar) ───────────────────
+// ── Sonuç penceresi (salt okunur; headless'ta konsola yazar) ───────────────────
 def showResultWindow = { String text ->
     if (isHeadless) {
         println text

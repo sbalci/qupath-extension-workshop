@@ -37,7 +37,7 @@ public final class WorkshopSettingsDialog {
     /** Choice options for string prefs that should render as a dropdown. */
     private static final Map<String, String[]> CHOICES = new LinkedHashMap<>();
     static {
-        // cellposeModel: Modül 4 (HER2) Cellpose detektörü okur. cellposeFamily: Cellpose sihirbazı
+        // cellposeModel: Modül 4 (HER2) Cellpose dedektörü okur. cellposeFamily: Cellpose sihirbazı
         // (yardimci-cellpose-sihirbaz) okur — cpsam (Cellpose-SAM) dahil. İki ayrı anahtar; silmeyin.
         CHOICES.put("atolye.cellposeModel", new String[]{"cyto3", "cyto2", "nuclei"});
         CHOICES.put("atolye.cellposeFamily", new String[]{"cyto3", "cyto2", "nuclei", "cpsam"});
@@ -203,7 +203,7 @@ public final class WorkshopSettingsDialog {
             case "atolye.pixDab1": return "Piksel H-score 1+";
             case "atolye.pixDab2": return "Piksel H-score 2+";
             case "atolye.pixDab3": return "Piksel H-score 3+";
-            case "atolye.pixHmask": return "Piksel Hematoksilin maskesi";
+            case "atolye.pixHmask": return "Piksel Hematoksilen maskesi";
             case "atolye.cellposeModel": return "Cellpose modeli";
             case "atolye.cellposeDiameter": return "Cellpose çapı (px)";
             case "atolye.cellposeFamily": return "Cellpose model ailesi";
@@ -217,19 +217,19 @@ public final class WorkshopSettingsDialog {
             case "atolye.cellExpansionCyto": return "Hücre genişlemesi — sitoplazma (µm)";
             case "atolye.sigma": return "Sigma (µm)";
             case "atolye.backgroundRadius": return "Arka plan yarıçapı (µm)";
-            case "atolye.minArea": return "Min alan (µm²)";
-            case "atolye.maxArea": return "Maks alan (µm²)";
+            case "atolye.minArea": return "En küçük alan (µm²)";
+            case "atolye.maxArea": return "En büyük alan (µm²)";
             case "atolye.medianRadius": return "Medyan filtre (µm)";
-            case "atolye.detectionThreshold": return "Çekirdek eşik (OD)";
+            case "atolye.detectionThreshold": return "Çekirdek eşiği (OD)";
             case "atolye.detectionChannel": return "Tespit kanalı";
-            case "atolye.watershed": return "Watershed bölme";
-            case "atolye.pixScale": return "Piksel ölçek (downsample)";
+            case "atolye.watershed": return "Watershed ile bölme";
+            case "atolye.pixScale": return "Piksel ölçeği (alt örnekleme)";
             case "atolye.classifierName": return "Sınıflandırıcı adı";
-            case "atolye.minObjectArea": return "Min nesne alanı (µm²)";
-            case "atolye.minHoleArea": return "Min boşluk alanı (µm²)";
-            case "atolye.maxTrainingSamples": return "Maks eğitim örneği (0 = sınırsız)";
-            case "atolye.warnNuclearCount": return "Uyarı: düşük çekirdek (Nielsen)";
-            case "atolye.warnGenericCount": return "Uyarı: düşük hücre";
+            case "atolye.minObjectArea": return "En küçük nesne alanı (µm²)";
+            case "atolye.minHoleArea": return "En küçük boşluk alanı (µm²)";
+            case "atolye.maxTrainingSamples": return "En fazla eğitim örneği (0 = sınırsız)";
+            case "atolye.warnNuclearCount": return "Uyarı: düşük çekirdek sayısı (Nielsen)";
+            case "atolye.warnGenericCount": return "Uyarı: düşük hücre sayısı";
             case "atolye.warnTissueAreaMm2": return "Uyarı: küçük doku (mm²)";
             case "atolye.exportFolder": return "Dışa aktarma klasörü";
             case "atolye.exportSeparator": return "Ayraç";

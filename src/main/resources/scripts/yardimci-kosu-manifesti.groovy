@@ -1,5 +1,5 @@
 /**
- * Yardımcı - Koşu Manifesti (salt-okur provenance/manifest dışa aktarıcı)
+ * Yardımcı - İşlem Kaydı (salt okunur provenance/manifest dışa aktarıcı)
  * -------------------------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
@@ -17,11 +17,11 @@
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   Yalnızca sayılar, yüzdeler, piksel boyutları, kanallar ve boya vektörü
  *   bileşenleri gibi ÖLÇÜM meta verisi üretir. Klinik etiket, eşik, alt tip,
- *   risk kategorisi veya yorum ÜRETMEZ. saveImageData çağırmaz; salt-okur.
+ *   risk kategorisi veya yorum ÜRETMEZ. saveImageData çağırmaz; salt okunur.
  *
  * KULLANIM:
  *   1. Bir slayt (veya proje) açın.
- *   2. [Extensions → Atölye → Yardımcılar → Koşu Manifesti]
+ *   2. [Extensions → Atölye → Yardımcılar → Klinik ve kohort → İşlem kaydı (provenance JSON)]
  *   3. Kapsam seçin ("Açık görüntü" / "Tüm proje").
  *   4. İsteğe bağlı kullanıcı notu girin; Tamam'a basın.
  *   5. JSON dosyaları manifests/ klasörüne yazılır; sonuç penceresi açılır.
@@ -35,7 +35,7 @@
  *   • qupath.lib.io.GsonTools.getInstance(true).toJson(record) — JSON serileştirme
  *   • imageData.getColorDeconvolutionStains() — boya vektörü okuma
  *   • qupath.lib.common.GeneralTools.getVersion() (try/catch ile korunmuş)
- *   • sbalci/metadata-qupath ile uyumlu alan adları (downstream araçlar çalışır)
+ *   • sbalci/metadata-qupath ile uyumlu alan adları (sonraki araçlar çalışır)
  *   • Bankhead P et al. (2017), Sci Rep. doi:10.1038/s41598-017-17204-5
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
@@ -94,7 +94,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Scriptleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -306,7 +306,7 @@ if (scope == "Tüm proje") {
         def nm    = (rec.identity?.image_name ?: 'slide').toString()
         def f     = writeManifest(rec, manifestDir, nm)
         writtenFiles << f
-        println String.format(java.util.Locale.US, "✓ Manifest yazıldı: %s", f.getAbsolutePath())
+        println String.format(java.util.Locale.US, "✓ İşlem kaydı yazıldı: %s", f.getAbsolutePath())
     } catch (Throwable t) {
         errors << (t.getMessage() ?: t.getClass().getSimpleName())
     }
@@ -314,7 +314,7 @@ if (scope == "Tüm proje") {
 
 // ── Sonuç penceresi ───────────────────────────────────────────────────────────
 def sb = new StringBuilder()
-sb << "KOŞU MANİFESTİ\n"
+sb << "İŞLEM KAYDI\n"
 sb << "═══════════════════════════════════════\n\n"
 sb << String.format(java.util.Locale.US, "Kapsam          : %s%n", scope)
 sb << String.format(java.util.Locale.US, "Yazılan dosya   : %,d%n", writtenFiles.size())
@@ -328,9 +328,9 @@ if (errors.size() > 0) {
 }
 if (userNote != null && !userNote.isEmpty())
     sb << String.format(java.util.Locale.US, "%nNot : %s%n", userNote)
-sb << "\nManifest alanları: kimlik · boya vektörleri · analiz durumu · ortam · kullanıcı notu.\n"
-sb << "JSON dosyalarını Python/R ile okuyarak pipeline provenance kaydı tutabilirsiniz.\n\n"
+sb << "\nKayıt alanları: kimlik · boya vektörleri · analiz durumu · ortam · kullanıcı notu.\n"
+sb << "JSON dosyalarını Python veya R ile okuyarak iş akışının izlenebilirlik kaydını tutabilirsiniz.\n\n"
 sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
-showResultWindow("Koşu Manifesti", sb.toString())
-println "✓ Koşu manifesti tamamlandı (${writtenFiles.size()} dosya → ${manifestDir.getAbsolutePath()})."
+showResultWindow("İşlem Kaydı", sb.toString())
+println "✓ İşlem kaydı tamamlandı (${writtenFiles.size()} dosya → ${manifestDir.getAbsolutePath()})."

@@ -6,7 +6,7 @@
  * NE YAPAR:
  *   Seçili bölgede (yoksa tüm slaytta) H&E/İHK boya KALİTESİNİ niceler. QuPath'in
  *   renk dekonvolüsyonuyla doku piksellerinde:
- *     • Boya-1 (Hematoksilin) ve Boya-2 (Eozin/DAB) ortalama optik yoğunluğu (OD)
+ *     • Boya-1 (Hematoksilen) ve Boya-2 (Eozin/DAB) ortalama optik yoğunluğu (OD)
  *     • Boya-1 : Boya-2 OD oranı (yoğunluk dengesi)
  *     • Dekonvolve tek-boya yeniden-yapımının CIELAB **L*** değeri ve **H:E L* oranı**
  *       — Dunn ve ark. (2025) yöntemine yakın; H&E için optimal aralık **0,94–0,99**.
@@ -69,7 +69,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
             def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, copyBtn, closeBtn)
             buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT); buttons.setPadding(new javafx.geometry.Insets(8))
             def root = new javafx.scene.layout.BorderPane(); root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Scriptleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons); __bottom.setPadding(new javafx.geometry.Insets(8))
@@ -98,7 +98,7 @@ if (imageData == null) {
 def server = imageData.getServer()
 def stains = imageData.getColorDeconvolutionStains()
 if (stains == null) {
-    def msg = "Bu yardımcı renk dekonvolüsyonu (parlak-alan H&E / H-DAB) gerektirir; boya vektörleri tanımlı değil.\n" +
+    def msg = "Bu yardımcı renk dekonvolüsyonu (parlak alan H&E / H-DAB) gerektirir; boya vektörleri tanımlı değil.\n" +
               "[Image → Set image type] ile Brightfield seçin ya da Boya vektörleri sihirbazını çalıştırın."
     if (isHeadless) { println msg; return }
     Dialogs.showErrorMessage("Boya vektörü yok", msg); return
@@ -162,8 +162,8 @@ double tissueFrac = (double) nTissue / (double) rgb.length
 String heVerdict
 if (isHE && !Double.isNaN(lRatio)) {
     if (lRatio >= 0.94d && lRatio <= 0.99d) heVerdict = "0,94–0,99 aralığında (Dunn 2025 optimal)"
-    else if (lRatio < 0.94d) heVerdict = "< 0,94 — hematoksilin baskın (koyu çekirdek eğilimi)"
-    else heVerdict = "> 0,99 — hematoksilin zayıf / eozin baskın"
+    else if (lRatio < 0.94d) heVerdict = "< 0,94 — hematoksilen baskın (koyu çekirdek eğilimi)"
+    else heVerdict = "> 0,99 — hematoksilen zayıf / eozin baskın"
 } else {
     heVerdict = isHE ? "(hesaplanamadı)" : "(yalnız H&E için Dunn referansı; bu görüntü " + s1name + "/" + s2name + ")"
 }

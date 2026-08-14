@@ -1,5 +1,5 @@
 /**
- * Yardımcı - ICC Renk Profili Denetçisi (tek pencere, salt-okur)
+ * Yardımcı - ICC Renk Profili Denetçisi (tek pencere, salt okunur)
  * -------------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
@@ -17,7 +17,7 @@
  *     4. Profil bulunursa boyut, renk uzayı, bileşen sayısı, profil sınıfı ve
  *        (varsa) açıklama metnini raporlar.
  *
- *   Tümüyle SALT-OKUR. Hücre/anotasyon/hiyerarşi/boya vektörü DEĞİŞTİRMEZ;
+ *   Tümüyle SALT OKUNUR. Hücre/anotasyon/hiyerarşi/boya vektörü DEĞİŞTİRMEZ;
  *   profili UYGULAMAZ (QuPath 0.6/0.7 analiz hattında ICC uygulamayı kararlı
  *   biçimde desteklemez — bkz. qupath/qupath#982). Yalnız DENETLER.
  *
@@ -144,7 +144,7 @@ def resolveTagBytes = { parser, ifd, int tag ->
     } catch (Throwable t) { return null }
 }
 
-// ── Çekirdek inceleme: dosyayı Bio-Formats TiffParser ile okur (salt-okur) ───
+// ── Çekirdek inceleme: dosyayı Bio-Formats TiffParser ile okur (salt okunur) ───
 // Dönen LinkedHashMap: ok, error, imageDescription, scannerHint, ext,
 //   has34675/bytes34675, hasFFFF/bytesFFFF
 def gatherIcc = { String path ->
@@ -371,7 +371,7 @@ render = { ->
         def imageData = QP.getCurrentImageData()
         title.setText('ICC renk profili denetçisi')
         addGuidance('Açık slaytın DOSYASINDA gömülü bir ICC renk profili olup olmadığını okur ' +
-            've raporlar. Salt-okur: görüntüyü, renkleri veya analizinizi değiştirmez.\n\n' +
+            've raporlar. Salt okunur: görüntüyü, renkleri veya analizinizi değiştirmez.\n\n' +
             'Aperio SVS dosyaları gömülü ICC profili taşır; ImageScope bunu uygular, QuPath uygulamaz ' +
             '→ aynı slayt iki yazılımda farklı renkte görünür. Bu araç hangi durumun geçerli olduğunu gösterir.')
         if (imageData == null) addGuidance('⚠ Açık slayt yok. Önce yerel bir TIFF/SVS slaytı açın.')

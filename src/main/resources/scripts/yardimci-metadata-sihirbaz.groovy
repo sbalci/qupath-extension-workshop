@@ -1,5 +1,5 @@
 /**
- * Yardımcı - Kohort Metadata Sihirbazı (tek pencere: bu slayt + tüm proje)
+ * Yardımcı - Kohort Üst Veri Sihirbazı (tek pencere: bu slayt + tüm proje)
  * ------------------------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
@@ -14,7 +14,7 @@
  *        anahtar alanları QuPath Proje sekmesine SIRALANABİLİR sütun olarak da
  *        yazabilir (entry.getMetadata()) — kohortu QuPath'ten çıkmadan eleyin.
  *
- *   Tümüyle SALT-OKUR ölçüm üretir: hücre tespiti, sınıflandırma veya hiyerarşi
+ *   Tümüyle SALT OKUNUR ölçüm üretir: hücre tespiti, sınıflandırma veya hiyerarşi
  *   DEĞİŞTİRMEZ. Yalnız "Proje sütunlarına da yaz" seçeneği işaretliyse proje
  *   girdi üst verisini günceller (görüntü pikselleri/anotasyonlar dokunulmaz).
  *
@@ -30,7 +30,7 @@
  *
  * KULLANIM:
  *   1. Bir QuPath projesi açın (tek slayt raporu için bir de slayt açın).
- *   2. [Extensions → Atölye → Yardımcılar → Kohort metadata sihirbazı]
+ *   2. [Extensions → Atölye → Yardımcılar → Klinik ve kohort → Kohort üst veri sihirbazı]
  *   3. "Bu slayt" panosunu inceleyin VEYA "Tüm projeyi tara → CSV".
  *   4. CSV'yi Excel/R/Python'da açıp kohort dahil/dışlama ölçütlerinizi tanımlayın.
  *
@@ -55,7 +55,7 @@ def fmt = { double d, int dec -> Double.isNaN(d) ? '—' : String.format(java.ut
 def fmtInt = { long v -> String.format(java.util.Locale.US, '%,d', v) }
 def nowStr = { -> new SimpleDateFormat('yyyy-MM-dd HH:mm:ss').format(new Date()) }
 
-// ── Gömülü özellik araştırması (salt-okur, en iyi çaba, tamamen korumalı) ───
+// ── Gömülü özellik araştırması (salt okunur, en iyi çaba, tamamen korumalı) ───
 // ImageServerMetadata gömülü tarayıcı anahtarlarını içermez; bunlar okuyucuya
 // özgüdür. Sunucuda parametresiz + Map dönen "metadata/properties" adlı bir
 // yöntem varsa onu yansıma (reflection) ile okuruz; yoksa boş Map döner.
@@ -325,7 +325,7 @@ def resolveOutDir = { project ->
 // ── Özet metni ───────────────────────────────────────────────────────────────
 def buildSummary = { List rows, List errors, File outDir, File csvFile, boolean wroteCols ->
     def sb = new StringBuilder()
-    sb << 'KOHORT METADATA — ÖZET\n'
+    sb << 'KOHORT ÜST VERİSİ — ÖZET\n'
     sb << '════════════════════════\n\n'
     sb << String.format(java.util.Locale.US, '  Taranan slayt   : %,d%n', rows.size())
     sb << String.format(java.util.Locale.US, '  Atlanan / hatalı: %,d%n', errors.size())
@@ -359,7 +359,7 @@ def writeSummaryFile = { List rows, List errors, File outDir, File csvFile, Stri
     try {
         def f = new File(outDir, 'detailed_summary.txt')
         f.withWriter('UTF-8') { w ->
-            w.writeLine('Kohort Metadata — ' + nowStr())
+            w.writeLine('Kohort Üst Verisi — ' + nowStr())
             w.writeLine('QuPath ' + GeneralTools.getVersion())
             w.writeLine(summaryText.replace('—', '-'))
         }
@@ -445,7 +445,7 @@ render = { ->
     if (cur == 'READY') {
         def imageData = QP.getCurrentImageData()
         def project = QP.getProject()
-        title.setText('Kohort metadata sihirbazı')
+        title.setText('Kohort üst veri sihirbazı')
         if (imageData != null) {
             def rep
             try { rep = reportText(extractMetadata(imageData, QP.getProjectEntry(), project)) }
@@ -525,7 +525,7 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Kohort metadata sihirbazı')
+        stage.setTitle('Kohort üst veri sihirbazı')
         stage.setAlwaysOnTop(alwaysTop.get())
         render()
         stage.show()
@@ -533,4 +533,4 @@ javafx.application.Platform.runLater {
         Dialogs.showErrorMessage('Sihirbaz açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
     }
 }
-println '✓ Kohort metadata sihirbazı açıldı.'
+println '✓ Kohort üst veri sihirbazı açıldı.'

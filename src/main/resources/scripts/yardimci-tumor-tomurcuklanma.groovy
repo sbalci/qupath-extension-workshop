@@ -3,8 +3,8 @@
  * ---------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
- * Pan-sitokeratin (CK) DAB parlak-alan slaytlarında tümör tomurcuklarını
- * yarı-otomatik sayar. Yöntem: gömülü bir DAB piksel sınıflandırıcısı CK⁺
+ * Pan-sitokeratin (CK) DAB parlak alan slaytlarında tümör tomurcuklarını
+ * yarı otomatik sayar. Yöntem: gömülü bir DAB piksel sınıflandırıcısı CK⁺
  * bölgeleri ayırır → boyut penceresi (varsayılan 40–700 µm², ≈ ITBCC'nin
  * 1–4 hücrelik tomurcuğu) ile süzülür → kalan nesneler "Tumor bud" sınıfına
  * atanır → sayılır. ITBCC sahası 0.785 mm²'dir (1 mm Ø).
@@ -181,7 +181,7 @@ def runBudding = { String mode, double budMin, double budMax, double frontMargin
         def imageData = QP.getCurrentImageData()
         if (imageData == null) return [ok:false, error:'Görüntü açık değil.']
         if (!imageData.isBrightfield())
-            return [ok:false, error:'Bu araç parlak-alan (brightfield) DAB görüntüsü gerektirir.\n' +
+            return [ok:false, error:'Bu araç parlak alan (brightfield) DAB görüntüsü gerektirir.\n' +
                                     'Görüntü tipini [Image → Set image type] ile Brightfield (H-DAB) yapın.']
         def cal = imageData.getServer().getPixelCalibration()
         double pw = cal.getPixelWidthMicrons(), ph = cal.getPixelHeightMicrons()

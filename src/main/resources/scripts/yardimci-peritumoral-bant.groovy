@@ -48,7 +48,7 @@
  *   • JTS (Java Topology Suite) buffer + difference — QuPath içinde. Dikkat:
  *     JTS getArea() PİKSEL² döndürür; µm² için pw·ph ile çarpılır.
  *   • Teknik esin: JamesCrichton/QuPath-Scripting-Workshop (Exeter Üniversitesi, 2025),
- *     "Islet Ring" (buffer→difference) — depo açık-kaynak lisansı taşımaz; bu betik
+ *     "Islet Ring" (buffer→difference) — depo açık kaynak lisansı taşımaz; bu betik
  *     teknik yeniden yazımdır (koddan aktarım yok).
  *   • Bankhead P et al. (2017), Sci Rep — QuPath. doi:10.1038/s41598-017-17204-5
  *
@@ -105,7 +105,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Scriptleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)

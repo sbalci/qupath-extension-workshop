@@ -21,7 +21,7 @@
  *   1. StarDist eklentisi yüklü (sihirbaz yoksa kuruluma yönlendirir)
  *   2. Model dosyası ~/.qupath/stardist/he_heavy_augment.pb
  *      (yoksa ilk tespitte github.com/qupath/models'ten otomatik indirilir)
- *   3. Sınıflandırıcı sihirbazın içinde, kendi olgunuzdan interaktif eğitilir
+ *   3. Sınıflandırıcı sihirbazın içinde, kendi olgunuzdan etkileşimli eğitilir
  *
  * Çıktılar yalnız sayım, alan, oran (cTCF) ve süredir.
  * Klinik kategori, NGS yeterlilik kararı veya yorum üretilmez.
@@ -325,7 +325,7 @@ def computeResult = { regionAnno, int tumorCount, int nonNeoCount, int ignoreCou
 }
 
 // ──────────────────────────────────────────────────────────────
-// Boya vektörü önerisi + tek-tık tahmin (DAB-OD modüllerinde aynı blok; H&E slaytta sessiz geçer).
+// Boya vektörü önerisi + tek tıklamalı tahmin (DAB-OD modüllerinde aynı blok; H&E slaytta sessiz geçer).
 //   • Aktif vektörler QuPath VARSAYILANI ise uyarır: kantitatif ölçümden önce bu
 //     slayttan tahmin etmeyi önerir (eşikler mutlak DAB OD; yanlış vektör skoru kaydırır).
 //   • "Tamam" → SEÇİLİ alan anotasyonundan tahmin edip uygular (Boya vektörleri
@@ -490,7 +490,7 @@ def startApply = { String name ->
 
 // ── Menü vurgusu (Atölye #3) — üst menü çubuğunda bir üst-menü başlığını turuncu iç
 // parıltıyla işaretler (başlık bulunamazsa tüm menü çubuğunu). SALT-GÖRSEL: menüyü
-// AÇMAZ, hiçbir şeyi tıklamaz/değiştirmez (sihirbazların salt-okur sözleşmesi). Tüm
+// AÇMAZ, hiçbir şeyi tıklamaz/değiştirmez (sihirbazların salt okunur sözleşmesi). Tüm
 // setEffect çağrıları FX iş parçacığında; render başında ve pencere kapanınca temizlenir.
 def menuHiRef = new java.util.concurrent.atomic.AtomicReference(null)   // [node, origEffect] | null
 def clearMenuHighlight = { ->

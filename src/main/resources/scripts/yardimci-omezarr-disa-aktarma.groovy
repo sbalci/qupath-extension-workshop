@@ -221,7 +221,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Scriptleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -386,7 +386,7 @@ if (errorMsg != null) {
         "Dışa aktarım sırasında bir hata oluştu:\n\n" + errorMsg + "\n\n" +
         "Olası nedenler:\n" +
         "  • Disk dolu ya da çıktı klasörüne yazma izni yok.\n" +
-        "  • Çok büyük tüm-slayt yazımı kesildi — bir bölge (anotasyon) deneyin.\n" +
+        "  • Çok büyük tüm slayt yazımı kesildi — bir bölge (anotasyon) deneyin.\n" +
         "  • QuPath 0.6.0+ gerekir (OME-Zarr yazıcısı bu sürümde geldi).\n\n" +
         "Detay: View → Show log dialogue.\n\n" +
         "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."

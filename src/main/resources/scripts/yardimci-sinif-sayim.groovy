@@ -12,7 +12,7 @@
  * (nesne sınıflandırıcı, fenotipleme) hücre tipi DAĞILIMINI bir bakışta
  * görmek istersiniz. Bu, From Samples to Knowledge (FS2K, Session 6–8)
  * eğitimindeki hücre-tipi frekansı çıktısının ve Sara McArdle'ın
- * CellClassPct.groovy betiğinin parlak-alan İHK karşılığıdır.
+ * CellClassPct.groovy betiğinin parlak alan İHK karşılığıdır.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • VAR OLAN tespitleri sınıfına göre SAYAR. Bu bir SAYIM/DAĞILIMdır —
@@ -93,7 +93,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Scriptleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)

@@ -69,7 +69,7 @@ def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
 
 String summaryName = "Doğrulama Özet"
-String ALL_DET = "▸ Tüm tespitler (sınıf farketmez)"
+String ALL_DET = "▸ Tüm tespitler (sınıf fark etmez)"
 double DEFAULT_IOU = 0.50d
 double DEFAULT_CENTROID_UM = 5.0d   // ~ bir çekirdek yarıçapı (µm)
 

@@ -400,7 +400,7 @@ def startDetection = {
 // ── Render: her durum değişiminde sahneyi sıfırdan kurar ────────────────────
 // ── Menü vurgusu (Atölye #3) — üst menü çubuğunda bir üst-menü başlığını turuncu iç
 // parıltıyla işaretler (başlık bulunamazsa tüm menü çubuğunu). SALT-GÖRSEL: menüyü
-// AÇMAZ, hiçbir şeyi tıklamaz/değiştirmez (sihirbazların salt-okur sözleşmesi). Tüm
+// AÇMAZ, hiçbir şeyi tıklamaz/değiştirmez (sihirbazların salt okunur sözleşmesi). Tüm
 // setEffect çağrıları FX iş parçacığında; render başında ve pencere kapanınca temizlenir.
 def menuHiRef = new java.util.concurrent.atomic.AtomicReference(null)   // [node, origEffect] | null
 def clearMenuHighlight = { ->

@@ -249,7 +249,7 @@ def exactGeoJSON = { slide, folder ->
     return f.isFile() ? f : null
 }
 
-// GrandQC'nin main.py'sinin ürettiği slayt-başı istatistik raporu (salt-okur):
+// GrandQC'nin main.py'sinin ürettiği slayt-başı istatistik raporu (salt okunur):
 //   <output_dir>/report_<klasörAdı>_<baş>_<son>_stats_per_slide.txt
 // output_dir = kapsam klasörü; en yeni eşleşeni döndür (yoksa null).
 def findReportFile = { String folder ->
@@ -1295,7 +1295,7 @@ render = { ->
         actions.add(navButton('↻ Yeniden çalıştır', { step.set('READY'); render() }))
     } else if (cur == 'REPORT') {
         title.setText('GrandQC istatistik raporu')
-        addGuidance('main.py çıktısı: slayt başına büyütme/MPP, karo sayıları, görüntü boyutu ve işlem süresi. Salt-okur — kalite notu/derece üretmez.')
+        addGuidance('main.py çıktısı: slayt başına büyütme/MPP, karo sayıları, görüntü boyutu ve işlem süresi. Salt okunur — kalite notu/derece üretmez.')
         addMonoArea(reportTextRef.get())
         actions.add(navButton('◀ Geri', { step.set('RESULT'); render() }))
         actions.add(navButton('Kopyala', { copyToClipboard(reportTextRef.get()) }))

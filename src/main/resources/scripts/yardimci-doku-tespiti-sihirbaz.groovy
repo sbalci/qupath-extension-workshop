@@ -136,7 +136,7 @@ def buildCache = { double ds, String choice ->
     def raster = img.getRaster()
     int W = raster.getWidth(), H = raster.getHeight()
     if (raster.getNumBands() < 3)
-        return [error: "Bu araç RGB (parlak-alan) görüntü bekler; bant sayısı: ${raster.getNumBands()}."]
+        return [error: "Bu araç RGB (parlak alan) görüntü bekler; bant sayısı: ${raster.getNumBands()}."]
     float[] scalar = computeScalar(raster, W, H, choice)
     def o = otsuOf(scalar)
     int[] baseArgb = new int[W * H]

@@ -2,7 +2,7 @@
  * Yardımcı - Tespitleri Sil
  * --------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
- * Hücre tespitlerini temizlemek için tek-tıkla bir araç. Atölye sırasında
+ * Hücre tespitlerini temizlemek için tek tıkla bir araç. Atölye sırasında
  * "Delete objects → Keep descendant objects → Yes" diyerek anotasyonu silip
  * çocuk tespitleri **slayda öksüz** bırakırsanız, bu betik onları temizler.
  *
@@ -141,7 +141,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Scriptleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)

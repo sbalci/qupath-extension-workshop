@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * ESİN (KAYNAK):
- *   Bu araç, DANEELpath'in "Centre-Periphery" (eşit-alan merkez/çevre)
+ *   Bu araç, DANEELpath'in "Centre-Periphery" (eşit alanlı merkez/çevre)
  *   aracından ESİNLENİLMİŞTİR:
  *     Vieco-Martí I ve ark. (2026), Scientific Reports 16:6162 —
  *     "DANEELpath open source digital analysis tools for histopathological
@@ -43,11 +43,11 @@
  *   3. Bölge sayısını girin (varsayılan 2 = merkez + çevre)
  *
  * ÇIKTI:
- *   • Her kaynak için "Merkez (eşit-alan)" / "Çevre (eşit-alan)" (+ ara bölge)
+ *   • Her kaynak için "Merkez (eşit alanlı)" / "Çevre (eşit alanlı)" (+ ara bölge)
  *     sınıflı bölge anotasyonları (alan + % + tespit ölçümleriyle)
  *   • Sonuç penceresinde bölge alanları ve bölgeler-arası maks. % fark
- *     (eşit-alan doğruluğu — makalede 48 WSI'da <%0,4)
- *   • Her çalıştırma önceki eşit-alan bölgelerini YENİLER
+ *     (eşit alanlı doğruluğu — makalede 48 WSI'da <%0,4)
+ *   • Her çalıştırma önceki eşit alanlı bölgelerini YENİLER
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı geometri/ölçüm üretir.
  */
@@ -102,7 +102,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Scriptleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -118,9 +118,9 @@ def showResultWindow = { String windowTitle, String windowBody ->
 }
 
 // ── Sabitler ────────────────────────────────────────────────────────
-String CLS_CENTER = "Merkez (eşit-alan)"
-String CLS_PERIPH = "Çevre (eşit-alan)"
-String CLS_MIDDLE = "Ara bölge (eşit-alan)"
+String CLS_CENTER = "Merkez (eşit alanlı)"
+String CLS_PERIPH = "Çevre (eşit alanlı)"
+String CLS_MIDDLE = "Ara bölge (eşit alanlı)"
 def REGION_CLASSES = [CLS_CENTER, CLS_PERIPH, CLS_MIDDLE]
 int DEF_REGIONS = 2
 int MAX_REGIONS = 6
@@ -159,7 +159,7 @@ if (isHeadless) {
 } else {
     def defN = prefs.get('numRegions', String.valueOf(DEF_REGIONS))
     def nTxt = Dialogs.showInputDialog("Eşit-alan merkez/çevre",
-        "Kaç eşit-alan bölge? (2 = merkez + çevre; en çok ${MAX_REGIONS})", defN)
+        "Kaç eşit alanlı bölge? (2 = merkez + çevre; en çok ${MAX_REGIONS})", defN)
     if (nTxt == null) { println "İptal edildi."; return }
     try { numRegions = Integer.parseInt(nTxt.trim()) }
     catch (Throwable t) { Dialogs.showErrorMessage("Geçersiz sayı", "Bölge sayısı bir tam sayı olmalı (2–${MAX_REGIONS})."); return }
@@ -197,7 +197,7 @@ def classNameFor = { int idx, int n ->
     return CLS_MIDDLE
 }
 
-// ── 3) Önceki eşit-alan bölgelerini temizle (idempotent) ────────────
+// ── 3) Önceki eşit alanlı bölgelerini temizle (idempotent) ────────────
 def stale = QP.getAnnotationObjects().findAll { REGION_CLASSES.contains(it.getPathClass()?.toString()) }
 if (!stale.isEmpty()) QP.removeObjects(stale, false)
 
@@ -321,7 +321,7 @@ body << "Bölgeler '${CLS_CENTER}' / '${CLS_PERIPH}'"
 body << (numRegions > 2 ? " / '${CLS_MIDDLE}'" : "") << " sınıflarıyla eklendi.\n"
 body << "İçlerinde hücre tespiti / piksel sınıflandırıcı çalıştırabilir,\n"
 body << "merkez↔çevre farkını (ör. TIL/immün gradyan) karşılaştırabilirsiniz.\n\n"
-body << "Yöntem: içe-buffer(−d) + ikili arama ile eşit-alan sınırı (JTS).\n"
+body << "Yöntem: içe-buffer(−d) + ikili arama ile eşit alanlı sınırı (JTS).\n"
 body << "Esin: DANEELpath (Vieco-Martí 2026, Sci Rep; doi:10.1038/s41598-026-37134-5) —\n"
 body << "makalede tarif edilen algoritmanın temiz-oda yeniden yazımı (GPL koddan aktarım yok).\n"
 body << "Bu bir GEOMETRİ/ölçüm üretimidir — klinik skor, eşik veya yorum DEĞİL.\n\n"
@@ -329,5 +329,5 @@ body << "⚠️ Yalnızca araştırma/eğitim amaçlı geometri/ölçüm üretir
 
 showResultWindow("Eşit-alan merkez/çevre", body.toString())
 println String.format(java.util.Locale.US,
-    "✓ %,d eşit-alan bölge üretildi (%d bölge/kaynak, %,d kaynak).",
+    "✓ %,d eşit alanlı bölge üretildi (%d bölge/kaynak, %,d kaynak).",
     created.size(), numRegions, targets.size() - skippedSrc)

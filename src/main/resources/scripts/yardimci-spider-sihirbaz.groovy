@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   HistAI'nin **SPIDER** organ-özelleşmiş, ÖN-EĞİTİMLİ doku sınıflandırıcı
+ *   HistAI'nin **SPIDER** organa özgüleşmiş, ÖN-EĞİTİMLİ doku sınıflandırıcı
  *   modellerini (histai/SPIDER-{colorectal,skin,thorax,breast}-model; Hibou-L
  *   omurgası) kullanarak açık slayttaki anotasyonları sınıflandırır — tek
  *   pencereden:

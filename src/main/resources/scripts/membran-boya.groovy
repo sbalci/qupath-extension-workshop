@@ -7,7 +7,7 @@
  *
  * BİRİNCİL METRİK — PİKSEL BAZLI H-SCORE (Cellpose gerektirmez):
  *   Seçili (tümör) anotasyon içindeki her piksel DAB OD üzerinden
- *   Negative / 1+ / 2+ / 3+ olarak sınıflanır → alan-ağırlıklı H-score.
+ *   Negative / 1+ / 2+ / 3+ olarak sınıflanır → alan ağırlıklı H-score.
  *   Hücre tespitinden bağımsız, her zaman çalışır.
  *   Eşikler: 0.10 / 0.30 / 0.60 OD (atölye varsayılanı), 0.05 H OD maskesi.
  *   → Slayt-spesifik kalibrasyon için referans noktaları kullanın.
@@ -108,7 +108,7 @@ if (!hasHematoxylin) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Boya vektörü önerisi + tek-tık tahmin (tüm DAB-OD modüllerinde aynı blok).
+// Boya vektörü önerisi + tek tıklamalı tahmin (tüm DAB-OD modüllerinde aynı blok).
 //   • Aktif vektörler QuPath VARSAYILANI ise uyarır: kantitatif ölçümden önce bu
 //     slayttan tahmin etmeyi önerir (eşikler mutlak DAB OD; yanlış vektör skoru kaydırır).
 //   • "Tamam" → SEÇİLİ alan anotasyonundan tahmin edip uygular (Boya vektörleri
@@ -213,7 +213,7 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
     //        (Ram et al. PLoS One 2021 / Sara McArdle)
     //        Hücre tespitinden tamamen bağımsız. Annotation içindeki her pikseli
     //        DAB OD'ye göre 0/1+/2+/3+ olarak sınıflar; bir Hematoxylin maskesi ile
-    //        boyasız boş alanlar dışlanır. Sonuç: alan-ağırlıklı H-score (0–300).
+    //        boyasız boş alanlar dışlanır. Sonuç: alan ağırlıklı H-score (0–300).
     println "─────────────────────────────────────"
     println "Membran Boya (HER2) - HER2 / Membran İHK"
     println "─────────────────────────────────────"
@@ -326,7 +326,7 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
 
         detector = cellposeAvailable ? "Cellpose (cyto3, DAB + H OD)" : "WatershedCellMembraneDetection (DAB-temelli)"
         println "Hücre bazlı tespit başlatılıyor (ikincil)..."
-        println "  • Detektör: ${detector}"
+        println "  • Dedektör: ${detector}"
         println "  • Grup eşikleri (Membrane: DAB OD mean): ${m1} / ${m2} / ${m3}"
         println "  • Hücre genişletme (cell expansion): ${cellExpansion} µm"
 
@@ -334,7 +334,7 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
 
         QP.selectObjects(targetAnnotation)
 
-        // Yardımcı kapatma: Watershed-tabanlı yedek detektör.
+        // Yardımcı kapatma: Watershed-tabanlı yedek dedektör.
         def runWatershedFallback = {
             QP.runPlugin(
                 'qupath.imagej.detect.cells.WatershedCellMembraneDetection',
@@ -641,7 +641,7 @@ javafx.application.Platform.runLater {
         })
         def closeBtn = new javafx.scene.control.Button('Kapat'); closeBtn.setOnAction({ stage.close() })
 
-        def footer = new javafx.scene.control.Label('QuPath Atölye Scriptleri · araştırma/eğitim amaçlı')
+        def footer = new javafx.scene.control.Label('QuPath Atölye Betikleri · araştırma/eğitim amaçlı')
         footer.setMaxWidth(Double.MAX_VALUE)
         footer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;')
 

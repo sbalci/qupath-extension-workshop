@@ -18,7 +18,7 @@
  *     Tümör içi Ki-67 modülleri) eşikler MUTLAK DAB OD üzerindendir;
  *     yanlış vektör her skoru kaydırır.
  *   • QuPath'in yerleşik [Analyze → Preprocessing → Estimate stain vectors]
- *     komutunun tek-tıkla, sadeleştirilmiş (kontrol → önizle → uygula) karşılığıdır.
+ *     komutunun tek tıkla, sadeleştirilmiş (kontrol → önizle → uygula) karşılığıdır.
  *
  * QUPATH MENÜSÜ — AYRINTILI / MANUEL AYAR:
  *   • Otomatik tahmin (resmî komut): [Analyze → Preprocessing → Estimate stain vectors].
@@ -341,7 +341,7 @@ def revertVectors = {
 
 // ── Menü vurgusu (Atölye #3) — üst menü çubuğunda bir üst-menü başlığını turuncu iç
 // parıltıyla işaretler (başlık bulunamazsa tüm menü çubuğunu). SALT-GÖRSEL: menüyü
-// AÇMAZ, hiçbir şeyi tıklamaz/değiştirmez (sihirbazların salt-okur sözleşmesi). Tüm
+// AÇMAZ, hiçbir şeyi tıklamaz/değiştirmez (sihirbazların salt okunur sözleşmesi). Tüm
 // setEffect çağrıları FX iş parçacığında; render başında ve pencere kapanınca temizlenir.
 def menuHiRef = new java.util.concurrent.atomic.AtomicReference(null)   // [node, origEffect] | null
 def clearMenuHighlight = { ->

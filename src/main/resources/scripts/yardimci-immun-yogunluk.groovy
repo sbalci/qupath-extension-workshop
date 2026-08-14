@@ -28,7 +28,7 @@
  *   • de Ruiter EJ et al. (2022), Virchows Arch 481(2):223–231 — CD57+
  *     hücre/mm², QuPath vs iki gözlemci ICC. doi:10.1007/s00428-022-03323-6
  *   • Russell GG et al. (2023), Immunol Invest 52(6):661–680 — PD1/PDL1
- *     yoğunluğu, yarı-otomatik QuPath. doi:10.1080/08820139.2023.2217845
+ *     yoğunluğu, yarı otomatik QuPath. doi:10.1080/08820139.2023.2217845
  *   • Reichling C et al. (2019), Gut — CD3/CD8 yoğunluğu (tümör/invaziv kenar).
  *     doi:10.1136/gutjnl-2019-319292
  *
@@ -41,7 +41,7 @@ import qupath.lib.scripting.QP
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
 // ──────────────────────────────────────────────────────────────
-// Boya vektörü önerisi + tek-tık tahmin (tüm DAB-OD modüllerinde aynı blok).
+// Boya vektörü önerisi + tek tıklamalı tahmin (tüm DAB-OD modüllerinde aynı blok).
 //   • Aktif vektörler QuPath VARSAYILANI ise uyarır: kantitatif ölçümden önce bu
 //     slayttan tahmin etmeyi önerir (eşikler mutlak DAB OD; yanlış vektör skoru kaydırır).
 //   • "Tamam" → SEÇİLİ alan anotasyonundan tahmin edip uygular (Boya vektörleri
@@ -154,7 +154,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Scriptleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)

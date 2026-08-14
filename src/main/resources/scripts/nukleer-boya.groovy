@@ -122,7 +122,7 @@ if (imageTypeOk()) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 1b) Boya vektörü önerisi + tek-tık tahmin (tüm DAB-OD modüllerinde aynı blok).
+// 1b) Boya vektörü önerisi + tek tıklamalı tahmin (tüm DAB-OD modüllerinde aynı blok).
 //   • Aktif vektörler QuPath VARSAYILANI ise uyarır: kantitatif ölçümden önce bu
 //     slayttan tahmin etmeyi önerir (eşikler mutlak DAB OD; yanlış vektör skoru kaydırır).
 //   • "Tamam" → SEÇİLİ alan anotasyonundan tahmin edip uygular (Boya vektörleri
@@ -339,8 +339,8 @@ def runDetection = { double thr1, double thr2, double thr3, boolean teaching ->
     QP.selectObjects(targetAnnotation)
 
     // Tespit kanalı seçimi — yöntemsel not:
-    //   "Hematoxylin OD" → çekirdek tespiti hematoksilin sinyali üzerinden (varsayılan).
-    //     Yüksek-LI Ki-67'de güçlü DAB hematoksilin sinyalini bastırabilir, bazı
+    //   "Hematoxylin OD" → çekirdek tespiti hematoksilen sinyali üzerinden (varsayılan).
+    //     Yüksek-LI Ki-67'de güçlü DAB hematoksilen sinyalini bastırabilir, bazı
     //     pozitif çekirdekler kaçabilir.
     //   "Optical density sum" → H + DAB + Eozin OD kombinasyonu; ASCO/cancer-informatics
     //     eğitimleri Ki-67 için bu kanalı önerir (DAB-yoğun pozitiflerde daha güvenli).
@@ -515,7 +515,7 @@ javafx.application.Platform.runLater {
         })
         def closeBtn = new javafx.scene.control.Button('Kapat'); closeBtn.setOnAction({ stage.close() })
 
-        def footer = new javafx.scene.control.Label('QuPath Atölye Scriptleri · araştırma/eğitim amaçlı')
+        def footer = new javafx.scene.control.Label('QuPath Atölye Betikleri · araştırma/eğitim amaçlı')
         footer.setMaxWidth(Double.MAX_VALUE)
         footer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;')
 

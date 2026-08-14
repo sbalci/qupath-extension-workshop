@@ -21,7 +21,7 @@
  * KAPSAM / SINIRLAR (dürüst):
  *   • Varsayılan akış (kopya + yeniden adlandırma) = Seviye I (dosya adı). Her zaman
  *     güvenli, çalışan slayt üretir.
- *   • "Metadata sil" (Python) = ImageDescription redaksiyonu (SVS/TIFF). Etiket/makro
+ *   • "Üst veriyi sil" (Python) = ImageDescription redaksiyonu (SVS/TIFF). Etiket/makro
  *     GÖRÜNTÜSÜNÜ silmez; piramidi koruyan tam temizlik için wsi-anon / tifftools /
  *     ImageDePHI kullanın (WSI Anonimleştirme eki § Araç ekosistemi). tifffile yoksa kopyaya düşer.
  *   • Anonimleştirmeyi HER dosyada gözle DOĞRULAYIN.
@@ -129,7 +129,7 @@ def saveConfig = { cfg ->
     try { prefs.flush() } catch (Throwable ignore) {}
 }
 
-// ── Python erişilebilir mi? (yalnız metadata silme için gerekir) ─────────────
+// ── Python erişilebilir mi? (yalnız üst veri silme için gerekir) ─────────────
 def checkPython = { String pythonExe ->
     if (!pythonExe?.trim()) return false
     try {
@@ -244,13 +244,13 @@ def anonymizeOne = { File src, File dst, cfg, File pyFile ->
             if (!fin) { proc.destroyForcibly(); return [ok: false, status: 'Python zaman aşımı'] }
             if (proc.exitValue() == 0) {
                 def msg = out.toString()
-                String detail = msg.contains('redakte') ? 'metadata redakte edildi'
+                String detail = msg.contains('redakte') ? 'üst veri redakte edildi'
                     : (msg.contains('bos') ? 'ImageDescription boştu' : 'kopyalandı')
                 return [ok: true, status: 'Kopyalandı + ' + detail]
             }
             // Python başarısız → düz kopyaya düş
             Files.copy(src.toPath(), dst.toPath(), StandardCopyOption.REPLACE_EXISTING)
-            return [ok: true, status: 'Kopyalandı (metadata silme başarısız — yalnız dosya adı)']
+            return [ok: true, status: 'Kopyalandı (üst veri silinemedi — yalnız dosya adı anonimleştirildi)']
         } else {
             Files.copy(src.toPath(), dst.toPath(), StandardCopyOption.REPLACE_EXISTING)
             String note = cfg.removeMeta ? 'Python yok — yalnız dosya adı' : 'yalnız dosya adı'
@@ -311,7 +311,7 @@ def buildResultText = { File outDir, cfg, List rows, List keyFiles ->
     sb << "═══════════════════════════\n\n"
     sb << "Çıktı klasörü : " << outDir.getAbsolutePath() << "\n"
     sb << "Mod           : " << (cfg.reversible ? 'Geri alınabilir (anahtar yazıldı)' : 'Geri alınamaz (anahtar yok)') << "\n"
-    sb << "Metadata silme: " << (cfg.removeMeta ? 'evet (Python/tifffile)' : 'hayır (yalnız dosya adı)') << "\n"
+    sb << "Üst veriyi silme: " << (cfg.removeMeta ? 'evet (Python/tifffile)' : 'hayır (yalnız dosya adı)') << "\n"
     sb << String.format(java.util.Locale.US, "Sonuç         : %d/%d slayt işlendi%n%n", ok, total)
     sb << "Eşleştirme (ilk satırlar):\n"
     int shown = 0
@@ -513,7 +513,7 @@ render = { ->
         namingChoice.setValue(NAMING_OPTIONS.contains(cfg.naming) ? cfg.naming : 'sequential')
         def scopeAll = new javafx.scene.control.CheckBox('Projedeki tüm slaytlar (kapalı: yalnız aktif görüntü)')
         scopeAll.setSelected((boolean) cfg.processAll)
-        def removeMeta = new javafx.scene.control.CheckBox('Metadata sil (Python/tifffile; SVS/TIFF ImageDescription)')
+        def removeMeta = new javafx.scene.control.CheckBox('Üst veriyi sil (Python/tifffile; SVS/TIFF ImageDescription)')
         removeMeta.setSelected((boolean) cfg.removeMeta)
         def reversible = new javafx.scene.control.CheckBox('Geri alınabilir mod (eşleştirme anahtarı CSV/JSON yaz)')
         reversible.setSelected((boolean) cfg.reversible)
@@ -546,7 +546,7 @@ render = { ->
         sb << "Çıktı klasörü : " << pv.outDir.getAbsolutePath() << "\n"
         sb << "Slayt sayısı  : " << pv.maps.size() << "\n"
         sb << "Mod           : " << (pv.cfg.reversible ? 'Geri alınabilir (anahtar yazılır)' : 'Geri alınamaz (anahtar yok)') << "\n"
-        sb << "Metadata silme: " << (pv.cfg.removeMeta ? 'evet (Python)' : 'hayır') << "\n\n"
+        sb << "Üst veriyi silme: " << (pv.cfg.removeMeta ? 'evet (Python)' : 'hayır') << "\n\n"
         sb << "Örnek eşleştirme:\n"
         int shown = 0
         pv.maps.each { m ->
@@ -560,7 +560,7 @@ render = { ->
         addMonoArea(sb.toString())
 
         if (pv.cfg.removeMeta && !checkPython(pv.cfg.python))
-            addWarnLabel('⚠ Python bulunamadı — metadata silinemeyecek; yalnız dosya adı anonimleştirmesi (Seviye I) yapılacak.')
+            addWarnLabel('⚠ Python bulunamadı — üst veri silinemeyecek; yalnız dosya adı anonimleştirmesi (Seviye I) yapılacak.')
         int nonLocal = pv.maps.count { it.file == null }
         if (nonLocal > 0)
             addWarnLabel('⚠ ' + nonLocal + ' slayt yerel dosya değil ve atlanacak.')

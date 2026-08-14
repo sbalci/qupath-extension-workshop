@@ -190,7 +190,7 @@ def startDetection = {
             b = b.nThreads(nThreads)
             b = b.outputDetections()
             b = b.makeMeasurements(true)
-            // Giriş kanalları: H&E parlak-alan modelleri (brightfield_nuclei) tüm RGB
+            // Giriş kanalları: H&E parlak alan modelleri (brightfield_nuclei) tüm RGB
             // kanallarını bekler. allInputChannels mevcut değilse varsayılana düşülür.
             try { b = b.allInputChannels() } catch (Throwable ignore) {}
             def instanseg = b.build()
@@ -220,7 +220,7 @@ def startDetection = {
 
         if (n == 0) {
             javafx.application.Platform.runLater {
-                errorTextRef.set('InstanSeg 0 tespit buldu.\nOlası nedenler:\n  • Model görüntü tipine uymuyor (model H&E parlak-alan ise floresan slaytta çalışmaz)\n  • ROI çok küçük\n  • Yanlış model klasörü')
+                errorTextRef.set('InstanSeg 0 tespit buldu.\nOlası nedenler:\n  • Model görüntü tipine uymuyor (model H&E parlak alan ise floresan slaytta çalışmaz)\n  • ROI çok küçük\n  • Yanlış model klasörü')
                 step.set('ERROR'); render()
             }
             return
@@ -255,7 +255,7 @@ def addParamGrid = { center ->
 // ── Render: her durum değişiminde sahneyi sıfırdan kurar ────────────────────
 // ── Menü vurgusu (Atölye #3) — üst menü çubuğunda bir üst-menü başlığını turuncu iç
 // parıltıyla işaretler (başlık bulunamazsa tüm menü çubuğunu). SALT-GÖRSEL: menüyü
-// AÇMAZ, hiçbir şeyi tıklamaz/değiştirmez (sihirbazların salt-okur sözleşmesi). Tüm
+// AÇMAZ, hiçbir şeyi tıklamaz/değiştirmez (sihirbazların salt okunur sözleşmesi). Tüm
 // setEffect çağrıları FX iş parçacığında; render başında ve pencere kapanınca temizlenir.
 def menuHiRef = new java.util.concurrent.atomic.AtomicReference(null)   // [node, origEffect] | null
 def clearMenuHighlight = { ->
@@ -357,7 +357,7 @@ render = { ->
             addMonoArea(sb.toString())
             addParamGrid(center)
             addGuidance('Çıktı yalnız tespit SAYISI + alan + yoğunluktur; sınıflandırma/yorum üretmez. ' +
-                'Model görüntü tipine uymalı (ör. brightfield_nuclei = H&E parlak-alan).')
+                'Model görüntü tipine uymalı (ör. brightfield_nuclei = H&E parlak alan).')
         }
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('⟳ Yenile', { render() }))

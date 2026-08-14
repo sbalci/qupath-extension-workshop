@@ -400,7 +400,7 @@ def scoreIntensity = { regionAnno, double n1, double n2, double n3 ->
 }
 
 // ──────────────────────────────────────────────────────────────
-// Boya vektörü önerisi + tek-tık tahmin (tüm DAB-OD modüllerinde aynı blok).
+// Boya vektörü önerisi + tek tıklamalı tahmin (tüm DAB-OD modüllerinde aynı blok).
 //   • Aktif vektörler QuPath VARSAYILANI ise uyarır: kantitatif ölçümden önce bu
 //     slayttan tahmin etmeyi önerir (eşikler mutlak DAB OD; yanlış vektör skoru kaydırır).
 //   • "Tamam" → SEÇİLİ alan anotasyonundan tahmin edip uygular (Boya vektörleri
@@ -604,7 +604,7 @@ def startApply = { String name ->
 
 // ── Menü vurgusu (Atölye #3) — üst menü çubuğunda bir üst-menü başlığını turuncu iç
 // parıltıyla işaretler (başlık bulunamazsa tüm menü çubuğunu). SALT-GÖRSEL: menüyü
-// AÇMAZ, hiçbir şeyi tıklamaz/değiştirmez (sihirbazların salt-okur sözleşmesi). Tüm
+// AÇMAZ, hiçbir şeyi tıklamaz/değiştirmez (sihirbazların salt okunur sözleşmesi). Tüm
 // setEffect çağrıları FX iş parçacığında; render başında ve pencere kapanınca temizlenir.
 def menuHiRef = new java.util.concurrent.atomic.AtomicReference(null)   // [node, origEffect] | null
 def clearMenuHighlight = { ->

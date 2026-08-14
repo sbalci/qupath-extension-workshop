@@ -5,7 +5,7 @@
  *
  * NE YAPAR:
  *   Açık slaytı bir patoloji TEMEL MODELİ (foundation model) hattına beslemeden
- *   önce hızlı, SALT-OKUR bir "hazırlık + sağlamlık" denetimi yapar — hepsi tek
+ *   önce hızlı, SALT OKUNUR bir "hazırlık + sağlamlık" denetimi yapar — hepsi tek
  *   pencereden:
  *     1. HAZIRLIK OLGULARI — piksel boyutu (µm/px) ve buna göre 224 px karo için
  *        önerilen downsample / etkin µm/px; kestirilen/gömülü büyütme; piramit
@@ -15,7 +15,7 @@
  *        (adversarial) kırılganlık (UTAP — Wang ve ark. 2026); boya normalizasyonu
  *        ve doğrulama işaretçileri.
  *
- *   Tümüyle SALT-OKUR: hücre tespiti, sınıflandırma, anotasyon veya hiyerarşi
+ *   Tümüyle SALT OKUNUR: hücre tespiti, sınıflandırma, anotasyon veya hiyerarşi
  *   DEĞİŞTİRMEZ. Hiçbir foundation model ÇALIŞTIRMAZ ve hiçbir pertürbasyon /
  *   saldırı ÜRETMEZ — yalnız farkındalık ve hazırlık raporu üretir.
  *
@@ -49,7 +49,7 @@ final int    TILE_PX     = 224
 def fmt = { double d, int dec -> Double.isNaN(d) ? '—' : String.format(java.util.Locale.US, '%.' + dec + 'f', d) }
 def fmtInt = { long v -> String.format(java.util.Locale.US, '%,d', v) }
 
-// ── Açık slayttan FM-hazırlık olgularını çıkar (salt-okur) ──────────────────
+// ── Açık slayttan FM-hazırlık olgularını çıkar (salt okunur) ──────────────────
 def extractReadiness = { imageData ->
     def m = new java.util.LinkedHashMap()
     def server = imageData.getServer()
@@ -157,7 +157,7 @@ if (isHeadless) {
     return
 }
 
-// ── Tek pencere (salt-okur rapor); hata olursa rapor alanında satır içi gösterilir ──
+// ── Tek pencere (salt okunur rapor); hata olursa rapor alanında satır içi gösterilir ──
 def stage = null
 def alwaysTop     = new java.util.concurrent.atomic.AtomicBoolean(true)
 def reportRef     = new java.util.concurrent.atomic.AtomicReference('')
@@ -207,7 +207,7 @@ render = { ->
         addMonoArea(rep)
     } else {
         reportRef.set('')
-        addGuidance('Önce bir slayt açın. Bu sihirbaz açık slaydın FM-hazırlık olgularını ve sağlamlık kontrol listesini raporlar (salt-okur).')
+        addGuidance('Önce bir slayt açın. Bu sihirbaz açık slaydın FM-hazırlık olgularını ve sağlamlık kontrol listesini raporlar (salt okunur).')
     }
     actions.add(navButton('Kapat', { stage.close() }))
     if (imageData != null) actions.add(navButton('Kopyala', { copyToClipboard(reportRef.get()) }, 'Raporu panoya kopyala'))
@@ -227,7 +227,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Salt-okur; FM çalıştırmaz, pertürbasyon üretmez. Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
+    def disclaimer = new javafx.scene.control.Label('Salt okunur; FM çalıştırmaz, pertürbasyon üretmez. Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')

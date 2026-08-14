@@ -1,5 +1,5 @@
 /**
- * QuPath Arayüz Turu (interaktif gezinti)
+ * QuPath Arayüz Turu (etkileşimli gezinti)
  * -------------------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
@@ -213,8 +213,8 @@ def pages = [
             '(Bu adım düğmenin menüsünü örnek olarak açar.)'],
 
     [id: 'script-editor', bolge: 'TOOLBAR', hedef: [action: 'SCRIPT_EDITOR'], demo: 'FIRE',
-     baslik: 'Script editörü — betikler ve konsol',
-     govde: 'Betik (script) editörü QuPath\'in Groovy konsoludur; tekrar eden işleri otomatikleştirmenin ' +
+     baslik: 'Betik düzenleyicisi — betikler ve konsol',
+     govde: 'Betik düzenleyicisi (Script editor), QuPath\'in Groovy konsoludur; tekrar eden işleri otomatikleştirmenin ' +
             'yoludur. Atölye eklentisinin tüm yardımcıları aslında buradan çalışan betiklerdir. Menüden ' +
             'Automate → Script editor ile de açılır. Korkmayın — çoğu işi menülerden yapabilirsiniz; betikler ' +
             'yalnızca tekrar ve ölçeklenme içindir. (Bu adım editörü örnek olarak açar.)'],
@@ -240,7 +240,7 @@ def pages = [
 
 // ── Headless: turu çalıştıramayız (GUI gerekir) — içeriği konsola özetle ─────
 if (isHeadless) {
-    println 'Arayüz turu için QuPath arayüzü gerekir (headless çalıştırılamaz).'
+    println 'Arayüz turu için QuPath arayüzü gerekir; arayüzsüz (headless) kipte çalıştırılamaz.'
     println 'Tur ' + pages.size() + ' sayfadan oluşur:'
     pages.eachWithIndex { p, n -> println '  ' + (n + 1) + '. ' + p.baslik }
     println '⚠️ Yalnızca eğitim amaçlıdır; ölçüm veya klinik karar üretmez.'

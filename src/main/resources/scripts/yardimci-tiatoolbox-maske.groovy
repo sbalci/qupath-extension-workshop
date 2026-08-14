@@ -17,7 +17,7 @@
  *
  * KARO DIŞA AKTARMA EKİNDEN FARKI:
  *   Karo Dışa Aktarma eki çok sayıda KÜÇÜK karo (+ tiled maske) üretir; bu betik
- *   TEK, düşük çözünürlüklü, tüm-slayt maskesi üretir — TIA Toolbox'ın `masks=`
+ *   TEK, düşük çözünürlüklü, tüm slayt maskesi üretir — TIA Toolbox'ın `masks=`
  *   parametresinin beklediği biçim. İki betik birbirini tamamlar, çakışmaz.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
@@ -122,7 +122,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Scriptleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)

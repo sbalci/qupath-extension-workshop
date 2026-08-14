@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   Açık görüntüleyiciyi (hücre/sınıf/anotasyon OVERLAY'leriyle birlikte) ya da
+ *   Açık görüntüleyiciyi (hücre/sınıf/anotasyon BİNDİRMELERİYLE birlikte) ya da
  *   tüm QuPath penceresini ekran görüntüsü olarak yakalar; PNG/JPEG dosyasına
  *   kaydeder VEYA panoya kopyalar. Rapor, sunum ve eğitim materyali için
  *   analiz sonucunuzun göründüğü hâlini tek tıkla almanızı sağlar.
@@ -17,7 +17,7 @@
  *   gerekmez). Tam ekran (üstteki tüm pencereler) modu kasıtlı olarak yoktur.
  *
  * İKİ YAKALAMA TÜRÜ:
- *   • Görüntüleyici (overlay'lerle) → yalnız aktif görüntüleyici tuvali
+ *   • Görüntüleyici (bindirmelerle) → yalnız aktif görüntüleyici tuvali
  *   • Tüm QuPath penceresi          → ana pencere sahnesi (araç çubukları dâhil)
  *
  * NE ÖLÇMEZ:

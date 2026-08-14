@@ -64,8 +64,8 @@ if (stains != null) {
 }
 def curImageType = imageData.getImageType()
 if (curImageType == qupath.lib.images.ImageData.ImageType.FLUORESCENCE) {
-    // Floresan görüntünün tipini parlak-alana çevirmek kalıcı bir hatadır — dokunma.
-    println "⚠ Görüntü tipi FLORESAN — bu modül parlak-alan H&E/İHK içindir; tip değiştirilmedi."
+    // Floresan görüntünün tipini parlak alana çevirmek kalıcı bir hatadır — dokunma.
+    println "⚠ Görüntü tipi FLORESAN — bu modül parlak alan H&E/İHK içindir; tip değiştirilmedi."
 } else if (!hasHematoxylin) {
     println "⚠ Hematoxylin boyası tanımlı değil → BRIGHTFIELD_H_E varsayılanı uygulanıyor."
     QP.setImageType('BRIGHTFIELD_H_E')
@@ -222,7 +222,7 @@ javafx.application.Platform.runLater {
         })
         def closeBtn = new javafx.scene.control.Button('Kapat'); closeBtn.setOnAction({ stage.close() })
 
-        def footer = new javafx.scene.control.Label('QuPath Atölye Scriptleri · araştırma/eğitim amaçlı')
+        def footer = new javafx.scene.control.Label('QuPath Atölye Betikleri · araştırma/eğitim amaçlı')
         footer.setMaxWidth(Double.MAX_VALUE)
         footer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;')
 

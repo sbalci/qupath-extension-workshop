@@ -4,9 +4,9 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   Açık QuPath projesindeki her parlak-alan (H&E / H-DAB) görüntüyü sırayla
+ *   Açık QuPath projesindeki her parlak alan (H&E / H-DAB) görüntüyü sırayla
  *   açar; her birinden küçük bir temsili bölge okur ve boya yoğunluğunu ölçer:
- *     • Boya-1 (Hematoksilin) ortalama OD
+ *     • Boya-1 (Hematoksilen) ortalama OD
  *     • Boya-2 (Eozin/DAB) ortalama OD
  *     • Boya-1 : Boya-2 OD oranı
  *     • H:DAB CIELAB L* oranı
@@ -103,7 +103,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Scriptleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)

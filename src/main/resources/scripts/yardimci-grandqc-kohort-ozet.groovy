@@ -19,7 +19,7 @@
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Yalnızca var olan GrandQC anotasyonlarının GEOMETRİSİNDEN alan/sayı/% türetir.
  *   • Kalite notu, derece, eşik, kabul/ret ya da klinik yorum ÜRETMEZ.
- *   • Hiçbir imageData'yı KAYDETMEZ (saveImageData çağrısı yoktur) — salt-okur.
+ *   • Hiçbir imageData'yı KAYDETMEZ (saveImageData çağrısı yoktur) — salt okunur.
  *   • Alanlar yalnız kalibre görüntülerde mm² verilir; kalibre değilse hücre boş kalır.
  *   • Artefakt alanı doğrudan (artefakt sınıfları ∩ doku) olarak ölçülür — ayrı saklanan
  *     "Temiz doku" anotasyonuna bağlı DEĞİLDİR; böylece %100 artefaktlı slaytta da doludur.
@@ -97,7 +97,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Scriptleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -283,7 +283,7 @@ body << "\nTSV dosyası:\n  " + tsvFile.getAbsolutePath() + "\n"
 body << "\nSütunlar: doku/temiz doku/artefakt alanı (mm²) + doku içi artefakt %,\n"
 body << "doku parça sayısı ve her artefakt sınıfı için alan (mm²) + bölge sayısı.\n"
 body << "Alanlar yalnız kalibre görüntülerde doldurulur; kalibre değilse hücre boş.\n"
-body << "Anotasyon üretmez, hiçbir slaydı kaydetmez — salt-okur.\n\n"
+body << "Anotasyon üretmez, hiçbir slaydı kaydetmez — salt okunur.\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
 showResultWindow("GrandQC Kohort KK Özeti", body.toString())

@@ -64,7 +64,7 @@ int    ROI_WARN_PX = 12000
 // ── Dedektör tanımları (per-detector descriptor) ─────────────────────────────
 // Her dedektörün KENDİ ortamı/köprüsü/girdi-türü/CLI'si var; ortak sözleşme YOK —
 // bu yüzden buildCmd her modelin argümanlarını kendi şablonundan kurar. inputKind:
-// 'mask' = tüm-slayt ikili maske (region_runner) · 'roi' = hedef-mpp ROI görüntüsü (fcos_runner).
+// 'mask' = tüm slayt ikili maske (region_runner) · 'roi' = hedef-mpp ROI görüntüsü (fcos_runner).
 def DETECTORS = [
     [ id:'kongnet', label:'KongNet MIDOG (TIA Toolbox)', envId:'tiatoolbox-region',
       runnerRel:'python/tiatoolbox/region_runner.py', inputKind:'mask',
@@ -187,7 +187,7 @@ def regionAnnotationsOf = { imageData ->
     return new ArrayList(h.getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() && notSummary(it) })
 }
 
-// ── Girdi üretimi: tüm-slayt maskesi (KongNet) + hedef-mpp ROI görüntüsü (FCOS) ──
+// ── Girdi üretimi: tüm slayt maskesi (KongNet) + hedef-mpp ROI görüntüsü (FCOS) ──
 def exportRegionMask = { imageData, File workDir, double downsample, List regionRois, Closure appendLine ->
     def server = imageData.getServer()
     int W = server.getWidth(), H = server.getHeight()
