@@ -24,7 +24,7 @@
  * KULLANIM:
  *   1. Bir slayt açın; Rectangle (R) ya da herhangi bir alan aracıyla bölgeyi
  *      çizip SEÇİN (birden çok seçiliyse her biri ayrı dosyaya çıkar).
- *   2. [Extensions → Atölye → Yardımcılar → İçe/dışa aktarma & veri → Görüntü alanı çıkart (Extract Region)]
+ *   2. [Extensions → Atölye → Yardımcılar → İçe ve dışa aktarma / veri → Görüntü alanı çıkart (Extract Region)]
  *   3. Biçim / çözünürlük / sıkıştırmayı seçip "Çıkart".
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlıdır.
