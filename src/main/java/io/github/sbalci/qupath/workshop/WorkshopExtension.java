@@ -243,6 +243,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             // Görüntü alanı çıkart (Extract Region) — seçili anotasyon(lar)ı bağımsız görüntü dosyasına
             // (OME-TIFF / TIFF / PNG / JPEG, sıkıştırma/çözünürlük seçmeli). Aperio ImageScope Extract Region karşılığı.
             new ScriptEntry("Görüntü alanı çıkart (Extract Region)", "yardimci-bolge-cikart-sihirbaz.groovy"),
+            // Dikdörtgen anotasyonlardan KIRPILMIŞ proje girdileri (CroppedImageServer — piksel
+            // kopyalamaz, dosya yazmaz; örtüşen anotasyonlar kesişimle taşınır).
+            // Kaynak: Egor Zindy, image.sc #109554; kırpma deseni ym.lim, image.sc #66681.
+            new ScriptEntry("Dikdörtgen seçimlerden görüntü oluştur", "yardimci-goruntuden-alan-cikart.groovy"),
             new ScriptEntry("Makine öğrenmesi için özellik matrisi", "yardimci-ozellik-matrisi.groovy"),
             // Küme/UMAP sonuçlarını TSV'den tespitlere geri yazar (fenotipleme round-trip). bkz. Ekler → Hücre Fenotipleme.
             new ScriptEntry("Kümeleme/fenotip etiketlerini içe aktar (TSV)", "yardimci-kume-etiketi-iceaktar.groovy"),
@@ -253,6 +257,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("TIA Toolbox için bölge maskesi",        "yardimci-tiatoolbox-maske.groovy"),
             // NOT: hizalama sihirbazları (Afin/Warpy/VALIS) artık Modüller → "Görüntü Hizalama" alt menüsünde (ALIGNMENT_MODULE).
             new ScriptEntry("TMA çekirdek bazlı dışa aktarım",      "yardimci-tma-cekirdek-aktarim.groovy"),
+            // DICOM → SVS-benzeri TIFF (Chauveau 2025, Virchows Archiv; DICOMtoSVS köprüsü — kayıpsız karo kopyalama).
+            // Depo LİSANSSIZ → betik çalışma anında SHA-sabitli indirilir, JAR'a paketlenmez. bkz. Ekler → WSI Dosya Formatları.
+            new ScriptEntry("DICOM → SVS dönüştürme (DICOMtoSVS)",  "yardimci-dicom-svs-sihirbaz.groovy", false, false),  // dosya düzeyi: açık slayt gerekmez
             new ScriptEntry("Örnek tümör/stroma sınıflandırıcısını projeye kaydet", "yardimci-ornek-siniflandirici.groovy", false, false)  // proje düzeyi: açık slayt gerekmez
         )),
         new ScriptGroup("Python köprüleri ve temel modeller", List.of(
