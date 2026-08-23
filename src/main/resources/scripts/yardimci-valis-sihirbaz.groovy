@@ -867,15 +867,18 @@ def _run_one_case(args):
         if getattr(args, "max_nonrigid_dim", None):
             vkwargs["max_non_rigid_registration_dim_px"] = int(args.max_nonrigid_dim)
         if getattr(args, "correct_scale", False):
-            # VALIS varsayilan rigid'i EuclideanTransform'dur (olcek DUZELTMEZ). Farkli tarayicilar
-            # (or. Aperio AT2 ~0.25 vs GT450 ~0.26 um/px) arasindaki olcek farkini rigid'in KENDISI
-            # goruntulerden tahmin edip duzeltsin diye benzerlik (similarity) donusumu kullan.
+            # DOGRU kanca (VALIS 1.2.0 kaynagindan dogrulandi): Valis(transformer_cls=<skimage Transform SINIFI>)
+            # — VALIS icten transformer() ile ornekler (_set_rigid_reg_kwargs). Onceki surum var olmayan
+            # 'rigid_reg_kwargs' anahtarini gecirip TypeError'a dusuyordu. NOT: 1.2.0'da varsayilan rigid
+            # ZATEN SimilarityTransform'dur (olcek tahminli; DEFAULT_TRANSFORM_CLASS) — bu bayrak davranisi
+            # surumden bagimsiz ACIKCA sabitler; tahmini olcekler asagida her durumda raporlanir.
             try:
                 from skimage.transform import SimilarityTransform as _SimTf
-                vkwargs["rigid_reg_kwargs"] = {"transformer": _SimTf()}
-                emit("Olcek duzeltme ACIK (--correct-scale): rigid kayit benzerlik (olcek tahminli) donusumu kullanacak.")
+                vkwargs["transformer_cls"] = _SimTf
+                emit("Olcek tahminli rigid SABITLENDI (--correct-scale): benzerlik (similarity) donusumu kullanilacak "
+                     "(VALIS 1.2.0'da bu zaten varsayilandir; bayrak surum degisikliklerine karsi garanti verir).")
             except Exception as _sce:
-                emit("UYARI: olcek duzeltme kurulamadi (" + str(_sce) + "); varsayilan (olceksiz) rigid ile devam.")
+                emit("UYARI: olcek sabitleme kurulamadi (" + str(_sce) + "); VALIS varsayilan rigid'i ile devam.")
         if getattr(args, "rigid_only", False):
             # VALIS varsayilan non-rigid'i OpenCV optical flow (OpticalFlowWarper) kullanir; bu makinede
             # native olarak 0xC0000005 ile coker. Yalniz rigid kayit -> calisir; anotasyon warp'i rigid
@@ -955,6 +958,8 @@ def _run_one_case(args):
             else:
                 _run_micro(registrar, args, emit)
                 non_rigid_merge = True   # micro non-rigid deformasyon ekler -> merge/warp non-rigid kullanmali
+        # VALIS'in kendi hata tablosu (varsa) - salt-okur QC ozeti (goruntu/Dice degil, ozellik-mesafesi).
+        _emit_error_summary(args.dst, emit)
 
         # Anotasyon warp'i ONCE yap: kullanicinin BIRINCIL ciktisidir + hizlidir (yalniz koordinat donusumu).
         # OME-TIFF yazimi (tam-res hizalanmis slaytlar) YAVAS + ikincildir; sonra ve --no-ome ile istege
@@ -1112,9 +1117,9 @@ def _run_one_case(args):
 
 def _report_resolution_and_scale(registrar, correct_scale, emit):
     """Her slaydin um/px (fiziksel piksel boyutu) degerini raporlar; farkli/eksik olanlari UYARIR.
-    Olcek duzeltme aciksa (--correct-scale) her slaydin rigid asamada TAHMIN EDILEN olcegini de yazar
-    (kullanici olcegin ~1.0 civari mi yoksa asiri mi duzeltildigini gorebilir; max_scaling=3.0 bir
-    guvenlik siniri, dogrulayici DEGIL)."""
+    Rigid asamada TAHMIN EDILEN olcek HER ZAMAN yazilir (VALIS 1.2.0 varsayilan rigid'i benzerlik/olcek
+    tahminlidir; correct_scale bayragindan bagimsiz) — kullanici olcegin ~1.0 civari mi yoksa asiri mi
+    duzeltildigini gorebilir (max_scaling=3.0 bir guvenlik siniri, dogrulayici DEGIL)."""
     try:
         ref = registrar.get_ref_slide().name
     except Exception:
@@ -1130,7 +1135,7 @@ def _report_resolution_and_scale(registrar, correct_scale, emit):
             resf = None
         res_list.append((name, resf))
         line = "  " + name + ": " + (("%.4f " % resf) + str(units) + "/px" if (resf is not None and resf == resf) else "um/px OKUNAMADI")
-        if correct_scale and name != ref:
+        if name != ref:
             try:
                 from skimage import transform as _sktf
                 s = float(_sktf.SimilarityTransform(slide.M).scale)
@@ -1151,11 +1156,97 @@ def _report_resolution_and_scale(registrar, correct_scale, emit):
              + " - kalibrasyon eksikse olcek/hizalama guvenilmez (QuPath Image sekmesinden ayarlayin).")
 
 
+def _micro_focus_mask(registrar, args, emit):
+    """--micro-focus: --geojson-in'deki anotasyonu (kaynak slaytin seviye-0 piksel uzayi) KAYITLI referans
+    cercevesine warp edip ikili maske olarak dondurur - register_micro(mask=...) yalniz o bolgede inceltir.
+    Koordinat sozlesmesi (VALIS 1.2.0 kaynagi + resmi ornekler sayfasindan dogrulandi):
+    Slide.warp_geojson(geojson_f, slide_level=ref.reg_img_shape_rc, pt_level=0, non_rigid=True, crop=False)
+    ciktiyi dogrudan non_rigid_reg_mask'in yasadigi KIRPILMAMIS kayitli cerceveye verir; herhangi bir slaydin
+    Slide nesnesi ayni PAYLASILAN kayitli uzaya varir (referans olmasi gerekmez). crop=True/overlap/reference
+    kokeni kaydirir ve maske SESSIZCE yanlis hizalanir - kullanilmaz. Basarisizlik fail-safe'tir: None doner,
+    ince hizalama TUM-doku olarak devam eder (yanlis maske hic maskeden kotudur)."""
+    try:
+        import numpy as np
+        import cv2
+        ref = registrar.get_ref_slide()
+        shape_rc = tuple(int(v) for v in ref.reg_img_shape_rc)
+        slide_obj = registrar.get_slide(args.src_slide)
+        warped = slide_obj.warp_geojson(args.geojson_in, slide_level=shape_rc, pt_level=0,
+                                        non_rigid=True, crop=False)
+        mask = np.zeros(shape_rc, dtype=np.uint8)
+        n_poly = 0
+        for ft in (warped.get("features") or []):
+            geom = ft.get("geometry") or {}
+            gtype = geom.get("type")
+            coords = geom.get("coordinates")
+            rings = []
+            if gtype == "Polygon" and coords:
+                rings.append(coords[0])          # dis halka (delikler kaba maskede onemsiz)
+            elif gtype == "MultiPolygon" and coords:
+                for poly in coords:
+                    if poly:
+                        rings.append(poly[0])
+            for ring in rings:
+                pts = np.round(np.asarray(ring, dtype=float)).astype(np.int32)
+                if pts.ndim == 2 and pts.shape[0] >= 3:
+                    cv2.fillPoly(mask, [pts.reshape((-1, 1, 2))], 255)
+                    n_poly += 1
+        cov = float((mask > 0).sum()) / float(mask.size) * 100.0
+        if n_poly == 0 or cov <= 0.0:
+            emit("UYARI: bolge odagi maskesi BOS (alanli/poligon anotasyon yok ya da bolge cerceve disina "
+                 "dustu) - TUM-doku ince hizalama yapilacak.")
+            return None
+        emit("Bolge odagi maskesi hazir: %d poligon, kayitli cerceve %dx%d px, kapsama ~%.1f%%."
+             % (n_poly, shape_rc[1], shape_rc[0], cov))
+        return mask
+    except Exception as _me:
+        emit("UYARI: bolge odagi maskesi olusturulamadi (" + str(_me) + ") - TUM-doku ince hizalama yapilacak.")
+        return None
+
+
+def _emit_error_summary(dst, emit):
+    """VALIS'in KENDI hata tablosunu (data/<ad>_summary.csv; measure_error ciktisi) okuyup slayt-basi kisa
+    ozet yazar. '_D' ile biten sutunlar eslesen ozellikler arasi MEDYAN mesafedir (fiziksel birim, ~um) -
+    kucuk = iyi; original_ oncesi, rigid_/non_rigid_ sonrasidir. Salt-okur + best-effort: tablo yoksa ya da
+    okunamazsa sessizce gecilir (kayit sonucunu etkilemez). Yeniden-kullanim yolunda sayilar, kullanilan
+    KAYITLI hizalamaya aittir (o da dogru olan budur)."""
+    try:
+        import csv
+        import glob as _glob
+        cands = _glob.glob(os.path.join(dst, "**", "*_summary.csv"), recursive=True)
+        if not cands:
+            return
+        newest = max(cands, key=os.path.getmtime)
+        with open(newest, "r", encoding="utf-8", newline="") as fh:
+            rows = list(csv.DictReader(fh))
+        if not rows:
+            return
+        cols = [c for c in rows[0].keys() if c and c.endswith("_D")][:6]
+        if not cols:
+            return
+        emit("Kayit hata olcumleri (VALIS measure_error; '_D' = eslesen ozellik MEDYAN mesafesi, fiziksel birim - kucuk=iyi):")
+        for r in rows:
+            frm = r.get("from") or r.get("name") or "?"
+            to = r.get("to") or ""
+            parts = []
+            for c in cols:
+                try:
+                    parts.append(c + "=%.1f" % float(r.get(c)))
+                except (TypeError, ValueError):
+                    pass
+            if parts:
+                emit("  " + str(frm) + ((" -> " + str(to)) if to else "") + ": " + ", ".join(parts))
+        emit("  (tablo: " + newest + ")")
+    except Exception as _ese:
+        emit("Not: hata-olcum tablosu okunamadi (" + str(_ese) + ").")
+
+
 def _run_micro(registrar, args, emit):
     """register_micro: ana hizalamadan sonra, DAHA YUKSEK cozunurlukte 2. bir non-rigid gecis yaparak
     'az kaymis' hizalamayi sikilastirir. Micro kenari, baslangic non-rigid kenarindan (registrar'in
     max_non_rigid_registration_dim_px'i; VALIS varsayilani 2048) BUYUK olMALI - degilse VALIS sessizce
-    None dondurur (islem yapilmamis gibi gorunur), o yuzden burada ACIKCA dogrulanir."""
+    None dondurur (islem yapilmamis gibi gorunur), o yuzden burada ACIKCA dogrulanir. --micro-focus ile
+    (--geojson-in + --src-slide gerekli) inceltme yalniz anotasyon BOLGESIYLE sinirlanir (maske)."""
     init_nr = getattr(registrar, "max_non_rigid_registration_dim_px", 2048) or 2048
     micro_dim = getattr(args, "micro_dim", None)
     micro_dim = int(micro_dim) if micro_dim else 4096   # VALIS DEFAULT_MAX_MICRO_REG_SIZE
@@ -1163,11 +1254,21 @@ def _run_micro(registrar, args, emit):
         emit("UYARI: ince hizalama kenari (%d px) baslangic non-rigid kenarindan (%d px) BUYUK olmali; "
              "ince hizalama ATLANIYOR (--micro-dim degerini artirin)." % (micro_dim, int(init_nr)))
         return
-    _stage_begin("INCE", "Ince hizalama (register_micro %d px - yuksek cozunurluklu 2. non-rigid gecis)" % micro_dim)
+    mask = None
+    if getattr(args, "micro_focus", False):
+        if getattr(args, "geojson_in", None) and getattr(args, "src_slide", None):
+            mask = _micro_focus_mask(registrar, args, emit)
+        else:
+            emit("UYARI: bolge odagi (--micro-focus) icin --geojson-in ve --src-slide gerekli - TUM-doku ince hizalama yapilacak.")
+    _label = "BOLGE-ODAKLI ince hizalama" if mask is not None else "Ince hizalama"
+    _stage_begin("INCE", _label + " (register_micro %d px - yuksek cozunurluklu 2. non-rigid gecis)" % micro_dim)
     hb = _start_heartbeat("Ince hizalama")
     try:
-        registrar.register_micro(max_non_rigid_registration_dim_px=micro_dim)
-        emit("Ince hizalama tamamlandi (register_micro, kenar=%d px)." % micro_dim)
+        if mask is not None:
+            registrar.register_micro(max_non_rigid_registration_dim_px=micro_dim, mask=mask)
+        else:
+            registrar.register_micro(max_non_rigid_registration_dim_px=micro_dim)
+        emit(_label + " tamamlandi (register_micro, kenar=%d px)." % micro_dim)
     except Exception as _me:
         emit("UYARI: ince hizalama basarisiz (" + str(_me) + "); ana hizalama ile devam.")
     finally:
@@ -1195,7 +1296,7 @@ _RUN_ARG_DEFAULTS = {
     "geojson_in": None, "src_slide": None, "target_slide": None, "geojson_out": None,
     "images": None, "reference": None, "auto_reference": False,
     "max_processed_dim": None, "max_nonrigid_dim": None,
-    "micro": False, "micro_dim": None, "correct_scale": False,
+    "micro": False, "micro_dim": None, "micro_focus": False, "correct_scale": False,
     "cpu": False, "rigid_only": False, "reuse_registrar": False, "stage": False, "no_ome": False,
     "merge": False, "merge_out": None, "merge_level": 0, "merge_mode": "hed",
     "merge_name": None, "merge_stain": None, "merge_color": None, "composite": False,
@@ -1368,6 +1469,7 @@ def build_parser():
     pr.add_argument("--max-nonrigid-dim", dest="max_nonrigid_dim", type=int, default=None)
     pr.add_argument("--micro", dest="micro", action="store_true")               # register_micro: yuksek-cozunurluklu 2. non-rigid gecis
     pr.add_argument("--micro-dim", dest="micro_dim", type=int, default=None)     # micro pass max kenar (baslangic non-rigid'ten BUYUK olmali; bos=4096)
+    pr.add_argument("--micro-focus", dest="micro_focus", action="store_true")    # ince hizalamayi --geojson-in/--src-slide anotasyon BOLGESIYLE sinirla (maske)
     pr.add_argument("--correct-scale", dest="correct_scale", action="store_true")  # rigid'i benzerlik (olcek tahminli) yap -> tarayici um/px farkini duzelt
     pr.add_argument("--cpu", dest="cpu", action="store_true")
     pr.add_argument("--rigid-only", dest="rigid_only", action="store_true")
@@ -1541,10 +1643,15 @@ def runArgs = { cfg, String srcDir, String dstDir, String omeDir, String crop, L
     if (opts?.micro) {                                                          // ince hizalama: register_micro (yüksek çözünürlüklü 2. non-rigid geçiş)
         a += ['--micro']
         if (opts?.microDim) a += ['--micro-dim', opts.microDim.toString()]
+        if (opts?.microFocus && geojsonIn && srcSlide) a += ['--micro-focus']   // bölge odağı: maske = --geojson-in anotasyonu
     }
     // Warp: BIR kaynak (srcSlide) → BIR VEYA DAHA FAZLA hedef. tgtSlide/geojsonOut String YA DA List olabilir.
-    if (geojsonIn && srcSlide && tgtSlide && geojsonOut) {
+    // Bölge odağı hedefsiz de --geojson-in/--src-slide ister (runner'da want_warp hedefsiz zaten kapalı kalır).
+    boolean _wantWarpArgs = geojsonIn && srcSlide && tgtSlide && geojsonOut
+    if (geojsonIn && srcSlide && (_wantWarpArgs || opts?.microFocus)) {
         a += ['--geojson-in', geojsonIn, '--src-slide', srcSlide]
+    }
+    if (_wantWarpArgs) {
         def _tl = (tgtSlide instanceof List) ? tgtSlide : [tgtSlide]
         def _gl = (geojsonOut instanceof List) ? geojsonOut : [geojsonOut]
         [_tl, _gl].transpose().each { pr -> if (pr[0] && pr[1]) a += ['--target-slide', pr[0].toString(), '--geojson-out', pr[1].toString()] }
@@ -1924,6 +2031,7 @@ def maxProcDimRef = new java.util.concurrent.atomic.AtomicReference('')         
 def correctScaleRef = new java.util.concurrent.atomic.AtomicBoolean(false)      // rigid'i benzerlik yap → tarayıcı µm/px (ölçek) farkını düzelt (VALIS varsayılan rigid=Euclidean, ölçek düzeltmez)
 def microRef      = new java.util.concurrent.atomic.AtomicBoolean(false)        // ince hizalama (register_micro — yüksek çözünürlüklü 2. non-rigid geçiş)
 def microDimRef   = new java.util.concurrent.atomic.AtomicReference('')         // ince hizalama kenarı (px); boş = 4096. Başlangıç non-rigid'ten (2048) BÜYÜK olmalı
+def microFocusRef = new java.util.concurrent.atomic.AtomicBoolean(false)        // ince hizalamayı seçili anotasyonun BÖLGESİYLE sınırla (register_micro mask)
 
 // ── Toplu işlem (batch — çoklu vaka) durumu ──
 def batchCasesRootRef        = new java.util.concurrent.atomic.AtomicReference(null)             // File: seçilen "vaka klasörü kökü"
@@ -2095,9 +2203,14 @@ def prepareRun = { cfg, boolean reuseRegistrar = false, boolean warpOnly = false
     def gjIn = null; int annCount = 0
     def warpPlan = []
     double srcAreaUm2 = 0.0d
-    if (!targetEntries.isEmpty()) {
+    // Bölge odağı da kaynak GeoJSON'u gerektirir (hedef seçilmemiş olsa bile): runner anotasyonu kayıtlı
+    // çerçeveye warp edip register_micro'ya maske verir. Yalnız TAZE kayıtta anlamlı (micro zaten öyle).
+    boolean wantMicroFocus = microFocusRef.get() && microRef.get() && !reuseRegistrar && !warpOnly && !rigidOnlyRef.get()
+    if (!targetEntries.isEmpty() || wantMicroFocus) {
         if (targetEntries.any { it.getID()?.toString() == srcId })
             return [ok: false, error: 'Warp hedefi kaynakla aynı olamaz — farklı bir hedef seçin ya da hedefi kaldırın.']
+        if (wantMicroFocus && imageData.getHierarchy().getAnnotationObjects().isEmpty())
+            return [ok: false, error: 'Bölge odağı için açık (kaynak) slaytta en az bir ANOTASYON çizili olmalı — bölgeyi çizin ya da "Bölge odağı" kutusunu kapatın.']
         def sanitize = { String s -> (s ?: 'x').replaceAll('[^A-Za-z0-9._-]', '_') }
         def sel = imageData.getHierarchy().getSelectionModel().getSelectedObjects().findAll { it.isAnnotation() }
         def expObjs = (sel != null && !sel.isEmpty()) ? sel : imageData.getHierarchy().getAnnotationObjects()
@@ -2169,7 +2282,8 @@ def prepareRun = { cfg, boolean reuseRegistrar = false, boolean warpOnly = false
                     // Ölçek düzeltme + ince hizalama YALNIZ taze kayıtta anlamlı (warpOnly/reuse'da YENİDEN KAYIT yok).
                     correctScale: (correctScaleRef.get() && !reuseRegistrar && !warpOnly),
                     micro: (microRef.get() && !reuseRegistrar && !warpOnly && !rigidOnlyRef.get()),
-                    microDim: (_microDim ?: null)]
+                    microDim: (_microDim ?: null),
+                    microFocus: wantMicroFocus]
         // tgtSlide/geojsonOut LİSTE olarak geçilir — runArgs zaten Liste'yi destekler (birden çok --target-slide/--geojson-out çifti).
         def tgtList  = warpPlan.collect { conv(it.file) }
         def gjOutList= warpPlan.collect { conv(it.geojsonOut) }
@@ -2996,7 +3110,7 @@ render = { ->
             hrow.setAlignment(javafx.geometry.Pos.CENTER_LEFT); center.getChildren().add(hrow)
 
             // ── Ölçek düzeltme (farklı tarayıcı µm/px) + İnce hizalama (register_micro) ──
-            def scaleCb = new javafx.scene.control.CheckBox('Ölçek/µm-px farkını düzelt (farklı tarayıcı — ör. AT2 vs GT450; benzerlik rigid, ölçeği görüntülerden tahmin eder)'); scaleCb.setSelected(correctScaleRef.get()); scaleCb.setWrapText(true)
+            def scaleCb = new javafx.scene.control.CheckBox('Ölçek tahminli rigid\'i sabitle (benzerlik dönüşümü — VALIS 1.2.0\'da zaten varsayılan; farklı tarayıcı µm/px farkı, ör. AT2 ile GT450, görüntülerden tahmin edilip düzeltilir. Sürüm değişse de davranışı garanti eder)'); scaleCb.setSelected(correctScaleRef.get()); scaleCb.setWrapText(true)
             scaleCb.selectedProperty().addListener({ o, ov, nv -> correctScaleRef.set(nv) } as javafx.beans.value.ChangeListener)
             center.getChildren().add(scaleCb)
             def microCb = new javafx.scene.control.CheckBox('İnce hizalama (register_micro — yüksek çözünürlüklü 2. non-rigid geçiş; "az kaymış"ı sıkılaştırır, yavaş)'); microCb.setSelected(microRef.get()); microCb.setWrapText(true)
@@ -3008,6 +3122,13 @@ render = { ->
             // Karşılıklı dışlama: register_micro NON-RIGID'dir → "Yalnız rigid" ile birlikte anlamsız (VALIS None döner). Biri açılınca diğeri kapanır.
             microCb.selectedProperty().addListener({ o, ov, nv -> microRef.set(nv); if (nv && rigidCb.isSelected()) rigidCb.setSelected(false) } as javafx.beans.value.ChangeListener)
             rigidCb.selectedProperty().addListener({ o, ov, nv -> if (nv && microCb.isSelected()) microCb.setSelected(false) } as javafx.beans.value.ChangeListener)
+            // Bölge odağı: ince hizalamayı seçili anotasyonun bölgesiyle sınırla (runner, anotasyonu kayıtlı
+            // çerçeveye warp edip register_micro'ya MASKE verir). Yalnız ince hizalama açıkken anlamlı.
+            def microFocusCb = new javafx.scene.control.CheckBox('Bölge odağı: ince hizalamayı SEÇİLİ anotasyonun bölgesiyle sınırla (seçili yoksa tüm anotasyonlar; açık/kaynak slaytta çizili olmalı)')
+            microFocusCb.setSelected(microFocusRef.get()); microFocusCb.setWrapText(true)
+            microFocusCb.disableProperty().bind(microCb.selectedProperty().not())
+            microFocusCb.selectedProperty().addListener({ o, ov, nv -> microFocusRef.set(nv) } as javafx.beans.value.ChangeListener)
+            center.getChildren().add(microFocusCb)
 
             // ── µm/px (piksel boyutu) oku — farklı tarayıcı ölçek farkını çalıştırmadan ÖNCE görmek için ──
             def mppLabel = new javafx.scene.control.Label('µm/px: (okumak için düğmeye basın)'); mppLabel.setWrapText(true); mppLabel.setMaxWidth(Double.MAX_VALUE)

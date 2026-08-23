@@ -10,7 +10,7 @@
  *     (A) OTOMATİK — Align eklentisinin AutoAligner'ı ile kaynak↔hedef arasında
  *         yoğunluk/anotasyon tabanlı afin hizalamayı BURADAN hesaplar (ayrı
  *         pencere + kopyala-yapıştır gerekmez). [qupath-extension-align gerekir.]
- *     (B) ELLE — [Extensions → Alignment → Interactive image alignment] penceresindeki
+ *     (B) ELLE — [Analyze → Alignment → Interactive image alignment] penceresindeki
  *         6 sayıyı (m00 m01 m02 m10 m11 m12) yapıştırırsınız.
  *   Böylece H&E üzerinde çizdiğiniz tümör/bölge anotasyonunu, hizaladığınız İHK
  *   slaydına TEK TIKLA ve YİNELENEBİLİR biçimde aktarırsınız.
@@ -104,7 +104,7 @@ def showAlignInstall = {
         '⚠ ÖNEMLİ: Sihirbazın (A) OTOMATİK yolu, Align\'ın "AutoAligner" sınıfını İÇEREN bir derlemesini ister.\n' +
         '   YAYINLANMIŞ 0.5.0 sürümü bunu İÇERMEZ (AutoAligner yalnız geliştirme/main dalındadır). Yani Align\'ı\n' +
         '   kursanız bile 0.5.0\'da (A) KAPALI kalır — bu normaldir. O sürümde:\n' +
-        '     • [Extensions → Alignment → Interactive image alignment] ile hizalayın (Align KURULU olmalı),\n' +
+        '     • [Analyze → Alignment → Interactive image alignment] ile hizalayın (Align KURULU olmalı),\n' +
         '     • gösterilen 6 sayıyı (B) Elle matris kutusuna yapıştırıp "Elle matrisle aktar" deyin.\n' +
         '   (A) yalnız AutoAligner içeren bir Align derlemesi kurulursa otomatik etkinleşir.\n\n' +
         'qupath-extension-align KURULUMU (Interactive image alignment için — (B) yolu ve GUI hizalama):\n\n' +
@@ -115,7 +115,7 @@ def showAlignInstall = {
         '  2. "qupath-extension-align-X.Y.Z.jar" indirin — "-javadoc"/"-sources" ya da kaynak (zip/tar.gz) DEĞİL; düz .jar (~48 KB).\n' +
         '  3. .jar\'ı QuPath penceresine SÜRÜKLEYİP BIRAKIN.\n' +
         '  4. QuPath\'i YENİDEN BAŞLATIN; bu sihirbazı tekrar açın.\n\n' +
-        'ZATEN KURDUYSANIZ AMA TANINMIYORSA (Extensions → Alignment menüsü de YOKSA):\n' +
+        'ZATEN KURDUYSANIZ AMA TANINMIYORSA (Analyze → Alignment menüsü de YOKSA):\n' +
         '  Büyük olasılıkla SÜRÜM UYUMSUZLUĞU — QuPath uyumsuz eklentiyi yükleMEZ (menü çıkmaz, sınıfları görünmez).\n' +
         '  • QuPath sürümünüzü kontrol edin (Help → About).\n' +
         '  • Log\'a bakın (View → Show log; "align" arayın) — uyumsuzluk/yükleme hatası orada yazar.\n' +
@@ -271,7 +271,7 @@ javafx.application.Platform.runLater {
 
         def info = new javafx.scene.control.Label(
             'Kaynak slaytı seçin. (A) Otomatik: Align eklentisi kaynağı bu (HEDEF) slayda afin hizalar ve\n' +
-            'anotasyonları aktarır. (B) Elle: [Extensions → Alignment → Interactive image alignment] penceresindeki\n' +
+            'anotasyonları aktarır. (B) Elle: [Analyze → Alignment → Interactive image alignment] penceresindeki\n' +
             '6 sayıyı yapıştırın. Her iki durumda kaynağın üst düzey anotasyonları buraya kilitli kopyalanır;\n' +
             'örtüşmeyi opaklık kaydırıcısıyla gözle doğrulayın.')
         info.setWrapText(true); info.setMaxWidth(Double.MAX_VALUE)
@@ -293,7 +293,7 @@ javafx.application.Platform.runLater {
         def autoBtn = new javafx.scene.control.Button('Otomatik hizala + aktar')
         def autoNote = new javafx.scene.control.Label(
             alignPresent ? 'INTENSITY: anotasyon gerektirmez (yoğunluk/ECC). AREA/POINT: her iki slaytta uygun anotasyon ister.' :
-            alignGuiOnly ? '⚠ Align KURULU ama bu SÜRÜM otomatik-hizalama sınıfını (AutoAligner) içermez (yayınlanmış 0.5.0 böyle — AutoAligner yalnız geliştirme/main dalında). [Extensions → Alignment → Interactive image alignment] ile hizalayıp 6 sayıyı (B)\'ye yapıştırın. Ayrıntı: "Otomatik neden kapalı?" düğmesi.'
+            alignGuiOnly ? '⚠ Align KURULU ama bu SÜRÜM otomatik-hizalama sınıfını (AutoAligner) içermez (yayınlanmış 0.5.0 böyle — AutoAligner yalnız geliştirme/main dalında). [Analyze → Alignment → Interactive image alignment] ile hizalayıp 6 sayıyı (B)\'ye yapıştırın. Ayrıntı: "Otomatik neden kapalı?" düğmesi.'
                          : '⚠ qupath-extension-align YÜKLENMEDİ — otomatik hizalama devre dışı. "Align eklentisini kur (nasıl?)" düğmesine basın (kurulu ama tanınmıyorsa: sürüm uyumsuzluğu — düğme log/çözümü açıklar). Ya da (B) elle matrisi kullanın.')
         autoNote.setWrapText(true); autoNote.setMaxWidth(Double.MAX_VALUE)
         if (!alignPresent) autoNote.setStyle('-fx-text-fill: -qp-script-error-color;')

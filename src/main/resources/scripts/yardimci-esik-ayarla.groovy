@@ -10,6 +10,10 @@
  *   • Slaydınızın KENDİ kromojen renklerinden üretilen renk şeridi + gerçek hücre
  *     kesitlerinden oluşan örnek şeridi üzerinde, histogramdaki üç eşik çizgisini
  *     SÜRÜKLEYEREK ayarlarsınız; sayım / yüzde / H-score anında güncellenir.
+ *   • Renk şeridi hücre YOĞUNLUĞUYLA dokulanır (yoğunluk-barkodu); eksen boyunca
+ *     Negatif|1+|2+|3+ kategori bandı ve alanların altında kümülatif yüzdeler canlı izlenir.
+ *   • "Otomatik öner": 3-eşik Otsu ile veri-güdümlü bir BAŞLANGIÇ önerisi üretir
+ *     (yalnız öneridir; yöntem referansınızla sabitleyip belgeleyin).
  *   • "Canlı uygula" açıkken her sürükleme bırakışında hücreler yeni bin'lerine
  *     yeniden sınıflandırılır — değişikliği ana görüntüde görürsünüz.
  *   • Kapsam seçilebilir: Seçili anotasyon(lar) ya da Tüm slayt.
@@ -335,6 +339,7 @@ javafx.application.Platform.runLater {
         def rebuildRamp = null
         def rebuildThumbs = null
         def relayoutAligned = null
+        def relayoutBand = null
 
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
@@ -358,6 +363,29 @@ javafx.application.Platform.runLater {
         def rampHolder = new javafx.scene.layout.Pane()
         rampHolder.setMinHeight(20); rampHolder.setPrefHeight(20)
 
+        // Kategori bandı: eksen boyunca Negatif | 1+ | 2+ | 3+ bölütleri (çizgilerle canlı)
+        def bandPane = new javafx.scene.layout.Pane()
+        bandPane.setMinHeight(16); bandPane.setPrefHeight(16)
+        def BAND_FILLS = [javafx.scene.paint.Color.web('#C7D3E0'),
+                          javafx.scene.paint.Color.web('#E6A817'),
+                          javafx.scene.paint.Color.web('#D97706'),
+                          javafx.scene.paint.Color.web('#7C2D12')]
+        def BAND_NAMES = ['Negatif', '1+', '2+', '3+']
+        def bandRects = (0..3).collect { int i ->
+            def r = new javafx.scene.shape.Rectangle(0, 1, 0, 14)
+            r.setFill(BAND_FILLS[i]); r.setManaged(false)
+            r.setArcWidth(4); r.setArcHeight(4)
+            bandPane.getChildren().add(r)
+            return r
+        }
+        def bandLabels = (0..3).collect { int i ->
+            def l = new javafx.scene.control.Label(BAND_NAMES[i])
+            l.setStyle('-fx-font-size: 10px; -fx-text-fill: ' + (i >= 2 ? 'white' : '#333333') + ';')
+            l.setManaged(false)
+            bandPane.getChildren().add(l)
+            return l
+        }
+
         // ── ③ Histogram + sürüklenebilir eşikler ──
         def chart = new qupath.lib.gui.charts.HistogramChart()
         chart.setAnimated(false)
@@ -378,9 +406,14 @@ javafx.application.Platform.runLater {
             thresholds << thrPane.addThreshold(v, LINE_COLORS[i])
         }
 
-        // ── ④ Sayısal alanlar ──
+        // ── ④ Sayısal alanlar (+ kümülatif yüzde etiketleri) ──
         def fields = (0..2).collect { new javafx.scene.control.TextField() }
         fields.each { it.setPrefColumnCount(7) }
+        def cumLabels = (0..2).collect {
+            def l = new javafx.scene.control.Label('')
+            l.setStyle('-fx-font-size: 10px; -fx-opacity: 0.8;')
+            return l
+        }
 
         // ── ⑤ Canlı istatistik + durum ──
         def statsLabel = new javafx.scene.control.Label('')
@@ -397,6 +430,10 @@ javafx.application.Platform.runLater {
         def applyBtn = new javafx.scene.control.Button('Uygula')
         applyBtn.setDefaultButton(true)
         def resetBtn = new javafx.scene.control.Button('Sıfırla')
+        def autoBtn = new javafx.scene.control.Button('Otomatik öner')
+        autoBtn.setTooltip(new javafx.scene.control.Tooltip(
+            '3-eşik Otsu: veri-güdümlü bir BAŞLANGIÇ önerisi — "doğru" eşik değildir; ' +
+            'yöntem referansınızla sabitleyip belgeleyin.'))
         def saveBtn = new javafx.scene.control.Button('Bu eşikleri varsayılan yap')
         def closeBtn = new javafx.scene.control.Button('Kapat')
         closeBtn.setCancelButton(true)
@@ -419,8 +456,15 @@ javafx.application.Platform.runLater {
                 'Negatif %,d (%%%.1f) · 1+ %,d (%%%.1f) · 2+ %,d (%%%.1f) · 3+ %,d (%%%.1f) · ≥1+ %,d (%%%.1f) · H-score %.0f',
                 c.n0, pc((int) c.n0), c.n1, pc((int) c.n1), c.n2, pc((int) c.n2), c.n3, pc((int) c.n3),
                 (int) (c.n1 + c.n2 + c.n3), pc((int) (c.n1 + c.n2 + c.n3)), hs))
+            double cum1 = pc((int) c.n0)
+            double cum2 = pc((int) (c.n0 + c.n1))
+            double cum3 = pc((int) (c.n0 + c.n1 + c.n2))
+            cumLabels[0].setText(String.format(java.util.Locale.US, 'kümülatif %%%.1f', cum1))
+            cumLabels[1].setText(String.format(java.util.Locale.US, 'kümülatif %%%.1f', cum2))
+            cumLabels[2].setText(String.format(java.util.Locale.US, 'kümülatif %%%.1f', cum3))
             def la = (double[]) lastApplied.get()
             dirtyLabel.setVisible(la == null || la[0] != t[0] || la[1] != t[1] || la[2] != t[2])
+            relayoutBand?.call()
         }
 
         // Programatik toplu eşik ataması (a<b<c çağıran garanti eder; kelepçe atlanır)
@@ -435,6 +479,50 @@ javafx.application.Platform.runLater {
                 }
             } finally { guard[0] = false; guard[1] = false; guard[2] = false }
             updateStats()
+        }
+
+        // Çok-düzeyli Otsu (3 eşik / 4 sınıf): 128-kutu histogram + önek toplamları ile
+        // sınıflar-arası varyansı (Σ w·μ² biçiminde) enüstleyen t1<t2<t3 üçlüsünü tam
+        // taramayla bulur. Veri-güdümlü BAŞLANGIÇ önerisidir — "doğru" eşik değildir
+        // (Bankhead notu; Sınırlamalar #4). Otsu N (1979), IEEE Trans SMC'nin çok-sınıf uzantısı.
+        def multiOtsu3 = { double[] sortedVals, double maxV ->
+            int nBins = 128
+            if (sortedVals.length < 8 || maxV <= 0.0d) return null
+            long[] histC = new long[nBins]
+            for (double v : sortedVals) {
+                int b = (int) (v / maxV * nBins)   // binW = maxV/nBins ile aynı ölçek (sol kenar dönüşümü tutarlı)
+                if (b < 0) b = 0; else if (b >= nBins) b = nBins - 1
+                histC[b]++
+            }
+            double[] w = new double[nBins + 1]   // önek ağırlık
+            double[] m = new double[nBins + 1]   // önek ağırlıklı toplam (kutu indeksi)
+            for (int i = 0; i < nBins; i++) {
+                w[i + 1] = w[i] + histC[i]
+                m[i + 1] = m[i] + (double) histC[i] * i
+            }
+            double total = w[nBins]
+            double sumAll = m[nBins]
+            if (total <= 0.0d) return null
+            double best = -1.0d
+            int b1 = 1, b2 = 2, b3 = 3
+            for (int i = 1; i < nBins - 2; i++) {
+                double wA = w[i], sA = m[i]
+                double cA = wA > 0.0d ? sA * sA / wA : 0.0d
+                for (int j = i + 1; j < nBins - 1; j++) {
+                    double wB = w[j] - w[i], sB = m[j] - m[i]
+                    double cAB = cA + (wB > 0.0d ? sB * sB / wB : 0.0d)
+                    for (int k = j + 1; k < nBins; k++) {
+                        double wC = w[k] - w[j], sC = m[k] - m[j]
+                        double wD = total - w[k], sD = sumAll - m[k]
+                        double v2 = cAB
+                        if (wC > 0.0d) v2 += sC * sC / wC
+                        if (wD > 0.0d) v2 += sD * sD / wD
+                        if (v2 > best) { best = v2; b1 = i; b2 = j; b3 = k }
+                    }
+                }
+            }
+            double binW = maxV / nBins
+            return [b1 * binW, b2 * binW, b3 * binW] as double[]
         }
 
         // Eşik dinleyicileri: sıralama kelepçesi (yalnız hareket edeni sınırlar,
@@ -516,6 +604,61 @@ javafx.application.Platform.runLater {
             return pane.sceneToLocal(scenePt.getX(), 0.0d).getX()
         }
 
+        // Yoğunluk-barkodu: renk şeridi üzerine, her piksel sütununda o değer aralığına
+        // düşen hücre sayısıyla orantılı opaklıkta kromojen rengi çizer (renk + yoğunluk
+        // tek görünümde). Aynı (veri, tuval, genişlik) için yeniden çizim atlanır.
+        def barcodeKey = new java.util.concurrent.atomic.AtomicReference(null)
+        def renderBarcode = { javafx.scene.canvas.Canvas bc, double wPx ->
+            def d = DATA.get()
+            if (d == null || wPx < 10.0d) return
+            int W = (int) Math.ceil(wPx)
+            // Genişlik 8 px'lik kovalara yuvarlanır: pencere sürüklenirken her bounds
+            // darbesinde O(n) yeniden tarama yapmamak için (büyük tüm-slayt kapsamında FX
+            // iş parçacığını teklemekten korur; ≤8 px'lik sağ-kenar farkı görsel olarak önemsiz)
+            String key = System.identityHashCode(d) + ':' + System.identityHashCode(bc) + ':' + ((int) (W / 8))
+            if (key.equals(barcodeKey.get())) return
+            barcodeKey.set(key)
+            double am = (double) d.axisMax
+            double[] sortedVals = (double[]) d.sorted
+            bc.setWidth(W); bc.setHeight(18.0d)
+            def g = bc.getGraphicsContext2D()
+            g.clearRect(0, 0, W, 18)
+            int[] colCount = new int[W]
+            for (double v : sortedVals) {
+                int x = (int) (v / am * (W - 1))
+                if (x < 0) x = 0; else if (x >= W) x = W - 1
+                colCount[x]++
+            }
+            int maxC = 1
+            for (int x = 0; x < W; x++) if (colCount[x] > maxC) maxC = colCount[x]
+            for (int x = 0; x < W; x++) {
+                if (colCount[x] == 0) continue
+                int argb = rampArgbAt(am * x / (W - 1))
+                double alpha = Math.min(1.0d, 0.25d + 0.75d * Math.sqrt((double) colCount[x] / maxC))
+                g.setFill(javafx.scene.paint.Color.rgb((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF, alpha))
+                g.fillRect(x, 0, 1, 18)
+            }
+        }
+
+        // Kategori bandını eksene ve güncel eşiklere hizala (Negatif|1+|2+|3+ bölütleri)
+        relayoutBand = { ->
+            def d = DATA.get()
+            if (d == null || chart.getScene() == null) return
+            double am = (double) d.axisMax
+            def t = curThr()
+            double[] edges = [0.0d, (double) t[0], (double) t[1], (double) t[2], am] as double[]
+            for (int i = 0; i < 4; i++) {
+                double xa = xInPane(bandPane, Math.min(edges[i], am))
+                double xb = xInPane(bandPane, Math.min(edges[i + 1], am))
+                def r = (javafx.scene.shape.Rectangle) bandRects[i]
+                r.setX(xa); r.setWidth(Math.max(0.0d, xb - xa))
+                def l = (javafx.scene.control.Label) bandLabels[i]
+                boolean fits = (xb - xa) >= 34.0d
+                l.setVisible(fits)
+                if (fits) l.relocate(xa + (xb - xa) / 2.0d - 12.0d, 0.0d)
+            }
+        }
+
         relayoutAligned = { ->
             def d = DATA.get()
             if (d == null || chart.getScene() == null) return
@@ -527,6 +670,11 @@ javafx.application.Platform.runLater {
                 def canvas = (qupath.lib.gui.ColorMapCanvas) kids[0]
                 canvas.setLayoutX(x0)
                 canvas.resize(x1 - x0, 18.0d)   // resize() ŞART — repaint yalnız burada (spec §②)
+                def bc = kids.find { it instanceof javafx.scene.canvas.Canvas && !(it instanceof qupath.lib.gui.ColorMapCanvas) }
+                if (bc != null) {
+                    ((javafx.scene.canvas.Canvas) bc).setLayoutX(x0)
+                    renderBarcode((javafx.scene.canvas.Canvas) bc, x1 - x0)
+                }
             }
             ((List) thumbData.get()).each { e ->
                 double x = xInPane(stripPane, (double) e.od)
@@ -534,6 +682,7 @@ javafx.application.Platform.runLater {
                 iv.setLayoutX(x - iv.getFitWidth() / 2.0d)
                 iv.setLayoutY(4.0d)
             }
+            relayoutBand?.call()
         }
 
         rebuildRamp = { ->
@@ -558,11 +707,16 @@ javafx.application.Platform.runLater {
             def cmap = qupath.lib.color.ColorMaps.createColorMap('Atölye kromojen', rr, gg, bb)
             def canvas = new qupath.lib.gui.ColorMapCanvas(18.0d, cmap)
             canvas.setManaged(false)
+            canvas.setOpacity(0.45)   // taban şerit soluk; yoğunluk-barkodu üstünde tam opak
             // DİKKAT: geri çağrının parametresi 0-255 İNDEKSTİR, OD değil (spec §②)
             canvas.setTooltipFunction({ Double idx ->
                 String.format(java.util.Locale.US, 'OD ≈ %.3f', am * idx / 255.0d)
             } as java.util.function.Function)
             rampHolder.getChildren().add(canvas)
+            def barcode = new javafx.scene.canvas.Canvas(10, 18)
+            barcode.setManaged(false)
+            barcode.setMouseTransparent(true)   // fare olayları alttaki tooltip'li şeride geçsin
+            rampHolder.getChildren().add(barcode)
         }
 
         rebuildThumbs = { ->
@@ -678,7 +832,8 @@ javafx.application.Platform.runLater {
                 'çevresindeki çeşitliliği gösteremez. Tüm dağılım histogramdadır.'),
             limitLabel('4) Eşik sonucu doğrudan kaydırır — bir eşiği sürüklemek 1+/2+/3+ dağılımını ve H-score\'u ' +
                 'tanım gereği değiştirir; "doğru" tek eşik yoktur. Yöntem referansınızla tutarlı bir eşik seçip ' +
-                'belgeleyin; aynı çalışmada slayttan slayta değiştirmeyin.'),
+                'belgeleyin; aynı çalışmada slayttan slayta değiştirmeyin. "Otomatik öner" (3-eşik Otsu) yalnızca ' +
+                'veri-güdümlü bir başlangıç önerisidir — yöntemsel doğruluk iddiası taşımaz.'),
             limitLabel('5) Yalnızca yeniden bin\'ler — tespit/genişletme parametrelerine dokunmaz (onlar için modülü ' +
                 'yeniden çalıştırın). Piksel-bazlı H-score yeniden HESAPLANMAZ; bayat ölçümler her uygulamada temizlenir.'),
             limitLabel('6) Canlı uygulamanın boyut maliyeti — büyük kümelerde her bırakışta yeniden sınıflandırma ' +
@@ -797,7 +952,8 @@ javafx.application.Platform.runLater {
                         invalidated.set(true)
                         javafx.application.Platform.runLater {
                             statusLabel.setText('Kapsam artık geçerli değil — pencereyi kapatın')
-                            liveChk.setSelected(false); liveChk.setDisable(true); applyBtn.setDisable(true)
+                            liveChk.setSelected(false); liveChk.setDisable(true)
+                            applyBtn.setDisable(true); autoBtn.setDisable(true)
                         }
                         return
                     }
@@ -831,6 +987,36 @@ javafx.application.Platform.runLater {
             def d = DATA.get(); if (d == null) return
             setThresholds((double) d.defVals[0], (double) d.defVals[1], (double) d.defVals[2])
             if (liveChk.isSelected() && !invalidated.get()) submitApply(false)
+        } as javafx.event.EventHandler)
+
+        // Otomatik öner: 3-eşik Otsu — arka planda hesaplanır, FX donmaz
+        autoBtn.setOnAction({
+            def d = DATA.get(); if (d == null || invalidated.get()) return
+            autoBtn.setDisable(true)
+            statusLabel.setText('Otsu önerisi hesaplanıyor…')
+            new Thread({
+                def sugg = null
+                try { sugg = multiOtsu3((double[]) d.sorted, (double) d.axisMax) } catch (Throwable ignored) { }
+                def suggF = sugg
+                javafx.application.Platform.runLater {
+                    autoBtn.setDisable(invalidated.get())
+                    if (DATA.get() != d) {
+                        statusLabel.setText('Kapsam/sütun değişti — Otomatik öner\'i güncel veriyle yeniden çalıştırın.')
+                        return
+                    }
+                    if (suggF == null) { statusLabel.setText('Otsu önerisi için yeterli veri yok.'); return }
+                    double eps = ((double) d.axisMax) / 128.0d
+                    double s1 = suggF[0]
+                    double s2 = Math.max((double) suggF[1], s1 + eps)
+                    double s3 = Math.max((double) suggF[2], s2 + eps)
+                    if (!(s1 < s2 && s2 < s3)) { statusLabel.setText('Otsu önerisi türetilemedi.'); return }
+                    setThresholds(s1, s2, s3)
+                    statusLabel.setText(String.format(java.util.Locale.US,
+                        'Otsu önerisi uygulandı: %.3f / %.3f / %.3f — başlangıç noktasıdır; yöntem referansınızla sabitleyip belgeleyin.',
+                        s1, s2, s3))
+                    if (liveChk.isSelected() && !invalidated.get()) submitApply?.call(false)
+                }
+            } as Runnable).start()
         } as javafx.event.EventHandler)
 
         saveBtn.setOnAction({
@@ -874,17 +1060,20 @@ javafx.application.Platform.runLater {
         scopeRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
         scopeRow.setPadding(new javafx.geometry.Insets(10, 10, 4, 10))
 
-        def fieldsRow = new javafx.scene.layout.HBox(10,
-            new javafx.scene.control.Label('1+ ≥'), fields[0],
-            new javafx.scene.control.Label('2+ ≥'), fields[1],
-            new javafx.scene.control.Label('3+ ≥'), fields[2],
-            dirtyLabel)
+        def FIELD_TITLES = ['1+ ≥', '2+ ≥', '3+ ≥']
+        def fieldCells = (0..2).collect { int i ->
+            def row = new javafx.scene.layout.HBox(4, new javafx.scene.control.Label(FIELD_TITLES[i]), fields[i])
+            row.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
+            return new javafx.scene.layout.VBox(2, row, cumLabels[i])
+        }
+        def fieldsRow = new javafx.scene.layout.HBox(14,
+            fieldCells[0], fieldCells[1], fieldCells[2], dirtyLabel)
         fieldsRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
 
-        def centerBox = new javafx.scene.layout.VBox(8, stripPane, rampHolder, thrPane, fieldsRow, statsLabel)
+        def centerBox = new javafx.scene.layout.VBox(8, stripPane, rampHolder, bandPane, thrPane, fieldsRow, statsLabel)
         centerBox.setPadding(new javafx.geometry.Insets(4, 10, 4, 10))
 
-        centerBox.getChildren().add(2, stripNote)          // şeridin hemen altına
+        centerBox.getChildren().add(3, stripNote)          // bandın altına, histogramın üstüne
         centerBox.getChildren().add(0, dabWarnLabel)
         centerBox.getChildren().add(limitsPane)
 
@@ -892,7 +1081,7 @@ javafx.application.Platform.runLater {
         javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
         def liveBox = new javafx.scene.layout.VBox(2, liveChk, liveNote)
         liveNote.setMaxWidth(260)
-        def buttons = new javafx.scene.layout.HBox(10, liveBox, alwaysTop, spacer, resetBtn, saveBtn, closeBtn, applyBtn)
+        def buttons = new javafx.scene.layout.HBox(10, liveBox, alwaysTop, spacer, autoBtn, resetBtn, saveBtn, closeBtn, applyBtn)
         buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
 
         def disclaimer = new javafx.scene.control.Label('⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')

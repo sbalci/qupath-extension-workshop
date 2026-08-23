@@ -5,9 +5,18 @@
  *
  * NE YAPAR:
  *   Warpy (BIOP) ile hesaplanmış ESNEK (non-rigid) bir hizalama dönüşümünü
- *   kullanarak, bir KAYNAK slayttaki anotasyonları/tespitleri şu anki (HEDEF)
- *   slayda TEK TIKLA aktarır. Afin (§ Hizalama aktarımı) dönüşümün yetmediği,
- *   kesitler arası kırışma/gerilme olan durumlar içindir (hücre düzeyi doğruluk).
+ *   kullanarak, bir KAYNAK slayttaki üst düzey anotasyonları — VE içlerindeki
+ *   yuvalanmış tespitleri/hücreleri (alt nesneler özyinelemeli) — şu anki (HEDEF)
+ *   slayda TEK TIKLA aktarır. Yalnız "anotasyon" değil: bir anotasyonun içinde
+ *   hücre tespitleri varsa onlar da (ad/ID/ölçümleriyle) taşınır. Afin (§ Hizalama
+ *   aktarımı) yetmeyen, kesitler arası kırışma/gerilme olan durumlar içindir
+ *   (hücre düzeyi doğruluk).
+ *
+ *   İsteğe bağlı — aktarım sonrası "yoğunluk ölçümü ekle": aktarılan nesnelere
+ *   HEDEF slaytta o boyanın (İHK) sinyali ölçülür (Warpy, QuPath çekirdeği
+ *   ObjectMeasurements'ı sarmalar; parlak-alan boya ayrıştırmasını kendisi yapar;
+ *   downsample seçilebilir). ⚠️ Seri kesitte AYNI hücre iki slaytta olmadığından
+ *   HÜCRE düzeyi yeniden-ölçüm bir VEKİLDİR — bölge/anotasyon düzeyi ölçüm daha güvenlidir.
  *
  * ÖNEMLİ — KAYIT (registration) FIJI'DE YAPILIR, QuPath'te DEĞİL:
  *   Warpy'nin esnek dönüşümü Fiji'de hesaplanır (BigDataViewer-Playground +
@@ -274,8 +283,12 @@ javafx.application.Platform.runLater {
                     'Bu (HEDEF) slayt için kayıtlı Warpy dönüşümü bulunamadı. Önce Fiji\'de kaydı tamamlayıp bu slaydı açın.')
         })
 
-        def measChk = new javafx.scene.control.CheckBox('Aktarım sonrası yoğunluk ölçümü ekle (yavaş; hata verirse aktarım yine tamamlanır)')
+        def measChk = new javafx.scene.control.CheckBox('Aktarım sonrası HEDEF slaytta yoğunluk ölçümü ekle — aktarılan nesnelere hedef boyanın (İHK) sinyalini ölçer (yavaş; hata verirse aktarım yine tamamlanır)')
         measChk.setSelected(false); measChk.setWrapText(true)
+        def dsField = new javafx.scene.control.TextField('1'); dsField.setPrefColumnCount(4)
+        dsField.disableProperty().bind(measChk.selectedProperty().not())
+        def dsRow = new javafx.scene.layout.HBox(6, new javafx.scene.control.Label('   Ölçüm downsample (px; 1=tam çözünürlük, 2–4 daha hızlı):'), dsField)
+        dsRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
         def lockChk = new javafx.scene.control.CheckBox('Aktarılanları kilitle'); lockChk.setSelected(true)
 
         def status = new javafx.scene.control.Label(warpyOk ? 'Hazır.' : 'Warpy eklentisi gerekli.'); status.setWrapText(true); status.setMaxWidth(Double.MAX_VALUE)
@@ -289,8 +302,10 @@ javafx.application.Platform.runLater {
             if (!srcName) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Kaynak yok — önce Fiji\'de kaydı tamamlayıp "Kaynakları tazele"ye basın.'); return }
             def srcEntry = sourceEntries[srcName]
             aktarBtn.setDisable(true); status.setStyle(''); status.setText('Aktarılıyor…')
+            double ds = 1.0d
+            try { def _t = (dsField.getText() ?: '1').trim(); if (_t) ds = Math.max(1.0d, Double.parseDouble(_t)) } catch (ignore) {}
             def worker = new Thread({
-                def r = doTransfer(srcEntry, measChk.isSelected(), 1.0d, lockChk.isSelected())
+                def r = doTransfer(srcEntry, measChk.isSelected(), ds, lockChk.isSelected())
                 javafx.application.Platform.runLater {
                     aktarBtn.setDisable(false)
                     if (r.ok) {
@@ -354,7 +369,7 @@ javafx.application.Platform.runLater {
             stepHeader('④ QuPath\'e dön → anotasyonları aktar'),
             instr('HEDEF (sabit) slaydı QuPath\'te açın, "↻ Kaynakları tazele" deyin, kaynağı seçip "Anotasyonları aktar"a basın. Örtüşmeyi opaklık kaydırıcısıyla doğrulayın.'),
             srcRow, srcNote,
-            new javafx.scene.layout.VBox(4, measChk, lockChk),
+            new javafx.scene.layout.VBox(4, measChk, dsRow, lockChk),
             status)
 
         def disclaimer = new javafx.scene.control.Label('⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar; klinik karar üretmez.')
