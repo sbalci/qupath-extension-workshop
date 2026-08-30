@@ -213,6 +213,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Tümör tomurcuklanma kantifikasyonu (CK / ITBCC)", "yardimci-tumor-tomurcuklanma.groovy"),
             // WSInfer karo tespitlerini sınıf bazında ALAN (mm²) + %'ye toplar (çıkarım yapmaz). bkz. Ekler → WSInfer.
             new ScriptEntry("WSInfer karo özeti (sınıf alanı / %)", "yardimci-wsinfer-ozet.groovy"),
+            // Salt okunur denetim: eklenti kurulu mu, görüntü kalibre mi (kalibrasyonsuzda WSInfer
+            // karo boyutunu spacing_um_px / 1.0 ile hesaplar → sessizce yanlış büyütmede çıkarım),
+            // ve karolardaki GERÇEK sınıf adları (config.json class_names; "TUM" gibi kısaltmalar değil).
+            new ScriptEntry("WSInfer çıkarım denetimi (kurulum · kalibrasyon · sınıf adları)", "yardimci-wsinfer-denetim.groovy"),
             // Var olan karoları seçili ölçüme göre sıralayıp top-N'i çıkarır (Ki-67 LI, mitoz/mm² vb.). Rehber eşiği YOK.
             new ScriptEntry("Sıralı hotspot seçici (top-N)", "yardimci-hotspot-sirali.groovy"),
             // Sınıf bazlı entegre DAB OD = pozitif alan × ortalama OD (toplam kromojen yükü; kalibrasyona bağlı).
