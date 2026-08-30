@@ -764,7 +764,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
 
     @Override
     public Version getVersion() {
-        return Version.parse("0.2.2-rc4");
+        return Version.parse("0.2.2-rc5");
     }
 
     @Override
