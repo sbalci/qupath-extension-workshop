@@ -8,7 +8,7 @@
  *   PanNuke / CoNIC / MONKEY / PUMA çekirdek, MapDe) bir WSI üzerinde çalıştırır.
  *   Üç KAPSAM seçilebilir:
  *     • Anotasyon bölgesi — yalnız QuPath'te çizdiğiniz alan içinde (tek bölge),
- *     • Tüm görüntü       — açık slaydın tamamında (tüm-görüntü maskesi),
+ *     • Tüm görüntü       — açık slaytın tamamında (tüm-görüntü maskesi),
  *     • Tüm proje         — projedeki her görüntüde tek tek (sonuç her girdiye kaydedilir).
  *   Kapsam ikili (binary) bir maske PNG'sine rasterlenir → Python köprüsü
  *   (region_runner.py) `engine.run(masks=[...], auto_get_mask=False)` ile yalnız maske
@@ -40,7 +40,7 @@
  *   2. Bir slayt açın (tercihen OpenSlide ile); ilgi BÖLGESİNİ çizip seçin.
  *   3. [Extensions → Atölye → Yardımcılar → TIA Toolbox bölgede çekirdek/mitoz tespiti]
  *   4. İlk açılışta python.exe + region_runner.py otomatik bulunur (gerekirse Gözat).
- *   5. Model seçip "Çalıştır" → bölge maskesi yazılır, çıkarım koşar, sonuç içe alınır.
+ *   5. Model seçip "Çalıştır" → bölge maskesi yazılır, çıkarım çalışır, sonuç içe alınır.
  *
  * API: ROIs.createPointsROI + PathObjects.createAnnotationObject (QuPath 0.6.0+);
  *      GeoJSON ayrıştırma com.google.gson.JsonParser (QuPath 0.7 groovy.json içermez).
@@ -494,7 +494,7 @@ def runOnImageData = { imageData, cfg, model, List regionRois, Closure appendLin
                '--device', (cfg.device ?: 'cuda'),
                '--batch-size', String.valueOf(parseIntOr(cfg.batchSize, 8)),
                '--classes', model.classes.join(',')]
-    setPhase('Çıkarım koşuyor (2/2) — ' + model.name + '…')
+    setPhase('Çıkarım çalışıyor (2/2) — ' + model.name + '…')
     def r = runPython(cmd, appendLine)
     if (!r.ok) return [ok: false, error: 'Çıkarım başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')]
     def geo = outGeo
@@ -568,8 +568,8 @@ def startProjectRun = {
             appendLine('')
             appendLine('── [' + done + '/' + entries.size() + '] ' + nm + ' ──')
             // CANLI veriyi YALNIZ, KULLANIM ANINDA açık görüntü gerçekten bu girdiyse kullan.
-            // Pencere kipsiz (Modality.NONE) — kullanıcı koşu sürerken görüntü değiştirebilir;
-            // bu yüzden koşu başındaki bir anlık görüntüye GÜVENME. project.getEntry(liveCur)
+            // Pencere kipsiz (Modality.NONE) — kullanıcı çalıştırma sürerken görüntü değiştirebilir;
+            // bu yüzden çalıştırma başındaki bir anlık görüntüye GÜVENME. project.getEntry(liveCur)
             // ile, elde ettiğimiz ImageData nesnesinin gerçekten `entry`'ye ait olduğunu doğrula
             // (nesne referansını yakaladıktan sonra kullanıcı değiştirse bile referans sabittir).
             def liveData = null
@@ -732,7 +732,7 @@ render = { ->
             scopeRow.getChildren().addAll(new javafx.scene.control.Label('Kapsam:'), scopeChoice)
             center.getChildren().add(scopeRow)
             def scopeHint = (scope == 'annotation') ? 'Yalnız çizili/seçili alan(lar) içinde çalışır (tek bölge tespiti).'
-                          : (scope == 'image')      ? 'Açık slaydın TAMAMINDA çalışır (tüm-görüntü maskesi).'
+                          : (scope == 'image')      ? 'Açık slaytın TAMAMINDA çalışır (tüm-görüntü maskesi).'
                           :                            'Projedeki TÜM görüntülerde tek tek çalışır; sonuç her girdiye kaydedilir.'
             addGuidance('Kapsam — ' + scopeHint)
 
@@ -794,7 +794,7 @@ render = { ->
         }
     } else if (cur == 'RUN_RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('TIA Toolbox köprüsü koşuyor (ilk çalıştırmada model ağırlıkları indirilebilir). Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance('TIA Toolbox köprüsü çalışıyor (ilk çalıştırmada model ağırlıkları indirilebilir). Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
         center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {

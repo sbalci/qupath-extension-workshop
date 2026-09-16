@@ -323,7 +323,7 @@ rects.each { rectAnn ->
             throw new IllegalStateException("girdi projeye eklenemedi (addSingleImageToProject null döndü)")
         entry.setImageName(entryName)
         // Ad hemen kaydedilir (saveImageData'dan ÖNCE): aynı ada sahip ikinci bir
-        // dikdörtgen, ilki daha sonra başarısız olsa bile bu koşuda yakalanır.
+        // dikdörtgen, ilki daha sonra başarısız olsa bile bu çalıştırmada yakalanır.
         nameRecorded = existingNames.add(entryName)
         try {
             entry.setThumbnail(ProjectCommands.getThumbnailRGB(croppedServer))
@@ -333,7 +333,7 @@ rects.each { rectAnn ->
 
         int nCopied = 0
         // withCloseable: readImageData()'nın kendi içinde açtığı YENİ sunucu örneği
-        // kapatılır (görüntüleyicinin sunucusu değil) — koşu başına okuyucu sızmaz.
+        // kapatılır (görüntüleyicinin sunucusu değil) — çalıştırma başına okuyucu sızmaz.
         entry.readImageData().withCloseable { croppedImageData ->
             if (opts.copyAnnotations) {
                 // Kesişimi görüntü sınırına kırpılmış bölgeyle al — böylece kaydırma

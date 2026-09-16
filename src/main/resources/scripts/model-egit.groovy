@@ -10,7 +10,7 @@
  * seçili anotasyon sınırı içinde alan ölçümü için kullanılır.
  * Akış: birkaç eğitim bölgesi çiz → modeli eğit → ölçüm sınırını seç → ölç.
  *
- * ÖNKOŞUL — anotasyonlar:
+ * ÖN KOŞUL — anotasyonlar:
  *   1. H&E slaytı açık ve görüntü tipi Brightfield (H&E) olmalı (boya
  *      vektörleri tanımlı). Değilse: Yardımcılar → Görüntü tipi ayarla.
  *   2. Piksel boyutu (µm/px) kalibre olmalı. Değilse: Yardımcılar → Kalibrasyon.

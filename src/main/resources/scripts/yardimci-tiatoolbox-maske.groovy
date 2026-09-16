@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   Sınıflı anotasyonlardan, TÜM slaydı kaplayan TEK bir indeksli maske PNG'si
+ *   Sınıflı anotasyonlardan, TÜM slaytı kaplayan TEK bir indeksli maske PNG'si
  *   yazar (arka plan = 0, her sınıf = 1, 2, ...). Maske, bir Python derin öğrenme
  *   kütüphanesinde — özellikle TIA Toolbox `engine.run(masks=[maske.png], ...)` —
  *   çıkarımı yalnızca anote ettiğiniz bölgeyle sınırlamak için kullanılır.

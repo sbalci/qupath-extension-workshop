@@ -32,7 +32,7 @@
  *
  * KULLANIM:
  *   1. Hepatocyte Python ortamını kurun (①), depoyu indirin (②), modeli seçin (③).
- *   2. Yerel diskteki bir karaciğer H&E slaydı açın; segmentlemek istediğiniz bölge(ler)
+ *   2. Yerel diskteki bir karaciğer H&E slaytı açın; segmentlemek istediğiniz bölge(ler)
  *      için alan anotasyonu çizin.
  *   3. [Extensions → Atölye → Yardımcılar → Hücre/çekirdek tespiti → Hepatosit segmentasyonu sihirbazı]
  *   4. "Bağımlılık kontrolü" ile ortamı doğrulayın; "Segmentle" ile çalıştırın.
@@ -380,7 +380,7 @@ def launchBundledScript = { String resourceName ->
             if (url == null) url = this.getClass().getResource('/scripts/' + resourceName)
             if (url == null) {
                 javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
-                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri & temel modeller → Atölye Python ortam yöneticisi') }
+                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
                 return
             }
             def cl = this.getClass().getClassLoader()
@@ -615,6 +615,56 @@ def startRun = {
     worker.setDaemon(true); worker.start()
 }
 
+// ── Ortam yöneticisinden bu sihirbaza dönüş ──────────────────────────────────
+// "Python ortamı" düğmesi Atölye Python ortam yöneticisini bu kancayla (`atolyeReturnHook`) açar.
+// Kurulum bitince yöneticideki "Sihirbaza dön ▶" (ya da yönetici penceresini kapatmak) bu pencereyi
+// öne getirir, yapılandırmayı yeniden okur ve çalıştırma ekranına (READY) geçer. Çalışan bir işlem
+// sürerken ekran değiştirilmez; yalnız pencere öne gelir.
+def envReturnHook = [
+    envId   : 'hepatocyte',
+    wizard  : 'Hepatosit segmentasyonu',
+    onReturn: { reopen ->
+        javafx.application.Platform.runLater {
+            if (stage == null || (!stage.isShowing() && !reopen)) return
+            try {
+                if (step.get() == 'CONFIG') persistFields()
+                def savedPy = prefs.get(PREF_PYTHON, '')
+                if (savedPy?.trim() && !(new File(savedPy.trim())).isFile()) { prefs.remove(PREF_PYTHON); try { prefs.flush() } catch (Throwable ignore) {} }
+                if (['CONFIG_INCOMPLETE', 'CONFIG', 'READY', 'CHECK_DONE', 'ERROR'].contains(step.get())) {
+                    step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render()
+                }
+                if (stage.isIconified()) stage.setIconified(false)
+                if (!stage.isShowing()) stage.show()
+                stage.toFront(); stage.requestFocus()
+            } catch (Throwable t) {
+                Dialogs.showErrorMessage('Sihirbaza dönüş', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+            }
+        }
+    }
+]
+def launchEnvManager = { ->
+    new Thread({
+        try {
+            def res = 'yardimci-python-ortam-yoneticisi.groovy'
+            def url = null
+            try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + res) } catch (Throwable t) {}
+            if (url == null) url = this.getClass().getResource('/scripts/' + res)
+            if (url == null) {
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
+                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                return
+            }
+            def cl = this.getClass().getClassLoader()
+            try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
+            def shellBinding = new Binding()
+            shellBinding.setVariable('atolyeReturnHook', envReturnHook)
+            new GroovyShell(cl, shellBinding).evaluate(url.getText('UTF-8'), res)
+        } catch (Throwable t) {
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+        }
+    } as Runnable).start()
+}
+
 // ── Render: her durum değişiminde sahneyi sıfırdan kurar ────────────────────
 render = { ->
     if (stage == null) return
@@ -663,7 +713,7 @@ render = { ->
             '   → bakımcıdan edinin, sonra "③ Model seç" ile gösterin (genel indirme yok).')
         resArea.setEditable(false); resArea.setWrapText(false); resArea.setStyle(MONO); resArea.setPrefRowCount(8); resArea.setMaxHeight(180)
         center.getChildren().add(resArea)
-        actions.add(navButton('① Python ortamı', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') },
+        actions.add(navButton('① Python ortamı', { launchEnvManager() },
             'Atölye Python ortam yöneticisini açar → "Hepatocyte"yi kurun; python otomatik algılanır'))
         actions.add(navButton('② Depoyu indir', { installRepo() },
             'sbalci/hepatocyte-app ZIP indirir + açar, köprü betiğini otomatik ayarlar'))
@@ -718,10 +768,11 @@ render = { ->
         addLiveLog()
         actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
         actions.add(navButton('Kapat', { stage.close() }))
+        if (selftestOkRef.get()) actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, 'Kontrol tamam — bölgede çalıştırma ekranına döner'))
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce yerel diskteki bir karaciğer H&E slaydı açın ve segmentlemek istediğiniz bölge(ler) için alan anotasyonu çizin, sonra "⟳ Yenile".')
+            addGuidance('Önce yerel diskteki bir karaciğer H&E slaytı açın ve segmentlemek istediğiniz bölge(ler) için alan anotasyonu çizin, sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
@@ -751,7 +802,7 @@ render = { ->
         }
     } else if (cur == 'RUN_RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('Python köprüsü koşuyor (slaytı openslide ile açar, modeli çalıştırır). Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance('Python köprüsü çalışıyor (slaytı openslide ile açar, modeli çalıştırır). Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
         center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {

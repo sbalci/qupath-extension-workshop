@@ -127,7 +127,7 @@ String scope
 if (isHeadless) {
     scope = defScope
 } else {
-    scope = Dialogs.showChoiceDialog("Koşu manifesti — kapsam",
+    scope = Dialogs.showChoiceDialog("İşlem kaydı — kapsam",
         "Manifest hangi kapsamda oluşturulsun?", scopeOpts, defScope)
     if (scope == null) { println "İptal edildi."; return }
 }
@@ -137,7 +137,7 @@ try { prefs.flush() } catch (Throwable ig) {}
 // ── Kullanıcı notu ────────────────────────────────────────────────────────────
 String userNote = ''
 if (!isHeadless) {
-    def noteInput = Dialogs.showInputDialog("Koşu manifesti — not",
+    def noteInput = Dialogs.showInputDialog("İşlem kaydı — not",
         "İsteğe bağlı not (ör. kullanılan parametre seti, analiz amacı):", prefs.get('lastNote', ''))
     if (noteInput != null) {
         userNote = noteInput.trim()

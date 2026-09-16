@@ -5,11 +5,18 @@
  *
  * NE YAPAR:
  *   QuPath'te ÇİZDİĞİNİZ alan anotasyonu içinde SEÇİLEN mitoz DEDEKTÖRLERİNİ (KongNet
- *   MIDOG ve/veya MIDOG25 FCOS) — YALNIZ orada — sırayla çalıştırır ve tespitlerini
- *   KARŞILAŞTIRIR. Her modelin mitozları AYRI renk/sınıfta nokta-anotasyonu olarak eklenir
- *   (Mitoz — KongNet = kırmızı, Mitoz — FCOS = mavi). Sonra modeller-arası UZLAŞI hesaplanır:
- *   birbirine R µm'den yakın noktalar EŞLEŞMİŞ sayılır (tek-bağ kümeleme) → model-başı sayım,
- *   ikili uyum oranı ve KONSENSÜS kümesi (≥K modelde bulunan mitozlar).
+ *   MIDOG, MIDOG25 FCOS, 2021 RetinaNet; isteğe bağlı HoVer-NeXt mitoz sınıfı) — YALNIZ
+ *   orada — sırayla çalıştırır ve tespitlerini KARŞILAŞTIRIR. Her modelin mitozları AYRI
+ *   renk/sınıfta nokta-anotasyonu olarak eklenir (Mitoz — KongNet = kırmızı, Mitoz — FCOS =
+ *   mavi, Mitoz — RetinaNet = mor, Mitoz — HoVer-NeXt = turuncu). Sonra modeller-arası UZLAŞI
+ *   hesaplanır: birbirine R µm'den yakın noktalar EŞLEŞMİŞ sayılır (tek-bağ kümeleme) →
+ *   model-başı sayım, ikili uyum oranı ve KONSENSÜS kümesi (çalışan TÜM modellerde bulunanlar).
+ *
+ * HoVer-NeXt NOTU:
+ *   HoVer-NeXt bir mitoz DEDEKTÖRÜ DEĞİLDİR — 7 sınıflı çekirdek sınıflandırıcısının "mitosis"
+ *   sınıfıdır; kolorektal (Lizard) eğitimlidir ve yayımlanmış mitoza-özel metriği yoktur.
+ *   Bu yüzden KATILIMI İSTEĞE BAĞLIDIR (varsayılan işaretsiz; eklemek konsensüsü daraltır),
+ *   kalibrasyon ister (ölçek-duyarlı), ortak eşiği kullanmaz ve yalnız CUDA GPU ile çalışır.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Modeller-ARASI UYUM (aynı yeri kaç model buldu). Bu bir DOĞRULUK ölçüsü DEĞİLDİR —
@@ -23,7 +30,7 @@
  *   ortam yöneticisi ("TIA Toolbox — bölge modelleri" ve "MIDOG25 FCOS — mitoz dedektörü").
  *
  * KULLANIM:
- *   1. H&E slaydını açın; piksel boyutu (µm/px) kalibre olsun.
+ *   1. H&E slaytını açın; piksel boyutu (µm/px) kalibre olsun.
  *   2. İlgi ALANINI anotasyon olarak çizin ve SEÇİN.
  *   3. Karşılaştırılacak modelleri işaretleyin → "Karşılaştır".
  *
@@ -93,6 +100,22 @@ def DETECTORS = [
                    '--origin', art.origin, '--downsample', art.downsample,
                    '--device', device, '--batch-size', '8']
           if (thr != null) { c.add('--det-thresh'); c.add(String.format(java.util.Locale.US, '%.4f', thr)) }
+          return c } ],
+    // HoVer-NeXt: MİTOZ DEDEKTÖRÜ DEĞİL — 7 sınıflı çekirdek sınıflandırıcısının "mitosis" sınıfı.
+    // optIn: varsayılan İŞARETSİZ (konsensüs = çalışan TÜM modeller; eklemek konsensüsü daraltır).
+    // needsCalibration: ölçek-duyarlı (0.5 µm/px + piksel-tabanlı boyut eşikleri) → kalibrasyonsuz devre dışı;
+    // köprü ayrıca --mpp bandı dışında reddeder. usesThreshold: false → ortak eşik uygulanmaz (sınıf argmax).
+    [ id:'hovernext', label:'HoVer-NeXt Lizard — mitoz SINIFI (çekirdek sınıflandırıcı)', envId:'hovernext',
+      runnerRel:'python/hovernext/hovernext_runner.py', inputKind:'roi',
+      cls:'Mitoz — HoVer-NeXt', color:[255, 140, 0],
+      optIn:true, needsCalibration:true, usesThreshold:false,
+      caveat:'kolorektal (Lizard) eğitimli çekirdek sınıflandırıcısı; yayımlanmış mitoza-özel metrik YOK; ortak eşik uygulanmaz; yalnız CUDA GPU',
+      buildCmd:{ py, runner, art, outGeo, device, thr ->
+          def model = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/hovernext').get('model', 'lizard_convnextv2_large')
+          def c = [py, runner, 'detect', '--roi', art.roi, '--out', outGeo,
+                   '--origin', art.origin, '--downsample', art.downsample,
+                   '--model', model, '--mode', 'points', '--classes', 'mitosis', '--device', device]
+          if (art.mpp) { c.add('--mpp'); c.add(art.mpp) }
           return c } ],
 ]
 
@@ -347,7 +370,7 @@ def launchBundledScript = { String resourceName ->
             def url = null
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + resourceName) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + resourceName)
-            if (url == null) { javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri & temel modeller → Atölye Python ortam yöneticisi') }; return }
+            if (url == null) { javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }; return }
             def cl = this.getClass().getClassLoader()
             try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
             new GroovyShell(cl).evaluate(url.getText('UTF-8'), resourceName)
@@ -373,8 +396,15 @@ def saveLogInteractive = {
     } catch (Throwable t) { Dialogs.showErrorMessage('Günlük', 'Kaydedilemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName())) }
 }
 
+// Süreç AĞACINI sonlandır: bazı köprüler (HoVer-NeXt) modeli ayrı bir alt süreçte çalıştırır;
+// yalnız köprüyü öldürmek GPU'da çalışan torun süreçleri (özellikle Windows'ta) yetim bırakır.
+def killTree = { proc ->
+    if (proc == null) return
+    try { proc.descendants().forEach({ h -> try { h.destroyForcibly() } catch (Throwable ignore) {} } as java.util.function.Consumer) } catch (Throwable ignore) {}
+    try { proc.destroyForcibly() } catch (Throwable ignore) {}
+}
 def runPython = { List cmd, Closure onLine ->
-    def pb = new ProcessBuilder(cmd); pb.redirectErrorStream(true); applyCacheEnv(pb)
+    def pb = new ProcessBuilder(cmd.collect { it.toString() }); pb.redirectErrorStream(true); applyCacheEnv(pb)
     def proc
     try { proc = pb.start() } catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
     processRef.set(proc)
@@ -386,9 +416,9 @@ def runPython = { List cmd, Closure onLine ->
         reader.close()
     } catch (Throwable ignore) {}
     boolean finished
-    try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) } catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: 'Zaman aşımı'] }
-    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) } catch (InterruptedException ie) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    if (!finished) { killTree(proc); return [ok: false, exitCode: -2, error: 'Zaman aşımı'] }
+    if (cancelledRef.get()) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
     int code = proc.exitValue()
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
@@ -414,7 +444,7 @@ def startRun = { List chosen, String device, double radiusUm, Double thr ->
     def workDir = resolveWorkDir(imageData); workDir.mkdirs()
     def base = imageNameOf(imageData)
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
-    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO); logAreaRef.set(la)
+    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO); logAreaRef.set(la)
     runPhaseRef.set('Hazırlanıyor…'); step.set('RUN_RUNNING'); render()
 
     def worker = new Thread({
@@ -436,17 +466,23 @@ def startRun = { List chosen, String device, double radiusUm, Double thr ->
                 def ei = exportRegionImage(imageData, workDir, TARGET_MPP, regionRois, cal, ROI_WARN_PX, appendLine)
                 if (!ei.ok) { javafx.application.Platform.runLater { errorTextRef.set(ei.error); step.set('ERROR'); render() }; return }
                 art.roi = ei.file.getAbsolutePath(); art.origin = (ei.originX + ',' + ei.originY); art.downsample = String.format(java.util.Locale.US, '%.6f', (double) ei.downsample)
+                // ROI'nin ETKİN µm/px'i — ölçek-duyarlı köprüler (HoVer-NeXt) bunu doğrular; kalibrasyonsuzsa boş.
+                art.mpp = (cal != null) ? String.format(java.util.Locale.US, '%.6f', ((cal.pw + cal.ph) / 2.0d) * (double) ei.downsample) : ''
             }
 
             def perModel = [:]   // modelIdx -> coords
             def counts = [:]     // id -> count
             chosen.eachWithIndex { d, mi ->
                 if (cancelledRef.get()) return
+                if (d.needsCalibration && cal == null) {   // savunma: READY'de zaten devre dışı
+                    appendLine('▶ ' + d.label); appendLine('  ✗ atlandı — piksel boyutu kalibre değil (ölçek-duyarlı model).'); counts[d.id] = -1; return
+                }
                 setPhase('Çalışıyor: ' + d.label + '…')
                 def py = detectPythonFor(d.envId); def rn = detectRunnerFor(d.runnerRel)
                 def outGeo = new File(workDir, base + '_' + d.id + '_mitoz.geojson')
                 def cmd = d.buildCmd(py, rn, art, outGeo.getAbsolutePath(), device, thr)
                 appendLine('▶ ' + d.label)
+                if (thr != null && d.usesThreshold == false) appendLine('  (ortak duyarlılık eşiği bu modele uygulanmaz — sınıf kararı eşiksizdir)')
                 def r = runPython(cmd, appendLine)
                 if (!r.ok) { appendLine('  ✗ ' + d.label + ' başarısız (çıkış ' + r.exitCode + ') — atlanıyor.'); counts[d.id] = -1; return }
                 def geo = outGeo
@@ -494,6 +530,7 @@ def startRun = { List chosen, String device, double radiusUm, Double thr ->
                     sb << "Model başı mitoz:\n"
                     chosen.eachWithIndex { d, mi -> def cnt = counts[d.id]; sb << "  • " << d.label << " : " << (cnt != null && cnt >= 0 ? ('' + cnt) : 'BAŞARISIZ') << "\n" }
                     sb << "\nKonsensüs (≥" << K << " model, aynı noktada): " << consensus << "\n"
+                    chosen.eachWithIndex { d, mi -> if (d.caveat && perModel.containsKey(mi)) sb << "⚠ " << d.label << ": " << d.caveat << " — konsensüse katılması onu daraltır.\n" }
                     if (runIdx.size() >= 2) {
                         sb << "\nİkili uyum (eşleşen / birleşik):\n"
                         for (int a = 0; a < runIdx.size(); a++) {
@@ -523,6 +560,67 @@ def startRun = { List chosen, String device, double radiusUm, Double thr ->
     worker.setDaemon(true); worker.start()
 }
 
+// ── Ortam yöneticisinden bu sihirbaza dönüş ──────────────────────────────────
+// "⚙ Python ortamı" yöneticiyi bu kancayla (`atolyeReturnHook`) açar; eksik (zorunlu olmayan HoVer-NeXt
+// hariç) dedektör ortamları vurgulanır. Kurulum bitince yöneticideki "Sihirbaza dön ▶" (ya da yönetici
+// penceresini kapatmak) bu pencereyi öne getirir ve model listesini yeniden çizer. Karşılaştırma
+// çalışırken ekran değiştirilmez; yalnız pencere öne gelir.
+def envReturnHook = [
+    wizard  : 'Mitoz modelleri karşılaştırma',
+    onReturn: { reopen ->
+        javafx.application.Platform.runLater {
+            if (stage == null || (!stage.isShowing() && !reopen)) return
+            try {
+                if (step.get() == 'READY' && deviceChoiceRef.get() != null) persistFields()
+                if (['READY', 'ERROR'].contains(step.get())) { step.set('READY'); render() }
+                if (stage.isIconified()) stage.setIconified(false)
+                if (!stage.isShowing()) stage.show()
+                stage.toFront(); stage.requestFocus()
+            } catch (Throwable t) {
+                Dialogs.showErrorMessage('Sihirbaza dönüş', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+            }
+        }
+    }
+]
+def launchEnvManager = { ->
+    def hook = envReturnHook + [envIds: DETECTORS.findAll { !it.optIn && !detectorReady(it) }.collect { it.envId }.unique()]
+    new Thread({
+        try {
+            def res = 'yardimci-python-ortam-yoneticisi.groovy'
+            def url = null
+            try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + res) } catch (Throwable t) {}
+            if (url == null) url = this.getClass().getResource('/scripts/' + res)
+            if (url == null) {
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
+                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                return
+            }
+            def cl = this.getClass().getClassLoader()
+            try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
+            def shellBinding = new Binding()
+            shellBinding.setVariable('atolyeReturnHook', hook)
+            new GroovyShell(cl, shellBinding).evaluate(url.getText('UTF-8'), res)
+        } catch (Throwable t) {
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+        }
+    } as Runnable).start()
+}
+// ── Mitoz modelleri listesine dön ─────────────────────────────────────────────
+// "◀ Mitoz listesi": bu pencereyi kapatır ve "Mitoz modelleri listesi"ni açar (başka bir model
+// başlatmak için). Liste betiği bulunamazsa pencere açık kalır.
+def openMitosisHub = { ->
+    def hubScript = 'yardimci-mitoz-merkez.groovy'
+    def url = null
+    try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + hubScript) } catch (Throwable t) {}
+    if (url == null) url = this.getClass().getResource('/scripts/' + hubScript)
+    if (url == null) {
+        Dialogs.showInfoNotification('Mitoz modelleri listesi', 'Menüden açın: Extensions → Atölye → Modüller → Mitoz tespiti → Mitoz modelleri listesi')
+        return
+    }
+    launchBundledScript(hubScript)
+    if (stage != null) stage.close()
+}
+
 // ── Render ───────────────────────────────────────────────────────────────────
 render = { ->
     if (stage == null) return
@@ -539,14 +637,14 @@ render = { ->
         lbl.sceneProperty().addListener({ obs, o, sc -> if (sc != null) { try { lbl.maxWidthProperty().unbind() } catch (Throwable ig) {}; lbl.maxWidthProperty().bind(sc.widthProperty().subtract(38)) } } as javafx.beans.value.ChangeListener)
     }
     def addGuidance = { String txt -> def lbl = new javafx.scene.control.Label(txt); wrapBind(lbl); center.getChildren().add(lbl) }
-    def addMonoArea = { String txt -> def ta = new javafx.scene.control.TextArea(txt ?: ''); ta.setEditable(false); ta.setWrapText(false); ta.setStyle(MONO); javafx.scene.layout.VBox.setVgrow(ta, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(ta) }
+    def addMonoArea = { String txt -> def ta = new javafx.scene.control.TextArea(txt ?: ''); ta.setEditable(false); ta.setWrapText(true); ta.setStyle(MONO); javafx.scene.layout.VBox.setVgrow(ta, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(ta) }
     def addWarnLabel = { String txt -> def lbl = new javafx.scene.control.Label(txt); wrapBind(lbl); lbl.setStyle('-fx-text-fill: #b8860b; -fx-font-weight: bold;'); center.getChildren().add(lbl) }
     def addLiveLog = { -> def la = logAreaRef.get(); if (la != null) { javafx.scene.layout.VBox.setVgrow(la, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(la) } }
 
     if (cur == 'READY') {
         title.setText('Mitoz modelleri karşılaştırma')
         if (imageData == null) {
-            addGuidance('Önce bir H&E slaydı açın, ilgi ALANINI çizip seçin, sonra "⟳ Yenile".')
+            addGuidance('Önce bir H&E slaytı açın, ilgi ALANINI çizip seçin, sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() })); actions.add(navButton('⟳ Yenile', { render() }))
         } else {
             def targets = regionAnnotationsOf(imageData); def cal = pixelMicrons(imageData)
@@ -556,9 +654,15 @@ render = { ->
             def box = new javafx.scene.layout.VBox(4)
             DETECTORS.each { d ->
                 boolean ready = detectorReady(d)
-                def cb = new javafx.scene.control.CheckBox(d.label + (ready ? '' : '  (kurulu değil)'))
-                cb.setDisable(!ready)
-                cb.setSelected(ready && (prevSel.isEmpty() ? true : prevSel.contains(d.id)))
+                boolean calBlocked = (d.needsCalibration && cal == null)
+                def text = d.label + (ready ? '' : '  (kurulu değil)') + (calBlocked ? '  (kalibrasyon gerekli)' : '') +
+                           (d.caveat ? ('\n      ⚠ ' + d.caveat) : '')
+                def cb = new javafx.scene.control.CheckBox(text)
+                cb.setWrapText(true); cb.setMaxWidth(Double.MAX_VALUE)
+                cb.setDisable(!ready || calBlocked)
+                // İsteğe bağlı (optIn) modeller ilk açılışta İŞARETSİZ; sonrasında son seçim hatırlanır.
+                boolean wanted = prevSel.isEmpty() ? !d.optIn : prevSel.contains(d.id)
+                cb.setSelected(ready && !calBlocked && wanted)
                 chks[d.id] = cb; box.getChildren().add(cb)
             }
             selChkRefs.set(chks); center.getChildren().add(box)
@@ -572,13 +676,13 @@ render = { ->
             qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Eşleşme yarıçapı (µm):'), radiusField)
             qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Ortak duyarlılık eşiği:'), threshField)
             center.getChildren().add(grid)
-            addGuidance('Eşleşme yarıçapı: iki modelin noktaları bu mesafeden (µm) yakınsa "aynı mitoz" sayılır (varsayılan ~10 µm). Ortak duyarlılık: boşsa her model kendi varsayılan eşiğini kullanır (KongNet 0.99 çok tutucudur → adil karşılaştırma için ör. 0.5 girin, iki modele de uygulanır).')
+            addGuidance('Eşleşme yarıçapı: iki modelin noktaları bu mesafeden (µm) yakınsa "aynı mitoz" sayılır (varsayılan ~10 µm). Ortak duyarlılık: boşsa her model kendi varsayılan eşiğini kullanır (KongNet 0.99 çok tutucudur → adil karşılaştırma için ör. 0.5 girin; eşik kullanan tüm dedektörlere uygulanır). HoVer-NeXt isteğe bağlıdır: mitoz dedektörü değil, çekirdek sınıflandırıcısıdır — eşik uygulanmaz, kalibrasyon ister ve eklenirse konsensüs (çalışan tüm modellerde bulunanlar) daralır.')
             def infoLbl = new javafx.scene.control.Label(String.format(java.util.Locale.US, 'Seçili bölge: %d anotasyon · Kalibrasyon: %s', targets.size(), (cal != null ? String.format(java.util.Locale.US, '%.3f µm/px', (cal.pw + cal.ph) / 2.0) : 'KALİBRE DEĞİL')))
             infoLbl.setStyle('-fx-opacity: 0.85;'); center.getChildren().add(infoLbl)
             if (targets.size() < 1) addWarnLabel('⚠ Önce en az 1 alan anotasyonu çizin/seçin.')
             if (cal == null) addWarnLabel('⚠ Kalibrasyon yok — FCOS native çözünürlükte çalışır ve yarıçap piksel varsayımıyla hesaplanır.')
             actions.add(navButton('Kapat', { stage.close() }))
-            if (DETECTORS.any { !detectorReady(it) }) actions.add(navButton('⚙ Python ortamı', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') }, 'Atölye Python ortam yöneticisini aç (eksik modelleri kur)'))
+            if (DETECTORS.any { !detectorReady(it) }) actions.add(navButton('⚙ Python ortamı', { launchEnvManager() }, 'Atölye Python ortam yöneticisini aç (eksik modelleri kur)'))
             actions.add(navButton('⟳ Yenile', { render() }))
             def runBtn = navButton('Karşılaştır ▶', {
                 persistFields()
@@ -594,9 +698,9 @@ render = { ->
         }
     } else if (cur == 'RUN_RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('Modeller sırayla koşuyor (her biri ilk çalıştırmada ağırlık indirmiş olmalı).')
+        addGuidance('Modeller sırayla çalışıyor (her biri ilk çalıştırmada ağırlık indirmiş olmalı).')
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton('İptal et', { cancelledRef.set(true); killTree(processRef.get()) }))
         actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
     } else if (cur == 'RESULT') {
         title.setText('Karşılaştırma tamam ✅'); addMonoArea(resultTextRef.get())
@@ -616,7 +720,10 @@ render = { ->
     topChk.selectedProperty().addListener({ obs, o, n -> alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
     def spacer = new javafx.scene.layout.Region(); javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
     def bar = new javafx.scene.layout.HBox(8); bar.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
-    bar.getChildren().add(topChk); bar.getChildren().add(spacer); bar.getChildren().addAll(actions)
+    bar.getChildren().add(topChk)
+    // Çalışan işlem yokken: bu pencereyi kapatıp mitoz modelleri listesine dön (başka bir model başlatmak için).
+    if (!['RUN_RUNNING', 'CHECK_RUNNING', 'DL_RUNNING', 'BUSY'].contains(cur)) bar.getChildren().add(navButton('◀ Mitoz listesi', { openMitosisHub() }, 'Bu pencereyi kapatıp mitoz modelleri listesini açar — başka bir model başlatmak için'))
+    bar.getChildren().add(spacer); bar.getChildren().addAll(actions)
     def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı UYUM ölçüsü üretir; doğruluk/klinik karar üretmez.')
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')

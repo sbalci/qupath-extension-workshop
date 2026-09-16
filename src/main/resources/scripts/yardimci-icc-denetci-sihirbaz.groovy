@@ -32,7 +32,7 @@
  * KULLANIM:
  *   1. Bir slayt açın (yerel TIFF/SVS dosyası).
  *   2. [Extensions → Atölye → Yardımcılar → ICC renk profili denetçisi]
- *   3. "Bu slaydı denetle" → raporu inceleyin / panoya kopyalayın.
+ *   3. "Bu slaytı denetle" → raporu inceleyin / panoya kopyalayın.
  *
  * AYRINTI:
  *   Ekler → Renk Yönetimi (ICC). Arka plan: petebankhead/ICC-Profiles,
@@ -294,7 +294,7 @@ def buildReport = { String imageName, String path, Map g ->
     return sb.toString()
 }
 
-// ── Headless: açık slaydı oku, raporu yazdır (UI yok, değişiklik yok) ─────────
+// ── Headless: açık slaytı oku, raporu yazdır (UI yok, değişiklik yok) ─────────
 if (isHeadless) {
     def imageData = QP.getCurrentImageData()
     if (imageData == null) { println 'Önce bir slayt açın (headless modda yalnız açık slayt denetlenir).'; return }
@@ -329,7 +329,7 @@ def copyToClipboard = { String txt ->
     cb.setContent(content)
 }
 
-// ── Açık slaydı arka planda denetle ──────────────────────────────────────────
+// ── Açık slaytı arka planda denetle ──────────────────────────────────────────
 def startInspect = {
     def imageData = QP.getCurrentImageData()
     if (imageData == null) { errorTextRef.set('Açık slayt yok. Önce bir TIFF/SVS slaytı açın.'); step.set('ERROR'); render(); return }
@@ -376,7 +376,7 @@ render = { ->
             '→ aynı slayt iki yazılımda farklı renkte görünür. Bu araç hangi durumun geçerli olduğunu gösterir.')
         if (imageData == null) addGuidance('⚠ Açık slayt yok. Önce yerel bir TIFF/SVS slaytı açın.')
         actions.add(navButton('Kapat', { stage.close() }))
-        def go = navButton('Bu slaydı denetle ▶', { startInspect() }, 'Açık slaytın dosyasında gömülü ICC profilini arar')
+        def go = navButton('Bu slaytı denetle ▶', { startInspect() }, 'Açık slaytın dosyasında gömülü ICC profilini arar')
         go.setDisable(imageData == null)
         actions.add(go)
     } else if (cur == 'SCANNING') {

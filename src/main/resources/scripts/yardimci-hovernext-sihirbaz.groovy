@@ -1,53 +1,52 @@
 /**
- * Modül - Mitoz tespiti (MIDOG 2025 Track-1 FCOS, bölgede canlı)
- * -------------------------------------------------------------
+ * Yardımcı - HoVer-NeXt çekirdek segmentasyonu + sınıflandırma (Lizard, 7 sınıf; bölgede)
+ * ----------------------------------------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   QuPath'te ÇİZDİĞİNİZ alan anotasyonu içinde — ve YALNIZ orada — DeepMicroscopy'nin
- *   **MIDOG 2025 Görev 1 resmî referans** dedektörünü (torchvision FCOS + ResNeXt101)
- *   canlı çalıştırır. Sihirbaz seçili bölgeyi hedef çözünürlükte (varsayılan 0.5 µm/px)
- *   bir ROI görüntüsü olarak dışa aktarır → Python köprüsü (midog/fcos_runner.py) 1024
- *   döşemeli FCOS çıkarımını yapar → mitotik figür merkezleri TABAN-piksel koordinatlarında
- *   GeoJSON olarak geri alınır, bölgeye göre filtrelenir, "Mitosis" nokta-anotasyonu olarak
- *   eklenir ve SAYIM + YOĞUNLUK üretilir: mitoz/mm² ve (ROI ~2 mm² ise) gözlenen mitoz/2 mm².
+ *   QuPath'te ÇİZDİĞİNİZ alan anotasyonu içinde — ve YALNIZ orada — HoVer-NeXt'i (Baumann ve
+ *   ark., MIDL 2024) çalıştırır: her çekirdeği SEGMENTE eder ve 7 sınıftan birine atar
+ *   (nötrofil, epitel hücresi, lenfosit, plazma hücresi, eozinofil, bağ dokusu hücresi, mitoz).
+ *   Sihirbaz bölgeyi 0.5 µm/px'te bir PNG ROI olarak dışa aktarır → Python köprüsü
+ *   (hovernext/hovernext_runner.py) HoVer-NeXt'i AYRI bir süreç olarak çalıştırır → çekirdek
+ *   konturları TABAN-piksel koordinatlarında geri alınır, bölgeye göre filtrelenir, sınıflı
+ *   TESPİT (detection) nesneleri olarak eklenir ve sınıf başına SAYIM + % + YOĞUNLUK üretilir.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
- *   • Seçili alandaki FCOS-tespitli mitoz noktalarının SAYIM ve YOĞUNLUĞU. Bu bir
- *     SAYIM/YOĞUNLUKtur — mitoz derecesi, grade eşiği veya klinik yorum DEĞİL.
- *   • FCOS doğrudan H&E üzerinde çalışır. Çıktı bir derin öğrenme tahminidir; alan
- *     kayması / genelleme sınırları için "Yapay Zekâ Araçlarını Değerlendirme" ekine
- *     bakın. Tahminleri görsel doğrulayın.
+ *   • Seçili alandaki model-tespitli çekirdeklerin sınıf başına sayımı, yüzdesi ve yoğunluğu
+ *     (çekirdek/mm²). Klinik kategori, derece veya yorum ÜRETMEZ.
+ *   • Lizard modeli KOLOREKTAL H&E ile eğitildi; başka dokulara genelleme doğrulanmamıştır.
+ *   • Mitoz sınıfı pHH3 destekli etiketlerle eğitildi; yayımlanmış MİTOZA-ÖZEL başarım metriği
+ *     YOKTUR. Mitoz sayımı için Modüller → Mitoz tespiti dedektörleri esastır.
  *
- * AĞIRLIK + KOD LİSANSI:
- *   FCOS_x101.ckpt (v1.0.0 yayını) ve MIDOG25_T1_reference_docker referans KODU (sabit
- *   commit) ÇALIŞMA ANINDA indirilir; depoda/JAR'da PAKETLENMEZ. Köprü model kurulumu ve
- *   döşemeli çıkarım için referans kodunu değiştirmeden import eder (kopyası taşınmaz).
- *   Kaynak deponun LİSANS dosyası yok → araştırma/eğitim amaçlı, kullanıcı sorumluluğunda.
- *   Atıf: MIDOG 2025, DeepMicroscopy.
+ * LİSANS SINIRI:
+ *   HoVer-NeXt kodu GPL-3.0 (bu eklenti Apache-2.0) → kod PAKETLENMEZ/KOPYALANMAZ; sabit commit
+ *   çalışma anında indirilir ve yalnız ayrı süreç olarak çalıştırılır. Ağırlıklar Zenodo
+ *   10635618, CC BY-NC-SA 4.0 (ticari olmayan) — çalışma anında indirilir, MD5 doğrulanır.
  *
  * ÇALIŞMA ZAMANI:
- *   torch + torchvision + SimpleITK + pyyaml ortamı (env id: midog-fcos) + midog/fcos_runner.py köprüsü.
- *   Yoksa: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam
- *   yöneticisi → "MIDOG25 FCOS — mitoz dedektörü".
+ *   NVIDIA CUDA GPU ZORUNLU. Python ortamı (env id: hovernext; torch 2.1.1 + CUDA 12.1) +
+ *   hovernext/hovernext_runner.py köprüsü. Kurulum: Extensions → Atölye → Yardımcılar →
+ *   Python köprüleri → Atölye Python ortam yöneticisi → "HoVer-NeXt — çekirdek segmentasyon + 7 sınıf".
  *
  * KULLANIM:
- *   1. H&E slaytını açın; piksel boyutu (µm/px) kalibre olsun.
- *   2. İlgi ALANINI anotasyon olarak çizin ve SEÇİN (ör. 10 BBA sıcak-nokta).
- *   3. Bu modülü çalıştırın → "Bölgede çalıştır".
+ *   1. H&E slaytını açın; piksel boyutu (µm/px) KALİBRE olmalı (kalibrasyonsuz çalıştırılmaz).
+ *   2. İlgi ALANINI anotasyon olarak çizin ve SEÇİN.
+ *   3. Bu sihirbazı çalıştırın → (ilk kez) Yapılandır → "Modeli yerel indir" → "Bölgede çalıştır".
  *
  * ÇIKTI:
- *   • Her mitoz için "Mitosis" sınıflı nokta-anotasyonu ("FCOS mitoz #i")
- *   • Her seçili anotasyona: "Mitoz (FCOS)" + "Mitoz yoğunluğu (mitoz/mm2)"
- *   • Kilitli "FCOS MIDOG25 mitoz özeti" anotasyonu (Veri dışa aktarma ile dışa aktarılır)
+ *   • Her çekirdek için "<Sınıf> (HoVer-NeXt)" sınıflı poligon TESPİTİ + "Çekirdek alanı (µm2)"
+ *   • Her seçili anotasyona: sınıf başına "(n)", "(%)", "(/mm2)" ölçümleri
+ *   • Kilitli "HoVer-NeXt çekirdek sınıfları özeti" anotasyonu (Veri dışa aktarma ile dışa aktarılır)
  *
  * YÖNTEM / KAYNAK REFERANSLARI:
- *   • MIDOG 2025 Track-1 resmî referansı (FCOS-ResNeXt101, det_thresh 0.548, 1024 döşeme):
- *     https://github.com/DeepMicroscopy/MIDOG25_T1_reference_docker
- *   • Alan-tabanlı mitoz birimi (mitoz/2 mm²): bkz. PHH3 Mitoz eki (Dessauvagie 2015).
+ *   • Baumann E ve ark., HoVer-NeXt, MIDL 2024 (PMLR 250): https://proceedings.mlr.press/v250/baumann24a.html
+ *   • Kod: https://github.com/digitalpathologybern/hover_next_inference (GPL-3.0)
+ *   • Ağırlık: https://zenodo.org/records/10635618 (CC BY-NC-SA 4.0)
+ *   • Lizard veri seti: Graham S ve ark., ICCV Workshops 2021 (kolorektal çekirdek sınıfları).
  *
  * API: RegionRequest.createInstance + ImageServer.readRegion (bölge dışa aktarma);
- *      ROIs.createPointsROI + PathObjects.createAnnotationObject (QuPath 0.6.0+);
+ *      ROIs.createPolygonROI + PathObjects.createDetectionObject (QuPath 0.6.0+);
  *      GeoJSON ayrıştırma com.google.gson.JsonParser (QuPath 0.7 groovy.json içermez).
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
@@ -57,7 +56,6 @@ import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import qupath.lib.objects.PathObjects
 import qupath.lib.roi.ROIs
-import qupath.lib.geom.Point2
 import qupath.lib.regions.ImagePlane
 import qupath.lib.regions.RegionRequest
 import com.google.gson.JsonParser
@@ -69,50 +67,65 @@ def isHeadless = gui == null
 // ── Sabitler ───────────────────────────────────────────────────────────────
 long PYTHON_TIMEOUT_SECONDS = 3600L
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
-def SUMMARY_NAME    = 'FCOS MIDOG25 mitoz özeti'
-// ── Model (mitoz-özel, sabit) ────────────────────────────────────────────────
-// MIDOG 2025 Görev 1 resmî referansı: torchvision FCOS + ResNeXt101. TABAN-piksel
-// nokta çıktısı; ağırlık (FCOS_x101.ckpt) çalışma anında indirilir (paketlenmez).
-def MODEL          = 'FCOS-ResNeXt101 (MIDOG25 Track-1)'
-def ENV_ID         = 'midog-fcos'
-def MITOSIS_CLASS  = 'Mitosis'                 // içe alınan nokta-anotasyonu sınıfı (paylaşılan sözleşme)
-def MITOSIS_PREFIX = 'FCOS mitoz'              // nokta-anotasyonu ad öneki
-def WEIGHTS_NAME   = 'FCOS_x101.ckpt'
-double TARGET_MPP  = 0.5        // FCOS'a beslenecek hedef çözünürlük (MIDOG kanonik; KongNet ile tutarlı)
-double DET_THRESH  = 0.548      // MIDOG25 T1 referans mitotik-figür eşiği
-double WHO_AREA_MM2 = 2.0        // WHO alan-tabanlı raporlama birimi (mitoz / 2 mm²)
-double AREA_TOL_MM2 = 0.01
-int    ROI_WARN_PX = 12000       // bu boyutu aşan ROI için bellek uyarısı
+def SUMMARY_NAME = 'HoVer-NeXt çekirdek sınıfları özeti'
+def ENV_ID       = 'hovernext'
+def RUNNER_REL   = 'python/hovernext/hovernext_runner.py'
+def CLASS_SUFFIX = ' (HoVer-NeXt)'
+double MODEL_MPP = 0.5      // Lizard modelinin eğitim çözünürlüğü (~20x)
+double MPP_TOL   = 0.20     // köprü etkin µm/px bu bandın (0.40–0.60) dışındaysa reddeder
+int    ROI_WARN_PX = 8000   // hedef çözünürlükte bu boyutu aşan ROI için bellek/süre uyarısı
+// Lizard sınıfları: köprünün GeoJSON sınıf adı (olduğu gibi) → Türkçe ad + görüntüleme rengi.
+def CLASSES = [
+    [key:'neutrophil',             tr:'Nötrofil',           rgb:[0, 200, 0]],
+    [key:'epithelial-cell',        tr:'Epitel hücresi',     rgb:[230, 40, 40]],
+    [key:'lymphocyte',             tr:'Lenfosit',           rgb:[40, 80, 230]],
+    [key:'plasma-cell',            tr:'Plazma hücresi',     rgb:[0, 120, 60]],
+    [key:'eosinophil',             tr:'Eozinofil',          rgb:[0, 190, 200]],
+    [key:'connective-tissue-cell', tr:'Bağ dokusu hücresi', rgb:[240, 170, 90]],
+    [key:'mitosis',                tr:'Mitoz',              rgb:[255, 0, 255]],
+]
+def MODELS = [
+    [id:'lizard_convnextv2_large', label:'Large — ConvNeXtV2-L (~745 MB; en yüksek doğruluk)'],
+    [id:'lizard_convnextv2_base',  label:'Base — ConvNeXtV2-B (~346 MB)'],
+    [id:'lizard_convnextv2_tiny',  label:'Tiny — ConvNeXtV2-T (~128 MB; en hızlı)'],
+]
+def CAVEAT = 'Lizard modeli KOLOREKTAL H&E ile eğitildi; diğer dokulara genelleme doğrulanmadı. ' +
+             'Mitoz sınıfı pHH3 destekli etiketlerle eğitildi ama yayımlanmış mitoza-özel başarım metriği YOK — ' +
+             'mitoz sayımı için Modüller → Mitoz tespiti dedektörlerini esas alın.'
+def classByKey = [:]
+CLASSES.each { classByKey[it.key] = it }
+def ourClassNames = CLASSES.collect { it.tr + CLASS_SUFFIX } as Set
+def modelLabelOf = { String id -> (MODELS.find { it.id == id }?.label) ?: id }
 
 // ── Kalıcı yapılandırma: java.util.prefs (eklenti JAR'ı olmadan da çalışır) ──
-def prefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/mitoz-fcos')
+// NOT: 'model' anahtarını Mitoz tespiti → Modelleri karşılaştır sihirbazı da okur.
+def prefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/hovernext')
 def PREF_PYTHON = 'python'
 def PREF_RUNNER = 'runner'
 def PREF_WORK   = 'workDir'
-def PREF_DEVICE = 'device'
-def PREF_TMPP   = 'targetMpp'      // hedef çözünürlük (µm/px); boş = 0.5
+def PREF_MODEL  = 'model'
 def PREF_BATCH  = 'batchSize'
-def PREF_THRESH = 'threshold'      // det_thresh geçersiz kılma (boş = 0.548)
+def PREF_TTA    = 'tta'
 
-// ── Atölye veri kökü (env yöneticisiyle PAYLAŞILAN) + model önbellek yönlendirme ──
+// ── Atölye veri kökü (env yöneticisiyle PAYLAŞILAN) + önbellek yönlendirme ──
 def atolyeDataRoot = { ->
     def p = ''
     try { p = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('dataRoot', '') } catch (Throwable ignore) {}
     return (p?.trim()) ? new File(p.trim()) : new File(System.getProperty('user.home'), '.atolye')
 }
-// Yerel model dosyasının beklenen yolu (fcos_runner download → <dataRoot>/cache/midog-fcos/FCOS_x101.ckpt)
-def modelCacheFile = { -> new File(new File(new File(atolyeDataRoot(), 'cache'), 'midog-fcos'), WEIGHTS_NAME) }
-// Referans KODU (fcos_runner download → <dataRoot>/cache/midog-fcos/MIDOG25_T1_reference_docker-<commit>/utils/*.py).
-// Köprü model kurulumu + döşemeli çıkarım için bu kodu import eder; ağırlık tek başına YETMEZ.
-def upstreamCodeReady = { ->
-    def base = new File(new File(atolyeDataRoot(), 'cache'), 'midog-fcos')
-    def ds = base.isDirectory() ? base.listFiles({ f -> f.isDirectory() && f.getName().startsWith('MIDOG25_T1_reference_docker-') &&
-        new File(f, 'utils/model.py').isFile() && new File(f, 'utils/inference_utils.py').isFile() } as java.io.FileFilter) : null
-    return ds != null && ds.length > 0
+// hovernext_runner download → <dataRoot>/cache/hovernext/hover_next_inference-<commit>/ (kod) + <model>/ (ağırlık)
+def codeDirs = { ->
+    def base = new File(new File(atolyeDataRoot(), 'cache'), 'hovernext')
+    if (!base.isDirectory()) return []
+    def ds = base.listFiles({ f -> f.isDirectory() && f.getName().startsWith('hover_next_inference-') && new File(f, 'main.py').isFile() } as java.io.FileFilter)
+    return ds == null ? [] : ds.toList()
 }
-def localModelReady = { -> modelCacheFile().isFile() && upstreamCodeReady() }
-// Önbellek köklerini veri köküne yönlendir. fcos_runner cache_dir() TIATOOLBOX_HOME'un
-// ÜST dizinini (=<dataRoot>/cache) alıp midog-fcos ekler; bu env yalnız o değeri taşır.
+def codeReady = { -> !codeDirs().isEmpty() }
+def weightsReady = { String model ->
+    codeDirs().any { d -> def md = new File(d, model); new File(md, 'params.toml').isFile() && new File(new File(md, 'train'), 'best_model').isFile() }
+}
+// Önbellek köklerini veri köküne yönlendir. hovernext_runner cache_dir() TIATOOLBOX_HOME'un ÜST
+// dizinini (=<dataRoot>/cache) alıp hovernext ekler; HF_HOME timm'in ImageNet omurgasını tutar.
 def applyCacheEnv = { pb ->
     try {
         def cache = new File(atolyeDataRoot(), 'cache'); cache.mkdirs()
@@ -123,7 +136,7 @@ def applyCacheEnv = { pb ->
     } catch (Throwable ignore) {}
 }
 
-// ── Otomatik tespit: midog-fcos ortamı + fcos_runner.py köprüsü ───────────────
+// ── Otomatik tespit: hovernext ortamı + hovernext_runner.py köprüsü ──────────
 def detectPython = { ->
     // (1) Env yöneticisinin kaydettiği KESİN yol (veri kökü değişse bile doğru).
     try {
@@ -146,7 +159,7 @@ def detectRunner = { ->
         if (handson.getParentFile() != null) roots << new File(handson.getParentFile(), 'handson')
     }
     for (r in roots) {
-        def f = new File(r, 'python/midog/fcos_runner.py')
+        def f = new File(r, RUNNER_REL)
         if (f.isFile()) return f.getAbsolutePath()
     }
     return ''
@@ -155,26 +168,25 @@ def detectRunner = { ->
 def loadConfig = { ->
     def py = prefs.get(PREF_PYTHON, ''); if (!py?.trim()) py = detectPython()
     def rn = prefs.get(PREF_RUNNER, ''); if (!rn?.trim()) rn = detectRunner()
+    def md = prefs.get(PREF_MODEL, MODELS[0].id); if (!MODELS.any { it.id == md }) md = MODELS[0].id
     [ python    : py,
       runner    : rn,
-      workDir   : prefs.get(PREF_WORK,   ''),
-      device    : prefs.get(PREF_DEVICE, 'cuda'),
-      targetMpp : prefs.get(PREF_TMPP,   ''),     // boş = TARGET_MPP (0.5)
-      batchSize : prefs.get(PREF_BATCH,  '8'),
-      threshold : prefs.get(PREF_THRESH, '') ]    // boş = DET_THRESH (0.548)
+      workDir   : prefs.get(PREF_WORK,  ''),
+      model     : md,
+      batchSize : prefs.get(PREF_BATCH, '16'),
+      tta       : prefs.get(PREF_TTA,   '4') ]
 }
 def configMissing = { cfg ->
     def miss = []
     if (!cfg.python?.trim() || !(new File(cfg.python)).isFile())
-        miss << 'Python yürütülebilir (midog-fcos venv)'
+        miss << 'Python yürütülebilir (hovernext venv)'
     if (!cfg.runner?.trim() || !(new File(cfg.runner)).isFile())
-        miss << 'Köprü betiği (fcos_runner.py)'
+        miss << 'Köprü betiği (hovernext_runner.py)'
     return miss
 }
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
 
 def parseIntOr = { s, int d -> try { return Integer.parseInt((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
-def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim().replace(',', '.')) } catch (Throwable t) { return d } }
 
 def resolveWorkDir = { cfg, imageData ->
     def wd = cfg.workDir?.trim()
@@ -196,7 +208,6 @@ def resolveWorkDir = { cfg, imageData ->
 
 def imageNameOf = { imageData -> (imageData.getServer().getMetadata().getName() ?: 'slide').replaceAll(/\.[^.\/\\]+$/, '') }
 
-// Piksel boyutu (µm/px) — yoğunluk + hedef-mpp yeniden örnekleme için gerekli
 def pixelMicrons = { imageData ->
     try {
         def cal = imageData.getServer().getPixelCalibration()
@@ -206,31 +217,38 @@ def pixelMicrons = { imageData ->
     return null
 }
 
-// Kalibrasyon bilgisi + akla yatkınlık denetimi (ÇALIŞTIRMADAN ÖNCE göster).
+// Kalibrasyon + ÖLÇEK KAPISI. HoVer-NeXt 0.5 µm/px için eğitildi ve son-işlemesi PİKSEL-tabanlı
+// boyut eşikleri kullanır → yanlış ölçekte hem segmentasyon hem sınıf bozulur. Bu yüzden
+// kalibrasyonsuz ya da modelden kaba çözünürlüklü slaytta ÇALIŞTIRILMAZ (sessiz ölçek hatası).
 def calibrationInfo = { imageData ->
     def cal = pixelMicrons(imageData)
     double mag = Double.NaN
     try { mag = imageData.getServer().getMetadata().getMagnification() } catch (Throwable ignore) {}
-    def warn = null
+    String block = null
+    String warn = null
+    double mpp = (cal != null) ? (cal.pw + cal.ph) / 2.0d : Double.NaN
     if (cal == null) {
-        warn = 'Piksel boyutu tanımlı DEĞİL — yoğunluk hesaplanamaz VE ROI hedef çözünürlüğe (0.5 µm/px) yeniden örneklenemez (0 tespit olası). Kalibrasyon yardımcısını çalıştırın.'
-    } else {
-        double p = (cal.pw + cal.ph) / 2.0
-        if (p <= 0.0) warn = 'Piksel boyutu geçersiz (≤ 0).'
-        else if (Math.abs(p - 1.0) < 1e-6) warn = 'Piksel boyutu tam 1.000 µm/px — bu genelde QuPath\'in KALİBRESİZ varsayılanıdır. Tarayıcının gerçek değerini girin; yanlışsa FCOS yanlış ölçekte çalışır.'
-        else if (p < 0.10 || p > 1.5) warn = String.format(java.util.Locale.US, 'Piksel boyutu %.3f µm/px H&E WSI için sıra dışı — kalibrasyonu doğrulayın (tipik: 0.25 @40x, 0.50 @20x).', p)
+        block = 'Piksel boyutu tanımlı DEĞİL. HoVer-NeXt 0.5 µm/px için eğitildi; kalibrasyonsuz görüntüde sessizce yanlış ölçekte çalışır. Yardımcılar → Temel araçlar → Kalibrasyon ile piksel boyutunu girin.'
+    } else if (!(mpp > 0.0d)) {
+        block = 'Piksel boyutu geçersiz (≤ 0).'
+    } else if (Math.abs(mpp - 1.0d) < 1e-6) {
+        block = 'Piksel boyutu tam 1.000 µm/px — bu genelde QuPath\'in KALİBRESİZ varsayılanıdır. Tarayıcının gerçek değerini girin (tipik: 0.25 @40x, 0.50 @20x).'
+    } else if (Math.max(mpp, MODEL_MPP) > MODEL_MPP * (1.0d + MPP_TOL)) {
+        block = String.format(java.util.Locale.US, 'Slayt çözünürlüğü %.3f µm/px — modelin 0.5 µm/px çözünürlüğünden kaba (izin ≤ %.2f µm/px). Daha yüksek büyütmeli tarama gerekir.', mpp, MODEL_MPP * (1.0d + MPP_TOL))
+    } else if (mpp < 0.10d) {
+        warn = String.format(java.util.Locale.US, 'Piksel boyutu %.3f µm/px H&E WSI için sıra dışı — kalibrasyonu doğrulayın.', mpp)
     }
-    return [cal: cal, mag: mag, warn: warn, mpp: (cal != null ? (cal.pw + cal.ph) / 2.0 : Double.NaN)]
+    return [cal: cal, mag: mag, mpp: mpp, block: block, warn: warn, scaleOk: (block == null)]
 }
-def resampleNote = { double mpp, double targetMpp ->
+def resampleNote = { double mpp ->
     if (!Double.isFinite(mpp) || mpp <= 0) return ''
-    double ratio = targetMpp / mpp
-    if (Math.abs(ratio - 1.0) < 0.05) return 'slayt zaten ~hedef çözünürlükte — yeniden örnekleme yok.'
-    if (ratio > 1.0) return String.format(java.util.Locale.US, 'slaytınız daha yüksek çözünürlükte; ROI ~%.1f× AŞAĞI örneklenir (normal).', ratio)
-    return 'slaytınız daha düşük çözünürlükte; hedef çözünürlüğe çıkılamaz (native beslenir; mitoz kaçabilir).'
+    double ratio = MODEL_MPP / mpp
+    if (Math.abs(ratio - 1.0d) < 0.05d) return 'slayt zaten ~0.5 µm/px — yeniden örnekleme yok.'
+    if (ratio > 1.0d) return String.format(java.util.Locale.US, 'ROI ~%.1f× AŞAĞI örneklenerek 0.5 µm/px çözünürlüğe getirilir.', ratio)
+    return 'slayt 0.5 µm/px çözünürlükten biraz kaba — native beslenir (izin bandı içinde).'
 }
 
-// Seçili (yoksa tüm) alan anotasyonları — mitozu YALNIZ bunların içinde sayarız.
+// Seçili (yoksa tüm) alan anotasyonları — çekirdekleri YALNIZ bunların içinde sayarız.
 def notSummary = { ann -> ann.getName() == null || !ann.getName().startsWith(SUMMARY_NAME) }
 def regionAnnotationsOf = { imageData ->
     def h = imageData.getHierarchy()
@@ -255,31 +273,37 @@ def exportRegionImage = { imageData, File workDir, double targetMpp, List region
     if (x + w > server.getWidth())  w = server.getWidth()  - x
     if (y + h > server.getHeight()) h = server.getHeight() - y
     if (w <= 0 || h <= 0) return [ok: false, error: 'Bölge sınır dışı ya da boş.']
-    double baseMpp = (cal != null) ? (cal.pw + cal.ph) / 2.0 : Double.NaN
-    double downsample = 1.0
-    if (cal != null && targetMpp > 0 && Double.isFinite(baseMpp) && baseMpp > 0) {
-        downsample = targetMpp / baseMpp
-        if (downsample < 1.0) downsample = 1.0   // asla üst-örnekleme — native besle
-    }
+    double baseMpp = (cal.pw + cal.ph) / 2.0d
+    double downsample = targetMpp / baseMpp
+    if (downsample < 1.0d) downsample = 1.0d   // asla üst-örnekleme — native besle
     int outW = (int) Math.max(1, Math.round(w / downsample))
     int outH = (int) Math.max(1, Math.round(h / downsample))
     if (outW > warnPx || outH > warnPx)
-        appendLine(String.format(java.util.Locale.US, '⚠ Büyük ROI (%d × %d px @ hedef çözünürlük) — bellek yoğun. Daha küçük bir sıcak-nokta seçmeyi düşünün.', outW, outH))
-    def request = qupath.lib.regions.RegionRequest.createInstance(server.getPath(), downsample, x, y, w, h)
+        appendLine(String.format(java.util.Locale.US, '⚠ Büyük ROI (%d × %d px @ hedef çözünürlük) — bellek/süre yoğun. Daha küçük bir bölge seçmeyi düşünün.', outW, outH))
+    def request = RegionRequest.createInstance(server.getPath(), downsample, x, y, w, h)
     def img = server.readRegion(request)
     if (img == null) return [ok: false, error: 'Bölge okunamadı (readRegion null döndü).']
     def rgb = new java.awt.image.BufferedImage(img.getWidth(), img.getHeight(), java.awt.image.BufferedImage.TYPE_INT_RGB)
     def g = rgb.createGraphics()
     try { g.setColor(java.awt.Color.WHITE); g.fillRect(0, 0, rgb.getWidth(), rgb.getHeight()); g.drawImage(img, 0, 0, null) } finally { g.dispose() }
-    def f = new File(workDir, 'fcos_roi.png')
+    def f = new File(workDir, 'hovernext_roi.png')
     if (f.getParentFile() != null) f.getParentFile().mkdirs()
     javax.imageio.ImageIO.write(rgb, 'PNG', f)
-    appendLine(String.format(java.util.Locale.US, 'ROI görüntüsü: %s (%d × %d px, downsample %.3f, köken %d,%d)', f.getName(), rgb.getWidth(), rgb.getHeight(), downsample, x, y))
-    return [ok: true, file: f, originX: x, originY: y, downsample: downsample, w: rgb.getWidth(), h: rgb.getHeight()]
+    double effMpp = baseMpp * downsample
+    appendLine(String.format(java.util.Locale.US, 'ROI görüntüsü: %s (%d × %d px, downsample %.3f, etkin %.3f µm/px, köken %d,%d)', f.getName(), rgb.getWidth(), rgb.getHeight(), downsample, effMpp, x, y))
+    return [ok: true, file: f, originX: x, originY: y, downsample: downsample, effMpp: effMpp]
 }
 
-// ── GeoJSON içe al: bölge içi noktaları çıkar + nokta-anotasyonu olarak ekle ──
-def importMitoses = { File geojson, imageData, List regionRois ->
+// Bölge içi testi: önce sınır kutusu (hızlı ret), sonra gerçek ROI.contains.
+def regionBounds = { List regionRois ->
+    regionRois.collect { r -> [x0: r.getBoundsX(), y0: r.getBoundsY(), x1: r.getBoundsX() + r.getBoundsWidth(), y1: r.getBoundsY() + r.getBoundsHeight(), roi: r] }
+}
+def insideAny = { List bounds, double x, double y ->
+    bounds.any { b -> x >= (b.x0 as double) && x <= (b.x1 as double) && y >= (b.y0 as double) && y <= (b.y1 as double) && b.roi.contains(x, y) }
+}
+
+// ── GeoJSON içe al: bölge içi çekirdekleri sınıflı TESPİT olarak ekle ──
+def importNuclei = { File geojson, imageData, List regionRois, cal ->
     if (geojson == null || !geojson.isFile())
         return [ok: false, error: 'GeoJSON çıktısı bulunamadı:\n' + (geojson?.getAbsolutePath() ?: '(yol yok)')]
     def root
@@ -287,107 +311,125 @@ def importMitoses = { File geojson, imageData, List regionRois ->
     catch (Throwable t) { return [ok: false, error: 'GeoJSON ayrıştırılamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
     def feats = root.has('features') ? root.getAsJsonArray('features') : null
     if (feats == null) return [ok: false, error: 'GeoJSON "features" içermiyor.']
+    def bounds = regionBounds(regionRois)
     def plane = ImagePlane.getDefaultPlane()
-    def coords = new ArrayList()
+    def pcs = [:]
+    CLASSES.each { c ->
+        def pc = QP.getPathClass(c.tr + CLASS_SUFFIX)
+        try { pc.setColor(qupath.lib.common.ColorTools.packRGB(c.rgb[0] as int, c.rgb[1] as int, c.rgb[2] as int)) } catch (Throwable ignore) {}
+        pcs[c.key] = pc
+    }
+    def dets = new ArrayList()
+    def nuclei = new ArrayList()   // [x, y, sınıfAnahtarı]
     int total = 0
+    int unknown = 0
     for (el in feats) {
         def ft = el.getAsJsonObject()
         if (!ft.has('geometry') || ft.get('geometry').isJsonNull()) continue
+        def props = (ft.has('properties') && ft.get('properties').isJsonObject()) ? ft.getAsJsonObject('properties') : null
+        String key = null
+        try { key = props.getAsJsonObject('classification').get('name').getAsString() } catch (Throwable ignore) {}
+        if (key == null || !classByKey.containsKey(key)) { unknown++; continue }
         def geom = ft.getAsJsonObject('geometry')
-        if (!geom.has('type') || geom.get('type').getAsString() != 'Point') continue
-        def c = geom.getAsJsonArray('coordinates')
-        double x = c.get(0).getAsDouble(), y = c.get(1).getAsDouble()
+        String gtype = geom.has('type') ? geom.get('type').getAsString() : ''
+        double cx = Double.NaN
+        double cy = Double.NaN
+        try { def c = props.getAsJsonArray('centroid'); cx = c.get(0).getAsDouble(); cy = c.get(1).getAsDouble() } catch (Throwable ignore) {}
+        def roi = null
+        if (gtype == 'Polygon') {
+            def ring = geom.getAsJsonArray('coordinates').get(0).getAsJsonArray()
+            int n = ring.size()
+            if (n >= 4) {   // kapalı halka: son nokta = ilk nokta
+                double[] xs = new double[n - 1]
+                double[] ys = new double[n - 1]
+                for (int i = 0; i < n - 1; i++) { def p = ring.get(i).getAsJsonArray(); xs[i] = p.get(0).getAsDouble(); ys[i] = p.get(1).getAsDouble() }
+                roi = ROIs.createPolygonROI(xs, ys, plane)
+            }
+        } else if (gtype == 'Point') {
+            def p = geom.getAsJsonArray('coordinates')
+            double px = p.get(0).getAsDouble()
+            double py = p.get(1).getAsDouble()
+            roi = ROIs.createPointsROI(px, py, plane)
+            if (!Double.isFinite(cx)) { cx = px; cy = py }
+        }
+        if (roi == null) continue
+        if (!Double.isFinite(cx) || !Double.isFinite(cy)) { cx = roi.getCentroidX(); cy = roi.getCentroidY() }
         total++
-        if (!regionRois.any { it.contains(x, y) }) continue
-        coords.add([x, y])
+        if (!insideAny(bounds, cx, cy)) continue
+        def det = PathObjects.createDetectionObject(roi, pcs[key])
+        if (cal != null && roi.isArea()) det.getMeasurements().put('Çekirdek alanı (µm2)', roi.getArea() * cal.pw * cal.ph)
+        dets << det
+        nuclei << [cx, cy, key]
     }
     def hier = imageData.getHierarchy()
-    def detClass = QP.getPathClass(MITOSIS_CLASS)
-    try { detClass.setColor(qupath.lib.common.ColorTools.packRGB(40, 120, 255)) } catch (Throwable ignore) {}  // FCOS = mavi (KongNet kırmızıdan ayırt et)
-    // YALNIZ bu bölgedeki önceki FCOS mitoz anotasyonlarını sil (alt-küme yeniden çalıştırma korur).
-    hier.removeObjects(hier.getAnnotationObjects().findAll { a ->
-        a.getName() != null && a.getName().startsWith(MITOSIS_PREFIX) && a.hasROI() &&
-        regionRois.any { r -> r.contains(a.getROI().getCentroidX(), a.getROI().getCentroidY()) }
-    }, false)
-    def newAnns = []
-    coords.eachWithIndex { pt, i ->
-        def ann = PathObjects.createAnnotationObject(ROIs.createPointsROI(pt[0] as double, pt[1] as double, plane), detClass)
-        ann.setName(MITOSIS_PREFIX + ' #' + (i + 1))
-        newAnns << ann
+    // YALNIZ bu bölgedeki önceki HoVer-NeXt tespitlerini sil (başka bölgelerdeki çalıştırmalar korunur).
+    def old = hier.getDetectionObjects().findAll { d ->
+        d.getPathClass() != null && ourClassNames.contains(d.getPathClass().getName()) && d.hasROI() &&
+        insideAny(bounds, d.getROI().getCentroidX(), d.getROI().getCentroidY())
     }
-    if (!newAnns.isEmpty()) hier.addObjects(newAnns)
+    if (!old.isEmpty()) hier.removeObjects(old, false)
+    if (!dets.isEmpty()) hier.addObjects(dets)
     hier.fireHierarchyChangedEvent(hier)
-    return [ok: true, total: total, inside: coords.size(), coords: coords]
+    return [ok: true, total: total, inside: nuclei.size(), nuclei: nuclei, unknown: unknown, removed: old.size()]
 }
 
-// ── Sayım + (kalibreyse) yoğunluk: seçili anotasyonlara ölçüm ekle + kilitli özet ──
-def writeCounts = { imageData, List targets, List coords, cal ->
+// ── Sınıf başına sayım + % + (kalibreyse) yoğunluk: seçili anotasyonlara + kilitli özete ──
+def writeCounts = { imageData, List targets, List nuclei, cal ->
     def hier = imageData.getHierarchy()
+    def fill = { obj, roi, List pts ->
+        def ml = obj.getMeasurements()
+        int tot = pts.size()
+        double areaMm2 = (cal != null) ? roi.getArea() * cal.pw * cal.ph / 1_000_000.0d : Double.NaN
+        ml.put('HoVer-NeXt: toplam çekirdek (n)', tot as double)
+        if (cal != null) ml.put('ROI alanı (mm2)', areaMm2)
+        CLASSES.each { c ->
+            int n = pts.count { it[2] == c.key } as int
+            ml.put('HoVer-NeXt: ' + c.tr + ' (n)', n as double)
+            ml.put('HoVer-NeXt: ' + c.tr + ' (%)', tot > 0 ? 100.0d * n / tot : Double.NaN)
+            if (cal != null) ml.put('HoVer-NeXt: ' + c.tr + ' (/mm2)', areaMm2 > 0 ? n / areaMm2 : Double.NaN)
+        }
+        return areaMm2
+    }
     targets.each { ann ->
         def roi = ann.getROI()
-        int cnt = coords.count { pt -> roi.contains(pt[0] as double, pt[1] as double) } as int
-        ann.measurements['Mitoz (FCOS)'] = cnt as double
-        if (cal != null) {
-            double a = roi.getArea() * cal.pw * cal.ph / 1_000_000.0
-            ann.measurements['ROI alanı (mm2)'] = a
-            ann.measurements['Mitoz yoğunluğu (mitoz/mm2)'] = a > 0 ? cnt / a : Double.NaN
-        }
+        fill(ann, roi, nuclei.findAll { p -> roi.contains(p[0] as double, p[1] as double) })
     }
     def unionRoi = (targets.size() == 1) ? targets[0].getROI() : qupath.lib.roi.RoiTools.union(targets.collect { it.getROI() })
-    int insideUnion = coords.size()
-
     hier.removeObjects(hier.getAnnotationObjects().findAll { it.getName() != null && it.getName().startsWith(SUMMARY_NAME) }, false)
     def summary = PathObjects.createAnnotationObject(unionRoi)
     summary.setName(SUMMARY_NAME)
-    summary.measurements['Seçili ROI sayısı'] = targets.size() as double
-    summary.measurements['Mitoz (FCOS, bölge içi)'] = insideUnion as double
-    def out = [inside: insideUnion, unionAreaMm2: Double.NaN, density: Double.NaN]
-    if (cal != null) {
-        double unionAreaMm2 = unionRoi.getArea() * cal.pw * cal.ph / 1_000_000.0
-        double density = unionAreaMm2 > 0 ? insideUnion / unionAreaMm2 : Double.NaN
-        summary.measurements['Ölçülen alan (mm2)'] = unionAreaMm2
-        summary.measurements['Mitoz yoğunluğu (mitoz/mm2)'] = density
-        if (Math.abs(unionAreaMm2 - WHO_AREA_MM2) <= AREA_TOL_MM2)
-            summary.measurements['Mitoz / 2 mm2 (gozlenen)'] = insideUnion as double
-        out = [inside: insideUnion, unionAreaMm2: unionAreaMm2, density: density]
-    }
+    summary.getMeasurements().put('Seçili ROI sayısı', targets.size() as double)
+    double areaMm2 = fill(summary, unionRoi, nuclei)
     summary.setLocked(true)
     hier.addObjects([summary])
     hier.fireHierarchyChangedEvent(hier)
-    return out
+    return [areaMm2: areaMm2]
 }
 
 // ── Sonuç metni ─────────────────────────────────────────────────────────────
 def resultText = { imageData, cfg, imp, dens, cal ->
-    def fmt = { double v, String p -> Double.isFinite(v) ? String.format(java.util.Locale.US, p, v) : 'hesaplanamadı' }
     def sb = new StringBuilder()
-    sb << "FCOS (MIDOG25 Track-1) — BÖLGEDE MİTOZ\n"
-    sb << "══════════════════════════════════════\n\n"
+    sb << "HoVer-NeXt (Lizard) — BÖLGEDE ÇEKİRDEK SINIFLARI\n"
+    sb << "═══════════════════════════════════════════════\n\n"
     sb << "Slayt   : " << imageNameOf(imageData) << "\n"
-    sb << "Model   : " << MODEL << "\n"
-    sb << "Cihaz   : " << (cfg.device ?: 'cuda') << "\n"
-    sb << String.format(java.util.Locale.US, "Tespit  : BÖLGE İÇİ %,d%n", (int)(imp?.inside ?: 0))
-    if (cal != null && dens != null) {
-        sb << String.format(java.util.Locale.US, "Ölçülen alan : %.3f mm²%n", (double)(dens.unionAreaMm2 ?: 0.0))
-        sb << "Yoğunluk     : " << fmt((double)(dens.density ?: Double.NaN), '%.1f mitoz/mm²') << "\n"
-        double a = (double)(dens.unionAreaMm2 ?: 0.0)
-        if (Math.abs(a - WHO_AREA_MM2) <= AREA_TOL_MM2)
-            sb << String.format(java.util.Locale.US, "Mitoz / %.0f mm² (gözlenen): %,d%n", WHO_AREA_MM2, (int)(dens.inside ?: 0))
-        else
-            sb << String.format(java.util.Locale.US, "Mitoz / %.0f mm²: hesaplanmadı (alan %.3f mm²; ROI'yi ~2 mm² yapın)%n", WHO_AREA_MM2, a)
-    } else {
-        sb << "Yoğunluk     : hesaplanmadı — piksel boyutu (µm/px) kalibre değil (Yardımcılar → Kalibrasyon).\n"
+    sb << "Model   : " << modelLabelOf(cfg.model) << "\n"
+    int tot = (imp?.inside ?: 0) as int
+    sb << String.format(java.util.Locale.US, "Çekirdek: BÖLGE İÇİ %,d%n", tot)
+    double a = (dens != null && dens.areaMm2 != null) ? (dens.areaMm2 as double) : Double.NaN
+    boolean haveArea = cal != null && Double.isFinite(a) && a > 0
+    if (haveArea) sb << String.format(java.util.Locale.US, "Ölçülen alan : %.3f mm²%n", a)
+    sb << "\n" << String.format(java.util.Locale.US, "%-22s %8s %8s %12s%n", 'Sınıf', 'n', '%', 'çekirdek/mm²')
+    CLASSES.each { c ->
+        int n = imp.nuclei.count { it[2] == c.key } as int
+        String pct = tot > 0 ? String.format(java.util.Locale.US, '%.1f', 100.0d * n / tot) : '—'
+        String dm = haveArea ? String.format(java.util.Locale.US, '%.1f', n / a) : '—'
+        sb << String.format(java.util.Locale.US, "%-22s %8d %8s %12s%n", c.tr, n, pct, dm)
     }
-    if ((int)(imp?.inside ?: 0) == 0) {
-        sb << "\n⚠ Bölgede 0 mitoz — model çalıştı ama eşiği geçen tespit yok.\n"
-        if (!cfg.threshold?.trim())
-            sb << "  Duyarlılık eşiğini (det_thresh) düşürüp (ör. 0.3) yeniden çalıştırın; kalibrasyonu da doğrulayın.\n"
-        else
-            sb << "  Eşiği (" << cfg.threshold.trim() << ") daha da düşürmeyi ve/veya kalibrasyonu doğrulamayı deneyin.\n"
-    }
-    sb << "\nTespitler '" << MITOSIS_CLASS << "' sınıflı MAVİ nokta-anotasyonları olarak eklendi; seçili anotasyonlara\n"
-    sb << "sayım + yoğunluk ölçümü yazıldı; kilitli özet: '" << SUMMARY_NAME << "'.\n"
-    sb << "Tahminleri görsel doğrulayın; klinik kategori/yorum üretilmez.\n"
+    if (tot == 0) sb << "\n⚠ Bölgede çekirdek bulunamadı — bölgenin doku içerdiğini ve kalibrasyonu doğrulayın.\n"
+    sb << "\n⚠ SINIRLAMA: " << CAVEAT << "\n"
+    sb << "\nÇekirdekler '<Sınıf> (HoVer-NeXt)' sınıflı poligon TESPİTLERİ olarak eklendi; seçili anotasyonlara\n"
+    sb << "sınıf başına sayım + % + yoğunluk yazıldı; kilitli özet: '" << SUMMARY_NAME << "'.\n"
+    sb << "Sınıflar modelin tahminidir; görsel doğrulayın. Klinik kategori/yorum üretilmez.\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
 }
@@ -397,11 +439,13 @@ if (isHeadless) {
     def imageData = QP.getCurrentImageData()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
-    println "Mitoz (FCOS MIDOG25) sihirbazı: python=${cfg.python ?: '(ayarsız)'} runner=${cfg.runner ?: '(ayarsız)'} model=${MODEL} cihaz=${cfg.device}"
+    println "HoVer-NeXt sihirbazı: python=${cfg.python ?: '(ayarsız)'} runner=${cfg.runner ?: '(ayarsız)'} model=${cfg.model}"
     if (!miss.isEmpty()) println "Eksik yapılandırma: ${miss.join(', ')}"
+    println "Yerel kod: ${codeReady() ? 'VAR' : 'yok'} · ağırlık (${cfg.model}): ${weightsReady(cfg.model) ? 'VAR' : 'yok'}"
     if (imageData != null) {
         println "Alan anotasyonu: ${regionAnnotationsOf(imageData).size()}"
-        println "Piksel boyutu: ${pixelMicrons(imageData) ? 'kalibre' : 'KALİBRE DEĞİL'}"
+        def ci = calibrationInfo(imageData)
+        println "Ölçek: ${ci.scaleOk ? 'uygun' : ('UYGUN DEĞİL — ' + ci.block)}"
     } else println "Açık görüntü yok."
     println "Bu sihirbaz QuPath arayüzü gerektirir (headless çalıştırılamaz)."
     println "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
@@ -426,13 +470,12 @@ def errorTextRef  = new java.util.concurrent.atomic.AtomicReference('')
 def pyFieldRef     = new java.util.concurrent.atomic.AtomicReference(null)
 def runnerFieldRef = new java.util.concurrent.atomic.AtomicReference(null)
 def workFieldRef   = new java.util.concurrent.atomic.AtomicReference(null)
-def deviceChoiceRef= new java.util.concurrent.atomic.AtomicReference(null)
-def tmppFieldRef   = new java.util.concurrent.atomic.AtomicReference(null)
+def modelChoiceRef = new java.util.concurrent.atomic.AtomicReference(null)
 def batchFieldRef  = new java.util.concurrent.atomic.AtomicReference(null)
-def threshFieldRef = new java.util.concurrent.atomic.AtomicReference(null)
+def ttaFieldRef    = new java.util.concurrent.atomic.AtomicReference(null)
 def render
 
-// Görüntüleyiciyi i. mitoza ORTALA + (gerekliyse) yakınlaş.
+// Görüntüleyiciyi i. mitoz-sınıflı çekirdeğe ORTALA + (gerekliyse) yakınlaş.
 def goToMitosis = { int i ->
     def coords = mitosisCoordsRef.get()
     if (coords == null || coords.isEmpty()) return
@@ -482,7 +525,7 @@ def launchBundledScript = { String resourceName ->
     } as Runnable).start()
 }
 
-// ── Çalıştırma günlüğü: biriktir + otomatik dosyaya yaz + "kaydet" ──
+// ── Çalışma günlüğü: biriktir + otomatik dosyaya yaz + "kaydet" ──
 def runLog      = new StringBuilder()
 def logFileRef  = new java.util.concurrent.atomic.AtomicReference(null)
 def resetLog    = { -> synchronized (runLog) { runLog.setLength(0) } }
@@ -492,7 +535,7 @@ def autoSaveLog = { File dir, String base ->
     try {
         if (dir == null) return null
         dir.mkdirs()
-        def f = new File(dir, (base ?: 'mitoz-fcos') + '_run.log')
+        def f = new File(dir, (base ?: 'hovernext') + '_hovernext_run.log')
         f.setText(logSnapshot(), 'UTF-8'); logFileRef.set(f); return f
     } catch (Throwable t) { return null }
 }
@@ -500,7 +543,7 @@ def saveLogInteractive = {
     def txt = logSnapshot()
     if (!txt?.trim()) { Dialogs.showInfoNotification('Günlük', 'Kaydedilecek günlük yok.'); return }
     try {
-        def suggested = logFileRef.get() ?: new File(System.getProperty('user.home'), 'mitoz-fcos_run.log')
+        def suggested = logFileRef.get() ?: new File(System.getProperty('user.home'), 'hovernext_run.log')
         def f = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, 'Çalışma günlüğünü kaydet', suggested,
             new javafx.stage.FileChooser.ExtensionFilter('Günlük (*.log, *.txt)', '*.log', '*.txt'))
         if (f != null) { f.setText(txt, 'UTF-8'); Dialogs.showInfoNotification('Günlük', 'Kaydedildi: ' + f.getAbsolutePath()) }
@@ -511,16 +554,27 @@ def persistFields = {
     prefs.put(PREF_PYTHON, textOf(pyFieldRef))
     prefs.put(PREF_RUNNER, textOf(runnerFieldRef))
     prefs.put(PREF_WORK,   textOf(workFieldRef))
-    def dv = deviceChoiceRef.get(); prefs.put(PREF_DEVICE, (dv != null && dv.getValue() != null) ? dv.getValue() : 'cuda')
-    def tm = textOf(tmppFieldRef);  prefs.put(PREF_TMPP,  tm ?: '')
-    def bs = textOf(batchFieldRef); prefs.put(PREF_BATCH, bs ?: '8')
-    prefs.put(PREF_THRESH, textOf(threshFieldRef))
+    def mc = modelChoiceRef.get()
+    if (mc != null) {
+        int i = mc.getSelectionModel().getSelectedIndex()
+        if (i >= 0 && i < MODELS.size()) prefs.put(PREF_MODEL, MODELS[i].id)
+    }
+    def bs = textOf(batchFieldRef); prefs.put(PREF_BATCH, bs ?: '16')
+    def tt = textOf(ttaFieldRef);   prefs.put(PREF_TTA,   tt ?: '4')
     try { prefs.flush() } catch (Throwable ignore) {}
+}
+
+// Süreç AĞACINI sonlandır: köprü HoVer-NeXt'i ayrı bir alt süreç olarak başlatır (+ son-işleme
+// işçisi); yalnız köprüyü öldürmek, GPU'da çalışan torun süreçleri (özellikle Windows'ta) yetim bırakır.
+def killTree = { proc ->
+    if (proc == null) return
+    try { proc.descendants().forEach({ h -> try { h.destroyForcibly() } catch (Throwable ignore) {} } as java.util.function.Consumer) } catch (Throwable ignore) {}
+    try { proc.destroyForcibly() } catch (Throwable ignore) {}
 }
 
 // ── Python süreci → satır akışı ──────────────────────────────────────────────
 def runPython = { List cmd, Closure onLine ->
-    def pb = new ProcessBuilder(cmd); pb.redirectErrorStream(true)
+    def pb = new ProcessBuilder(cmd.collect { it.toString() }); pb.redirectErrorStream(true)
     applyCacheEnv(pb)
     def proc
     try { proc = pb.start() }
@@ -539,9 +593,9 @@ def runPython = { List cmd, Closure onLine ->
     } catch (Throwable ignore) {}
     boolean finished
     try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
-    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    catch (InterruptedException ie) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    if (!finished) { killTree(proc); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
+    if (cancelledRef.get()) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
     int code = proc.exitValue()
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
@@ -553,50 +607,51 @@ def startSelftest = {
     def miss = configMissing(cfg)
     if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
-    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO)
+    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
     runPhaseRef.set('Bağımlılık kontrolü'); step.set('CHECK_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def r = runPython([cfg.python, cfg.runner, 'selftest'], appendLine)
         javafx.application.Platform.runLater { selftestOkRef.set(r.ok); step.set('CHECK_DONE'); render() }
-    }, 'AtolyeFcos-Check')
+    }, 'AtolyeHoverNext-Check')
     worker.setDaemon(true); worker.start()
 }
 
-// ── Modeli yerel indir (bir kez) ─────────────────────────────────────────────
+// ── Kodu + seçili modelin ağırlığını yerel indir (bir kez) ────────────────────
 def startModelDownload = {
     persistFields()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
     if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
-    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO)
+    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
     runPhaseRef.set('Model indiriliyor (yerel)…'); step.set('DL_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
-        def r = runPython([cfg.python, cfg.runner, 'download'], appendLine)
+        def r = runPython([cfg.python, cfg.runner, 'download', '--model', cfg.model], appendLine)
         javafx.application.Platform.runLater { dlOkRef.set(r.ok); step.set('DL_DONE'); render() }
-    }, 'AtolyeFcos-Download')
+    }, 'AtolyeHoverNext-Download')
     worker.setDaemon(true); worker.start()
 }
 
-// ── Çalıştırma akışı — seçili bölgede canlı FCOS ─────────────────────────────
+// ── Çalıştırma akışı — seçili bölgede HoVer-NeXt ──────────────────────────────
 def startRun = {
     def imageData = QP.getCurrentImageData()
     if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
     def targets = regionAnnotationsOf(imageData)
     if (targets.isEmpty()) { errorTextRef.set('Bölge yok.\nÖnce bir alan anotasyonu çizin/seçin.'); step.set('ERROR'); render(); return }
+    def ci = calibrationInfo(imageData)
+    if (!ci.scaleOk) { errorTextRef.set('Ölçek uygun değil — çalıştırılmadı:\n' + ci.block); step.set('ERROR'); render(); return }
+    def cal = ci.cal
     def regionRois = targets.collect { it.getROI() }
-    def cal = pixelMicrons(imageData)
-    double targetMpp = cfg.targetMpp?.trim() ? parseDoubleOr(cfg.targetMpp, TARGET_MPP) : TARGET_MPP
     def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs()
     def base    = imageNameOf(imageData)
-    def outGeo  = new File(workDir, base + '_fcos_mitoz.geojson')
+    def outGeo  = new File(workDir, base + '_hovernext.geojson')
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
-    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO)
+    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
     runPhaseRef.set('Hazırlanıyor…'); step.set('RUN_RUNNING'); render()
 
@@ -604,15 +659,13 @@ def startRun = {
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def setPhase   = { String ph -> javafx.application.Platform.runLater { runPhaseRef.set(ph); render() } }
         try {
-            appendLine('Model: ' + MODEL + '  ·  cihaz: ' + (cfg.device ?: 'cuda') + '  ·  hedef çözünürlük: ' + String.format(java.util.Locale.US, '%.3f µm/px', targetMpp))
+            appendLine('Model: HoVer-NeXt ' + cfg.model + '  ·  cihaz: CUDA (zorunlu)  ·  hedef çözünürlük: 0.500 µm/px')
             appendLine('Kapsam: seçili bölge (' + targets.size() + ' anotasyon)')
-            def ci0 = calibrationInfo(imageData)
-            if (ci0.cal != null) appendLine(String.format(java.util.Locale.US, 'Kalibrasyon: %.4f × %.4f µm/px%s  →  hedef %.2f µm/px (%s)',
-                ci0.cal.pw, ci0.cal.ph, (Double.isFinite(ci0.mag) && ci0.mag > 0 ? String.format(java.util.Locale.US, ' (~%.0fx)', ci0.mag) : ''), targetMpp, resampleNote(ci0.mpp, targetMpp)))
-            if (ci0.warn != null) appendLine('⚠ Kalibrasyon: ' + ci0.warn)
-            if (cal == null) appendLine('⚠ Piksel boyutu kalibre değil — yoğunluk hesaplanmayacak, native çözünürlük beslenecek.')
-            setPhase('ROI görüntüsü dışa aktarılıyor (1/2)…')
-            def exp = exportRegionImage(imageData, workDir, targetMpp, regionRois, cal, ROI_WARN_PX, appendLine)
+            appendLine(String.format(java.util.Locale.US, 'Kalibrasyon: %.4f × %.4f µm/px%s  →  %s', cal.pw, cal.ph,
+                (Double.isFinite(ci.mag) && ci.mag > 0 ? String.format(java.util.Locale.US, ' (~%.0fx)', ci.mag) : ''), resampleNote(ci.mpp)))
+            if (ci.warn != null) appendLine('⚠ Kalibrasyon: ' + ci.warn)
+            setPhase('ROI görüntüsü dışa aktarılıyor (1/3)…')
+            def exp = exportRegionImage(imageData, workDir, MODEL_MPP, regionRois, cal, ROI_WARN_PX, appendLine)
             if (!exp.ok) { javafx.application.Platform.runLater { errorTextRef.set(exp.error); step.set('ERROR'); render() }; return }
             if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
             def cmd = [cfg.python, cfg.runner, 'detect',
@@ -620,37 +673,37 @@ def startRun = {
                        '--out', outGeo.getAbsolutePath(),
                        '--origin', (exp.originX + ',' + exp.originY),
                        '--downsample', String.format(java.util.Locale.US, '%.6f', (double) exp.downsample),
-                       '--device', (cfg.device ?: 'cuda'),
-                       '--batch-size', String.valueOf(parseIntOr(cfg.batchSize, 8))]
-            if (cfg.threshold?.trim()) {
-                double thr = parseDoubleOr(cfg.threshold, -1.0d)
-                if (thr >= 0.0d && thr <= 1.0d) { cmd.add('--det-thresh'); cmd.add(String.format(java.util.Locale.US, '%.4f', thr)); appendLine('Duyarlılık eşiği (det_thresh): ' + String.format(java.util.Locale.US, '%.3f', thr) + ' (referans 0.548)') }
-            }
-            setPhase('FCOS çıkarımı çalışıyor (2/2)…')
+                       '--mpp', String.format(java.util.Locale.US, '%.6f', (double) exp.effMpp),
+                       '--model', cfg.model, '--mode', 'polygons', '--classes', 'all',
+                       '--batch-size', String.valueOf(parseIntOr(cfg.batchSize, 16)),
+                       '--tta', String.valueOf(parseIntOr(cfg.tta, 4)),
+                       '--device', 'cuda', '--work', workDir.getAbsolutePath()]
+            setPhase('HoVer-NeXt çıkarımı + son-işleme çalışıyor (2/3)…')
             def r = runPython(cmd, appendLine)
             appendLine('# Çıkış kodu: ' + r.exitCode)
             def savedLog = autoSaveLog(workDir, base)
             if (savedLog != null) appendLine('# Günlük kaydedildi: ' + savedLog.getAbsolutePath())
-            if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set('Çıkarım başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '') + (savedLog != null ? ('\n\nÇalışma günlüğü: ' + savedLog.getAbsolutePath()) : '')); step.set('ERROR'); render() }; return }
+            if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set('HoVer-NeXt başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '') + (savedLog != null ? ('\n\nÇalışma günlüğü: ' + savedLog.getAbsolutePath()) : '')); step.set('ERROR'); render() }; return }
             def geo = outGeo
             try { def m = (r.lastLines ?: '') =~ /RESULT geojson=(.+)/; if (m.find()) { def gp = new File(m.group(1).trim()); if (gp.isFile()) geo = gp } } catch (Throwable ignore) {}
 
             // Uzun çıkarımdan SONRA QP.getCurrentImageData()'yı YENİDEN ALMA (TOCTOU);
             // çalıştırmayı başlatan captured `imageData`ya yaz.
-            javafx.application.Platform.runLater { busyLabelRef.set('Sonuçlar içe aktarılıyor…'); step.set('BUSY'); render() }
-            def imp = importMitoses(geo, imageData, regionRois)
+            javafx.application.Platform.runLater { busyLabelRef.set('Çekirdekler içe aktarılıyor (3/3)…'); step.set('BUSY'); render() }
+            def imp = importNuclei(geo, imageData, regionRois, cal)
             if (!imp.ok) { javafx.application.Platform.runLater { errorTextRef.set(imp.error); step.set('ERROR'); render() }; return }
-            def dens = writeCounts(imageData, targets, imp.coords, cal)
-            mitosisCoordsRef.set(new ArrayList(imp.coords)); navIdxRef.set(-1)
+            if (imp.unknown > 0) appendLine('⚠ Tanınmayan sınıflı ' + imp.unknown + ' özellik atlandı.')
+            def dens = writeCounts(imageData, targets, imp.nuclei, cal)
+            mitosisCoordsRef.set(new ArrayList(imp.nuclei.findAll { it[2] == 'mitosis' }.collect { [it[0], it[1]] }))
+            navIdxRef.set(-1)
             javafx.application.Platform.runLater {
                 try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {}
                 resultTextRef.set(resultText(imageData, cfg, imp, dens, cal)); step.set('RESULT'); render()
-                if (!imp.coords.isEmpty()) goToMitosis(0)
             }
         } catch (Throwable t) {
             javafx.application.Platform.runLater { errorTextRef.set('Beklenmeyen hata:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
         }
-    }, 'AtolyeFcos-Run')
+    }, 'AtolyeHoverNext-Run')
     worker.setDaemon(true); worker.start()
 }
 
@@ -661,7 +714,7 @@ def startRun = {
 // sürerken ekran değiştirilmez; yalnız pencere öne gelir.
 def envReturnHook = [
     envId   : ENV_ID,
-    wizard  : 'Mitoz tespiti (FCOS)',
+    wizard  : 'HoVer-NeXt çekirdek sınıflandırma',
     onReturn: { reopen ->
         javafx.application.Platform.runLater {
             if (stage == null || (!stage.isShowing() && !reopen)) return
@@ -703,21 +756,6 @@ def launchEnvManager = { ->
         }
     } as Runnable).start()
 }
-// ── Mitoz modelleri listesine dön ─────────────────────────────────────────────
-// "◀ Mitoz listesi": bu pencereyi kapatır ve "Mitoz modelleri listesi"ni açar (başka bir model
-// başlatmak için). Liste betiği bulunamazsa pencere açık kalır.
-def openMitosisHub = { ->
-    def hubScript = 'yardimci-mitoz-merkez.groovy'
-    def url = null
-    try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + hubScript) } catch (Throwable t) {}
-    if (url == null) url = this.getClass().getResource('/scripts/' + hubScript)
-    if (url == null) {
-        Dialogs.showInfoNotification('Mitoz modelleri listesi', 'Menüden açın: Extensions → Atölye → Modüller → Mitoz tespiti → Mitoz modelleri listesi')
-        return
-    }
-    launchBundledScript(hubScript)
-    if (stage != null) stage.close()
-}
 
 // ── Render ───────────────────────────────────────────────────────────────────
 render = { ->
@@ -740,7 +778,7 @@ render = { ->
     }
     def addGuidance = { String txt -> def lbl = new javafx.scene.control.Label(txt); wrapBind(lbl); center.getChildren().add(lbl) }
     def addMonoArea = { String txt ->
-        def ta = new javafx.scene.control.TextArea(txt ?: ''); ta.setEditable(false); ta.setWrapText(true); ta.setStyle(MONO)
+        def ta = new javafx.scene.control.TextArea(txt ?: ''); ta.setEditable(false); ta.setWrapText(false); ta.setStyle(MONO)
         javafx.scene.layout.VBox.setVgrow(ta, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(ta)
     }
     def addWarnLabel = { String txt ->
@@ -748,78 +786,73 @@ render = { ->
         lbl.setStyle('-fx-text-fill: #b8860b; -fx-font-weight: bold;'); center.getChildren().add(lbl)
     }
     def addLiveLog = { -> def la = logAreaRef.get(); if (la != null) { javafx.scene.layout.VBox.setVgrow(la, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(la) } }
+    def killRunning = { -> cancelledRef.set(true); killTree(processRef.get()) }
 
     if (cur == 'CONFIG_INCOMPLETE') {
-        title.setText('Mitoz tespiti (FCOS) — çalışma zamanı gerekli')
+        title.setText('HoVer-NeXt — çalışma zamanı gerekli')
         def miss = configMissing(cfg)
-        addGuidance('Bu modül torch + torchvision ortamını (env id: midog-fcos) gerektirir.\nEksik/geçersiz:\n  • ' +
+        addGuidance('Bu sihirbaz HoVer-NeXt Python ortamını (env id: hovernext) ve bir NVIDIA CUDA GPU gerektirir.\nEksik/geçersiz:\n  • ' +
             (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
-            '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi → "MIDOG25 FCOS — mitoz dedektörü".\n' +
-            'Köprü betiği: handson/python/midog/fcos_runner.py')
+            '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi → "HoVer-NeXt — çekirdek segmentasyon + 7 sınıf".\n' +
+            'Köprü betiği: handson/python/hovernext/hovernext_runner.py')
         actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('⚙ Python ortamını kur/aç', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar → "MIDOG25 FCOS — mitoz dedektörü"yü kurun'))
+        actions.add(navButton('⚙ Python ortamını kur/aç', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar → "HoVer-NeXt"i kurun'))
         actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
-        title.setText('Mitoz tespiti (FCOS) — yapılandırma')
+        title.setText('HoVer-NeXt — yapılandırma')
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         def pyField = new javafx.scene.control.TextField(cfg.python ?: '')
         def rnField = new javafx.scene.control.TextField(cfg.runner ?: '')
         def wdField = new javafx.scene.control.TextField(cfg.workDir ?: '')
-        def tmppField = new javafx.scene.control.TextField(cfg.targetMpp ?: '')
-        tmppField.setPromptText('boş = 0.5')
-        def batchField = new javafx.scene.control.TextField(cfg.batchSize ?: '8')
-        def threshField = new javafx.scene.control.TextField(cfg.threshold ?: '')
-        threshField.setPromptText('boş = 0.548')
+        def batchField = new javafx.scene.control.TextField(cfg.batchSize ?: '16')
+        def ttaField = new javafx.scene.control.TextField(cfg.tta ?: '4')
         [pyField, rnField, wdField].each { it.setPrefColumnCount(36) }
-        [tmppField, batchField, threshField].each { it.setPrefColumnCount(8) }
-        def deviceChoice = new javafx.scene.control.ChoiceBox(); ['cuda', 'cpu'].each { deviceChoice.getItems().add(it) }
-        deviceChoice.setValue((cfg.device == 'cpu') ? 'cpu' : 'cuda')
+        [batchField, ttaField].each { it.setPrefColumnCount(6) }
+        def modelChoice = new javafx.scene.control.ChoiceBox()
+        MODELS.each { modelChoice.getItems().add(it.label) }
+        int mIdx = MODELS.findIndexOf { it.id == cfg.model }
+        modelChoice.getSelectionModel().select(mIdx < 0 ? 0 : mIdx)
         pyFieldRef.set(pyField); runnerFieldRef.set(rnField); workFieldRef.set(wdField)
-        deviceChoiceRef.set(deviceChoice); tmppFieldRef.set(tmppField); batchFieldRef.set(batchField); threshFieldRef.set(threshField)
+        modelChoiceRef.set(modelChoice); batchFieldRef.set(batchField); ttaFieldRef.set(ttaField)
         def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Dosya seç'); if (x != null) f.setText(x.getAbsolutePath()) }
         def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Dizin seç', null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model:'), new javafx.scene.control.Label(MODEL + ' (sabit)'))
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (.venv/python.exe):'), pyField, navButton('…', { browseFile(pyField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Köprü (fcos_runner.py):'), rnField, navButton('…', { browseFile(rnField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Köprü (hovernext_runner.py):'), rnField, navButton('…', { browseFile(rnField) }))
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Çalışma dizini (ops.):'), wdField, navButton('…', { browseDir(wdField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Cihaz:'), deviceChoice)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Hedef çözünürlük (µm/px):'), tmppField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model (Lizard):'), modelChoice)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Batch size:'), batchField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Duyarlılık eşiği (det_thresh, 0–1):'), threshField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('TTA görünümü:'), ttaField)
         center.getChildren().add(grid)
-        def mcf = modelCacheFile()
-        def missingLocal = [mcf.isFile() ? null : 'ağırlık (~1.1 GB, v1.0.0 yayını)', upstreamCodeReady() ? null : 'referans kod (sabit commit)'].findAll { it != null }
-        def mcLbl = new javafx.scene.control.Label(missingLocal.isEmpty()
-            ? ('✓ Yerel model + referans kod VAR: ' + mcf.getParentFile().getAbsolutePath())
-            : ('○ Eksik: ' + missingLocal.join(' + ') + ' — "Modeli yerel indir" ile bir kez indirin.'))
+        def mcLbl = new javafx.scene.control.Label(
+            (codeReady() ? '✓ HoVer-NeXt kodu VAR' : '○ HoVer-NeXt kodu yok') + '   ·   ' +
+            (weightsReady(cfg.model) ? ('✓ ağırlık VAR (' + cfg.model + ')') : ('○ ağırlık yok (' + cfg.model + ') — "Modeli yerel indir"')))
         mcLbl.setWrapText(true); mcLbl.setMaxWidth(Double.MAX_VALUE); mcLbl.setStyle('-fx-opacity: 0.85; -fx-font-size: 11px;')
         center.getChildren().add(mcLbl)
-        addGuidance('Model: MIDOG 2025 Görev 1 resmî referansı (FCOS-ResNeXt101), sabit. Ağırlık ve referans kodu paketlenmez; "Modeli yerel indir" ikisini de bir kez çeker (ağırlık: v1.0.0 yayını; kod: sabit commit — model kurulumu ve döşemeli çıkarım bu koddan değiştirilmeden çalıştırılır; LİSANS dosyası yok → araştırma/eğitim, kullanıcı sorumluluğunda). midog-fcos ortamını bu sürümden önce kurduysanız yeniden kurun (SimpleITK + pyyaml eklendi).\n' +
-            'Python + köprü otomatik bulunur (midog-fcos venv ve handson/python/midog/). Cihaz: GPU için cuda.\n' +
-            'Hedef çözünürlük: ROI bu µm/px değerine yeniden örneklenip FCOS\'a beslenir (varsayılan 0.5, MIDOG kanonik). Duyarlılık eşiği: referans 0.548; daha çok tespit için düşürün (ör. 0.3) — daha çok yanlış-pozitif, görsel doğrulayın.')
+        addGuidance('Model: HoVer-NeXt Lizard (7 sınıf). "Modeli yerel indir" seçili modelin ağırlığını Zenodo\'dan (CC BY-NC-SA 4.0, MD5 doğrulanır) ve HoVer-NeXt kodunu (GPL-3.0, sabit commit; paketlenmez, ayrı süreç olarak çalıştırılır) bir kez indirir; ImageNet omurgasını da önbelleğe almaya çalışır — yine de ilk çalıştırmada internet gerekebilir.\n' +
+            'Model seçimini değiştirirseniz önce "Kaydet", sonra yeniden "Modeli yerel indir". Cihaz: yalnız CUDA (HoVer-NeXt CPU\'da çalışmaz). Batch size: GPU belleği yetmezse düşürün (ör. 8). TTA: test-zamanı artırma görünümü (HoVer-NeXt varsayılanı 4; 1 = daha hızlı).')
         actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('⚙ Python ortamı', { launchEnvManager() }, 'Atölye Python ortam yöneticisini aç (midog-fcos kur)'))
-        actions.add(navButton('Modeli yerel indir', { startModelDownload() }, 'FCOS_x101.ckpt ağırlığını bir kez yerel indir'))
-        actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }, 'fcos_runner.py selftest'))
+        actions.add(navButton('⚙ Python ortamı', { launchEnvManager() }, 'Atölye Python ortam yöneticisini aç (hovernext kur)'))
+        actions.add(navButton('Modeli yerel indir', { startModelDownload() }, 'HoVer-NeXt kodu + seçili Lizard ağırlığını bir kez yerel indir'))
+        actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }, 'hovernext_runner.py selftest (paketler + CUDA + kod/ağırlık)'))
         actions.add(navButton('Kaydet ▶', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
     } else if (cur == 'CHECK_RUNNING') {
         title.setText('Bağımlılık kontrolü çalışıyor…')
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton('İptal et', { killRunning() }))
     } else if (cur == 'CHECK_DONE') {
         title.setText(selftestOkRef.get() ? 'Bağımlılık kontrolü tamam ✅'
-            : '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın (Python / bağımlılık)'); addLiveLog()
+            : '⚠ Bağımlılık kontrolü BAŞARISIZ — günlüğe bakın (paket / CUDA / kod-ağırlık)'); addLiveLog()
         actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
         if (logSnapshot()?.trim()) actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }, 'Bağımlılık kontrolü günlüğünü kaydet'))
         if (selftestOkRef.get()) actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, 'Kontrol tamam — bölgede çalıştırma ekranına döner'))
     } else if (cur == 'DL_RUNNING') {
         title.setText('Model indiriliyor (yerel)…')
-        addGuidance('FCOS_x101.ckpt (~1.1 GB, v1.0.0 yayını) + MIDOG25 T1 referans kodu (sabit commit) veri kökü altına indiriliyor (bir kerelik).')
+        addGuidance('HoVer-NeXt kodu + ' + modelLabelOf(cfg.model) + ' ağırlığı veri kökü altına indiriliyor (bir kerelik; MD5 doğrulanır).')
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton('İptal et', { killRunning() }))
     } else if (cur == 'DL_DONE') {
-        title.setText(dlOkRef.get() ? 'Model yerel olarak indirildi ✅' : '⚠ Model indirilemedi — yukarıdaki günlüğe bakın'); addLiveLog()
+        title.setText(dlOkRef.get() ? 'Model yerel olarak indirildi ✅' : '⚠ Model indirilemedi — günlüğe bakın'); addLiveLog()
         actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
         if (logSnapshot()?.trim()) actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }, 'İndirme günlüğünü kaydet'))
         if (dlOkRef.get()) actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, 'İndirme tamam — bölgede çalıştırma ekranına döner'))
@@ -833,60 +866,61 @@ render = { ->
         } else {
             def targets = regionAnnotationsOf(imageData)
             def ci = calibrationInfo(imageData)
-            def cal = ci.cal
-            double targetMpp = cfg.targetMpp?.trim() ? parseDoubleOr(cfg.targetMpp, TARGET_MPP) : TARGET_MPP
             def typeName = (imageData.getImageType()?.name() ?: '').toUpperCase(java.util.Locale.ROOT)
             boolean isHE = typeName.contains('BRIGHTFIELD_H_E')
-            title.setText('Mitoz tespiti — FCOS MIDOG25 (bölgede)')
+            boolean localReady = codeReady() && weightsReady(cfg.model)
+            title.setText('HoVer-NeXt — çekirdek segmentasyonu + 7 sınıf (bölgede)')
             def sb = new StringBuilder()
-            sb << "Slayt          : " << imageNameOf(imageData) << "\n"
-            sb << "Model          : " << MODEL << "\n"
-            sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
-            sb << "Cihaz          : " << (cfg.device ?: 'cuda') << "\n"
-            sb << String.format(java.util.Locale.US, "Hedef çözünürlük: %.3f µm/px%n", targetMpp)
-            sb << "Duyarlılık eşiği: " << (cfg.threshold?.trim() ? cfg.threshold.trim() : '0.548 (referans)') << "\n"
-            sb << "Yerel model    : " << (localModelReady() ? 'VAR (ağırlık + referans kod)' : 'eksik — Yapılandır → "Modeli yerel indir"') << "\n"
-            sb << String.format(java.util.Locale.US, "Seçili bölge   : %,d alan anotasyonu%n", targets.size())
-            if (cal != null) {
-                sb << String.format(java.util.Locale.US, "Piksel boyutu  : %.4f × %.4f µm/px%s%n", cal.pw, cal.ph,
+            sb << "Slayt            : " << imageNameOf(imageData) << "\n"
+            sb << "Model            : " << modelLabelOf(cfg.model) << "\n"
+            sb << "Python           : " << (cfg.python ?: '(ayarsız)') << "\n"
+            sb << "Cihaz            : CUDA GPU (zorunlu)\n"
+            sb << "Batch / TTA      : " << (cfg.batchSize ?: '16') << " / " << (cfg.tta ?: '4') << "\n"
+            sb << "Yerel kod+ağırlık: " << (localReady ? 'VAR' : 'eksik — Yapılandır → "Modeli yerel indir"') << "\n"
+            sb << String.format(java.util.Locale.US, "Seçili bölge     : %,d alan anotasyonu%n", targets.size())
+            if (ci.cal != null) {
+                sb << String.format(java.util.Locale.US, "Piksel boyutu    : %.4f × %.4f µm/px%s%n", ci.cal.pw, ci.cal.ph,
                     (Double.isFinite(ci.mag) && ci.mag > 0 ? String.format(java.util.Locale.US, '   (~%.0f×)', ci.mag) : ''))
-                sb << String.format(java.util.Locale.US, "Yeniden örnek. : %s%n", resampleNote(ci.mpp, targetMpp))
+                sb << "Yeniden örnek.   : " << resampleNote(ci.mpp) << "\n"
             } else {
-                sb << "Piksel boyutu  : KALİBRE DEĞİL — yoğunluk hesaplanmaz, native çözünürlük beslenir\n"
+                sb << "Piksel boyutu    : KALİBRE DEĞİL — çalıştırılamaz\n"
             }
             addMonoArea(sb.toString())
-            addGuidance('FCOS YALNIZ seçili/çizili alan anotasyon(lar)ı içinde çalışır. Sonuç: "Mitosis" mavi nokta-anotasyonları + her anotasyona mitoz sayısı ve yoğunluğu (mitoz/mm²); ROI ~2 mm² ise WHO birimi (mitoz/2 mm²).')
-            if (!isHE) addWarnLabel('⚠ Görüntü tipi H&E değil (' + typeName + '). FCOS H&E için tasarlanmıştır.')
-            if (ci.warn != null) addWarnLabel('⚠ Kalibrasyon: ' + ci.warn)
-            boolean canRun = configComplete(cfg) && targets.size() >= 1
-            if (!configComplete(cfg)) addWarnLabel('⚠ Python ortamı (midog-fcos) kurulu değil — "⚙ Python ortamını kur/aç" ile kurun.')
+            addGuidance('HoVer-NeXt YALNIZ seçili/çizili alan anotasyon(lar)ı içinde çalışır. Sonuç: her çekirdek için "<Sınıf> (HoVer-NeXt)" sınıflı renkli poligon TESPİTİ + her anotasyona sınıf başına sayım, % ve yoğunluk (çekirdek/mm²).')
+            addWarnLabel('⚠ Sınırlama: ' + CAVEAT)
+            if (!isHE) addWarnLabel('⚠ Görüntü tipi H&E değil (' + typeName + '). HoVer-NeXt H&E için eğitildi.')
+            if (ci.block != null) addWarnLabel('⛔ Ölçek: ' + ci.block)
+            else if (ci.warn != null) addWarnLabel('⚠ Kalibrasyon: ' + ci.warn)
+            if (!configComplete(cfg)) addWarnLabel('⚠ Python ortamı (hovernext) kurulu değil — "⚙ Python ortamını kur/aç" ile kurun.')
+            else if (!localReady) addWarnLabel('⚠ HoVer-NeXt kodu/ağırlığı yerelde yok — Yapılandır → "Modeli yerel indir".')
+            if (targets.size() < 1) addWarnLabel('⚠ Önce en az 1 alan anotasyonu çizin/seçin.')
+            boolean canRun = configComplete(cfg) && localReady && targets.size() >= 1 && ci.scaleOk
             actions.add(navButton('Kapat', { stage.close() }))
             if (!configComplete(cfg)) actions.add(navButton('⚙ Python ortamını kur/aç', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar'))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
-            def runBtn = navButton('Bölgede çalıştır ▶', { startRun() }, 'FCOS mitoz dedektörünü seçili bölgede çalıştırır')
+            def runBtn = navButton('Bölgede çalıştır ▶', { startRun() }, 'HoVer-NeXt çekirdek segmentasyonu + sınıflandırmasını seçili bölgede çalıştırır')
             runBtn.setDisable(!canRun)
-            if (!canRun && targets.size() < 1) addWarnLabel('⚠ Önce en az 1 alan anotasyonu çizin/seçin.')
             actions.add(runBtn)
         }
     } else if (cur == 'RUN_RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('FCOS köprüsü çalışıyor (ilk çalıştırmada model ağırlığı indirilmiş olmalı). Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance('HoVer-NeXt köprüsü çalışıyor (ayrı süreç; ilk çalıştırmada ImageNet omurgası da indirilebilir). Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton('İptal et', { killRunning() }))
         actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }, 'O ana kadarki çalışma günlüğünü dosyaya kaydet'))
     } else if (cur == 'BUSY') {
         title.setText(busyLabelRef.get()); addGuidance('Lütfen bekleyin…'); center.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
         title.setText('Tamamlandı ✅'); addMonoArea(resultTextRef.get())
         int nMit = (mitosisCoordsRef.get()?.size() ?: 0)
-        if (nMit > 0) addGuidance('Tespitler "' + MITOSIS_CLASS + '" sınıflı MAVİ nokta-anotasyonları olarak eklendi (Annotations panelinde "' + MITOSIS_PREFIX + ' #…"). Düşük yakınlaştırmada nokta küçük görünür — "Mitoza git" ile üstüne gidin.')
+        addGuidance('Çekirdek sınıflarını Annotations/Hierarchy panelinden ya da View → Show detections ile inceleyin; sınıf renklerini "Classes" listesinden aç/kapat edin.')
         def lf = logFileRef.get(); if (lf != null) addGuidance('Çalışma günlüğü otomatik kaydedildi: ' + lf.getAbsolutePath())
         actions.add(navButton('Kapat', { stage.close() }))
-        if (nMit > 0) actions.add(navButton('◀ Önceki', { goToMitosis(navIdxRef.get() - 1); render() }, 'Önceki mitoza git'))
-        if (nMit > 0) actions.add(navButton('Mitoza git ' + (navIdxRef.get() >= 0 ? ((navIdxRef.get() + 1) + '/' + nMit) : ('1/' + nMit)) + ' ▶', { goToMitosis(navIdxRef.get() + 1); render() }, 'Görüntüleyiciyi mitozun üstüne ortala + yakınlaştır'))
+        if (nMit > 0) actions.add(navButton('◀ Önceki', { goToMitosis(navIdxRef.get() - 1); render() }, 'Önceki mitoz-sınıflı çekirdeğe git'))
+        if (nMit > 0) actions.add(navButton('Mitoza git ' + (navIdxRef.get() >= 0 ? ((navIdxRef.get() + 1) + '/' + nMit) : ('1/' + nMit)) + ' ▶', { goToMitosis(navIdxRef.get() + 1); render() }, 'Görüntüleyiciyi mitoz-sınıflı çekirdeğin üstüne ortala'))
         actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-        actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }, 'FCOS çalışma günlüğünü dosyaya kaydet'))
+        actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }, 'HoVer-NeXt çalışma günlüğünü dosyaya kaydet'))
         actions.add(navButton('↻ Yeniden çalıştır', { step.set('READY'); render() }))
     } else { // ERROR
         title.setText('Hata'); addMonoArea(errorTextRef.get())
@@ -899,16 +933,13 @@ render = { ->
     topChk.selectedProperty().addListener({ obs, o, n -> alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
     def spacer = new javafx.scene.layout.Region(); javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
     def bar = new javafx.scene.layout.HBox(8); bar.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
-    bar.getChildren().add(topChk)
-    // Çalışan işlem yokken: bu pencereyi kapatıp mitoz modelleri listesine dön (başka bir model başlatmak için).
-    if (!['RUN_RUNNING', 'CHECK_RUNNING', 'DL_RUNNING', 'BUSY'].contains(cur)) bar.getChildren().add(navButton('◀ Mitoz listesi', { openMitosisHub() }, 'Bu pencereyi kapatıp mitoz modelleri listesini açar — başka bir model başlatmak için'))
-    bar.getChildren().add(spacer); bar.getChildren().addAll(actions)
+    bar.getChildren().add(topChk); bar.getChildren().add(spacer); bar.getChildren().addAll(actions)
     def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
     def bottom = new javafx.scene.layout.VBox(8, disclaimer, bar); bottom.setPadding(new javafx.geometry.Insets(10))
     def root = new javafx.scene.layout.BorderPane(); root.setCenter(center); root.setBottom(bottom)
-    stage.setScene(new javafx.scene.Scene(root, 900, 640))
+    stage.setScene(new javafx.scene.Scene(root, 920, 700))
 }
 
 // ── Açılış ────────────────────────────────────────────────────────────────────
@@ -917,11 +948,11 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Mitoz tespiti — FCOS (MIDOG25 Track-1)')
+        stage.setTitle('HoVer-NeXt — çekirdek segmentasyonu + 7 sınıf (Lizard)')
         stage.setAlwaysOnTop(alwaysTop.get())
         render(); stage.show()
     } catch (Throwable t) {
         Dialogs.showErrorMessage('Sihirbaz açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
     }
 }
-println "✓ Mitoz tespiti (FCOS · MIDOG25 Track-1) sihirbazı açıldı."
+println "✓ HoVer-NeXt çekirdek segmentasyonu + sınıflandırma sihirbazı açıldı."

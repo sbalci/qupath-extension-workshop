@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   Aynı projedeki 2+ slaydı QuPath'in ÇOKLU GÖRÜNÜM (multi-view) ızgarasına yan yana
+ *   Aynı projedeki 2+ slaytı QuPath'in ÇOKLU GÖRÜNÜM (multi-view) ızgarasına yan yana
  *   açar ve "Synchronize viewers"ı açar — bir panelde kaydırma/yakınlaştırma diğerlerini
  *   birlikte hareket ettirir. Bir vakanın seri kesitlerini (ör. H&E + CK7 + CDX2 + CK20)
  *   birlikte incelemenin en hızlı yolu. QuPath'in ViewerManager API'sini çağırır:
@@ -105,7 +105,7 @@ Platform.runLater {
         boxes << cb
         listBox.getChildren().add(cb)
     }
-    // Hiç ön-işaret oluşmadıysa açık slaydı işaretle (en az bir başlangıç seçimi)
+    // Hiç ön-işaret oluşmadıysa açık slaytı işaretle (en az bir başlangıç seçimi)
     if (openEntry != null && boxes.every { !it.isSelected() }) {
         boxes.find { it.getUserData() == openEntry }?.setSelected(true)
     }
@@ -136,7 +136,7 @@ Platform.runLater {
             selected = new ArrayList(selected.subList(0, MAX_PANELS))
             n = MAX_PANELS
         }
-        // Açık slaydı ilk panele al (kararlı yerleşim — getAllViewers'ın ilki)
+        // Açık slaytı ilk panele al (kararlı yerleşim — getAllViewers'ın ilki)
         if (openEntry != null && selected.contains(openEntry)) {
             selected = [openEntry] + selected.findAll { it != openEntry }
         }

@@ -11,7 +11,7 @@
  *                      küçük anotasyonun alanının >%5'ini kapsıyorsa çift sayılır.
  *     (2) NEREDEYSE-KOPYA — ağırlık merkezleri < 10 µm VE göreli alan farkı < %1.
  *     (3) BOŞ/TRİVİAL — alanı < 100 µm² ya da boş ROI.
- *     (4) İSİMSİZ+SINIFSIIZ — getName() null/boş VE getPathClass()==null.
+ *     (4) İSİMSİZ+SINIFSIZ — getName() null/boş VE getPathClass()==null.
  *     (5) SINIR DIŞI   — ROI sınırlayıcı kutusu sunucu genişlik/yüksekliğinin dışında.
  *     (6) GEÇERSİZ GEOMETRİ — getROI().getGeometry().isValid()==false.
  *
@@ -20,7 +20,7 @@
  *   ağırlık merkezi farkı (µm). Klinik eşik, skor veya yorum ÜRETMEZ.
  *
  * KULLANIM:
- *   1. Denetlemek istediğiniz anotasyonları içeren slaydı açın.
+ *   1. Denetlemek istediğiniz anotasyonları içeren slaytı açın.
  *   2. [Extensions → Atölye → Yardımcılar → Uzamsal analiz → Anotasyon Yapısı QC]
  *      ya da [Automate → Project scripts → bu betik]
  *
@@ -187,7 +187,7 @@ annots.each { ann ->
     if (areaScaled < TRIVIAL_UM2) emptyTrivial << label(ann)
 }
 
-// ── (4) İSİMSİZ + SINIFSIIZ ─────────────────────────────────────────────────
+// ── (4) İSİMSİZ + SINIFSIZ ──────────────────────────────────────────────────
 annots.each { ann ->
     def n = ann.getName()
     if ((n == null || n.isBlank()) && ann.getPathClass() == null)
@@ -314,7 +314,7 @@ body << String.format(java.util.Locale.US,
 body << fmt(emptyTrivial)
 
 body << String.format(java.util.Locale.US,
-    "(4) İSİMSİZ + SINIFSIIZ                  : %d\n", unnamedUnclassed.size())
+    "(4) İSİMSİZ + SINIFSIZ                   : %d\n", unnamedUnclassed.size())
 body << fmt(unnamedUnclassed)
 
 body << String.format(java.util.Locale.US,

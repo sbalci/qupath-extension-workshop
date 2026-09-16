@@ -12,7 +12,7 @@
  *   eklenti gerektirmeyen, SAYISAL (kare başına hücre/mm²) ve Veri Dışa Aktarma
  *   modülü ile dışa aktarılabilen karşılığıdır.
  *
- * GİRDİ (ÖNKOŞUL):
+ * GİRDİ (ÖN KOŞUL):
  *   • Slaytta hücre tespitleri olmalı (Hücre Tespiti, Nükleer Boya, Sitoplazmik Boya
  *     veya Tümör İçi Ki-67 modüllerinden biriyle üretilmiş). Betik tespit YAPMAZ.
  *

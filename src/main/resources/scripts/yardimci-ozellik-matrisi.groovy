@@ -415,7 +415,7 @@ def processImage = { imageData, String imageName ->
 // 5) Modu uygula
 // ──────────────────────────────────────────────────────────────
 if (projectMode) {
-    // Açık slaydı önce diske kaydet — readImageData diskten okur
+    // Açık slaytı önce diske kaydet — readImageData diskten okur
     if (currentImageData != null && currentEntry != null) {
         try { currentEntry.saveImageData(currentImageData) }
         catch (Throwable t) { println "⚠ Açık slayt kaydedilemedi: ${t.getMessage()}" }

@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   "Analiz etmeden önce verine bak." Açık slaydın (veya seçili bir ROI'nin)
+ *   "Analiz etmeden önce verine bak." Açık slaytın (veya seçili bir ROI'nin)
  *   temel görüntü künyesini tek pencerede gösterir — Pete Bankhead'in ücretsiz
  *   kitabı *Introduction to Bioimage Analysis* (CC-BY 4.0) Bölüm 1'in QuPath
  *   içindeki tek tıklamalı karşılığı:

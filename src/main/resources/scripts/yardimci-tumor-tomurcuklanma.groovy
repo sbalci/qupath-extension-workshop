@@ -13,7 +13,7 @@
  *   Classify → Pixel classification (ck-tumor-dab) → Create detections →
  *   boyut süzme → yeniden sınıflandırma. Bu sihirbaz tüm adımları birleştirir.
  *
- * GİRDİ (ÖNKOŞUL):
+ * GİRDİ (ÖN KOŞUL):
  *   • Parlak-alan (brightfield) CK-DAB görüntüsü + piksel kalibrasyonu (µm/px)
  *   • Moda göre seçim:
  *       - Seçili alan       → bir alan anotasyonu seçin (Brush/Polygon)
@@ -36,7 +36,7 @@
  *   • ITBCC 2016: Lugli A ve ark. Mod Pathol 2017;30(9):1299-1311.
  *     DOI: 10.1038/modpathol.2017.46
  *
- * NOT: Gömülü sınıflandırıcının boya vektörleri ("Cam5.2") kaynak slayda
+ * NOT: Gömülü sınıflandırıcının boya vektörleri ("Cam5.2") kaynak slayta
  * özgüdür. Kendi CK antikoru/tarayıcınız için [Boya vektörleri sihirbazı] ile
  * vektörleri yeniden kestirip eşiği uyarlamanız gerekebilir.
  *
@@ -66,7 +66,7 @@ final String BAND_NAME = 'Tomurcuk bandı (invazif cephe)'
 
 // ── Gömülü CK/DAB piksel sınıflandırıcısı (handson/classifiers/.../ck-tumor-dab.json) ──
 // Aynı JSON proje klasöründe de bulunur; sihirbaz, projeye bağımlı olmadan
-// kendi kopyasından çalışır. Boya vektörleri kaynak slayda özgüdür (yukarıdaki NOT).
+// kendi kopyasından çalışır. Boya vektörleri kaynak slayta özgüdür (yukarıdaki NOT).
 final String CK_CLASSIFIER_JSON = '''{
   "pixel_classifier_type": "OpenCVPixelClassifier",
   "metadata": {
@@ -372,7 +372,7 @@ render = { ->
     if (cur == 'CONFIG') {
         title.setText('Tümör tomurcuklanma kantifikasyonu')
         bodyLbl.setText(
-            "Önkoşullar:\n" +
+            "Ön koşullar:\n" +
             "  ${s.image ? '✓' : '✗'} Görüntü açık\n" +
             "  ${s.bf ? '✓' : '✗'} Parlak-alan (brightfield) — CK-DAB beklenir\n" +
             "  ${s.calib ? '✓' : '✗'} Piksel kalibrasyonu (µm/px)\n\n" +
@@ -406,7 +406,7 @@ render = { ->
 
         buttons.getChildren().addAll(
             navButton('Kapat', { stage.close() }),
-            navButton('⟳ Yenile', { render() }, 'Önkoşul ve seçim durumunu yeniler'),
+            navButton('⟳ Yenile', { render() }, 'Ön koşul ve seçim durumunu yeniler'),
             navButton('Tomurcukları say ▶', { startRun() },
                 'Seçili bölge(ler)de CK⁺ tomurcukları tespit eder, boyutla süzer ve sayar', 'PLAY'))
     } else if (cur == 'RUNNING') {

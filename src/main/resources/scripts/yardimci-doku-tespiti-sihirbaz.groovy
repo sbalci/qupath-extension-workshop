@@ -58,7 +58,7 @@ def prefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/doku-tes
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     if (isHeadless) { println "Görüntü açık değil."; return }
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce analiz edilecek slaydı açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce analiz edilecek slaytı açın.")
     return
 }
 def server = imageData.getServer()

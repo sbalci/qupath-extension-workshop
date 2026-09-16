@@ -17,7 +17,7 @@
  *   APPLYING        → sınıflandırıcı tüm tespit edilen hücrelere uygulanır
  *   RESULT          → cTCF + sayımlar; TCR anotasyonuna 5 ölçüm yazılır (Veri dışa aktarma modülü)
  *
- * ÖNKOŞULLAR:
+ * ÖN KOŞULLAR:
  *   1. StarDist eklentisi yüklü (sihirbaz yoksa kuruluma yönlendirir)
  *   2. Model dosyası ~/.qupath/stardist/he_heavy_augment.pb
  *      (yoksa ilk tespitte github.com/qupath/models'ten otomatik indirilir)
@@ -41,7 +41,7 @@ def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
 }
 def atolyeD = { String k, double d -> (double) __wpCall('dbl', [String.class, double.class] as Class[], [k, d] as Object[], d) }
 
-// ── Önkoşul düzeltme için paketli yardımcı betikleri çalıştırma ──
+// ── Ön koşul düzeltme için paketli yardımcı betikleri çalıştırma ──
 def bundledScript = { String name ->
     try {
         Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
@@ -512,7 +512,7 @@ def applyMenuHighlight = { String menuName ->
             javafx.scene.Node target = null
             def want = menuName?.toLowerCase(java.util.Locale.ROOT)
             if (want != null) {
-                // Yalnız üst-menü başlıkları (.menu-button); '.menu' alt-menülere de inip yanlış
+                // Yalnız üst-menü başlıkları (.menu-button); '.menu' alt menülere de inip yanlış
                 // düğümü işaretleyebildiğinden kullanılmaz. Bulunamazsa tüm menü çubuğuna düşülür.
                 for (n in mb.lookupAll('.menu-button')) {
                     try {
@@ -560,7 +560,7 @@ render = { ->
     if (cur == 'PREREQ') {
         title.setText('Önce: görüntü ve eklenti hazırlığı')
         bodyLbl.setText(
-            'QuANTUM cTCF iş akışının önkoşulları:\n\n' +
+            'QuANTUM cTCF iş akışının ön koşulları:\n\n' +
             "  ${s.image ? '✓' : '✗'} Açık görüntü\n" +
             "  ${s.heType ? '✓' : '✗'} Görüntü tipi Brightfield (H&E)\n" +
             "  ${s.calib ? '✓' : '✗'} Piksel kalibrasyonu (µm/px)\n" +

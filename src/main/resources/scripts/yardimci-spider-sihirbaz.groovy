@@ -14,7 +14,7 @@
  *     3. İçe aktarım — sonuçlar QuPath'e geri yazılır:
  *          • Anotasyon düzeyi  → her anotasyona sınıf + güven + olasılık ölçümü.
  *          • Karo ızgarası     → her karo için renkli ALT-TESPİT (ısı haritası).
- *   Derin öğrenme QuPath DIŞINDA bir Python venv'inde koşar; bu betik karoları
+ *   Derin öğrenme QuPath DIŞINDA bir Python venv'inde çalışır; bu betik karoları
  *   QuPath tarafında üretir (openslide gibi yerel kütüphane GEREKMEZ).
  *
  *   Kaiko sihirbazından FARKI: SPIDER modelleri ZATEN eğitilmiştir (organ başına
@@ -738,7 +738,7 @@ render = { ->
         }
     } else if (cur == 'RUN_RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('Python köprüsü koşuyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance('Python köprüsü çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
         center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {

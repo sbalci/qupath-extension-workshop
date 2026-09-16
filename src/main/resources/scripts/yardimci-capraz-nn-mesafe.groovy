@@ -31,7 +31,7 @@
  *   • Sonuç penceresinde özet tablo
  *
  * YÖNTEM / KAYNAK:
- *   • Uzamsal hash ızgarası ile çok halkali en yakın komşu — aynı
+ *   • Uzamsal hash ızgarası ile çok halkalı en yakın komşu — aynı
  *     yardimci-nn-mesafe.groovy çekirdeği, yalnız B havuzu üzerinde
  *     indeks kurulur; her A için B'de arama yapılır.
  *   • Summers MA et al. (2022), Cell Rep Methods — uzamsal komşuluk ve

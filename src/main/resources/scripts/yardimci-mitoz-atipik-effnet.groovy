@@ -7,10 +7,11 @@
  *   Bu bir DEDEKTÖR DEĞİLDİR. Bir mitoz dedektörünün (KongNet / FCOS / RetinaNet, ya da
  *   karşılaştırma konsensüsü) daha önce eklediği "Mitosis" nokta-anotasyonlarını alır ve
  *   DeepMicroscopy'nin **MIDOG 2025 Görev 2 resmî referans** sınıflandırıcısı (EfficientNetV2-M)
- *   ile her mitozu **tipik vs atipik** olarak sınıflar. Seçili bölgeyi hedef çözünürlükte bir
- *   ROI görüntüsü + nokta listesi olarak dışa aktarır → köprü (midog/atypical_effnet.py) her
- *   nokta çevresinde bir yama kırpar, sınıflar → her nokta "Mitoz (tipik)" (yeşil) / "Mitoz
- *   (atipik)" (kırmızı) olarak yeniden sınıflandırılır ve atipik olasılığı ölçüm olarak yazılır.
+ *   ile her mitozu **tipik vs atipik** olarak sınıflar. Her mitoz noktasının çevresinden hedef
+ *   çözünürlükte KÜÇÜK bir yama kırpar (kenarda beyaz dolgu → nokta yamanın merkezinde kalır)
+ *   ve yamaları bir manifest dosyasıyla köprüye (midog/atypical_effnet.py) verir → her nokta
+ *   "Mitoz (tipik)" (yeşil) / "Mitoz (atipik)" (kırmızı) olarak yeniden sınıflandırılır, atipik
+ *   olasılığı ölçüm olarak yazılır. Dev bir bölge görüntüsü dışa AKTARILMAZ (yalnız yamalar).
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Tipik/atipik ETİKET + atipik olasılık + atipik oranı. Klinik derece/eşik/yorum DEĞİL.
@@ -144,41 +145,54 @@ def mitosisPointsIn = { imageData, List regionRois ->
     })
 }
 
-// ── Bölgeyi hedef çözünürlükte ROI görüntüsü olarak dışa aktar (birleşik sınır kutusu) ──
-def exportRegionImage = { imageData, File workDir, double targetMpp, List regionRois, cal, Closure appendLine ->
+// ── Her mitoz noktası çevresinden küçük bir yama dışa aktar (dev bölge görüntüsü YOK) ──
+// Sınıflandırıcı yalnız nokta çevresini görür. Bölgenin tamamını tek PNG olarak yazmak geniş
+// seçimlerde yüzlerce MB dosya + GB'larca RAM demekti; burada nokta başına ~128 px yama yazılır.
+// Görüntü kenarında kırpılan yama BEYAZ ile doldurulur → nokta, model 224'e ölçeklemeden önce
+// yamanın MERKEZİNDE kalır (kaydırılmış yama tahmini sessizce değiştirir).
+def exportPatches = { imageData, File workDir, double targetMpp, double patchUm, List points, cal, Closure appendLine ->
     def server = imageData.getServer()
-    double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY
-    regionRois.each { roi -> minX = Math.min(minX, roi.getBoundsX()); minY = Math.min(minY, roi.getBoundsY()); maxX = Math.max(maxX, roi.getBoundsX() + roi.getBoundsWidth()); maxY = Math.max(maxY, roi.getBoundsY() + roi.getBoundsHeight()) }
-    int x = (int) Math.floor(minX); int y = (int) Math.floor(minY)
-    if (x < 0) x = 0
-    if (y < 0) y = 0
-    int w = (int) Math.ceil(maxX - x); int h = (int) Math.ceil(maxY - y)
-    if (x + w > server.getWidth())  w = server.getWidth()  - x
-    if (y + h > server.getHeight()) h = server.getHeight() - y
-    if (w <= 0 || h <= 0) return [ok: false, error: 'Bölge sınır dışı ya da boş.']
     double baseMpp = (cal != null) ? (cal.pw + cal.ph) / 2.0 : Double.NaN
+    boolean calibrated = (cal != null) && Double.isFinite(baseMpp) && baseMpp > 0
     double downsample = 1.0
-    if (cal != null && targetMpp > 0 && Double.isFinite(baseMpp) && baseMpp > 0) { downsample = targetMpp / baseMpp; if (downsample < 1.0) downsample = 1.0 }
-    def request = qupath.lib.regions.RegionRequest.createInstance(server.getPath(), downsample, x, y, w, h)
-    def img = server.readRegion(request)
-    if (img == null) return [ok: false, error: 'Bölge okunamadı (readRegion null döndü).']
-    def rgb = new java.awt.image.BufferedImage(img.getWidth(), img.getHeight(), java.awt.image.BufferedImage.TYPE_INT_RGB)
-    def g = rgb.createGraphics()
-    try { g.setColor(java.awt.Color.WHITE); g.fillRect(0, 0, rgb.getWidth(), rgb.getHeight()); g.drawImage(img, 0, 0, null) } finally { g.dispose() }
-    def f = new File(workDir, 'atipik_roi.png'); if (f.getParentFile() != null) f.getParentFile().mkdirs()
-    javax.imageio.ImageIO.write(rgb, 'PNG', f)
-    appendLine(String.format(java.util.Locale.US, 'ROI görüntüsü: %s (%d × %d px, downsample %.3f, köken %d,%d)', f.getName(), rgb.getWidth(), rgb.getHeight(), downsample, x, y))
-    return [ok: true, file: f, originX: x, originY: y, downsample: downsample]
-}
-// Girdi noktalarını GeoJSON (taban-piksel) olarak yaz.
-def writePointsGeoJson = { File out, List points ->
-    def sb = new StringBuilder(); sb << '{"type":"FeatureCollection","features":['
+    if (calibrated && targetMpp > 0) { downsample = targetMpp / baseMpp; if (downsample < 1.0) downsample = 1.0 }
+    // Yama kenarı taban piksel cinsinden; kalibre değilse taban piksel = hedef piksel varsayılır.
+    int sideBase = (int) Math.max(8, Math.round(calibrated ? (patchUm / baseMpp) : (patchUm / targetMpp)))
+    int outSide  = (int) Math.max(8, Math.round(sideBase / downsample))
+    def dir = new File(workDir, 'atipik_patches')
+    // Önceki çalıştırmanın yamaları birikmesin.
+    try { if (dir.isDirectory()) dir.listFiles()?.each { if (it.isFile() && it.getName().endsWith('.png')) it.delete() } } catch (Throwable ignore) {}
+    dir.mkdirs()
+    def sb = new StringBuilder(); sb << '{"patch_px":' << outSide << ',"items":['
+    int written = 0, skipped = 0
     points.eachWithIndex { a, i ->
-        def roi = a.getROI(); double x = roi.getCentroidX(), y = roi.getCentroidY()
-        if (i > 0) sb << ','
-        sb << String.format(java.util.Locale.US, '{"type":"Feature","geometry":{"type":"Point","coordinates":[%.3f,%.3f]},"properties":{}}', x, y)
+        def roi = a.getROI(); double cx = roi.getCentroidX(), cy = roi.getCentroidY()
+        int x0 = (int) Math.round(cx - sideBase / 2.0), y0 = (int) Math.round(cy - sideBase / 2.0)
+        int ix0 = Math.max(0, x0), iy0 = Math.max(0, y0)
+        int ix1 = Math.min(server.getWidth(), x0 + sideBase), iy1 = Math.min(server.getHeight(), y0 + sideBase)
+        if (ix1 <= ix0 || iy1 <= iy0) { skipped++; return }
+        def img = null
+        try { img = server.readRegion(qupath.lib.regions.RegionRequest.createInstance(server.getPath(), downsample, ix0, iy0, ix1 - ix0, iy1 - iy0)) } catch (Throwable t) { img = null }
+        if (img == null) { skipped++; return }
+        def patch = new java.awt.image.BufferedImage(outSide, outSide, java.awt.image.BufferedImage.TYPE_INT_RGB)
+        def g = patch.createGraphics()
+        try {
+            g.setColor(java.awt.Color.WHITE); g.fillRect(0, 0, outSide, outSide)
+            g.drawImage(img, (int) Math.round((ix0 - x0) / downsample), (int) Math.round((iy0 - y0) / downsample), null)
+        } finally { g.dispose() }
+        def pf = new File(dir, String.format(java.util.Locale.US, 'p%05d.png', i))
+        javax.imageio.ImageIO.write(patch, 'PNG', pf)
+        // id = girdi nokta indeksi; köprü bunu aynen geri verir, sonuç bu anahtarla eşlenir.
+        if (written > 0) sb << ','
+        sb << String.format(java.util.Locale.US, '{"id":%d,"file":"%s","x":%.3f,"y":%.3f}', i, pf.getName(), cx, cy)
+        written++
     }
-    sb << ']}'; out.setText(sb.toString(), 'UTF-8')
+    sb << ']}'
+    if (written == 0) return [ok: false, error: 'Hiçbir yama kırpılamadı — noktalar görüntü sınırlarının dışında olabilir.']
+    def man = new File(dir, 'atipik_patches.json'); man.setText(sb.toString(), 'UTF-8')
+    appendLine(String.format(java.util.Locale.US, 'Yama: %,d adet · %d × %d px · downsample %.3f%s',
+        written, outSide, outSide, downsample, (skipped > 0 ? ('  (kırpılamayan: ' + skipped + ')') : '')))
+    return [ok: true, manifest: man, count: written, skipped: skipped, patchPx: outSide, downsample: downsample]
 }
 
 // ── Headless ──
@@ -223,7 +237,7 @@ def launchBundledScript = { String resourceName ->
             def url = null
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + resourceName) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + resourceName)
-            if (url == null) { javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri & temel modeller → Atölye Python ortam yöneticisi') }; return }
+            if (url == null) { javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }; return }
             def cl = this.getClass().getClassLoader()
             try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
             new GroovyShell(cl).evaluate(url.getText('UTF-8'), resourceName)
@@ -277,7 +291,7 @@ def startSelftest = {
     persistFields(); def cfg = loadConfig(); def miss = configMissing(cfg)
     if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
-    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO); logAreaRef.set(la)
+    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO); logAreaRef.set(la)
     runPhaseRef.set('Bağımlılık kontrolü'); step.set('CHECK_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
@@ -290,7 +304,7 @@ def startModelDownload = {
     persistFields(); def cfg = loadConfig(); def miss = configMissing(cfg)
     if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
-    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO); logAreaRef.set(la)
+    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO); logAreaRef.set(la)
     runPhaseRef.set('Model indiriliyor…'); step.set('DL_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
@@ -316,10 +330,9 @@ def startRun = {
     int patchPx = (int) Math.max(16, Math.round(patchUm / targetMpp))
     def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs()
     def base = imageNameOf(imageData)
-    def ptsGeo = new File(workDir, base + '_atipik_points.geojson')
     def outGeo = new File(workDir, base + '_atipik_out.geojson')
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
-    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO); logAreaRef.set(la)
+    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO); logAreaRef.set(la)
     runPhaseRef.set('Hazırlanıyor…'); step.set('RUN_RUNNING'); render()
 
     def worker = new Thread({
@@ -328,17 +341,14 @@ def startRun = {
         try {
             appendLine('Model: ' + MODEL + '  ·  sınıflanacak nokta: ' + points.size() + '  ·  yama: ' + patchPx + ' px (' + String.format(java.util.Locale.US, '%.1f µm @ %.2f µm/px', patchUm, targetMpp) + ')')
             if (cal == null) appendLine('⚠ Piksel boyutu kalibre değil — yama boyutu hedef-mpp varsayımıyla hesaplandı.')
-            setPhase('ROI + nokta listesi dışa aktarılıyor (1/2)…')
-            // ROI centroid'leri değişmezdir → worker thread'den güvenle yazılır.
-            writePointsGeoJson(ptsGeo, points)
-            def exp = exportRegionImage(imageData, workDir, targetMpp, regionRois, cal, appendLine)
+            setPhase('Yamalar dışa aktarılıyor (1/2)…')
+            // Nokta centroid'leri değişmezdir → worker thread'den güvenle okunur.
+            def exp = exportPatches(imageData, workDir, targetMpp, patchUm, points, cal, appendLine)
             if (!exp.ok) { javafx.application.Platform.runLater { errorTextRef.set(exp.error); step.set('ERROR'); render() }; return }
             if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
-            def cmd = [cfg.python, cfg.runner, 'classify', '--roi', exp.file.getAbsolutePath(), '--points', ptsGeo.getAbsolutePath(),
-                       '--out', outGeo.getAbsolutePath(), '--origin', (exp.originX + ',' + exp.originY),
-                       '--downsample', String.format(java.util.Locale.US, '%.6f', (double) exp.downsample),
-                       '--patch-px', String.valueOf(patchPx), '--device', (cfg.device ?: 'cuda')]
-            setPhase('EfficientNetV2 sınıflaması koşuyor (2/2)…')
+            def cmd = [cfg.python, cfg.runner, 'classify', '--patches', exp.manifest.getAbsolutePath(),
+                       '--out', outGeo.getAbsolutePath(), '--device', (cfg.device ?: 'cuda')]
+            setPhase('EfficientNetV2 sınıflaması çalışıyor (2/2)…')
             def r = runPython(cmd, appendLine)
             appendLine('# Çıkış kodu: ' + r.exitCode)
             def savedLog = autoSaveLog(workDir, base)
@@ -394,6 +404,71 @@ def startRun = {
     worker.setDaemon(true); worker.start()
 }
 
+// ── Ortam yöneticisinden bu sihirbaza dönüş ──────────────────────────────────
+// "Python ortamı" düğmesi Atölye Python ortam yöneticisini bu kancayla (`atolyeReturnHook`) açar.
+// Kurulum bitince yöneticideki "Sihirbaza dön ▶" (ya da yönetici penceresini kapatmak) bu pencereyi
+// öne getirir, yapılandırmayı yeniden okur ve çalıştırma ekranına (READY) geçer. Çalışan bir işlem
+// sürerken ekran değiştirilmez; yalnız pencere öne gelir.
+def envReturnHook = [
+    envId   : ENV_ID,
+    wizard  : 'Atipik sınıflandırma (MIDOG25 EffNetV2)',
+    onReturn: { reopen ->
+        javafx.application.Platform.runLater {
+            if (stage == null || (!stage.isShowing() && !reopen)) return
+            try {
+                if (step.get() == 'CONFIG') persistFields()
+                def savedPy = prefs.get(PREF_PYTHON, '')
+                if (savedPy?.trim() && !(new File(savedPy.trim())).isFile()) { prefs.remove(PREF_PYTHON); try { prefs.flush() } catch (Throwable ignore) {} }
+                if (['CONFIG_INCOMPLETE', 'CONFIG', 'READY', 'CHECK_DONE', 'DL_DONE', 'ERROR'].contains(step.get())) {
+                    step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render()
+                }
+                if (stage.isIconified()) stage.setIconified(false)
+                if (!stage.isShowing()) stage.show()
+                stage.toFront(); stage.requestFocus()
+            } catch (Throwable t) {
+                Dialogs.showErrorMessage('Sihirbaza dönüş', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+            }
+        }
+    }
+]
+def launchEnvManager = { ->
+    new Thread({
+        try {
+            def res = 'yardimci-python-ortam-yoneticisi.groovy'
+            def url = null
+            try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + res) } catch (Throwable t) {}
+            if (url == null) url = this.getClass().getResource('/scripts/' + res)
+            if (url == null) {
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
+                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                return
+            }
+            def cl = this.getClass().getClassLoader()
+            try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
+            def shellBinding = new Binding()
+            shellBinding.setVariable('atolyeReturnHook', envReturnHook)
+            new GroovyShell(cl, shellBinding).evaluate(url.getText('UTF-8'), res)
+        } catch (Throwable t) {
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+        }
+    } as Runnable).start()
+}
+// ── Mitoz modelleri listesine dön ─────────────────────────────────────────────
+// "◀ Mitoz listesi": bu pencereyi kapatır ve "Mitoz modelleri listesi"ni açar (başka bir model
+// başlatmak için). Liste betiği bulunamazsa pencere açık kalır.
+def openMitosisHub = { ->
+    def hubScript = 'yardimci-mitoz-merkez.groovy'
+    def url = null
+    try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + hubScript) } catch (Throwable t) {}
+    if (url == null) url = this.getClass().getResource('/scripts/' + hubScript)
+    if (url == null) {
+        Dialogs.showInfoNotification('Mitoz modelleri listesi', 'Menüden açın: Extensions → Atölye → Modüller → Mitoz tespiti → Mitoz modelleri listesi')
+        return
+    }
+    launchBundledScript(hubScript)
+    if (stage != null) stage.close()
+}
+
 render = { ->
     if (stage == null) return
     stage.setAlwaysOnTop(alwaysTop.get())
@@ -407,7 +482,7 @@ render = { ->
 
     def wrapBind = { javafx.scene.control.Label lbl -> lbl.setWrapText(true); lbl.sceneProperty().addListener({ obs, o, sc -> if (sc != null) { try { lbl.maxWidthProperty().unbind() } catch (Throwable ig) {}; lbl.maxWidthProperty().bind(sc.widthProperty().subtract(38)) } } as javafx.beans.value.ChangeListener) }
     def addGuidance = { String txt -> def lbl = new javafx.scene.control.Label(txt); wrapBind(lbl); center.getChildren().add(lbl) }
-    def addMonoArea = { String txt -> def ta = new javafx.scene.control.TextArea(txt ?: ''); ta.setEditable(false); ta.setWrapText(false); ta.setStyle(MONO); javafx.scene.layout.VBox.setVgrow(ta, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(ta) }
+    def addMonoArea = { String txt -> def ta = new javafx.scene.control.TextArea(txt ?: ''); ta.setEditable(false); ta.setWrapText(true); ta.setStyle(MONO); javafx.scene.layout.VBox.setVgrow(ta, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(ta) }
     def addWarnLabel = { String txt -> def lbl = new javafx.scene.control.Label(txt); wrapBind(lbl); lbl.setStyle('-fx-text-fill: #b8860b; -fx-font-weight: bold;'); center.getChildren().add(lbl) }
     def addLiveLog = { -> def la = logAreaRef.get(); if (la != null) { javafx.scene.layout.VBox.setVgrow(la, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(la) } }
 
@@ -416,7 +491,7 @@ render = { ->
         def miss = configMissing(cfg)
         addGuidance('Bu modül torch + timm ortamını (env id: midog-atypical) gerektirir.\nEksik/geçersiz:\n  • ' + (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
             '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi → "MIDOG25 EffNetV2 — atipik sınıflandırıcı".\nKöprü: handson/python/midog/atypical_effnet.py')
-        actions.add(navButton('Kapat', { stage.close() })); actions.add(navButton('⚙ Python ortamını kur/aç', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') }, 'Atölye Python ortam yöneticisini açar → "MIDOG25 EffNetV2"yi kurun')); actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
+        actions.add(navButton('Kapat', { stage.close() })); actions.add(navButton('⚙ Python ortamını kur/aç', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar → "MIDOG25 EffNetV2"yi kurun')); actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
         title.setText('Atipik sınıflama — yapılandırma')
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
@@ -442,7 +517,7 @@ render = { ->
         mcLbl.setWrapText(true); mcLbl.setMaxWidth(Double.MAX_VALUE); mcLbl.setStyle('-fx-opacity: 0.85; -fx-font-size: 11px;'); center.getChildren().add(mcLbl)
         addGuidance('Bu bir DEDEKTÖR değildir: mevcut "Mitosis"/"Mitoz (konsensüs)" noktalarını tipik/atipik olarak sınıflar. Ağırlık paketlenmez; "Modeli yerel indir" v1.0.0 yayınından çeker (LİSANS yok → araştırma/eğitim). Yama boyutu: her mitoz çevresinde kırpılan alan (µm); referans ~32 µm (≈128 px @ 40x). Hedef çözünürlük varsayılanı 0.25 (T2 eğitim ölçeği).')
         actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('⚙ Python ortamı', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') }, 'Atölye Python ortam yöneticisini aç'))
+        actions.add(navButton('⚙ Python ortamı', { launchEnvManager() }, 'Atölye Python ortam yöneticisini aç'))
         actions.add(navButton('Modeli yerel indir', { startModelDownload() }))
         actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }))
         actions.add(navButton('Kaydet ▶', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
@@ -453,6 +528,7 @@ render = { ->
         title.setText(selftestOkRef.get() ? 'Bağımlılık kontrolü tamam ✅' : '⚠ Bağımlılık kontrolü BAŞARISIZ — günlüğe bakın'); addLiveLog()
         actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
         if (logSnapshot()?.trim()) actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
+        if (selftestOkRef.get()) actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, 'Kontrol tamam — bölgede çalıştırma ekranına döner'))
     } else if (cur == 'DL_RUNNING') {
         title.setText('Model indiriliyor…'); addGuidance('EfficientNetV2-M ağırlığı (~213 MB) veri kökü altına indiriliyor.'); center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
@@ -460,9 +536,10 @@ render = { ->
         title.setText(dlOkRef.get() ? 'Model indirildi ✅' : '⚠ İndirilemedi — günlüğe bakın'); addLiveLog()
         actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
         if (logSnapshot()?.trim()) actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
+        if (dlOkRef.get()) actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, 'İndirme tamam — bölgede çalıştırma ekranına döner'))
     } else if (cur == 'READY') {
         if (imageData == null) {
-            title.setText('Görüntü açık değil'); addGuidance('Önce bir H&E slaydı açıp bir dedektör çalıştırın, ilgi ALANINI seçin, sonra "⟳ Yenile".')
+            title.setText('Görüntü açık değil'); addGuidance('Önce bir H&E slaytı açıp bir dedektör çalıştırın, ilgi ALANINI seçin, sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() })); actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() })); actions.add(navButton('⟳ Yenile', { render() }))
         } else {
             def regions = selectedRegions(imageData); def regionRois = regions.collect { it.getROI() }
@@ -482,13 +559,13 @@ render = { ->
             boolean canRun = configComplete(cfg) && points.size() >= 1
             if (!configComplete(cfg)) addWarnLabel('⚠ Python ortamı (midog-atypical) kurulu değil — "⚙ Python ortamını kur/aç" ile kurun.')
             actions.add(navButton('Kapat', { stage.close() }))
-            if (!configComplete(cfg)) actions.add(navButton('⚙ Python ortamını kur/aç', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') }, 'Atölye Python ortam yöneticisini açar'))
+            if (!configComplete(cfg)) actions.add(navButton('⚙ Python ortamını kur/aç', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar'))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() })); actions.add(navButton('⟳ Yenile', { render() }))
             def runBtn = navButton('Sınıfla ▶', { startRun() }, 'Seçili bölgedeki mitoz noktalarını tipik/atipik sınıfla'); runBtn.setDisable(!canRun)
             actions.add(runBtn)
         }
     } else if (cur == 'RUN_RUNNING') {
-        title.setText(runPhaseRef.get()); addGuidance('EfficientNetV2 sınıflaması koşuyor.'); center.getChildren().add(busyBar()); addLiveLog()
+        title.setText(runPhaseRef.get()); addGuidance('EfficientNetV2 sınıflaması çalışıyor.'); center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
         actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
     } else if (cur == 'RESULT') {
@@ -509,7 +586,10 @@ render = { ->
     topChk.selectedProperty().addListener({ obs, o, n -> alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
     def spacer = new javafx.scene.layout.Region(); javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
     def bar = new javafx.scene.layout.HBox(8); bar.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
-    bar.getChildren().add(topChk); bar.getChildren().add(spacer); bar.getChildren().addAll(actions)
+    bar.getChildren().add(topChk)
+    // Çalışan işlem yokken: bu pencereyi kapatıp mitoz modelleri listesine dön (başka bir model başlatmak için).
+    if (!['RUN_RUNNING', 'CHECK_RUNNING', 'DL_RUNNING', 'BUSY'].contains(cur)) bar.getChildren().add(navButton('◀ Mitoz listesi', { openMitosisHub() }, 'Bu pencereyi kapatıp mitoz modelleri listesini açar — başka bir model başlatmak için'))
+    bar.getChildren().add(spacer); bar.getChildren().addAll(actions)
     def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')

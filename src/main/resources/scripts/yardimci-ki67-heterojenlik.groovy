@@ -13,7 +13,7 @@
  *   LI bölgeden bölgeye 5%–40% arası değişebilir (Ki-67 "hot-spot"). Bu
  *   betik bu değişkenliği bir ÖLÇÜME çevirir.
  *
- * GİRDİ (ÖNKOŞUL):
+ * GİRDİ (ÖN KOŞUL):
  *   • Slaytta zaten Ki-67 hücre tespitleri olmalı (Nükleer boya modülünü ya
  *     da Tümör içi Ki-67 modülünü önce çalıştırın). Betik tespit YAPMAZ; var
  *     olanı kullanır.

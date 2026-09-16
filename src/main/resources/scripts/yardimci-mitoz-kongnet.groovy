@@ -18,7 +18,7 @@
  *     immün boya gerekmez). Çıktı bir derin öğrenme tahminidir; alan kayması /
  *     genelleme sınırları için bkz. Yapay Zekâ Araçlarını Değerlendirme eki. Görsel doğrulama gerekir.
  *
- * GeoJSON ÜRETİMİ (önkoşul, QuPath dışında):
+ * GeoJSON ÜRETİMİ (ön koşul, QuPath dışında):
  *   KongNet'i resmi depo (Jiaqi-Lv/KongNet_Inference_Main) ile çalıştırın:
  *   inference_MIDOG.py → SQLite çıktı; ardından output_to_qupath.py ile mitoz
  *   merkezlerini WSI taban (level-0) piksel koordinatlarında GeoJSON
@@ -71,7 +71,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def textArea = new javafx.scene.control.TextArea(windowBody)
             textArea.setEditable(false)
-            textArea.setWrapText(false)
+            textArea.setWrapText(true)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
             def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")

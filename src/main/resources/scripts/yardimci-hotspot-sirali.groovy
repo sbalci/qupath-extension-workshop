@@ -198,8 +198,8 @@ if (isHeadless) {
 }
 
 // ── 3) Karoları topla, sırala, top-N al ─────────────────────────────
-// Önceki koşudan kalan "Hotspot" etiketlerini seçili sınıfa geri döndür ki aday
-// havuzu koşular arasında küçülmesin (yeniden çalıştırınca tüm karolar aday kalır).
+// Önceki çalıştırmadan kalan "Hotspot" etiketlerini seçili sınıfa geri döndür ki aday
+// havuzu çalıştırmalar arasında küçülmesin (yeniden çalıştırınca tüm karolar aday kalır).
 if (assignHotspotClass) {
     def resetPC = QP.getPathClass(chosenClass)
     allAnnos.findAll { it.getPathClass()?.toString() == hotspotClass }

@@ -11,7 +11,7 @@
  *   ya da floresan 2-kanal = sitoplazma + çekirdek, Cellpose yerel çift-kanal) ve
  *   flow/cellprob eşikleri pencereden seçilir.
  *   Derin öğrenme QuPath DIŞINDA, BIOP eklentisinin yapılandırdığınız Python
- *   venv'inde koşar; bu betik yalnızca builder'ı kurar ve sonucu raporlar.
+ *   venv'inde çalışır; bu betik yalnızca builder'ı kurar ve sonucu raporlar.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Çıktı: tespit edilen hücre nesneleri + adet + (kalibreyse) yoğunluk
@@ -278,7 +278,7 @@ def applyMenuHighlight = { String menuName ->
             javafx.scene.Node target = null
             def want = menuName?.toLowerCase(java.util.Locale.ROOT)
             if (want != null) {
-                // Yalnız üst-menü başlıkları (.menu-button); '.menu' alt-menülere de inip yanlış
+                // Yalnız üst-menü başlıkları (.menu-button); '.menu' alt menülere de inip yanlış
                 // düğümü işaretleyebildiğinden kullanılmaz. Bulunamazsa tüm menü çubuğuna düşülür.
                 for (n in mb.lookupAll('.menu-button')) {
                     try {
@@ -326,7 +326,7 @@ javafx.application.Platform.runLater {
 
         def info = new javafx.scene.control.Label(
             'Bir bölge anotasyonu çizip SEÇİN (kenarı sarı), parametreleri seçip "Çalıştır".\n' +
-            'Segmentasyon QuPath dışındaki Python (venv) ortamında koşar; ilk çalıştırmada model indirilebilir.')
+            'Segmentasyon QuPath dışındaki Python (venv) ortamında çalışır; ilk çalıştırmada model indirilebilir.')
         info.setWrapText(true)
 
         def familyBox = new javafx.scene.control.ChoiceBox()
@@ -423,7 +423,7 @@ javafx.application.Platform.runLater {
             int nucCh = spNuc.getValue() as int
 
             runBtn.setDisable(true)
-            status.setStyle(''); status.setText('… Cellpose çalışıyor (ilk koşuda model indirilebilir)…')
+            status.setStyle(''); status.setText('… Cellpose çalışıyor (ilk çalıştırmada model indirilebilir)…')
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             def worker = new Thread({
                 def res = runDetection(fam, mdl, chan, dia, px, fl, pr, ex, bin, t1, t2, t3, comp, cytoCh, nucCh)

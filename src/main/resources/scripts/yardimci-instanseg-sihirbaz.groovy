@@ -10,7 +10,7 @@
  *     1. InstanSeg eklentisi + bir InstanSeg modeli (klasör) kontrol edilir.
  *     2. TESPİT — seçili ROI içinde InstanSeg çalışır.
  *     3. Özet: tespit sayısı, ROI alanı (mm²), yoğunluk (tespit/mm²), süre.
- *   InstanSeg QuPath İÇİNDE Deep Java Library (DJL) ile koşar — ayrı bir
+ *   InstanSeg QuPath İÇİNDE Deep Java Library (DJL) ile çalışır — ayrı bir
  *   Python ortamı (venv) GEREKMEZ; en sade derin öğrenme seçeneğidir.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
@@ -277,7 +277,7 @@ def applyMenuHighlight = { String menuName ->
             javafx.scene.Node target = null
             def want = menuName?.toLowerCase(java.util.Locale.ROOT)
             if (want != null) {
-                // Yalnız üst-menü başlıkları (.menu-button); '.menu' alt-menülere de inip yanlış
+                // Yalnız üst-menü başlıkları (.menu-button); '.menu' alt menülere de inip yanlış
                 // düğümü işaretleyebildiğinden kullanılmaz. Bulunamazsa tüm menü çubuğuna düşülür.
                 for (n in mb.lookupAll('.menu-button')) {
                     try {
@@ -337,7 +337,7 @@ render = { ->
         addGuidance('Bu sihirbaz yerel QuPath **InstanSeg eklentisini** kullanır; şu anda yüklü değil.\n\n' +
             'Kurulum:\n  1. [Extensions → Manage extensions] → InstanSeg → Install\n  2. QuPath\'i yeniden başlatın\n  3. Bu sihirbazı tekrar açın\n\n' +
             'Ayrıntılı kurulum + modeller: Ekler → InstanSeg.\n' +
-            'Not: InstanSeg DJL ile QuPath içinde koşar — ayrı bir Python ortamı (venv) GEREKMEZ.')
+            'Not: InstanSeg DJL ile QuPath içinde çalışır — ayrı bir Python ortamı (venv) GEREKMEZ.')
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('⟳ Yeniden denetle', { step.set(instansegInstalled() ? 'READY' : 'NEED_INSTALL'); render() }))
         actions.add(menuHighlightToggle('Extensions'))   // #3: Extensions menüsünü göster

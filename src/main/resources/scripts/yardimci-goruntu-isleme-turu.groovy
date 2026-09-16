@@ -1,5 +1,5 @@
 /**
- * Yardımcı - Görüntü işleme kavramları (kendi slaydınızda etkileşimli tur)
+ * Yardımcı - Görüntü işleme kavramları (kendi slaytınızda etkileşimli tur)
  * ----------------------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
@@ -55,11 +55,11 @@ def isHeadless = gui == null
 // onizleme ∈ {null, 'RGB_LUT', 'CHANNELS', 'DECONV', 'GAUSSIAN', 'THRESHOLD', 'WATERSHED', 'COMPOSE'}
 def pages = [
     [id: 'intro', onizleme: null,
-     baslik: 'Görüntü işleme kavramları — kendi slaydınızda',
-     govde: 'Bu tur, dijital patolojide hücre tespitinin "perde arkasını" kendi açık slaydınız ' +
+     baslik: 'Görüntü işleme kavramları — kendi slaytınızda',
+     govde: 'Bu tur, dijital patolojide hücre tespitinin "perde arkasını" kendi açık slaytınız ' +
             'üzerinde adım adım gösterir. En verimli kullanım için çekirdek içeren KÜÇÜK bir bölge ' +
             '(R aracı) çizip seçin; bir seçim yoksa görüntüleyici görünümü kullanılır. Önizlemeler ' +
-            'salt okunurdur — slaydınızı değiştirmez.\n\n' +
+            'salt okunurdur — slaytınızı değiştirmez.\n\n' +
             'Kaynak: Pete Bankhead\'in dijital patoloji için görüntü-işleme sözlüğü (CC-BY 4.0). ' +
             'Aynı kavramların atölyedeki karşılıkları için: Ek — Görüntü Analizi Temelleri.'],
 
@@ -114,7 +114,7 @@ def pages = [
             'adımları kontrol eder.\n\n' +
             'Bankhead\'in uyarısı: bu kadar basit bir hat yalnız birkaç görüntüde ve düşük büyütmede iyi ' +
             'görünür; yüksek büyütmede hatalar belirginleşir. Gerçek uygulamalar çok daha fazla ayarlanabilir ' +
-            'parametre gerektirir — bu yüzden Hücre tespiti modülü sonrası eşikleri kendi slaydınızda kalibre edersiniz.\n\n' +
+            'parametre gerektirir — bu yüzden Hücre tespiti modülü sonrası eşikleri kendi slaytınızda kalibre edersiniz.\n\n' +
             '⚠️ Yalnızca araştırma/eğitim amaçlı; ölçüm veya klinik karar üretmez.']
 ]
 

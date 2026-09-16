@@ -233,7 +233,7 @@ def computeMatch = { gtUnits, predUnits, mode, double thr, boolean hasMicrons, d
             areaIoU: areaIoU, areaDice: areaDice]
 }
 
-// ── Bir doğrulama koşusu: bağlam + seçimler → sonuç metni + sayılar ─────
+// ── Bir doğrulama çalıştırması: bağlam + seçimler → sonuç metni + sayılar ─────
 // Dönüş: [ok:true, text, tp, fp, fn, precision, recall, f1, ...]
 //      | [ok:false, reason, ...]
 def runValidation = { String gtLabel, String predLabel, String mode, double thr,

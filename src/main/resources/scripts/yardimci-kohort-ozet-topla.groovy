@@ -177,7 +177,7 @@ entries.eachWithIndex { entry, idx ->
         println String.format(java.util.Locale.US, "  [%d/%d] %s — %d kilitli anotasyon", idx + 1, totalImages, imgName, lockedAnnos.size())
     } catch (Throwable t) {
         skipped++
-        println String.format(java.util.Locale.US, "  [%d/%d] %s — ATLANIL: %s", idx + 1, totalImages, imgName, (t.getMessage() ?: t.getClass().getSimpleName()))
+        println String.format(java.util.Locale.US, "  [%d/%d] %s — ATLANDI: %s", idx + 1, totalImages, imgName, (t.getMessage() ?: t.getClass().getSimpleName()))
     } finally {
         try { imageData?.getServer()?.close() } catch (Throwable ignore) {}
         imageData = null

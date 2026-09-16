@@ -13,7 +13,7 @@
  *     2. TAHMİN — SINIFSIZ (etiketsiz) anotasyonların karolarını yazar; köprü
  *        bunları tahmin eder; sihirbaz her anotasyona sınıf + güven + sınıf
  *        olasılığı ölçümlerini geri yazar.
- *   Derin öğrenme QuPath DIŞINDA bir Python venv'inde koşar; bu betik karoları
+ *   Derin öğrenme QuPath DIŞINDA bir Python venv'inde çalışır; bu betik karoları
  *   QuPath tarafında üretir (openslide gibi yerel kütüphane GEREKMEZ).
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
@@ -804,7 +804,7 @@ render = { ->
         }
     } else if (cur == 'TRAIN_RUNNING' || cur == 'PREDICT_RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('Python köprüsü koşuyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance('Python köprüsü çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
         center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {}; try { if (persistentRef.get()) stopWorker() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {

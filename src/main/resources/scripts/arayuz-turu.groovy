@@ -99,7 +99,7 @@ def pages = [
      baslik: 'Project sekmesi — slayt listesi',
      govde: 'Project sekmesi, projedeki tüm slaytları küçük resimleriyle listeler. Bir küçük resme ' +
             'çift tıklamak slaytı görüntüleyicide açar; sağ tıklamak açıklama ekleme, görüntü tipi ' +
-            'atama gibi işlemleri sunar. Projeler birden çok slaydı bir arada tutmanın ve aynı analizi ' +
+            'atama gibi işlemleri sunar. Projeler birden çok slaytı bir arada tutmanın ve aynı analizi ' +
             'hepsine uygulamanın profesyonel yoludur. Henüz proje açmadıysanız bu sekme boş görünür.'],
 
     [id: 'tab-image', bolge: 'SIDEBAR', hedef: [tab: 'Image'], safeActivate: true,
@@ -167,7 +167,7 @@ def pages = [
     [id: 'practice-polygon', bolge: 'TOOLBAR', hedef: [tools: 'POLYGON'], demo: 'TOOL_POLYGON', practice: 'POLYGON',
      baslik: 'Alıştırma — bir POLİGON çizin',
      govde: 'Polygon (P) aracı seçildi. Köşelere tek tek tıklayarak bir çokgen oluşturun; çift tıklayarak ' +
-            '(ya da ilk noktaya dönerek) kapatın. İstersen tıklayıp sürükleyip bırakarak da çizebilirsin. ' +
+            '(ya da ilk noktaya dönerek) kapatın. İsterseniz tıklayıp sürükleyip bırakarak da çizebilirsiniz. ' +
             'Poligon tamamlanınca otomatik ilerlenir.'],
 
     [id: 'practice-points', bolge: 'TOOLBAR', hedef: [tools: 'POINTS'], demo: 'TOOL_POINTS', practice: 'POINTS',
@@ -544,7 +544,7 @@ def matchesRoi = { roi, String type ->
 def PRACTICE_HINT = [
     RECTANGLE: 'Görüntü üzerinde tıklayıp sürükleyerek bir DİKDÖRTGEN çizin…',
     ELLIPSE:   'Tıklayıp sürükleyerek bir ELİPS çizin…',
-    POLYGON:   'Köşelere tıklayarak bir POLİGON çizin (çift tıkla ya da ilk noktaya dönerek bitirin)…',
+    POLYGON:   'Köşelere tıklayarak bir POLİGON çizin (çift tıklayın ya da ilk noktaya dönerek bitirin)…',
     POINTS:    'Görüntüye tıklayarak bir veya birkaç NOKTA ekleyin…'
 ]
 def PRACTICE_DONE = [RECTANGLE: 'Dikdörtgen', ELLIPSE: 'Elips', POLYGON: 'Poligon', POINTS: 'Nokta']

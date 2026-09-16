@@ -28,7 +28,7 @@
  *     https://qupath.readthedocs.io/en/stable/docs/tutorials/separating_stains.html
  *
  * BOYA AYRIMI ≠ BOYA NORMALİZASYONU:
- *   • Ayrım (bu betik): bu slaydı doğru OKUMAK için kanallara kalibre eder.
+ *   • Ayrım (bu betik): bu slaytı doğru OKUMAK için kanallara kalibre eder.
  *   • Normalizasyon: slaytları birbirine BENZETMEK için yeniden renklendirir
  *     (Macenko/Reinhard/Vahadane — bkz. Boya Normalizasyonu eki).
  *
@@ -363,7 +363,7 @@ def applyMenuHighlight = { String menuName ->
             javafx.scene.Node target = null
             def want = menuName?.toLowerCase(java.util.Locale.ROOT)
             if (want != null) {
-                // Yalnız üst-menü başlıkları (.menu-button); '.menu' alt-menülere de inip yanlış
+                // Yalnız üst-menü başlıkları (.menu-button); '.menu' alt menülere de inip yanlış
                 // düğümü işaretleyebildiğinden kullanılmaz. Bulunamazsa tüm menü çubuğuna düşülür.
                 for (n in mb.lookupAll('.menu-button')) {
                     try {

@@ -7,7 +7,7 @@
  * yeniden çalıştırmadan** üç bin eşiğini (1+ / 2+ / 3+) GÖRSEL olarak ayarlar.
  *
  * NE İŞE YARAR?
- *   • Slaydınızın KENDİ kromojen renklerinden üretilen renk şeridi + gerçek hücre
+ *   • Slaytınızın KENDİ kromojen renklerinden üretilen renk şeridi + gerçek hücre
  *     kesitlerinden oluşan örnek şeridi üzerinde, histogramdaki üç eşik çizgisini
  *     SÜRÜKLEYEREK ayarlarsınız; sayım / yüzde / H-score anında güncellenir.
  *   • Renk şeridi hücre YOĞUNLUĞUYLA dokulanır (yoğunluk-barkodu); eksen boyunca

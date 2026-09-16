@@ -13,7 +13,7 @@
  *     3. (İsteğe bağlı) YANLIŞ-POZİTİF FİLTRESİ — kayıtlı bir nesne sınıflandırıcısı
  *        çalıştırıp 'yanlış' sınıfına atanan tespitleri siler (artefakt temizliği).
  *     4. Özet: çekirdek sayısı, ROI alanı (mm²), yoğunluk (çekirdek/mm²), süre.
- *   StarDist QuPath İÇİNDE OpenCV ile koşar — bu .pb modelleri için ayrıca DJL/
+ *   StarDist QuPath İÇİNDE OpenCV ile çalışır — bu .pb modelleri için ayrıca DJL/
  *   TensorFlow kurmak GEREKMEZ.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
@@ -422,7 +422,7 @@ def applyMenuHighlight = { String menuName ->
             javafx.scene.Node target = null
             def want = menuName?.toLowerCase(java.util.Locale.ROOT)
             if (want != null) {
-                // Yalnız üst-menü başlıkları (.menu-button); '.menu' alt-menülere de inip yanlış
+                // Yalnız üst-menü başlıkları (.menu-button); '.menu' alt menülere de inip yanlış
                 // düğümü işaretleyebildiğinden kullanılmaz. Bulunamazsa tüm menü çubuğuna düşülür.
                 for (n in mb.lookupAll('.menu-button')) {
                     try {
@@ -511,7 +511,7 @@ render = { ->
         addGuidance('Bu sihirbaz yerel QuPath **StarDist eklentisini** kullanır; şu anda yüklü değil.\n\n' +
             'Kurulum:\n  1. [Extensions → Manage extensions] → StarDist → Install\n  2. QuPath\'i yeniden başlatın\n  3. Bu sihirbazı tekrar açın\n\n' +
             'Ayrıntılı kurulum + model dosyaları: Ekler → StarDist (StarDist Eklentisi).\n' +
-            'Not: .pb modelleri QuPath içinde OpenCV ile koşar — ayrıca DJL/TensorFlow GEREKMEZ.')
+            'Not: .pb modelleri QuPath içinde OpenCV ile çalışır — ayrıca DJL/TensorFlow GEREKMEZ.')
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('⟳ Yeniden denetle', { step.set(stardistInstalled() ? 'READY' : 'NEED_INSTALL'); render() }))
         actions.add(menuHighlightToggle('Extensions'))   // #3: Extensions menüsünü göster

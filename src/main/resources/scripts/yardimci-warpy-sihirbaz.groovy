@@ -7,7 +7,7 @@
  *   Warpy (BIOP) ile hesaplanmış ESNEK (non-rigid) bir hizalama dönüşümünü
  *   kullanarak, bir KAYNAK slayttaki üst düzey anotasyonları — VE içlerindeki
  *   yuvalanmış tespitleri/hücreleri (alt nesneler özyinelemeli) — şu anki (HEDEF)
- *   slayda TEK TIKLA aktarır. Yalnız "anotasyon" değil: bir anotasyonun içinde
+ *   slayta TEK TIKLA aktarır. Yalnız "anotasyon" değil: bir anotasyonun içinde
  *   hücre tespitleri varsa onlar da (ad/ID/ölçümleriyle) taşınır. Afin (§ Hizalama
  *   aktarımı) yetmeyen, kesitler arası kırışma/gerilme olan durumlar içindir
  *   (hücre düzeyi doğruluk).
@@ -18,12 +18,12 @@
  *   downsample seçilebilir). ⚠️ Seri kesitte AYNI hücre iki slaytta olmadığından
  *   HÜCRE düzeyi yeniden-ölçüm bir VEKİLDİR — bölge/anotasyon düzeyi ölçüm daha güvenlidir.
  *
- * ÖNEMLİ — KAYIT (registration) FIJI'DE YAPILIR, QuPath'te DEĞİL:
+ * ÖNEMLİ — HİZALAMA (registration) FIJI'DE YAPILIR, QuPath'te DEĞİL:
  *   Warpy'nin esnek dönüşümü Fiji'de hesaplanır (BigDataViewer-Playground +
  *   elastix + isteğe bağlı BigWarp). Bu sihirbaz QuPath tarafını yapar:
- *     (a) önkoşulları denetler (Warpy eklentisi kurulu mu, Fiji yolu ayarlı mı),
+ *     (a) ön koşulları denetler (Warpy eklentisi kurulu mu, Fiji yolu ayarlı mı),
  *     (b) Fiji'yi başlatır ve adımları gösterir,
- *     (c) Fiji kaydı projeye yazdıktan SONRA anotasyonları aktarır.
+ *     (c) Fiji hizalaması projeye yazdıktan SONRA anotasyonları aktarır.
  *   BigWarp'ın elle işaret arayüzü Fiji'ye özgüdür; QuPath sihirbazı içine
  *   gömülemez — bu yüzden akış Fiji'ye köprülenir.
  *
@@ -35,7 +35,7 @@
  *   3. [Plugins → BigDataViewer-Playground → Sources → Register → QuPath - Create Warpy Registration]:
  *      kaba rigid → elastix afin (ROI) → elastix spline → (ops.) BigWarp düzeltme →
  *      dönüşümü QuPath projesine yazar (transform_<hedef>_<kaynak>.json).
- *   4. QuPath'e dönüp HEDEF (sabit) slaydı açın; bu sihirbazla aktarın.
+ *   4. QuPath'e dönüp HEDEF (sabit) slaytı açın; bu sihirbazla aktarın.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Yalnız nesneleri TAŞIR (koordinat dönüşümü). Hizalama kalitesini,
@@ -66,7 +66,7 @@ String PREF_FIJI = 'fijiPath'
 
 // Warpy, BIOP kataloğundan kurulur (elle .jar yerine önerilir; sürümünüzle eşleşen derlemeyi verir).
 String BIOP_CATALOG_URL = 'https://github.com/BIOP/qupath-biop-catalog'
-// Fiji (= "Fiji Is Just ImageJ") ayrı bir uygulamadır; buradan indirilir (kayıt Fiji'de yapılır).
+// Fiji (= "Fiji Is Just ImageJ") ayrı bir uygulamadır; buradan indirilir (hizalama Fiji'de yapılır).
 String FIJI_DOWNLOAD_URL = 'https://fiji.sc'
 // elastix: otomatik afin+spline motoru; Fiji EKLENTİSİ DEĞİL, harici çalıştırılabilir (SuperElastix).
 String ELASTIX_URL = 'https://github.com/SuperElastix/elastix/releases'
@@ -96,7 +96,7 @@ def showWarpyInstall = {
         '3. Katalogdan Warpy\'yi kurun — QuPath sürümünüzle EŞLEŞEN derlemeyi verir (elle .jar\'dan güvenli;\n' +
         '   yanlış sürüm elle .jar yüklenmeyebilir).\n' +
         '4. QuPath\'i YENİDEN BAŞLATIN.\n\n' +
-        'AYRICA Fiji gerekir (AYRI uygulama; kayıt Fiji\'de yapılır):\n' +
+        'AYRICA Fiji gerekir (AYRI uygulama; hizalama Fiji\'de yapılır):\n' +
         '  • Fiji\'yi ' + FIJI_DOWNLOAD_URL + ' adresinden indirin ("Fiji indir" düğmesi), arşivi açın.\n' +
         '  • Fiji\'de PTBIOP güncelleme sitesini açın + elastix wrapper\'larını ayarlayın\n' +
         '    (Plugins → BIOP → Set and Check Wrappers). BigWarp Fiji çekirdeğinde gelir.\n\n' +
@@ -104,7 +104,7 @@ def showWarpyInstall = {
     if (Dialogs.showConfirmDialog('Warpy nasıl kurulur? (BIOP kataloğu)', steps)) openUrl(BIOP_CATALOG_URL)
 }
 def showFijiPlugins = {
-    def s = 'FIJI EKLENTİLERİ (Warpy kaydı için) — Fiji açıkken:\n\n' +
+    def s = 'FIJI EKLENTİLERİ (Warpy hizalaması için) — Fiji açıkken:\n\n' +
         '1) PTBIOP güncelleme sitesi (BigDataViewer-Playground + Warpy komutları):\n' +
         '   Help → Update… → (kontrol bitince) Manage update sites → listeden PTBIOP\'u İŞARETLE →\n' +
         '   Close → Apply changes → Fiji\'yi YENİDEN BAŞLAT.\n' +
@@ -143,7 +143,7 @@ if (project == null) {
     return
 }
 if (isHeadless) {
-    println "Bu sihirbaz QuPath arayüzü gerektirir (önkoşul denetimi + Fiji köprüsü + kaynak seçimi)."
+    println "Bu sihirbaz QuPath arayüzü gerektirir (ön koşul denetimi + Fiji köprüsü + kaynak seçimi)."
     return
 }
 
@@ -153,7 +153,7 @@ def doTransfer = { Object sourceEntry, boolean addMeas, double downsample, boole
         def W = warpyClass()
         if (W == null) return [ok:false, kind:'noclass', error:"Warpy eklentisi kurulu değil (BIOP kataloğu). Kurup QuPath'i yeniden başlatın."]
         def targetEntry = QP.getProjectEntry()
-        if (targetEntry == null) return [ok:false, kind:'notarget', error:"Hedef slayt bulunamadı; aktarımın HEDEF (sabit) slaydını açın."]
+        if (targetEntry == null) return [ok:false, kind:'notarget', error:"Hedef slayt bulunamadı; aktarımın HEDEF (sabit) slaytını açın."]
 
         def transform, objs, transferred
         try {
@@ -210,7 +210,7 @@ javafx.application.Platform.runLater {
             l.setWrapText(true); l.setMaxWidth(Double.MAX_VALUE); l.setStyle('-fx-opacity: 0.85;'); return l
         }
 
-        // — Önkoşul durumu —
+        // — Ön koşul durumu —
         def W0 = warpyClass()
         def warpyOk = (W0 != null)
         def warpyLbl = new javafx.scene.control.Label(
@@ -242,7 +242,7 @@ javafx.application.Platform.runLater {
             if (!p || !(new File(p)).isFile()) {
                 Dialogs.showErrorMessage('Fiji bulunamadı',
                     'Geçerli bir Fiji/ImageJ çalıştırılabilir dosyası seçin (… düğmesi).\n' +
-                    'Fiji kurulu değilse "Fiji indir" ile fiji.sc\'den indirin (Fiji = ayrı uygulama; kayıt orada yapılır),\n' +
+                    'Fiji kurulu değilse "Fiji indir" ile fiji.sc\'den indirin (Fiji = ayrı uygulama; hizalama orada yapılır),\n' +
                     'arşivi açın ve içindeki çalıştırılabiliri (Windows: ImageJ-win64.exe) seçin.')
                 return
             }
@@ -252,7 +252,7 @@ javafx.application.Platform.runLater {
                 new ProcessBuilder([p]).start()
                 Dialogs.showMessageDialog('Fiji başlatıldı',
                     'Fiji açılıyor. ③. adımdaki komutları izleyin (a: Create BDV Dataset (QuPath) → project.qpproj, b: Create Warpy Registration).\n' +
-                    'Kayıt bittiğinde QuPath\'e dönün, HEDEF slaydı açıp ④. adımdan aktarın.')
+                    'Hizalama bittiğinde QuPath\'e dönün, HEDEF slaytı açıp ④. adımdan aktarın.')
             } catch (Throwable t) {
                 Dialogs.showErrorMessage('Fiji başlatılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
             }
@@ -280,7 +280,7 @@ javafx.application.Platform.runLater {
         refreshBtn.setOnAction({ refreshSources()
             if (sourceBox.getItems().isEmpty())
                 Dialogs.showMessageDialog('Warpy dönüşümü yok',
-                    'Bu (HEDEF) slayt için kayıtlı Warpy dönüşümü bulunamadı. Önce Fiji\'de kaydı tamamlayıp bu slaydı açın.')
+                    'Bu (HEDEF) slayt için kayıtlı Warpy dönüşümü bulunamadı. Önce Fiji\'de hizalamayı tamamlayıp bu slaytı açın.')
         })
 
         def measChk = new javafx.scene.control.CheckBox('Aktarım sonrası HEDEF slaytta yoğunluk ölçümü ekle — aktarılan nesnelere hedef boyanın (İHK) sinyalini ölçer (yavaş; hata verirse aktarım yine tamamlanır)')
@@ -297,9 +297,9 @@ javafx.application.Platform.runLater {
 
         aktarBtn.setOnAction({
             if (!warpyOk) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Warpy eklentisi kurulu değil.'); return }
-            if (QP.getCurrentImageData() == null) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Aktarımın HEDEF slaydını açın.'); return }
+            if (QP.getCurrentImageData() == null) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Aktarımın HEDEF slaytını açın.'); return }
             def srcName = sourceBox.getValue()
-            if (!srcName) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Kaynak yok — önce Fiji\'de kaydı tamamlayıp "Kaynakları tazele"ye basın.'); return }
+            if (!srcName) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Kaynak yok — önce Fiji\'de hizalamayı tamamlayıp "Kaynakları tazele"ye basın.'); return }
             def srcEntry = sourceEntries[srcName]
             aktarBtn.setDisable(true); status.setStyle(''); status.setText('Aktarılıyor…')
             double ds = 1.0d
@@ -335,7 +335,7 @@ javafx.application.Platform.runLater {
         def step1 = new javafx.scene.layout.VBox(6,
             stepHeader('① Warpy eklentisini kur (BIOP kataloğu)'),
             warpyRow,
-            instr('Warpy esnek (non-rigid) kaydı Fiji ile yapar. Eklentiyi BIOP kataloğundan kurun (elle .jar\'dan güvenli), sonra QuPath\'i yeniden başlatın.'))
+            instr('Warpy esnek (non-rigid) hizalamayı Fiji ile yapar. Eklentiyi BIOP kataloğundan kurun (elle .jar\'dan güvenli), sonra QuPath\'i yeniden başlatın.'))
 
         // ② Fiji uygulamasını + eklentilerini kur
         def fijiRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Fiji yolu:'), fijiField, fijiBrowse, fijiDownloadBtn)
@@ -349,9 +349,9 @@ javafx.application.Platform.runLater {
             fijiRow,
             new javafx.scene.layout.HBox(8, fijiPluginsBtn))
 
-        // ③ Fiji'de görüntüleri aç + kaydı (registration) çalıştır
+        // ③ Fiji'de görüntüleri aç + hizalamayı (registration) çalıştır
         def step3 = new javafx.scene.layout.VBox(6,
-            stepHeader('③ Fiji\'de projeyi aç ve kaydı (registration) çalıştır'),
+            stepHeader('③ Fiji\'de projeyi aç ve hizalamayı (registration) çalıştır'),
             new javafx.scene.layout.HBox(8, launchBtn),
             instr('Fiji açıldıktan sonra (menü: BigDataViewer-Playground — TİRELİ; düz "BigDataViewer" DEĞİL. Yoksa ②\'deki PTBIOP\'u kurun):\n' +
                   '  a) Plugins → BigDataViewer-Playground → BDVDataset → Create BDV Dataset (QuPath) → project.qpproj\'u açın (birim: mm).\n' +
@@ -363,11 +363,11 @@ javafx.application.Platform.runLater {
         srcRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
         javafx.scene.layout.HBox.setHgrow(sourceBox, javafx.scene.layout.Priority.ALWAYS)
         sourceBox.setMaxWidth(Double.MAX_VALUE)
-        def srcNote = new javafx.scene.control.Label('Kaynak listesi, ③\'teki Fiji kaydı projeye yazıldıktan SONRA "↻ Kaynakları tazele" ile dolar. HEDEF (sabit) slayt AÇIK olmalı; henüz kayıt yoksa liste BOŞTUR.')
+        def srcNote = new javafx.scene.control.Label('Kaynak listesi, ③\'teki Fiji hizalaması projeye yazıldıktan SONRA "↻ Kaynakları tazele" ile dolar. HEDEF (sabit) slayt AÇIK olmalı; henüz hizalama yoksa liste BOŞTUR.')
         srcNote.setWrapText(true); srcNote.setMaxWidth(Double.MAX_VALUE); srcNote.setStyle('-fx-opacity: 0.8; -fx-font-size: 11px;')
         def step4 = new javafx.scene.layout.VBox(6,
             stepHeader('④ QuPath\'e dön → anotasyonları aktar'),
-            instr('HEDEF (sabit) slaydı QuPath\'te açın, "↻ Kaynakları tazele" deyin, kaynağı seçip "Anotasyonları aktar"a basın. Örtüşmeyi opaklık kaydırıcısıyla doğrulayın.'),
+            instr('HEDEF (sabit) slaytı QuPath\'te açın, "↻ Kaynakları tazele" deyin, kaynağı seçip "Anotasyonları aktar"a basın. Örtüşmeyi opaklık kaydırıcısıyla doğrulayın.'),
             srcRow, srcNote,
             new javafx.scene.layout.VBox(4, measChk, dsRow, lockChk),
             status)

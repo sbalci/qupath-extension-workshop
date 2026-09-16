@@ -120,6 +120,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
      * Entries are added phase-by-phase as each model's bridge+wizard lands.
      */
     private static final ScriptGroup MITOSIS_MODULE = new ScriptGroup("Mitoz tespiti", List.of(
+        // Başlangıç/liste ekranı: aşağıdaki sihirbazları tek pencerede listeler; her sihirbazın
+        // "◀ Mitoz listesi" düğmesi buraya döner. Salt gezinme — açık slayt gerekmez.
+        new ScriptEntry("Mitoz modelleri listesi", "yardimci-mitoz-merkez.groovy", false, false),
         new ScriptEntry("KongNet MIDOG (TIA Toolbox)", "yardimci-mitoz-tiatoolbox.groovy"),
         new ScriptEntry("MIDOG25 FCOS (torchvision)",  "yardimci-mitoz-fcos.groovy"),
         new ScriptEntry("MIDOG DA-RetinaNet (2021, eski)", "yardimci-mitoz-retinanet.groovy"),
@@ -194,6 +197,14 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Cellpose hücre/çekirdek tespiti sihirbazı", "yardimci-cellpose-sihirbaz.groovy"),
             // InstanSeg (yerel eklenti) köprüsü — I2K 2024 uyarlaması. Ek H.
             new ScriptEntry("InstanSeg çekirdek/hücre tespiti sihirbazı", "yardimci-instanseg-sihirbaz.groovy"),
+            // HoVer-NeXt (Python, ayrı süreç; GPL-3.0 kodu çalışma anında indirilir, paketlenmez) — seçili
+            // bölgede çekirdek segmentasyonu + 7 sınıf (Lizard/kolorektal). NVIDIA CUDA GPU zorunlu. Mitoz
+            // sınıfı ayrıca Mitoz tespiti → Modelleri karşılaştır'da İSTEĞE BAĞLI model olarak kullanılır.
+            new ScriptEntry("HoVer-NeXt çekirdek sınıflandırma sihirbazı (7 sınıf, GPU)", "yardimci-hovernext-sihirbaz.groovy"),
+            // Classpose (Python, ayrı süreç; CC BY-NC 4.0 kodu çalışma anında `classpose` ortamına kurulur,
+            // paketlenmez) — seçili alanda Cellpose-SAM tabanlı hücre segmentasyonu + sınıf (6 hazır model).
+            // GrandQC ağırlıklarını GrandQC sihirbazıyla ortak klasörden kullanır. Ek → Classpose.
+            new ScriptEntry("Classpose hücre fenotipleme sihirbazı (H&E)", "yardimci-classpose-sihirbaz.groovy"),
             // hepatocyte-app (Python) köprüsü — karaciğer hepatosit segmentasyonu; "kendi modelini QuPath'te
             // çalıştırma" örneği. Depo + model 🔒 talep üzerine (sihirbazın ①②③ butonları). Ek → Hepatosit Segmentasyonu.
             new ScriptEntry("Hepatosit segmentasyonu sihirbazı (Python)", "yardimci-hepatosit-sihirbaz.groovy"),
@@ -292,11 +303,11 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Kohort özet toplayıcı (proje tablosu)", "yardimci-kohort-ozet-topla.groovy", false, false),
             // GrandQC sentinel anotasyonlarını (doku/temiz/artefakt alan + parça) proje geneli geniş TSV'ye toplar; salt okunur, açık slayt gerekmez.
             new ScriptEntry("GrandQC kohort KK özeti", "yardimci-grandqc-kohort-ozet.groovy", false, false),
-            // Salt okunur koşu manifesti: kimlik + boya vektörleri + sınıf bazlı sayımlar → provenance JSON; açık slayt gerekmez.
+            // Salt okunur işlem kaydı: kimlik + boya vektörleri + sınıf bazlı sayımlar → provenance JSON; açık slayt gerekmez.
             new ScriptEntry("İşlem kaydı (provenance JSON)", "yardimci-kosu-manifesti.groovy", false, false)
         )),
         new ScriptGroup("Eğitim, sunum ve ImageJ", List.of(
-            // Bankhead'in görüntü-işleme sözlüğünü kendi slaydında canlı önizlemelerle gezdiren tur (Modül 2'nin perde arkası).
+            // Bankhead'in görüntü-işleme sözlüğünü kendi slaytında canlı önizlemelerle gezdiren tur (Modül 2'nin perde arkası).
             new ScriptEntry("Görüntü işleme kavramları", "yardimci-goruntu-isleme-turu.groovy"),
             // Ekran kaydı / canlı sunum — bastığınız tuş ve fare işlemlerini gösterir (InputDisplay aç/kapa).
             new ScriptEntry("Tuş/fare göstergesi (kayıt için)", "yardimci-tus-fare-gostergesi.groovy", false, false),  // global ekran katmanı: açık slayt gerekmez

@@ -8,7 +8,7 @@
  *   Centre'in **KongNet-Det (MIDOG)** H&E mitoz dedektörünü canlı çalıştırır.
  *   Seçtiğiniz bölge ikili bir maskeye rasterlenir → Python köprüsü (region_runner.py)
  *   `engine.run(masks=[...], auto_get_mask=False)` ile yalnız o bölgede KongNet_Det_MIDOG_1
- *   modelini koşturur → mitoz merkezleri GeoJSON olarak geri alınır, bölgeye göre
+ *   modelini çalıştırır → mitoz merkezleri GeoJSON olarak geri alınır, bölgeye göre
  *   filtrelenir, "Mitosis" nokta-tespiti olarak eklenir ve SAYIM + YOĞUNLUK üretilir:
  *   mitoz/mm² ve (ROI ~2 mm² ise) gözlenen mitoz / 2 mm².
  *
@@ -26,7 +26,7 @@
  *   yöneticisi → "TIA Toolbox — bölge modelleri".
  *
  * KULLANIM:
- *   1. H&E slaydını (tercihen OpenSlide) açın; piksel boyutu (µm/px) kalibre olsun.
+ *   1. H&E slaytını (tercihen OpenSlide) açın; piksel boyutu (µm/px) kalibre olsun.
  *   2. İlgi ALANINI anotasyon olarak çizin ve SEÇİN (ör. 10 BBA sıcak-nokta).
  *   3. Bu modülü çalıştırın → "Bölgede çalıştır".
  *
@@ -237,13 +237,13 @@ def calibrationInfo = { imageData ->
     }
     return [cal: cal, mag: mag, warn: warn, mpp: (cal != null ? (cal.pw + cal.ph) / 2.0 : Double.NaN)]
 }
-// KongNet'in slaydı hangi yönde yeniden örnekleyeceğini açıkla (0.5 µm/px hedef).
+// KongNet'in slaytı hangi yönde yeniden örnekleyeceğini açıkla (0.5 µm/px hedef).
 def resampleNote = { double mpp ->
     if (!Double.isFinite(mpp) || mpp <= 0) return ''
     double ratio = MODEL_MPP / mpp
     if (Math.abs(ratio - 1.0) < 0.05) return 'slayt zaten ~0.5 µm/px — yeniden örnekleme yok.'
-    if (ratio > 1.0) return String.format(java.util.Locale.US, 'slaydınız daha yüksek çözünürlükte; KongNet ~%.1f× AŞAĞI örnekler (normal).', ratio)
-    return String.format(java.util.Locale.US, 'slaydınız daha düşük çözünürlükte; KongNet ~%.1f× YUKARI örnekler (mitoz kaçırabilir).', 1.0 / ratio)
+    if (ratio > 1.0) return String.format(java.util.Locale.US, 'slaytınız daha yüksek çözünürlükte; KongNet ~%.1f× AŞAĞI örnekler (normal).', ratio)
+    return String.format(java.util.Locale.US, 'slaytınız daha düşük çözünürlükte; KongNet ~%.1f× YUKARI örnekler (mitoz kaçırabilir).', 1.0 / ratio)
 }
 
 // Seçili (yoksa tüm) alan anotasyonları — mitozu YALNIZ bunların içinde sayarız.
@@ -474,7 +474,7 @@ def launchBundledScript = { String resourceName ->
             def url = null
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + resourceName) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + resourceName)
-            if (url == null) { javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri & temel modeller → Atölye Python ortam yöneticisi') }; return }
+            if (url == null) { javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }; return }
             def cl = this.getClass().getClassLoader()
             try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
             new GroovyShell(cl).evaluate(url.getText('UTF-8'), resourceName)
@@ -557,7 +557,7 @@ def startSelftest = {
     def miss = configMissing(cfg)
     if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
-    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
+    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO)
     logAreaRef.set(la)
     runPhaseRef.set('Bağımlılık kontrolü'); step.set('CHECK_RUNNING'); render()
     def worker = new Thread({
@@ -568,14 +568,14 @@ def startSelftest = {
     worker.setDaemon(true); worker.start()
 }
 
-// ── Modeli yerel indir (bir kez) → sonra "Çevrimdışı çalış" ile ağa çıkmadan koş ──
+// ── Modeli yerel indir (bir kez) → sonra "Çevrimdışı çalış" ile ağa çıkmadan çalıştır ──
 def startModelDownload = {
     persistFields()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
     if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
-    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
+    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO)
     logAreaRef.set(la)
     runPhaseRef.set('Model indiriliyor (yerel)…'); step.set('DL_RUNNING'); render()
     def worker = new Thread({
@@ -603,7 +603,7 @@ def startRun = {
     def saveDir = new File(workDir, 'mitoz_out_' + base)
     def outGeo  = new File(workDir, base + '_mitoz.geojson')
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
-    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
+    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO)
     logAreaRef.set(la)
     runPhaseRef.set('Hazırlanıyor…'); step.set('RUN_RUNNING'); render()
 
@@ -641,7 +641,7 @@ def startRun = {
             }
             boolean offlineOn = (cfg.offline == 'true')
             if (offlineOn) appendLine('Çevrimdışı mod: HF_HUB_OFFLINE=1 (yalnız yerel model; ağa çıkılmaz)')
-            setPhase('KongNet MIDOG çıkarımı koşuyor (2/2)…')
+            setPhase('KongNet MIDOG çıkarımı çalışıyor (2/2)…')
             def r = runPython(cmd, appendLine, offlineOn)
             // Çıktı ne olursa olsun günlüğü çalışma dizinine YAZ — kullanıcı hep bulabilsin.
             appendLine('# Çıkış kodu: ' + r.exitCode)
@@ -653,7 +653,7 @@ def startRun = {
 
             // Uzun (saatlerce olabilen) çıkarımdan SONRA QP.getCurrentImageData()'yı
             // YENİDEN ALMA — pencere kipsiz; kullanıcı arada görüntü değiştirebilir/kapatabilir.
-            // Koşuyu başlatan `imageData` bu yolda hiç kapatılmaz; hep onu kullan (yabancı
+            // Çalıştırmayı başlatan `imageData` bu yolda hiç kapatılmaz; hep onu kullan (yabancı
             // görüntüye yazma / null NPE önlenir).
             javafx.application.Platform.runLater { busyLabelRef.set('Sonuçlar içe aktarılıyor…'); step.set('BUSY'); render() }
             def imp = importMitoses(geo, imageData, regionRois)
@@ -670,6 +670,71 @@ def startRun = {
         }
     }, 'AtolyeMitoz-Run')
     worker.setDaemon(true); worker.start()
+}
+
+// ── Ortam yöneticisinden bu sihirbaza dönüş ──────────────────────────────────
+// "Python ortamı" düğmesi Atölye Python ortam yöneticisini bu kancayla (`atolyeReturnHook`) açar.
+// Kurulum bitince yöneticideki "Sihirbaza dön ▶" (ya da yönetici penceresini kapatmak) bu pencereyi
+// öne getirir, yapılandırmayı yeniden okur ve çalıştırma ekranına (READY) geçer. Çalışan bir işlem
+// sürerken ekran değiştirilmez; yalnız pencere öne gelir.
+def envReturnHook = [
+    envId   : 'tiatoolbox-region',
+    wizard  : 'Mitoz tespiti (KongNet MIDOG)',
+    onReturn: { reopen ->
+        javafx.application.Platform.runLater {
+            if (stage == null || (!stage.isShowing() && !reopen)) return
+            try {
+                if (step.get() == 'CONFIG') persistFields()
+                def savedPy = prefs.get(PREF_PYTHON, '')
+                if (savedPy?.trim() && !(new File(savedPy.trim())).isFile()) { prefs.remove(PREF_PYTHON); try { prefs.flush() } catch (Throwable ignore) {} }
+                if (['CONFIG_INCOMPLETE', 'CONFIG', 'READY', 'CHECK_DONE', 'DL_DONE', 'ERROR'].contains(step.get())) {
+                    step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render()
+                }
+                if (stage.isIconified()) stage.setIconified(false)
+                if (!stage.isShowing()) stage.show()
+                stage.toFront(); stage.requestFocus()
+            } catch (Throwable t) {
+                Dialogs.showErrorMessage('Sihirbaza dönüş', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+            }
+        }
+    }
+]
+def launchEnvManager = { ->
+    new Thread({
+        try {
+            def res = 'yardimci-python-ortam-yoneticisi.groovy'
+            def url = null
+            try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + res) } catch (Throwable t) {}
+            if (url == null) url = this.getClass().getResource('/scripts/' + res)
+            if (url == null) {
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
+                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                return
+            }
+            def cl = this.getClass().getClassLoader()
+            try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
+            def shellBinding = new Binding()
+            shellBinding.setVariable('atolyeReturnHook', envReturnHook)
+            new GroovyShell(cl, shellBinding).evaluate(url.getText('UTF-8'), res)
+        } catch (Throwable t) {
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+        }
+    } as Runnable).start()
+}
+// ── Mitoz modelleri listesine dön ─────────────────────────────────────────────
+// "◀ Mitoz listesi": bu pencereyi kapatır ve "Mitoz modelleri listesi"ni açar (başka bir model
+// başlatmak için). Liste betiği bulunamazsa pencere açık kalır.
+def openMitosisHub = { ->
+    def hubScript = 'yardimci-mitoz-merkez.groovy'
+    def url = null
+    try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + hubScript) } catch (Throwable t) {}
+    if (url == null) url = this.getClass().getResource('/scripts/' + hubScript)
+    if (url == null) {
+        Dialogs.showInfoNotification('Mitoz modelleri listesi', 'Menüden açın: Extensions → Atölye → Modüller → Mitoz tespiti → Mitoz modelleri listesi')
+        return
+    }
+    launchBundledScript(hubScript)
+    if (stage != null) stage.close()
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
@@ -695,7 +760,7 @@ render = { ->
     }
     def addGuidance = { String txt -> def lbl = new javafx.scene.control.Label(txt); wrapBind(lbl); center.getChildren().add(lbl) }
     def addMonoArea = { String txt ->
-        def ta = new javafx.scene.control.TextArea(txt ?: ''); ta.setEditable(false); ta.setWrapText(false); ta.setStyle(MONO)
+        def ta = new javafx.scene.control.TextArea(txt ?: ''); ta.setEditable(false); ta.setWrapText(true); ta.setStyle(MONO)
         javafx.scene.layout.VBox.setVgrow(ta, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(ta)
     }
     def addWarnLabel = { String txt ->
@@ -712,7 +777,7 @@ render = { ->
             '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi → "TIA Toolbox — bölge modelleri".\n' +
             'Köprü betiği: handson/python/tiatoolbox/region_runner.py')
         actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('⚙ Python ortamını kur/aç', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') }, 'Atölye Python ortam yöneticisini açar → "TIA Toolbox — bölge modelleri"ni kurun'))
+        actions.add(navButton('⚙ Python ortamını kur/aç', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar → "TIA Toolbox — bölge modelleri"ni kurun'))
         actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
         title.setText('Mitoz tespiti — yapılandırma')
@@ -755,9 +820,9 @@ render = { ->
             'Python + köprü otomatik bulunur (tiatoolbox-runtime/.venv ve handson/python/tiatoolbox/). Cihaz: GPU için cuda.\n' +
             'Duyarlılık eşiği: KongNet varsayılanı 0.99 (çok tutucu — az/hiç tespit). Daha çok mitoz için düşürün (ör. 0.5); boş = model varsayılanı. ' +
             'Düşük eşik daha çok tespit ama daha çok yanlış-pozitif demektir — tahminleri görsel doğrulayın.\n' +
-            'Yerel model: "Modeli yerel indir" ağırlıkları BİR KEZ veri kökü altına indirir; ardından "Çevrimdışı çalış"ı işaretleyin → koşularda ağa hiç çıkılmaz (GrandQC gibi).')
+            'Yerel model: "Modeli yerel indir" ağırlıkları BİR KEZ veri kökü altına indirir; ardından "Çevrimdışı çalış"ı işaretleyin → çalıştırmalarda ağa hiç çıkılmaz (GrandQC gibi).')
         actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('⚙ Python ortamı', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') }, 'Atölye Python ortam yöneticisini aç'))
+        actions.add(navButton('⚙ Python ortamı', { launchEnvManager() }, 'Atölye Python ortam yöneticisini aç'))
         actions.add(navButton('Modeli yerel indir', { startModelDownload() }, 'KongNet ağırlıklarını bir kez yerel indir (sonra çevrimdışı çalışılabilir)'))
         actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }, 'region_runner.py selftest'))
         actions.add(navButton('Kaydet ▶', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
@@ -770,6 +835,7 @@ render = { ->
             : '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın (Python / bağımlılık)'); addLiveLog()
         actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
         if (logSnapshot()?.trim()) actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }, 'Bağımlılık kontrolü günlüğünü kaydet'))
+        if (selftestOkRef.get()) actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, 'Kontrol tamam — bölgede çalıştırma ekranına döner'))
     } else if (cur == 'DL_RUNNING') {
         title.setText('Model indiriliyor (yerel)…')
         addGuidance('KongNet ağırlıkları veri kökü altına indiriliyor (bir kerelik; ~yüzlerce MB olabilir).')
@@ -777,13 +843,14 @@ render = { ->
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'DL_DONE') {
         title.setText(dlOkRef.get() ? 'Model yerel olarak indirildi ✅' : '⚠ Model indirilemedi — yukarıdaki günlüğe bakın'); addLiveLog()
-        if (dlOkRef.get()) addGuidance('Artık "Çevrimdışı çalış"ı işaretleyip ağa çıkmadan koşabilirsiniz (Yapılandır ekranı).')
+        if (dlOkRef.get()) addGuidance('Artık "Çevrimdışı çalış"ı işaretleyip ağa çıkmadan çalıştırabilirsiniz (Yapılandır ekranı).')
         actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
         if (logSnapshot()?.trim()) actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }, 'İndirme günlüğünü kaydet'))
+        if (dlOkRef.get()) actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, 'İndirme tamam — bölgede çalıştırma ekranına döner'))
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce bir H&E slaydı açın (tercihen OpenSlide), ilgi ALANINI çizip seçin, sonra "⟳ Yenile".')
+            addGuidance('Önce bir H&E slaytı açın (tercihen OpenSlide), ilgi ALANINI çizip seçin, sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
@@ -817,7 +884,7 @@ render = { ->
             boolean canRun = configComplete(cfg) && targets.size() >= 1
             if (!configComplete(cfg)) addWarnLabel('⚠ Python ortamı (tiatoolbox-region) kurulu değil — "⚙ Python ortamını kur/aç" ile kurun.')
             actions.add(navButton('Kapat', { stage.close() }))
-            if (!configComplete(cfg)) actions.add(navButton('⚙ Python ortamını kur/aç', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') }, 'Atölye Python ortam yöneticisini açar'))
+            if (!configComplete(cfg)) actions.add(navButton('⚙ Python ortamını kur/aç', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar'))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
             def runBtn = navButton('Bölgede çalıştır ▶', { startRun() }, 'KongNet MIDOG mitoz dedektörünü seçili bölgede çalıştırır')
@@ -827,7 +894,7 @@ render = { ->
         }
     } else if (cur == 'RUN_RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('KongNet MIDOG köprüsü koşuyor (ilk çalıştırmada model ağırlıkları indirilebilir). Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance('KongNet MIDOG köprüsü çalışıyor (ilk çalıştırmada model ağırlıkları indirilebilir). Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
         center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
         actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }, 'O ana kadarki çalışma günlüğünü dosyaya kaydet'))
@@ -855,7 +922,10 @@ render = { ->
     topChk.selectedProperty().addListener({ obs, o, n -> alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
     def spacer = new javafx.scene.layout.Region(); javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
     def bar = new javafx.scene.layout.HBox(8); bar.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
-    bar.getChildren().add(topChk); bar.getChildren().add(spacer); bar.getChildren().addAll(actions)
+    bar.getChildren().add(topChk)
+    // Çalışan işlem yokken: bu pencereyi kapatıp mitoz modelleri listesine dön (başka bir model başlatmak için).
+    if (!['RUN_RUNNING', 'CHECK_RUNNING', 'DL_RUNNING', 'BUSY'].contains(cur)) bar.getChildren().add(navButton('◀ Mitoz listesi', { openMitosisHub() }, 'Bu pencereyi kapatıp mitoz modelleri listesini açar — başka bir model başlatmak için'))
+    bar.getChildren().add(spacer); bar.getChildren().addAll(actions)
     def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')

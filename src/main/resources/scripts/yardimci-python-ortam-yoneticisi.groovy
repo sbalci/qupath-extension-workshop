@@ -9,7 +9,7 @@
  *   pip install, python.exe'ye gözat" sürtünmesini kaldırır. Resmî TIA Toolbox eklentisinin
  *   `uv` tabanlı kurulum desenini TÜM entegrasyonlara genelleştirir.
  *
- *   PYTHON ÖN-KOŞUL DEĞİLDİR: yönetici saf Groovy'dir ve kendi kendine yeten **uv**
+ *   PYTHON ÖN KOŞUL DEĞİLDİR: yönetici saf Groovy'dir ve kendi kendine yeten **uv**
  *   ikilisini çağırır; uv gerekirse Python 3.11'i kendisi indirir. uv yoksa resmî
  *   sürümü `<veri-kökü>/uv/`'a indirilir (PATH'te uv varsa o kullanılır).
  *
@@ -35,6 +35,8 @@
  * KULLANIM:
  *   [Extensions → Atölye → Yardımcılar → Atölye Python ortam yöneticisi]
  *   İlgili ortamın yanındaki "Kur" düğmesine basın; log akar, durum güncellenir.
+ *   Bir sihirbazın "Python ortamı" düğmesiyle açıldıysa: gereken ortam satırı vurgulanır ve kurulum
+ *   bitince "Sihirbaza dön ▶" o sihirbazın çalıştırma ekranına döndürür (pencereyi kapatmak da döndürür).
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlıdır.
  */
@@ -108,9 +110,9 @@ def CATALOG = [
      torchBackend:'auto', reuseOfficial:null,
      note:'⚠️ Yalnızca Python ortamı. hepatocyte-app deposu + model ağırlığı (🔒 talep üzerine) AYRICA gerekir — Hepatosit sihirbazının ②③ butonları. openslide-bin, OpenSlide ikililerini pip ile getirir (conda gerekmez).'],
     [id:'midog-fcos', label:'MIDOG25 FCOS — mitoz dedektörü (torchvision)', python:'3.11',
-     packages:['torch>=2.1','torchvision>=0.16','numpy','Pillow','tifffile'],
+     packages:['torch>=2.1','torchvision>=0.16','numpy','Pillow','tifffile','SimpleITK','pyyaml','tqdm'],
      torchBackend:'auto', reuseOfficial:null,
-     note:'⚠️ Yalnızca Python ortamı. FCOS_x101.ckpt ağırlığı AYRICA gerekir — mitoz sihirbazının "Modeli yerel indir" butonu ağırlığı çalışma anında v1.0.0 yayınından çeker (paketlenmez; LİSANS dosyası yok → araştırma/eğitim, kullanıcı sorumluluğunda).'],
+     note:'⚠️ Yalnızca Python ortamı. FCOS_x101.ckpt ağırlığı + MIDOG25 T1 referans KODU AYRICA gerekir — mitoz sihirbazının "Modeli yerel indir" butonu ikisini de çalışma anında çeker (ağırlık: v1.0.0 yayını; kod: sabit commit; paketlenmez, LİSANS dosyası yok → araştırma/eğitim, kullanıcı sorumluluğunda). SimpleITK + pyyaml + tqdm referans kodunun import ettikleridir — bu ortamı daha önce kurduysanız YENİDEN KURUN.'],
     [id:'midog-retinanet-legacy', label:'MIDOG DA-RetinaNet (eski, DOĞRULANMAMIŞ)', python:'3.8',
      packages:['fastai==1.0.61','torch>=1.6,<1.10','torchvision>=0.10,<0.11','opencv-python==4.5.1.48','scikit-learn','scipy','tqdm','numpy','Pillow'],
      torchBackend:'auto', reuseOfficial:null,
@@ -123,6 +125,18 @@ def CATALOG = [
      packages:['torch>=2.1','torchvision>=0.16','transformers>=4.56','peft>=0.11','safetensors>=0.4','omegaconf','huggingface_hub>=0.23','numpy','Pillow'],
      torchBackend:'auto', reuseOfficial:null,
      note:'⚠️ Tipik/atipik SINIFLANDIRICI (MIDOG25 T2 birincisi). KISMEN KAPILI: LoRA adaptörleri açık ama DINOv3-H+ omurgası (facebook/dinov3-vith16plus) HF\'te KAPILIDIR — Meta lisansı + `huggingface-cli login` gerekir (otomatik DEĞİL). QuPath menüsünde varsayılan DEVRE DIŞI. Ticari-olmayan araştırma lisansı.'],
+    [id:'hovernext', label:'HoVer-NeXt — çekirdek segmentasyon + 7 sınıf (Lizard; NVIDIA GPU)', python:'3.11',
+     packages:['torch==2.1.1','torchvision==0.16.1','timm==0.9.6','segmentation-models-pytorch==0.1.0','six','numpy<2',
+               'zarr==2.16.1','numcodecs==0.12.1','scikit-image==0.22.0','scipy==1.11.4','opencv-python==4.8.1.78','Pillow',
+               'openslide-python==1.4.6','openslide-bin==4.0.1.2','geojson==3.1.0','shapely==2.0.2','toml==0.10.2',
+               'requests','tqdm','pylibCZIrw==4.1.3'],
+     torchBackend:'cu121', reuseOfficial:null,
+     note:'⚠️ NVIDIA CUDA GPU ZORUNLU (HoVer-NeXt CPU\'da çalışmaz). Yalnızca Python ortamı: HoVer-NeXt KODU (GPL-3.0, sabit commit) ve Lizard AĞIRLIKLARI (Zenodo 10635618, CC BY-NC-SA 4.0 — ticari olmayan) sihirbazın "Modeli yerel indir" butonuyla çalışma anında indirilir; paketlenmez, kod ayrı süreç olarak çalıştırılır. Sürümler upstream\'e sabitlenmiştir (torch 2.1.1 + CUDA 12.1, smp 0.1.0, timm 0.9.6, zarr 2.16 → numpy<2); çok yeni GPU mimarileri (ör. RTX 50xx) bu torch sürümüyle desteklenmeyebilir. Cihaz seçimi CPU ise kurulum yapılır ama HoVer-NeXt çalışmaz.'],
+    [id:'classpose', label:'Classpose — H&E hücre fenotipleme (Cellpose-SAM)', python:'3.13',
+     packages:['classpose @ https://github.com/sohmandal/classpose/archive/f6aeadd54729f6b9e50db620af68616f202d7a72.zip',
+               'cellpose==4.0.8', 'torch', 'torchvision'],
+     torchBackend:'auto', reuseOfficial:null,
+     note:'⚠️ Yalnızca Python ortamı (~6 GB; GPU torch). Classpose KODU (CC BY-NC 4.0, sabit commit f6aeadd) bu ortama çalışma anında kurulur — atölyede paketlenmez; sihirbaz onu ayrı süreç olarak çalıştırır. Model dosyaları (Hugging Face classpose/classpose, ~1.2 GB/model) ve isteğe bağlı GrandQC ağırlıkları sihirbazdan indirilir ya da yerel klasörden kullanılır. Python 3.13 gerekir (uv kendisi indirir). Windows\'ta GPU için sihirbaz TORCHDYNAMO_DISABLE=1 ayarlar (Triton yok). cellpose 4.0.8\'e sabitlenir (bu commit yeni cellpose ile açılmaz); yayımlanan paket alt modülleri atladığından her ortam kurulumundan sonra sihirbazın ① adımında bir kez "Kurulumu tamamla" gerekir.'],
     [id:'valis', label:'VALIS — WSI hizalama (native; JDK/Java AYRICA gerekir)', python:'3.10',
      packages:['valis-wsi', 'pyvips[binary]', 'openslide-python', 'openslide-bin'], torchBackend:'auto', reuseOfficial:null,
      note:'⚠️ Yalnız NATIVE mod içindir. valis-wsi + pyvips[binary] (libvips ikilisi) + openslide-python & openslide-bin (OpenSlide ikilisi → .svs/.ndpi HIZLI okunur; yoksa VALIS yavaş Bio-Formats yoluna düşer) pip ile kurulur; torch CUDA wheel\'i --torch-backend=auto ile otomatik seçilir (RTX A4000; GPU özellik-eşleştirmeyi hızlandırır — SLAYT OKUMA/DÖNÜŞTÜRME ise disk/IO bağımlıdır, GPU kullanmaz). AYRICA bir JDK (Bio-Formats/JPype) gerekir — sistemde Java varsa yeterlidir. ÖNERİLEN yol: Docker (cdgatenbee/valis-wsi; tüm bağımlılıklar hazır). Bkz. Kaynaklar → İleri kurulumlar → VALIS. Lisans: VALIS = MIT.'],
@@ -165,6 +179,22 @@ def resultTextRef = new java.util.concurrent.atomic.AtomicReference('')
 def errorTextRef  = new java.util.concurrent.atomic.AtomicReference('')
 def selectedDeviceRef = new java.util.concurrent.atomic.AtomicReference('auto')   // 'auto'|'cuda'|'mps'|'cpu'
 
+// ── Çağıran sihirbaza dönüş (isteğe bağlı) ───────────────────────────────────
+// Bir sihirbaz bu yöneticiyi kendi GroovyShell'inde `atolyeReturnHook` bağlamasıyla açabilir:
+// [envId: 'kimlik' | envIds: [...], wizard: 'görünen ad', onReturn: { reopen -> … }].
+// Varsa: ilgili ortam satırı vurgulanır, "Sihirbaza dön ▶" düğmesi görünür ve bu pencere
+// kapanınca sihirbaz öne gelip yapılandırmasını yeniden okur. Menüden açılışta bağlama yoktur.
+def returnHook = null
+try { if (binding?.hasVariable('atolyeReturnHook')) returnHook = binding.getVariable('atolyeReturnHook') } catch (Throwable ignore) {}
+def returnWantedIds = (returnHook == null) ? [] :
+    (returnHook.envIds ? returnHook.envIds.collect { it?.toString() } : (returnHook.envId ? [returnHook.envId.toString()] : []))
+def returnedRef = new java.util.concurrent.atomic.AtomicBoolean(false)
+def notifyWizard = { boolean reopen ->
+    if (returnHook == null || returnedRef.getAndSet(true)) return
+    try { returnHook.onReturn?.call(reopen) } catch (Throwable ignore) {}
+}
+def returnToWizard = { -> notifyWizard(true); if (stage != null) stage.close() }
+
 // ── Hızlandırıcı (GPU) algıla ve torch-backend'e çevir ───────────────────────
 // Apple Silicon → mps; nvidia-smi çalışıyorsa → cuda; yoksa cpu.
 // BİR KEZ algılanır ve önbelleğe alınır — render() (FX iş parçacığı) içinden
@@ -197,14 +227,17 @@ def detectAccelerator = { ->
     return result
 }
 // Seçilen cihazı uv --torch-backend değerine çevir (yalnız torch İÇEREN specler için).
-// cuda → 'auto' (uv CUDA sürümünü seçer); cpu → 'cpu'; mps → null (mac wheel'de MPS gömülü).
+// cuda → spec'in AÇIK CUDA arka ucu varsa o (ör. 'cu121': eski torch'a sabitlenmiş ortamlar — 'auto'
+// yeni sürücüde yalnız yeni torch barındıran indeksi seçip sabit sürümü bulamayabilir), yoksa 'auto'
+// (uv CUDA sürümünü seçer); cpu → 'cpu'; mps → null (mac wheel'de MPS gömülü).
 def effectiveTorchBackend = { spec ->
     if (spec.torchBackend == null) return null
     def dev = selectedDeviceRef.get() ?: 'auto'
     if (dev == 'auto') dev = detectAccelerator()
     if (dev == 'cpu') return 'cpu'
     if (dev == 'mps') return null
-    return 'auto'
+    def explicit = spec.torchBackend.toString()
+    return explicit.startsWith('cu') ? explicit : 'auto'
 }
 def render
 
@@ -301,12 +334,16 @@ def ensureUv = { Closure appendLine ->
 
 // Paket adından Python import adını türet (scikit-learn→sklearn, Pillow→PIL, ...)
 def importNameOf = { String pkg ->
-    def b = pkg.replaceAll(/[<>=!~\[].*$/, '').trim().toLowerCase(java.util.Locale.ROOT)
+    // PEP 508 doğrudan başvuru ("paket @ https://…zip") → yalnız paket adı; URL import edilmeye çalışılmasın.
+    def b = pkg.replaceAll(/\s*@.*$/, '').replaceAll(/[<>=!~\[].*$/, '').trim().toLowerCase(java.util.Locale.ROOT)
     if (b == 'scikit-learn') return 'sklearn'
     if (b == 'scikit-image') return 'skimage'
     if (b == 'pillow') return 'PIL'
     if (b == 'opencv-python' || b == 'opencv-python-headless') return 'cv2'
     if (b == 'openslide-python') return 'openslide'
+    if (b == 'pyyaml') return 'yaml'
+    if (b == 'simpleitk') return 'SimpleITK'      // import adı büyük/küçük harfe duyarlı
+    if (b == 'pylibczirw') return 'pylibCZIrw'
     return b.replace('-', '_')
 }
 
@@ -332,8 +369,9 @@ def installEnv = { spec, String uvPath, Closure appendLine ->
         if (!r2.ok && !cancelledRef.get()) {
             def ll = (r2.lastLines ?: '').toLowerCase(java.util.Locale.ROOT)
             if (ll.contains('torch-backend') && (ll.contains('unexpected') || ll.contains('unrecognized') || ll.contains('invalid value') || ll.contains('found argument'))) {
-                def idx = (bk == 'cpu') ? 'https://download.pytorch.org/whl/cpu' : 'https://download.pytorch.org/whl/cu128'
-                appendLine(''); appendLine('uv bu sürüm --torch-backend desteklemiyor; --extra-index-url (' + (bk == 'cpu' ? 'cpu' : 'cu128') + ') ile yeniden deneniyor…')
+                def idxName = (bk == 'cpu') ? 'cpu' : (bk == 'auto' ? 'cu128' : bk)   // açık arka uç (ör. cu121) korunur
+                def idx = 'https://download.pytorch.org/whl/' + idxName
+                appendLine(''); appendLine('uv bu sürüm --torch-backend desteklemiyor; --extra-index-url (' + idxName + ') ile yeniden deneniyor…')
                 def cmd2 = new ArrayList(base)
                 cmd2.add('--index-strategy'); cmd2.add('unsafe-best-match')
                 cmd2.add('--extra-index-url'); cmd2.add(idx)
@@ -532,6 +570,8 @@ render = { ->
             row.setStyle('-fx-border-color: -fx-box-border; -fx-border-width: 0 0 1 0; -fx-padding: 6 2 6 2;')
             def head = new javafx.scene.layout.HBox(8); head.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
             def name = new javafx.scene.control.Label(spec.label); name.setStyle('-fx-font-weight: bold;')
+            // Çağıran sihirbazın ihtiyaç duyduğu ortam(lar)ı vurgula (sihirbazdan açıldıysa).
+            if (returnWantedIds.contains(spec.id)) { name.setText(spec.label + '   ← ' + (returnHook.wizard ?: 'sihirbaz')); row.setStyle(row.getStyle() + ' -fx-background-color: rgba(46,139,87,0.12);') }
             def chip = new javafx.scene.control.Label(
                 st.state == 'official'  ? '✓ resmî ortam kullanılıyor' :
                 st.state == 'installed' ? '✓ kurulu' : '○ kurulu değil')
@@ -556,6 +596,7 @@ render = { ->
         center.getChildren().add(scroll)
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('⟳ Yenile', { render() }))
+        if (returnHook != null) actions.add(navButton('Sihirbaza dön ▶', { returnToWizard() }, (returnHook.wizard ?: 'Sihirbaz') + ' penceresine döner; kurulu ortam otomatik bulunur'))
     } else if (cur == 'RUNNING') {
         title.setText(runPhaseRef.get())
         def g = new javafx.scene.control.Label('uv Python + paketleri indiriyor (torch ortamları birkaç dakika sürer). İlk kurulum büyük olabilir.'); wrapBind(g)
@@ -566,10 +607,12 @@ render = { ->
         actions.add(navButton('◀ Ortam listesi', { step.set('LIST'); render() }))
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
+        if (returnHook != null) actions.add(navButton('Sihirbaza dön ▶', { returnToWizard() }, (returnHook.wizard ?: 'Sihirbaz') + ' penceresine döner; kurulan ortam otomatik bulunur'))
     } else { // ERROR
         title.setText('Hata'); addMonoArea(errorTextRef.get())
         actions.add(navButton('◀ Ortam listesi', { step.set('LIST'); render() }))
         actions.add(navButton('Kapat', { stage.close() }))
+        if (returnHook != null) actions.add(navButton('Sihirbaza dön', { returnToWizard() }, (returnHook.wizard ?: 'Sihirbaz') + ' penceresine döner'))
     }
 
     def topChk = new javafx.scene.control.CheckBox('Üstte tut'); topChk.setSelected(alwaysTop.get())
@@ -595,6 +638,8 @@ javafx.application.Platform.runLater {
         stage.initModality(javafx.stage.Modality.NONE)
         stage.setTitle('Atölye Python ortam yöneticisi')
         stage.setAlwaysOnTop(alwaysTop.get())
+        // Sihirbazdan açıldıysa: pencere nasıl kapanırsa kapansın sihirbaza haber ver (öne gelip yenilensin).
+        stage.setOnHidden({ e -> notifyWizard(false) } as javafx.event.EventHandler)
         render(); stage.show()
     } catch (Throwable t) {
         Dialogs.showErrorMessage('Yönetici açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))

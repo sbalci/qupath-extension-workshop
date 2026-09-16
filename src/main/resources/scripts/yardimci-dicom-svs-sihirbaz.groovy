@@ -150,7 +150,7 @@ def downloadScript = { ->
     }
 }
 
-// ── Sürücü betiği (BİZİM kodumuz; her koşuda üzerine yazılır) ────────────────
+// ── Sürücü betiği (BİZİM kodumuz; her çalıştırmada üzerine yazılır) ────────────────
 // DICOMtoSVS.py'yi içe aktarır (GUI'si __main__ korumasının arkasında — açılmaz)
 // ve from_DICOM_to_SVS(...) işlevini komut satırı bayraklarıyla çağırır.
 // Çift tırnak YOK (Windows ProcessBuilder tırnak tuzağına karşı tek tırnak).
@@ -536,7 +536,7 @@ render = { ->
         syncAnon()
         def opts = new javafx.scene.layout.VBox(6, zipChk, labelChk, macroChk, anonChk, tagsChk)
         center.getChildren().add(opts)
-        addGuidance('Girdi klasörü her slaydı kendi ALT KLASÖRÜNDE (ya da zip\'li seçeneğiyle kendi .zip dosyasında) barındırmalıdır. ' +
+        addGuidance('Girdi klasörü her slaytı kendi ALT KLASÖRÜNDE (ya da zip\'li seçeneğiyle kendi .zip dosyasında) barındırmalıdır. ' +
             'Çıktılar "<girdi-klasörü>_output" içine yazılır. Dönüşüm kayıpsızdır; multipleks/z-stack slaytlar atlanır.')
         addWarnLabel('⚠ İnternetten indirilen araçlar için kurumunuzun BT onayını alın; yalnız güvendiğiniz kaynaklardan gelen DICOM dosyalarını işleyin.')
         actions.add(navButton('Kapat', { stage.close() }))

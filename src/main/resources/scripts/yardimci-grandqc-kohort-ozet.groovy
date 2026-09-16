@@ -28,7 +28,7 @@
  * KULLANIM:
  *   1. Önce GrandQC sihirbazıyla slaytları işleyip GeoJSON'u içe aktarın
  *      (tek slayt ya da "Proje geneli içe aktar"). Anotasyonlar "GrandQC KK" adını taşır.
- *   2. [Extensions → Atölye → Yardımcılar → Klinik & kohort → GrandQC kohort KK özeti]
+ *   2. [Extensions → Atölye → Yardımcılar → Klinik ve kohort → GrandQC kohort KK özeti]
  *      (ya da [Automate → Project scripts → bu betik])
  *   3. TSV <proje>/grandqc-kohort/ altında oluşur; sonuç penceresinde yol + özet görünür.
  *
@@ -283,7 +283,7 @@ body << "\nTSV dosyası:\n  " + tsvFile.getAbsolutePath() + "\n"
 body << "\nSütunlar: doku/temiz doku/artefakt alanı (mm²) + doku içi artefakt %,\n"
 body << "doku parça sayısı ve her artefakt sınıfı için alan (mm²) + bölge sayısı.\n"
 body << "Alanlar yalnız kalibre görüntülerde doldurulur; kalibre değilse hücre boş.\n"
-body << "Anotasyon üretmez, hiçbir slaydı kaydetmez — salt okunur.\n\n"
+body << "Anotasyon üretmez, hiçbir slaytı kaydetmez — salt okunur.\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
 showResultWindow("GrandQC Kohort KK Özeti", body.toString())

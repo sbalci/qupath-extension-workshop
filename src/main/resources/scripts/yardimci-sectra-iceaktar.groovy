@@ -12,7 +12,7 @@
  *     2. İÇE AKTAR — sihirbaz GeoJSON'u okuyup anotasyon nesneleri (poligon / çizgi
  *        / nokta) oluşturur; seçilen renk şemasıyla (geometri tipi veya etiket metni)
  *        sınıflandırır ve Sectra metin etiketini anotasyon adı olarak korur.
- *   Köprü QuPath DIŞINDA bir Python venv'inde koşar; tek bağımlılığı pydicom'dur.
+ *   Köprü QuPath DIŞINDA bir Python venv'inde çalışır; tek bağımlılığı pydicom'dur.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Bu bir VERİ AKTARIM betiğidir: Sectra anotasyonlarını QuPath görselleştirme/
@@ -529,7 +529,7 @@ render = { ->
         }
     } else if (cur == 'CONVERT_RUNNING') {
         title.setText('Dönüştürülüyor (DICOM → GeoJSON)…')
-        addGuidance('Python köprüsü koşuyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance('Python köprüsü çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
         center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {

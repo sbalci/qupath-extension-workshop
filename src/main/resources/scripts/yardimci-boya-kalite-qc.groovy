@@ -20,7 +20,7 @@
  *   kapsamı dışındadır. Yalnız ölçüm üretir; hiçbir klinik eşik/yorum üretmez.
  *
  * KULLANIM:
- *   1. Parlak-alan bir H&E (ya da İHK) slaydı açın; boya vektörleri tanımlı olmalı
+ *   1. Parlak-alan bir H&E (ya da İHK) slaytı açın; boya vektörleri tanımlı olmalı
  *      (Image type = Brightfield H&E/H-DAB; gerekirse Boya vektörleri sihirbazı).
  *   2. (Önerilir) temsilî bir doku bölgesini anote edip SEÇİN; yoksa tüm slayt kullanılır.
  *   3. [Extensions → Atölye → Yardımcılar → Boya kalitesi QC ölçümü]

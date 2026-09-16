@@ -415,7 +415,7 @@ def tissueResultText = { File workDir, cfg, exp, imp ->
         sb << String.format(java.util.Locale.US, "Doku alanı: %.3f mm²%n", (double) imp.mm2)
     else
         sb << "Doku alanı: (görüntü kalibre değil — mm² verilemedi)\n"
-    sb << "\nMaske açık slayda hizalı 'Doku' anotasyonu olarak eklendi.\n"
+    sb << "\nMaske açık slayta hizalı 'Doku' anotasyonu olarak eklendi.\n"
     sb << "Maske bir tahmindir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki). Klinik yorum üretilmez.\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
@@ -602,7 +602,7 @@ def launchBundledScript = { String resourceName ->
             if (url == null) url = this.getClass().getResource('/scripts/' + resourceName)
             if (url == null) {
                 javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
-                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri & temel modeller → Atölye Python ortam yöneticisi') }
+                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
                 return
             }
             def cl = this.getClass().getClassLoader()
@@ -614,6 +614,56 @@ def launchBundledScript = { String resourceName ->
     } as Runnable).start()
 }
 def openUrl = { String u -> try { qupath.lib.gui.QuPathGUI.openInBrowser(u) } catch (Throwable t) {} }
+
+// ── Ortam yöneticisinden bu sihirbaza dönüş ──────────────────────────────────
+// "Python ortamı" düğmesi Atölye Python ortam yöneticisini bu kancayla (`atolyeReturnHook`) açar.
+// Kurulum bitince yöneticideki "Sihirbaza dön ▶" (ya da yönetici penceresini kapatmak) bu pencereyi
+// öne getirir, yapılandırmayı yeniden okur ve çalıştırma ekranına (READY) geçer. Çalışan bir işlem
+// sürerken ekran değiştirilmez; yalnız pencere öne gelir.
+def envReturnHook = [
+    envId   : 'tiatoolbox-stain',
+    wizard  : 'TIA Toolbox boya normalizasyonu / doku maskesi',
+    onReturn: { reopen ->
+        javafx.application.Platform.runLater {
+            if (stage == null || (!stage.isShowing() && !reopen)) return
+            try {
+                if (step.get() == 'CONFIG') persistFields()
+                def savedPy = prefs.get(PREF_PYTHON, '')
+                if (savedPy?.trim() && !(new File(savedPy.trim())).isFile()) { prefs.remove(PREF_PYTHON); try { prefs.flush() } catch (Throwable ignore) {} }
+                if (['CONFIG_INCOMPLETE', 'CONFIG', 'READY', 'CHECK_DONE', 'ERROR'].contains(step.get())) {
+                    step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render()
+                }
+                if (stage.isIconified()) stage.setIconified(false)
+                if (!stage.isShowing()) stage.show()
+                stage.toFront(); stage.requestFocus()
+            } catch (Throwable t) {
+                Dialogs.showErrorMessage('Sihirbaza dönüş', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+            }
+        }
+    }
+]
+def launchEnvManager = { ->
+    new Thread({
+        try {
+            def res = 'yardimci-python-ortam-yoneticisi.groovy'
+            def url = null
+            try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + res) } catch (Throwable t) {}
+            if (url == null) url = this.getClass().getResource('/scripts/' + res)
+            if (url == null) {
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
+                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                return
+            }
+            def cl = this.getClass().getClassLoader()
+            try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
+            def shellBinding = new Binding()
+            shellBinding.setVariable('atolyeReturnHook', envReturnHook)
+            new GroovyShell(cl, shellBinding).evaluate(url.getText('UTF-8'), res)
+        } catch (Throwable t) {
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+        }
+    } as Runnable).start()
+}
 
 // ── Render: her durum değişiminde sahneyi sıfırdan kurar ────────────────────
 render = { ->
@@ -668,12 +718,12 @@ render = { ->
         addGuidance('Bu sihirbaz bir Python ortamı (TIA Toolbox) + bir köprü betiği gerektirir. Eksik/geçersiz:\n  • ' +
             (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
             '\n\nKOLAY KURULUM:\n' +
-            '  1) Python ortamı → [Extensions → Atölye → Yardımcılar → Python köprüleri & temel modeller →\n' +
+            '  1) Python ortamı → [Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller →\n' +
             '     Atölye Python ortam yöneticisi] penceresinde "TIA Toolbox — boya normalizasyonu / doku maskesi"\n' +
             '     ortamını tek tıkla kurun (hafif; torch gerekmez). Model ağırlıklarını TIA Toolbox ilk kullanımda kendi indirir.\n' +
             '  2) Köprü betiği → handson/python/tiatoolbox/tiatoolbox_bridge.py (repoda hazır gelir).\n' +
             'Sonra bu pencerede "Yapılandır ▶" ile python.exe ve köprü yolunu seçin.')
-        actions.add(navButton('▶ Python ortamını kur', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') },
+        actions.add(navButton('▶ Python ortamını kur', { launchEnvManager() },
             'Atölye Python ortam yöneticisini açar → "TIA Toolbox — boya normalizasyonu / doku maskesi" ortamını tek tıkla kurun'))
         actions.add(navButton('📄 Belge', { openUrl('https://atolye.patoloji.dev/ekler/tiatoolbox.html') },
             'Ekler → TIA Toolbox kurulum sayfasını tarayıcıda açar'))
@@ -729,6 +779,7 @@ render = { ->
             : '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın (Python / bağımlılık)')
         addLiveLog()
         actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
+        if (selftestOkRef.get()) actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, 'Kontrol tamam — çalıştırma ekranına döner'))
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
@@ -765,7 +816,7 @@ render = { ->
                 r.getChildren().addAll(new javafx.scene.control.Label('Doku maske yöntemi:'), maskChoice,
                     new javafx.scene.control.Label('   downsample: ' + (cfg.maskDownsample ?: '16.0')))
                 center.getChildren().add(r)
-                addGuidance('Doku maskesi açık slaydın TAMAMINDAN üretilir ve hizalı "Doku" anotasyonu olarak içe aktarılır. Anotasyon gerekmez.')
+                addGuidance('Doku maskesi açık slaytın TAMAMINDAN üretilir ve hizalı "Doku" anotasyonu olarak içe aktarılır. Anotasyon gerekmez.')
             } else {
                 def normChoice = makeNormChoice()
                 normChoice.valueProperty().addListener({ obs, o, n ->
@@ -794,7 +845,7 @@ render = { ->
         }
     } else if (cur == 'RUN_RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('Python köprüsü koşuyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance('Python köprüsü çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
         center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {

@@ -16,7 +16,7 @@
  *   Aynı komşuluk grafiğini menüden de üretebilirsiniz; bu betik onu tek
  *   tıkla otomatikleştirir ve sade bir özet yazar.
  *
- * GİRDİ (ÖNKOŞUL):
+ * GİRDİ (ÖN KOŞUL):
  *   • Slaytta hücre tespitleri olmalı (Hücre Tespiti, Nükleer Boya, Sitoplazmik
  *     Boya veya Tümör İçi Ki-67 modüllerinde üretilmiş olabilir). Betik tespit YAPMAZ.
  *

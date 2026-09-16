@@ -6,7 +6,7 @@
  * NE YAPAR:
  *   GrandQC'nin (Weng ve ark., Nat Commun 2024) iki aşamalı PyTorch hattını —
  *   (1) doku tespiti, (2) 7 sınıflı artefakt kalite kontrolü — QuPath'e TEK
- *   pencereden bağlar. Derin öğrenme QuPath DIŞINDA bir Python venv'inde koşar;
+ *   pencereden bağlar. Derin öğrenme QuPath DIŞINDA bir Python venv'inde çalışır;
  *   bu sihirbaz HİBRİT bir köprüdür:
  *     • KÖPRÜ — kopyalanabilir komut satırlarını üretir (terminalde çalıştırın),
  *       sonra üretilen GeoJSON'u içe aktarır.
@@ -25,7 +25,7 @@
  *
  * KULLANIM:
  *   1. GrandQC Python ortamını kurun (venv + modeller). Bkz. Ekler → Kalite Kontrol § GrandQC.
- *   2. Bir H&E slaydını açın (yerel diskte).
+ *   2. Bir H&E slaytını açın (yerel diskte).
  *   3. [Extensions → Atölye → Modüller → Doku tespiti → GrandQC modeli (doku & artefakt, Python)]
  *   4. İlk açılışta yapılandırın: python.exe, GrandQC betik dizini, model dizini, MPP.
  *   5. "Komut üret" (kopyala-çalıştır) ya da "Doğrudan çalıştır"; sonra otomatik içe aktarım.
@@ -224,7 +224,7 @@ def resolveSlide = { imageData ->
 def findGeoJSON = { slide, manualFolder ->
     def folder = manualFolder ?: slide.folder
     if (folder == null) return null
-    // slide.geojson kısayolu YALNIZ etkin klasör slaydın kendi klasörüyse geçerli
+    // slide.geojson kısayolu YALNIZ etkin klasör slaytın kendi klasörüyse geçerli
     // (klasör geçersiz kılındıysa slide.geojson eski/yanlış klasörü işaret eder).
     def exact = (folder == slide.folder && slide.geojson != null && slide.geojson.isFile())
         ? slide.geojson : new File(new File(folder, 'geojson_qc'), slide.name + '.geojson')
@@ -241,7 +241,7 @@ def findGeoJSON = { slide, manualFolder ->
 
 // ── Batch (proje geneli) GeoJSON çözümü: YALNIZ tam ad eşleşmesi ─────────────
 // Bulanık yedek (startsWith / tek-dosya) tek-slayt kolaylığıdır; proje döngüsünde
-// paylaşılan bir klasörde bir slaydın GeoJSON'unu YANLIŞ slayda yazma (ve kaydetme)
+// paylaşılan bir klasörde bir slaytın GeoJSON'unu YANLIŞ slayta yazma (ve kaydetme)
 // riskini taşır. Batch bu yüzden asla bulanık eşleşme kullanmaz.
 def exactGeoJSON = { slide, folder ->
     if (folder == null || slide?.name == null) return null
@@ -633,8 +633,8 @@ def runImportClean = { slide, manualFolder ->
             javafx.application.Platform.runLater { errorTextRef.set('Açık görüntü yok — içe aktarım için bir slayt açın.'); step.set('ERROR'); render() }
             return
         }
-        // Kimlik denetimi: pencere kipsiz (Modality.NONE) ve "Doğrudan çalıştır" koşusu dakikalarca
-        // sürebilir; bu arada kullanıcı açık slaydı değiştirebilir. Yakalanan `slide` ≠ şu an açık
+        // Kimlik denetimi: pencere kipsiz (Modality.NONE) ve "Doğrudan çalıştır" işlemi dakikalarca
+        // sürebilir; bu arada kullanıcı açık slaytı değiştirebilir. Yakalanan `slide` ≠ şu an açık
         // görüntü ise YANLIŞ hiyerarşiye yazma (batch'teki getID denetiminin tek-slayt karşılığı).
         def curSlide0 = resolveSlide(curData0)
         boolean sameSlide = (slide.file != null && curSlide0.file != null) ?
@@ -642,7 +642,7 @@ def runImportClean = { slide, manualFolder ->
             (slide.name == curSlide0.name)
         if (!sameSlide) {
             javafx.application.Platform.runLater {
-                errorTextRef.set('Açık görüntü değişti — içe aktarım "' + slide.name + '" için başlatıldı ama şu an "' + curSlide0.name + '" açık.\n\n"' + slide.name + '" slaydını yeniden açıp tekrar deneyin.')
+                errorTextRef.set('Açık görüntü değişti — içe aktarım "' + slide.name + '" için başlatıldı ama şu an "' + curSlide0.name + '" açık.\n\n"' + slide.name + '" slaytını yeniden açıp tekrar deneyin.')
                 step.set('ERROR'); render()
             }
             return
@@ -726,7 +726,7 @@ def runDiag = { ->
 // ── Proje geneli içe aktarım (batch) — HER girdinin KENDİ GeoJSON'unu içe aktarır ──
 // tiatoolbox-bolge kalıbı: canlı veriyi yalnız gerçekten o girdiyse kullan (getEntry/getID),
 // diğerlerini readImageData → import → temiz doku → saveImageData → server.close().
-// GeoJSON çözümü YALNIZ tam ad (exactGeoJSON) — yanlış slayda yazmayı önler.
+// GeoJSON çözümü YALNIZ tam ad (exactGeoJSON) — yanlış slayta yazmayı önler.
 def runBatchImport = { manualFolder ->
     def project = QP.getProject()
     if (project == null) { errorTextRef.set('Proje açık değil — proje geneli içe aktarım için bir QuPath projesi açın.'); step.set('ERROR'); render(); return }
@@ -761,7 +761,7 @@ def runBatchImport = { manualFolder ->
                 data = (liveData != null) ? liveData : entry.readImageData()
                 opened = (liveData == null)
                 def slide = resolveSlide(data)
-                // SADECE tam ad: önce slaydın kendi klasörü, sonra (varsa) elle kapsam klasörü.
+                // SADECE tam ad: önce slaytın kendi klasörü, sonra (varsa) elle kapsam klasörü.
                 def gj = exactGeoJSON(slide, slide.folder)
                 if (gj == null && manualFolder != null && manualFolder.toString().trim())
                     gj = exactGeoJSON(slide, manualFolder.toString().trim())
@@ -797,8 +797,8 @@ def runBatchImport = { manualFolder ->
             rb << String.format(java.util.Locale.US, "Görüntü: %,d   içe aktarıldı: %,d   atlandı: %,d   hata: %,d%n%n", entries.size(), okN, skipN, failN)
             lines.each { rb << it << "\n" }
             rb << "\nHer görüntünün GeoJSON'u KENDİ klasöründeki geojson_qc/ içinde TAM ADLA arandı.\n"
-            rb << (currentTouched ? "Açık slaydın TÜM güncel hâli diske kaydedildi (yalnız GrandQC nesneleri değil); görüntüleyici yenilendi.\n"
-                                  : "Açık slaytta değişiklik olduysa görmek için slaydı yeniden açın.\n")
+            rb << (currentTouched ? "Açık slaytın TÜM güncel hâli diske kaydedildi (yalnız GrandQC nesneleri değil); görüntüleyici yenilendi.\n"
+                                  : "Açık slaytta değişiklik olduysa görmek için slaytı yeniden açın.\n")
             rb << "\nGrandQC çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın.\n"
             rb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
             resultFolderRef.set(null)   // batch: çok klasör olabilir → tek rapor butonu gösterme
@@ -924,7 +924,7 @@ def launchBundledScript = { String resourceName ->
             if (url == null) url = this.getClass().getResource('/scripts/' + resourceName)
             if (url == null) {
                 javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
-                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri & temel modeller → Atölye Python ortam yöneticisi') }
+                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
                 return
             }
             def cl = this.getClass().getClassLoader()
@@ -1092,6 +1092,57 @@ def installModels = {
     } as Runnable).start()
 }
 
+// ── Ortam yöneticisinden bu sihirbaza dönüş ──────────────────────────────────
+// "① Python ortamı" düğmesi Atölye Python ortam yöneticisini bu kancayla (`atolyeReturnHook`) açar.
+// Kurulum bitince yöneticideki "Sihirbaza dön ▶" (ya da yönetici penceresini kapatmak) bu pencereyi
+// öne getirir, kurulan python'u (grandqc venv) yapılandırmaya yazar ve durumu yeniden değerlendirir
+// (depo ② ve model ③ de hazırsa çalıştırma ekranına geçer). Çalışan bir işlem sürerken ekran değişmez.
+def envReturnHook = [
+    envId   : 'grandqc',
+    wizard  : 'GrandQC doku ve artefakt',
+    onReturn: { reopen ->
+        javafx.application.Platform.runLater {
+            if (stage == null || (!stage.isShowing() && !reopen)) return
+            try {
+                def savedPy = prefs.get(PREF_PYTHON, '')
+                if (savedPy?.trim() && !(new File(savedPy.trim())).isFile()) { prefs.remove(PREF_PYTHON); savedPy = '' }
+                if (!savedPy?.trim()) { def vp = grandqcVenvPython(); if (vp != null) prefs.put(PREF_PYTHON, vp.getAbsolutePath()) }
+                try { prefs.flush() } catch (Throwable ignore) {}
+                if (['CONFIG_INCOMPLETE', 'READY', 'ERROR'].contains(step.get())) {
+                    step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render()
+                }
+                if (stage.isIconified()) stage.setIconified(false)
+                if (!stage.isShowing()) stage.show()
+                stage.toFront(); stage.requestFocus()
+            } catch (Throwable t) {
+                Dialogs.showErrorMessage('Sihirbaza dönüş', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+            }
+        }
+    }
+]
+def launchEnvManager = { ->
+    new Thread({
+        try {
+            def res = 'yardimci-python-ortam-yoneticisi.groovy'
+            def url = null
+            try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + res) } catch (Throwable t) {}
+            if (url == null) url = this.getClass().getResource('/scripts/' + res)
+            if (url == null) {
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
+                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                return
+            }
+            def cl = this.getClass().getClassLoader()
+            try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
+            def shellBinding = new Binding()
+            shellBinding.setVariable('atolyeReturnHook', envReturnHook)
+            new GroovyShell(cl, shellBinding).evaluate(url.getText('UTF-8'), res)
+        } catch (Throwable t) {
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+        }
+    } as Runnable).start()
+}
+
 // ── Render: her durum değişiminde sahneyi sıfırdan kurar ────────────────────
 render = { ->
     if (stage == null) return
@@ -1146,7 +1197,7 @@ render = { ->
             '   • GrandQC_MPP1 / 15 / 2.pth   (3×~25 MB) → models/qc/  [zenodo 14041538]')
         resArea.setEditable(false); resArea.setWrapText(false); resArea.setStyle(MONO); resArea.setPrefRowCount(9); resArea.setMaxHeight(190)
         center.getChildren().add(resArea)
-        actions.add(navButton('① Python ortamı', { launchBundledScript('yardimci-python-ortam-yoneticisi.groovy') },
+        actions.add(navButton('① Python ortamı', { launchEnvManager() },
             'Atölye Python ortam yöneticisini açar → "GrandQC"yi kurun; python otomatik algılanır'))
         actions.add(navButton('② GrandQC deposu indir', { installRepo() },
             'GitHub ZIP indirir + açar, betik dizinini otomatik ayarlar'))
@@ -1190,7 +1241,7 @@ render = { ->
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce bir H&E slaydını açın, sonra "⟳ Yenile".')
+            addGuidance('Önce bir H&E slaytını açın, sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
@@ -1212,7 +1263,7 @@ render = { ->
             sb << "GeoJSON      : " << ((gj != null && gj.isFile()) ? ('mevcut — ' + gj.getName()) : 'yok (henüz çalıştırılmadı)') << "\n"
             addMonoArea(sb.toString())
             addGuidance('Kapsam: GrandQC seçili KLASÖRDEKİ tüm slaytları işler (tek slayt / anotasyon modu yoktur). ' +
-                        'Öntanımlı olarak açık slaydın klasörü kullanılır; tüm projeyi/başka bir klasörü işlemek için "Klasör seç…".')
+                        'Öntanımlı olarak açık slaytın klasörü kullanılır; tüm projeyi/başka bir klasörü işlemek için "Klasör seç…".')
             if (!isHE) addWarnLabel('⚠ Görüntü tipi H&E değil (' + typeName + '). GrandQC H&E için tasarlanmıştır; yine de deneyebilirsiniz.')
             boolean canRun = configComplete(cfg) && (scopeFolder != null)
             actions.add(navButton('Kapat', { stage.close() }))
@@ -1221,7 +1272,7 @@ render = { ->
                 if (x != null) { manualFolderRef.set(x.getAbsolutePath()); render() }
             }, 'İşlenecek klasörü değiştir — o klasördeki tüm slaytlar işlenir'))
             if (overridden)
-                actions.add(navButton('↺ Slaytın klasörü', { manualFolderRef.set(null); render() }, 'Kapsamı açık slaydın klasörüne döndür'))
+                actions.add(navButton('↺ Slaytın klasörü', { manualFolderRef.set(null); render() }, 'Kapsamı açık slaytın klasörüne döndür'))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('Komut üret ▶', { cmdTextRef.set(cmdText(cfg, (effectiveFolder(slide) ?: '<slayt-klasörü>'), slide.name)); step.set('CMD_READY'); render() }))
             if (gj != null && gj.isFile())
@@ -1238,7 +1289,7 @@ render = { ->
                     boolean go = Dialogs.showConfirmDialog('Proje geneli içe aktarım',
                         'Projedeki ' + nImg + ' görüntünün her biri için var olan GrandQC GeoJSON\'u içe aktarılacak:\n\n' +
                         '• Her görüntüdeki önceki "GrandQC KK" anotasyonları (varsa elle düzeltmeler dahil) silinip yeniden üretilir.\n' +
-                        '• Sonuç HER görüntü için diske KAYDEDİLİR (geri alınamaz); açık slaydın tüm güncel hâli de kaydedilir.\n\n' +
+                        '• Sonuç HER görüntü için diske KAYDEDİLİR (geri alınamaz); açık slaytın tüm güncel hâli de kaydedilir.\n\n' +
                         'Devam edilsin mi?')
                     if (go) runBatchImport(manualFolderRef.get())
                 }, 'Projedeki TÜM görüntüler için her birinin KENDİ klasöründeki GeoJSON çıktısını içe aktarır ve diske kaydeder (tam ad eşleşmesi)'))
@@ -1257,7 +1308,7 @@ render = { ->
         }
     } else if (cur == 'RUNNING') {
         title.setText(runPhaseRef.get() + ' çalışıyor…')
-        addGuidance('Python hattı koşuyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance('Python hattı çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
         center.getChildren().add(busyBar())
         def la = logAreaRef.get()
         if (la != null) {

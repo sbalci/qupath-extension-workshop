@@ -152,7 +152,7 @@ javafx.application.Platform.runLater {
             'Eşikleri değiştirip yeniden çalıştırabilirsiniz; sonuç aşağıda güncellenir.\n' +
             'Perde arkası: dekonvolüsyon → Gaussian (σ) yumuşatma → eşik (ikili maske) → ' +
             'mesafe dönüşümü + watershed (bitişik çekirdekleri ayır). Bu adımları kendi ' +
-            'slaydınızda görmek için: Yardımcılar → Görüntü işleme kavramları.')
+            'slaytınızda görmek için: Yardımcılar → Görüntü işleme kavramları.')
         info.setWrapText(true)
 
         def spThr = new javafx.scene.control.Spinner(0.0, 1.0, atolyeD('atolye.detectionThreshold', 0.1), 0.01)

@@ -69,7 +69,7 @@ def ensureClassesRegistered = { ->
     } catch (Throwable ignored) { }
 }
 
-// ── Paketli kardeş betikleri çalıştırma (yalnız önkoşul yardımcıları için) ──
+// ── Paketli kardeş betikleri çalıştırma (yalnız ön koşul yardımcıları için) ──
 def bundledScript = { String name ->
     try {
         Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
@@ -589,7 +589,7 @@ render = { ->
     } else if (cur == 'PREREQ') {
         title.setText('Önce: görüntü tipi ve kalibrasyon')
         bodyLbl.setText(
-            "Eğitim için iki önkoşul gerekir:\n\n" +
+            "Eğitim için iki ön koşul gerekir:\n\n" +
             "  ${s.he ? '✓' : '✗'} Görüntü tipi Brightfield (H&E) + boya vektörleri\n" +
             "  ${s.calib ? '✓' : '✗'} Piksel kalibrasyonu (µm/px)\n\n" +
             "Eksik olanı aşağıdaki düğmelerle düzeltin, sonra 'Yenile'.")

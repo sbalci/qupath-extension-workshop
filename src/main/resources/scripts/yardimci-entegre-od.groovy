@@ -24,7 +24,7 @@
  *   2. Ölçmek istediğiniz bölgeyi alan anotasyonu olarak çizin ve SEÇİN.
  *   3. Tümör/Stroma modülü piksel sınıflandırıcısını önce çalıştırın (sınıflı deteksiyonlar
  *      hiyerarşide bulunmalı), VEYA sadece "Pozitif" sınıf adıyla devam edin.
- *   4. [Extensions → Atölye → Yardımcılar → Skorlama & ölçüm → Entegre DAB OD]
+ *   4. [Extensions → Atölye → Yardımcılar → Skorlama ve ölçüm → Entegre DAB OD]
  *      (ya da [Automate → Project scripts → bu betik])
  *
  * ÇIKTI:

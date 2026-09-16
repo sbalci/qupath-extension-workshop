@@ -146,7 +146,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def textArea = new javafx.scene.control.TextArea(windowBody)
             textArea.setEditable(false)
-            textArea.setWrapText(false)
+            textArea.setWrapText(true)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
             def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")

@@ -34,7 +34,7 @@
  *   (downsample + "labels" {indeks→sınıf}) ölçek ve sınıf adları otomatik okunur.
  *
  * KULLANIM:
- *   1. Maskenin türetildiği slaydı QuPath'te açın.
+ *   1. Maskenin türetildiği slaytı QuPath'te açın.
  *   2. [Extensions → Atölye → Yardımcılar → Maske görüntüsünü içe aktar]
  *   3. Maske dosyasını seçin; (yan dosya yoksa) downsample ve ön plan sınıf adını girin.
  *
@@ -125,7 +125,7 @@ int maxDistinctLabels     = 256                   // bunun üstünde maske ikili
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce maskenin türetildiği slaydı açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce maskenin türetildiği slaytı açın.")
     return
 }
 if (isHeadless) {

@@ -3,7 +3,7 @@
  * ----------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Atölye için "hızlı deneme" betiği. Sitoplazmik DAB boyamasını (CD68,
- * CD163 ve sitokeratinler gibi belirteçleri ölçer. Her hücre sitoplazmik DAB yoğunluğuna göre
+ * CD163 ve sitokeratinler gibi belirteçleri) ölçer. Her hücre sitoplazmik DAB yoğunluğuna göre
  * Negative / Weak / Moderate / Strong bin'lerine atanır.
  *
  * KULLANIM:

@@ -3,7 +3,7 @@
  * -----------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Her hücre için en yakın komşu hücreye olan merkez-merkez mesafesini (µm)
- * hesaplar ve hücre ölçümü olarak yazar. Karelerarası uzamsal düzeni
+ * hesaplar ve hücre ölçümü olarak yazar. Hücrelerarası uzamsal düzeni
  * (kümelenme/dağınıklık) sayısallaştıran basit bir ÖLÇÜTtür.
  *
  * QuPath KARŞILIĞI (GUI):
@@ -12,7 +12,7 @@
  *   "en yakın herhangi bir hücre" mesafesini doğrudan, eklenti gerektirmeden
  *   hesaplar (uzamsal hash ızgarası ile hızlı + tam sonuç).
  *
- * GİRDİ (ÖNKOŞUL):
+ * GİRDİ (ÖN KOŞUL):
  *   • Slaytta hücre tespitleri olmalı (Hücre Tespiti / Nükleer Boya / Sitoplazmik Boya /
  *     Tümör İçi Ki-67 modüllerinden biriyle üretilmiş). Betik tespit YAPMAZ.
  *

@@ -207,7 +207,7 @@ render = { ->
         addMonoArea(rep)
     } else {
         reportRef.set('')
-        addGuidance('Önce bir slayt açın. Bu sihirbaz açık slaydın FM-hazırlık olgularını ve sağlamlık kontrol listesini raporlar (salt okunur).')
+        addGuidance('Önce bir slayt açın. Bu sihirbaz açık slaytın FM-hazırlık olgularını ve sağlamlık kontrol listesini raporlar (salt okunur).')
     }
     actions.add(navButton('Kapat', { stage.close() }))
     if (imageData != null) actions.add(navButton('Kopyala', { copyToClipboard(reportRef.get()) }, 'Raporu panoya kopyala'))

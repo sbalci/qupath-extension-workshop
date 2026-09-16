@@ -426,7 +426,7 @@ if (!projectMode && currentEntry == null) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 2.5) Açık slaydı diske kaydet — kritik
+// 2.5) Açık slaytı diske kaydet — kritik
 // MeasurementExporter ve readImageData her ikisi de .qpdata dosyasından
 // okur. Kaydedilmemiş anotasyon / tespit değişiklikleri dışa aktarımda görünmez,
 // dosyalar boş çıkar. Burada savunmacı bir kaydetme yapıyoruz.
@@ -557,7 +557,7 @@ if (projectMode) {
     // Per-image dosyalar
     imageList.each { entry ->
         try {
-            // ImageData 0.6'da AutoCloseable — proje döngüsünde her slaydı kapatarak
+            // ImageData 0.6'da AutoCloseable — proje döngüsünde her slaytı kapatarak
             // sunucu/karo-önbelleği tanıtıcılarının birikmesini önle (bkz. sib. kohort betikleri).
             entry.readImageData().withCloseable { imgData ->
                 exportEntry(entry, imgData)
@@ -639,7 +639,7 @@ if (annotationsTotal == 0 && detectionsTotal == 0 && currentSaveError == null) {
                 "  1. Bu slaytta gerçekten hiç anotasyon / tespit yoktu — önce ilgili modüllerden birini çalıştırın.\n" +
                 "  2. Slayt betikten ÖNCE QuPath dışında değiştirildi ve .qpdata kaydedilmedi.\n" +
                 "  3. ROI seçilip içinde tespit üretildi ama anotasyon kaydedilmedi.\n" +
-                "QuPath'te [Ctrl+S] ile slaydı kaydedin ve betiği tekrar çalıştırın."
+                "QuPath'te [Ctrl+S] ile slaytı kaydedin ve betiği tekrar çalıştırın."
 }
 
 def fmtName = (ext == "tsv") ? "TSV (TAB)" : "CSV (virgül)"

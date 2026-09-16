@@ -24,7 +24,7 @@
  *   • Önceki içe aktarımdan kalan "ESDIP AI tahmin" adlı anotasyonlar yeniden
  *     içe aktarma öncesinde otomatik silinir.
  *
- * GeoJSON ÜRETİMİ (önkoşul, QuPath dışında):
+ * GeoJSON ÜRETİMİ (ön koşul, QuPath dışında):
  *   Bir Python segmentasyon hattı çalıştırın — slaytı karolara bölün, U-Net ile
  *   çıkarım yapın, maskeleri birleştirip poligon GeoJSON'a dönüştürün. Tam akış,
  *   örnek kod ve sınırlar: Derin Öğrenme Eğitimi ve Segmentasyon eki

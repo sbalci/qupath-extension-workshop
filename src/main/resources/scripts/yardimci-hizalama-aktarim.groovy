@@ -5,7 +5,7 @@
  *
  * NE YAPAR:
  *   Aynı projedeki bir KAYNAK slaytın üst düzey anotasyonlarını, bir AFİN
- *   dönüşüm uygulayarak şu anki (HEDEF) slayda kopyalar. Afin dönüşümü İKİ
+ *   dönüşüm uygulayarak şu anki (HEDEF) slayta kopyalar. Afin dönüşümü İKİ
  *   yoldan elde edebilirsiniz:
  *     (A) OTOMATİK — Align eklentisinin AutoAligner'ı ile kaynak↔hedef arasında
  *         yoğunluk/anotasyon tabanlı afin hizalamayı BURADAN hesaplar (ayrı
@@ -13,7 +13,7 @@
  *     (B) ELLE — [Analyze → Alignment → Interactive image alignment] penceresindeki
  *         6 sayıyı (m00 m01 m02 m10 m11 m12) yapıştırırsınız.
  *   Böylece H&E üzerinde çizdiğiniz tümör/bölge anotasyonunu, hizaladığınız İHK
- *   slaydına TEK TIKLA ve YİNELENEBİLİR biçimde aktarırsınız.
+ *   slaytına TEK TIKLA ve YİNELENEBİLİR biçimde aktarırsınız.
  *
  *   Kavram + yöntem: Pete Bankhead'in "transfer objects between images" betiği
  *   (gist c696ffb…) — kaynak hiyerarşiyi okur, PathObjectTools.transformObject(...)
@@ -37,7 +37,7 @@
  *
  * KULLANIM:
  *   1. Kaynak (anotasyonların çizili olduğu) ve hedef slayt AYNI projede olsun.
- *   2. HEDEF slaydı açın.
+ *   2. HEDEF slaytı açın.
  *   3. Bu sihirbazı çalıştırın → kaynağı seçin → (A) "Otomatik hizala + aktar"
  *      VEYA (B) matrisi yapıştırıp "Elle matrisle aktar".
  *
@@ -182,7 +182,7 @@ def doTransferManual = { String sourceName, List<Double> m, boolean inv, boolean
         if (entry == null) return [ok:false, error:"Kaynak slayt bulunamadı: ${sourceName}"]
         def srcHier
         try { srcHier = entry.readHierarchy() }
-        catch (Throwable t) { return [ok:false, error:"Kaynak hiyerarşi okunamadı (${t.getClass().getSimpleName()}). Kaynak slaydı projede bir kez açıp kaydetmeyi deneyin."] }
+        catch (Throwable t) { return [ok:false, error:"Kaynak hiyerarşi okunamadı (${t.getClass().getSimpleName()}). Kaynak slaytı projede bir kez açıp kaydetmeyi deneyin."] }
         def srcAnns = srcHier.getRootObject().getChildObjectsAsArray().findAll { it.isAnnotation() }
         if (srcAnns.isEmpty()) return [ok:false, error:"Kaynak slaytta üst düzey anotasyon yok: ${sourceName}"]
 
@@ -270,7 +270,7 @@ javafx.application.Platform.runLater {
         stage.setAlwaysOnTop(true)
 
         def info = new javafx.scene.control.Label(
-            'Kaynak slaytı seçin. (A) Otomatik: Align eklentisi kaynağı bu (HEDEF) slayda afin hizalar ve\n' +
+            'Kaynak slaytı seçin. (A) Otomatik: Align eklentisi kaynağı bu (HEDEF) slayta afin hizalar ve\n' +
             'anotasyonları aktarır. (B) Elle: [Analyze → Alignment → Interactive image alignment] penceresindeki\n' +
             '6 sayıyı yapıştırın. Her iki durumda kaynağın üst düzey anotasyonları buraya kilitli kopyalanır;\n' +
             'örtüşmeyi opaklık kaydırıcısıyla gözle doğrulayın.')

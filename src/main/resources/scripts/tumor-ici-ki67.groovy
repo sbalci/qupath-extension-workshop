@@ -12,7 +12,7 @@
  *     eğit/kaydet → uygula → Ki-67'yi YALNIZ Tumor hücrelerinde derecele. Böylece
  *     Ki-67+ lenfositler ve stromal hücreler indeksten dışlanır.
  *
- * Yol B'nin sınıflandırıcısı, İHK (Ki-67 H-DAB) slaydı üzerinde eğitilen ayrı bir
+ * Yol B'nin sınıflandırıcısı, İHK (Ki-67 H-DAB) slaytı üzerinde eğitilen ayrı bir
  * NESNE (hücre) sınıflandırıcısıdır; Tümör/Stroma modülünün H&E PİKSEL sınıflandırıcısından
  * farklıdır. Yoğunluk derecelemesi (DAB eşiği) ayrı, alt adımdır.
  *
@@ -42,7 +42,7 @@ def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class,
 def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
 def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
 
-// ── Önkoşul düzeltme için paketli yardımcı betikleri çalıştırma ──
+// ── Ön koşul düzeltme için paketli yardımcı betikleri çalıştırma ──
 def bundledScript = { String name ->
     try {
         Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
@@ -86,9 +86,9 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3 ->
     }
     if (tumorObjects.isEmpty())
         return [ok:false, error:
-            'Ki-67 slaydında ölçülecek tümör epitelini anotasyonla çevreleyin, sınıfını tam\n' +
+            'Ki-67 slaytında ölçülecek tümör epitelini anotasyonla çevreleyin, sınıfını tam\n' +
             'olarak "Tumor" yapın ve bu anotasyon(lar)ı SEÇİN. Betik yalnız seçili Tumor\n' +
-            'anotasyonlarını ölçer; H&E sınıflandırıcısı bu İHK slaydına otomatik uygulanmaz.']
+            'anotasyonlarını ölçer; H&E sınıflandırıcısı bu İHK slaytına otomatik uygulanmaz.']
 
     def tumorUnion = RoiTools.union(tumorObjects.collect { it.getROI() })
     if (tumorUnion == null || tumorUnion.isEmpty())
@@ -626,7 +626,7 @@ def applyMenuHighlight = { String menuName ->
             javafx.scene.Node target = null
             def want = menuName?.toLowerCase(java.util.Locale.ROOT)
             if (want != null) {
-                // Yalnız üst-menü başlıkları (.menu-button); '.menu' alt-menülere de inip yanlış
+                // Yalnız üst-menü başlıkları (.menu-button); '.menu' alt menülere de inip yanlış
                 // düğümü işaretleyebildiğinden kullanılmaz. Bulunamazsa tüm menü çubuğuna düşülür.
                 for (n in mb.lookupAll('.menu-button')) {
                     try {
@@ -690,7 +690,7 @@ render = { ->
         boolean needProject = pathChoice.get() == 'B'
         title.setText('Önce: görüntü tipi ve kalibrasyon' + (needProject ? ' + proje' : ''))
         bodyLbl.setText(
-            'Gerekli önkoşullar:\n\n' +
+            'Gerekli ön koşullar:\n\n' +
             "  ${s.image ? '✓' : '✗'} Açık görüntü\n" +
             "  ${s.hDab ? '✓' : '✗'} Görüntü tipi Brightfield (H-DAB)\n" +
             "  ${s.calib ? '✓' : '✗'} Piksel kalibrasyonu (µm/px)\n" +
@@ -721,7 +721,7 @@ render = { ->
     } else if (cur == 'DETECT_REGION') {
         title.setText('1/5 — Tespit bölgesini seçin')
         bodyLbl.setText(
-            'Ki-67 slaydında ölçmek istediğiniz tümör alanını kapsayan GENİŞ bir anotasyon çizin\n' +
+            'Ki-67 slaytında ölçmek istediğiniz tümör alanını kapsayan GENİŞ bir anotasyon çizin\n' +
             '(Brush/Polygon) ve SEÇİN. Sınıf atamanıza gerek yok — bu yalnız hücre tespitinin sınırıdır.\n\n' +
             "Şu an seçili alan anotasyonu: ${s.selectedArea}")
         buttons.getChildren().addAll(

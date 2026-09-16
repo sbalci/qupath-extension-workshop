@@ -6,7 +6,7 @@
  * NE YAPAR:
  *   "Analiz etmeden önce ne elinde olduğunu bil." Açık slaytın VEYA tüm
  *   projenin teknik/tarayıcı üst verisini (metadata) okur — hepsi tek pencereden:
- *     1. BU SLAYT — açık slaydın boyut, piksel boyutu (µm/px), kestirilen
+ *     1. BU SLAYT — açık slaytın boyut, piksel boyutu (µm/px), kestirilen
  *        büyütme, piramit, dosya bilgisi vb. üst verisini anında raporlar.
  *     2. TÜM PROJE — projedeki her görüntüyü arka planda gezer; çekirdek
  *        alanları (+ okunabiliyorsa gömülü tarayıcı anahtarları) bir CSV'ye
@@ -275,7 +275,7 @@ def writeProjectColumns = { entry, m ->
     } catch (Throwable ignore) {}
 }
 
-// ── Headless: yalnız açık slaydı raporla (UI yok, değişiklik yok) ────────────
+// ── Headless: yalnız açık slaytı raporla (UI yok, değişiklik yok) ────────────
 if (isHeadless) {
     def imageData = QP.getCurrentImageData()
     if (imageData == null) { println 'Önce bir slayt açın (headless modda yalnız açık slayt raporlanır).'; return }
