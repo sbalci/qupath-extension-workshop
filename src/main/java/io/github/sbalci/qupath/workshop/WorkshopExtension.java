@@ -205,6 +205,21 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             // paketlenmez) — seçili alanda Cellpose-SAM tabanlı hücre segmentasyonu + sınıf (6 hazır model).
             // GrandQC ağırlıklarını GrandQC sihirbazıyla ortak klasörden kullanır. Ek → Classpose.
             new ScriptEntry("Classpose hücre fenotipleme sihirbazı (H&E)", "yardimci-classpose-sihirbaz.groovy"),
+            // CytoFormer (Python, ayrı süreç; kod PENN Academic Software License → lisans onayından sonra sabit
+            // commit'ten veri köküne indirilir, paketlenmez/içe aktarılmaz) — seçili alandaki MEVCUT hücre
+            // tespitlerini 56 µm yamalarla organ-başlıklı 23 hücre tipinden birine atar. Ek → CytoFormer.
+            new ScriptEntry("CytoFormer hücre tipi sınıflama sihirbazı (H&E, 16 organ)", "yardimci-cytoformer-sihirbaz.groovy"),
+            // HistoPLUS (Owkin; Python, ayrı süreç; kod + ağırlık CC BY-NC-ND 4.0 → kod sabit commit'ten `histoplus`
+            // ortamına kurulur, ağırlıklar kapılı HF'ten kullanıcının kendi hesabıyla; ikisi de paketlenmez) — seçili
+            // alanda CellViT + H0-mini ile çekirdek segmentasyonu + 13 (+1 tanımsız) sınıf. Upstream extract() Windows'ta
+            // çalışmadığı için köprü upstream yapı taşlarını süreç içinde çağırır. Ek → HistoPLUS.
+            new ScriptEntry("HistoPLUS hücre segmentasyonu + sınıflama sihirbazı (H&E, 13 sınıf)", "yardimci-histoplus-sihirbaz.groovy"),
+            // NuClick (Python, ayrı süreç) — TIKLA → ÇEKİRDEK SINIRI. Yukarıdakilerden farkı: otomatik değil,
+            // SEÇİCİdir; kullanıcının "Points" aracıyla koyduğu her nokta için TEK çekirdeğin konturunu üretir
+            // (HistoPLUS'ın eğitim/konsensüs kümelerini üreten yöntemin aynısı). Ağ, TIA Toolbox'ın BSD-3-Clause
+            // yeniden uygulamasıdır — upstream nuclick_torch (CC BY-NC-SA 4.0) paketlenmez/port edilmez; ağırlık
+            // (nuclick_original-pannuke) PanNuke kaynaklı olduğu için CC BY-NC-SA'dır. Ek → NuClick.
+            new ScriptEntry("NuClick (tıkla → çekirdek sınırı) sihirbazı", "yardimci-nuclick-sihirbaz.groovy"),
             // hepatocyte-app (Python) köprüsü — karaciğer hepatosit segmentasyonu; "kendi modelini QuPath'te
             // çalıştırma" örneği. Depo + model 🔒 talep üzerine (sihirbazın ①②③ butonları). Ek → Hepatosit Segmentasyonu.
             new ScriptEntry("Hepatosit segmentasyonu sihirbazı (Python)", "yardimci-hepatosit-sihirbaz.groovy"),
@@ -289,6 +304,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Kaiko Midnight sınıflandırıcı sihirbazı", "yardimci-kaiko-sihirbaz.groovy"),
             // SPIDER (Python) — organa özgüleşmiş HAZIR sınıflandırıcı (yalnız tahmin; CC BY-NC, kapılı). bkz. Ekler → SPIDER.
             new ScriptEntry("SPIDER doku sınıflandırıcı sihirbazı", "yardimci-spider-sihirbaz.groovy"),
+            // HistoART (Python) — FDA/DIDSR karo düzeyi artefakt sınıflandırması (ikili → tür) + kalite karnesi.
+            // GrandQC'nin YERİNE GEÇMEZ: maske üretmez (GrandQC piksel maskesi verir); bu yüzden "Doku tespiti"
+            // modülünde değil burada. Kod CC0; FMA varyantının UNI omurgası KAPILI. bkz. Ekler → WSI Kalite Kontrol § 8.
+            new ScriptEntry("HistoART artefakt tespiti sihirbazı", "yardimci-histoart-sihirbaz.groovy"),
             // NOT: VALIS hizalama sihirbazı artık Modüller → "Görüntü Hizalama" alt menüsünde (ALIGNMENT_MODULE).
             // Salt okunur FM-hazırlık denetimi + sağlamlık kontrol listesi (batch/UTAP/doğrulama). FM ÇALIŞTIRMAZ. bkz. Ekler → Patolojide Temel Modeller.
             new ScriptEntry("Temel model hazırlık ve sağlamlık sihirbazı", "yardimci-foundation-model-sihirbaz.groovy")

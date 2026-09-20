@@ -96,6 +96,14 @@ def CATALOG = [
     [id:'spider', label:'SPIDER — organ doku sınıflandırıcı', python:'3.11',
      packages:['torch>=2.1','transformers>=4.40.0','huggingface_hub>=0.23','Pillow>=10.0','numpy>=1.24'],
      torchBackend:'auto', reuseOfficial:null, note:'⚠️ Model ağırlıkları KAPILI — ayrıca HF girişi gerekir.'],
+    [id:'histoart', label:'HistoART — artefakt tespiti (WSI kalite kontrol)', python:'3.11',
+     packages:['torch>=2.1','torchvision>=0.16','timm>=1.0.16','huggingface_hub>=0.23','Pillow>=10.0','numpy>=1.24'],
+     torchBackend:'auto', reuseOfficial:null,
+     note:'Yalnızca Python ortamı. Ağırlıklar (didsr/HistoArt, AÇIK) sihirbazın ③ "Modeli indir" düğmesiyle ayrıca çekilir. DLA varyantı açık/CC0 (~94 MB); FMA varyantı ince ayarlı UNI\'dir ve omurgası (MahmoodLab/uni) KAPILIDIR (CC-BY-NC-ND 4.0 + HF erişim onayı) — timm yalnız FMA için gerekir. Upstream requirements.txt\'teki nvidia-*/triton tekerlekleri BİLEREK alınmaz (Linux kilit dosyası; CUDA torchBackend ile çözülür).'],
+    [id:'nuclick', label:'NuClick — tıkla → çekirdek sınırı', python:'3.11',
+     packages:['tiatoolbox>=2.1.2','torch>=2.5','torchvision','scikit-image>=0.26','numpy','Pillow'],
+     torchBackend:'auto', reuseOfficial:null,
+     note:'Yalnızca Python ortamı. Ağırlık (nuclick_original-pannuke, ~255 MB) sihirbazın ③ düğmesiyle ayrıca çekilir; PanNuke ile eğitildiği için CC BY-NC-SA 4.0\'dır (ticari kullanım yok). Ağ, TIA Toolbox\'ın BSD-3-Clause yeniden uygulamasıdır — upstream nuclick_torch (CC BY-NC-SA) paketlenmez. scikit-image>=0.26: NuClick.postproc `remove_small_objects(..., max_size=)` çağırır; bu kwarg 0.26 ile geldi (tiatoolbox 2.1.3 zaten sabitler, taban açıkça yazılır).'],
     [id:'sectra', label:'Sectra PACS — DICOM → GeoJSON', python:'3.11',
      packages:['pydicom>=2.4','shapely','numpy'], torchBackend:null, reuseOfficial:null,
      note:'Hafif. Sectra PACS içe-aktarma sihirbazı.'],
@@ -137,6 +145,18 @@ def CATALOG = [
                'cellpose==4.0.8', 'torch', 'torchvision'],
      torchBackend:'auto', reuseOfficial:null,
      note:'⚠️ Yalnızca Python ortamı (~6 GB; GPU torch). Classpose KODU (CC BY-NC 4.0, sabit commit f6aeadd) bu ortama çalışma anında kurulur — atölyede paketlenmez; sihirbaz onu ayrı süreç olarak çalıştırır. Model dosyaları (Hugging Face classpose/classpose, ~1.2 GB/model) ve isteğe bağlı GrandQC ağırlıkları sihirbazdan indirilir ya da yerel klasörden kullanılır. Python 3.13 gerekir (uv kendisi indirir). Windows\'ta GPU için sihirbaz TORCHDYNAMO_DISABLE=1 ayarlar (Triton yok). cellpose 4.0.8\'e sabitlenir (bu commit yeni cellpose ile açılmaz); yayımlanan paket alt modülleri atladığından her ortam kurulumundan sonra sihirbazın ① adımında bir kez "Kurulumu tamamla" gerekir.'],
+    [id:'cytoformer', label:'CytoFormer — H&E hücre tipi sınıflama (ViT-g; NVIDIA GPU önerilir)', python:'3.11',
+     packages:['torch>=2.1','torchvision>=0.16','timm>=1.0.9,<1.1','numpy>=1.24','pandas>=2.0','pyarrow>=12.0','Pillow>=9.5','huggingface_hub>=0.23'],
+     torchBackend:'auto', reuseOfficial:null,
+     note:'⚠️ Yalnızca Python ortamı (~5 GB; GPU torch). CytoFormer KODU (PENN Academic Software License — yalnız dahili araştırma/ticari olmayan kullanım, yeniden dağıtım yok) sihirbazda lisans onayından SONRA sabit commit\'ten (36b667e) veri köküne indirilir; atölyede paketlenmez, ayrı süreç olarak çalışır. Ağırlık (Hugging Face zhihuanglab/CytoFormer, KAPILI, CC BY-NC 4.0, 2.7 GB) yerel klasörden kullanılır ya da HF girişiyle indirilir. torchvision>=0.16 BİLEREK açıktır: upstream requirements.txt torchvision\'ı listelemez, timm onu sınırsız çeker ve uv 0.2.0\'a (2018) çözebilir → "torchvision.ops" hatası. timm 1.1 altında tutulur (mimariyi timm kurar; 1.0.29 doğrulandı). NVIDIA GPU yoksa ortamı cihaz = CPU ile kurun: CUDA torch\'u CPU kipine zorlamak Windows\'ta 0xC0000005 ile çöktü; CPU tekerleği sorunsuz (~1.5–2 hücre/sn).'],
+    [id:'histoplus', label:'HistoPLUS — H&E hücre segmentasyonu + 13 (+1) sınıf (CellViT/H0-mini; NVIDIA GPU önerilir)', python:'3.12',
+     packages:['histoplus @ https://github.com/owkin/histoplus/archive/576b94e528791c9f22c4d755bee01ec9a5743558.zip',
+               'torch==2.7.1','torchvision==0.22.1','xformers==0.0.31.post1','timm==1.0.8',
+               'numpy==2.2.6','pandas==2.3.1','opencv-python-headless==4.12.0.88','scikit-image==0.25.2','shapely==2.1.1',
+               'huggingface-hub==0.33.4','joblib==1.5.1','scipy==1.15.3','pillow==11.3.0',
+               'openslide-python==1.4.2','openslide-bin==4.0.0.8','typer==0.16.0','pyyaml==6.0.2','tqdm==4.67.1','loguru==0.7.3'],
+     torchBackend:'auto', cpuStandardWheel:true, reuseOfficial:null,
+     note:'⚠️ Yalnızca Python ortamı (~6 GB; GPU torch). HistoPLUS KODU (Owkin, CC BY-NC-ND 4.0 — ticari olmayan, türev PAYLAŞILMAZ) sabit commit\'ten (576b94e) bu ortama çalışma anında kurulur; atölyede paketlenmez ve DEĞİŞTİRİLMEZ. Ağırlıklar (Hugging Face Owkin-Bioptimus/histoplus, KAPILI, ~285 MB × 2) sihirbazın ② adımından kendi HF hesabınızla indirilir ya da yerel klasörden kullanılır. Sürümler upstream uv.lock\'a SABİTTİR (sabitlenmezse uv pandas 3 / OpenCV 5 çözer; upstream kodu bunlarla denenmedi). xformers torch 2.7.1\'e bağlıdır: CUDA 12.6/12.8 indeksinde var, CUDA 11.8\'de YOK (eski NVIDIA sürücüsü → sürücüyü güncelleyin ya da cihaz = CPU ile kurun). Cihaz = CPU ise standart PyPI tekerleği kullanılır (CPU indeksinde xformers yok). CPU çıkarımı çalışır ama çok yavaştır (~7 dk/mm²); GPU (RTX A4000) ~12 sn/mm².'],
     [id:'valis', label:'VALIS — WSI hizalama (native; JDK/Java AYRICA gerekir)', python:'3.10',
      packages:['valis-wsi', 'pyvips[binary]', 'openslide-python', 'openslide-bin'], torchBackend:'auto', reuseOfficial:null,
      note:'⚠️ Yalnız NATIVE mod içindir. valis-wsi + pyvips[binary] (libvips ikilisi) + openslide-python & openslide-bin (OpenSlide ikilisi → .svs/.ndpi HIZLI okunur; yoksa VALIS yavaş Bio-Formats yoluna düşer) pip ile kurulur; torch CUDA wheel\'i --torch-backend=auto ile otomatik seçilir (RTX A4000; GPU özellik-eşleştirmeyi hızlandırır — SLAYT OKUMA/DÖNÜŞTÜRME ise disk/IO bağımlıdır, GPU kullanmaz). AYRICA bir JDK (Bio-Formats/JPype) gerekir — sistemde Java varsa yeterlidir. ÖNERİLEN yol: Docker (cdgatenbee/valis-wsi; tüm bağımlılıklar hazır). Bkz. Kaynaklar → İleri kurulumlar → VALIS. Lisans: VALIS = MIT.'],
@@ -234,7 +254,10 @@ def effectiveTorchBackend = { spec ->
     if (spec.torchBackend == null) return null
     def dev = selectedDeviceRef.get() ?: 'auto'
     if (dev == 'auto') dev = detectAccelerator()
-    if (dev == 'cpu') return 'cpu'
+    // cpuStandardWheel: CPU'da PyTorch CPU indeksi YERİNE standart PyPI tekerleği. xformers PyTorch CPU
+    // indeksinde yoktur (histoplus: 'torch==2.7.1 + xformers' --torch-backend=cpu ile ÇÖZÜLEMEZ); PyPI'nin
+    // Windows torch tekerleği zaten yalnız-CPU'dur (Linux'ta CUDA'lı ama CPU'da da çalışır).
+    if (dev == 'cpu') return spec.cpuStandardWheel ? null : 'cpu'
     if (dev == 'mps') return null
     def explicit = spec.torchBackend.toString()
     return explicit.startsWith('cu') ? explicit : 'auto'
