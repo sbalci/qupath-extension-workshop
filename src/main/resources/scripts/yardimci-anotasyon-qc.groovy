@@ -21,7 +21,7 @@
  *
  * KULLANIM:
  *   1. Denetlemek istediğiniz anotasyonları içeren slaytı açın.
- *   2. [Extensions → Atölye → Yardımcılar → Uzamsal analiz → Anotasyon Yapısı QC]
+ *   2. [Extensions → Atölye → Yardımcılar → Temel araçlar → Anotasyon yapısı QC (denetçi)]
  *      ya da [Automate → Project scripts → bu betik]
  *
  * ÇIKTI:

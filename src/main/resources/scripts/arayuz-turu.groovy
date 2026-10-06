@@ -75,7 +75,7 @@ def pages = [
      govde: 'Görüntüleyici, slaytın görüntülendiği merkezdeki büyük alandır. WSI\'yi Google ' +
             'Haritalar gibi bir çözünürlük piramidi üzerinde gezersiniz: fare tekerleğiyle ' +
             'yakınlaşıp uzaklaşır, Move aracı etkinken tıklayıp sürükleyerek kaydırırsınız. ' +
-            'Tüm tespit ve anotasyonlar bu alanın üzerine çizilir. Shift+Z tüm slaytı pencereye sığdırır.'],
+            'Tüm tespit ve anotasyonlar bu alanın üzerine çizilir. Tüm slaytı pencereye sığdırmak için View → Zoom → Zoom to fit.'],
 
     [id: 'overview', bolge: 'VIEWER',
      baslik: 'Genel bakış navigatörü (görüntüleyicinin sağ-üst köşesi)',
@@ -141,7 +141,7 @@ def pages = [
     [id: 'tools-draw', bolge: 'TOOLBAR', hedef: [tools: 'ALL'], demo: 'TOOL_MOVE',
      baslik: 'Çizim araçları — Move, Rectangle, Polygon, Brush, Wand',
      govde: 'Çizim araçları araç çubuğunda yan yana durur: Move (gezinme, kısayol M), Rectangle (R), ' +
-            'Ellipse (E), Polygon (P), Brush (fırça, B) ve Wand (kenar takipli sihirli değnek, W). Bir bölge ' +
+            'Ellipse (O), Polygon (P), Brush (fırça, B) ve Wand (kenar takipli sihirli değnek, W). Bir bölge ' +
             'çizmek için ilgili aracı seçip görüntüleyicide sürüklersiniz. İş bitince Move aracına dönmek iyi ' +
             'alışkanlıktır — yoksa yanlışlıkla yeni anotasyon çizebilirsiniz. (Bu adım örnek olarak Move aracını etkinleştirir.)'],
 
@@ -161,7 +161,7 @@ def pages = [
 
     [id: 'practice-ellipse', bolge: 'TOOLBAR', hedef: [tools: 'ELLIPSE'], demo: 'TOOL_ELLIPSE', practice: 'ELLIPSE',
      baslik: 'Alıştırma — bir ELİPS çizin',
-     govde: 'Ellipse (E) aracı seçildi. Görüntü üzerinde tıklayıp sürükleyerek bir elips çizin. ' +
+     govde: 'Ellipse (O) aracı seçildi. Görüntü üzerinde tıklayıp sürükleyerek bir elips çizin. ' +
             'Shift ile sürüklerseniz daire olur. Çizim algılanınca otomatik ilerlenir.'],
 
     [id: 'practice-polygon', bolge: 'TOOLBAR', hedef: [tools: 'POLYGON'], demo: 'TOOL_POLYGON', practice: 'POLYGON',

@@ -608,8 +608,8 @@ render = { ->
         bodyLbl.setText(
             ((d?.ok) ? "Tespit edilen çekirdek: ${d.count}\n\n" : '') +
             'Birkaç TİPİK TÜMÖR HÜCRESİ bölgesini küçük anotasyonlarla çizin ve sınıfını tam olarak\n' +
-            '"Tumor" yapın (Annotations paneli ya da sağ tık → Set class). Tümör epiteline ait\n' +
-            'çekirdekleri hedefleyin; lenfosit ve stromadan uzak durun. Bitince İleri.\n\n' +
+            '"Tumor" yapın (Annotations sekmesinde sınıfı seçip "Set selected" ya da sağ tık → Set classification).\n' +
+            'Tümör epiteline ait çekirdekleri hedefleyin; lenfosit ve stromadan uzak durun. Bitince İleri.\n\n' +
             "Şu an Tumor anotasyonu: ${s.tumor}")
         buttons.getChildren().addAll(
             navButton('◀ Geri', { step.set('DETECT_REGION'); render() }),

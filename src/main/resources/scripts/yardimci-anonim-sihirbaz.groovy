@@ -16,7 +16,8 @@
  *   • Orijinal slaytlara DOKUNMAZ, yeniden adlandırmaz, SİLMEZ; açık projeyi
  *     DEĞİŞTİRMEZ. Yalnız seçtiğiniz çıktı klasörüne yeni kopyalar yazar.
  *   • Böylece Windows dosya-kilidi sorunu ve proje bozulma riski oluşmaz.
- *   • Bittiğinde çıktı klasörünü QuPath'te YENİ bir proje olarak açabilirsiniz.
+ *   • Bittiğinde kopyaları, AYRI ve BOŞ bir klasörde oluşturduğunuz YENİ bir QuPath
+ *     projesine ekleyin (QuPath boş olmayan klasörde proje oluşturmaz).
  *
  * KAPSAM / SINIRLAR (dürüst):
  *   • Varsayılan akış (kopya + yeniden adlandırma) = Seviye I (dosya adı). Her zaman
@@ -32,8 +33,8 @@
  *
  * KULLANIM:
  *   1. Anonimleştirilecek slaytları içeren bir QuPath projesi açın.
- *   2. [Extensions → Atölye → İleri analiz — sonraki oturum → WSI anonimleştirme sihirbazı]
- *      (bu giriş bir sonraki oturumda etkinleştirilecek).
+ *   2. Projeden bir slayt açın (menü öğesi açık slayt ister), sonra
+ *      [Extensions → Atölye → Yardımcılar → Klinik ve kohort → WSI anonimleştirme sihirbazı]
  *   3. Çıktı klasörünü + adlandırma + (ops.) Python yolunu seçin → Önizle → Başlat.
  *
  * YÖNTEM / KAYNAK:
@@ -326,8 +327,9 @@ def buildResultText = { File outDir, cfg, List rows, List keyFiles ->
     if (total > shown) sb << String.format(java.util.Locale.US, "  … ve %d slayt daha%n", (total - shown))
     sb << "\nÜretilen dosyalar:\n"
     keyFiles.each { f -> sb << "  • " << f.getName() << "\n" }
-    sb << "\nSonraki adım: çıktı klasörünü QuPath'te YENİ bir proje olarak açabilirsiniz\n"
-    sb << "(File → Project → Create project → bu klasör).\n\n"
+    sb << "\nSonraki adım: AYRI ve BOŞ bir klasörde YENİ bir QuPath projesi oluşturun\n"
+    sb << "(File → Project → Create project), ardından bu klasördeki kopyaları ekleyin\n"
+    sb << "(File → Project → Add images). QuPath boş olmayan klasörde proje oluşturmaz.\n\n"
     if (cfg.reversible)
         sb << "⚠ Eşleştirme anahtarı (CSV/JSON) PHI içerir — güvenli saklayın, anonim slaytlarla paylaşmayın.\n"
     else

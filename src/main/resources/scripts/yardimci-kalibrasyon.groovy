@@ -170,7 +170,7 @@ def buildSummary = { ->
     if (br != null && br.ok) {
         b << String.format(java.util.Locale.US, "  Proje geneli  : %d güncellendi, %d zaten kalibre\n", (int) br.updated, (int) br.skipped)
     }
-    b << "\nDoğrulama: Ruler aracıyla tipik bir tümör çekirdeği çapı ~8–12 µm görünmeli.\n"
+    b << "\nDoğrulama: Line (çizgi, L) aracıyla tipik bir tümör çekirdeği çapı ~8–12 µm görünmeli.\n"
     b << "\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return b.toString()
 }

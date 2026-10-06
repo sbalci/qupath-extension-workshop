@@ -2537,7 +2537,7 @@ def startDirectRun = { List cmd ->
             sb << "Aşağıdan sonuçları QuPath'e aktarın:\n"
             sb << (isComp
                 ? " • \"Birleşik multipleksi ekle\" → doğal-renk RGB'yi projeye ekler. Tür: BRIGHTFIELD; tek görünüm, kanal seçilemez (\"slayt gibi\").\n"
-                : " • \"Birleşik multipleksi ekle\" → çok kanallı hizalı görüntüyü ekler. Tür: FLUORESCENCE; Ctrl+Shift+C ile 2–3 kanalı aç/kapat.\n")
+                : " • \"Birleşik multipleksi ekle\" → çok kanallı hizalı görüntüyü ekler. Tür: FLUORESCENCE; Brightness/Contrast (Shift+C) ile 2–3 kanalı aç/kapat.\n")
             sb << " • \"Warp'lı anotasyonu içe aktar\" → hedef slayt(lar)a (VALIS adlı, kilitli) anotasyon ekler.\n\n"
             sb << "Çıktı türleri: Ekler → Görüntü Hizalama § 7.2 (hangisini ne zaman/hangi tür).\n"
             sb << "Hizalamayı GÖRSEL doğrulayın.\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
@@ -2721,7 +2721,7 @@ def doAddMergeOut = {
         boolean bad = ((res.failed ?: 0) > 0) || (res.syncOk == false)
         def hint = isComp
             ? '\nDoğal-renk parlak alan bileşiği → tür OTOMATİK "Brightfield" olarak ayarlandı. Tek pişmiş RGB görüntüdür; kanal seçilemez ("slayt gibi" görünüm).'
-            : '\nÇok kanallı → tür OTOMATİK "Fluorescence" olarak ayarlandı. Ctrl+Shift+C ile 2–3 kanalı (ör. marker-DAB + marker-Hematoksilen) "Göster" ile aç/kapat; beyaz zemin için "Invert background".'
+            : '\nÇok kanallı → tür OTOMATİK "Fluorescence" olarak ayarlandı. Brightness/Contrast (Shift+C) ile 2–3 kanalı (ör. marker-DAB + marker-Hematoksilen) "Göster" ile aç/kapat; beyaz zemin için "Invert background".'
         applyAddPreview(res)
         if (bad) Dialogs.showErrorMessage('Birleşik görüntü — kısmen/hata', msg + '\n\n' + ((res.notes) ? res.notes.join('\n') : ''))
         else Dialogs.showInfoNotification('Birleşik görüntü', msg + hint)
@@ -2773,7 +2773,7 @@ def doAddOmeFromFile = {
         def msg = String.format(java.util.Locale.US, '%d eklendi, %d zaten vardı, %d hata.', (res.added ?: 0), (res.skipped ?: 0), (res.failed ?: 0))
         boolean bad = ((res.failed ?: 0) > 0) || (res.syncOk == false)
         if (bad) Dialogs.showErrorMessage('OME-TIFF — kısmen/hata', msg + '\n\n' + ((res.notes) ? res.notes.join('\n') : ''))
-        else Dialogs.showInfoNotification('OME-TIFF', msg + '\nÇok kanallı birleşik görüntü ise tür sorulur → "Fluorescence" seçin; sonra Brightness/Contrast (Ctrl+Shift+C) ile kanallara renk atayın.')
+        else Dialogs.showInfoNotification('OME-TIFF', msg + '\nÇok kanallı birleşik görüntü ise tür sorulur → "Fluorescence" seçin; sonra Brightness/Contrast (Shift+C) ile kanallara renk atayın.')
     })
 }
 
