@@ -108,6 +108,17 @@ def uriFileNameOf = { uris ->
     } catch (Throwable ignore) {}
     return null
 }
+// Tam dosya URI'si (ilk 'file' şemalı) — dışa aktarıcının manifestteki 'uri_tam' sütunuyla aynı tanım
+def firstFileUriOf = { uris ->
+    try {
+        for (u in (uris ?: [])) { if (u != null && 'file'.equals(u.getScheme())) return u.toString() }
+    } catch (Throwable ignore) {}
+    return null
+}
+def canonPath = { String p ->
+    if (p == null || p.isEmpty()) return ''
+    try { return new File(p).getCanonicalPath() } catch (Throwable ignore) { return p }
+}
 // Modül 9 (veri-aktarma.groovy) slug kuralı — birebir kopya; onun "<önek><slug>__annotations.geojson" dosyalarını eşlemek için
 def toSlug = { String s ->
     if (s == null) return 'untitled'
@@ -398,6 +409,7 @@ def readManifest = { File dir ->
     if (lines.isEmpty()) return null
     def hdr = lines[0].split('\t', -1) as List
     int iName = hdr.indexOf('goruntu_adi'), iId = hdr.indexOf('giris_id'), iFile = hdr.indexOf('cikti_dosyasi'), iStat = hdr.indexOf('durum')
+    int iProj = hdr.indexOf('proje_yolu'), iUri = hdr.indexOf('uri_tam')       // eski manifestlerde yok
     if (iName < 0 || iFile < 0) return null
     def rows = []
     lines.drop(1).each { String ln ->
@@ -408,6 +420,7 @@ def readManifest = { File dir ->
         String rel = c[iFile]
         if (!rel) return
         rows.add([name: nfc(c[iName]), id: (iId >= 0 && c.length > iId) ? c[iId] : '',
+                  projectPath: (iProj >= 0 && c.length > iProj) ? c[iProj] : '', uriFull: (iUri >= 0 && c.length > iUri) ? c[iUri] : '',
                   file: new File(f.getParentFile(), rel.replace('/', File.separator)).getCanonicalFile()])
     }
     return rows
@@ -429,20 +442,33 @@ def imageKeys = { String imageName, String uriFile ->
 }
 def targetOf = { entry, liveData ->
     String uriFile = null
-    try { uriFile = (entry != null) ? uriFileNameOf(entry.getURIs()) : uriFileNameOf(liveData?.getServer()?.getURIs()) } catch (Throwable ignore) {}
+    String uriFull = null
+    try {
+        def uris = (entry != null) ? entry.getURIs() : liveData?.getServer()?.getURIs()
+        uriFile = uriFileNameOf(uris); uriFull = firstFileUriOf(uris)
+    } catch (Throwable ignore) {}
     String name = (entry != null) ? entry.getImageName() : (liveData?.getServer()?.getMetadata()?.getName() ?: 'goruntu')
-    return [name: name, entry: entry, live: liveData, uriFile: uriFile]
+    return [name: name, entry: entry, live: liveData, uriFile: uriFile, uriFull: uriFull]
 }
-def buildMatches = { List targets, List files, List manifestRows ->
+def buildMatches = { List targets, List files, List manifestRows, String projectPath = null ->
     def byPath = new LinkedHashMap()
     files.each { byPath.put(it.file.getPath(), it) }
     def rows = targets.collect { t -> [target: t, candidates: [], file: null, format: null, how: '', status: 'dosya yok',
                                        include: false, summary: '', outOfBounds: false] }
-    // 1) _manifest.tsv — görüntü adı (NFC) eşit; aynı ad birden çok satırdaysa giris_id ayırır
+    // 1) _manifest.tsv — görüntü adı (NFC) eşit; aynı ad birden çok satırdaysa (a) tam dosya URI'si, yoksa
+    //    (b) YALNIZ manifest bu projeden yazıldıysa giris_id ayırır; aksi hâlde hepsi aday kalır → 'belirsiz'
+    //    (giris_id projeye göre sayaçtır: başka projedeki aynı numara başka bir görüntüdür)
     if (manifestRows != null) {
         rows.each { r ->
             def hits = manifestRows.findAll { it.name == nfc((String) r.target.name) && byPath.containsKey(it.file.getPath()) }
-            if (hits.size() > 1 && r.target.entry != null) {
+            if (hits.size() > 1) {
+                String tUri = (String) r.target.uriFull
+                if (tUri) {
+                    def byUri = hits.findAll { it.uriFull && it.uriFull == tUri }
+                    if (!byUri.isEmpty()) hits = byUri
+                }
+            }
+            if (hits.size() > 1 && r.target.entry != null && projectPath && hits.every { it.projectPath && canonPath((String) it.projectPath) == canonPath(projectPath) }) {
                 def byId = hits.findAll { it.id == r.target.entry.getID() }
                 if (byId.size() == 1) hits = byId
             }
@@ -665,7 +691,15 @@ def scriptArgs = { ->
     }
     return m
 }
-def yes = { String v, boolean dflt -> (v == null || v.isEmpty()) ? dflt : (v.toLowerCase(java.util.Locale.ROOT) in ['evet', 'e', 'true', '1', 'yes']) }
+def BOOL_TRUE  = ['evet', 'e', 'true', '1', 'yes']
+def BOOL_FALSE = ['hayir', 'h', 'false', '0', 'no']
+def yes = { String v, boolean dflt -> (v == null || v.isEmpty()) ? dflt : (foldTr(v) in BOOL_TRUE) }
+// Evet/hayır değerleri açıkça doğrulanır: tanınmayan değer sessizce "hayır" sayılmaz (fail-closed)
+def checkBool = { Map a, String key ->
+    String v = a.get(key)
+    if (v != null && !v.isEmpty() && !(foldTr(v) in BOOL_TRUE) && !(foldTr(v) in BOOL_FALSE))
+        throw new IllegalArgumentException('Geçersiz değer: ' + key + '=' + v + ' (evet/hayır, true/false, 1/0 kabul edilir)')
+}
 
 // ── Headless (arayüzsüz) giriş noktası ──────────────────────────────────────
 if (isHeadless) {
@@ -674,6 +708,7 @@ if (isHeadless) {
     def badKeys = a.keySet().findAll { !VALID_KEYS.contains(it) }
     if (!badKeys.isEmpty())
         throw new IllegalArgumentException('Bilinmeyen argüman: ' + badKeys.join(', ') + '. Geçerli anahtarlar: ' + VALID_KEYS.join(', '))
+    checkBool(a, 'kilitle')
     if (!a.kaynak)
         throw new IllegalArgumentException('Kaynak gerekli: --args "kaynak=<klasör ya da dosya>"')
     if (QP.getProject() != null)
@@ -694,11 +729,12 @@ if (isHeadless) {
     File chosen = new File((String) a.kaynak)
     def src = resolveSource(chosen, fmt)
     if (src.files.isEmpty()) throw new IllegalStateException('Kaynakta okunabilir GeoJSON / ImageScope / ASAP dosyası yok: ' + chosen.getAbsolutePath())
-    def m = buildMatches(targets, src.files, readManifest((File) src.dir))
+    def m = buildMatches(targets, src.files, readManifest((File) src.dir), project.getPath()?.toString())
     if (chosen.isFile() && targets.size() == 1) forceSingle(m, src.files[0])
     def res = runImport(m.rows, [mode: mode, lock: yes((String) a.kilitle, false), respectBounds: true, reportDir: reportDirFor(project)],
                         { int i, int n, String nm -> println "[${i}/${n}] ${nm}" }, new java.util.concurrent.atomic.AtomicBoolean(false))
     println resultText(res, (String) MODE_LABELS[mode])
+    if (res.reportFile == null) throw new RuntimeException('Rapor yazılamadı (ayrıntı: ' + (res.lines.find { it.startsWith('⚠ Rapor') } ?: 'bilinmiyor') + ')')
     if (res.failed > 0) throw new RuntimeException(res.failed + ' görüntü içe aktarılamadı (ayrıntı: ' + res.reportFile + ')')
     return
 }
@@ -826,12 +862,13 @@ def startPreview = {
         }
     } catch (Throwable ignore) {}
     cancelledRef.set(false)
+    String projPathNow = QP.getProject()?.getPath()?.toString()
     step.set('LOADING'); render()
     def worker = new Thread({
         try {
             def src = resolveSource(chosen, fmt)
             if (src.files.isEmpty()) throw new IllegalStateException('Kaynakta okunabilir GeoJSON / ImageScope / ASAP dosyası bulunamadı:\n' + chosen.getAbsolutePath())
-            def m = buildMatches(targets, src.files, readManifest((File) src.dir))
+            def m = buildMatches(targets, src.files, readManifest((File) src.dir), projPathNow)
             if (chosen.isFile() && targets.size() == 1) forceSingle(m, src.files[0])
             int i = 0
             for (r in m.rows) {
@@ -860,6 +897,10 @@ def startImport = {
     boolean lock = prefs.getBoolean('lock', false)
     def todo = pv.rows.findAll { it.include && it.file != null }
     if (todo.isEmpty()) { showError('İçe aktarılacak işaretli satır yok.'); return }
+    // Aynı dosya birden çok işaretli satıra seçilmişse (önizlemedeki açılır listeler serbesttir) hiçbir şey yazılmaz
+    if (todo.groupBy { it.file.getPath() }.any { k, v -> v.size() > 1 }) {
+        showError('Aynı dosya birden çok görüntü için seçili; önizlemede düzeltin.'); return
+    }
     // Projesiz tek görüntü: önizlemedeki açık görüntü hâlâ geçerli görüntü olmalı (aksi hâlde yanlış görüntüye yazılırdı)
     def curData = QP.getCurrentImageData()
     if (todo.any { it.target.entry == null && !(curData != null && curData.is(it.target.live)) }) {
@@ -1034,7 +1075,7 @@ render = { ->
         center.getChildren().add(lockChk)
         addGuidance('"Önizle" hiçbir şey yazmaz. "İçe aktar"a bastığınızda, hedef görüntülerde anotasyon varsa ne yapılacağı ' +
             'sorulur; varsayılan seçenek önceki anotasyonlara DOKUNMAZ. İçe aktarılan her nesne "atolye_iceaktarim" üst ' +
-            'verisiyle (dosya adı · zaman) işaretlenir; hedefte aynı UUID\'li bir nesne zaten varsa yenisi eklenmez.')
+            'verisiyle (biçim · dosya yolu · zaman) işaretlenir; hedefte aynı UUID\'li bir nesne zaten varsa yenisi eklenmez.')
         def go = navButton('Önizle ▶', { startPreview() }, 'Dosyaları görüntülerle eşler ve içeriğini özetler; henüz hiçbir şey yazmaz')
         go.setDisable(src == null)
         actions.add(navButton('Kapat', { stage.close() }))
@@ -1062,17 +1103,30 @@ render = { ->
         ['İçe aktar', 'Görüntü', 'Dosya', 'Eşleşme', 'Durum / içerik'].eachWithIndex { String h, int c ->
             def l = new javafx.scene.control.Label(h); l.setStyle('-fx-font-weight: bold;'); grid.add(l, c, 0)
         }
+        // Aynı dosya birden çok İŞARETLİ satırda seçiliyse o satırların durumu 'belirsiz' gösterilir (otomatik işaret kaldırma yok; "İçe aktar" yine de engeller)
+        def DUP_TXT = 'belirsiz — aynı dosya birden çok görüntüde seçili'
+        def stLabels = []
+        def refreshDup = { ->
+            def cnt = [:]
+            rows.each { rr -> if (rr.include && rr.file != null) { String k = rr.file.getPath(); cnt.put(k, ((cnt.get(k) ?: 0) as int) + 1) } }
+            rows.eachWithIndex { rr, int j ->
+                if (j >= stLabels.size()) return
+                boolean dup = rr.include && rr.file != null && ((cnt.get(rr.file.getPath()) ?: 0) as int) > 1
+                stLabels[j].setText(dup ? DUP_TXT : (rr.status + (rr.summary ? (' — ' + rr.summary) : '')))
+            }
+        }
         rows.eachWithIndex { r, int i ->
             int rowIdx = i + 1
             def inc = new javafx.scene.control.CheckBox()
             inc.setSelected((boolean) r.include); inc.setDisable(r.file == null)
-            inc.selectedProperty().addListener(onChange { n -> r.include = n })
+            inc.selectedProperty().addListener(onChange { n -> r.include = n; refreshDup() })
             def combo = new javafx.scene.control.ComboBox()
             def opts = [NONE] + r.candidates.collect { it.file.getName() } + pv.unmatched.collect { it.file.getName() }
             combo.getItems().addAll(opts.unique())
             combo.setValue(r.file != null ? r.file.getName() : NONE)
             def st = new javafx.scene.control.Label(r.status + (r.summary ? (' — ' + r.summary) : ''))
             st.setWrapText(true); st.setMaxWidth(420)
+            stLabels.add(st)
             def howLbl = new javafx.scene.control.Label((String) (r.how ?: ''))
             combo.valueProperty().addListener(onChange { n ->
                 def pick = (n == null || n == NONE) ? null : byName.get(n)
@@ -1084,6 +1138,7 @@ render = { ->
                 r.status = (pick == null) ? 'dosya yok' : 'elle seçildi'
                 r.summary = (pick == null) ? '' : '(çalıştırmada okunacak)'
                 st.setText(r.status + (r.summary ? (' — ' + r.summary) : ''))
+                refreshDup()
             })
             grid.add(inc, 0, rowIdx)
             grid.add(new javafx.scene.control.Label((String) r.target.name), 1, rowIdx)
@@ -1091,6 +1146,7 @@ render = { ->
             grid.add(howLbl, 3, rowIdx)
             grid.add(st, 4, rowIdx)
         }
+        refreshDup()
         def sp = new javafx.scene.control.ScrollPane(grid)
         sp.setFitToWidth(true)
         javafx.scene.layout.VBox.setVgrow(sp, javafx.scene.layout.Priority.ALWAYS)
@@ -1104,7 +1160,8 @@ render = { ->
     } else if (cur == 'RUNNING') {
         title.setText('İçe aktarılıyor…')
         addProgress('Başlıyor…')
-        addGuidance('İptal, sıradaki görüntüden önce durur; işlenmekte olan görüntü tamamlanır ve kaydedilir.')
+        addGuidance('İptal, sıradaki görüntüden önce durur; işlenmekte olan görüntü tamamlanır ve kaydedilir. ' +
+            'Çalışma sürerken hedef slaytları açıp kapatmayın; açık bir slayt işlem sırasında değişirse o görüntü atlanır ya da hata olarak raporlanır.')
         actions.add(navButton('İptal et', { cancelledRef.set(true) }))
     } else if (cur == 'RESULT') {
         title.setText(resultTitleRef.get())

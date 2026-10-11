@@ -448,6 +448,22 @@ def startConvert = { File dicomFile ->
             }
             return
         }
+        // Dönüştürme sürerken görüntü kapatılmış/değişmiş olabilir: düğmeye basıldığı andaki ImageData hâlâ bir görüntüleyicide açık olmalı
+        boolean stillOpen = false
+        try {
+            def ft = new java.util.concurrent.FutureTask({ ->
+                gui.getAllViewers().any { vw -> vw.getImageData() != null && vw.getImageData().is(imageData) }
+            } as java.util.concurrent.Callable)
+            javafx.application.Platform.runLater(ft)
+            stillOpen = (ft.get(10, java.util.concurrent.TimeUnit.SECONDS) == Boolean.TRUE)
+        } catch (Throwable ignore) { stillOpen = false }
+        if (!stillOpen) {
+            javafx.application.Platform.runLater {
+                errorTextRef.set('Görüntü dönüştürme sırasında kapatıldı; içe aktarma yapılmadı.')
+                step.set('ERROR'); render()
+            }
+            return
+        }
         javafx.application.Platform.runLater { busyLabelRef.set('GeoJSON içe aktarılıyor…'); step.set('BUSY'); render() }
         def imp = importGeoJSON(outGeojson, imageData.getHierarchy(), replacePrevious)
         javafx.application.Platform.runLater {
@@ -582,6 +598,7 @@ def startBatch = {
                 if (!pr.ok) throw new IOException('dönüştürme başarısız (çıkış ' + pr.exitCode + '): ' + ((pr.error ?: pr.lastLines ?: '').readLines().takeRight(1).join(' ')))
                 // Dönüştürme sürerken kullanıcı slaytı açmış olabilir: içe aktarmadan önce yeniden çöz (başarısızlıkta KAPALI-BAŞARISIZ)
                 def live2 = findLive()
+                if (live != null && !live.is(live2)) throw new IOException('açık görüntü dönüştürme sırasında kapatıldı ya da değişti')
                 if (live2 != null && opened) {
                     try { data.getServer().close() } catch (Throwable ignore) {}
                     data = live2; live = live2; opened = false
@@ -622,7 +639,7 @@ def startBatch = {
         sb << '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.'
         javafx.application.Platform.runLater {
             if (liveTouched) { try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {} }
-            resultTitleRef.set(cancelled ? 'İptal edildi' : (fail > 0 ? 'Tamamlandı (hatalarla) ⚠' : 'Tamamlandı ✅')); resultBtnRef.set('↻ Yeni içe aktarma')
+            resultTitleRef.set(cancelled ? 'İptal edildi' : (fail > 0 ? 'Tamamlandı (hatalarla) ⚠' : (reportErr != null ? 'Tamamlandı (rapor yazılamadı) ⚠' : 'Tamamlandı ✅'))); resultBtnRef.set('↻ Yeni içe aktarma')
             resultTextRef.set(sb.toString()); step.set('RESULT'); render()
         }
     }, 'AtolyeSectra-Batch')
@@ -822,7 +839,8 @@ render = { ->
         actions.add(runBatchBtn)
     } else if (cur == 'BATCH_RUNNING') {
         title.setText('Tüm proje içe aktarılıyor (DICOM → GeoJSON → QuPath)…')
-        addGuidance('Her görüntü için Python köprüsü çalışır; iptal, sıradaki görüntüden önce durur.')
+        addGuidance('Her görüntü için Python köprüsü çalışır; iptal, sıradaki görüntüden önce durur. ' +
+            'Çalışma sürerken hedef slaytları açıp kapatmayın; açık bir slayt işlem sırasında değişirse o görüntü atlanır ya da hata olarak raporlanır.')
         center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {
@@ -876,6 +894,8 @@ javafx.application.Platform.runLater {
         stage.initModality(javafx.stage.Modality.NONE)
         stage.setTitle('Sectra PACS anotasyon sihirbazı')
         stage.setAlwaysOnTop(alwaysTop.get())
+        // Pencere kapatılırsa çalışan dönüştürme/toplu işlem iptal edilir
+        stage.setOnCloseRequest({ cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} } as javafx.event.EventHandler)
         render()
         stage.show()
     } catch (Throwable t) {

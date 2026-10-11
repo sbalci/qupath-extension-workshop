@@ -74,7 +74,7 @@ def UNCLASSIFIED = '(sınıfsız)'
 def EXCLUSION_RGB = ColorTools.packRGB(128, 128, 128)
 def DEFAULT_RGB = ColorTools.packRGB(255, 0, 0)
 def MANIFEST_COLS = ['goruntu_adi', 'giris_id', 'uri_dosya', 'bicim', 'cikti_dosyasi', 'nesne_sayisi',
-                     'atlanan_nokta', 'atlanan_cizgi', 'delik_uyarisi', 'durum', 'not']
+                     'atlanan_nokta', 'atlanan_cizgi', 'delik_uyarisi', 'durum', 'not', 'proje_yolu', 'uri_tam']
 def CSV_COLS = ['goruntu_adi', 'uuid', 'nesne_tipi', 'sinif', 'ad', 'roi_tipi', 'z', 't',
                 'merkez_x_px', 'merkez_y_px', 'merkez_x_um', 'merkez_y_um',
                 'bbox_x_px', 'bbox_y_px', 'bbox_w_px', 'bbox_h_px', 'alan_px2', 'alan_um2', 'delik_sayisi']
@@ -100,6 +100,16 @@ def uriFileNameOf = { uris ->
         for (u in (uris ?: [])) { if (u != null && 'file'.equals(u.getScheme())) return new File(u).getName() }
     } catch (Throwable ignore) {}
     return null
+}
+// Tam dosya URI'si (ilk 'file' şemalı) — manifestte aynı adlı görüntüleri ayırmak için; içe aktarmadaki ile aynı
+def firstFileUriOf = { uris ->
+    try {
+        for (u in (uris ?: [])) { if (u != null && 'file'.equals(u.getScheme())) return u.toString() }
+    } catch (Throwable ignore) {}
+    return null
+}
+def projectPathOf = { project ->
+    try { return (project != null && project.getPath() != null) ? project.getPath().toAbsolutePath().normalize().toString() : '' } catch (Throwable ignore) { return '' }
 }
 
 // ── Küçük yardımcılar ───────────────────────────────────────────────────────
@@ -365,10 +375,12 @@ def runExport = { Map cfg, List targets, Closure onProgress, java.util.concurren
             String uriFile = null
             String gid = ''
             try { if (t.entry != null) gid = t.entry.getID() ?: '' } catch (Throwable ignore) {}
-            try { if (t.entry != null) uriFile = uriFileNameOf(t.entry.getURIs()) } catch (Throwable ignore) {}
+            String uriFull = null
+            try { if (t.entry != null) { uriFile = uriFileNameOf(t.entry.getURIs()); uriFull = firstFileUriOf(t.entry.getURIs()) } } catch (Throwable ignore) {}
+            String projPath = (t.entry != null) ? (String) (cfg.projectPath ?: '') : ''
             def mrow = { String bicim, String file, int nObj, int sp, int sl, int hw, String durum, String note ->
                 manifest << [tsvCell((String) t.name), tsvCell(gid), tsvCell(uriFile ?: ''), bicim, tsvCell(file),
-                             nObj, sp, sl, hw, durum, tsvCell(note)].join('\t') << '\n'
+                             nObj, sp, sl, hw, durum, tsvCell(note), tsvCell(projPath), tsvCell(uriFull ?: '')].join('\t') << '\n'
             }
             try {
                 if (data == null) { data = t.entry.readImageData(); opened = true }
@@ -499,7 +511,15 @@ def scriptArgs = { ->
     }
     return m
 }
-def yes = { String v, boolean dflt -> (v == null || v.isEmpty()) ? dflt : (v.toLowerCase(java.util.Locale.ROOT) in ['evet', 'e', 'true', '1', 'yes']) }
+def BOOL_TRUE  = ['evet', 'e', 'true', '1', 'yes']
+def BOOL_FALSE = ['hayir', 'h', 'false', '0', 'no']
+def yes = { String v, boolean dflt -> (v == null || v.isEmpty()) ? dflt : (foldTr(v) in BOOL_TRUE) }
+// Evet/hayır değerleri açıkça doğrulanır: tanınmayan değer sessizce "hayır" sayılmaz (fail-closed)
+def checkBool = { Map a, String key ->
+    String v = a.get(key)
+    if (v != null && !v.isEmpty() && !(foldTr(v) in BOOL_TRUE) && !(foldTr(v) in BOOL_FALSE))
+        throw new IllegalArgumentException('Geçersiz değer: ' + key + '=' + v + ' (evet/hayır, true/false, 1/0 kabul edilir)')
+}
 
 // ── Headless (arayüzsüz) giriş noktası ──────────────────────────────────────
 if (isHeadless) {
@@ -508,6 +528,7 @@ if (isHeadless) {
     def badKeys = a.keySet().findAll { !VALID_KEYS.contains(it) }
     if (!badKeys.isEmpty())
         throw new IllegalArgumentException('Bilinmeyen argüman: ' + badKeys.join(', ') + '. Geçerli anahtarlar: ' + VALID_KEYS.join(', '))
+    ['tespit', 'olcum'].each { checkBool(a, it) }
     if (QP.getProject() != null)
         throw new IllegalArgumentException("Bu betik projeyi kendisi açar: QuPath'i -p OLMADAN, --args \"proje=<proje.qpproj>\" ile çalıştırın.")
     def project = a.proje ? ProjectIO.loadProject(new File((String) a.proje), BufferedImage.class) : QP.getProject()
@@ -537,7 +558,7 @@ if (isHeadless) {
     def classes = a.siniflar ? new LinkedHashSet(((String) a.siniflar).split(';').collect { it.trim() }.findAll { it }) : null
     File outDir = a.cikis ? new File((String) a.cikis) : new File(defaultBaseDir(project), 'anotasyon_' + stamp())
     def cfg = [outDir: outDir, formats: fmts, detections: yes((String) a.tespit, false), measurements: yes((String) a.olcum, true),
-               classes: classes, sep: sepVal]
+               classes: classes, sep: sepVal, projectPath: projectPathOf(project)]
     def res = runExport(cfg, targets, { int i, int n, String nm -> println "[${i}/${n}] ${nm}" }, new java.util.concurrent.atomic.AtomicBoolean(false))
     println summaryText(res)
     if (res.failed > 0) throw new RuntimeException(res.failed + ' görüntü dışa aktarılamadı (ayrıntı: _manifest.tsv)')
@@ -554,7 +575,9 @@ def resultTextRef = new java.util.concurrent.atomic.AtomicReference('')
 def resultTitleRef = new java.util.concurrent.atomic.AtomicReference('Tamamlandı ✅')
 def lastProjectPath = new java.util.concurrent.atomic.AtomicReference(null)   // proje değişince işaretli görüntüleri sıfırla
 def errorTextRef  = new java.util.concurrent.atomic.AtomicReference('')
-def baseDirRef    = new java.util.concurrent.atomic.AtomicReference(null)   // File; null → proje/exports
+def classNamesRef = new java.util.concurrent.atomic.AtomicReference(null)     // CONFIG sınıf adı önbelleği (List)
+def lastRenderStep = new java.util.concurrent.atomic.AtomicReference(null)
+def baseDirRef   = new java.util.concurrent.atomic.AtomicReference(null)   // File; null → proje/exports
 def scopeRef      = new java.util.concurrent.atomic.AtomicReference(prefs.get('scope', 'project'))
 def progressLabelRef = new java.util.concurrent.atomic.AtomicReference(null)
 def progressBarRef   = new java.util.concurrent.atomic.AtomicReference(null)
@@ -631,7 +654,7 @@ def startExport = {
     File base = baseDirRef.get() ?: defaultBaseDir(QP.getProject())
     def cfg = [outDir: new File(base, 'anotasyon_' + stamp()), formats: fmts, detections: withDet,
                measurements: prefs.getBoolean('measurements', true), classes: classes,
-               sep: (prefs.get('sep', 'tab') == 'comma') ? ',' : '\t']
+               sep: (prefs.get('sep', 'tab') == 'comma') ? ',' : '\t', projectPath: projectPathOf(QP.getProject())]
     prefs.put('scope', scope)
     try { prefs.flush() } catch (Throwable ignore) {}
     cancelledRef.set(false)
@@ -665,7 +688,11 @@ render = { ->
     def project = QP.getProject()
     def imageData = QP.getCurrentImageData()
     String projPath = project?.getPath()?.toString()
-    if (projPath != lastProjectPath.get()) { checkedImages.clear(); lastProjectPath.set(projPath) }
+    if (projPath != lastProjectPath.get()) { checkedImages.clear(); lastProjectPath.set(projPath); classNamesRef.set(null) }
+    if (cur != lastRenderStep.get()) {                    // başka durumdan CONFIG'e dönüş → sınıf adları yeniden taranır
+        if (cur == 'CONFIG') classNamesRef.set(null)
+        lastRenderStep.set(cur)
+    }
 
     def title = new javafx.scene.control.Label()
     title.setStyle('-fx-font-size: 14px; -fx-font-weight: bold;')
@@ -731,17 +758,25 @@ render = { ->
         def chosen = new LinkedHashSet(((String) prefs.get('classes', '')).split(';').findAll { it })
         def flow = new javafx.scene.layout.FlowPane(10, 6)
         // Birleşim (sıra korunur, yineleme yok): sınıf listesi + açık görüntülerdeki anotasyon/tespit sınıfları + kayıtlı seçimler
+        // Tarama (tüm açık görüntülerin tüm tespitleri) pahalıdır: yalnız CONFIG'e girişte/pencere açılışında yapılır, kapsam/“Seç…” yeniden çizimleri önbelleği kullanır
         def names = new LinkedHashSet()
-        try { gui.getAvailablePathClasses().each { pc -> if (pc != null && pc != PathClass.NULL_CLASS) names.add(pc.toString()) } } catch (Throwable ignore) {}
-        try {
-            gui.getAllViewers().each { vw ->
-                def h = vw.getImageData()?.getHierarchy()
-                if (h == null) return
-                (new ArrayList(h.getAnnotationObjects()) + new ArrayList(h.getDetectionObjects())).each { o ->
-                    def cn = classNameOf(o); if (cn != null) names.add(cn)
+        def cachedNames = classNamesRef.get()
+        if (cachedNames == null) {
+            def found = new LinkedHashSet()
+            try { gui.getAvailablePathClasses().each { pc -> if (pc != null && pc != PathClass.NULL_CLASS) found.add(pc.toString()) } } catch (Throwable ignore) {}
+            try {
+                gui.getAllViewers().each { vw ->
+                    def h = vw.getImageData()?.getHierarchy()
+                    if (h == null) return
+                    (new ArrayList(h.getAnnotationObjects()) + new ArrayList(h.getDetectionObjects())).each { o ->
+                        def cn = classNameOf(o); if (cn != null) found.add(cn)
+                    }
                 }
-            }
-        } catch (Throwable ignore) {}
+            } catch (Throwable ignore) {}
+            classNamesRef.set(new ArrayList(found))
+            cachedNames = classNamesRef.get()
+        }
+        names.addAll(cachedNames)
         chosen.each { names.add(it) }
         names.remove(UNCLASSIFIED)
         names.add(UNCLASSIFIED)
