@@ -961,7 +961,7 @@ def startImport = {
                                       liveResolver: { e -> onFx(10) { liveDataForStrict(projAtRun, e) } },
                                       stillValid: { -> onFx(30) { QP.getProject().is(projAtRun) } }], setProgress, cancelledRef)
             String txt = resultText(res, (String) MODE_LABELS[mode])
-            String ttl = res.cancelled ? 'İptal edildi' : res.stopped ? (res.stopUnverified ? 'Durduruldu ⚠' : 'Durduruldu — proje değişti ⚠') : ((res.failed as int) > 0 ? 'Tamamlandı (hatalarla) ⚠' : 'Tamamlandı ✅')
+            String ttl = res.cancelled ? 'İptal edildi' : res.stopped ? (res.stopUnverified ? 'Durduruldu ⚠' : 'Durduruldu — proje değişti ⚠') : (res.reportFile == null ? 'Tamamlandı (rapor yazılamadı) ⚠' : ((res.failed as int) > 0 ? 'Tamamlandı (hatalarla) ⚠' : 'Tamamlandı ✅'))
             javafx.application.Platform.runLater {
                 if (res.liveTouched) { try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {} }
                 resultTextRef.set(txt); resultTitleRef.set(ttl); step.set('RESULT'); render()
