@@ -267,6 +267,11 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Eşit alanlı merkez/çevre",      "yardimci-merkez-cevre.groovy")
         )),
         new ScriptGroup("İçe ve dışa aktarma / veri", List.of(
+            // Toplu anotasyon aktarımı — proje geneli GeoJSON / ImageScope XML / ASAP XML (+ COCO, merkez tablosu dışa).
+            // _manifest.tsv ile tam ad eşleşmesi; içe aktarım önizlemeli ve önceki anotasyonları SORAR (varsayılan: silme).
+            // Arayüzsüz de çalışır (--args). bkz. Ekler → Toplu Anotasyon Aktarımı.
+            new ScriptEntry("Toplu anotasyon dışa aktarma", "yardimci-anotasyon-disa-aktar.groovy", false, false),  // proje geneli: açık slayt gerekmez
+            new ScriptEntry("Toplu anotasyon içe aktarma",  "yardimci-anotasyon-ice-aktar.groovy",  false, false),  // proje geneli: açık slayt gerekmez
             new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy"),
             // QuPath'in YERLEŞİK OME-Zarr (OME-NGFF) yazıcısını saran sihirbaz; parçalı+piramidal .ome.zarr.
             new ScriptEntry("OME-Zarr dışa aktarma",       "yardimci-omezarr-disa-aktarma.groovy"),

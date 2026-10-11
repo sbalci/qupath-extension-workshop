@@ -9,10 +9,16 @@
  *     1. DÖNÜŞTÜR — bir Python köprüsü (sectra_dicom_to_qupath.py) GSPS'i okur,
  *        normalize [0–1] koordinatları WSI piksel uzayına ölçekler ve GeoJSON yazar.
  *        Görüntü boyutu QuPath'ten geçirilir (openslide GEREKMEZ).
- *     2. İÇE AKTAR — sihirbaz GeoJSON'u okuyup anotasyon nesneleri (poligon / çizgi
+ *     2. İÇE AKTAR — görüntüde anotasyon varsa önce ne yapılacağını SORAR (varsayılan: hiçbir şey
+ *        silinmez; isterseniz yalnız önceki Sectra içe aktarımı değiştirilir), sonra GeoJSON'u okuyup
+ *        anotasyon nesneleri (poligon / çizgi
  *        / nokta) oluşturur; seçilen renk şemasıyla (geometri tipi veya etiket metni)
  *        sınıflandırır ve Sectra metin etiketini anotasyon adı olarak korur.
  *   Köprü QuPath DIŞINDA bir Python venv'inde çalışır; tek bağımlılığı pydicom'dur.
+ *   TÜM PROJE kipi: bir klasördeki Sectra dışa aktarımlarını (<slayt dosyası>.graphics.<tarih>.dcm) proje
+ *   görüntülerine AD ÖNEKİYLE birebir eşler, önce bir eşleştirme önizlemesi gösterir, sonra her görüntü için
+ *   dönüştürüp içe aktarır ve kaydeder; çalıştırmadan önce mevcut anotasyonlar için ne yapılacağını SORAR
+ *   (varsayılan: dokunma — yalnız ekle). Rapor: <proje>/exports/sectra_iceaktarma_<tarih>.tsv.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Bu bir VERİ AKTARIM betiğidir: Sectra anotasyonlarını QuPath görselleştirme/
@@ -30,6 +36,8 @@
  *   4. [Extensions → Atölye → Yardımcılar → Sectra PACS anotasyon sihirbazı]
  *   5. İlk açılışta yapılandırın: python.exe + sectra_dicom_to_qupath.py yolu.
  *   6. Renk şemasını seçin → ".dcm seç ve Aktar" → anotasyonlar otomatik içe aktarılır.
+ *   7. (Tüm proje) Bir proje açıkken "Tüm proje (klasörden) ▶" → .dcm klasörünü seçin → önizlemeyi
+ *      denetleyin → "İçe aktar ▶" → önceki anotasyonlar için seçim yapın.
  *
  * YÖNTEM / KAYNAK REFERANSLARI:
  *   • Balcı S. — Using Sectra PACS Annotations in QuPath, github.com/sbalci/sectra-qupath
@@ -67,6 +75,19 @@ def PREF_PYTHON = 'python'
 def PREF_BRIDGE = 'bridge'
 def PREF_SCHEME = 'scheme'
 def PREF_WORK   = 'workDir'
+
+// Önceki anotasyonlar sorusu (kullanıcı kararı D5) — varsayılan: hiçbir şey silme
+def SECTRA_KEEP    = 'Mevcut anotasyonlara dokunma — yalnız ekle (varsayılan)'
+def SECTRA_REPLACE = 'Önceki Sectra içe aktarımını değiştir (yalnız Sectra bayraklı anotasyonlar silinir)'
+
+// Atölye ayarları köprüsü — yalnız 'exports' klasör adı için (Tüm proje raporu)
+def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
+def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
+    def c = __wpClass(); if (c == null) return dflt
+    try { c.getMethod(m, sig).invoke(null, args) } catch (Throwable t) { dflt }
+}
+def atolyeS = { String k, String d -> (String) __wpCall('str', [String.class, String.class] as Class[], [k, d] as Object[], d) }
+def exportFolder = atolyeS('atolye.exportFolder', 'exports')
 
 // Atölye veri kökü (env yöneticisiyle PAYLAŞILAN; öntanımlı ~/.atolye — C:).
 def atolyeDataRoot = { ->
@@ -166,7 +187,10 @@ def ensureClass = { String name, Integer rgb ->
 }
 
 // ── GeoJSON içe aktarma (Polygon / LineString / Point) ──────────────────────
-def importGeoJSON = { File geojsonFile ->
+// hier: hedef hiyerarşi (null → açık görüntü). replacePrevious: önceki SECTRA_FLAG'li anotasyonlar silinsin mi —
+// her iki akışta da kullanıcı seçer (soru penceresi); varsayılan false = hiçbir şey silinmez.
+def importGeoJSON = { File geojsonFile, hier = null, boolean replacePrevious = false ->
+    def targetH = (hier != null) ? hier : QP.getCurrentHierarchy()
     if (geojsonFile == null || !geojsonFile.isFile())
         return [ok: false, error: 'GeoJSON bulunamadı:\n' + (geojsonFile?.getAbsolutePath() ?: '(yol yok)')]
     def plane = ImagePlane.getDefaultPlane()
@@ -273,23 +297,26 @@ def importGeoJSON = { File geojsonFile ->
     if (newAnns.isEmpty())
         return [ok: false, error: 'GeoJSON içinde geçerli geometri bulunamadı (atlanan: ' + skipped + ').\n' +
                 'Dosya bir Sectra GSPS (GraphicAnnotationSequence) dışa aktarımı mı?']
-    // Önceki Sectra içe aktarımını temizle → idempotent
-    QP.removeObjects(QP.getAnnotationObjects().findAll {
+    // Önceki Sectra içe aktarımını temizle (istenirse) → idempotent
+    def previous = targetH.getAnnotationObjects().findAll {
         try { it.getMeasurementList().getNames().contains(SECTRA_FLAG) } catch (Throwable t) { false }
-    }, false)
-    QP.addObjects(newAnns)
-    QP.fireHierarchyUpdate()
-    return [ok: true, annotations: newAnns, byClass: byClass, byType: byType, skipped: skipped, file: geojsonFile]
+    }
+    int removedPrev = 0
+    if (replacePrevious && !previous.isEmpty()) { targetH.removeObjects(previous, true); removedPrev = previous.size() }
+    targetH.addObjects(newAnns)
+    targetH.fireHierarchyChangedEvent(targetH)
+    return [ok: true, annotations: newAnns, byClass: byClass, byType: byType, skipped: skipped, file: geojsonFile, removed: removedPrev]
 }
 
 // ── Özet metni ──────────────────────────────────────────────────────────────
-def buildResultText = { slideName, schemeDisp, imp ->
+def buildResultText = { slideName, schemeDisp, imp, boolean replacedPrev = false ->
     def sb = new StringBuilder()
     sb << "SECTRA PACS ANOTASYON — İÇE AKTARMA\n"
     sb << "═════════════════════════════════════\n\n"
     sb << "Slayt       : " << slideName << "\n"
     sb << "GeoJSON     : " << (imp.file?.getAbsolutePath() ?: '-') << "\n"
-    sb << "Renk şeması : " << schemeDisp << "\n\n"
+    sb << "Renk şeması : " << schemeDisp << "\n"
+    sb << "Önceki      : " << (replacedPrev ? (String.valueOf(imp.removed) + ' Sectra bayraklı anotasyon değiştirildi') : 'mevcut anotasyonlara dokunulmadı (yalnız eklendi)') << "\n\n"
     int total = 0
     sb << "Geometri tipine göre:\n"
     imp.byType.each { t, n -> sb << String.format(java.util.Locale.US, "  %-22s : %,d%n", t, n); total += n }
@@ -319,7 +346,7 @@ if (isHeadless) {
 
 // ── Durum makinesi ──────────────────────────────────────────────────────────
 // CONFIG_INCOMPLETE | CONFIG | CHECK_RUNNING | CHECK_DONE | READY
-//   | CONVERT_RUNNING | BUSY | RESULT | ERROR
+//   | CONVERT_RUNNING | BATCH_PREVIEW | BATCH_RUNNING | BUSY | RESULT | ERROR
 def stage = null
 def step          = new java.util.concurrent.atomic.AtomicReference('READY')
 def alwaysTop     = new java.util.concurrent.atomic.AtomicBoolean(true)
@@ -331,6 +358,8 @@ def pyFieldRef     = new java.util.concurrent.atomic.AtomicReference(null)
 def bridgeFieldRef = new java.util.concurrent.atomic.AtomicReference(null)
 def workFieldRef   = new java.util.concurrent.atomic.AtomicReference(null)
 def schemeChoiceRef= new java.util.concurrent.atomic.AtomicReference(null)
+def resultTitleRef = new java.util.concurrent.atomic.AtomicReference('Tamamlandı ✅')
+def resultBtnRef   = new java.util.concurrent.atomic.AtomicReference('↻ Yeni .dcm')
 def render  // forward declaration
 
 def navButton = { String text, Closure action, String tooltip = null ->
@@ -381,6 +410,17 @@ def startSelftest = {
 def startConvert = { File dicomFile ->
     def imageData = QP.getCurrentImageData()
     if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    // Önceki anotasyonlar için SOR — varsayılan: hiçbir şey silme (kullanıcı kararı D5). Görüntü boşsa sorulmaz.
+    boolean replacePrevious = false
+    def existingAnns = imageData.getHierarchy().getAnnotationObjects()
+    if (!existingAnns.isEmpty()) {
+        int nSectra = existingAnns.count { try { it.getMeasurementList().getNames().contains(SECTRA_FLAG) } catch (Throwable t) { false } } as int
+        def pick = Dialogs.showChoiceDialog('Önceki anotasyonlar',
+            String.format(java.util.Locale.US, 'Bu görüntüde %,d anotasyon var (%,d tanesi daha önce Sectra\'dan içe aktarılmış).%n"Yalnız ekle", aynı .dcm daha önce aktarıldıysa ikinci kopya oluşturur.%n%nÖnceki anotasyonlar ne olsun?', existingAnns.size(), nSectra),
+            [SECTRA_KEEP, SECTRA_REPLACE], SECTRA_KEEP)
+        if (pick == null) return
+        replacePrevious = (pick == SECTRA_REPLACE)
+    }
     def cfg = loadConfig()
     def server = imageData.getServer()
     int width = server.getWidth(); int height = server.getHeight()
@@ -409,16 +449,193 @@ def startConvert = { File dicomFile ->
             return
         }
         javafx.application.Platform.runLater { busyLabelRef.set('GeoJSON içe aktarılıyor…'); step.set('BUSY'); render() }
-        def imp = importGeoJSON(outGeojson)
+        def imp = importGeoJSON(outGeojson, imageData.getHierarchy(), replacePrevious)
         javafx.application.Platform.runLater {
             if (!imp.ok) { errorTextRef.set(imp.error); step.set('ERROR'); render() }
             else {
                 try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {}
-                resultTextRef.set(buildResultText(slideName, schemeDisp, imp)); step.set('RESULT'); render()
+                resultTextRef.set(buildResultText(slideName, schemeDisp, imp, replacePrevious)); resultTitleRef.set('Tamamlandı ✅'); resultBtnRef.set('↻ Yeni .dcm'); step.set('RESULT'); render()
             }
         }
     }, 'AtolyeSectra-Convert')
     worker.setDaemon(true); worker.start()
+}
+
+// ── Tüm proje (batch) içe aktarım ───────────────────────────────────────────
+// Eşleştirme: <slayt dosyası UZANTISIYLA>.graphics.<YYYY-MM-DD_HH-MM-SS>.dcm — ad ÖNEKİ birebir (getURIs'ten).
+// sectra-qupath'in "herhangi bir .dcm / ilk bulunan" hatası burada yok: başka slaytın dosyası ya da kendi
+// .geojson çıktısı asla eşleşmez. Aynı slaytın birden çok dışa aktarımında en yeni zaman damgası önseçilidir.
+def batchRowsRef = new java.util.concurrent.atomic.AtomicReference([project: null, rows: [], unmatched: []])
+def batchDirRef  = new java.util.concurrent.atomic.AtomicReference(null)
+def SECTRA_TS = ~/(?i)\.graphics\.(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})\.dcm$/
+def slideFileOf = { entry ->
+    try { for (u in (entry.getURIs() ?: [])) { if (u != null && 'file'.equals(u.getScheme())) return new File(u).getName() } } catch (Throwable ignore) {}
+    return null
+}
+def tsOf = { String name -> def m = (name =~ SECTRA_TS); m.find() ? m.group(1) : '' }
+def TRANSFORM_BUILDER = ~/(?i)^.*\$(Cropped|Rotated|AffineTransform|Flipped|Sparse)ImageServerBuilder$/
+def isTransformedEntry = { entry ->
+    try { def b = entry.getServerBuilder(); return b != null && (b.getClass().getName() ==~ TRANSFORM_BUILDER) } catch (Throwable t) { return false }
+}
+def buildSectraRows = { File dir ->
+    def project = QP.getProject()
+    def dcms = (dir.listFiles()?.findAll { it.isFile() && it.getName().toLowerCase(java.util.Locale.ROOT).endsWith('.dcm') } ?: []).sort { it.getName() }
+    def rows = []
+    project.getImageList().each { e ->
+        String sf = slideFileOf(e)
+        String pfx = (sf == null) ? null : (sf.toLowerCase(java.util.Locale.ROOT) + '.graphics.')
+        def cands = (pfx == null) ? [] : dcms.findAll { it.getName().toLowerCase(java.util.Locale.ROOT).startsWith(pfx) }
+        cands = cands.sort { a, b -> tsOf(b.getName()) <=> tsOf(a.getName()) }   // en yeni önce
+        String status = (sf == null) ? 'dosya URI\'si yok' : (cands.isEmpty() ? '.dcm yok' : (cands.size() > 1 ? (cands.size() + ' sürüm — en yenisi seçili') : 'eşleşti'))
+        def row = [entry: e, name: e.getImageName(), slideFile: sf, candidates: cands, file: (cands ? cands[0] : null), include: !cands.isEmpty(), status: status]
+        if (isTransformedEntry(e)) {
+            // kırpılmış/dönüştürülmüş görüntüde Sectra (tam slayt) koordinatları uymaz → önseçim yok
+            row.file = null; row.include = false; row.transformed = true; row.status = 'dönüştürülmüş görüntü (kırpma vb.) — Sectra koordinatları uymaz'
+        }
+        rows.add(row)
+    }
+    // Aynı .dcm birden çok satıra önseçiliyorsa (aynı slayt dosyası adı, kırpma girdisi…) hepsi belirsiz
+    def claims = [:]
+    rows.each { r -> if (r.file != null) { String k = r.file.getPath(); claims.put(k, ((claims.get(k) ?: 0) as int) + 1) } }
+    rows.each { r ->
+        if (r.file != null && (claims.get(r.file.getPath()) as int) > 1) {
+            r.include = false; r.status = 'belirsiz — aynı .dcm birden çok görüntüye uyuyor'
+        }
+    }
+    def used = new HashSet(rows.collectMany { it.candidates }.collect { it.getPath() })
+    return [project: project, rows: rows, unmatched: dcms.findAll { !used.contains(it.getPath()) }]
+}
+
+def startBatch = {
+    def cfg = loadConfig()
+    def project = batchRowsRef.get()?.project          // önizleme kurulurken SABİTLENEN proje
+    if (project == null || QP.getProject() == null) { errorTextRef.set('Proje açık değil.'); step.set('ERROR'); render(); return }
+    def rows = (batchRowsRef.get()?.rows ?: []).findAll { it.include && it.file != null }
+    if (!QP.getProject().is(project) || rows.any { r -> !project.getImageList().any { e -> e.is(r.entry) } }) {
+        errorTextRef.set('Proje değişti; önizlemeyi yeniden oluşturun.'); step.set('ERROR'); render(); return
+    }
+    if (rows.isEmpty()) { errorTextRef.set('İçe aktarılacak işaretli satır yok.'); step.set('ERROR'); render(); return }
+    def dupCount = [:]
+    rows.each { r -> String k = r.file.getPath(); dupCount.put(k, ((dupCount.get(k) ?: 0) as int) + 1) }
+    if (dupCount.values().any { (it as int) > 1 }) {
+        errorTextRef.set('Aynı .dcm birden çok görüntü için seçili; önizlemede düzeltin.'); step.set('ERROR'); render(); return
+    }
+    // Önceki anotasyonlar için SOR — varsayılan: hiçbir şey silme (kullanıcı kararı D5)
+    def pick = Dialogs.showChoiceDialog('Önceki anotasyonlar',
+        rows.size() + ' görüntüye Sectra anotasyonu aktarılacak.\n"Yalnız ekle", aynı .dcm daha önce aktarıldıysa ikinci kopya oluşturur.\n\nÖnceki anotasyonlar ne olsun?',
+        [SECTRA_KEEP, SECTRA_REPLACE], SECTRA_KEEP)
+    if (pick == null) return
+    boolean replacePrevious = (pick == SECTRA_REPLACE)
+    def workDir = cfg.workDir?.trim() ? new File(cfg.workDir.trim()) : new File(project.getPath().getParent().toFile(), 'sectra_geojson')
+    workDir.mkdirs()
+    cancelledRef.set(false)
+    def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
+    logAreaRef.set(la)
+    step.set('BATCH_RUNNING'); render()
+    def worker = new Thread({
+        def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
+        // Açık görüntü sorgusu FX iş parçacığında yapılır (ImageData erişimi); başarısızlıkta KAPALI-BAŞARISIZ:
+        // o görüntü 'hata' olur ve hiçbir şey yazılmaz (yoksa açık slaytın ikinci kopyası diskten okunup kaydedilirdi).
+        def onFx = { Closure c -> def ft = new java.util.concurrent.FutureTask(c as java.util.concurrent.Callable); javafx.application.Platform.runLater(ft); ft.get(10, java.util.concurrent.TimeUnit.SECONDS) }
+        def report = new StringBuilder(['goruntu_adi', 'dcm', 'durum', 'eklenen', 'silinen', 'atlanan', 'not'].join('\t') + '\n')
+        def clean = { v -> (v == null ? '' : String.valueOf(v)).replace('\t', ' ').replace('\n', ' ').replace('\r', ' ') }
+        int ok = 0, fail = 0, skip = 0, skipT = 0
+        boolean liveTouched = false, cancelled = false
+        int idx = 0
+        for (r in rows) {
+            idx++
+            if (cancelledRef.get()) {
+                cancelled = true; appendLine('⏹ İptal edildi — kalan görüntüler işlenmedi.')
+                for (int k = idx - 1; k < rows.size(); k++) {
+                    skip++
+                    report << [rows[k].name, rows[k].file.getName(), 'atlandı', 0, 0, 0, 'iptal edildi — işlenmedi'].collect { clean(it) }.join('\t') << '\n'
+                }
+                break
+            }
+            appendLine('[' + idx + '/' + rows.size() + '] ' + r.name + '  ←  ' + r.file.getName())
+            if (r.transformed || isTransformedEntry(r.entry)) {
+                skipT++
+                report << [r.name, r.file.getName(), 'atlandı', 0, 0, 0, 'dönüştürülmüş görüntü — Sectra koordinatları uymaz'].collect { clean(it) }.join('\t') << '\n'
+                appendLine('   ⏭ dönüştürülmüş görüntü — Sectra koordinatları uymaz')
+                continue
+            }
+            def data = null
+            def live = null
+            boolean opened = false
+            try {
+                def findLive = { -> onFx { ->
+                    for (v in gui.getAllViewers()) {
+                        def d = v.getImageData()
+                        if (d == null) continue
+                        def le = project.getEntry(d)
+                        if (le != null && le.is(r.entry)) return d
+                    }
+                    return null
+                } }
+                live = findLive()
+                data = live
+                if (data == null) { data = r.entry.readImageData(); opened = true }
+                def server = data.getServer()
+                def outGeojson = new File(workDir, (r.slideFile ?: r.name) + '.sectra.geojson')
+                def pr = runPython(convertCmd(cfg, r.file, outGeojson, server.getWidth(), server.getHeight()), { String ln -> })
+                if (!pr.ok && pr.exitCode == -3) throw new java.util.concurrent.CancellationException('iptal edildi')
+                if (!pr.ok) throw new IOException('dönüştürme başarısız (çıkış ' + pr.exitCode + '): ' + ((pr.error ?: pr.lastLines ?: '').readLines().takeRight(1).join(' ')))
+                // Dönüştürme sürerken kullanıcı slaytı açmış olabilir: içe aktarmadan önce yeniden çöz (başarısızlıkta KAPALI-BAŞARISIZ)
+                def live2 = findLive()
+                if (live2 != null && opened) {
+                    try { data.getServer().close() } catch (Throwable ignore) {}
+                    data = live2; live = live2; opened = false
+                }
+                def imp = importGeoJSON(outGeojson, data.getHierarchy(), replacePrevious)
+                if (!imp.ok) throw new IOException(imp.error)
+                r.entry.saveImageData(data)
+                if (live != null) liveTouched = true
+                ok++
+                report << [r.name, r.file.getName(), 'tamam', imp.annotations.size(), imp.removed, imp.skipped, ''].collect { clean(it) }.join('\t') << '\n'
+                appendLine('   ✓ ' + imp.annotations.size() + ' anotasyon eklendi' + (replacePrevious ? (', önceki Sectra içe aktarımından ' + imp.removed + ' silindi') : ''))
+            } catch (java.util.concurrent.CancellationException ce) {
+                cancelled = true; skip++
+                report << [r.name, r.file.getName(), 'atlandı', 0, 0, 0, 'iptal edildi'].collect { clean(it) }.join('\t') << '\n'
+                appendLine('   ⏹ iptal edildi')
+            } catch (Throwable e) {
+                fail++
+                String msg = (e instanceof java.util.concurrent.TimeoutException) ? 'açık görüntü sorgusu zaman aşımına uğradı' : (e.getMessage() ?: e.getClass().getSimpleName())
+                report << [r.name, r.file.getName(), 'hata', 0, 0, 0, msg].collect { clean(it) }.join('\t') << '\n'
+                appendLine('   ✗ ' + msg)
+            } finally {
+                if (opened && data != null) { try { data.getServer().close() } catch (Throwable ignore) {} }
+            }
+        }
+        def rf = new File(new File(project.getPath().getParent().toFile(), exportFolder),
+            'sectra_iceaktarma_' + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern('yyyy-MM-dd_HHmmss')) + '.tsv')
+        String reportErr = null
+        try { rf.getParentFile().mkdirs(); rf.setText(report.toString(), 'UTF-8') } catch (Throwable we) { reportErr = we.getMessage() ?: we.getClass().getSimpleName() }
+        def sb = new StringBuilder()
+        sb << 'SECTRA PACS ANOTASYON — TÜM PROJE İÇE AKTARMA' << (cancelled ? ' (İPTAL EDİLDİ)' : '') << '\n'
+        sb << '══════════════════════════════════════════════\n\n'
+        sb << String.format(java.util.Locale.US, 'İşaretli görüntü: %,d   içe aktarıldı: %,d   hata: %,d%n', rows.size(), ok, fail)
+        sb << 'Önceki anotasyonlar: ' << (replacePrevious ? 'Sectra bayraklı olanlar değiştirildi' : 'korundu (yalnız eklendi)') << '\n'
+        if (skip > 0) sb << String.format(java.util.Locale.US, 'İptal nedeniyle işlenmedi: %,d%n', skip)
+        if (skipT > 0) sb << String.format(java.util.Locale.US, 'Dönüştürülmüş görüntü nedeniyle atlandı: %,d%n', skipT)
+        sb << 'Rapor   : ' << (reportErr == null ? rf.getAbsolutePath() : ('⚠ Rapor yazılamadı: ' + reportErr)) << '\n'
+        sb << 'GeoJSON : ' << workDir.getAbsolutePath() << '\n\n'
+        sb << '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.'
+        javafx.application.Platform.runLater {
+            if (liveTouched) { try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {} }
+            resultTitleRef.set(cancelled ? 'İptal edildi' : (fail > 0 ? 'Tamamlandı (hatalarla) ⚠' : 'Tamamlandı ✅')); resultBtnRef.set('↻ Yeni içe aktarma')
+            resultTextRef.set(sb.toString()); step.set('RESULT'); render()
+        }
+    }, 'AtolyeSectra-Batch')
+    worker.setDaemon(true); worker.start()
+}
+
+def openBatchPreview = {
+    def d = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Sectra .dcm klasörünü seçin', batchDirRef.get())
+    if (d == null) return
+    batchDirRef.set(d)
+    def built = buildSectraRows(d)
+    batchRowsRef.set([project: built.project, rows: built.rows, unmatched: built.unmatched])
+    step.set('BATCH_PREVIEW'); render()
 }
 
 // ── Render: her durum değişiminde sahneyi sıfırdan kurar ────────────────────
@@ -491,6 +708,12 @@ render = { ->
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
+            if (QP.getProject() != null) {
+                addGuidance('Proje açık: "Tüm proje (klasörden)" ile bir klasördeki Sectra .dcm dosyalarını tüm proje görüntülerine aktarabilirsiniz.')
+                def batchBtn = navButton('Tüm proje (klasörden) ▶', { openBatchPreview() }, '<slayt>.graphics.<tarih>.dcm dosyalarını proje görüntüleriyle eşler')
+                batchBtn.setDisable(!configComplete(cfg))
+                actions.add(batchBtn)
+            }
         } else {
             def server = imageData.getServer()
             def workDir = resolveWorkDir(cfg, imageData)
@@ -526,20 +749,90 @@ render = { ->
             }, 'Sectra GSPS .dcm dosyasını GeoJSON\'a çevirir ve içe aktarır')
             runBtn.setDisable(!canRun)
             actions.add(runBtn)
+            if (QP.getProject() != null) {
+                def batchBtn = navButton('Tüm proje (klasörden) ▶', { openBatchPreview() }, '<slayt>.graphics.<tarih>.dcm dosyalarını proje görüntüleriyle eşler')
+                batchBtn.setDisable(!canRun)
+                actions.add(batchBtn)
+            }
         }
     } else if (cur == 'CONVERT_RUNNING') {
         title.setText('Dönüştürülüyor (DICOM → GeoJSON)…')
         addGuidance('Python köprüsü çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
         center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+    } else if (cur == 'BATCH_PREVIEW') {
+        def pv = batchRowsRef.get()
+        def rows = pv.rows
+        title.setText('Tüm proje — eşleştirme önizlemesi (henüz hiçbir şey yazılmadı)')
+        int nOk = rows.count { it.file != null } as int
+        addGuidance(String.format(java.util.Locale.US, '%,d görüntü · .dcm eşleşen %,d · eşleşmeyen .dcm %,d — klasör: %s',
+            rows.size(), nOk, pv.unmatched.size(), batchDirRef.get()?.getAbsolutePath() ?: '-'))
+        String NONE = '— dosya yok —'
+        def refreshBatchBtn = { -> }
+        def byName = new LinkedHashMap()
+        rows.each { r -> r.candidates.each { f -> byName.put(f.getName(), f) } }
+        pv.unmatched.each { f -> byName.put(f.getName(), f) }
+        def grid = new javafx.scene.layout.GridPane(); grid.setHgap(10); grid.setVgap(6)
+        ['İçe aktar', 'Görüntü', 'Sectra .dcm', 'Durum'].eachWithIndex { String h, int c ->
+            def l = new javafx.scene.control.Label(h); l.setStyle('-fx-font-weight: bold;'); grid.add(l, c, 0)
+        }
+        String DUP = 'belirsiz — aynı .dcm birden çok görüntüde seçili'
+        def stLabels = [:]
+        def refreshClaims = { -> }
+        rows.eachWithIndex { r, int i ->
+            int rowIdx = i + 1
+            def inc = new javafx.scene.control.CheckBox(); inc.setSelected((boolean) r.include); inc.setDisable(r.file == null || r.transformed == true)
+            inc.selectedProperty().addListener({ o, ov, nv -> r.include = nv; refreshClaims(); refreshBatchBtn() } as javafx.beans.value.ChangeListener)
+            def combo = new javafx.scene.control.ComboBox()
+            combo.getItems().addAll(([NONE] + r.candidates.collect { it.getName() } + pv.unmatched.collect { it.getName() }).unique())
+            combo.setValue(r.file != null ? r.file.getName() : NONE)
+            def st = new javafx.scene.control.Label((String) r.status); st.setWrapText(true); st.setMaxWidth(320)
+            stLabels.put(r, st)
+            if (r.transformed == true) { combo.setDisable(true) }
+            combo.valueProperty().addListener({ o, ov, nv ->
+                def f = (nv == null || nv == NONE) ? null : byName.get(nv)
+                r.file = f; r.include = (f != null)
+                inc.setSelected((boolean) r.include); inc.setDisable(f == null)
+                r.status = (f == null) ? '.dcm yok' : 'elle seçildi'
+                st.setText((String) r.status)
+                refreshClaims()
+                refreshBatchBtn()
+            } as javafx.beans.value.ChangeListener)
+            grid.add(inc, 0, rowIdx); grid.add(new javafx.scene.control.Label((String) r.name), 1, rowIdx)
+            grid.add(combo, 2, rowIdx); grid.add(st, 3, rowIdx)
+        }
+        refreshClaims = { ->
+            def cnt = [:]
+            rows.each { r -> if (r.include && r.file != null) { String k = r.file.getPath(); cnt.put(k, ((cnt.get(k) ?: 0) as int) + 1) } }
+            rows.each { r ->
+                boolean dup = r.include && r.file != null && (cnt.get(r.file.getPath()) as int) > 1
+                if (dup && r.status != DUP) { r.status = DUP; stLabels.get(r)?.setText(DUP) }
+                else if (!dup && r.status == DUP) { r.status = 'elle seçildi'; stLabels.get(r)?.setText((String) r.status) }
+            }
+        }
+        def sp = new javafx.scene.control.ScrollPane(grid); sp.setFitToWidth(true)
+        javafx.scene.layout.VBox.setVgrow(sp, javafx.scene.layout.Priority.ALWAYS)
+        center.getChildren().add(sp)
+        addGuidance('Eşleşme yalnız tam ad önekiyle yapılır: <slayt dosyası>.graphics.<tarih>.dcm. "İçe aktar" önce mevcut ' +
+            'anotasyonlar için ne yapılacağını sorar (varsayılan: dokunma).')
+        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
+        def runBatchBtn = navButton('İçe aktar ▶', { startBatch() }, 'İşaretli görüntüleri dönüştürür, içe aktarır ve kaydeder')
+        refreshBatchBtn = { -> runBatchBtn.setDisable(!rows.any { it.include && it.file != null }) }
+        refreshBatchBtn()
+        actions.add(runBatchBtn)
+    } else if (cur == 'BATCH_RUNNING') {
+        title.setText('Tüm proje içe aktarılıyor (DICOM → GeoJSON → QuPath)…')
+        addGuidance('Her görüntü için Python köprüsü çalışır; iptal, sıradaki görüntüden önce durur.')
+        center.getChildren().add(busyBar()); addLiveLog()
+        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {
         title.setText(busyLabelRef.get()); addGuidance('Lütfen bekleyin…'); center.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
-        title.setText('Tamamlandı ✅')
+        title.setText(resultTitleRef.get())
         addMonoArea(resultTextRef.get())
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-        actions.add(navButton('↻ Yeni .dcm', { step.set('READY'); render() }))
+        actions.add(navButton(resultBtnRef.get(), { step.set('READY'); render() }))
     } else { // ERROR
         title.setText('Hata')
         addMonoArea(errorTextRef.get())
