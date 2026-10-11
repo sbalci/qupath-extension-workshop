@@ -54,6 +54,7 @@ def ENV_ID         = 'midog-atypical'
 def WEIGHTS_NAME   = 'efficientnetv2_m_fold3_best.pth'
 def CLASS_ATYP     = 'Mitoz (atipik)'
 def CLASS_TYP      = 'Mitoz (tipik)'
+def META_POINT     = 'atolye.mitoz.nokta'   // dedektörlerin görüntü halkası → bağlı noktanın ID'si
 def SUMMARY_NAME   = 'Atipik mitoz sınıflama özeti'
 // Sınıflanacak girdi noktalarının sınıfları (dedektör çıktısı + konsensüs + önceki sınıflama).
 def INPUT_CLASSES  = ['Mitosis', 'Mitoz (konsensüs)', CLASS_TYP, CLASS_ATYP] as Set
@@ -365,6 +366,9 @@ def startRun = {
                     try { atypClass.setColor(qupath.lib.common.ColorTools.packRGB(220, 40, 40)); typClass.setColor(qupath.lib.common.ColorTools.packRGB(30, 170, 90)) } catch (Throwable ignore) {}
                     int nAtyp = 0, nTyp = 0
                     def hier = imageData.getHierarchy()
+                    // Dedektörlerin görüntü halkaları (nokta ID'siyle bağlı) noktanın yeni sınıf rengini alır.
+                    def ringsByPoint = [:]
+                    hier.getAnnotationObjects().each { a -> def link = a.getMetadata().get(META_POINT); if (link != null) { if (!ringsByPoint.containsKey(link)) ringsByPoint[link] = []; ringsByPoint[link] << a } }
                     if (feats != null) {
                         for (el in feats) {
                             def ft = el.getAsJsonObject()
@@ -377,6 +381,7 @@ def startRun = {
                             double pAtyp = (props != null && props.has('probability') && !props.get('probability').isJsonNull()) ? props.get('probability').getAsDouble() : Double.NaN
                             boolean isAtyp = (name == CLASS_ATYP)
                             ann.setPathClass(isAtyp ? atypClass : typClass)
+                            ringsByPoint[ann.getID().toString()]?.each { it.setColor((isAtyp ? atypClass : typClass).getColor()) }
                             if (Double.isFinite(pAtyp)) ann.measurements['Atipik olasılık'] = pAtyp
                             if (isAtyp) nAtyp++ else nTyp++
                         }
@@ -554,7 +559,7 @@ render = { ->
             sb << String.format(java.util.Locale.US, "Sınıflanacak   : %,d mitoz noktası%n", points.size())
             sb << "Kalibrasyon    : " << (cal != null ? String.format(java.util.Locale.US, '%.3f µm/px', (cal.pw + cal.ph) / 2.0) : 'KALİBRE DEĞİL') << "\n"
             addMonoArea(sb.toString())
-            addGuidance('Bu bir DEDEKTÖR değildir: seçili bölgedeki mevcut mitoz noktalarını (dedektör çıktısı / konsensüs) tipik vs atipik olarak sınıflar. Sonuç: noktalar KIRMIZI (atipik) / YEŞİL (tipik) yeniden renklenir + "Atipik olasılık" ölçümü.')
+            addGuidance('Bu bir DEDEKTÖR değildir: seçili bölgedeki mevcut mitoz noktalarını (dedektör çıktısı / konsensüs) tipik vs atipik olarak sınıflar. Sonuç: noktalar (ve çevrelerindeki etiketli görüntü halkaları) KIRMIZI (atipik) / YEŞİL (tipik) yeniden renklenir + "Atipik olasılık" ölçümü (noktada; halka yalnız görüntüdür).')
             if (points.isEmpty()) addWarnLabel('⚠ Sınıflanacak mitoz noktası yok — önce bir mitoz dedektörü (KongNet / FCOS / RetinaNet ya da Karşılaştır) çalıştırın.')
             boolean canRun = configComplete(cfg) && points.size() >= 1
             if (!configComplete(cfg)) addWarnLabel('⚠ Python ortamı (midog-atypical) kurulu değil — "⚙ Python ortamını kur/aç" ile kurun.')

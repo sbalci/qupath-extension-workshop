@@ -34,12 +34,15 @@
  *   köprüleri → Atölye Python ortam yöneticisi → "MIDOG DA-RetinaNet (eski, CPU)".
  *
  * ÇIKTI:
- *   • Her mitoz için "Mitosis" sınıflı nokta-anotasyonu ("RetinaNet mitoz #i")
+ *   • Her mitoz için "Mitosis" sınıflı nokta-anotasyonu (tespitin kendisi) + çevresinde,
+ *     etiketi ("RetinaNet mitoz #i") taşıyan bir GÖRÜNTÜ halkası (sınıfsız, kilitli) —
+ *     etiket mitozu örtmesin diye
  *   • Her seçili anotasyona: "Mitoz (RetinaNet)" + "Mitoz yoğunluğu (mitoz/mm2)"
  *   • Kilitli "RetinaNet MIDOG mitoz özeti" anotasyonu
  *
  * API: RegionRequest.createInstance + ImageServer.readRegion; ROIs.createPointsROI +
- *      PathObjects.createAnnotationObject; GeoJSON com.google.gson.JsonParser.
+ *      PathObjects.createAnnotationObject; görüntü halkası ROIs.createPolylineROI +
+ *      PathObject.setColor/getMetadata; GeoJSON com.google.gson.JsonParser.
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
@@ -64,12 +67,57 @@ def SUMMARY_NAME    = 'RetinaNet MIDOG mitoz özeti'
 def MODEL          = 'DA-RetinaNet (MIDOG 2021/22)'
 def ENV_ID         = 'midog-retinanet-legacy'
 def MITOSIS_CLASS  = 'Mitosis'                 // paylaşılan sözleşme
-def MITOSIS_PREFIX = 'RetinaNet mitoz'
+def MITOSIS_PREFIX = 'RetinaNet mitoz'         // halka etiketi öneki + noktanın META_SOURCE değeri
+def MITOSIS_RGB    = [170, 70, 200]            // RetinaNet = mor (sınıf + görüntü halkası)
 double TARGET_MPP  = 0.5        // MIDOG kanonik; KongNet/FCOS ile tutarlı
 double DET_THRESH  = 0.64       // referans process.py çıktı eşiği
 double WHO_AREA_MM2 = 2.0
 double AREA_TOL_MM2 = 0.01
 int    ROI_WARN_PX = 12000
+
+// ── Mitoz görünümü: NOKTA (veri) + HALKA (yalnız görüntü) ──────────────────────────
+// Tespit eskisi gibi sınıflı bir NOKTA anotasyonudur (konum + sınıf; sayım, atipik sınıflama,
+// karşılaştırma ve dışa aktarma bunu kullanır). QuPath ad etiketini nesnenin ÜST kenarının
+// hemen üstüne çizer; noktada bu kenar mitozun kendisidir → etiket figürü örter. Bu yüzden
+// nokta ADSIZ kalır ve etiket, mitozu ortada açık bırakan ayrı bir HALKAYA taşınır → etiket
+// halkanın üstünde durur. Halka yalnız görüntüdür: kapalı ÇİZGİ (alan değil → doldurulmaz,
+// "tüm alan anotasyonları" geri dönüşlerine girmez), SINIFSIZ (sınıf-tabanlı sayımlara
+// girmez) ve kilitli. Bağ: noktanın metadata'sı = dedektör, halkanınki = noktanın ID'si.
+double MARKER_RING_UM = 8.0      // halka yarıçapı (µm) — tipik mitoz figürünü içine alır
+double MARKER_RING_PX = 32.0     // kalibrasyonsuz slaytta yarıçap (px; ≈ 8 µm @ 0.25 µm/px)
+int MARKER_RING_VERTICES = 64
+def META_SOURCE = 'atolye.mitoz.kaynak'        // noktada: hangi dedektör (yeniden çalıştırmada temizlik)
+def META_POINT  = 'atolye.mitoz.nokta'         // halkada: bağlı noktanın ID'si
+def markerRadiusPx = { imageData ->
+    def pxCal = imageData.getServer().getPixelCalibration()
+    double um = pxCal.hasPixelSizeMicrons() ? pxCal.getAveragedPixelSizeMicrons() : Double.NaN
+    return (Double.isFinite(um) && um > 0) ? MARKER_RING_UM / um : MARKER_RING_PX
+}
+def mitosisRing = { point, double r, int rgb, String label ->
+    def proi = point.getROI()
+    double cx = proi.getCentroidX(), cy = proi.getCentroidY()
+    def ringPts = new ArrayList<Point2>()
+    for (int i = 0; i <= MARKER_RING_VERTICES; i++) {
+        double t = -Math.PI / 2 + 2 * Math.PI * (i % MARKER_RING_VERTICES) / MARKER_RING_VERTICES
+        ringPts.add(new Point2(cx + r * Math.cos(t), cy + r * Math.sin(t)))
+    }
+    def ring = PathObjects.createAnnotationObject(ROIs.createPolylineROI(ringPts, proi.getImagePlane()))
+    ring.setName(label)
+    ring.setColor(rgb)
+    ring.getMetadata().put(META_POINT, point.getID().toString())
+    ring.setLocked(true)
+    return ring
+}
+// Bağlı noktası artık olmayan görüntü halkalarını sil (yeniden çalıştırma ya da silinen nokta).
+def removeOrphanRings = { hier ->
+    def ids = new HashSet<String>()
+    hier.getAnnotationObjects().each { ids.add(it.getID().toString()) }
+    def orphans = hier.getAnnotationObjects().findAll { a ->
+        def link = a.getMetadata().get(META_POINT)
+        link != null && !ids.contains(link)
+    }
+    if (!orphans.isEmpty()) hier.removeObjects(orphans, false)
+}
 
 def prefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/mitoz-retinanet')
 def PREF_PYTHON = 'python'
@@ -244,15 +292,21 @@ def importMitoses = { File geojson, imageData, List regionRois ->
     }
     def hier = imageData.getHierarchy()
     def detClass = QP.getPathClass(MITOSIS_CLASS)
-    try { detClass.setColor(qupath.lib.common.ColorTools.packRGB(170, 70, 200)) } catch (Throwable ignore) {}  // RetinaNet = mor
+    int rgb = qupath.lib.common.ColorTools.packRGB(MITOSIS_RGB[0] as int, MITOSIS_RGB[1] as int, MITOSIS_RGB[2] as int)
+    try { detClass.setColor(rgb) } catch (Throwable ignore) {}  // RetinaNet = mor
+    // Bölgedeki önceki RetinaNet mitozları: nokta = metadata ya da eski ad öneki; halka = etiket öneki.
     hier.removeObjects(hier.getAnnotationObjects().findAll { a ->
-        a.getName() != null && a.getName().startsWith(MITOSIS_PREFIX) && a.hasROI() &&
+        a.hasROI() && (a.getMetadata().get(META_SOURCE) == MITOSIS_PREFIX ||
+                       (a.getName() != null && a.getName().startsWith(MITOSIS_PREFIX))) &&
         regionRois.any { r -> r.contains(a.getROI().getCentroidX(), a.getROI().getCentroidY()) }
     }, false)
+    removeOrphanRings(hier)
+    double ringPx = markerRadiusPx(imageData)
     def newAnns = []
     coords.eachWithIndex { pt, i ->
         def ann = PathObjects.createAnnotationObject(ROIs.createPointsROI(pt[0] as double, pt[1] as double, plane), detClass)
-        ann.setName(MITOSIS_PREFIX + ' #' + (i + 1)); newAnns << ann
+        ann.getMetadata().put(META_SOURCE, MITOSIS_PREFIX); newAnns << ann
+        newAnns << mitosisRing(ann, ringPx, rgb, MITOSIS_PREFIX + ' #' + (i + 1))
     }
     if (!newAnns.isEmpty()) hier.addObjects(newAnns)
     hier.fireHierarchyChangedEvent(hier)
@@ -311,7 +365,8 @@ def resultText = { imageData, cfg, imp, dens, cal ->
         sb << "\n⚠ Bölgede 0 mitoz — model çalıştı ama eşiği geçen tespit yok.\n"
         sb << "  Duyarlılık eşiğini düşürüp yeniden çalıştırın; kalibrasyonu doğrulayın.\n"
     }
-    sb << "\nTespitler '" << MITOSIS_CLASS << "' sınıflı MOR nokta-anotasyonları olarak eklendi; kilitli özet: '" << SUMMARY_NAME << "'.\n"
+    sb << "\nTespitler '" << MITOSIS_CLASS << "' sınıflı MOR nokta-anotasyonları olarak eklendi (her birinin çevresinde\n"
+    sb << "etiketli bir görüntü halkası var — mitoz ortada açık kalır); kilitli özet: '" << SUMMARY_NAME << "'.\n"
     sb << "Tahminleri görsel doğrulayın; klinik kategori/yorum üretilmez.\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
@@ -676,7 +731,7 @@ render = { ->
             else sb << "Piksel boyutu  : KALİBRE DEĞİL — yoğunluk hesaplanmaz\n"
             addMonoArea(sb.toString())
             addWarnLabel('⚠ ESKİ/DOĞRULANMAMIŞ ortam (kırılgan, yavaş olabilir, aşılmış). Modern GPU\'lu tespit için MIDOG25 FCOS kullanın.')
-            addGuidance('RetinaNet YALNIZ seçili/çizili alan içinde çalışır. Sonuç: "Mitosis" mor nokta-anotasyonları + sayım + yoğunluk (mitoz/mm²).')
+            addGuidance('RetinaNet YALNIZ seçili/çizili alan içinde çalışır. Sonuç: "Mitosis" mor nokta-anotasyonları (etiketli görüntü halkalarıyla) + sayım + yoğunluk (mitoz/mm²).')
             if (!isHE) addWarnLabel('⚠ Görüntü tipi H&E değil (' + typeName + ').')
             if (ci.warn != null) addWarnLabel('⚠ Kalibrasyon: ' + ci.warn)
             boolean canRun = configComplete(cfg) && targets.size() >= 1
@@ -698,7 +753,7 @@ render = { ->
     } else if (cur == 'RESULT') {
         title.setText('Tamamlandı ✅'); addMonoArea(resultTextRef.get())
         int nMit = (mitosisCoordsRef.get()?.size() ?: 0)
-        if (nMit > 0) addGuidance('Tespitler "' + MITOSIS_CLASS + '" sınıflı MOR nokta-anotasyonları olarak eklendi ("' + MITOSIS_PREFIX + ' #…"). "Mitoza git" ile üstüne gidin.')
+        if (nMit > 0) addGuidance('Tespitler "' + MITOSIS_CLASS + '" sınıflı MOR nokta-anotasyonları olarak eklendi. Her noktanın çevresinde, etiketi ("' + MITOSIS_PREFIX + ' #…") üstünde duran bir görüntü halkası var — mitoz ortada açık kalır. Halka yalnız görüntüdür: yanlış pozitifi silmek için ortadaki NOKTAYI silin (halka sonraki çalıştırmada kalkar). "Mitoza git" ile üstüne gidin.')
         def lf = logFileRef.get(); if (lf != null) addGuidance('Çalışma günlüğü otomatik kaydedildi: ' + lf.getAbsolutePath())
         actions.add(navButton('Kapat', { stage.close() }))
         if (nMit > 0) actions.add(navButton('◀ Önceki', { goToMitosis(navIdxRef.get() - 1); render() }))

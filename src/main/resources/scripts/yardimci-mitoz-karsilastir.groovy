@@ -35,12 +35,14 @@
  *   3. Karşılaştırılacak modelleri işaretleyin → "Karşılaştır".
  *
  * ÇIKTI:
- *   • Model-başına "Mitoz — <model>" renkli nokta-anotasyonları
- *   • Konsensüs noktaları "Mitoz (konsensüs)" (≥K model)
+ *   • Model-başına "Mitoz — <model>" renkli nokta-anotasyonları; her birinin çevresinde etiketi
+ *     ("Mitoz — <model> #i") taşıyan bir GÖRÜNTÜ halkası (sınıfsız, kilitli)
+ *   • Konsensüs noktaları "Mitoz (konsensüs)" (≥K model; görüntü halkası biraz daha büyük)
  *   • Kilitli "Mitoz — model karşılaştırması" özet anotasyonu (model sayıları + uyum matrisi)
  *
  * API: RegionRequest/ImageServer.readRegion (ROI), ROIs.createPointsROI +
- *      PathObjects.createAnnotationObject; GeoJSON com.google.gson.JsonParser.
+ *      PathObjects.createAnnotationObject; görüntü halkası ROIs.createPolylineROI +
+ *      PathObject.setColor/getMetadata; GeoJSON com.google.gson.JsonParser.
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
@@ -49,6 +51,7 @@ import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 import qupath.lib.objects.PathObjects
 import qupath.lib.roi.ROIs
+import qupath.lib.geom.Point2
 import qupath.lib.regions.ImagePlane
 import qupath.lib.regions.RegionRequest
 import com.google.gson.JsonParser
@@ -67,6 +70,51 @@ double DEFAULT_R_UM = 10.0       // eşleşme yarıçapı (µm) ≈ bir çekirde
 double WHO_AREA_MM2 = 2.0
 double AREA_TOL_MM2 = 0.01
 int    ROI_WARN_PX = 12000
+
+// ── Mitoz görünümü: NOKTA (veri) + HALKA (yalnız görüntü) ──────────────────────────
+// Tespit eskisi gibi sınıflı bir NOKTA anotasyonudur (konum + sınıf; sayım, atipik sınıflama,
+// karşılaştırma ve dışa aktarma bunu kullanır). QuPath ad etiketini nesnenin ÜST kenarının
+// hemen üstüne çizer; noktada bu kenar mitozun kendisidir → etiket figürü örter. Bu yüzden
+// nokta ADSIZ kalır ve etiket, mitozu ortada açık bırakan ayrı bir HALKAYA taşınır → etiket
+// halkanın üstünde durur. Halka yalnız görüntüdür: kapalı ÇİZGİ (alan değil → doldurulmaz,
+// "tüm alan anotasyonları" geri dönüşlerine girmez), SINIFSIZ (sınıf-tabanlı sayımlara
+// girmez) ve kilitli. Bağ: noktanın metadata'sı = dedektör, halkanınki = noktanın ID'si.
+double MARKER_RING_UM = 8.0      // halka yarıçapı (µm) — tipik mitoz figürünü içine alır
+double MARKER_RING_PX = 32.0     // kalibrasyonsuz slaytta yarıçap (px; ≈ 8 µm @ 0.25 µm/px)
+int MARKER_RING_VERTICES = 64
+double CONSENSUS_RING_SCALE = 1.25  // konsensüs halkası model halkalarının dışında kalsın
+def META_SOURCE = 'atolye.mitoz.kaynak'        // noktada: hangi dedektör (yeniden çalıştırmada temizlik)
+def META_POINT  = 'atolye.mitoz.nokta'         // halkada: bağlı noktanın ID'si
+def markerRadiusPx = { imageData ->
+    def pxCal = imageData.getServer().getPixelCalibration()
+    double um = pxCal.hasPixelSizeMicrons() ? pxCal.getAveragedPixelSizeMicrons() : Double.NaN
+    return (Double.isFinite(um) && um > 0) ? MARKER_RING_UM / um : MARKER_RING_PX
+}
+def mitosisRing = { point, double r, int rgb, String label ->
+    def proi = point.getROI()
+    double cx = proi.getCentroidX(), cy = proi.getCentroidY()
+    def ringPts = new ArrayList<Point2>()
+    for (int i = 0; i <= MARKER_RING_VERTICES; i++) {
+        double t = -Math.PI / 2 + 2 * Math.PI * (i % MARKER_RING_VERTICES) / MARKER_RING_VERTICES
+        ringPts.add(new Point2(cx + r * Math.cos(t), cy + r * Math.sin(t)))
+    }
+    def ring = PathObjects.createAnnotationObject(ROIs.createPolylineROI(ringPts, proi.getImagePlane()))
+    ring.setName(label)
+    ring.setColor(rgb)
+    ring.getMetadata().put(META_POINT, point.getID().toString())
+    ring.setLocked(true)
+    return ring
+}
+// Bağlı noktası artık olmayan görüntü halkalarını sil (yeniden çalıştırma ya da silinen nokta).
+def removeOrphanRings = { hier ->
+    def ids = new HashSet<String>()
+    hier.getAnnotationObjects().each { ids.add(it.getID().toString()) }
+    def orphans = hier.getAnnotationObjects().findAll { a ->
+        def link = a.getMetadata().get(META_POINT)
+        link != null && !ids.contains(link)
+    }
+    if (!orphans.isEmpty()) hier.removeObjects(orphans, false)
+}
 
 // ── Dedektör tanımları (per-detector descriptor) ─────────────────────────────
 // Her dedektörün KENDİ ortamı/köprüsü/girdi-türü/CLI'si var; ortak sözleşme YOK —
@@ -284,15 +332,19 @@ def importModelPoints = { imageData, List regionRois, String cls, List rgbColor,
     def hier = imageData.getHierarchy()
     def plane = ImagePlane.getDefaultPlane()
     def pc = QP.getPathClass(cls)
-    try { pc.setColor(qupath.lib.common.ColorTools.packRGB(rgbColor[0] as int, rgbColor[1] as int, rgbColor[2] as int)) } catch (Throwable ignore) {}
+    int rgb = qupath.lib.common.ColorTools.packRGB(rgbColor[0] as int, rgbColor[1] as int, rgbColor[2] as int)
+    try { pc.setColor(rgb) } catch (Throwable ignore) {}
     hier.removeObjects(hier.getAnnotationObjects().findAll { a ->
         a.getPathClass() == pc && a.hasROI() && a.getROI().isPoint() &&
         regionRois.any { r -> r.contains(a.getROI().getCentroidX(), a.getROI().getCentroidY()) }
     }, false)
+    removeOrphanRings(hier)
+    double ringPx = markerRadiusPx(imageData)
     def anns = []
     coords.eachWithIndex { pt, i ->
         def ann = PathObjects.createAnnotationObject(ROIs.createPointsROI(pt[0] as double, pt[1] as double, plane), pc)
-        ann.setName(cls + ' #' + (i + 1)); anns << ann
+        ann.getMetadata().put(META_SOURCE, cls); anns << ann
+        anns << mitosisRing(ann, ringPx, rgb, cls + ' #' + (i + 1))
     }
     if (!anns.isEmpty()) hier.addObjects(anns)
     hier.fireHierarchyChangedEvent(hier)
@@ -506,12 +558,15 @@ def startRun = { List chosen, String device, double radiusUm, Double thr ->
                     def hier = imageData.getHierarchy()
                     hier.removeObjects(hier.getAnnotationObjects().findAll { it.getName() != null && it.getName().startsWith(SUMMARY_NAME) }, false)
                     def consClass = QP.getPathClass(CONSENSUS_CLASS)
-                    try { consClass.setColor(qupath.lib.common.ColorTools.packRGB(30, 170, 90)) } catch (Throwable ignore) {}
+                    int consRgb = qupath.lib.common.ColorTools.packRGB(30, 170, 90)
+                    try { consClass.setColor(consRgb) } catch (Throwable ignore) {}
                     hier.removeObjects(hier.getAnnotationObjects().findAll { it.getPathClass() == consClass && it.hasROI() && it.getROI().isPoint() && regionRois.any { r -> r.contains(it.getROI().getCentroidX(), it.getROI().getCentroidY()) } }, false)
+                    removeOrphanRings(hier)
                     def plane = ImagePlane.getDefaultPlane()
+                    double consRingPx = markerRadiusPx(imageData) * CONSENSUS_RING_SCALE
                     int consensus = 0
                     def consAnns = []
-                    clusters.each { c -> if (c.modelSet.size() >= K && K >= 2) { consensus++; def a = PathObjects.createAnnotationObject(ROIs.createPointsROI(c.cx as double, c.cy as double, plane), consClass); a.setName(CONSENSUS_CLASS + ' #' + consensus); consAnns << a } }
+                    clusters.each { c -> if (c.modelSet.size() >= K && K >= 2) { consensus++; def a = PathObjects.createAnnotationObject(ROIs.createPointsROI(c.cx as double, c.cy as double, plane), consClass); a.getMetadata().put(META_SOURCE, CONSENSUS_CLASS); consAnns << a; consAnns << mitosisRing(a, consRingPx, consRgb, CONSENSUS_CLASS + ' #' + consensus) } }
                     if (!consAnns.isEmpty()) hier.addObjects(consAnns)
 
                     def unionRoi = (targets.size() == 1) ? targets[0].getROI() : qupath.lib.roi.RoiTools.union(targets.collect { it.getROI() })
@@ -704,7 +759,7 @@ render = { ->
         actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
     } else if (cur == 'RESULT') {
         title.setText('Karşılaştırma tamam ✅'); addMonoArea(resultTextRef.get())
-        addGuidance('Her model "Mitoz — <model>" renkli nokta-anotasyonlarında; ortak bulunanlar "' + CONSENSUS_CLASS + '" (yeşil). Annotations panelinden sınıfları aç/kapat ederek örtüşmeyi inceleyin.')
+        addGuidance('Her model "Mitoz — <model>" renkli nokta-anotasyonlarında; ortak bulunanlar "' + CONSENSUS_CLASS + '" (yeşil). Her noktanın çevresinde etiketli bir görüntü halkası var (konsensüs halkası biraz daha büyük) — mitoz ortada açık kalır; halka yalnız görüntüdür, veri noktadadır. Annotations panelinden sınıfları aç/kapat ederek örtüşmeyi inceleyin.')
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
         actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))

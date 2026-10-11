@@ -37,7 +37,9 @@
  *   3. Bu modülü çalıştırın → "Bölgede çalıştır".
  *
  * ÇIKTI:
- *   • Her mitoz için "Mitosis" sınıflı nokta-anotasyonu ("FCOS mitoz #i")
+ *   • Her mitoz için "Mitosis" sınıflı nokta-anotasyonu (tespitin kendisi) + çevresinde,
+ *     etiketi ("FCOS mitoz #i") taşıyan bir GÖRÜNTÜ halkası (sınıfsız, kilitli) — etiket
+ *     mitozu örtmesin diye
  *   • Her seçili anotasyona: "Mitoz (FCOS)" + "Mitoz yoğunluğu (mitoz/mm2)"
  *   • Kilitli "FCOS MIDOG25 mitoz özeti" anotasyonu (Veri dışa aktarma ile dışa aktarılır)
  *
@@ -47,7 +49,8 @@
  *   • Alan-tabanlı mitoz birimi (mitoz/2 mm²): bkz. PHH3 Mitoz eki (Dessauvagie 2015).
  *
  * API: RegionRequest.createInstance + ImageServer.readRegion (bölge dışa aktarma);
- *      ROIs.createPointsROI + PathObjects.createAnnotationObject (QuPath 0.6.0+);
+ *      ROIs.createPointsROI + PathObjects.createAnnotationObject (QuPath 0.6.0+); görüntü
+ *      halkası ROIs.createPolylineROI + PathObject.setColor/getMetadata;
  *      GeoJSON ayrıştırma com.google.gson.JsonParser (QuPath 0.7 groovy.json içermez).
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
@@ -76,13 +79,58 @@ def SUMMARY_NAME    = 'FCOS MIDOG25 mitoz özeti'
 def MODEL          = 'FCOS-ResNeXt101 (MIDOG25 Track-1)'
 def ENV_ID         = 'midog-fcos'
 def MITOSIS_CLASS  = 'Mitosis'                 // içe alınan nokta-anotasyonu sınıfı (paylaşılan sözleşme)
-def MITOSIS_PREFIX = 'FCOS mitoz'              // nokta-anotasyonu ad öneki
+def MITOSIS_PREFIX = 'FCOS mitoz'              // halka etiketi öneki + noktanın META_SOURCE değeri
+def MITOSIS_RGB    = [40, 120, 255]            // FCOS = mavi (sınıf + görüntü halkası)
 def WEIGHTS_NAME   = 'FCOS_x101.ckpt'
 double TARGET_MPP  = 0.5        // FCOS'a beslenecek hedef çözünürlük (MIDOG kanonik; KongNet ile tutarlı)
 double DET_THRESH  = 0.548      // MIDOG25 T1 referans mitotik-figür eşiği
 double WHO_AREA_MM2 = 2.0        // WHO alan-tabanlı raporlama birimi (mitoz / 2 mm²)
 double AREA_TOL_MM2 = 0.01
 int    ROI_WARN_PX = 12000       // bu boyutu aşan ROI için bellek uyarısı
+
+// ── Mitoz görünümü: NOKTA (veri) + HALKA (yalnız görüntü) ──────────────────────────
+// Tespit eskisi gibi sınıflı bir NOKTA anotasyonudur (konum + sınıf; sayım, atipik sınıflama,
+// karşılaştırma ve dışa aktarma bunu kullanır). QuPath ad etiketini nesnenin ÜST kenarının
+// hemen üstüne çizer; noktada bu kenar mitozun kendisidir → etiket figürü örter. Bu yüzden
+// nokta ADSIZ kalır ve etiket, mitozu ortada açık bırakan ayrı bir HALKAYA taşınır → etiket
+// halkanın üstünde durur. Halka yalnız görüntüdür: kapalı ÇİZGİ (alan değil → doldurulmaz,
+// "tüm alan anotasyonları" geri dönüşlerine girmez), SINIFSIZ (sınıf-tabanlı sayımlara
+// girmez) ve kilitli. Bağ: noktanın metadata'sı = dedektör, halkanınki = noktanın ID'si.
+double MARKER_RING_UM = 8.0      // halka yarıçapı (µm) — tipik mitoz figürünü içine alır
+double MARKER_RING_PX = 32.0     // kalibrasyonsuz slaytta yarıçap (px; ≈ 8 µm @ 0.25 µm/px)
+int MARKER_RING_VERTICES = 64
+def META_SOURCE = 'atolye.mitoz.kaynak'        // noktada: hangi dedektör (yeniden çalıştırmada temizlik)
+def META_POINT  = 'atolye.mitoz.nokta'         // halkada: bağlı noktanın ID'si
+def markerRadiusPx = { imageData ->
+    def pxCal = imageData.getServer().getPixelCalibration()
+    double um = pxCal.hasPixelSizeMicrons() ? pxCal.getAveragedPixelSizeMicrons() : Double.NaN
+    return (Double.isFinite(um) && um > 0) ? MARKER_RING_UM / um : MARKER_RING_PX
+}
+def mitosisRing = { point, double r, int rgb, String label ->
+    def proi = point.getROI()
+    double cx = proi.getCentroidX(), cy = proi.getCentroidY()
+    def ringPts = new ArrayList<Point2>()
+    for (int i = 0; i <= MARKER_RING_VERTICES; i++) {
+        double t = -Math.PI / 2 + 2 * Math.PI * (i % MARKER_RING_VERTICES) / MARKER_RING_VERTICES
+        ringPts.add(new Point2(cx + r * Math.cos(t), cy + r * Math.sin(t)))
+    }
+    def ring = PathObjects.createAnnotationObject(ROIs.createPolylineROI(ringPts, proi.getImagePlane()))
+    ring.setName(label)
+    ring.setColor(rgb)
+    ring.getMetadata().put(META_POINT, point.getID().toString())
+    ring.setLocked(true)
+    return ring
+}
+// Bağlı noktası artık olmayan görüntü halkalarını sil (yeniden çalıştırma ya da silinen nokta).
+def removeOrphanRings = { hier ->
+    def ids = new HashSet<String>()
+    hier.getAnnotationObjects().each { ids.add(it.getID().toString()) }
+    def orphans = hier.getAnnotationObjects().findAll { a ->
+        def link = a.getMetadata().get(META_POINT)
+        link != null && !ids.contains(link)
+    }
+    if (!orphans.isEmpty()) hier.removeObjects(orphans, false)
+}
 
 // ── Kalıcı yapılandırma: java.util.prefs (eklenti JAR'ı olmadan da çalışır) ──
 def prefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/mitoz-fcos')
@@ -303,17 +351,23 @@ def importMitoses = { File geojson, imageData, List regionRois ->
     }
     def hier = imageData.getHierarchy()
     def detClass = QP.getPathClass(MITOSIS_CLASS)
-    try { detClass.setColor(qupath.lib.common.ColorTools.packRGB(40, 120, 255)) } catch (Throwable ignore) {}  // FCOS = mavi (KongNet kırmızıdan ayırt et)
-    // YALNIZ bu bölgedeki önceki FCOS mitoz anotasyonlarını sil (alt-küme yeniden çalıştırma korur).
+    int rgb = qupath.lib.common.ColorTools.packRGB(MITOSIS_RGB[0] as int, MITOSIS_RGB[1] as int, MITOSIS_RGB[2] as int)
+    try { detClass.setColor(rgb) } catch (Throwable ignore) {}  // FCOS = mavi (KongNet kırmızıdan ayırt et)
+    // YALNIZ bu bölgedeki önceki FCOS mitozlarını sil (alt-küme yeniden çalıştırma korur): nokta =
+    // metadata ya da eski sürümün ad öneki; halka = etiket öneki. Sonra bağsız halkaları temizle.
     hier.removeObjects(hier.getAnnotationObjects().findAll { a ->
-        a.getName() != null && a.getName().startsWith(MITOSIS_PREFIX) && a.hasROI() &&
+        a.hasROI() && (a.getMetadata().get(META_SOURCE) == MITOSIS_PREFIX ||
+                       (a.getName() != null && a.getName().startsWith(MITOSIS_PREFIX))) &&
         regionRois.any { r -> r.contains(a.getROI().getCentroidX(), a.getROI().getCentroidY()) }
     }, false)
+    removeOrphanRings(hier)
+    double ringPx = markerRadiusPx(imageData)
     def newAnns = []
     coords.eachWithIndex { pt, i ->
         def ann = PathObjects.createAnnotationObject(ROIs.createPointsROI(pt[0] as double, pt[1] as double, plane), detClass)
-        ann.setName(MITOSIS_PREFIX + ' #' + (i + 1))
+        ann.getMetadata().put(META_SOURCE, MITOSIS_PREFIX)
         newAnns << ann
+        newAnns << mitosisRing(ann, ringPx, rgb, MITOSIS_PREFIX + ' #' + (i + 1))
     }
     if (!newAnns.isEmpty()) hier.addObjects(newAnns)
     hier.fireHierarchyChangedEvent(hier)
@@ -385,7 +439,8 @@ def resultText = { imageData, cfg, imp, dens, cal ->
         else
             sb << "  Eşiği (" << cfg.threshold.trim() << ") daha da düşürmeyi ve/veya kalibrasyonu doğrulamayı deneyin.\n"
     }
-    sb << "\nTespitler '" << MITOSIS_CLASS << "' sınıflı MAVİ nokta-anotasyonları olarak eklendi; seçili anotasyonlara\n"
+    sb << "\nTespitler '" << MITOSIS_CLASS << "' sınıflı MAVİ nokta-anotasyonları olarak eklendi (her birinin çevresinde\n"
+    sb << "etiketli bir görüntü halkası var — mitoz ortada açık kalır); seçili anotasyonlara\n"
     sb << "sayım + yoğunluk ölçümü yazıldı; kilitli özet: '" << SUMMARY_NAME << "'.\n"
     sb << "Tahminleri görsel doğrulayın; klinik kategori/yorum üretilmez.\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
@@ -855,7 +910,7 @@ render = { ->
                 sb << "Piksel boyutu  : KALİBRE DEĞİL — yoğunluk hesaplanmaz, native çözünürlük beslenir\n"
             }
             addMonoArea(sb.toString())
-            addGuidance('FCOS YALNIZ seçili/çizili alan anotasyon(lar)ı içinde çalışır. Sonuç: "Mitosis" mavi nokta-anotasyonları + her anotasyona mitoz sayısı ve yoğunluğu (mitoz/mm²); ROI ~2 mm² ise WHO birimi (mitoz/2 mm²).')
+            addGuidance('FCOS YALNIZ seçili/çizili alan anotasyon(lar)ı içinde çalışır. Sonuç: "Mitosis" mavi nokta-anotasyonları (etiketli görüntü halkalarıyla) + her anotasyona mitoz sayısı ve yoğunluğu (mitoz/mm²); ROI ~2 mm² ise WHO birimi (mitoz/2 mm²).')
             if (!isHE) addWarnLabel('⚠ Görüntü tipi H&E değil (' + typeName + '). FCOS H&E için tasarlanmıştır.')
             if (ci.warn != null) addWarnLabel('⚠ Kalibrasyon: ' + ci.warn)
             boolean canRun = configComplete(cfg) && targets.size() >= 1
@@ -880,7 +935,7 @@ render = { ->
     } else if (cur == 'RESULT') {
         title.setText('Tamamlandı ✅'); addMonoArea(resultTextRef.get())
         int nMit = (mitosisCoordsRef.get()?.size() ?: 0)
-        if (nMit > 0) addGuidance('Tespitler "' + MITOSIS_CLASS + '" sınıflı MAVİ nokta-anotasyonları olarak eklendi (Annotations panelinde "' + MITOSIS_PREFIX + ' #…"). Düşük yakınlaştırmada nokta küçük görünür — "Mitoza git" ile üstüne gidin.')
+        if (nMit > 0) addGuidance('Tespitler "' + MITOSIS_CLASS + '" sınıflı MAVİ nokta-anotasyonları olarak eklendi. Her noktanın çevresinde, etiketi ("' + MITOSIS_PREFIX + ' #…") üstünde duran bir görüntü halkası var — mitoz ortada açık kalır. Halka yalnız görüntüdür: yanlış pozitifi silmek için ortadaki NOKTAYI silin (halka sonraki çalıştırmada kalkar). Düşük yakınlaştırmada halka küçük görünür — "Mitoza git" ile üstüne gidin.')
         def lf = logFileRef.get(); if (lf != null) addGuidance('Çalışma günlüğü otomatik kaydedildi: ' + lf.getAbsolutePath())
         actions.add(navButton('Kapat', { stage.close() }))
         if (nMit > 0) actions.add(navButton('◀ Önceki', { goToMitosis(navIdxRef.get() - 1); render() }, 'Önceki mitoza git'))
