@@ -23,10 +23,22 @@
  *   bu yolla üretmiştir: patolog merkezi işaretler, sınırı model çizer.
  *
  * NOKTALAR KAYNAK, TESPİTLER TÜREVDİR (yeniden çalıştırma davranışı):
- *   Her çalıştırma, mevcut TÜM noktalardan TÜM çekirdekleri yeniden üretir ve
- *   önceki "NuClick çekirdekleri" anotasyonunu alt nesneleriyle birlikte
- *   değiştirir. Yani nokta eklemeye devam edip yeniden çalıştırabilirsiniz;
- *   sonuç birikmez, çoğalmaz. Nokta anotasyonlarınıza hiç dokunulmaz.
+ *   Her çalıştırma, mevcut TÜM noktalardan TÜM çekirdekleri yeniden üretir.
+ *   Nokta anotasyonlarınıza hiçbir kipte dokunulmaz.
+ *
+ *   ÖNCEKİ SONUÇLAR VARSAYILAN OLARAK SİLİNMEZ (ev kuralı): slaytta önceki bir
+ *   NuClick katmanı varsa sihirbaz, ÇIKARIMDAN ÖNCE ne yapılacağını SORAR —
+ *     • Önceki NuClick sonucuna dokunma — yeni katman olarak ekle (VARSAYILAN).
+ *       Hiçbir şey silinmez; sonuç "NuClick çekirdekleri (2)", "(3)" … adlı yeni
+ *       bir katmana yazılır. Her çalıştırma tüm noktalardan yeniden ürettiği için
+ *       bu, aynı çekirdeklerin ikinci bir kopyası olur — sonuç penceresi söyler.
+ *     • Önceki NuClick sonucunu değiştir — yalnız BU sihirbazın ürettiği katmanlar
+ *       (tam ad ya da "… (n)") silinir; ek bir onay istenir, çünkü o konturlarda
+ *       ELLE yapılmış düzeltmeler de gider. Kullanıcının kendi anotasyonlarına ve
+ *       nokta işaretlerine dokunulmaz.
+ *     • İptal — hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz (soru çıkarımdan
+ *       ÖNCE geldiği için GPU/CPU geçişi hiç başlamaz).
+ *   Üretilen tespitler KİLİTLİ DEĞİLDİR; bir konturu elle düzeltebilirsiniz.
  *
  * ÖLÇEK (sessiz hata kaynağı):
  *   NuClick ağırlıkları PanNuke ile, **~0,25 µm/px (40×)** ve 128×128 yama ile
@@ -88,6 +100,10 @@ def DEVICE_OPTIONS = ['auto', 'cpu', 'cuda']
 final double NUCLICK_MPP = 0.25d      // PanNuke eğitim çözünürlüğü
 final int    TILE        = 128        // NuClick yama boyu — DEĞİŞTİRMEYİN
 def SENTINEL   = 'NuClick çekirdekleri'
+// "Önceki sonuçlar ne olsun?" kipleri — varsayılan HİÇBİR ŞEY SİLMEZ (ev kuralı:
+// içe aktarma/tahmin yazan sihirbazlar sorar, varsayılan silmemektir).
+def MODE_ADD     = 'Önceki NuClick sonucuna dokunma — yeni bir katman olarak ekle (varsayılan)'
+def MODE_REPLACE = 'Önceki NuClick sonucunu değiştir (bu sihirbazın ürettikleri silinir)'
 def NUC_CLASS  = 'NuClick çekirdek'
 def AREA_UM    = 'NuClick: Alan (µm²)'
 def AREA_PX    = 'NuClick: Alan (piksel²)'
@@ -176,6 +192,47 @@ def resolveWorkDir = { cfg, imageData ->
 }
 def imageNameOf = { imageData ->
     try { return imageData.getServer().getMetadata().getName() ?: 'slayt' } catch (Throwable t) { return 'slayt' }
+}
+
+// ── Önceki NuClick katmanları ───────────────────────────────────────────────
+//   Bu sihirbazın ürettiği her anotasyon ya tam SENTINEL adını taşır ya da
+//   "SENTINEL (n)" biçimindedir — hepsi AYNI KAYNAKTAN (bu sihirbaz, bu slayt)
+//   gelir, bu yüzden "değiştir" kipi hepsini birlikte siler. Kullanıcının kendi
+//   anotasyonlarına hiçbir kipte dokunulmaz.
+//   Ad kalıbı SIKI tutulur: ya tam "base" ya da "base (<sayı>)". Sadece ön eke
+//   bakmak TEHLİKELİ olurdu — bölüm metni kullanıcıya "düzeltmelerini korumak için
+//   tespitleri başka bir anotasyonun altına taşı" diyor; o anotasyona
+//   "NuClick çekirdekleri (benim düzeltmelerim)" adını verirse ön ek eşleşmesi
+//   "değiştir" kipinde tam olarak korumak istediği işi silerdi.
+def isNuclickSentinel = { obj, String base ->
+    def n = obj?.getName()
+    if (n == null) return false
+    if (n == base) return true
+    return n.matches(java.util.regex.Pattern.quote(base) + ' \\(\\d+\\)')
+}
+def findSentinels = { hierarchy, String base ->
+    return hierarchy.getAnnotationObjects().findAll { isNuclickSentinel(it, base) }
+}
+// Sonraki katman adı: "NuClick çekirdekleri (2)", "(3)", …
+def nextSentinelName = { hierarchy, String base ->
+    def existing = findSentinels(hierarchy, base)
+    if (existing.isEmpty()) return base
+    int maxIdx = 1
+    existing.each { o ->
+        def m = (o.getName() =~ /\((\d+)\)\s*$/)
+        if (m.find()) { try { maxIdx = Math.max(maxIdx, Integer.parseInt(m.group(1))) } catch (Throwable ignore) {} }
+    }
+    return base + ' (' + (maxIdx + 1) + ')'
+}
+// Yalnız TESPİTLER sayılır: kullanıcı sentinelin altına kendi bir anotasyonunu
+// çizmiş olabilir — onu "çekirdek" diye saymak yanlış olurdu (lint Check: filtresiz
+// getChildObjects yasak).
+def countSentinelChildren = { hierarchy, String base ->
+    int n = 0
+    findSentinels(hierarchy, base).each { o ->
+        n += o.getChildObjects().findAll { it.isDetection() }.size()
+    }
+    return n
 }
 def writePng = { img, File f -> if (f.getParentFile() != null) f.getParentFile().mkdirs(); javax.imageio.ImageIO.write(img, 'PNG', f) }
 def writeJson = { obj, File f ->
@@ -333,7 +390,7 @@ def copyToClipboard = { String txt ->
 }
 
 // ── Sonuçları içe aktar ─────────────────────────────────────────────────────
-def importResults = { File workDir, imageData, exp ->
+def importResults = { File workDir, imageData, exp, String mode ->
     def predsFile = new File(workDir, 'predictions.json')
     if (!predsFile.isFile())
         return [ok: false, error: 'predictions.json bulunamadı:\n' + predsFile.getAbsolutePath()]
@@ -404,15 +461,24 @@ def importResults = { File workDir, imageData, exp ->
         nOk++
     }
 
-    // Noktalar kaynak, tespitler türev: önceki çalıştırmanın sentineli alt
-    // nesneleriyle birlikte silinir, sonuç birikmez. Nokta anotasyonlarına
+    // Önceki NuClick katmanı: kullanıcı ne dediyse o. Varsayılan kip 'ekle' —
+    // HİÇBİR ŞEY SİLİNMEZ, sonuç yeni bir katman olarak yazılır. 'değiştir'
+    // kipinde yalnız BU sihirbazın ürettiği katmanlar silinir (aynı kaynak);
+    // nokta anotasyonlarına ve kullanıcının kendi nesnelerine hiçbir kipte
     // DOKUNULMAZ.
-    hierarchy.removeObjects(hierarchy.getAnnotationObjects().findAll { it.getName() == SENTINEL }, false)
+    boolean replacePrev = (mode == MODE_REPLACE)
+    int nRemoved = 0
+    if (replacePrev) {
+        def prev = findSentinels(hierarchy, SENTINEL)
+        nRemoved = (prev.collect { o -> o.getChildObjects().findAll { it.isDetection() }.size() }.sum() ?: 0) as int
+        hierarchy.removeObjects(prev, false)
+    }
+    String sentinelName = replacePrev ? SENTINEL : nextSentinelName(hierarchy, SENTINEL)
 
     def srv = imageData.getServer()
     def sentinelRoi = ROIs.createRectangleROI(0, 0, srv.getWidth(), srv.getHeight(), plane)
     def sentinel = PathObjects.createAnnotationObject(sentinelRoi)
-    sentinel.setName(SENTINEL)
+    sentinel.setName(sentinelName)
     if (!dets.isEmpty()) sentinel.addChildObjects(dets)
     sentinel.setLocked(true)
     hierarchy.addObjects([sentinel])
@@ -421,7 +487,9 @@ def importResults = { File workDir, imageData, exp ->
 
     double meanArea = (nOk > 0) ? (areaSum / nOk) : 0.0d
     return [ok: true, nOk: nOk, nFail: nFail, nDrift: nDrift,
-            meanArea: meanArea, calibrated: calibrated]
+            meanArea: meanArea, calibrated: calibrated,
+            mode: mode, replaced: replacePrev, nRemoved: nRemoved,
+            sentinelName: sentinelName]
 }
 
 // ── Özet metni ──────────────────────────────────────────────────────────────
@@ -446,9 +514,17 @@ def buildResultText = { exp, imp, cfg, imageData ->
         sb << String.format(java.util.Locale.US, "Ortalama alan  : %.1f %s\n",
                 (double) imp.meanArea, imp.calibrated ? "µm²" : "piksel²")
     }
-    sb << "\nNesneler \"" << SENTINEL << "\" anotasyonunun altına yazıldı.\n"
-    sb << "Nokta eklemeye devam edip yeniden çalıştırabilirsiniz — sonuç birikmez,\n"
-    sb << "her çalıştırma tüm noktalardan yeniden üretir.\n"
+    sb << "\nNesneler \"" << (imp.sentinelName ?: SENTINEL) << "\" anotasyonunun altına yazıldı.\n"
+    if (imp.replaced) {
+        sb << String.format(java.util.Locale.US,
+                "Önceki NuClick sonucu DEĞİŞTİRİLDİ (%,d çekirdek silindi — sizin seçiminizle).\n",
+                (int) (imp.nRemoved ?: 0))
+    } else {
+        sb << "Önceki NuClick sonucu KORUNDU — hiçbir şey silinmedi.\n"
+        sb << "Bu, aynı çekirdeklerin ikinci bir kopyası olabilir; gerekmiyorsa eski\n"
+        sb << "katmanı elle silin ya da bir sonraki çalıştırmada \"Değiştir\"i seçin.\n"
+    }
+    sb << "Nokta işaretlerinize dokunulmadı; onlar daima kaynaktır.\n"
     sb << "\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n"
     return sb.toString()
 }
@@ -564,6 +640,41 @@ def startRun = {
     if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     def imageData = QP.getCurrentImageData()
     if (imageData == null) { errorTextRef.set('Önce bir slayt açın.'); step.set('ERROR'); render(); return }
+
+    // ── Önceki sonuçlar için kullanıcıya SOR ────────────────────────────────
+    //   Çıkarımdan ÖNCE sorulur: İptal'de GPU/CPU geçişi hiç çalıştırılmaz ve
+    //   hiçbir şey yazılmaz. Varsayılan "ekle" — hiçbir şey silinmez.
+    //   (Toplu anotasyon içe aktarma sihirbazındaki kalıbın aynısı.)
+    String mode = MODE_ADD
+    def hier = imageData.getHierarchy()
+    int nPrevLayers = findSentinels(hier, SENTINEL).size()
+    int nPrevDets = countSentinelChildren(hier, SENTINEL)
+    if (nPrevLayers > 0) {
+        def sb = new StringBuilder()
+        sb << String.format(java.util.Locale.US,
+            'Bu slaytta zaten %,d NuClick katmanı ve içinde %,d çekirdek var.',
+            nPrevLayers, nPrevDets)
+        sb << '\n\n"Ekle" seçilirse hiçbir şey silinmez; sonuç yeni bir katman olur. '
+        sb << 'Her çalıştırma TÜM noktalardan yeniden ürettiği için aynı çekirdeklerin '
+        sb << 'ikinci bir kopyasını göreceksiniz.'
+        sb << '\n\n"Değiştir" seçilirse önceki NuClick katmanları silinir — '
+        sb << 'o konturlarda ELLE yaptığınız düzeltmeler de gider. '
+        sb << 'Nokta işaretlerinize ve kendi anotasyonlarınıza hiçbir kipte dokunulmaz.'
+        sb << '\n\nÖnceki NuClick sonucu ne olsun?'
+        def pick = Dialogs.showChoiceDialog('Önceki NuClick sonucu', sb.toString(),
+                [MODE_ADD, MODE_REPLACE], MODE_ADD)
+        if (pick == null) return                       // İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz
+        mode = (String) pick
+        if (mode == MODE_REPLACE) {
+            boolean ok = Dialogs.showConfirmDialog('Önceki NuClick sonucu silinecek',
+                String.format(java.util.Locale.US,
+                    '%,d katman ve %,d çekirdek silinip yeniden üretilecek. Bu konturlarda elle yaptığınız düzeltmeler KAYBOLUR ve geri alınamaz.\n\nDevam edilsin mi?',
+                    nPrevLayers, nPrevDets))
+            if (!ok) return
+        }
+    }
+    final String runMode = mode
+
     cancelledRef.set(false)
     busyLabelRef.set('Çalıştırılıyor')
     step.set('BUSY'); render()
@@ -588,7 +699,7 @@ def startRun = {
                 return
             }
             javafx.application.Platform.runLater {
-                def imp = importResults(workDir, imageData, exp)
+                def imp = importResults(workDir, imageData, exp, runMode)
                 if (!imp.ok) { errorTextRef.set(imp.error); step.set('ERROR'); render(); return }
                 resultTextRef.set(buildResultText(exp, imp, cfg, imageData))
                 step.set('DONE'); render()

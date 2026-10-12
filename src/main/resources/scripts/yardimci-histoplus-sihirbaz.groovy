@@ -36,8 +36,14 @@
  *
  * ÇIKTI:
  *   • Her çekirdek için "<Sınıf> (HistoPLUS)" sınıflı poligon TESPİTİ + "Alan µm²" + "HistoPLUS: sınıf oy oranı"
- *   • Her seçili anotasyona: "HistoPLUS: <sınıf> (n) / (%) / (/mm²)" ölçümleri
- *   • Kilitli "HistoPLUS hücre sınıfları özeti — <model>" anotasyonu
+ *   • Kilitli "HistoPLUS hücre sınıfları özeti — <model>" anotasyonu (ekle kipinde "(2)", "(3)" …)
+ *   • "Değiştir" kipinde her seçili anotasyona: "HistoPLUS: <sınıf> (n) / (%) / (/mm²)" ölçümleri
+ *
+ * ÖNCEKİ SONUÇLAR HİÇBİR ŞEY SİLİNMEDEN KORUNUR (atölye kuralı):
+ *   Seçili alanda daha önce bir HistoPLUS sonucu varsa sihirbaz ÇALIŞTIRMADAN ÖNCE sorar —
+ *   "Ekle" (varsayılan; hiçbir şey silinmez, yeni özet "(2)" olur, ölçümler önceki çalıştırmada kalır),
+ *   "Değiştir" (bu alanda HistoPLUS SINIFI taşıyan tüm tespitler silinir — elle sınıflandırdıklarınız
+ *   dahil; ayrı bir onay istenir) ya da İptal (Python süreci hiç başlamaz).
  *   • Çalışma klasöründe upstream biçiminde cell_masks.json + histoplus_cells.geojson + histoplus_run.json
  *
  * YÖNTEM / KAYNAK REFERANSLARI:
@@ -66,6 +72,10 @@ def isHeadless = gui == null
 // ── Sabitler ───────────────────────────────────────────────────────────────
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
 def SUMMARY_NAME = 'HistoPLUS hücre sınıfları özeti'
+// Önceki sonuç kipleri — çalıştırmadan ÖNCE sorulur (İptal'de hiçbir şey çalışmaz/yazılmaz).
+// Varsayılan "ekle": hiçbir şey silinmez (atölye kuralı: içe aktarma hiçbir şeyi kendiliğinden silmez).
+def MODE_ADD     = 'Önceki HistoPLUS sonucuna dokunma — yeni özet olarak ekle (varsayılan)'
+def MODE_REPLACE = 'Önceki HistoPLUS sonucunu değiştir (bu alandaki HistoPLUS sınıflı nesneler silinir)'
 def ENV_ID       = 'histoplus'
 def RUNNER_REL   = 'python/histoplus/histoplus_runner.py'
 def CLASS_SUFFIX = ' (HistoPLUS)'
@@ -462,6 +472,43 @@ def areaAnnotationsOf = { imageData ->
 def unionRoiOf = { List targets -> targets.size() == 1 ? targets[0].getROI() : qupath.lib.roi.RoiTools.union(targets.collect { it.getROI() }) }
 def areaMm2Of = { roi, double pw, double ph -> roi.getArea() * pw * ph / 1_000_000.0d }
 
+// ── Önceki sonuçlar: bu ALANDAKİ özetler ve HistoPLUS sınıflı tespitler ──────
+// Özet adı TAM eşleşir ya da "(N)" ile biter — ÖN EK eşleşmesi KULLANILMAZ: kullanıcı bir özeti
+// "HistoPLUS hücre sınıfları özeti — kendi notlarım" diye yeniden adlandırdıysa "değiştir" kipi tam
+// olarak korumak istediği işi silerdi (NuClick sihirbazındaki aynı ders).
+def summaryBaseOf = { String modelKey -> SUMMARY_NAME + ' — ' + (modelKey ?: '?') }
+def isSummaryOf = { obj, String base ->
+    def n = obj?.getName()
+    if (n == null) return false
+    if (n == base) return true
+    return n.matches(java.util.regex.Pattern.quote(base) + ' \\(\\d+\\)')
+}
+// Numaralandırma ALAN BAŞINADIR: komşu bir bölgedeki özet bu alandaki adı kaydırmaz.
+def prevSummariesIn = { hier, unionRoi, String base ->
+    hier.getAnnotationObjects().findAll { a ->
+        isSummaryOf(a, base) && a.hasROI() && unionRoi.contains(a.getROI().getCentroidX(), a.getROI().getCentroidY())
+    }
+}
+// DİKKAT: bu bir SINIF-SONEKİ eşleşmesidir, köken (provenance) değil — elle HistoPLUS sınıfına
+// atadığınız ya da çakışan bir alandaki başka bir çalıştırmanın ürettiği tespitler de eşleşir.
+// "Değiştir" onay metni bunu açıkça söyler; sihirbaz "yalnız kendi ürettiklerim" demez.
+def prevDetectionsIn = { hier, unionRoi ->
+    hier.getDetectionObjects().findAll { d ->
+        d.getPathClass() != null && (d.getPathClass().getName() ?: '').endsWith(CLASS_SUFFIX) && d.hasROI() &&
+        unionRoi.contains(d.getROI().getCentroidX(), d.getROI().getCentroidY())
+    }
+}
+def nextSummaryName = { hier, unionRoi, String base ->
+    def existing = prevSummariesIn(hier, unionRoi, base)
+    if (existing.isEmpty()) return base
+    int maxIdx = 1
+    existing.each { o ->
+        def m = (o.getName() =~ /\((\d+)\)\s*$/)
+        if (m.find()) { try { maxIdx = Math.max(maxIdx, Integer.parseInt(m.group(1))) } catch (Throwable ignore) {} }
+    }
+    return base + ' (' + (maxIdx + 1) + ')'
+}
+
 // ── ROI → GeoJSON (köprünün --roi biçimi) ────────────────────────────────────
 def ringJson = { coords ->
     def arr = new com.google.gson.JsonArray()
@@ -661,20 +708,20 @@ def elapsedText = { long ms ->
 }
 
 // ── İçe aktarma: HistoPLUS çekirdek konturları → sınıflı TESPİT nesneleri ──
-// Önce YALNIZ bu çalıştırmanın alanına düşen eski özet anotasyonları ÇOCUKLARI KORUNARAK silinir, sonra
-// YALNIZ bu alandaki eski HistoPLUS tespitleri silinir; yeni tespitler silinecek bir özetin altına düşmez.
-def importCells = { File geojson, imageData, unionRoi, calA ->
+// "Değiştir" kipinde (kullanıcı çalıştırmadan önce açıkça seçti) bu ALANDAKİ eski özetler ÇOCUKLARI
+// KORUNARAK, eski HistoPLUS sınıflı tespitler ise tümüyle silinir. "Ekle" kipinde (varsayılan) HİÇBİR
+// ŞEY silinmez; yeni özet "(2)", "(3)" … olarak eklenir.
+def importCells = { File geojson, imageData, unionRoi, calA, boolean replacePrev, String base ->
     def hier = imageData.getHierarchy()
-    def oldSummaries = hier.getAnnotationObjects().findAll { a ->
-        a.getName() != null && a.getName().startsWith(SUMMARY_NAME) && a.hasROI() &&
-        unionRoi.contains(a.getROI().getCentroidX(), a.getROI().getCentroidY())
+    int removedSummaries = 0
+    def old = []
+    if (replacePrev) {
+        def oldSummaries = prevSummariesIn(hier, unionRoi, base)
+        removedSummaries = oldSummaries.size()
+        if (!oldSummaries.isEmpty()) hier.removeObjects(oldSummaries, true)
+        old = prevDetectionsIn(hier, unionRoi)
+        if (!old.isEmpty()) hier.removeObjects(old, false)
     }
-    if (!oldSummaries.isEmpty()) hier.removeObjects(oldSummaries, true)
-    def old = hier.getDetectionObjects().findAll { d ->
-        d.getPathClass() != null && (d.getPathClass().getName() ?: '').endsWith(CLASS_SUFFIX) && d.hasROI() &&
-        unionRoi.contains(d.getROI().getCentroidX(), d.getROI().getCentroidY())
-    }
-    if (!old.isEmpty()) hier.removeObjects(old, false)
     def cells = new ArrayList()   // [cx, cy, etiket, oy oranı]
     def unknown = new LinkedHashSet()
     int outside = 0
@@ -726,11 +773,15 @@ def importCells = { File geojson, imageData, unionRoi, calA ->
         if (!dets.isEmpty()) hier.addObjects(dets)
     }
     hier.fireHierarchyChangedEvent(hier)
-    return [cells: cells, removed: old.size(), unknown: unknown, outside: outside]
+    return [cells: cells, removed: old.size(), removedSummaries: removedSummaries, unknown: unknown, outside: outside]
 }
 
 // ── Sınıf başına sayım + % + yoğunluk: seçili anotasyonlara + kilitli özete ──
-def writeCounts = { imageData, List targets, unionRoi, List cells, calA, String modelKey ->
+// "Ekle" kipinde seçili anotasyonların "HistoPLUS: …" ölçümlerine DOKUNULMAZ: o sayılar hâlâ ekranda
+// duran ÖNCEKİ çalıştırmaya aittir ve onları bu çalıştırmanın (yalnız yeni tespitleri kapsayan)
+// sayılarıyla üzerine yazmak, ekranda iki küme varken bir kümeyi anlatan sessiz bir sayı üretirdi.
+// Bu kipte sayımlar YALNIZ yeni özet anotasyonuna yazılır.
+def writeCounts = { imageData, List targets, unionRoi, List cells, calA, String modelKey, boolean replacePrev, String summaryName ->
     def hier = imageData.getHierarchy()
     def present = cells.collect { it[2] } as LinkedHashSet
     def keys = CLASSES.collect { it.key }.findAll { present.contains(it) } + present.findAll { !classByKey.containsKey(it) }
@@ -750,16 +801,17 @@ def writeCounts = { imageData, List targets, unionRoi, List cells, calA, String 
         }
         return areaMm2
     }
-    targets.each { ann -> def roi = ann.getROI(); fill(ann, roi, cells.findAll { p -> roi.contains(p[0] as double, p[1] as double) }) }
+    if (replacePrev)
+        targets.each { ann -> def roi = ann.getROI(); fill(ann, roi, cells.findAll { p -> roi.contains(p[0] as double, p[1] as double) }) }
     def summary = PathObjects.createAnnotationObject(unionRoi)
-    summary.setName(SUMMARY_NAME + ' — ' + (modelKey ?: '?'))
+    summary.setName(summaryName)
     double areaMm2 = fill(summary, unionRoi, cells)
     // fill() MEAS_PREFIX ile başlayan tüm ölçümleri temizlediği için bu ölçüm fill()'den SONRA yazılır.
     summary.getMeasurements().put(MEAS_PREFIX + 'seçili alan sayısı', targets.size() as double)
     summary.setLocked(true)
     hier.addObjects([summary])
     hier.fireHierarchyChangedEvent(hier)
-    return [areaMm2: areaMm2, keys: keys]
+    return [areaMm2: areaMm2, keys: keys, summaryName: summaryName, wroteTargets: replacePrev]
 }
 
 // ── Sonuç metni (yalnız sayım/yüzde/yoğunluk/oy oranı) ──────────────────────
@@ -797,9 +849,16 @@ def resultText = { imageData, cfg, Map rd, Map imp, Map dens, Map stats, long el
         if (skipped != 0) sb << String.format(java.util.Locale.US, "\nUYARI: köprü %,d kontur yazdı, %,d içe aktarıldı, %,d alan dışında, %,d atlandı (beklenmeyen geometri ya da sınıf bilgisi eksik).\n", exported, tot, outside, skipped)
     }
     if (!imp.unknown.isEmpty()) sb << "\nTabloda olmayan etiketler (özgün adıyla eklendi): " << imp.unknown.join(', ') << "\n"
-    if (imp.removed > 0) sb << "\nBu alandaki önceki " << imp.removed << " HistoPLUS tespiti değiştirildi.\n"
-    sb << "\nÇekirdekler '<Sınıf> (HistoPLUS)' sınıflı poligon TESPİTLERİ olarak eklendi; seçili anotasyonlara\n"
-    sb << "'HistoPLUS: <sınıf> (n) / (%) / (/mm²)' yazıldı; kilitli özet: '" << SUMMARY_NAME << " — " << (stats.model ?: rd.modelKey) << "'.\n"
+    sb << "\nÇekirdekler '<Sınıf> (HistoPLUS)' sınıflı poligon TESPİTLERİ olarak eklendi; kilitli özet: '" << (dens.summaryName ?: '?') << "'.\n"
+    if (dens.wroteTargets) {
+        if (imp.removed > 0 || (imp.removedSummaries ?: 0) > 0)
+            sb << String.format(java.util.Locale.US, "Değiştir kipi: bu alandaki %,d önceki tespit ve %,d özet silindi.\n", imp.removed as int, (imp.removedSummaries ?: 0) as int)
+        sb << "Seçili anotasyonlara 'HistoPLUS: <sınıf> (n) / (%) / (/mm²)' yazıldı.\n"
+    } else {
+        sb << "Ekle kipi: HİÇBİR ŞEY silinmedi. Bu alanda önceki bir çalıştırma varsa aynı çekirdeklerin iki\n"
+        sb << "kopyası vardır; seçili anotasyonların 'HistoPLUS: …' ölçümleri önceki çalıştırmadan KALDI —\n"
+        sb << "bu çalıştırmanın sayımları yukarıdaki tabloda ve yeni özet anotasyonundadır.\n"
+    }
     sb << "Sınıflar modelin eğitim veri setinin kategorileridir; görsel olarak doğrulayın.\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
@@ -814,6 +873,40 @@ def startRun = {
     def cfg = loadConfig()
     def rd = readiness(imageData, cfg)
     if (!rd.ok) { errorTextRef.set('Çalıştırılamadı:\n  • ' + rd.blocks.join('\n  • ')); step.set('ERROR'); render(); return }
+    // ── Önceki sonuç için kullanıcıya SOR (çalıştırmadan ÖNCE) ──────────────
+    // İptal'de Python süreci hiç başlamaz ve hiçbir şey yazılmaz. Varsayılan "ekle": hiçbir şey silinmez.
+    // (Toplu anotasyon içe aktarma ve NuClick sihirbazlarındaki kalıbın aynısı.)
+    def summaryBase = summaryBaseOf((rd.modelKey ?: '?') as String)
+    def hierNow = imageData.getHierarchy()
+    int nPrevSummaries = prevSummariesIn(hierNow, rd.unionRoi, summaryBase).size()
+    int nPrevDets = prevDetectionsIn(hierNow, rd.unionRoi).size()
+    boolean replacePrev = false
+    if (nPrevSummaries > 0 || nPrevDets > 0) {
+        def sb = new StringBuilder()
+        sb << String.format(java.util.Locale.US,
+            'Seçili alanda zaten %,d HistoPLUS özeti ve HistoPLUS sınıflı %,d tespit var.',
+            nPrevSummaries, nPrevDets)
+        sb << '\n\n"Ekle" seçilirse hiçbir şey silinmez; sonuç "' + summaryBase + ' (2)" gibi yeni bir özet olur. '
+        sb << 'Aynı çekirdeklerin ikinci bir kopyasını göreceksiniz ve seçili anotasyonların '
+        sb << '"HistoPLUS: …" ölçümleri önceki çalıştırmadan KALIR (yeni sayımlar yeni özete yazılır).'
+        sb << '\n\n"Değiştir" seçilirse bu alanda HistoPLUS sınıfı taşıyan TÜM tespitler silinir — '
+        sb << 'elle HistoPLUS sınıfına atadığınız ya da çakışan bir alandaki başka bir çalıştırmanın '
+        sb << 'ürettiği tespitler de dahil (eşleşme sınıf adına göredir, kökene göre değil). '
+        sb << 'Kendi anotasyonlarınıza ve diğer sınıflara hiçbir kipte dokunulmaz.'
+        sb << '\n\nÖnceki HistoPLUS sonucu ne olsun?'
+        def pick = Dialogs.showChoiceDialog('Önceki HistoPLUS sonucu', sb.toString(), [MODE_ADD, MODE_REPLACE], MODE_ADD)
+        if (pick == null) return                      // İptal → çalıştırma yok, yazma yok
+        replacePrev = (pick == MODE_REPLACE)
+        if (replacePrev) {
+            boolean ok = Dialogs.showConfirmDialog('Önceki HistoPLUS sonucu silinecek',
+                String.format(java.util.Locale.US,
+                    'Bu alandaki %,d özet ve HistoPLUS sınıflı %,d tespit silinecek. Bu tespitlerde elle yaptığınız sınıf düzeltmeleri de KAYBOLUR ve geri alınamaz.\n\nDevam edilsin mi?',
+                    nPrevSummaries, nPrevDets))
+            if (!ok) return
+        }
+    }
+    final boolean runReplacePrev = replacePrev
+    final String runSummaryBase = summaryBase
     def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs(); workDirRef.set(workDir)
     def roiFile = new File(workDir, 'roi.geojson')
     if (!writeRoiGeoJson(rd.unionRoi, roiFile)) { errorTextRef.set('Seçili alan GeoJSON olarak yazılamadı (boş geometri).'); step.set('ERROR'); render(); return }
@@ -874,8 +967,12 @@ def startRun = {
             if (geo != null && !geo.isFile()) geo = null
             javafx.application.Platform.runLater { busyLabelRef.set('Hücreler içe aktarılıyor…'); step.set('BUSY'); render() }
             // Uzun çalıştırmadan SONRA QP.getCurrentImageData()'yı YENİDEN ALMA: başlatan imageData'ya yaz.
-            def imp = importCells(geo, imageData, rd.unionRoi, rd.calA)
-            def dens = writeCounts(imageData, rd.targets, rd.unionRoi, imp.cells, rd.calA, (stats.model ?: rd.modelKey) as String)
+            def imp = importCells(geo, imageData, rd.unionRoi, rd.calA, runReplacePrev, runSummaryBase)
+            // Ad, içe aktarma anında belirlenir (uzun çalıştırma sırasında hiyerarşi değişmiş olabilir).
+            def summaryName = runReplacePrev ? runSummaryBase
+                                             : nextSummaryName(imageData.getHierarchy(), rd.unionRoi, runSummaryBase)
+            def dens = writeCounts(imageData, rd.targets, rd.unionRoi, imp.cells, rd.calA,
+                                   (stats.model ?: rd.modelKey) as String, runReplacePrev, summaryName)
             if (imp.outside > 0) appendLine('Not: alan dışında kalan ' + imp.outside + ' kontur atlandı (karolar alanı aşar; sayım yalnız alan içidir).')
             def txt = resultText(imageData, cfg, rd, imp, dens, stats, elapsed)
             javafx.application.Platform.runLater {
@@ -1078,7 +1175,7 @@ render = { ->
 
             rd.blocks.each { addWarnLabel('⛔ ' + it) }
             rd.warns.each { addWarnLabel('⚠ ' + it) }
-            addGuidance('HistoPLUS YALNIZ seçili alan(lar)la kesişen karolarda çalışır; sayım yalnız alan İÇİNDEKİ çekirdeklerdir. Sonuç: her çekirdek için "<Sınıf> (HistoPLUS)" sınıflı poligon tespiti + seçili anotasyonlara sınıf başına sayım, % ve yoğunluk (hücre/mm²).')
+            addGuidance('HistoPLUS YALNIZ seçili alan(lar)la kesişen karolarda çalışır; sayım yalnız alan İÇİNDEKİ çekirdeklerdir. Sonuç: her çekirdek için "<Sınıf> (HistoPLUS)" sınıflı poligon tespiti + sınıf başına sayım, % ve yoğunluk (hücre/mm²). Bu alanda önceki bir HistoPLUS sonucu varsa çalıştırmadan önce ne yapılacağı sorulur — varsayılan hiçbir şeyi silmez.')
 
             actions.add(navButton('Kapat', { closeWizard() }))
             actions.add(navButton('◀ Kurulum', { step.set('CONFIG_INCOMPLETE'); render() }))

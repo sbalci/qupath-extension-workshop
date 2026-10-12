@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 88" role="img" aria-label="Patologlar için QuPath Atölyesi — Kesit logosu">
+  <g transform="translate(8 12)">  <rect width="64" height="64" rx="15" fill="#29384E"/>
+  <g>
+          <path d="M42 13h8" fill="none" stroke="#F7EBE8" stroke-width="4" stroke-linecap="round"/>
+          <path d="M47 16c6 7 5 17-3 28" fill="none" stroke="#F7EBE8" stroke-width="3.5" stroke-linecap="round"/>
+          <circle cx="25" cy="26" r="14" fill="#F7EBE8"/>
+          <path d="M18 26c1-5 6-8 10-5 2 2 5 2 5 5 0 4-3 7-7 7-4 0-4-3-7-3-2 0-2-2-1-4Z" fill="#D68091"/>
+          <circle cx="24" cy="26" r="2.5" fill="#783F5E"/>
+          <path d="M31 27h5m-15 4v4" stroke="#783F5E" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="35" cy="27" r="1.5" fill="#783F5E"/>
+          <path d="M35 36 44 45v7H19" fill="none" stroke="#F7EBE8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M13 44h16" fill="none" stroke="#F7EBE8" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M44 52h10v-6" fill="none" stroke="#D68091" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="54" cy="45" r="2" fill="#D68091"/>
+        </g></g>
+  <text x="88" y="37" fill="#29384E" font-family="'DM Sans','Segoe UI',Arial,sans-serif" font-size="19" font-weight="500">Patologlar için</text>
+  <text x="88" y="68" fill="#29384E" font-family="'DM Sans','Segoe UI',Arial,sans-serif" font-size="30" font-weight="700" letter-spacing="-.8">QuPath Atölyesi</text>
+</svg>

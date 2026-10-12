@@ -43,8 +43,16 @@
  *
  * ÇIKTI:
  *   • Her hücre: "<Türkçe hücre tipi> (CytoFormer)" sınıfı (düşük olasılıkta "Belirsiz (CytoFormer)")
- *     + "CytoFormer: olasılık" ölçümü (mevcut sınıf varsa DEĞİŞTİRİLİR).
+ *     + "CytoFormer: olasılık" ölçümü.
  *   • Her seçili anotasyona: "CytoFormer: <tip> (n) / (%) / (/mm²)" ölçümleri.
+ *
+ * MEVCUT SINIFLAR (varsayılan: ÜZERİNE YAZILMAZ):
+ *   Bu sihirbaz nesne ÜRETMEZ, var olan tespitlerin SINIFINI değiştirir. Hedef hücrelerin bir kısmında
+ *   BAŞKA bir kaynaktan gelen sınıf varsa (eğittiğiniz nesne sınıflandırıcısı, Classpose/HistoPLUS/
+ *   HoVer-NeXt çıktısı, elle verilmiş sınıflar) çalıştırmadan ÖNCE sorulur: "Yalnızca sınıfsız hücreler"
+ *   (varsayılan — hiçbir mevcut sınıf kaybolmaz) ya da "Hepsini sınıfla" (ikinci bir onayla). Kendi
+ *   ürettiğimiz "(CytoFormer)" sınıfları aynı kaynak sayılır: yeniden çalıştırma onları tazeler, soru
+ *   sorulmaz. Başsız: `-a mevcutsinif=atla` (varsayılan) | `yaz`.
  *
  * YÖNTEM / KAYNAK REFERANSLARI:
  *   • Yao J, Li S, Yu A, Huang Z. CytoFormer — Precision Pathology 1 (2026) 100006.
@@ -79,6 +87,9 @@ def LICENSE_URL     = 'https://github.com/zhihuanglab/CytoFormer/blob/36b667e40a
 def CLASS_SUFFIX    = ' (CytoFormer)'
 def MEAS_PREFIX     = 'CytoFormer: '
 def UNCERTAIN_CLASS = 'Belirsiz (CytoFormer)'
+// Mevcut sınıfların üzerine yazma kipi — çalıştırmadan ÖNCE sorulur (bkz. startRun / headless `mevcutsinif`).
+def MODE_SKIP       = 'Yalnızca sınıfsız hücreleri sınıfla (mevcut sınıflara dokunma)'
+def MODE_OVERWRITE  = 'Hepsini sınıfla (mevcut sınıfların üzerine yaz)'
 double HALF_UM       = 28.0d   // 56 µm alan görüşü / 2
 int    OUT_PX        = 224
 int    MAX_EXPORT_THREADS = 8
@@ -283,6 +294,25 @@ def areaMm2Of  = { roi, double mpp -> roi.getArea() * mpp * mpp / 1_000_000.0d }
 def centroidOf = { obj ->
     def roi = (obj instanceof qupath.lib.objects.PathCellObject && obj.getNucleusROI() != null) ? obj.getNucleusROI() : obj.getROI()
     return [roi.getCentroidX(), roi.getCentroidY()] as double[]
+}
+
+// ── Mevcut sınıfları koru: "içe aktarma varsayılan olarak hiçbir şeyi silmez" kuralının bu sihirbazdaki
+// karşılığı. CytoFormer nesne ÜRETMEZ, var olan tespitlerin SINIFINI değiştirir; bu yüzden yok edilebilecek
+// şey kullanıcının önceki sınıflarıdır (eğittiği nesne sınıflandırıcısı, Classpose/HistoPLUS/HoVer-NeXt
+// çıktısı, elle verilmiş sınıflar). Kendi ürettiğimiz sınıflar "aynı kaynak" sayılır: onların üzerine
+// yazmak yeniden çalıştırma/tazeleme demektir, soru sorulmaz (NuClick'teki MODE_ADD/MODE_REPLACE kalıbı).
+// NOT: Bu iki closure tools/test-cytoformer-overwrite.groovy içine BİREBİR kopyalanmıştır — biri değişirse
+// diğeri de değişmeli, yoksa test boşa düşer.
+def isOwnClass = { String name ->
+    name != null && (name.endsWith(CLASS_SUFFIX) || name == UNCERTAIN_CLASS)
+}
+// Hedef hücreler içinde BAŞKA bir kaynaktan gelen sınıfı olanlar (türetilmiş sınıflar dâhil: "A: B").
+def foreignClassed = { List cells ->
+    cells.findAll { def pc = it.getPathClass(); pc != null && !isOwnClass(pc.toString()) }
+}
+// "Yalnızca sınıfsız" kipinde çalıştırılacak hücreler: sınıfsız olanlar + kendi önceki sınıflarımız.
+def keepableCells = { List cells ->
+    cells.findAll { def pc = it.getPathClass(); pc == null || isOwnClass(pc.toString()) }
 }
 // Hedef alan(lar) içindeki hücre-benzeri (tile OLMAYAN) tespitler — Check 3: getChildObjects() DEĞİL,
 // hiyerarşinin UZAMSAL İNDEKSİ (getAllDetectionsForRegion, 0.6.0'da mevcut) ile ROI'nin sınırlayıcı
@@ -563,7 +593,13 @@ def buildResultText = { imageData, cfg, String organKey, Map pipeline, Map apply
         sb << String.format(java.util.Locale.US, "%-28s %8d %8s %12s\n", UNCERTAIN_CLASS, applyStats.uncertain as int, pct, '—')
     }
     if (tot == 0) sb << "\n0 hücre sınıflandı — seçili alanda hücre tespiti bulunduğunu ve organ seçimini denetleyin.\n"
-    sb << "\nHücreler '<tip> (CytoFormer)' sınıfına atandı (mevcut sınıf varsa değiştirildi); 'CytoFormer: olasılık'\n"
+    int skipped = (pipeline.skippedForeign ?: 0) as int
+    if (skipped > 0)
+        sb << String.format(java.util.Locale.US,
+            "\nATLANAN: %,d hücre, BAŞKA bir kaynaktan gelen sınıfı korunsun diye sınıflanmadı (sizin seçiminiz).\nYukarıdaki yüzdeler yalnız sınıflanan %,d hücreyi anlatır.\n", skipped, tot)
+    sb << "\nHücreler '<tip> (CytoFormer)' sınıfına atandı"
+    sb << (skipped > 0 ? " (yalnız sınıfsız/önceki CytoFormer hücreleri); " : " (mevcut sınıf varsa değiştirildi); ")
+    sb << "'CytoFormer: olasılık'\n"
     sb << "ölçümü yazıldı; seçili anotasyonlara 'CytoFormer: <tip> (n) / (%) / (/mm²)' eklendi.\n\n"
     sb << "MODELİN BİLİNEN SINIRLARI (Yao ve ark. 2026, tutulan test seti):\n"
     sb << "  • Genel doğruluk 0.846, makro-F1 0.779. En zayıf sınıflar: Kondrosit, Sinir hücresi,\n"
@@ -661,6 +697,25 @@ if (isHeadless) {
     def realBlocks = rd.blocks.findAll { !it.startsWith('Kurulum tamamlanmadı') }
     if (!realBlocks.isEmpty()) { println "Çalıştırılamadı:"; realBlocks.each { println '  • ' + it }; println "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."; return }
     rd.warns.each { println '⚠ ' + it }
+
+    // Mevcut sınıflar: başsız modda diyalog yok — `-a mevcutsinif=atla|yaz` (varsayılan `atla`: başka bir
+    // kaynaktan gelen sınıfların üzerine YAZILMAZ; kendi önceki CytoFormer sınıflarımız her zaman tazelenir).
+    String keepMode = (argMap.mevcutsinif ?: 'atla').toLowerCase(java.util.Locale.ROOT)
+    if (!['atla', 'yaz'].contains(keepMode)) { println "HATA: mevcutsinif yalnız 'atla' ya da 'yaz' olabilir (verilen: ${argMap.mevcutsinif})."; return }
+    int skippedForeign = 0
+    def foreignHeadless = foreignClassed(rd.cells)
+    if (!foreignHeadless.isEmpty()) {
+        if (keepMode == 'atla') {
+            def keep = keepableCells(rd.cells)
+            skippedForeign = rd.cells.size() - keep.size()
+            rd.cells = keep
+            rd.nChunks = rd.chunk > 0 ? (int) Math.ceil(keep.size() / (double) rd.chunk) : 0
+            println String.format(java.util.Locale.US, '⚠ %,d hücrenin başka bir kaynaktan gelen sınıfı var — ATLANDI (üzerine yazmak için -a mevcutsinif=yaz).', skippedForeign)
+            if (keep.isEmpty()) { println 'Sınıflanacak hücre kalmadı — hiçbir şey değiştirilmedi.'; println "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."; return }
+        } else {
+            println String.format(java.util.Locale.US, '⚠ %,d hücrenin mevcut sınıfı ÜZERİNE YAZILACAK (-a mevcutsinif=yaz).', foreignHeadless.size())
+        }
+    }
     println String.format(java.util.Locale.US, 'Tahmini süre: %s (%d hücre, %d parça, %s)', formatDuration(rd.estSec), rd.cells.size(), rd.nChunks, rd.gpu ? 'GPU varsayımı' : 'CPU')
 
     def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs()
@@ -684,6 +739,7 @@ if (isHeadless) {
     writeAnnotationMeasurements(rd.targets, rd.cells, pipeline.assignments, rd.minProb, rd.mpp)
     try { imageData.getHierarchy().fireHierarchyChangedEvent(imageData.getHierarchy()) } catch (Throwable ignore) {}
     long elapsed = System.currentTimeMillis() - t0
+    pipeline.skippedForeign = skippedForeign
     println buildResultText(imageData, cfg, cfg.organ, pipeline, applyStats, rd.areaMm2, elapsed)
     return
 }
@@ -822,6 +878,44 @@ def startRun = { ->
     def cfg = loadConfig()
     def rd = readiness(imageData, cfg, selectedTargets)
     if (!rd.ok) { errorTextRef.set('Çalıştırılamadı (seçim değişmiş olabilir):\n  • ' + rd.blocks.join('\n  • ')); step.set('ERROR'); render(); return }
+
+    // ── Mevcut sınıflar için kullanıcıya SOR (çıkarımdan ÖNCE: İptal'de hiç GPU işi çalışmaz) ──
+    //   Varsayılan: hiçbir mevcut sınıfın üzerine yazılmaz. Kendi önceki sınıflarımız "aynı kaynak"
+    //   sayıldığı için tazelenir ve soru sorulmaz.
+    def foreign = foreignClassed(rd.cells)
+    int nSkippedForeign = 0
+    if (!foreign.isEmpty()) {
+        def byClass = [:]
+        foreign.each { def n = it.getPathClass().toString(); byClass[n] = (byClass[n] ?: 0) + 1 }
+        def top = byClass.sort { -it.value }.take(4).collect { k, v -> String.format(java.util.Locale.US, '  • %s — %,d hücre', k, v) }.join('\n')
+        def sb = new StringBuilder()
+        sb << String.format(java.util.Locale.US,
+            'Seçili alandaki %,d hücrenin %,d tanesinin BAŞKA bir kaynaktan gelen sınıfı var:\n%s',
+            rd.cells.size(), foreign.size(), top)
+        if (byClass.size() > 4) sb << String.format(java.util.Locale.US, '\n  • … ve %d sınıf daha', byClass.size() - 4)
+        sb << '\n\nCytoFormer nesne üretmez, var olan hücrelerin SINIFINI değiştirir — bu sınıflar '
+        sb << '(eğittiğiniz nesne sınıflandırıcısı, başka bir model ya da elle verdikleriniz) üzerine yazılırsa '
+        sb << 'geri alınamaz.\n\nNe yapılsın?'
+        def pick = Dialogs.showChoiceDialog('Mevcut sınıflar', sb.toString(), [MODE_SKIP, MODE_OVERWRITE], MODE_SKIP)
+        if (pick == null) return                       // İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz
+        if (((String) pick) == MODE_OVERWRITE) {
+            boolean ok = Dialogs.showConfirmDialog('Mevcut sınıfların üzerine yazılacak',
+                String.format(java.util.Locale.US,
+                    '%,d hücrenin mevcut sınıfı CytoFormer sınıfıyla DEĞİŞTİRİLECEK ve geri alınamaz.\n\nDevam edilsin mi?',
+                    foreign.size()))
+            if (!ok) return
+        } else {
+            def keep = keepableCells(rd.cells)
+            nSkippedForeign = rd.cells.size() - keep.size()
+            rd.cells = keep
+            rd.nChunks = rd.chunk > 0 ? (int) Math.ceil(keep.size() / (double) rd.chunk) : 0
+            if (keep.isEmpty()) {
+                Dialogs.showInfoNotification('CytoFormer', 'Seçili alandaki tüm hücrelerin zaten başka bir sınıfı var — sınıflanacak hücre kalmadı. Hiçbir şey değiştirilmedi.')
+                return
+            }
+        }
+    }
+    final int skippedForeign = nSkippedForeign
     def modelDir = modelDirOf(cfg)
     def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs(); workDirRef.set(workDir)
     cancelledRef.set(false); resetLog(); runStartRef.set(System.currentTimeMillis())
@@ -866,6 +960,7 @@ def startRun = { ->
                     def hier = imageData.getHierarchy()
                     hier.fireHierarchyChangedEvent(hier)
                     try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {}
+                    pipeline.skippedForeign = skippedForeign
                     def txt = buildResultText(imageData, cfg, cfg.organ, pipeline, applyStats, rd.areaMm2, elapsed)
                     resultTextRef.set(txt); step.set('RESULT'); render()
                 } catch (Throwable t) { errorTextRef.set('Sonuç işleme hatası: ' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
@@ -1048,7 +1143,7 @@ render = { ->
 
             rd.blocks.each { addWarnLabel('⛔ ' + it) }
             rd.warns.each { addWarnLabel('⚠ ' + it) }
-            addGuidance('⑥ "Seçili alanda çalıştır ▶" mevcut sınıfları DEĞİŞTİRİR. Sonuç: her hücre için "<tip> (CytoFormer)" sınıfı + olasılık ölçümü; seçili anotasyonlara sayım/%/yoğunluk.')
+            addGuidance('⑥ "Seçili alanda çalıştır ▶": her hücre için "<tip> (CytoFormer)" sınıfı + olasılık ölçümü; seçili anotasyonlara sayım/%/yoğunluk. Hücrelerde BAŞKA bir kaynaktan gelen sınıf varsa (nesne sınıflandırıcınız, başka bir model) çalıştırmadan önce sorulur — varsayılan, o sınıfların üzerine YAZMAMAKTIR.')
 
             actions.add(navButton('Kapat', { closeWizard() }))
             actions.add(navButton('◀ Kurulum', { step.set('CONFIG_INCOMPLETE'); render() }))

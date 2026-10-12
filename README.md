@@ -1,3 +1,5 @@
+<img src="assets/logo.svg" alt="Patologlar için QuPath Atölyesi" width="320">
+
 # qupath-extension-workshop
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20375397.svg)](https://doi.org/10.5281/zenodo.20375397)

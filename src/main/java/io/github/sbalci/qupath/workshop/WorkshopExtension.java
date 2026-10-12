@@ -30,6 +30,8 @@ import javafx.beans.property.StringProperty;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
 import org.controlsfx.control.PropertySheet;
 import org.slf4j.Logger;
@@ -377,6 +379,17 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
 
         try {
             var menu = qupath.getMenu(MENU_PATH, true);
+
+            // The compact microscope/scan mark is also used by the website and docs.
+            try (InputStream iconStream = WorkshopExtension.class.getResourceAsStream("/images/workshop-icon.png")) {
+                if (iconStream != null) {
+                    ImageView icon = new ImageView(new Image(iconStream));
+                    icon.setFitWidth(18);
+                    icon.setFitHeight(18);
+                    icon.setPreserveRatio(true);
+                    menu.setGraphic(icon);
+                }
+            }
 
             // Header item (disabled) so the menu purpose is obvious
             var header = new MenuItem("— Atölye betikleri —");
