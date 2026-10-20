@@ -15,6 +15,7 @@ import java.time.format.DateTimeFormatter
 
 plugins {
     java
+    groovy
     `java-library`
     // JavaFX modules (controls/graphics) — needed at compile time because
     // QuPath's GUI APIs return JavaFX types. JavaFX is bundled with QuPath
@@ -23,7 +24,7 @@ plugins {
 }
 
 group = "io.github.sbalci"
-version = "0.2.2-rc5"
+version = "0.2.2-rc6"
 description = "QuPath atölyesi: hücre tespiti, IHC kantifikasyonu, tümör/stroma, cTCF — bir menü ile."
 
 java {
@@ -58,6 +59,10 @@ javafx {
 }
 
 dependencies {
+    testImplementation("org.apache.groovy:groovy-test:4.0.21")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("io.github.qupath:qupath-core:$qupathVersion")
+
     // QuPath APIs — provided by the host application at runtime
     compileOnly("io.github.qupath:qupath-gui-fx:$qupathVersion")
     compileOnly("io.github.qupath:qupath-core:$qupathVersion")

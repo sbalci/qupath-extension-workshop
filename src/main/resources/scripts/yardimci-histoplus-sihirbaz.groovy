@@ -715,22 +715,19 @@ def importCells = { File geojson, imageData, unionRoi, calA, boolean replacePrev
     def hier = imageData.getHierarchy()
     int removedSummaries = 0
     def old = []
-    if (replacePrev) {
-        def oldSummaries = prevSummariesIn(hier, unionRoi, base)
-        removedSummaries = oldSummaries.size()
-        if (!oldSummaries.isEmpty()) hier.removeObjects(oldSummaries, true)
-        old = prevDetectionsIn(hier, unionRoi)
-        if (!old.isEmpty()) hier.removeObjects(old, false)
-    }
     def cells = new ArrayList()   // [cx, cy, etiket, oy oranı]
     def unknown = new LinkedHashSet()
     int outside = 0
+    def dets = new ArrayList()
+    if (geojson == null || !geojson.isFile())
+        throw new IllegalArgumentException("HistoPLUS result GeoJSON is missing; previous results were preserved.")
     if (geojson != null) {
         def root = JsonParser.parseString(geojson.getText('UTF-8')).getAsJsonObject()
-        def feats = root.has('features') ? root.getAsJsonArray('features') : new com.google.gson.JsonArray()
+        if (!root.has('features') || !root.get('features').isJsonArray())
+            throw new IllegalArgumentException('HistoPLUS result must contain a features array.')
+        def feats = root.getAsJsonArray('features')
         def plane = ImagePlane.getDefaultPlane()
         def pcs = [:]
-        def dets = new ArrayList()
         for (el in feats) {
             def ft = el.getAsJsonObject()
             def geom = (ft.has('geometry') && ft.get('geometry').isJsonObject()) ? ft.getAsJsonObject('geometry') : null
@@ -770,8 +767,16 @@ def importCells = { File geojson, imageData, unionRoi, calA, boolean replacePrev
             dets << det
             cells << [cx, cy, key, vote]
         }
-        if (!dets.isEmpty()) hier.addObjects(dets)
     }
+    // Parse and construct every new object before any destructive replacement.
+    if (replacePrev) {
+        def oldSummaries = prevSummariesIn(hier, unionRoi, base)
+        removedSummaries = oldSummaries.size()
+        if (!oldSummaries.isEmpty()) hier.removeObjects(oldSummaries, true)
+        old = prevDetectionsIn(hier, unionRoi)
+        if (!old.isEmpty()) hier.removeObjects(old, false)
+    }
+    if (!dets.isEmpty()) hier.addObjects(dets)
     hier.fireHierarchyChangedEvent(hier)
     return [cells: cells, removed: old.size(), removedSummaries: removedSummaries, unknown: unknown, outside: outside]
 }
@@ -967,6 +972,7 @@ def startRun = {
             if (geo != null && !geo.isFile()) geo = null
             javafx.application.Platform.runLater { busyLabelRef.set('Hücreler içe aktarılıyor…'); step.set('BUSY'); render() }
             // Uzun çalıştırmadan SONRA QP.getCurrentImageData()'yı YENİDEN ALMA: başlatan imageData'ya yaz.
+            if (cancelledRef.get()) { javafx.application.Platform.runLater { step.set('READY'); render() }; return }
             def imp = importCells(geo, imageData, rd.unionRoi, rd.calA, runReplacePrev, runSummaryBase)
             // Ad, içe aktarma anında belirlenir (uzun çalıştırma sırasında hiyerarşi değişmiş olabilir).
             def summaryName = runReplacePrev ? runSummaryBase

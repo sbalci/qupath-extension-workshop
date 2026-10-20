@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+"""Inspect the actual built JAR; write evidence and SHA-256 beside it."""
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import re
+import zipfile
+
+root = Path(__file__).resolve().parents[1]
+version = re.search(r'^version = "([^"]+)"', (root / 'build.gradle.kts').read_text(), re.M)[1]
+assert version == '0.2.2-rc6', version
+jar = root / f'build/libs/qupath-extension-workshop-{version}.jar'
+with zipfile.ZipFile(jar) as z:
+    names = set(z.namelist())
+    manifest = z.read('META-INF/MANIFEST.MF').decode()
+    assert f'Implementation-Version: {version}' in manifest
+    info = z.read('build-info.properties').decode()
+    assert f'build.version={version}\n' in info
+    service = z.read('META-INF/services/qupath.lib.gui.extensions.QuPathExtension').decode().strip()
+    assert service == 'io.github.sbalci.qupath.workshop.WorkshopExtension'
+    cls = z.read(service.replace('.', '/') + '.class')
+    assert int.from_bytes(cls[6:8], 'big') == 65, 'Must target Java 21'
+    assert version.encode() in cls, 'Extension-reported version missing'
+    assert b'0.2.2-rc5' not in cls
+    # All source resources must survive packaging byte for byte, including the
+    # classifier, icon, service descriptor, Groovy scripts and Python bridges.
+    resources = root / 'src/main/resources'
+    for p in resources.rglob('*'):
+        if p.is_file():
+            assert z.read(p.relative_to(resources).as_posix()) == p.read_bytes(), str(p)
+    java_source = (root / 'src/main/java/io/github/sbalci/qupath/workshop/WorkshopExtension.java').read_text()
+    scripts = sorted(set(re.findall(r'"([^"/]+\.groovy)"', java_source)))
+    for script in scripts:
+        assert 'scripts/' + script in names, script
+    assert z.read('images/workshop-icon.png').startswith(b'\x89PNG\r\n\x1a\n')
+    classifier = json.loads(gzip.decompress(z.read('classifiers/tumor-stroma-RF.json.gz')))
+    assert classifier, 'Empty example classifier'
+    # QuPath, JavaFX, Groovy and test dependencies must remain host-provided.
+    assert not any(n.startswith(('qupath/', 'javafx/', 'groovy/', 'org/junit/')) for n in names)
+digest = hashlib.sha256(jar.read_bytes()).hexdigest()
+jar.with_suffix('.jar.sha256').write_text(f'{digest}  {jar.name}\n')
+report = {'jar': jar.name, 'sha256': digest, 'bytes': jar.stat().st_size,
+          'version': version, 'class_major': 65, 'menu_script_count': len(scripts),
+          'source_resource_identity': 'passed', 'classifier_json': 'passed',
+          'qupath_compile_and_core_test_baseline': '0.6.0', 'gui_acceptance': 'NOT RUN'}
+jar.with_suffix('.jar.verification.json').write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps(report, indent=2))
