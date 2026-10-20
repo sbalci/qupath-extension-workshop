@@ -23,6 +23,9 @@ class SafetyRegressionTest extends GroovyTestCase {
         String s = source(file)
         int start = s.indexOf('def ' + name + ' = {')
         assert start >= 0 : "Missing production closure: $name"
+        int lineEnd = s.indexOf('\n', start)
+        if (s.substring(start, lineEnd).trim().endsWith('}'))
+            return s.substring(start, lineEnd) + '\n'
         int end = s.indexOf('\n}', start)
         assert end > start
         s.substring(start, end + 2) + '\n'
