@@ -18,7 +18,7 @@ If you use this software in published work, please cite it using the metadata in
 
 After installation, a new **Extensions → Atölye** submenu appears in QuPath. The entries available depend on the JAR you installed.
 
-**Release/source status, checked October 13, 2026:** the newest published JAR is [v0.2.2-rc5](https://github.com/sbalci/qupath-extension-workshop/releases/tag/v0.2.2-rc5), published August 30, 2026. [`catalog.json`](catalog.json) points to that release. The `main` branch has newer scripts and safeguards; installing through the extension manager does **not** build or install `main`.
+**Release/source status, checked October 20, 2026:** the newest published JAR is [v0.2.2-rc5](https://github.com/sbalci/qupath-extension-workshop/releases/tag/v0.2.2-rc5), published August 30, 2026. [`catalog.json`](catalog.json) points to that release. The `main` branch has newer scripts and safeguards; installing through the extension manager does **not** build or install `main`.
 
 ### Current source menu (`main`, not a released-JAR feature list)
 
@@ -52,12 +52,59 @@ The October 12 CytoFormer, HistoPLUS, and NuClick safeguards are also source-onl
 
 Each item runs the corresponding workshop Groovy script: friendly Turkish dialogs explain what's about to happen, sensible defaults are applied, and the results pop-up gives measurements plus research/education context.
 
-The extension is a convenience wrapper around the loose scripts at [qupath-workshop/handson/scripts/](https://github.com/sbalci/qupath-workshop/tree/main/handson/scripts). Both coexist: the loose scripts surface via **Automate → Project scripts** when the workshop project is open; the extension runs the scripts packaged in the installed JAR without requiring participants to open the workshop project. Updating the workshop's scripts or its extension submodule (for example, [qupath-workshop PR #13](https://github.com/sbalci/qupath-workshop/pull/13)) does not update an installed JAR or publish a new one.
+The extension is a convenience wrapper around the loose scripts at [qupath-workshop/handson/scripts/](https://github.com/sbalci/qupath-workshop/tree/main/handson/scripts). The companion workshop repository currently requires repository access; the public rc5 fallback files are linked in the session section below. Both coexist: the loose scripts surface via **Automate → Project scripts** when the workshop project is open; the extension runs the scripts packaged in the installed JAR without requiring participants to open the workshop project. Updating the workshop's scripts or its extension submodule (for example, [qupath-workshop PR #13](https://github.com/sbalci/qupath-workshop/pull/13)) does not update an installed JAR or publish a new one.
+
+## Veri hazırlama oturumu: sabit sürüm ve yardımcılar
+
+Katılımcının ayrıntılı [uygulama rehberi](https://github.com/sbalci/qupath-workshop/blob/codex/data-preparation-practical-source-only/sunumlar.qmd), veri hazırlama → takma adlandırma incelemesi → anotasyon → karo → devir sırasını izler. Süre yaklaşık 90 dakikadır ve esnektir. Patologlar ile patoloji deneyimi sınırlı teknik katılımcılar aynı **açık öğretim görüntüsünü** kullanır; klinik slayt/rapor kullanılmaz. Mevcut kapsamlı modüller ve dört sunum başvuru olarak korunur. Atölye deposu ve aşağıdaki PR/kaynak bağlantıları depo erişimi gerektirir. Rehber [qupath-workshop PR #15](https://github.com/sbalci/qupath-workshop/pull/15) içindeki `sunumlar.qmd` dosyasının `uygulama-rotasi` bölümünde yer alan taslaktır; yayımlanmış sitenin güncellendiği anlamına gelmez. Rehberin yönlendirdiği [çevrimdışı paket taslağı](https://github.com/sbalci/qupath-workshop/pull/16), ayrı dağıtılan ZIP ve yerel `BASLA.html` başlangıcını açıklar; GitHub kaynak ZIP'i indirilen görüntü/JAR ve üretilen başvuru çıktılarının yerine geçmez.
+
+**Sürüm kaydı (20 Ekim 2026, statik inceleme):**
+
+| Kaynak | Durum | Oturum için anlamı |
+|---|---|---|
+| [Kararlı Latest](https://github.com/sbalci/qupath-extension-workshop/releases/latest) | `v0.2.1` | Bu oturumun yardımcılarını içermez; hazırlık için tek başına bu bağlantıyı vermeyin |
+| [Sabit aday yayın](https://github.com/sbalci/qupath-extension-workshop/releases/tag/v0.2.2-rc5) | `v0.2.2-rc5`, **prerelease**, 30 Ağustos 2026 | Aşağıdaki menü ve kaynak dosyalarını içerir; katılımcı bilgisayarında prova ayrıca gerekir |
+| rc5 kaynak commit'i | `d1df6f335ccf374826731c1d69026acaad11cd27` | Bu tablodaki kaynak incelemesinin temeli; `main` ile aynı kabul edilmez |
+
+Aday dosya: [`qupath-extension-workshop-0.2.2-rc5.jar`](https://github.com/sbalci/qupath-extension-workshop/releases/download/v0.2.2-rc5/qupath-extension-workshop-0.2.2-rc5.jar), 3.226.968 bayt. GitHub yayın kaydının SHA-256 değeri:
+
+```text
+8717da4902e2d3c0b52726b8b4e8e20f56b772a53f176526944b99c7c0bc4624
+```
+
+Boyut ve özet yayın kaydından okunmuştur; bu README uzlaştırmasında JAR indirilmedi/çalıştırılmadı ve GUI provası yapılmadı. Kurulum adımları aşağıdaki [JAR kurulumu](#install-a-released-or-locally-built-jar) bölümündedir. Kullanılacak QuPath ve eklenti sürümü oturumdan önce birlikte sabitlenmelidir. Temel rota Python/GPU/model kurulumu gerektirmez.
+
+**Menü yoksa kaynak dosyası yedeği:** [rc5 `src/main/resources/scripts/`](https://github.com/sbalci/qupath-extension-workshop/tree/v0.2.2-rc5/src/main/resources/scripts) içindeki dosyayı önceden hazırlayın; **Automate → Script editor** ile açıp **Run** kullanın. Projenin `scripts/` klasörüne konmuşsa **Automate → Project scripts** altında da bulunabilir. Kod düzenlemek gerekmez; QuPath arayüzünde çalıştırın, komut satırı/headless yedeği olarak kullanmayın. Dosyaları `main` sürümüyle karıştırmayın. Bazı betiklerin başlık yorumlarındaki eski menü yolları yerine aşağıdaki rc5 Java menü kayıtlarını esas alın. Aşağıdaki bütün menüler **Extensions → Atölye → Yardımcılar** altındadır.
+
+| Alt menü → işlev | Dosya | Girdi / beklenen çıktı |
+|---|---|---|
+| Klinik ve kohort → Kohort üst veri sihirbazı | [`yardimci-metadata-sihirbaz.groovy`](https://github.com/sbalci/qupath-extension-workshop/blob/v0.2.2-rc5/src/main/resources/scripts/yardimci-metadata-sihirbaz.groovy) | Proje → `cohort_metadata/` içinde CSV + `detailed_summary.txt` |
+| Klinik ve kohort → WSI anonimleştirme sihirbazı | [`yardimci-anonim-sihirbaz.groovy`](https://github.com/sbalci/qupath-extension-workshop/blob/v0.2.2-rc5/src/main/resources/scripts/yardimci-anonim-sihirbaz.groovy) | Proje + açık öğretim slaytı → seçilen klasörde kopyalar ve isteğe bağlı `anonymization_lookup_*.csv/.json` |
+| Temel araçlar → Anotasyon yapısı QC (denetçi) | [`yardimci-anotasyon-qc.groovy`](https://github.com/sbalci/qupath-extension-workshop/blob/v0.2.2-rc5/src/main/resources/scripts/yardimci-anotasyon-qc.groovy) | Açık slayttaki anotasyonlar → yapısal sorun raporu; biyolojik doğruluk veya otomatik düzeltme sağlamaz |
+| İçe ve dışa aktarma / veri → Karo (tile) dışa aktarma | [`yardimci-karo-disa-aktarma.groovy`](https://github.com/sbalci/qupath-extension-workshop/blob/v0.2.2-rc5/src/main/resources/scripts/yardimci-karo-disa-aktarma.groovy) | Açık kalibre slayt + anotasyon → varsayılan `exports/tiles/<slayt-slug>__<tarih>/`; maske modunda `images/`, `labels/`, `labels.txt` |
+| Klinik ve kohort → İşlem kaydı (provenance JSON) | [`yardimci-kosu-manifesti.groovy`](https://github.com/sbalci/qupath-extension-workshop/blob/v0.2.2-rc5/src/main/resources/scripts/yardimci-kosu-manifesti.groovy) | Açık slayt gerekir; açık görüntü veya tüm proje kapsamı → proje altında `manifests/`; karo parametreleri ayrıca elle kaydedilir |
+
+Kalibrasyon kontrolü için **Temel araçlar → Kalibrasyon (piksel boyutu)**, kaynak değerleri görmek için **Temel araçlar → Görüntü künyesi ve histogram** kullanılır; ikisi de rc5'te bulunur ve açık slayt gerektirir.
+
+Anotasyon çizimi, sınıf atama ve GeoJSON devir adımları uygulama rehberindeki yerleşik QuPath araçlarıyla yapılır. Yukarıdaki QC betiği anotasyonları içe/dışa aktarmaz; `main` menüsündeki toplu anotasyon aktarımını rc5 özelliği saymayın.
+
+**rc5 ile uygulamada dikkat edilecekler:**
+
+- Anonimleştirme yardımcısı kopya üretir; yeniden adlandırma tam anonimleştirme değildir. Python kapalı tutulduğunda meta veriye dokunmaz; açıkken sabit listeli `ImageDescription` redaksiyonu yapar, etiket/makroyu veya ana görüntüdeki yazıyı kaldırmaz. Hata halinde yalnız kopyaya düşebilir. Anahtar, proje yolları, envanter, provenance, GeoJSON ve türetilmiş karolar ayrıca incelenir.
+- rc5 sonuç penceresi proje için kopyaların bulunduğu klasörü önerebilir. **Ayrı, boş bir klasörde proje oluşturun**, sonra kopyaları **Add images** ile ekleyin. Kalibrasyonu bu yeni projede yeniden kontrol edin.
+- Önce hasta düzeyinde bölme planını hazırlayın. Aynı hastanın slaytları, seri kesitleri, yeniden taramaları ve karoları aynı bölmede kalmalıdır. Yardımcı hasta bölmesini otomatik yapmaz.
+- Kalibrasyon yoksa karo yardımcısı µm/px alanını downsample sayar; fiziksel ölçekli çıktı için durup doğrulayın. Çekirdek deneme: seçili iki küçük ROI, 256 px, 1.0 µm/px, örtüşme 0, PNG. Görüş alanı 256 µm'dir; kaynak µm/px ayrıca bilinmelidir.
+- **Form her açılışta sıfırlanır:** varsayılan 512 px ve “Tüm anotasyonlar”dır. RGB'den maske moduna geçerken de **Seçili anotasyon(lar) (2), 256 px, 1.0 µm/px, 0 px örtüşme, PNG** değerlerini yeniden girin. Yardımcı kısmi kenar karolarını açmaz (`includePartialTiles` varsayılan false); eksik kenar şeritleri atlanır, farklı boyutlar ayrıca incelenir.
+- Anotasyonla kesişen dikdörtgen karolar boş cam veya poligon dışı piksel içerebilir. `Ignore*` otomatik dışlanmaz. Sınıf indeksleri kapsamdaki alfabetik sınıf listesine bağlıdır; her çıktıda `labels.txt` kontrol edilir. Kısmi anotasyondaki 0, kanıtlanmış negatif etiket değildir.
+- Maske küçük tamsayılar nedeniyle siyah görünebilir. Bir RGB/maske çiftinin koordinat, boyut ve değerlerini kontrol etmeden eğitim için hazır saymayın. Karo ayarlarını ve QC sonucunu elle kayıt şablonuna yazın.
+
+Bu sınırlamalar rc5 kaynağından incelenmiştir. Bu README uzlaştırmasında menü/dosya eşlemeleri ve yayın meta verileri statik olarak kontrol edilmiştir. Betik çalıştırma, derleme, kurulum ve GUI provası yapılmamıştır; işlevsel doğrulama yapıldığı iddia edilmez.
 
 ## Requirements
 
 - **QuPath 0.6.0** is the compile baseline and the catalog's minimum version. Check individual tools and dependencies before using a newer QuPath version.
-- Java 21 is the build toolchain; normal QuPath installations supply their own runtime, so installing a released JAR does not require a separate JDK.
+- **JDK 21** is the source-build toolchain in both rc5 and the reviewed `main`; Java 17 does not meet it. Normal QuPath installations supply their own runtime, so installing a released JAR does not require a separate JDK.
+- The data-preparation route uses QuPath and the pinned rc5 helpers; it does not require a GPU, StarDist, Cellpose, QuANTUM or an external Python environment. Leave optional Python metadata redaction off for this route.
 - Optional tools require their own dependencies: for example, QuANTUM cTCF requires StarDist, and Python/model bridges need the environments, weights, permissions, or extensions described by their wizards. A menu entry does not mean these dependencies are bundled.
 
 ## Build the current source (development JAR)
@@ -98,7 +145,7 @@ Users can install the **published catalog release** via QuPath's built-in extens
 2. **Manage extension catalogs → Add**: add this repository's catalog URL, `https://github.com/sbalci/qupath-extension-workshop` (the catalog is [`catalog.json`](catalog.json) at the repository root).
 3. Install **QuPath Workshop extension (Atölye)** using its **+ / Install** control and restart QuPath.
 
-As of October 13, 2026, the catalog's newest entry is **v0.2.2-rc5**. The manager downloads the published JAR referenced by the catalog; it does not compile the current branch. New source functionality becomes available through this route only after a new JAR is published and the catalog references it. Use the explicit release link above to obtain rc5; GitHub's **Latest** link/badge can differ when releases are marked as prereleases.
+As of October 20, 2026, the catalog's newest entry is **v0.2.2-rc5**. The manager downloads the published JAR referenced by the catalog; it does not compile the current branch. New source functionality becomes available through this route only after a new JAR is published and the catalog references it. Use the explicit release link above to obtain rc5; GitHub's **Latest** link/badge can differ when releases are marked as prereleases.
 
 ## Versioning
 
