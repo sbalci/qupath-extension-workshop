@@ -61,6 +61,7 @@ javafx {
 dependencies {
     testImplementation("org.apache.groovy:groovy-test:4.0.21")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("com.google.zxing:core:3.5.3")
     testImplementation("io.github.qupath:qupath-core:$qupathVersion")
 
     // QuPath APIs — provided by the host application at runtime

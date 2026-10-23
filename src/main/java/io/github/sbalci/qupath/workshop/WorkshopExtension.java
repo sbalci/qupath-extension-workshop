@@ -324,7 +324,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Kohort üst veri sihirbazı", "yardimci-metadata-sihirbaz.groovy", false, false),  // proje geneli, salt okunur: açık slayt gerekmez
             // sectra-qupath (sbalci, MIT) köprüsü — Sectra PACS DICOM (GSPS) → GeoJSON. bkz. Ekler → Klinik PACS.
             new ScriptEntry("Sectra PACS anotasyon sihirbazı", "yardimci-sectra-iceaktar.groovy"),
-            new ScriptEntry("WSI anonimleştirme sihirbazı",         "yardimci-anonim-sihirbaz.groovy"),
+            // Denetim (salt okunur) + anonimleştirme: açık görüntü YA DA seçilen/tüm proje görüntüleri → açık slayt gerekmez.
+            new ScriptEntry("WSI anonimleştirme sihirbazı",         "yardimci-anonim-sihirbaz.groovy", false, false),
             // Proje geneli kilitli özet anotasyon ölçümlerini tek satır/görüntü geniş TSV'ye toplar; salt okunur, açık slayt gerekmez.
             new ScriptEntry("Kohort özet toplayıcı (proje tablosu)", "yardimci-kohort-ozet-topla.groovy", false, false),
             // GrandQC sentinel anotasyonlarını (doku/temiz/artefakt alan + parça) proje geneli geniş TSV'ye toplar; salt okunur, açık slayt gerekmez.
