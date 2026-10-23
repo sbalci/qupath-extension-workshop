@@ -2,7 +2,7 @@
 
 This is an unpublished candidate. Keep the participant kit and workshop installation pinned to rc5 until GUI acceptance and explicit replacement approval. Do not install both versions together. No catalog, release tag, release, participant ZIP or companion submodule change is part of this candidate.
 
-## Source comparison
+## Original October 20 source comparison
 
 Compared published `v0.2.2-rc5` (`d1df6f335ccf374826731c1d69026acaad11cd27`, August 30) with October 12 main `f81faf56db9a86aad81187b07dba4c59edbff3ce` (eight commits ahead). The published rc5 asset digest is `8717da4902e2d3c0b52726b8b4e8e20f56b772a53f176526944b99c7c0bc4624` (release metadata/user-provided verification; not a local binary rehash).
 
@@ -33,7 +33,7 @@ Existing Java 21 `Build` workflow runs `./gradlew --no-daemon clean build` again
 
 `python3 tools/verify-candidate.py` inspects the genuine Gradle JAR: manifest and build-info version, extension class version constant and Java 21 bytecode, service registration, every source resource byte-for-byte, every Java menu script, PNG signature, decompressed classifier JSON and absence of bundled host/test dependencies. It produces `.jar.sha256` and `.jar.verification.json` beside the JAR. The existing artifact upload carries all three plus a separate test-report artifact. Build timestamps make repeat builds potentially byte-different; always use the digest from the exact artifact being evaluated.
 
-Local execution: only Java 17 is installed; Gradle distribution retrieval failed with `Network is unreachable`, before compilation/tests. No local JAR or test pass is claimed. CI evidence is to be recorded on the PR after execution.
+Local execution: only Java 17 is installed; Gradle distribution retrieval failed with `Network is unreachable`, before compilation/tests. No local JAR or test pass is claimed. The current CI and independent artifact evidence is recorded below; the October 20 artifact predates the redesigned wizard.
 
 ## Remaining GUI acceptance — required before participant replacement
 
@@ -42,3 +42,50 @@ Use a disposable QuPath 0.6.0 project with a calibrated teaching slide, independ
 For HistoPLUS, NuClick and CytoFormer, test default add/skip, explicit overwrite/replace, both dialog cancellations and cancellation during inference. Confirm object identities/counts, manual classes, measurements and point annotations before/after. Include renamed summaries, numbered layers, overlapping/disjoint ROIs and manually assigned model classes. Check late cancellation just before results are applied and repeat/reopen/save behavior. HistoPLUS missing/malformed output must preserve old objects; valid empty output must follow the explicit mode. CytoFormer partial failure should clearly report completed chunks and its processed-cell denominator.
 
 No QuPath GUI or model inference environment is available here. Automated core/API checks establish a limited 0.6.0 compatibility baseline, not successful extension installation, Groovy GUI execution, model setup or clinical validation. Do not replace the pinned participant binary until this acceptance is documented and approved.
+
+## October 22 wizard integration (reconciled October 23)
+
+The original October 20 rc6 build packaged the older Python/tifffile wizard. It is historical evidence only and does not validate the redesigned wizard. Main `8c8910b608620516ce1e40cb391d53c99929970e` changes exactly two files relative to October 12: the wizard (1,429 additions / 436 deletions) and its Java menu entry. Those changes were merged into the existing candidate, preserving both version declarations at `0.2.2-rc6` and preserving the candidate's CytoFormer, NuClick and HistoPLUS files byte-for-byte relative to `a16e83acbb032b060ee3984fc4060fc0d2405079`.
+
+| Area | October 20 candidate | Integrated candidate |
+| --- | --- | --- |
+| Audit | No dedicated read-only audit | Open, selected or all project entries; structural TIFF and associated-image checks; optional Sectra DataMatrix decoding |
+| Processing | Python/tifffile description edits; copy fallback | Java classic TIFF/BigTIFF processing; copy, edit and verify before final naming; optional separate project |
+| Decoder | None | External ZXing core 3.5.3, SHA-256 `8d8064c1636fdaef7189dd9055c7d59950a8940a12f2293956446ec3c109fd82`; verified cache/download; not bundled |
+| Menu | Required an open image | Available without an open image for project-wide audit/processing |
+
+Compatibility: the Java entry compiles against QuPath 0.6.0. The wizard no longer invokes Python or tifffile. ZXing is optional at runtime; absent/invalid offline cache means no barcode decoding, and unreadable labels require visual review. An audit reads source slides/project data; optional decoder setup writes its runtime cache, and the explicit gallery-export action writes label/macro images. Thus “read-only” describes slide/project handling, not zero filesystem writes. Those exported images and reversible lookup keys can contain identifiers.
+
+Additional integration fixes: failed QuPath/TIFF audit checks now yield uncertainty rather than a clean verdict; pre-cancelled audits do not initialize/download the decoder. Copy processing checks cancellation before copying and again after final QuPath verification before final naming. It owns a unique temporary file, cleans only that file on failure/cancellation, rejects source aliases and output paths outside the chosen folder, and preserves existing final files. Naming prefixes cannot contain path separators. Cancellation stops between stages; copying/TIFF editing/host checks are not immediately interruptible and completed earlier copies are not rolled back.
+
+`AnonymizationRegressionTest` executes production closures with synthetic data: classic TIFF and BigTIFF in both byte orders; source bytes unchanged during inspection/copy; PHI redaction, label/macro unlinking and pixel blanking; tissue payload and MPP/AppMag preservation; cancellation before copying, after copying and after host verification; existing output/legacy temporary-file preservation; failed verification cleanup; invalid output paths; uncertain audits; pre-cancelled decoder setup; corrupt downloaded/cache dependency rejection; the actual resolved ZXing 3.5.3 JAR digest; synthetic DataMatrix decoding through the production decoder. Extra checks parse the complete wizard at Groovy's conversion phase (syntax, not host API resolution) and exercise duplicate-source grouping and output-name collision avoidance. Host QuPath server checks are injected in copy/audit tests; these are not real WSI-reader or GUI tests. The previous nine model-helper regression tests remain in place.
+
+The packaged-resource verifier additionally checks the wizard's Java workflow/decoder pin, absence of the old Python workflow and absence of bundled ZXing, and records the packaged wizard's digest. All resource identity checks are against the actual Gradle-built JAR.
+
+### Remaining QuPath GUI/real-slide acceptance
+
+Use a disposable QuPath 0.6.0 installation/project and the exact candidate artifact checksum. Record OS, Java/QuPath version, slide formats and results. In addition to the model-helper checks above:
+
+- Install/restart with rc5 removed from this test installation; check About/version and the wizard menu with no image open, then active/selected/all scopes and duplicate project entries.
+- Audit representative Aperio SVS, BigTIFF and partial/unsupported formats; compare source-slide hashes and project files before/after. Check failed/unreadable slides cannot appear clean. Test Sectra ANON labels, non-ANON codes, unreadable label/macro images and sidecar mismatches. A synthetic DataMatrix test is not a Sectra scanner-validation claim.
+- Test first-use online decoder download, verified offline cache, missing/corrupt offline cache, blocked network and explicit thumbnail export. Check UI uncertainty/warnings and export destination.
+- Produce copies with metadata/label settings on/off, reversible/irreversible modes and existing destinations. Open copies through the real WSI reader; verify tissue at multiple pyramid levels, dimensions, MPP, associated-image removal and remaining identifiers visually. TIFF fixture checks cannot establish every vendor format's safety.
+- Cancel via button/window-close during audit, copy/edit, byte scan and near final verification. Confirm source/project unchanged and no unfinished copy receives a final name; already completed copies and reports may remain.
+- Test optional new-project creation, save/reopen and optional object transfer. Inspect copied object names, measurements/metadata and lookup keys for identifiers; object transfer does not establish anonymization of user annotations. Test cropped/transformed/multi-file inputs follow documented exclusions.
+
+No GUI, real WSI reader, optional project/object-transfer or model-inference acceptance was performed here. Keep rc6 unpublished and the participant kit pinned to rc5 until GUI acceptance is documented and replacement explicitly approved.
+
+### Verified integrated build and artifact
+
+Tested source/test commit: `7fd5e8a964a4bd7cbf24498d5127f01ca68716bd` (the later documentation-only update does not change those sources). [Build run 39910049657](https://github.com/sbalci/qupath-extension-workshop/actions/runs/39910049657) passed with Temurin Java 21.0.12, Gradle 8.10.2 and QuPath 0.6.0: `./gradlew --no-daemon clean build` and the candidate JAR verifier both succeeded.
+
+Downloaded [test reports](https://github.com/sbalci/qupath-extension-workshop/actions/runs/39910049657/artifacts/12482084235) contain JUnit XML for **19 tests: 10 anonymization + 9 existing safety tests; 0 failures, 0 errors, 0 skipped**. Whole-script parsing is syntax validation only; injected host checks do not exercise a real QuPath WSI reader.
+
+Downloaded [JAR artifact](https://github.com/sbalci/qupath-extension-workshop/actions/runs/39910049657/artifacts/12482561902) contains the candidate JAR, checksum and verification JSON. Independent extraction and rehash confirmed:
+
+- `qupath-extension-workshop-0.2.2-rc6.jar`: **3,444,824 bytes**, SHA-256 `aa618da3f757e4cdd193eceaf64c6e2e7d15eba21d734ae87a265245bf3d3c0e`.
+- Packaged wizard SHA-256: `f915b685b151b8d2a62868307af7b502b7190529628ca5e6c3261ca3c6c180cd`.
+- Re-running `tools/verify-candidate.py` locally on the actual downloaded JAR passed: manifest, build-info and extension class all report `0.2.2-rc6`; Java 21 bytecode; 101 menu scripts; all source resources byte-for-byte; extension service, icon and classifier valid; host/test/ZXing dependencies absent.
+- Artifact ZIP SHA-256: `0be7722895fd14767dd60b38e47c2ab428492cf82966ccfe0bcba55bd8a62310` (not the JAR checksum). Artifacts currently expire January 21, 2027.
+
+Local `git diff --check` and verifier Python syntax checks passed. Local Gradle could not download its distribution (`Network is unreachable`; only Java 17 installed); the executed Java 21 build/test evidence comes from GitHub CI. No rc6 release, tag, catalog modification or participant/workshop rc5 dependency change was made.
