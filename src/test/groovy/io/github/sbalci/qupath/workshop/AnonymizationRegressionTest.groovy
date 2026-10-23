@@ -61,6 +61,27 @@ import java.awt.image.BufferedImage
         File f = new File(dir, "source-${big}-${le}.svs"); f.bytes = b.array(); f
     }
 
+    void testWholeWizardParsesAndMenuSupportsProjectWithoutOpenSlide() {
+        def unit = new org.codehaus.groovy.control.CompilationUnit()
+        unit.addSource(SCRIPT, SafetyRegressionTest.source(SCRIPT))
+        unit.compile(org.codehaus.groovy.control.Phases.CONVERSION)
+        String menu = new File('src/main/java/io/github/sbalci/qupath/workshop/WorkshopExtension.java').text
+        assert menu.contains('"yardimci-anonim-sihirbaz.groovy", false, false)')
+    }
+
+    void testPlanDeduplicatesSourcesAndAvoidsExistingDestinations() {
+        File f = fixture()
+        new File(dir,'case_1.svs').text = 'existing'
+        def items = [[file:f,name:f.name,uris:[]],[file:f,name:'Second entry',uris:[]]]
+        def r = shell([items:items,out:dir,classifyFile:{a,b -> 'aperio'},KIND_LABEL:[:]]).evaluate(
+            imports + code('extOf','groupUnits','buildPlan') + "\nreturn buildPlan([prefix:'case',naming:'sequential'],items,out)")
+        assert r.units.size() == 1 && r.units[0].items.size() == 2
+        assert r.units[0].anon == 'case_1a.svs'
+        shouldFail(IllegalArgumentException) {
+            shell([items:items,out:dir]).evaluate(imports + code('buildPlan') + "\nbuildPlan([prefix:'../bad'],items,out)")
+        }
+    }
+
     void testAuditReadOnlyAcrossTiffVariantsAndMalformedInput() {
         [false,true].each { big -> [false,true].each { le ->
             File f = fixture(big,le); byte[] before = f.bytes
