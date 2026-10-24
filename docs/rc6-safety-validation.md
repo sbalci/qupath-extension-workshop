@@ -1,3 +1,5 @@
+> Historical candidate record. rc6 was subsequently published from a different commit. The active correction is unpublished rc7; see [published artifact audit](rc6-published-artifact-audit.md). Older rc5 installation/publishing statements below describe the historical candidate, not current workshop dependencies.
+
 # 0.2.2-rc6 candidate: safety delta and validation
 
 This is an unpublished candidate. Keep the participant kit and workshop installation pinned to rc5 until GUI acceptance and explicit replacement approval. Do not install both versions together. No catalog, release tag, release, participant ZIP or companion submodule change is part of this candidate.

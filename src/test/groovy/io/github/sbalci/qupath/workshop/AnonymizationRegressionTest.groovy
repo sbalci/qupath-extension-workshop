@@ -16,8 +16,12 @@ import com.google.zxing.datamatrix.DataMatrixWriter
 class AnonymizationRegressionTest extends GroovyTestCase {
     static final String SCRIPT = 'yardimci-anonim-sihirbaz.groovy'
     File dir
-    void setUp() { dir = Files.createTempDirectory('anon-regression-').toFile() }
-    void tearDown() { dir.deleteDir() }
+    void setUp() {
+        // Contain even the legacy path-traversal reproduction in an owned sandbox.
+        dir = new File(Files.createTempDirectory('anon-regression-').toFile(), 'work')
+        assert dir.mkdir()
+    }
+    void tearDown() { dir.parentFile.deleteDir() }
     static String code(String... names) { names.collect { SafetyRegressionTest.closure(SCRIPT, it) }.join('\n') }
     static String imports = '''import java.nio.*
 import java.nio.file.Files
@@ -78,7 +82,7 @@ import java.awt.image.BufferedImage
         assert r.units.size() == 1 && r.units[0].items.size() == 2
         assert r.units[0].anon == 'case_1a.svs'
         shouldFail(IllegalArgumentException) {
-            shell([items:items,out:dir]).evaluate(imports + code('buildPlan') + "\nbuildPlan([prefix:'../bad'],items,out)")
+            shell([items:items,out:dir,classifyFile:{a,b -> 'aperio'},KIND_LABEL:[:]]).evaluate(imports + code('extOf','groupUnits','buildPlan') + "\nbuildPlan([prefix:'../bad'],items,out)")
         }
     }
 
@@ -126,6 +130,7 @@ import java.awt.image.BufferedImage
             def cancel = new AtomicBoolean(phase == 0); int calls = 0
             def r = runCopy(f,cancel,{File p -> if (++calls == phase) cancel.set(true); hostCheck()})
             assert r.status == 'ATLANDI'
+            if (phase == 0) assert calls == 0 : 'Pre-cancelled operation started host work'
             assert !new File(dir,'case_1.svs').exists()
             assert dir.listFiles().toList() == [f]
             assert f.bytes == before

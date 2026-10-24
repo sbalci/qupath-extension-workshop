@@ -171,11 +171,13 @@ assert imp.removedSummaries == 1
             def h = new PathObjectHierarchy()
             def old = det('Old (HistoPLUS)'), summary = ann('summary')
             h.addObjects([old, summary])
-            shouldFail(Exception) {
+            Exception rejected = null
+            try {
                 shell([image:new Expando(getHierarchy:{h}), region:roi(), f:f]).evaluate(histoCode() + "importCells(f, image, region, null, true, 'summary')")
-            }
-            assert h.getDetectionObjects().contains(old)
-            assert h.getAnnotationObjects().contains(summary)
+            } catch (Exception e) { rejected = e }
+            assert h.getDetectionObjects().contains(old) : 'Invalid output deleted previous detections'
+            assert h.getAnnotationObjects().contains(summary) : 'Invalid output deleted previous summary'
+            assert rejected != null : 'Invalid output was accepted'
         }
     }
 
@@ -188,11 +190,13 @@ assert imp.removedSummaries == 1
             def old = det('Old (HistoPLUS)'), summary = ann('summary')
             h.addObjects([old, summary])
             def f = resultFile('{"features":[' + feature + ']}')
-            shouldFail(Exception) {
+            Exception rejected = null
+            try {
                 shell([image:new Expando(getHierarchy:{h}), region:roi(), f:f]).evaluate(histoCode() + "importCells(f, image, region, null, true, 'summary')")
-            }
-            assert h.getDetectionObjects().contains(old)
-            assert h.getAnnotationObjects().contains(summary)
+            } catch (Exception e) { rejected = e }
+            assert h.getDetectionObjects().contains(old) : 'Invalid output deleted previous detections'
+            assert h.getAnnotationObjects().contains(summary) : 'Invalid output deleted previous summary'
+            assert rejected != null : 'Invalid output was accepted'
         }
     }
 
