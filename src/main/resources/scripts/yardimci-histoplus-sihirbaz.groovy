@@ -731,12 +731,14 @@ def importCells = { File geojson, imageData, unionRoi, calA, boolean replacePrev
         for (el in feats) {
             def ft = el.getAsJsonObject()
             def geom = (ft.has('geometry') && ft.get('geometry').isJsonObject()) ? ft.getAsJsonObject('geometry') : null
-            if (geom == null || !geom.has('type') || geom.get('type').getAsString() != 'Polygon') continue
+            if (geom == null || !geom.has('type') || geom.get('type').getAsString() != 'Polygon')
+                throw new IllegalArgumentException('HistoPLUS feature must contain Polygon geometry; previous results were preserved.')
             String key = null
             double vote = Double.NaN
             try { key = ft.getAsJsonObject('properties').getAsJsonObject('classification').get('name').getAsString() } catch (Throwable ignore) {}
             try { vote = ft.getAsJsonObject('properties').getAsJsonObject('measurements').get(RUNNER_VOTE).getAsDouble() } catch (Throwable ignore) {}
-            if (key == null) continue
+            if (key == null || key.trim().isEmpty())
+                throw new IllegalArgumentException('HistoPLUS feature classification is missing; previous results were preserved.')
             def ring = geom.getAsJsonArray('coordinates').get(0).getAsJsonArray()
             int n = ring.size()
             if (n >= 2) {
@@ -744,11 +746,15 @@ def importCells = { File geojson, imageData, unionRoi, calA, boolean replacePrev
                 def pl = ring.get(n - 1).getAsJsonArray()
                 if (p0.get(0).getAsDouble() == pl.get(0).getAsDouble() && p0.get(1).getAsDouble() == pl.get(1).getAsDouble()) n--
             }
-            if (n < 3) continue
+            if (n < 3) throw new IllegalArgumentException('HistoPLUS polygon has fewer than three vertices.')
             double[] xs = new double[n]
             double[] ys = new double[n]
             for (int i = 0; i < n; i++) { def p = ring.get(i).getAsJsonArray(); xs[i] = p.get(0).getAsDouble(); ys[i] = p.get(1).getAsDouble() }
+            if (xs.any { !Double.isFinite(it) } || ys.any { !Double.isFinite(it) })
+                throw new IllegalArgumentException('HistoPLUS polygon coordinates must be finite.')
             def roi = ROIs.createPolygonROI(xs, ys, plane)
+            if (!Double.isFinite(roi.getArea()) || roi.getArea() <= 0d)
+                throw new IllegalArgumentException('HistoPLUS polygon must have positive finite area.')
             double cx = roi.getCentroidX()
             double cy = roi.getCentroidY()
             if (!unionRoi.contains(cx, cy)) { outside++; continue }

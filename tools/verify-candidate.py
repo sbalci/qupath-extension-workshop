@@ -1,16 +1,39 @@
 #!/usr/bin/env python3
 """Inspect the actual built JAR; write evidence and SHA-256 beside it."""
+import argparse
 import gzip
 import hashlib
 import json
 from pathlib import Path
 import re
 import zipfile
+import subprocess
+import tempfile
+import tarfile
+import io
 
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--jar', type=Path, help='Verify an existing JAR against source')
+parser.add_argument('--source-ref', help='Compare with this exact git commit rather than the checkout')
+parser.add_argument('--expect-sha256', help='Require the digest of the exact downloaded artifact')
+args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
+# git archive contains repository-controlled paths; extract only regular files.
+snapshot = tempfile.TemporaryDirectory() if args.source_ref else None
+if snapshot:
+    archive = subprocess.check_output(['git', 'archive', args.source_ref], cwd=root)
+    root = Path(snapshot.name)
+    with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
+        for entry in tar:
+            if entry.isfile():
+                target = root / entry.name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(tar.extractfile(entry).read())
 version = re.search(r'^version = "([^"]+)"', (root / 'build.gradle.kts').read_text(), re.M)[1]
-assert version == '0.2.2-rc6', version
-jar = root / f'build/libs/qupath-extension-workshop-{version}.jar'
+jar = args.jar.resolve() if args.jar else root / f'build/libs/qupath-extension-workshop-{version}.jar'
+digest = hashlib.sha256(jar.read_bytes()).hexdigest()
+if args.expect_sha256:
+    assert digest == args.expect_sha256, 'Artifact digest mismatch'
 with zipfile.ZipFile(jar) as z:
     names = set(z.namelist())
     manifest = z.read('META-INF/MANIFEST.MF').decode()
@@ -51,6 +74,6 @@ report = {'jar': jar.name, 'sha256': digest, 'bytes': jar.stat().st_size,
           'anonymization_wizard_sha256': hashlib.sha256(wizard).hexdigest(),
           'zxing': '3.5.3 external, SHA-256 pinned; not bundled',
           'source_resource_identity': 'passed', 'classifier_json': 'passed',
-          'qupath_compile_and_core_test_baseline': '0.6.0', 'gui_acceptance': 'NOT RUN'}
+          'qupath_compile_and_core_test_baseline': '0.6.0', 'gui_acceptance': 'NOT RUN', 'source_ref': args.source_ref or 'checkout'}
 jar.with_suffix('.jar.verification.json').write_text(json.dumps(report, indent=2) + '\n')
 print(json.dumps(report, indent=2))

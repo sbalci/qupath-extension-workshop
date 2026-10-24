@@ -97,7 +97,7 @@ import java.awt.image.BufferedImage
 
     static Map cfg() { [redactMeta:true,removeLabels:true] }
     static Map hostCheck() { [ok:true,width:100,height:100,px:0.25d,assoc:[]] }
-    static String processCode() { tiffCode() + code('processUnit') }
+    static String processCode() { tiffCode() + code('tmpNameFor','processUnit') }
     Map runCopy(File f, AtomicBoolean cancel, Closure check, Map more = [:]) {
         def vars = [u:[file:f,kind:'aperio',anon:'case_1.svs'],cfg:cfg(),outDir:dir,
             log:{String s ->},cancel:cancel,qupathCheck:check,stemsOf:{u -> []},KIND_LABEL:[aperio:'Aperio']] + more
@@ -131,6 +131,19 @@ import java.awt.image.BufferedImage
             assert f.bytes == before
         }
     }
+    void testLegacyTemporaryFileIsNeverDeleted() {
+        File f = fixture()
+        File legacy = new File(dir,'case_1.anonim-gecici.svs'); legacy.text = 'user file'
+        runCopy(f,new AtomicBoolean(false),{File p -> hostCheck()})
+        assert legacy.exists() && legacy.text == 'user file'
+    }
+    void testLateCancellationCannotPublishOutput() {
+        File f = fixture(); def cancel = new AtomicBoolean(false); int calls = 0
+        def r = runCopy(f,cancel,{File p -> if (++calls == 2) cancel.set(true); hostCheck()})
+        assert r.status == 'ATLANDI'
+        assert !new File(dir,'case_1.svs').exists()
+    }
+
     void testExistingDestinationTempAndFailedVerificationPreserved() {
         File f = fixture(); byte[] before = f.bytes
         File legacyTemp = new File(dir,'case_1.anonim-gecici.svs'); legacyTemp.text = 'user file'

@@ -16,7 +16,13 @@ class SafetyRegressionTest extends GroovyTestCase {
     static final String CYTO = 'yardimci-cytoformer-sihirbaz.groovy'
     static final String NUC = 'yardimci-nuclick-sihirbaz.groovy'
 
-    static String source(String file) { new File(ROOT + file).getText('UTF-8') }
+    static String source(String file) {
+        String jar = System.getenv('WORKSHOP_SCRIPT_JAR')
+        if (!jar) return new File(ROOT + file).getText('UTF-8')
+        new java.util.zip.ZipFile(jar).withCloseable { zip ->
+            zip.getInputStream(zip.getEntry('scripts/' + file)).withCloseable { it.getText('UTF-8') }
+        }
+    }
 
     // Top-level closures end at column zero; fail if production structure changes.
     static String closure(String file, String name) {
@@ -165,6 +171,23 @@ assert imp.removedSummaries == 1
             def h = new PathObjectHierarchy()
             def old = det('Old (HistoPLUS)'), summary = ann('summary')
             h.addObjects([old, summary])
+            shouldFail(Exception) {
+                shell([image:new Expando(getHierarchy:{h}), region:roi(), f:f]).evaluate(histoCode() + "importCells(f, image, region, null, true, 'summary')")
+            }
+            assert h.getDetectionObjects().contains(old)
+            assert h.getAnnotationObjects().contains(summary)
+        }
+    }
+
+    void testHistoSkippedInvalidFeaturesCannotBecomeEmptyReplacement() {
+        ['{}', '{"geometry":{"type":"Point"}}',
+         '{"geometry":{"type":"Polygon","coordinates":[[[1,1],[2,2],[1,1]]]},"properties":{"classification":{"name":"x"}}}',
+         '{"geometry":{"type":"Polygon","coordinates":[[[1,1],[2,2],[3,3],[1,1]]]},"properties":{"classification":{"name":"x"}}}',
+         '{"geometry":{"type":"Polygon","coordinates":[[[20,20],[24,20],[24,24],[20,20]]]}}'].each { feature ->
+            def h = new PathObjectHierarchy()
+            def old = det('Old (HistoPLUS)'), summary = ann('summary')
+            h.addObjects([old, summary])
+            def f = resultFile('{"features":[' + feature + ']}')
             shouldFail(Exception) {
                 shell([image:new Expando(getHierarchy:{h}), region:roi(), f:f]).evaluate(histoCode() + "importCells(f, image, region, null, true, 'summary')")
             }
