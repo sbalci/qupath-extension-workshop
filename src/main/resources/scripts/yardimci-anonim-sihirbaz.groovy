@@ -739,7 +739,7 @@ def runAudit = { List items, Closure log, AtomicBoolean cancel, Map opts = [:] -
     def counts = ['TEMİZ': 0, 'EKSİK': 0, 'BELİRSİZ': 0, 'ATLANDI': 0]
     def gallery = []
     def decoder = null
-    if (opts.decodeLabels) {
+    if (opts.decodeLabels && !(cancel != null && cancel.get())) {
         try { decoder = makeDecoder(ensureZxing(true, log)) } catch (Throwable t) { log('Barkod çözücü yüklenemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName())) }
     }
     def sb = new StringBuilder()
@@ -758,7 +758,7 @@ def runAudit = { List items, Closure log, AtomicBoolean cancel, Map opts = [:] -
             verdict = 'ATLANDI'; notes << KIND_LABEL[u.kind]
         } else {
             def qp = qupathCheck(u.file)
-            if (!qp.ok) notes << 'QuPath açamadı: ' + qp.error
+            if (!qp.ok) unsure << 'QuPath açamadı: ' + qp.error
             def ac = assocCheck(u.file, decoder, (boolean) opts.keepThumbs, (File) opts.saveDir)
             switch (ac.label.state) {
                 case 'ANON': notes << 'Etiket: Sectra anonim etiketi ✓ — "' + ac.label.code + '" (DataMatrix doğrulandı)'; break
@@ -786,7 +786,7 @@ def runAudit = { List items, Closure log, AtomicBoolean cancel, Map opts = [:] -
                 gallery << [name: fname, label: ac.labelThumb, macro: ac.macroThumb, state: ac.label.state, macroState: ac.macro.state]
             if (u.kind in ['aperio', 'tiff']) {
                 def ins = inspectTiff(u.file, u.kind, stemsOf(u))
-                if (!ins.ok) notes << 'TIFF okunamadı: ' + ins.error
+                if (!ins.ok) unsure << 'TIFF okunamadı: ' + ins.error
                 else {
                     if (!ins.phi.isEmpty())
                         findings << 'Dolu kimlik alanları: ' + ins.phi.collect { k, v -> k + ' (IFD ' + v.join(',') + ')' }.join('; ')
@@ -831,6 +831,9 @@ def tmpNameFor = { String anon ->
     return (d > 0) ? (anon.substring(0, d) + '.anonim-gecici' + anon.substring(d)) : (anon + '.anonim-gecici')
 }
 def buildPlan = { cfg, List items, File outDir ->
+    String prefix = cfg.prefix ?: 'case'
+    if (prefix in ['.', '..'] || prefix.contains('/') || prefix.contains('\\'))
+        throw new IllegalArgumentException('Önek bir dosya adı olmalıdır; klasör yolu olamaz.')
     def units = groupUnits(items)
     def used = new HashSet<String>()
     int counter = 1
@@ -871,14 +874,18 @@ def moveWithRetry = { File a, File b ->
 
 // Tek birim: geçici kopya → düzenle → doğrula → anonim ada taşı (başarısızsa geçici silinir)
 def processUnit = { u, cfg, File outDir, Closure log, AtomicBoolean cancel ->
-    File tmp = new File(outDir, tmpNameFor(u.anon))
+    File tmp = null
     File fin = new File(outDir, u.anon)
     def stems = stemsOf(u)
     try {
-        Files.deleteIfExists(tmp.toPath())
+        if (cancel.get()) throw new InterruptedException('iptal')
+        if (fin.getCanonicalFile().getParentFile() != outDir.getCanonicalFile() || fin.getCanonicalFile() == u.file.getCanonicalFile())
+            throw new IllegalArgumentException('Geçersiz çıktı yolu')
+        // Own a unique temporary file; never delete a pre-existing user's file.
+        tmp = File.createTempFile('atolye-anon-', '.' + extOf(u.file), outDir)
         def orig = qupathCheck(u.file)
         log('    kopyalanıyor (' + fmtBytes(u.file.length()) + ') …')
-        Files.copy(u.file.toPath(), tmp.toPath())            // öznitelik (tarih) KOPYALANMAZ
+        Files.copy(u.file.toPath(), tmp.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)            // öznitelik (tarih) KOPYALANMAZ
         if (cancel.get()) throw new InterruptedException('iptal')
         def ed = [values: [], keys: [], removed: [], stemEdits: 0]
         if (u.kind in ['aperio', 'tiff']) {
@@ -922,6 +929,7 @@ def processUnit = { u, cfg, File outDir, Closure log, AtomicBoolean cancel ->
             Files.deleteIfExists(tmp.toPath())
             return [status: 'HATA', detail: issues.join('; ') + ' → kopya silindi', ed: ed]
         }
+        if (cancel.get()) throw new InterruptedException('iptal')
         moveWithRetry(tmp, fin)
         def lv = ['I']
         if (u.kind == 'aperio') {
@@ -941,7 +949,7 @@ def processUnit = { u, cfg, File outDir, Closure log, AtomicBoolean cancel ->
         notes.each { parts << it }
         return [status: full ? 'TAMAM' : 'KISMİ', detail: parts.join(' · '), ed: ed]
     } catch (Throwable t) {
-        try { Files.deleteIfExists(tmp.toPath()) } catch (Throwable ignore) {}
+        try { if (tmp != null) Files.deleteIfExists(tmp.toPath()) } catch (Throwable ignore) {}
         String msg = (t instanceof InterruptedException) ? 'İptal edildi' : ('Hata: ' + (t.getMessage() ?: t.getClass().getSimpleName()))
         return [status: (t instanceof InterruptedException) ? 'ATLANDI' : 'HATA', detail: msg + ' → kopya silindi']
     }

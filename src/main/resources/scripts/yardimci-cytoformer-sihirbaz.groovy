@@ -301,8 +301,7 @@ def centroidOf = { obj ->
 // şey kullanıcının önceki sınıflarıdır (eğittiği nesne sınıflandırıcısı, Classpose/HistoPLUS/HoVer-NeXt
 // çıktısı, elle verilmiş sınıflar). Kendi ürettiğimiz sınıflar "aynı kaynak" sayılır: onların üzerine
 // yazmak yeniden çalıştırma/tazeleme demektir, soru sorulmaz (NuClick'teki MODE_ADD/MODE_REPLACE kalıbı).
-// NOT: Bu iki closure tools/test-cytoformer-overwrite.groovy içine BİREBİR kopyalanmıştır — biri değişirse
-// diğeri de değişmeli, yoksa test boşa düşer.
+// Regression tests evaluate these production closures directly (SafetyRegressionTest).
 def isOwnClass = { String name ->
     name != null && (name.endsWith(CLASS_SUFFIX) || name == UNCERTAIN_CLASS)
 }
@@ -935,6 +934,7 @@ def startRun = { ->
                     return
                 }
                 javafx.application.Platform.runLater {
+                    if (cancelledRef.get()) { step.set('READY'); render(); return }
                     // İptal değil, GERÇEK bir hata: önceki parçalardan kalan kısmi 'assignments' varsa
                     // (bkz. runClassifyPipeline) o kadarını yine de yaz — tamamlanmış GPU işi kaybolmasın.
                     def nPartial = 0
@@ -955,6 +955,7 @@ def startRun = { ->
             }
             javafx.application.Platform.runLater {
                 try {
+                    if (cancelledRef.get()) { step.set('READY'); render(); return }
                     def applyStats = applyAssignments(rd.cells, pipeline.assignments, rd.minProb)
                     writeAnnotationMeasurements(rd.targets, rd.cells, pipeline.assignments, rd.minProb, rd.mpp)
                     def hier = imageData.getHierarchy()
