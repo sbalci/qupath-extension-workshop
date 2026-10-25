@@ -95,6 +95,15 @@ jobs:
           assert os.environ['RELEASE_TAG'] == 'v' + version, 'Release tag/build version mismatch'
           PYTHON
 
+      - name: Find release-specific notes
+        id: notes
+        env:
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          if [ -f "docs/releases/$RELEASE_TAG.md" ]; then
+            echo "path=docs/releases/$RELEASE_TAG.md" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: List built artifacts
         run: ls -la build/libs/
 
@@ -103,6 +112,8 @@ jobs:
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: ${{ steps.tag.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          body_path: ${{ steps.notes.outputs.path }}
           files: |
             build/libs/qupath-extension-workshop-*.jar
             build/libs/qupath-extension-workshop-*.jar.sha256

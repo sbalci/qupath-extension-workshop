@@ -1,0 +1,28 @@
+name: Publish approved rc7 once
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publish-approved-rc7.yml']
+permissions:
+  contents: read
+  actions: write
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify approved version and refuse an existing release or tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: sbalci/qupath-extension-workshop
+        run: |
+          grep -Fx 'version = "0.2.2-rc7"' build.gradle.kts
+          if gh api repos/$GH_REPO/releases/tags/v0.2.2-rc7 >/dev/null 2>&1; then
+            echo 'rc7 already published; no replacement requested.'
+            exit 1
+          fi
+          if gh api repos/$GH_REPO/git/ref/tags/v0.2.2-rc7 >/dev/null 2>&1; then
+            echo 'rc7 tag already exists; refusing to move it.'
+            exit 1
+          fi
+          gh workflow run release.yml --repo "$GH_REPO" --ref main -f tag=v0.2.2-rc7
