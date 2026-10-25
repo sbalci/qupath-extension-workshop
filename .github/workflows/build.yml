@@ -52,9 +52,25 @@ jobs:
           echo "::error::Build failed after 3 attempts."
           exit 1
 
+      - name: Verify candidate metadata and packaged resources
+        run: python3 tools/verify-candidate.py
+
+      - name: Upload regression test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: safety-regression-reports
+          path: |
+            build/reports/tests/test/
+            build/test-results/test/
+          if-no-files-found: warn
+
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
         with:
           name: qupath-extension-workshop-jar
-          path: build/libs/qupath-extension-workshop-*.jar
+          path: |
+            build/libs/qupath-extension-workshop-*.jar
+            build/libs/qupath-extension-workshop-*.jar.sha256
+            build/libs/qupath-extension-workshop-*.jar.verification.json
           if-no-files-found: error

@@ -699,6 +699,7 @@ def startRun = {
                 return
             }
             javafx.application.Platform.runLater {
+                if (cancelledRef.get()) { step.set('READY'); render(); return }
                 def imp = importResults(workDir, imageData, exp, runMode)
                 if (!imp.ok) { errorTextRef.set(imp.error); step.set('ERROR'); render(); return }
                 resultTextRef.set(buildResultText(exp, imp, cfg, imageData))
