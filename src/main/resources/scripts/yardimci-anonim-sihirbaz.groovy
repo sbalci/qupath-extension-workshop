@@ -903,7 +903,8 @@ def accessionHits = { File f, java.util.regex.Pattern pat, Map lim = [:] ->
                 String s = readAscii(raf, e)
                 if (s == null) return
                 s = s.replace('\u0000', ' ')
-                if (s.length() > maxLen) s = s.substring(0, maxLen)
+                // Never report a clean scan when a bounded value was not fully examined.
+                if (s.length() > maxLen) throw new IllegalStateException('ZAMANASIMI')
                 def isoSpans = []
                 def im = isoPat.matcher(s)
                 while (im.find()) isoSpans << [im.start(), im.end()]

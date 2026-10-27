@@ -766,6 +766,18 @@ return [plan:plan, res:runApply(plan, { s -> }, new AtomicBoolean(false))]
             shell([f:fx.file, p:bomb, c:cancel]).evaluate(tiffCode() + "return accessionHits(f, compileAccession(p), [cancel: c, budgetMs: 60000L])")
         }.contains('IPTAL')
     }
+    void testOversizedAccessionValueCannotBeSilentlyTruncatedAndClean() {
+        // Identifier lies AFTER the scanner's 65536-character bound.
+        def fx = build([[desc:KEEP0 + '|Comment=' + (' ' * 65536) + 'case 7-25'],
+                        [desc:KEEP], [desc:LABEL, kind:'remove'], [desc:MACRO, kind:'remove']])
+        byte[] before = fx.file.bytes
+        assert shouldFail(IllegalStateException) {
+            shell([f:fx.file]).evaluate(tiffCode() + 'return accessionHits(f, compileAccession(null))')
+        }.contains('ZAMANASIMI')
+        def r = runCopy(fx.file, new AtomicBoolean(false), {File p -> hostCheck()})
+        assert r.status == 'İNCELE' && r.detail.contains('ZAMAN AŞIMI') : r.status + r.detail
+        assert new File(dir, 'case_1.svs').exists() && fx.file.bytes == before
+    }
     void testDefaultPatternCoverageIsStatedHonestlyAndSharedReportHasNoAbsolutePaths() {
         File src = new File(dir, 'src'); src.mkdir()
         def fx = build([[desc:KEEP0], [desc:KEEP], [desc:LABEL, kind:'remove'], [desc:MACRO, kind:'remove']])
