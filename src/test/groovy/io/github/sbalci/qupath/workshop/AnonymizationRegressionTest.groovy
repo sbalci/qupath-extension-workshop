@@ -240,7 +240,7 @@ import java.time.format.DateTimeFormatter
 
     // ═══ Lessons from a production pipeline: A (safety), B (pseudonyms/keys), C (main scan), D (package) ═══
 
-    static List KEY_NAMES = ['csvCell','parseCsvLine','hexOf','hmacHex','dirKey','assertKeyDirSafe','keyDirOf',
+    static List KEY_NAMES = ['csvCell','parseCsvLine','hexOf','hmacHex','dirKey','assertKeyDirSafe','assertSaveDirSafe','keyDirOf',
         'saltNotice','loadSalt','loadCrosswalk','prepareKeyState','appendCrosswalk','extOf','groupUnits','buildPlan']
     static List APPLY_NAMES = ['stemOf','stemsOf','tmpNameFor','processUnitCore','processUnit','sha256Of','writeKeyFiles','foreignOutputs',
         'edgeFlagged','reviewUnits','buildBenioku','writePackage','buildApplyText','sanitizerFor','runApply']
@@ -733,5 +733,85 @@ return [plan:plan, res:runApply(plan, { s -> }, new AtomicBoolean(false))]
         def rep = out.listFiles().find { it.name.startsWith('anonimlestirme_raporu_') }
         assert rep != null && rep.lastModified() == java.time.Instant.parse('2000-01-01T00:00:00Z').toEpochMilli()
         assert out.listFiles().every { !it.name.endsWith('.svs') }
+    }
+
+    // ── independent-review follow-ups
+    void testNonAsciiResidualValueIsFoundByTheByteScan() {
+        // UTF-8 bytes of a Turkish value, as they sit in the file (ISO-8859-1 view of the bytes)
+        String v = new String('Şükrü Yılmaz'.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1)
+        def fx = build([[desc:KEEP0.replace('Patient=SECRETPAT', 'Patient=' + v)], [desc:KEEP + '|Note=' + v],
+                        [desc:LABEL, kind:'remove'], [desc:MACRO, kind:'remove']])
+        byte[] before = fx.file.bytes
+        def r = runCopy(fx.file, new AtomicBoolean(false), {File p -> hostCheck()})
+        assert r.status == 'HATA' && r.detail.contains('orijinal değer geçiyor') : r.detail     // surviving copy of the value is detected
+        assert !new File(dir, 'case_1.svs').exists() && fx.file.bytes == before
+        // without the surviving copy the same unit is clean
+        def ok = build([[desc:KEEP0.replace('Patient=SECRETPAT', 'Patient=' + v)], [desc:KEEP], [desc:LABEL, kind:'remove'], [desc:MACRO, kind:'remove']])
+        assert runCopy(ok.file, new AtomicBoolean(false), {File p -> hostCheck()}).status == 'TAMAM'
+    }
+    void testCatastrophicUserRegexIsBoundedAndNeverClean() {
+        String bomb = '(a*)*\\1b'      // backreference defeats the JDK's memoisation, so this really is catastrophic
+        String desc = KEEP0 + '|Comment=' + ('a' * 45) + '!'
+        def fx = build([[desc:desc], [desc:KEEP], [desc:LABEL, kind:'remove'], [desc:MACRO, kind:'remove']])
+        long t0 = System.currentTimeMillis()
+        def msg = shouldFail(IllegalStateException) {
+            shell([f:fx.file, p:bomb]).evaluate(tiffCode() + "return accessionHits(f, compileAccession(p), [budgetMs: 200L])")
+        }
+        assert msg.contains('ZAMANASIMI') && System.currentTimeMillis() - t0 < 20000
+        def r = runCopy(fx.file, new AtomicBoolean(false), {File p -> hostCheck()}, [cfg: cfg() + [accPattern:bomb, accBudgetMs:200L]])
+        assert r.status == 'İNCELE' && r.detail.contains('ZAMAN AŞIMI') : r.status + r.detail
+        // a cancel request interrupts the scan instead of hanging
+        def cancel = new AtomicBoolean(true)
+        assert shouldFail(IllegalStateException) {
+            shell([f:fx.file, p:bomb, c:cancel]).evaluate(tiffCode() + "return accessionHits(f, compileAccession(p), [cancel: c, budgetMs: 60000L])")
+        }.contains('IPTAL')
+    }
+    void testDefaultPatternCoverageIsStatedHonestlyAndSharedReportHasNoAbsolutePaths() {
+        File src = new File(dir, 'src'); src.mkdir()
+        def fx = build([[desc:KEEP0], [desc:KEEP], [desc:LABEL, kind:'remove'], [desc:MACRO, kind:'remove']])
+        File t = new File(src, 'x-1.svs'); Files.move(fx.file.toPath(), t.toPath())
+        File out = new File(dir, 'out-unique-name'); out.mkdir(); File keys = new File(dir, 'keys')
+        def vars = [items:[[file:t, name:t.name, uris:[], id:'i', entry:null, plain:false, builder:null]], out:out, keys:keys,
+            classifyFile:{a,b -> 'aperio'}, KIND_LABEL:[aperio:'Aperio SVS'], qupathCheck:{File p -> hostCheck()},
+            mainScanCheck:{File p, boolean k -> [ok:true,left:0d,right:0d,flagged:false]}, atolyeDataRoot:{ -> dir}]
+        def r = shell(vars).evaluate(applyCode() + '''
+def cfg = [prefix:'case', naming:'sequential', keyDir:keys.path, reversible:true, redactMeta:true, removeLabels:true]
+cfg.keyState = prepareKeyState(cfg, out, { s -> })
+def plan = buildPlan(cfg, items, out)
+return runApply(plan, { s -> }, new AtomicBoolean(false))
+''')
+        String rep = out.listFiles().find { it.name.startsWith('anonimlestirme_raporu_') }.getText('UTF-8')
+        String rd = new File(out, 'BENIOKU.md').getText('UTF-8')
+        [rep, rd].each { assert it.contains('YAKALAMAZ') && it.contains('S25-12345') }
+        assert !rep.contains('bulunmadı.\n') || rep.contains('yalnız aranan desen')
+        assert rep.contains('Çıktı klasörü : out-unique-name') && !rep.contains(out.absolutePath) && !rep.contains(dir.absolutePath)
+        assert r.text.contains(out.absolutePath)                       // the private summary keeps full paths
+    }
+    void testAuditPngFolderCannotBeInsideOutputOrKeyFolder() {
+        File out = new File(dir, 'out'); File keys = new File(dir, 'keys'); out.mkdir(); keys.mkdir()
+        def chk = { File s -> shell([s:s, forb:[out, keys]]).evaluate(keyCode() + 'assertSaveDirSafe(s, forb); return true') }
+        shouldFail(IllegalArgumentException) { chk(new File(out, 'png')) }
+        shouldFail(IllegalArgumentException) { chk(keys) }
+        shouldFail(IllegalArgumentException) { chk(dir) }               // contains both
+        assert chk(new File(dir, 'png')) && chk(null)
+    }
+    void testKeyFolderCheckSeesCaseVariantsAndLinks() {
+        File out = new File(dir, 'out'); out.mkdir()
+        def check = { File k, File o -> shell([k:k, o:o]).evaluate(keyCode() + 'assertKeyDirSafe(k, o); return true') }
+        String os = System.getProperty('os.name').toLowerCase()
+        if (os.contains('win') || os.contains('mac'))
+            shouldFail(IllegalArgumentException) { check(new File(out.path.toUpperCase() + File.separator + 'Keys'), out) }
+        // symbolic link (or, on Windows without privilege, a junction) pointing at the output folder
+        File link = new File(dir, 'linkdir')
+        boolean made = false
+        try { Files.createSymbolicLink(link.toPath(), out.toPath()); made = true } catch (Throwable ignore) {}
+        if (!made && os.contains('win')) {
+            try { made = new ProcessBuilder('cmd', '/c', 'mklink', '/J', link.path, out.path).redirectErrorStream(true).start().waitFor() == 0 && link.exists() } catch (Throwable ignore) {}
+        }
+        if (made) {
+            shouldFail(IllegalArgumentException) { check(new File(link, 'keys'), out) }
+            shouldFail(IllegalArgumentException) { check(out, link) }
+            if (os.contains('win') && !Files.isSymbolicLink(link.toPath())) new ProcessBuilder('cmd', '/c', 'rmdir', link.path).start().waitFor()
+        } else println 'link/junction creation not possible here - link part skipped'
     }
 }

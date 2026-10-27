@@ -135,7 +135,8 @@ def ISO = StandardCharsets.ISO_8859_1
 // (?<![A-Za-z0-9]) ile elenir; ISO tarihleri (2026-09-28) ayrıca her zaman yok sayılır (accessionHits).
 def ACCESSION_DEFAULT = '(?<![A-Za-z0-9])(?:\\d{1,6}-\\d{2}(?![0-9A-Za-z])|\\d{3,6}\\s*-\\s*[A-Za-z0-9])'
 def ISO_DATE_RE = '(?<!\\d)\\d{4}-\\d{2}-\\d{2}(?!\\d)'
-def PIN_ISO = '2000-01-01T00:00:00Z'      // paylaşılabilir dosyaların sabitlenen zamanı (mtime + oluşturma + erişim)
+def ACC_COVERAGE_TR = 'Varsayılan kayıt numarası deseni yalnız NNN-YY ve NNNNN-NA biçimlerini (ör. 1021-25, 7-25, 12345-1A) arar; S25-12345, B2025-1234 ya da 25-12345 gibi biçimleri YAKALAMAZ. Kurumunuzun biçimi farklıysa desen= (arayüzde "Kayıt no deseni") ile verin; "desen bulunmadı" yalnız aranan desen için geçerlidir.'
+def PIN_ISO ='2000-01-01T00:00:00Z'      // paylaşılabilir dosyaların sabitlenen zamanı (mtime + oluşturma + erişim)
 def PKG_STATUSES = ['TAMAM', 'KISMİ', 'İNCELE']   // diskte kopyası bulunan durumlar
 def SALT_FILE = 'salt.bin'
 def CROSSWALK_FILE = 'anahtar.csv'
@@ -870,8 +871,28 @@ def compileAccession = { String p ->
 def maskHit = { String s -> (s ?: '').replaceAll('[0-9]', '#').replaceAll('[A-Za-z]', 'a') }
 // Bağlantılı HER IFD'nin HER ASCII etiket değerini tarar; ISO tarihleriyle örtüşen eşleşmeler yok sayılır.
 // Sonuç: [[page: IFD indeksi, tag: etiket, masked: maskeli şekil], …]
-def accessionHits = { File f, java.util.regex.Pattern pat ->
+// Kullanıcı desenine zaman/iptal sınırı: metin, charAt içinde iptal bayrağını ve bir süre sınırını denetleyen bir
+// CharSequence ile sarılır (felaket geri izlemeli desen takılıp kalamaz); değer başına taranan uzunluk sınırlıdır.
+// lim: [cancel: AtomicBoolean, budgetMs: dosya başına toplam süre (varsayılan 10000), maxLen: değer başına (65536)].
+// Süre aşımı → IllegalStateException('ZAMANASIMI') — çağıran birimi İNCELE yapar (asla TAMAM değil).
+def accessionHits = { File f, java.util.regex.Pattern pat, Map lim = [:] ->
     def hits = []
+    long deadline = System.nanoTime() + ((lim.budgetMs ?: 10000L) as long) * 1000000L
+    int maxLen = (lim.maxLen ?: 65536) as int
+    def cancelFlag = lim.cancel
+    int[] tick = [0] as int[]
+    def guard = { String text ->
+        return ([length  : { -> text.length() },
+                 charAt   : { int i ->
+                     if ((++tick[0] & 1023) == 0) {
+                         if (cancelFlag != null && cancelFlag.get()) throw new IllegalStateException('IPTAL')    // denetlenen istisna Proxy'de sarılırdı
+                         if (System.nanoTime() > deadline) throw new IllegalStateException('ZAMANASIMI')
+                     }
+                     text.charAt(i)
+                 },
+                 subSequence: { int a, int b -> text.substring(a, b) },
+                 toString : { -> text }] as CharSequence)
+    }
     def raf = new RandomAccessFile(f, 'r')
     try {
         def t = parseTiff(raf)
@@ -882,10 +903,11 @@ def accessionHits = { File f, java.util.regex.Pattern pat ->
                 String s = readAscii(raf, e)
                 if (s == null) return
                 s = s.replace('\u0000', ' ')
+                if (s.length() > maxLen) s = s.substring(0, maxLen)
                 def isoSpans = []
                 def im = isoPat.matcher(s)
                 while (im.find()) isoSpans << [im.start(), im.end()]
-                def m = pat.matcher(s)
+                def m = pat.matcher(guard(s))
                 while (m.find()) {
                     int a = m.start(), b = m.end()
                     if (isoSpans.any { sp -> a < sp[1] && b > sp[0] }) continue
@@ -1158,10 +1180,28 @@ def hmacHex = { byte[] salt, String msg ->
     mac.init(new javax.crypto.spec.SecretKeySpec(salt, 'HmacSHA256'))
     return hexOf(mac.doFinal(msg.getBytes(StandardCharsets.UTF_8)))
 }
+// Karşılaştırma anahtarı: yolun VAR OLAN en derin atası toRealPath() ile çözülür (sembolik bağ / junction
+// içinden dolanma yakalanır), kalan kısım eklenir; Windows ve macOS'ta büyük-küçük harf farkı yok sayılır.
 def dirKey = { File d ->
-    String s = d.getCanonicalFile().getAbsolutePath()
+    def cur = d.getAbsoluteFile().toPath().normalize()
+    def rest = []
+    while (cur != null && !Files.exists(cur)) { rest.add(0, cur.getFileName().toString()); cur = cur.getParent() }
+    def real = (cur != null) ? cur.toRealPath() : d.getAbsoluteFile().toPath().getRoot()
+    rest.each { real = real.resolve((String) it) }
+    String s = real.normalize().toString()
     if (!s.endsWith(File.separator)) s += File.separator
-    return System.getProperty('os.name', '').toLowerCase(java.util.Locale.ROOT).contains('win') ? s.toLowerCase(java.util.Locale.ROOT) : s
+    String os = System.getProperty('os.name', '').toLowerCase(java.util.Locale.ROOT)
+    return (os.contains('win') || os.contains('mac')) ? s.toLowerCase(java.util.Locale.ROOT) : s
+}
+// Denetim etiket/makro PNG'leri ÖZGÜN dosya adlarıyla yazılır → çıktı ya da anahtar klasörünün içine/üstüne yazılamaz
+def assertSaveDirSafe = { File saveDir, Collection forbidden ->
+    if (saveDir == null) return
+    String s = dirKey(saveDir)
+    forbidden.findAll { it != null }.each { File x ->
+        String k = dirKey(x)
+        if (s.startsWith(k) || k.startsWith(s))
+            throw new IllegalArgumentException('Etiket/makro PNG klasörü çıktı ya da anahtar klasörünün içinde (ya da üstünde) olamaz: PNG\'ler özgün dosya adlarını taşır.')
+    }
 }
 def assertKeyDirSafe = { File keyDir, File outDir ->
     String k = dirKey(keyDir), o = dirKey(outDir)
@@ -1272,7 +1312,7 @@ def buildPlan = { cfg, List items, File outDir ->
         }
         proc << u
     }
-    // Anahtar tablosu özgün DOSYA ADINI anahtar alır: geri alınabilir koşuda aynı ad iki farklı dosyada geçerse
+    // Anahtar tablosu özgün DOSYA ADINI anahtar alır: geri alınabilir çalıştırmada aynı ad iki farklı dosyada geçerse
     // iki farklı takma ad aynı ada bağlanır ve (eklemeli) tablo kalıcı olarak çelişkili olurdu → baştan reddet.
     if (cfg.reversible && ks != null) {
         def seenNames = new HashSet<String>()
@@ -1304,8 +1344,8 @@ def buildPlan = { cfg, List items, File outDir ->
     }
     int counter = 1
     // Çarpışma = bu çalıştırmada ya da anahtar tablosunda BAŞKA bir özgün adın takma adı. hmac'te tablodaki sahibi
-    // bilinmeyen (geri alınamaz koşu: özgün ad yazılmaz) ya da aynı dosya adı olan kayıt çarpışma SAYILMAZ —
-    // yoksa ikinci geri alınamaz koşuda aynı girdi 12, sonra 16 karakter alırdı. (Bedeli: geri alınamaz modda
+    // bilinmeyen (geri alınamaz çalıştırma: özgün ad yazılmaz) ya da aynı dosya adı olan kayıt çarpışma SAYILMAZ —
+    // yoksa ikinci geri alınamaz çalıştırmada aynı girdi 12, sonra 16 karakter alırdı. (Bedeli: geri alınamaz modda
     // partiler ARASI gerçek çarpışma tespit edilemez; parti içi edilir.)
     def taken = { String cand, String who ->
         String lc = cand.toLowerCase(java.util.Locale.ROOT)
@@ -1319,7 +1359,7 @@ def buildPlan = { cfg, List items, File outDir ->
     }
     proc.each { u ->
         String ext = extOf(u.file) ? ('.' + extOf(u.file)) : ''
-        def prior = (ks != null) ? ks.byOrig.get(u.file.getName()) : null     // yalnız geri alınabilir koşularda dolu
+        def prior = (ks != null) ? ks.byOrig.get(u.file.getName()) : null     // yalnız geri alınabilir çalıştırmalarda dolu
         String base
         u.reused = false
         if (prior != null) {
@@ -1423,14 +1463,19 @@ def processUnitCore = { u, cfg, File outDir, Closure log, AtomicBoolean cancel -
             // Düzenleme SONRASI kayıt numarası deseni taraması (kimlik-benzeri izler gözle incelenir)
             try {
                 def seenHit = new LinkedHashSet()
-                accessionHits(tmp, compileAccession(cfg.accPattern)).each { h ->
+                accessionHits(tmp, compileAccession(cfg.accPattern), [cancel: cancel, budgetMs: (cfg.accBudgetMs ?: 10000L)]).each { h ->
                     seenHit.add('IFD ' + h.page + ' etiket ' + h.tag + ' (şekil ' + h.masked + ')')
                 }
                 review.addAll(seenHit)
-            } catch (Throwable th) { issues << 'Kayıt numarası taraması başarısız: ' + (th.getMessage() ?: th.getClass().getSimpleName()) }
+            } catch (Throwable th) {
+                if (th.getMessage() == 'IPTAL') throw new InterruptedException('iptal')
+                if (th.getMessage() == 'ZAMANASIMI')       // desen çok pahalı: tarama TAMAMLANAMADI → asla TAMAM sayılmaz
+                    review.add('kayıt numarası taraması ZAMAN AŞIMINA uğradı (desen çok pahalı ya da değer çok uzun) — taranamayan değerleri elle inceleyin')
+                else issues << 'Kayıt numarası taraması başarısız: ' + (th.getMessage() ?: th.getClass().getSimpleName())
+            }
         }
         def probes = new LinkedHashSet(stems)
-        probes.addAll(ed.values.collect { latin1Form(it) })
+        probes.addAll(ed.values)      // ed.values zaten ISO-8859-1 ile çözülmüş DOSYA baytlarıdır → latin1Form'dan GEÇİRİLMEZ (çift kodlama UTF-8 değerleri kaçırırdı); latin1Form yalnız Unicode dosya adı gövdeleri içindir
         def hits = scanForProbes(tmp, probes, cancel)
         if (cancel.get()) throw new InterruptedException('iptal')
         if (!hits.isEmpty()) {
@@ -1711,6 +1756,7 @@ def buildBenioku = { plan, String ts, String reportName, String sumsName, String
         sb << '- Kayıt numarasına benzeyen bir desen kalan dosyalar (gönderici incelemesi gerekir):\n'
         rev.each { sb << '  - `' << it.anon << '`\n' }
     }
+    sb << '- Kayıt numarası taraması: ' << ACC_COVERAGE_TR << '\n'
     sb << '\n## Bütünlük doğrulaması\n\n'
     sb << 'Linux / macOS (dosyaların bulunduğu klasörde):\n\n'
     sb << '    sha256sum -c ' << sumsName << '\n'
@@ -1767,7 +1813,8 @@ def buildApplyText = { plan, projInfo, List keyFiles, boolean showOrig, Map ext 
     def sb = new StringBuilder()
     sb << 'WSI ANONİMLEŞTİRME — ÖZET\n'
     sb << '═══════════════════════════\n\n'
-    sb << 'Çıktı klasörü : ' << plan.outDir.getAbsolutePath() << '\n'
+    // Paylaşılabilir raporda mutlak yol YOK (kullanıcı adı / kurum klasörü sızdırabilir): yalnız klasör adı
+    sb << 'Çıktı klasörü : ' << (showOrig ? plan.outDir.getAbsolutePath() : plan.outDir.getName()) << '\n'
     sb << 'Mod           : ' << (cfg.reversible ? 'Geri alınabilir (eşleştirme anahtarı yazıldı)' : 'Geri alınamaz (özgün ad yazılmadı)') << '\n'
     sb << 'Adlandırma    : ' << (cfg.naming ?: 'sequential') << (cfg.naming == 'hmac' ? ' (tuzlu HMAC-SHA256; her çalıştırmada aynı girdi → aynı takma ad)' : '') << '\n'
     if (showOrig && cfg.keyState != null) sb << 'Anahtar klasörü: ' << cfg.keyState.dir.getAbsolutePath() << '  (PHI — paylaşmayın)\n'
@@ -1804,10 +1851,11 @@ def buildApplyText = { plan, projInfo, List keyFiles, boolean showOrig, Map ext 
         rv.each { u -> sb << '   • ' << u.anon << ': ' << (u.review ?: []).join('; ') << '\n' }
         sb << '   Bunları gözle doğrulamadan paylaşmayın.\n'
     }
+    sb << '\nKayıt numarası taraması: ' << (cfg.accPattern ? 'özel desen kullanıldı.' : ACC_COVERAGE_TR) << '\n'
     if (projInfo != null) {
         sb << '\nAnonim QuPath projesi:\n'
         if (projInfo.created) {
-            sb << '  ' << projInfo.file.getAbsolutePath() << '\n'
+            sb << '  ' << (showOrig ? projInfo.file.getAbsolutePath() : (projInfo.dir.getName() + '/' + projInfo.file.getName())) << '\n'
             sb << '  ' << projInfo.added << ' giriş eklendi' << (cfg.transferObjects ? (', ' + projInfo.objects + ' nesne YENİ kimliklerle aktarıldı') : ' (nesne aktarımı kapalı)') << '\n'
             if (projInfo.named > 0) sb << '  ⚠ ' << projInfo.named << ' nesnenin adı/açıklaması var — PHI içermediğini kontrol edin.\n'
             if (projInfo.tma > 0) sb << '  ⚠ ' << projInfo.tma << ' girişteki TMA ızgarası aktarılmadı.\n'
@@ -2044,6 +2092,7 @@ if (isHeadless) {
     def cancel = new AtomicBoolean(false)
     def logc = { String s -> println s }
     if (kip == 'denetle') {
+        assertSaveDirSafe(a.etiketler ? new File((String) a.etiketler) : null, [a.cikti ? new File((String) a.cikti) : null, keyDirOf(cfg)])
         println runAudit(items, logc, cancel, [decodeLabels: argBool(a, 'barkod', true), mainScan: cfg.mainScan,
                                                saveDir: (a.etiketler ? new File((String) a.etiketler) : null)]).text
         return
@@ -2143,6 +2192,8 @@ def goAudit = { File saveDirFor = null ->
         Dialogs.showWarningNotification('Görüntü yok', cfg.scope == 'acik' ? 'Açık görüntü yok.' : 'Listeden en az bir görüntü seçin.')
         return
     }
+    try { assertSaveDirSafe(saveDirFor, [cfg.outDir ? new File((String) cfg.outDir) : null, keyDirOf(cfg)]) }
+    catch (Throwable t) { Dialogs.showErrorMessage('PNG klasörü reddedildi', t.getMessage() ?: t.getClass().getSimpleName()); return }
     saveConfig(cfg)
     startWorker('AtolyeAnonimDenetim', { log ->
         def r = runAudit(items, log, cancelFlag, [decodeLabels: cfg.decodeLabels, mainScan: cfg.mainScan, keepThumbs: true, saveDir: saveDirFor])
@@ -2304,7 +2355,7 @@ render = { ->
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, 3, 0, null, new javafx.scene.control.Label('Anahtar klasörü (PHI):'), keyField, navButton('…', { browseKey() }))
         def accField = new javafx.scene.control.TextField(cfg.accPattern ?: '')
         accField.setPrefColumnCount(34)
-        accField.setPromptText('boş = varsayılan (7-25, 1021-25, 12345-1A …); ISO tarihleri ve PDL1-22C3 sayılmaz')
+        accField.setPromptText('boş = varsayılan: yalnız NNN-YY / NNNNN-NA (1021-25, 7-25, 12345-1A); S25-12345, 25-12345 gibi biçimleri KENDİNİZ yazın')
         ctl.put('accPattern', accField)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, 4, 0, null, new javafx.scene.control.Label('Kayıt no deseni (regex):'), accField)
         center.getChildren().add(grid)
