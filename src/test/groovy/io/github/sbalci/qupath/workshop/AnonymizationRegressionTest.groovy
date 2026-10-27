@@ -662,4 +662,76 @@ return runApply(plan, { s -> }, new AtomicBoolean(false))
         assert keys.list().toList().any { it.startsWith('anonymization_manifest_') }
         assert !keys.list().toList().any { it.startsWith('anonymization_lookup_') }
     }
+
+    // ── review follow-ups
+    void testIrreversibleHmacRunsKeepTheSamePseudonymsAcrossManyBatches() {
+        byte[] salt = new byte[32]; Arrays.fill(salt, (byte) 11)
+        File keys = new File(dir, 'keys'); keys.mkdir()
+        def names = ['p-1.svs','p-2.svs','p-3.svs']
+        Map first = null
+        (1..4).each { run ->
+            File out = new File(dir, 'out' + run); out.mkdir()
+            def cw = shell([k:keys]).evaluate(keyCode() + 'return loadCrosswalk(k)')
+            def ks = [dir:keys, salt:salt, byOrig:cw.byOrig, usedBases:cw.usedBases]
+            def p = planFor(names, [prefix:'case', naming:'hmac', reversible:false, keyState:ks], out)   // must not throw
+            def m = p.units.collectEntries { [(it.file.name): it.anon] }
+            if (first == null) first = m
+            assert m == first : "run $run changed pseudonyms"
+            assert m.values().every { it ==~ /case_[0-9a-f]{10}\.svs/ }
+            // irreversible rows: pseudonym only, no original name
+            shell([k:keys, rows:p.units.collect { [origName:'', origPath:'', pseudonym:it.base, mode:'hmac', ts:'20261027_101010', status:'TAMAM', fpBefore:'', fpAfter:'']}]).evaluate(
+                keyCode() + 'appendCrosswalk(k, rows)')
+        }
+        assert new File(keys, 'anahtar.csv').text.readLines().size() == 1 + 4 * 3
+    }
+    void testReversibleRunRefusesDuplicateOriginalNames() {
+        File a = new File(dir, 'd1'); a.mkdir(); File b = new File(dir, 'd2'); b.mkdir()
+        [a, b].each { new File(it, 'same.svs').text = 'x' }
+        File out = new File(dir, 'out'); out.mkdir()
+        def items = [a, b].collect { d -> [file:new File(d, 'same.svs'), name:'same.svs', uris:[]] }
+        ['sequential','uuid'].each { naming ->
+            shouldFail(IllegalArgumentException) {
+                shell([items:items, out:out, classifyFile:{x,y -> 'aperio'}, KIND_LABEL:[:],
+                       cfg:[prefix:'case', naming:naming, reversible:true, keyState:[dir:dir, salt:null, byOrig:[:], usedBases:[:]]]]).evaluate(keyCode() + 'return buildPlan(cfg, items, out)')
+            }
+        }
+        // irreversible mode stores no names, so the same situation is allowed
+        def p = shell([items:items, out:out, classifyFile:{x,y -> 'aperio'}, KIND_LABEL:[:],
+                       cfg:[prefix:'case', naming:'sequential', reversible:false, keyState:[dir:dir, salt:null, byOrig:[:], usedBases:[:]]]]).evaluate(keyCode() + 'return buildPlan(cfg, items, out)')
+        assert p.units.size() == 2
+    }
+    void testReadmeStatesOnlyTheLevelsActuallyReached() {
+        def units = [[status:'TAMAM', anon:'case_a.svs', kind:'aperio'], [status:'KISMİ', anon:'case_b.tif', kind:'tiff']]
+        def render = { Map cfg -> shell([plan:[cfg:cfg + [naming:'hmac', prefix:'case'], units:units]]).evaluate(
+            imports + constants() + code('edgeFlagged','reviewUnits','buildBenioku') + "\nreturn buildBenioku(plan, '20261027_101010', 'rapor.txt', 'SHA256SUMS.txt', 'BENIOKU.md', 2)") }
+        String full = render([removeLabels:true, redactMeta:true])
+        assert full.contains('**Seviye III** (1 Aperio') && full.contains('**Seviye IV** (1 Aperio') && full.contains('Levels reached: I + III + IV')
+        assert full.contains('case_b.tif') && full.contains('KISMİ')                          // partial file listed, not claimed as fully de-identified
+        String noLabel = render([removeLabels:false, redactMeta:true])
+        assert noLabel.contains('**Seviye III** — UYGULANMADI') && noLabel.contains('Levels reached: I + IV')
+        String none = render([removeLabels:false, redactMeta:false])
+        assert none.contains('**Seviye III** — UYGULANMADI') && none.contains('**Seviye IV** — UYGULANMADI') && none.contains('Levels reached: I (1 file(s)')
+    }
+    void testReportIsPinnedEvenWhenNoPackageIsWritten() {
+        File src = new File(dir, 'src'); src.mkdir()
+        def fx = build([[desc:KEEP0], [desc:KEEP], [desc:LABEL, kind:'remove'], [desc:MACRO, kind:'remove']], [:])
+        File t = new File(src, 'x-1.svs'); Files.move(fx.file.toPath(), t.toPath())
+        File out = new File(dir, 'out'); out.mkdir(); File keys = new File(dir, 'keys')
+        int calls = 0
+        def vars = [items:[[file:t, name:t.name, uris:[], id:'i', entry:null, plain:false, builder:null]], out:out, keys:keys,
+            classifyFile:{a,b -> 'aperio'}, KIND_LABEL:[aperio:'Aperio SVS'],
+            qupathCheck:{File p -> (++calls % 2 == 1) ? hostCheck() : [ok:false, error:'fixture']},          // verification always fails -> HATA
+            mainScanCheck:{File p, boolean k -> [ok:true,left:0d,right:0d,flagged:false]}, atolyeDataRoot:{ -> dir}]
+        def r = shell(vars).evaluate(applyCode() + '''
+def cfg = [prefix:'case', naming:'sequential', keyDir:keys.path, reversible:true, redactMeta:true, removeLabels:true]
+cfg.keyState = prepareKeyState(cfg, out, { s -> })
+def plan = buildPlan(cfg, items, out)
+return [plan:plan, res:runApply(plan, { s -> }, new AtomicBoolean(false))]
+''')
+        assert r.plan.units[0].status == 'HATA'
+        assert !new File(out, 'SHA256SUMS.txt').exists() && !new File(out, 'BENIOKU.md').exists() && r.res.pkg == null
+        def rep = out.listFiles().find { it.name.startsWith('anonimlestirme_raporu_') }
+        assert rep != null && rep.lastModified() == java.time.Instant.parse('2000-01-01T00:00:00Z').toEpochMilli()
+        assert out.listFiles().every { !it.name.endsWith('.svs') }
+    }
 }

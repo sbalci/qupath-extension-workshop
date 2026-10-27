@@ -1272,6 +1272,16 @@ def buildPlan = { cfg, List items, File outDir ->
         }
         proc << u
     }
+    // Anahtar tablosu özgün DOSYA ADINI anahtar alır: geri alınabilir koşuda aynı ad iki farklı dosyada geçerse
+    // iki farklı takma ad aynı ada bağlanır ve (eklemeli) tablo kalıcı olarak çelişkili olurdu → baştan reddet.
+    if (cfg.reversible && ks != null) {
+        def seenNames = new HashSet<String>()
+        proc.each { u ->
+            if (!seenNames.add(u.file.getName()))
+                throw new IllegalArgumentException('Aynı dosya adı birden çok dosyada geçiyor (geri alınabilir mod özgün adı anahtar tablosunda tutar): ' +
+                    'dosyaları ayrı partilere bölün ya da geri alınamaz modu seçin.')
+        }
+    }
     // Numaralama sırası özgün (proje-giriş / kabul) sırasını YANSITMAZ: tuz varsa tuzlu-HMAC sırası, yoksa
     // SecureRandom karıştırması. Sıralı adlar + yazma sırası aksi hâlde özgün sırayı (çoğu kez kabul numarası
     // sırasını) sızdırırdı.
@@ -1293,9 +1303,19 @@ def buildPlan = { cfg, List items, File outDir ->
         }
     }
     int counter = 1
-    def taken = { String cand ->
+    // Çarpışma = bu çalıştırmada ya da anahtar tablosunda BAŞKA bir özgün adın takma adı. hmac'te tablodaki sahibi
+    // bilinmeyen (geri alınamaz koşu: özgün ad yazılmaz) ya da aynı dosya adı olan kayıt çarpışma SAYILMAZ —
+    // yoksa ikinci geri alınamaz koşuda aynı girdi 12, sonra 16 karakter alırdı. (Bedeli: geri alınamaz modda
+    // partiler ARASI gerçek çarpışma tespit edilemez; parti içi edilir.)
+    def taken = { String cand, String who ->
         String lc = cand.toLowerCase(java.util.Locale.ROOT)
-        usedBase.contains(lc) || (ks != null && ks.usedBases.containsKey(lc))
+        if (usedBase.contains(lc)) return true
+        if (ks == null || !ks.usedBases.containsKey(lc)) return false
+        if (naming == 'hmac') {
+            String owner = ks.usedBases.get(lc)
+            return owner != null && !owner.isEmpty() && owner != who
+        }
+        return true
     }
     proc.each { u ->
         String ext = extOf(u.file) ? ('.' + extOf(u.file)) : ''
@@ -1314,13 +1334,13 @@ def buildPlan = { cfg, List items, File outDir ->
             base = null
             for (int len : [10, 12, 16]) {
                 String cand = prefix + '_' + u.hmacFull.substring(0, len)
-                if (!taken(cand)) { base = cand; break }
+                if (!taken(cand, u.file.getName())) { base = cand; break }
             }
             if (base == null) throw new IllegalStateException('Takma ad çarpışması 16 karakterde de çözülemedi')
         } else if (naming == 'uuid') {
             base = prefix + '_' + UUID.randomUUID().toString()
         } else {
-            while (taken(prefix + '_' + counter)) counter++
+            while (taken(prefix + '_' + counter, u.file.getName())) counter++
             base = prefix + '_' + (counter++)
         }
         String anon = base + ext
@@ -1642,7 +1662,7 @@ def edgeFlagged = { plan -> plan.units.findAll { it.status in PKG_STATUSES && it
 def reviewUnits = { plan -> plan.units.findAll { it.status == 'İNCELE' && it.anon } }
 
 // BENIOKU.md — alıcıya (Türkçe + kısa İngilizce özet). Tarihler kayıt numarası gibi görünmesin diye yyyyMMdd yazılır.
-def buildBenioku = { plan, String ts, String reportName, String sumsName, int nSlides ->
+def buildBenioku = { plan, String ts, String reportName, String sumsName, String readmeName, int nSlides ->
     def cfg = plan.cfg
     def sb = new StringBuilder()
     String day = ts.substring(0, 8)
@@ -1653,7 +1673,7 @@ def buildBenioku = { plan, String ts, String reportName, String sumsName, int nS
     sb << '- ' << nSlides << ' anonimleştirilmiş slayt kopyası\n'
     sb << '- `' << reportName << '` — işlem raporu (özgün ad içermez)\n'
     sb << '- `' << sumsName << '` — dosya bütünlüğü sağlama toplamları (SHA-256)\n'
-    sb << '- `BENIOKU.md` — bu dosya\n\n'
+    sb << '- `' << readmeName << '` — bu dosya\n\n'
     sb << '**Anahtar / eşleştirme tablosu ve tuz bu pakete DAHİL DEĞİLDİR**; özgün adlarla bağlantı kurulamaz ve paylaşılmaz.\n\n'
     sb << '## Adlandırma\n\n'
     if (cfg.naming == 'hmac')
@@ -1662,11 +1682,23 @@ def buildBenioku = { plan, String ts, String reportName, String sumsName, int nS
         sb << 'Dosya adı `' << (cfg.prefix ?: 'case') << '_<UUID>` biçimindedir (rastgele).\n\n'
     else
         sb << 'Dosya adı `' << (cfg.prefix ?: 'case') << '_<sayı>` biçimindedir. Sayılar özgün (kabul / proje) sırasını YANSITMAZ; karıştırılmıştır.\n\n'
+    def prod = plan.units.findAll { it.status in PKG_STATUSES && it.anon }
+    def aperioU = prod.findAll { it.kind == 'aperio' }
+    def partialU = prod.findAll { it.kind != 'aperio' }
+    boolean l3 = cfg.removeLabels && !aperioU.isEmpty(), l4 = cfg.redactMeta && !aperioU.isEmpty()
+    def lvList = ['I'] + (l3 ? ['III'] : []) + (l4 ? ['IV'] : [])
     sb << '## Uygulanan anonimleştirme düzeyleri (Bisson ve ark. 2023)\n\n'
     sb << '- **Seviye I** — dosya adları anonimleştirildi.\n'
-    sb << '- **Seviye III** — etiket ve makro görüntüsü dosyadan çıkarıldı; yalnız piksel verisi değil, bu sayfaların IFD tablosu ve satır dışı değerleri (ImageDescription dahil) de sıfırlandı.\n'
-    sb << '- **Seviye IV** — Aperio başlığındaki kimlik alanları (Filename, Title, Patient, Case, Barcode, Date, Time, Time Zone, User, ImageID, ScanScope ID, Rack, Slide) tüm sayfalarda aynı uzunlukta `X` ile dolduruldu; standart TIFF metin etiketleri (DateTime, Artist, HostComputer …) temizlendi.\n'
+    if (l3) sb << '- **Seviye III** (' << aperioU.size() << ' Aperio SVS dosyasında) — etiket ve makro görüntüsü dosyadan çıkarıldı; yalnız piksel verisi değil, bu sayfaların IFD tablosu ve satır dışı değerleri (ImageDescription dahil) de sıfırlandı ve geri okunarak doğrulandı.\n'
+    else sb << '- **Seviye III** — UYGULANMADI (etiket/makro silme kapalıydı ya da dosyalar Aperio SVS değil).\n'
+    if (l4) sb << '- **Seviye IV** (' << aperioU.size() << ' Aperio SVS dosyasında) — Aperio başlığındaki kimlik alanları (Filename, Title, Patient, Case, Barcode, Date, Time, Time Zone, User, ImageID, ScanScope ID, Rack, Slide) tüm sayfalarda aynı uzunlukta `X` ile dolduruldu; standart TIFF metin etiketleri (DateTime, Artist, HostComputer …) temizlendi.\n'
+    else sb << '- **Seviye IV** — UYGULANMADI (üst veri temizleme kapalıydı ya da dosyalar Aperio SVS değil).\n'
     sb << '- **Seviye V** (doku / tarama alanı içeriği) — UYGULANMADI.\n\n'
+    if (!partialU.isEmpty()) {
+        sb << 'Aşağıdaki dosyalar tam desteklenmeyen biçimdedir (KISMİ): yalnız Seviye I uygulanmış, dosya adı ASCII etiketlerden silinmiş ve standart etiketler temizlenmiştir; etiket/makro görüntüsü ve biçime özgü üst veri dosyada KALMIŞ olabilir:\n\n'
+        partialU.each { sb << '- `' << it.anon << '`\n' }
+        sb << '\n'
+    }
     sb << 'Ölçüm alanları **MPP** ve **AppMag** (ve Left/Top gibi geometri alanları) bilerek korunmuştur; aşağı akım araçlar MPP olmadan çalışmaz.\n\n'
     sb << '## Kalan riskler (elle kontrol edin)\n\n'
     sb << '- Etiket/makro silme, ana taranmış görüntünün **içindeki** kimliği silemez. Bazı GT450 taramaları baskılı etiket şeridini tarama kenarında yakalar; camın üzerindeki el yazısı da görüntünün parçasıdır.\n'
@@ -1688,7 +1720,10 @@ def buildBenioku = { plan, String ts, String reportName, String sumsName, int nS
     sb << 'Windows PowerShell (tümü):\n\n'
     sb << '    Get-Content ' << sumsName << ' | ForEach-Object { $h, $n = $_ -split \'  \', 2; if ((Get-FileHash -Algorithm SHA256 -LiteralPath $n).Hash.ToLower() -ne $h) { "UYUŞMUYOR: $n" } }\n\n'
     sb << '## English summary\n\n'
-    sb << 'This package holds ' << nSlides << ' de-identified whole-slide image copies. Filenames are pseudonymised (Bisson level I); the label and macro images were removed and their IFD tables, out-of-line values and pixel data zeroed (level III); identifying Aperio header fields and standard TIFF text tags were overwritten with same-length filler (level IV). MPP and AppMag are intentionally kept. '
+    sb << 'This package holds ' << nSlides << ' de-identified whole-slide image copies. Filenames are pseudonymised (Bisson level I)'
+    if (l3) sb << '; the label and macro images were removed and their IFD tables, out-of-line values and pixel data zeroed (level III)'
+    if (l4) sb << '; identifying Aperio header fields and standard TIFF text tags were overwritten with same-length filler (level IV)'
+    sb << '. Levels reached: ' << lvList.join(' + ') << (partialU.isEmpty() ? '' : (' (' + partialU.size() + ' file(s) in a not fully supported format reached level I only and may still hold a label/macro image - see the list above)')) << '. MPP and AppMag are intentionally kept. '
     sb << 'Level V (content inside the scanned tissue area, including a printed label strip captured at the scan edge, or handwriting on the glass) is NOT addressed; please inspect the slides visually. '
     sb << 'No key, crosswalk or salt is included. Verify integrity with `sha256sum -c ' << sumsName << '` (LF line endings) or the PowerShell snippet above.\n'
     return sb.toString()
@@ -1701,7 +1736,7 @@ def writePackage = { plan, String ts, File reportFile, Closure log ->
     String readmeName = new File(outDir, 'BENIOKU.md').exists() ? ("BENIOKU_${ts}.md" as String) : 'BENIOKU.md'
     String sumsName = new File(outDir, 'SHA256SUMS.txt').exists() ? ("SHA256SUMS_${ts}.txt" as String) : 'SHA256SUMS.txt'
     File readme = new File(outDir, readmeName)
-    Files.write(readme.toPath(), buildBenioku(plan, ts, reportFile?.getName() ?: '(rapor yazılamadı)', sumsName, slides.size()).getBytes(StandardCharsets.UTF_8),
+    Files.write(readme.toPath(), buildBenioku(plan, ts, reportFile?.getName() ?: '(rapor yazılamadı)', sumsName, readmeName, slides.size()).getBytes(StandardCharsets.UTF_8),
         java.nio.file.StandardOpenOption.CREATE_NEW, java.nio.file.StandardOpenOption.WRITE)
     def share = new ArrayList(slides)
     if (reportFile != null && reportFile.isFile()) share << reportFile
@@ -1915,6 +1950,7 @@ def runApply = { plan, Closure log, AtomicBoolean cancel ->
     }
     if (pkg != null && pkg.notCreation > 0) log('⚠ ' + pkg.notCreation + ' dosyada oluşturma zamanı sabitlenemedi (dosya sistemi desteklemiyor); değiştirilme zamanı sabitlendi.')
     ext.pkg = pkg
+    if (rep != null && rep.isFile()) pinTimes(rep)       // paket yazılmasa bile paylaşılabilir rapor sabitlenir
     if (pkg == null) ext.pkgSkipped = willPackage ? 'yazma hatası (günlüğe bakın)' : (cancel.get() ? 'çalışma iptal edildi' : 'üretilen slayt yok')
     return [text: buildApplyText(plan, projInfo, keyFiles, true, ext), projInfo: projInfo, saltCreated: ks.saltCreated,
             saltNotice: ext.saltNotice, pkg: pkg, foreign: foreign]
@@ -2071,7 +2107,7 @@ def readConfigFromFields = { ->
             transferObjects: get('transferObjects')?.isSelected() ?: false,
             decodeLabels   : get('decodeLabels')?.isSelected() ?: false,
             mainScan       : get('mainScan')?.isSelected() ?: false,
-            keyDir         : (get('keyDir')?.getText() ?: base.keyDir)?.trim(),
+            keyDir         : (get('keyDir') != null ? get('keyDir').getText() : base.keyDir)?.trim(),   // boş alan = varsayılan klasör
             accPattern     : (get('accPattern')?.getText() ?: '')?.trim()]
 }
 def currentItems = { cfg ->
