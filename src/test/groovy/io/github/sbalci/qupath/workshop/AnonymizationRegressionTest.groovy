@@ -577,6 +577,19 @@ import java.time.format.DateTimeFormatter
     // ── D + integration through runApply (host QuPath checks injected)
     String sha(File f) { shell([f:f]).evaluate(tiffCode() + code('sha256Of') + '\nreturn sha256Of(f)') }
     void testRunApplyKeepsKeysOutOfOutputWritesChecksumsAndReadmeAndPinsTimes() {
+        // Exercise the existing writer independently before new-only key setup.
+        // This lets older binaries demonstrate their actual lookup destination.
+        File writerOut = new File(dir, 'writer-out'); writerOut.mkdir()
+        File writerKeys = new File(dir, 'writer-keys'); writerKeys.mkdir()
+        def writerPlan = [outDir:writerOut, cfg:[reversible:true, keyState:[dir:writerKeys]],
+            units:[[file:new File(dir, 'PRIVATE.svs'), anon:'case_1.svs', status:'TAMAM',
+                    items:[[name:'PRIVATE.svs', id:'fixture']]]]]
+        def written = shell([plan:writerPlan]).evaluate(imports +
+            availableCode(['csvCell','fpString','writeKeyFiles']) +
+            "return writeKeyFiles(plan, '20261028_000000')")
+        assert written.size() == 2 && written.every { it.parentFile == writerKeys }
+        assert writerOut.list().length == 0
+
         File src = new File(dir, 'src'); src.mkdir()
         def srcs = ['1021-25;A.svs','1022-25;B.svs','1023-25;C.svs'].collect { n ->
             def fx = build([[desc:KEEP0], [desc:KEEP], [desc:LABEL, kind:'remove'], [desc:MACRO, kind:'remove']], [:])
