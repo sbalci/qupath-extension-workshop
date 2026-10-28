@@ -93,7 +93,7 @@ def run_suite(name, jar=None):
 def main():
     out.mkdir(parents=True, exist_ok=True)
     # A passing corrected implementation defines the suite for THIS checkout.
-    # Keep the original 22-contract floor; new tests need no harness count edit.
+    # Require the merged 48-contract floor; added tests need no harness count edit.
     rc, expected_cases, failures, errors = run_suite('corrected-baseline')
     required = set().union(*(a[3] for a in artifacts))
     assert rc == 0 and not failures and not errors, (rc, failures, errors)
