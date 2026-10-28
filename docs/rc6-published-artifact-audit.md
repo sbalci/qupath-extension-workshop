@@ -1,3 +1,5 @@
+> **28 October 2026:** see the [published rc7 versus merged implementation audit](rc7-published-artifact-audit.md) for the new 49-contract binary comparison. The 22-test results below remain historical.
+
 > **Publication update — 25 October 2026:** the maintainer approved publication and workshop dependency updates. PR #3 was merged and [v0.2.2-rc7](https://github.com/sbalci/qupath-extension-workshop/releases/tag/v0.2.2-rc7) was published at `644a0bba12350781015787a77974df6c79b67d02`. The independently downloaded release JAR is 3,444,988 bytes; SHA-256 `7ed24440452eaa49c101b624d3522312d69828169f89ce0e681fbf1de5a13e70`. The [release workflow](https://github.com/sbalci/qupath-extension-workshop/actions/runs/40183686154) passed all 22 tests and packaged-artifact verification. rc6 was not replaced. GUI/real-slide acceptance remains pending; earlier unpublished/approval statements below are historical.
 
 # Published rc6 audit and unpublished rc7 correction
