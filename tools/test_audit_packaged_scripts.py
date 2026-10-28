@@ -25,6 +25,8 @@ class AuditHarnessTest(unittest.TestCase):
 
     def run_audit(self, result=None, digest=None):
         with patch.object(audit, 'out', self.directory), \
+             patch.object(audit, 'script_evidence', return_value={'script_sha256':'fixture', 'closures':[]}), \
+             patch.object(audit, 'detailed_results', return_value=[]), \
              patch.object(audit, 'run_suite', side_effect=result or self.result), \
              patch.object(Path, 'read_bytes', return_value=b'fixture'), \
              patch.object(audit.hashlib, 'sha256') as sha:
@@ -61,8 +63,28 @@ class AuditHarnessTest(unittest.TestCase):
                     self.run_audit(result)
 
     def test_artifact_hash_mismatch_is_rejected(self):
-        with self.assertRaises(AssertionError):
-            self.run_audit(digest=['wrong'])
+        for index, artifact in enumerate(audit.artifacts):
+            with self.subTest(artifact=artifact[0]):
+                digests = [a[2] for a in audit.artifacts]
+                digests[index] = 'wrong'
+                with self.assertRaises(AssertionError):
+                    self.run_audit(digest=digests)
+
+    def test_rc7_cannot_pass_or_omit_a_required_contract(self):
+        for defect in ['passing', 'missing', 'error']:
+            with self.subTest(defect=defect):
+                def result(name, jar=None):
+                    rc, cases, failures, errors = self.result(name, jar)
+                    if name == 'published-rc7':
+                        if defect == 'passing':
+                            return 0, cases, set(), []
+                        if defect == 'missing':
+                            return rc, cases - {next(iter(cases))}, failures, errors
+                        return rc, cases, failures, ['fixture error']
+                    return rc, cases, failures, errors
+                with self.assertRaises(AssertionError):
+                    self.run_audit(result)
+
 
     def test_empty_duplicate_and_skipped_reports_are_rejected(self):
         for body in ['', '<testcase classname="A" name="x"/>' * 2,

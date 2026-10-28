@@ -27,6 +27,13 @@ class AnonymizationRegressionTest extends GroovyTestCase {
         String s = SafetyRegressionTest.source(SCRIPT)
         names.toList().unique().sort { s.indexOf('def ' + it + ' = {') }.collect { SafetyRegressionTest.closure(SCRIPT, it) }.join('\n')
     }
+    // Dependency bundles span several releases. Load only closures actually present in
+    // the selected script, never substitutes from current source. A test invoking an
+    // unavailable feature still fails; unrelated legacy contracts can now execute.
+    static String availableCode(List names) {
+        String s = SafetyRegressionTest.source(SCRIPT)
+        code(names.findAll { s.contains('def ' + it + ' = {') } as String[])
+    }
     static String imports = '''import java.nio.*
 import java.nio.file.Files
 import java.nio.charset.StandardCharsets
@@ -44,7 +51,7 @@ import java.time.format.DateTimeFormatter
         'stemReplaceable','ownedRanges','mergeRanges','overlapsMerged','verifyZeroed','editTiff','inspectTiff','scanForProbes',
         'latin1Form','isLabelOrMacro','extOf','fmtBytes','moveWithRetry','fingerprintOf','fpEqual','fpString',
         'compileAccession','maskHit','accessionHits','pinTimes']
-    static String tiffCode() { imports + constants() + code(TIFF_NAMES as String[]) }
+    static String tiffCode() { imports + constants() + availableCode(TIFF_NAMES) }
     def shell(Map vars = [:]) { SafetyRegressionTest.shell(vars) }
 
     // Minimal classic/BigTIFF in either byte order: tissue + label + macro IFDs,
@@ -110,7 +117,7 @@ import java.time.format.DateTimeFormatter
 
     static Map cfg() { [redactMeta:true,removeLabels:true] }
     static Map hostCheck() { [ok:true,width:100,height:100,px:0.25d,assoc:[]] }
-    static String processCode() { tiffCode() + code('tmpNameFor','processUnitCore','processUnit') }
+    static String processCode() { tiffCode() + availableCode(['tmpNameFor','processUnitCore','processUnit']) }
     Map runCopy(File f, AtomicBoolean cancel, Closure check, Map more = [:]) {
         def vars = [u:[file:f,kind:'aperio',anon:'case_1.svs'],cfg:cfg(),outDir:dir,
             log:{String s ->},cancel:cancel,qupathCheck:check,stemsOf:{u -> []},KIND_LABEL:[aperio:'Aperio'],
@@ -244,8 +251,8 @@ import java.time.format.DateTimeFormatter
         'saltNotice','loadSalt','loadCrosswalk','prepareKeyState','appendCrosswalk','extOf','groupUnits','buildPlan']
     static List APPLY_NAMES = ['stemOf','stemsOf','tmpNameFor','processUnitCore','processUnit','sha256Of','writeKeyFiles','foreignOutputs',
         'edgeFlagged','reviewUnits','buildBenioku','writePackage','buildApplyText','sanitizerFor','runApply']
-    static String keyCode() { imports + constants() + code(KEY_NAMES as String[]) }
-    static String applyCode() { imports + constants() + code((TIFF_NAMES + KEY_NAMES + APPLY_NAMES) as String[]) }
+    static String keyCode() { imports + constants() + availableCode(KEY_NAMES) }
+    static String applyCode() { imports + constants() + availableCode(TIFF_NAMES + KEY_NAMES + APPLY_NAMES) }
 
     // General multi-page Aperio-like fixture. Every page owns: IFD block, out-of-line description, StripOffsets
     // array (3 entries), StripByteCounts array (3 entries) and 3 x 16 bytes of strip data.
@@ -318,7 +325,6 @@ import java.time.format.DateTimeFormatter
             def r = ed(fx)
             byte[] out = fx.file.bytes
             assert r.removed.size() == 2 : name
-            assert r.ifdCountBefore == pages.size()
             fx.lay.each { L ->
                 if (L.remove) {
                     assert zeroAt(out, L.ifd, fx.cntSz + 3 * fx.ent + fx.ptr) : "$name IFD table of removed page must be zero"
@@ -329,6 +335,7 @@ import java.time.format.DateTimeFormatter
                 }
             }
             assert !new String(out, StandardCharsets.ISO_8859_1).contains('ORPHANTOKEN') : "$name orphan bytes remain"
+            assert r.ifdCountBefore == pages.size()
             assert chain(fx.file).size() == pages.count { it.kind != 'remove' } : name
             // production verification reads the ranges back and finds zeros
             assert shell([f:fx.file, z:r.zeroed]).evaluate(tiffCode() + 'return verifyZeroed(f, z)') == []
@@ -518,6 +525,11 @@ import java.time.format.DateTimeFormatter
 
     // ── A2: fingerprints
     void testFingerprintDetectsChangeAndOriginalMutationBecomesLoudError() {
+        // mutation of the source while a unit runs -> HATA, copy deleted, loud message
+        File g = fixture(false, false); int calls = 0
+        def r = runCopy(g, new AtomicBoolean(false), {File p -> if (++calls == 2) { g.setLastModified(g.lastModified() + 3000) }; hostCheck()})
+        assert r.status == 'HATA' && r.detail.contains('ORİJİNAL DOSYA DEĞİŞMİŞ')
+        assert !new File(dir, 'case_1.svs').exists()
         File f = fixture(); def fp = { shell([f:f]).evaluate(tiffCode() + 'return fingerprintOf(f)') }
         def a = fp(); def a2 = fp()
         def eq = { x, y -> shell([x:x, y:y]).evaluate(tiffCode() + 'return fpEqual(x, y)') }
@@ -526,11 +538,6 @@ import java.time.format.DateTimeFormatter
         assert !eq(a, fp()); f.setLastModified(m); assert eq(a, fp())
         byte[] bytes = f.bytes; bytes[bytes.length - 1] ^= 1; f.bytes = bytes; f.setLastModified(m)
         assert !eq(a, fp())                                                  // tail differs
-        // mutation of the source while a unit runs -> HATA, copy deleted, loud message
-        File g = fixture(false, false); int calls = 0
-        def r = runCopy(g, new AtomicBoolean(false), {File p -> if (++calls == 2) { g.setLastModified(g.lastModified() + 3000) }; hostCheck()})
-        assert r.status == 'HATA' && r.detail.contains('ORİJİNAL DOSYA DEĞİŞMİŞ')
-        assert !new File(dir, 'case_1.svs').exists()
     }
 
     // ── A3: timestamps

@@ -1,4 +1,4 @@
-name: Published rc6 safety audit
+name: Published packaged-script safety audit
 on:
   pull_request:
     branches: [main]
@@ -29,6 +29,8 @@ jobs:
         run: |
           mkdir -p audit-artifacts/candidate
           curl --fail --location --retry 3 https://github.com/sbalci/qupath-extension-workshop/releases/download/v0.2.2-rc6/qupath-extension-workshop-0.2.2-rc6.jar -o audit-artifacts/published-rc6.jar
+          curl --fail --location --retry 3 https://github.com/sbalci/qupath-extension-workshop/releases/download/v0.2.2-rc7/qupath-extension-workshop-0.2.2-rc7.jar -o audit-artifacts/published-rc7.jar
+          python3 tools/verify-candidate.py --jar audit-artifacts/published-rc7.jar --source-ref 644a0bba12350781015787a77974df6c79b67d02 --expect-sha256 7ed24440452eaa49c101b624d3522312d69828169f89ce0e681fbf1de5a13e70
           gh api repos/sbalci/qupath-extension-workshop/actions/artifacts/12482561902/zip > audit-artifacts/candidate.zip
           unzip audit-artifacts/candidate.zip -d audit-artifacts/candidate
       - name: Test exact packaged scripts against safety contracts
@@ -36,6 +38,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: rc6-artifact-audit
+          name: packaged-script-audit
           path: audit-artifacts/
           if-no-files-found: error
