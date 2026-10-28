@@ -3,6 +3,7 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+import zipfile
 from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('audit', Path(__file__).with_name('audit-packaged-scripts.py'))
@@ -17,7 +18,7 @@ class AuditHarnessTest(unittest.TestCase):
         self.directory = Path(self.tmp.name)
         required = set().union(*(a[3] for a in audit.artifacts))
         self.cases = {('Safety', name + '()') for name in required}
-        self.cases.update(('Added', f'test{i}()') for i in range(49 - len(required)))
+        self.cases.update(('Added', f'test{i}()') for i in range(50 - len(required)))
 
     def result(self, name, jar=None):
         failures = next((a[3] for a in audit.artifacts if a[0] == name), set())
@@ -27,6 +28,7 @@ class AuditHarnessTest(unittest.TestCase):
         with patch.object(audit, 'out', self.directory), \
              patch.object(audit, 'script_evidence', return_value={'script_sha256':'fixture', 'closures':[]}), \
              patch.object(audit, 'detailed_results', return_value=[]), \
+             patch('builtins.print'), \
              patch.object(audit, 'run_suite', side_effect=result or self.result), \
              patch.object(Path, 'read_bytes', return_value=b'fixture'), \
              patch.object(audit.hashlib, 'sha256') as sha:
@@ -85,6 +87,28 @@ class AuditHarnessTest(unittest.TestCase):
                 with self.assertRaises(AssertionError):
                     self.run_audit(result)
 
+
+    def test_contract_details_preserve_assertions_and_unavailable_helper_evidence(self):
+        (self.directory / 'TEST-fixture.xml').write_text(
+            '<testsuite><testcase classname="A" name="pass"/>'
+            '<testcase classname="A" name="behavior"><failure type="AssertionError" '
+            'message="orphan bytes">trace</failure></testcase>'
+            '<testcase classname="A" name="unavailable"><failure type="MissingMethodException" '
+            'message="fingerprintOf">helper trace</failure></testcase></testsuite>')
+        records = audit.detailed_results(self.directory)
+        self.assertEqual([r['outcome'] for r in records], ['passed', 'failed', 'failed'])
+        self.assertEqual(records[1]['message'], 'orphan bytes')
+        self.assertEqual(records[2]['failure_type'], 'MissingMethodException')
+        self.assertEqual(records[2]['trace'], 'helper trace')
+
+    def test_inventory_reads_only_actual_jar_entry(self):
+        jar = self.directory / 'fixture.jar'
+        with zipfile.ZipFile(jar, 'w') as archive:
+            archive.writestr(audit.SCRIPT, 'def legacy = { -> true }\n')
+        evidence = audit.script_evidence(jar)
+        self.assertEqual(evidence['closures'], ['legacy'])
+        self.assertEqual(evidence['script_sha256'],
+                         audit.hashlib.sha256(b'def legacy = { -> true }\n').hexdigest())
 
     def test_empty_duplicate_and_skipped_reports_are_rejected(self):
         for body in ['', '<testcase classname="A" name="x"/>' * 2,
