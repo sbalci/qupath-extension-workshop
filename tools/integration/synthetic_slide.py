@@ -18,8 +18,8 @@ def make_slide(path):
     for i, (w, h, tiled, desc) in enumerate([
         (64, 48, True, b'Aperio Image Library v12.0.0\n64x48 [0,0 64x48] (16x16) RGB|Patient=' + TOKEN + b'|MPP=0.25|AppMag=40'),
         (32, 24, False, b'Aperio Image Library v12.0.0\n32x24 -> 64x48 - |MPP=0.25'),
-        (16, 16, False, b'label 16x16\n|Comment=' + ORPHAN),
-        (16, 16, False, b'macro 16x16\n|Comment=' + ORPHAN),
+        (16, 16, False, b'Aperio Image Library v12.0.0\nlabel 16x16|Comment=' + ORPHAN),
+        (16, 16, False, b'Aperio Image Library v12.0.0\nmacro 16x16|Comment=' + ORPHAN),
     ]):
         if len(buf) % 2:
             buf.append(0)

@@ -32,6 +32,11 @@ class CandidateAcceptanceTest(unittest.TestCase):
         self.assertEqual([p[257][2] for p in pages], [48, 24, 16, 16])
         self.assertTrue(all(p[277][2] == 3 and p[259][2] == 8 for p in pages))
         self.assertEqual(pages[0][324][1], 12)
+        # OpenSlide derives associated-image names from description line two.
+        for page, kind in zip(pages[2:], [b'label', b'macro']):
+            typ, count, pos = page[270]
+            desc = a.read_bytes()[pos:pos + count]
+            self.assertTrue(desc.split(b'\n')[1].startswith(kind + b' '))
         self.assertTrue(all(len(a.read_bytes()[pos:pos+n]) == n
                             for p in layout['pages'] for pos, n in p['owned']))
 
