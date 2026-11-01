@@ -60,9 +60,11 @@ def logMutation = { String s ->
 def failed = processUnit(unit, cfg, mutationOut, logMutation, new AtomicBoolean(false))
 assert injected && failed.status == 'HATA' && unit.sourceChanged : failed
 assert mutationOut.listFiles().length == 0
-new File(acceptanceRoot, 'host-results.json').text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson([
+new File(acceptanceRoot, 'host-results.json').text = qupath.lib.io.GsonTools.getInstance(true).toJson([
     status:'passed', fixture:'synthetic-only', gui_acceptance:'NOT RUN', real_slide_acceptance:'NOT RUN',
+    qupath_version:qupath.lib.gui.BuildInfo.getInstance().getVersion().toString(),
+    java_version:System.getProperty('java.version'),
     server:original.server, calibration:original.px, output:output.path,
     label_macro_removed:true, retained_pixels_equal:true, key_separation:true,
     source_unchanged:true, injected_mutation_rejected:true
-]))
+])
