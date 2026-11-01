@@ -30,7 +30,7 @@ class CandidateAcceptanceTest(unittest.TestCase):
         pages = ifd_chain(a.read_bytes())
         self.assertEqual([p[256][2] for p in pages], [64, 32, 16, 16])
         self.assertEqual([p[257][2] for p in pages], [48, 24, 16, 16])
-        self.assertTrue(all(p[277][2] == 3 and p[259][2] == 1 for p in pages))
+        self.assertTrue(all(p[277][2] == 3 and p[259][2] == 8 for p in pages))
         self.assertEqual(pages[0][324][1], 12)
         self.assertTrue(all(len(a.read_bytes()[pos:pos+n]) == n
                             for p in layout['pages'] for pos, n in p['owned']))

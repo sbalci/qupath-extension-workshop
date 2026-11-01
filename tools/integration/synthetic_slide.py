@@ -1,10 +1,11 @@
 """Deterministic, nonclinical, decodable classic TIFF with an Aperio-like header.
 
 No external dependencies. Main image is RGB, tiled; thumbnail/label/macro are
-stripped RGB pages. Owned ranges are recorded independently of the wizard parser.
+stripped RGB pages. Deflate avoids the host libtiff uncompressed tile path. Owned ranges are recorded independently of the wizard parser.
 This is a tiny format fixture, not a scanner-equivalence or real-slide claim.
 """
 import struct
+import zlib
 from pathlib import Path
 
 TOKEN = b'SYNTHETIC_PATIENT_ONLY'
@@ -48,13 +49,14 @@ def make_slide(path):
                     chunks.append(b''.join(rgb(x, y) for y in range(ty, ty + 16) for x in range(tx, tx + 16)))
         else:
             chunks = [b''.join(rgb(x, y) for y in range(h) for x in range(w))]
-        pixels = [(alloc(c), len(c)) for c in chunks]
+        encoded = [zlib.compress(c, level=6) for c in chunks]
+        pixels = [(alloc(c), len(c)) for c in encoded]
         offs = [p for p, _ in pixels]
         counts = [s for _, s in pixels]
         op = alloc(struct.pack('<' + 'I' * len(offs), *offs)) if len(offs) > 1 else offs[0]
         cp = alloc(struct.pack('<' + 'I' * len(counts), *counts)) if len(counts) > 1 else counts[0]
         entries = [(256, 4, 1, w), (257, 4, 1, h), (258, 3, 3, bits),
-                   (259, 3, 1, 1), (262, 3, 1, 2), (270, 2, len(desc), desc_at),
+                   (259, 3, 1, 8), (262, 3, 1, 2), (270, 2, len(desc), desc_at),
                    (277, 3, 1, 3), (284, 3, 1, 1)]
         if tiled:
             entries += [(322, 4, 1, 16), (323, 4, 1, 16), (324, 4, len(offs), op), (325, 4, len(counts), cp)]

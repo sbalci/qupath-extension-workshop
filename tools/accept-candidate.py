@@ -124,7 +124,7 @@ try {
         prefix = wizard.split(anchor)[0]
         checks = (ROOT / 'tools/integration/host-checks.groovy').read_text()
         harness = work / 'host.groovy'
-        harness.write_text('def acceptanceRoot = new File(args[0])\n' + prefix + '\n' + checks)
+        harness.write_text(prefix + '\ndef acceptanceRoot = new File(args[0])\n' + checks)
         run('host', ['script', str(harness), '--args', str(work)])
         host = json.loads((work / 'host-results.json').read_text())
         assert host['status'] == 'passed'
