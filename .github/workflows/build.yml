@@ -55,6 +55,25 @@ jobs:
       - name: Verify candidate metadata and packaged resources
         run: python3 tools/verify-candidate.py
 
+      # Reuse PR #5 without merging it or copying its safety contracts.
+      - name: Checkout pinned PR 5 audit harness
+        uses: actions/checkout@v4
+        with:
+          ref: 95bc3d468793d30fe797b7dd4710ff6a42d2913f
+          path: .candidate-audit
+          persist-credentials: false
+
+      - name: Execute pinned safety contracts against candidate JAR scripts
+        run: python3 tools/validate-candidate-binary.py --audit-root .candidate-audit
+
+      - name: Upload candidate binary regression evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: candidate-binary-regression-evidence
+          path: build/candidate-binary-evidence/
+          if-no-files-found: warn
+
       - name: Upload regression test reports
         if: always()
         uses: actions/upload-artifact@v4
