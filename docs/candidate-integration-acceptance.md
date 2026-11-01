@@ -20,9 +20,12 @@ Use a disposable machine/container with QuPath **0.6.0**, not a normal QuPath pr
 
 ```bash
 # Checkout must contain the pinned source commit (fetch history if necessary).
+gh api repos/sbalci/qupath-extension-workshop/actions/runs/40507617137 > /tmp/run.json
+gh api repos/sbalci/qupath-extension-workshop/actions/artifacts/12735752184 > /tmp/artifact.json
 gh api repos/sbalci/qupath-extension-workshop/actions/artifacts/12735752184/zip > /tmp/candidate.zip
 python3 -m unittest discover -s tools -p test_candidate_acceptance.py -v
-python3 tools/accept-candidate.py --archive /tmp/candidate.zip \
+python3 tools/accept-candidate.py --candidate earlier \
+  --run-metadata /tmp/run.json --artifact-metadata /tmp/artifact.json --archive /tmp/candidate.zip \
   --work /tmp/candidate-acceptance-new \
   --qupath /path/to/disposable/QuPath/bin/QuPath
 ```
@@ -59,3 +62,41 @@ Even if automated headless checks pass, record **GUI acceptance: NOT RUN** until
 Record **real-slide acceptance: NOT RUN** until a separately authorized local assessment checks copies of representative scanner files (including AT2/GT450 and relevant TIFF layouts), reopen/readability, dimensions, calibration, tissue/pyramid integrity, associated-image removal, private key placement and source checksums. Keep those files and any identifying logs outside CI. Synthetic success does not establish real-slide compatibility or absence of identifiers in scanned tissue.
 
 No release tag, release upload, historical artifact modification or workshop redistribution is part of this test.
+
+## Exact rc8 candidate profile (PR #7)
+
+The same driver and fixtures now support `--candidate rc8`. The workflow runs
+`earlier` and `rc8` as independent matrix jobs with separately named evidence
+artifacts. No historical candidate, report, or prior successful run is replaced.
+The earlier [acceptance run 41268471074](https://github.com/sbalci/qupath-extension-workshop/actions/runs/41268471074)
+remains evidence for its original binary only.
+
+| rc8 identity | Pin |
+| --- | --- |
+| Build run | `41270697133`, attempt 1 |
+| Artifact ID | `13068674430` |
+| ZIP SHA-256 | `123dc21998e93b527209047d01c024927483358199dc2f9f6f4b84bada6ec3a7` |
+| Source PR head | `222449d8f6b7ff8c83c73d71e8d90b62def00f07` |
+| Original Actions merge checkout | `0c77a5712f405facdf6459f5adaa5828653d1de7` |
+| Original filename | `qupath-extension-workshop-0.2.2-rc8.jar` |
+| JAR SHA-256 | `3a40cabe18b7108a47c301680df784ee00816de22233d5cac3484f7999042be1` |
+| Expected version | `0.2.2-rc8` |
+| Wizard SHA-256 | `b6f3d19559e00d90b7efc8c6142c6e0c1b3b06778e62b2a774b8a28bcd68b307` |
+
+To reproduce rc8, retrieve run `41270697133` and artifact `13068674430` metadata
+and ZIP using the commands above with those IDs, then select `--candidate rc8`
+and a fresh `--work` directory. Archive expiry is January 30, 2027 as observed
+November 1. Never substitute a rebuild if retrieval fails.
+
+Before executing any candidate code, the driver verifies repository, successful
+Build workflow/run, artifact/run/source association and expiry, artifact digest,
+ZIP bytes, filename, embedded JAR digest, source resources, version metadata and
+wizard digest. Source comparison uses the pinned PR head (the merge checkout is
+recorded separately). Inside QuPath 0.6.0 it also asserts the discovered extension's
+code-source JAR and actual `getVersion()` result. The 49 packaged safety contracts
+run separately; read their JUnit XML alongside the host report. Both profiles
+retain the GUI/real-slide NOT RUN fields and all original synthetic limitations.
+
+Local harness regression checks: 9 passed. Actual rc8 QuPath/packaged-contract
+execution must be assessed from the new workflow results; it is not inferred from
+matching wizard bytes or the earlier acceptance run.

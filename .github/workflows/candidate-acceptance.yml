@@ -18,6 +18,12 @@ jobs:
   candidate:
     runs-on: ubuntu-22.04
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        candidate: [earlier, rc8]
+    env:
+      CANDIDATE: ${{ matrix.candidate }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,31 +36,29 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Harness regression checks
         run: python3 -m unittest discover -s tools -p test_candidate_acceptance.py -v
+      - name: Select pinned candidate
+        run: |
+          mkdir -p build/candidate-input
+          python3 - <<'PYCODE'
+          import importlib.util, os
+          spec = importlib.util.spec_from_file_location('accept_candidate', 'tools/accept-candidate.py')
+          m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+          c = m.CANDIDATES[os.environ['CANDIDATE']]
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write(f"CANDIDATE_RUN={c['run_id']}\nCANDIDATE_ARTIFACT={c['artifact_id']}\nCANDIDATE_JAR={m.candidate_name(c)}\n")
+          PYCODE
       - name: Retrieve exact existing CI archive (no rebuild)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p build/candidate-input
-          gh api repos/sbalci/qupath-extension-workshop/actions/runs/40507617137 > build/candidate-input/run.json
-          gh api repos/sbalci/qupath-extension-workshop/actions/artifacts/12735752184 > build/candidate-input/artifact.json
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          p = Path('build/candidate-input')
-          run = json.loads((p / 'run.json').read_text())
-          artifact = json.loads((p / 'artifact.json').read_text())
-          ref = 'e2806e06ab6e256ff2089fb9d29041449908df58'
-          assert run['head_sha'] == ref and run['conclusion'] == 'success'
-          assert artifact['id'] == 12735752184 and not artifact['expired']
-          assert artifact['workflow_run']['id'] == run['id'] and artifact['workflow_run']['head_sha'] == ref
-          assert artifact['digest'] == 'sha256:70a0b36a8c648f27a7b45436acd23b585351460c69589a4eded51359a17c7db0'
-          PY
-          gh api repos/sbalci/qupath-extension-workshop/actions/artifacts/12735752184/zip > build/candidate-input/artifact.zip
+          gh api "repos/sbalci/qupath-extension-workshop/actions/runs/$CANDIDATE_RUN" > build/candidate-input/run.json
+          gh api "repos/sbalci/qupath-extension-workshop/actions/artifacts/$CANDIDATE_ARTIFACT" > build/candidate-input/artifact.json
+          gh api "repos/sbalci/qupath-extension-workshop/actions/artifacts/$CANDIDATE_ARTIFACT/zip" > build/candidate-input/artifact.zip
       - name: Verify candidate and prepare private fixtures
         run: |
           # Exit 2 means provenance passed but host acceptance is explicitly blocked.
           set +e
-          python3 tools/accept-candidate.py --archive build/candidate-input/artifact.zip --work build/provenance
+          python3 tools/accept-candidate.py --candidate "$CANDIDATE" --run-metadata build/candidate-input/run.json --artifact-metadata build/candidate-input/artifact.json --archive build/candidate-input/artifact.zip --work build/provenance
           rc=$?
           test "$rc" -eq 2
           python3 - <<'PYCODE'
@@ -65,14 +69,15 @@ jobs:
           PYCODE
       - name: Run safety contracts on packaged candidate resources
         env:
-          WORKSHOP_SCRIPT_JAR: ${{ github.workspace }}/build/provenance/candidate-e2806e0-artifact-12735752184.jar
+          WORKSHOP_SCRIPT_JAR: ${{ github.workspace }}/build/provenance/${{ env.CANDIDATE_JAR }}
         run: |
           ./gradlew --no-daemon test --rerun-tasks
           python3 - <<'PY'
           import xml.etree.ElementTree as E
           from pathlib import Path
           cases = [c for p in Path('build/test-results/test').glob('TEST-*.xml') for c in E.parse(p).getroot().findall('testcase')]
-          assert len(cases) >= 49
+          assert len(cases) == 49
+          assert len({(c.attrib.get('classname'), c.attrib['name']) for c in cases}) == 49
           assert not any(any(c.find(t) is not None for t in ['failure', 'error', 'skipped']) for c in cases)
           PY
       - name: Retrieve pinned QuPath 0.6.0 isolated host
@@ -87,12 +92,12 @@ jobs:
           test -n "$executable"
           echo "QUPATH_ACCEPTANCE_BIN=$executable" >> "$GITHUB_ENV"
       - name: Real QuPath CLI synthetic integration
-        run: python3 tools/accept-candidate.py --archive build/candidate-input/artifact.zip --work build/host-acceptance --qupath "$QUPATH_ACCEPTANCE_BIN"
+        run: python3 tools/accept-candidate.py --candidate "$CANDIDATE" --run-metadata build/candidate-input/run.json --artifact-metadata build/candidate-input/artifact.json --archive build/candidate-input/artifact.zip --work build/host-acceptance --qupath "$QUPATH_ACCEPTANCE_BIN"
       - name: Upload evidence only (no JAR or workshop distribution)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: existing-candidate-acceptance-reports
+          name: candidate-${{ matrix.candidate }}-acceptance-reports
           path: |
             build/provenance/*.json
             build/host-acceptance/*.json
