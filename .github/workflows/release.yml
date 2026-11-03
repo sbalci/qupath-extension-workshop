@@ -2,127 +2,125 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    tags: ['v*']
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag (e.g. v0.1.0) — creates the tag if it does not exist'
+        description: 'Pinned release tag (e.g. v0.2.2-rc8)'
         required: true
+        type: string
+      publish:
+        description: 'Publish only after explicit approval; false verifies without publishing'
+        required: true
+        default: false
+        type: boolean
 
 permissions:
-  contents: write
+  contents: read
+  actions: read
+
+concurrency:
+  group: extension-release-promotion
+  cancel-in-progress: false
 
 jobs:
-  build-and-release:
-    runs-on: ubuntu-latest
-
+  verify:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
-      # On a tag push, this checks out the tag's commit. On workflow_dispatch the
-      # input tag may NOT exist yet (the dispatch path is documented to create it),
-      # so we deliberately do NOT pass `ref: inputs.tag` — that would fail for a
-      # not-yet-existing tag. The dispatch path builds from the selected branch HEAD,
-      # and the tag is then created against that commit by action-gh-release below.
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
-
-      - name: Set up JDK 21 (Temurin)
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
-
-      - name: Set up Gradle (with dependency cache)
-        uses: gradle/actions/setup-gradle@v4
-
-      # SciJava Maven (maven.scijava.org) is the only host for io.github.qupath
-      # artifacts and has had intermittent timeouts. Retry the build up to 3
-      # times with 30s backoff before giving up, so a transient network blip
-      # doesn't fail the release.
-      - name: Build with Gradle (retry on transient failures)
-        run: |
-          set +e
-          for attempt in 1 2 3; do
-            echo "::group::Gradle build attempt $attempt of 3"
-            ./gradlew --no-daemon clean build
-            rc=$?
-            echo "::endgroup::"
-            if [ $rc -eq 0 ]; then
-              exit 0
-            fi
-            if [ $attempt -lt 3 ]; then
-              echo "::warning::Build attempt $attempt failed (exit $rc) — retrying in 30s..."
-              sleep 30
-            fi
-          done
-          echo "::error::Build failed after 3 attempts."
-          exit 1
-
-      - name: Verify packaged artifact before publishing
-        run: python3 tools/verify-candidate.py
-
-      - name: Upload regression test reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-safety-regression-reports
-          path: build/test-results/test/
-          if-no-files-found: warn
-
-      - name: Resolve release tag
+          persist-credentials: false
+      - name: Resolve release tag safely
         id: tag
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Require tag to match built version
         env:
-          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
+          REQUESTED_TAG: ${{ inputs.tag }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          python3 - <<'PYTHON'
+          python3 - <<'PY'
           import os, re
-          from pathlib import Path
-          version = re.search(r'^version = "([^"]+)"', Path('build.gradle.kts').read_text(), re.M)[1]
-          assert os.environ['RELEASE_TAG'] == 'v' + version, 'Release tag/build version mismatch'
-          PYTHON
-
-      - name: Find release-specific notes
-        id: notes
+          tag = os.environ['REQUESTED_TAG'] if os.environ['EVENT_NAME'] == 'workflow_dispatch' else os.environ['GITHUB_REF'].removeprefix('refs/tags/')
+          if not re.fullmatch(r'v[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?', tag):
+              raise SystemExit('Invalid release tag')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write('tag=' + tag + '\n')
+          PY
+      - name: Promotion regression tests (no release)
+        run: python3 -m unittest discover -s tools -p test_release_promotion.py -v
+      - name: Retrieve and verify exact acceptance-tested bytes (no rebuild)
         env:
+          GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.tag.outputs.tag }}
+        run: python3 tools/promote-candidate.py --tag "$RELEASE_TAG" --release-sha "$GITHUB_SHA" --output "$RUNNER_TEMP/verified-release"
+      - name: Record verification scope
         run: |
-          if [ -f "docs/releases/$RELEASE_TAG.md" ]; then
-            echo "path=docs/releases/$RELEASE_TAG.md" >> "$GITHUB_OUTPUT"
-          fi
+          echo 'Exact accepted JAR verified. GUI, representative real-slide, barcode and intended-OS acceptance remain NOT RUN. No clinical validation is established.' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: List built artifacts
-        run: ls -la build/libs/
-
-      - name: Create GitHub release with JAR
-        uses: softprops/action-gh-release@v2
+  publish:
+    needs: verify
+    # Tag pushes and default dispatches are verification-only, never publication.
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == true
+    environment: release-promotion
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          name: ${{ steps.tag.outputs.tag }}
-          target_commitish: ${{ github.sha }}
-          body_path: ${{ steps.notes.outputs.path }}
-          files: |
-            build/libs/qupath-extension-workshop-*.jar
-            build/libs/qupath-extension-workshop-*.jar.sha256
-            build/libs/qupath-extension-workshop-*.jar.verification.json
-          generate_release_notes: true
-          draft: false
-          # Mark pre-release tags (-rc / -alpha / -beta) as prerelease so they
-          # never become GitHub's "Latest". The website's releases/latest link
-          # and OSF's "alternatif kaynak" link follow that badge, so only a clean
-          # final vX.Y.Z (no suffix) should be Latest. A clean tag evaluates to
-          # false here and becomes Latest as before.
-          prerelease: ${{ contains(steps.tag.outputs.tag, '-rc') || contains(steps.tag.outputs.tag, '-alpha') || contains(steps.tag.outputs.tag, '-beta') }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Reverify original pinned artifacts immediately before publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.verify.outputs.tag }}
+        run: python3 tools/promote-candidate.py --tag "$RELEASE_TAG" --release-sha "$GITHUB_SHA" --output "$RUNNER_TEMP/verified-release"
+      - name: Create new release with exact verified files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.verify.outputs.tag }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          tag = os.environ['RELEASE_TAG']
+          repo = os.environ['GITHUB_REPOSITORY']
+          p = json.loads(Path('docs/release-candidates', tag + '.json').read_text())
+          jar = Path(os.environ['RUNNER_TEMP'], 'verified-release', p['jar_name'])
+          if jar.stat().st_size != p['jar_bytes'] or hashlib.sha256(jar.read_bytes()).hexdigest() != p['jar_sha256']:
+              raise SystemExit('Staged JAR changed after verification')
+          environment = json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/environments/release-promotion']))
+          if not any(rule.get('type') == 'required_reviewers' and rule.get('reviewers') for rule in environment.get('protection_rules', [])):
+              raise SystemExit('Configure required reviewers for release-promotion before publishing')
+          # Only a positively identified HTTP 404 permits a new release.
+          result = subprocess.run(['gh', 'api', '--include', f'repos/{repo}/releases/tags/{tag}'], capture_output=True)
+          status = result.stdout.decode(errors='replace').splitlines()
+          if result.returncode == 0 or not status or not __import__('re').fullmatch(r'HTTP/\S+ 404(?: .*)?', status[0]):
+              raise SystemExit('Existing release or release lookup failure; refusing to publish/overwrite')
+          args = ['gh', 'release', 'create', tag, '--repo', repo, '--target', os.environ['GITHUB_SHA'],
+                  '--title', tag, '--generate-notes', '--draft']
+          notes = Path('docs/releases', tag + '.md')
+          if notes.is_file():
+              args += ['--notes-file', str(notes)]
+          if any(suffix in tag for suffix in ['-rc', '-alpha', '-beta']):
+              args += ['--prerelease', '--latest=false']
+          args += [str(jar), str(jar) + '.sha256', str(jar) + '.verification.json']
+          subprocess.run(args, check=True)
+          release = json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/releases/tags/{tag}']))
+          expected = {f.name: f for f in [jar, Path(str(jar)+'.sha256'), Path(str(jar)+'.verification.json')]}
+          assets = release['assets']
+          if release['draft'] is not True or {a['name'] for a in assets} != set(expected) or len(assets) != len(expected):
+              raise SystemExit('Release asset verification failed; leaving draft')
+          for asset in assets:
+              local = expected[asset['name']].read_bytes()
+              downloaded = subprocess.check_output(['gh', 'api', '-H', 'Accept: application/octet-stream', f"repos/{repo}/releases/assets/{asset['id']}"])
+              if asset['size'] != len(local) or downloaded != local:
+                  raise SystemExit('Uploaded asset differs; leaving draft')
+          # Only the verified draft becomes public. Failures leave a draft for review.
+          subprocess.run(['gh', 'api', '--method', 'PATCH', f"repos/{repo}/releases/{release['id']}",
+                          '-F', 'draft=false'], check=True, stdout=subprocess.DEVNULL)
+          PY
