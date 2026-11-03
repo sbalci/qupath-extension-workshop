@@ -94,7 +94,26 @@ part of this reconciliation.
 - JAR SHA-256: `0870de63395cdb044916a6c54e81ee1b64a936df6c79e5db4a0311997731cfdd`.
 - Artifact ZIP SHA-256: `2e380a2a7ccd9c8fe148db530698ecac8db13e8087540ebef12148d42cf2afb8`.
 - Source and packaged safety contracts: 49/49 each; metadata/resources verified.
-- QuPath synthetic integration: pending in the pinned `rc8-reconciled` profile.
+- [QuPath 0.6.0 synthetic acceptance run 41582392193](https://github.com/sbalci/qupath-extension-workshop/actions/runs/41582392193), attempt 1: **passed**.
+- [Acceptance reports artifact 13206233983](https://github.com/sbalci/qupath-extension-workshop/actions/runs/41582392193/artifacts/13206233983), ZIP SHA-256 `d9290fbf402ae394010825313d4e88ce32c134333bd4c016d508c3009a61f2eb`.
+- JAR size: 3,470,056 bytes. Independently downloaded ZIP/JAR digests matched;
+  local resource/metadata verification also passed.
+- Acceptance harness source: `19939492a81ff6fe16f649964b0fc8f673b89b06`.
+  Provenance gate and 49 packaged contracts passed before real host execution.
+- Actual JAR service discovery and reported rc8 version passed. The complete
+  packaged anonymization wizard ran through normal CLI dispatch. Independent
+  synthetic verification confirmed label/macro removal, original integrity,
+  retained pixels and calibration; host checks confirmed key separation and
+  rejection of an injected source mutation.
+- The packaged bridge helper completed in the real QuPath CLI both without an
+  image and with the synthetic image; the original synthetic source digest
+  remained unchanged. This does not validate third-party MCP configuration
+  interpretations, an installed MCP/Py4J server, or GUI menu interaction.
+- GUI, representative real-slide and intended-platform acceptance: **NOT RUN**.
+
+Production code/resources at the pinned build commit are unchanged by the later
+acceptance-profile and evidence-documentation commits. Their automatically
+rebuilt JARs have separate identities and are not the accepted artifact above.
 
 The acceptance workflow downloads this artifact, verifies run/source/ZIP/JAR
 identities, and never rebuilds its input. Subsequent PR Build runs create other
