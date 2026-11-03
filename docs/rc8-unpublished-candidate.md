@@ -22,7 +22,7 @@ Build timestamps mean a rebuild need not produce the same digest.
 Binary validation reuses the audit harness and tests from
 [PR #5](https://github.com/sbalci/qupath-extension-workshop/pull/5), pinned at
 `95bc3d468793d30fe797b7dd4710ff6a42d2913f`, in a separate checkout. The historical
-rc6/rc7 comparison is not duplicated. PR #5 remains independently reviewable.
+rc6/rc7 comparison is not duplicated. PR #5 and PR #6 are now merged on main.
 `tools/validate-candidate-binary.py` compares exact class/method identities with
 the source-build results, requires at least 49 tests, rejects skipped/missing
 tests and failures, and confirms the JAR digest before and after execution.
@@ -59,3 +59,28 @@ establish complete de-identification or clinical/vendor suitability. Completed
 outputs are not transactionally rolled back after cancellation. Record the exact
 JAR hash, platform, fixtures and outcomes for each acceptance session before
 considering a release.
+
+## November 3 reconciliation
+
+PR #7 incorporates main at `19d106e76a181cfcdd0076337c4d189560d5e4ad`,
+including the read-only Python/MCP inspection helper introduced in `f489e0e9`.
+The only production differences from the original rc8 are that script and its
+menu registration (no image/project required). The anonymization wizard is unchanged.
+The helper checks installed classes, local configuration/preferences, loopback TCP
+ports and image metadata; it does not host MCP or send protocol requests. Its
+third-party configuration assumptions and GUI behavior still require acceptance.
+
+The original candidate at `222449d8` remains a separate historical artifact:
+run `41270697133`, artifact `13068674430`, JAR SHA-256
+`3a40cabe18b7108a47c301680df784ee00816de22233d5cac3484f7999042be1`.
+Its evidence must never be relabeled as evidence for this rebuild. Retain the
+original pinned acceptance profile and append a new profile for the new artifact.
+Both builds are unpublished rc8; identify them by full digest/run/artifact,
+never by filename alone. Build artifacts expire; do not rely on CI as permanent
+release storage.
+
+The current release workflow builds again and therefore cannot promise to ship
+an acceptance-tested JAR. Before any authorized release, either promote the exact
+accepted bytes and verify their digest or validate the newly built bytes afresh.
+No release workflow, tag, rc7 replacement or workshop distribution change is
+part of this reconciliation.

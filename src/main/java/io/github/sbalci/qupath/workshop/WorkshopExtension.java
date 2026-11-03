@@ -317,7 +317,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("HistoART artefakt tespiti sihirbazı", "yardimci-histoart-sihirbaz.groovy"),
             // NOT: VALIS hizalama sihirbazı artık Modüller → "Görüntü Hizalama" alt menüsünde (ALIGNMENT_MODULE).
             // Salt okunur FM-hazırlık denetimi + sağlamlık kontrol listesi (batch/UTAP/doğrulama). FM ÇALIŞTIRMAZ. bkz. Ekler → Patolojide Temel Modeller.
-            new ScriptEntry("Temel model hazırlık ve sağlamlık sihirbazı", "yardimci-foundation-model-sihirbaz.groovy")
+            new ScriptEntry("Temel model hazırlık ve sağlamlık sihirbazı", "yardimci-foundation-model-sihirbaz.groovy"),
+            // Salt okunur: Py4J / paquo / MCP köprülerinin durumu ve açık görüntüde ajana gidebilecek kimliklendiriciler.
+            // MCP sunucusu BARINDIRMAZ, ağ geçidi BAŞLATMAZ, yalnız yerel TCP yoklar. bkz. Ekler → Yapay Zekâ Ajanları ve MCP.
+            new ScriptEntry("Python ve yapay zekâ ajanı köprü denetimi", "yardimci-ajan-kopru-denetimi.groovy", false, false)
         )),
         new ScriptGroup("Klinik ve kohort", List.of(
             // metadata-qupath (sbalci, MIT) köprüsü — proje geneli slayt/tarayıcı üst verisi → CSV + Proje sütunları.
