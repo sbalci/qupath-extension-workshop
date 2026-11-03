@@ -84,3 +84,18 @@ an acceptance-tested JAR. Before any authorized release, either promote the exac
 accepted bytes and verify their digest or validate the newly built bytes afresh.
 No release workflow, tag, rc7 replacement or workshop distribution change is
 part of this reconciliation.
+
+### Reconciled build identity
+
+- PR source: `6a376ae58b46f1518569fa894f42b953c7d1ec6b`.
+- Actions checkout: `9826cdf53c8c1dd5d066cd79e0baf7155b8a2cba`.
+- [Build run 41582122603](https://github.com/sbalci/qupath-extension-workshop/actions/runs/41582122603), attempt 1.
+- [Candidate artifact 13206675137](https://github.com/sbalci/qupath-extension-workshop/actions/runs/41582122603/artifacts/13206675137).
+- JAR SHA-256: `0870de63395cdb044916a6c54e81ee1b64a936df6c79e5db4a0311997731cfdd`.
+- Artifact ZIP SHA-256: `2e380a2a7ccd9c8fe148db530698ecac8db13e8087540ebef12148d42cf2afb8`.
+- Source and packaged safety contracts: 49/49 each; metadata/resources verified.
+- QuPath synthetic integration: pending in the pinned `rc8-reconciled` profile.
+
+The acceptance workflow downloads this artifact, verifies run/source/ZIP/JAR
+identities, and never rebuilds its input. Subsequent PR Build runs create other
+artifacts; they are not substituted for this pinned candidate.
