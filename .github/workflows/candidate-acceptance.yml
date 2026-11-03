@@ -1,0 +1,108 @@
+name: Existing candidate synthetic acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/accept-candidate.py'
+      - 'tools/test_candidate_acceptance.py'
+      - 'tools/integration/**'
+      - '.github/workflows/candidate-acceptance.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        candidate: [earlier, rc8]
+    env:
+      CANDIDATE: ${{ matrix.candidate }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/wrapper-validation@v4
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Harness regression checks
+        run: python3 -m unittest discover -s tools -p test_candidate_acceptance.py -v
+      - name: Select pinned candidate
+        run: |
+          mkdir -p build/candidate-input
+          python3 - <<'PYCODE'
+          import importlib.util, os
+          spec = importlib.util.spec_from_file_location('accept_candidate', 'tools/accept-candidate.py')
+          m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+          c = m.CANDIDATES[os.environ['CANDIDATE']]
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write(f"CANDIDATE_RUN={c['run_id']}\nCANDIDATE_ARTIFACT={c['artifact_id']}\nCANDIDATE_JAR={m.candidate_name(c)}\n")
+          PYCODE
+      - name: Retrieve exact existing CI archive (no rebuild)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/sbalci/qupath-extension-workshop/actions/runs/$CANDIDATE_RUN" > build/candidate-input/run.json
+          gh api "repos/sbalci/qupath-extension-workshop/actions/artifacts/$CANDIDATE_ARTIFACT" > build/candidate-input/artifact.json
+          gh api "repos/sbalci/qupath-extension-workshop/actions/artifacts/$CANDIDATE_ARTIFACT/zip" > build/candidate-input/artifact.zip
+      - name: Verify candidate and prepare private fixtures
+        run: |
+          # Exit 2 means provenance passed but host acceptance is explicitly blocked.
+          set +e
+          python3 tools/accept-candidate.py --candidate "$CANDIDATE" --run-metadata build/candidate-input/run.json --artifact-metadata build/candidate-input/artifact.json --archive build/candidate-input/artifact.zip --work build/provenance
+          rc=$?
+          test "$rc" -eq 2
+          python3 - <<'PYCODE'
+          import json
+          from pathlib import Path
+          r = json.loads(Path('build/provenance/acceptance.json').read_text())
+          assert r['provenance'] == 'passed' and r['host_integration'].startswith('BLOCKED:')
+          PYCODE
+      - name: Run safety contracts on packaged candidate resources
+        env:
+          WORKSHOP_SCRIPT_JAR: ${{ github.workspace }}/build/provenance/${{ env.CANDIDATE_JAR }}
+        run: |
+          ./gradlew --no-daemon test --rerun-tasks
+          python3 - <<'PY'
+          import xml.etree.ElementTree as E
+          from pathlib import Path
+          cases = [c for p in Path('build/test-results/test').glob('TEST-*.xml') for c in E.parse(p).getroot().findall('testcase')]
+          assert len(cases) == 49
+          assert len({(c.attrib.get('classname'), c.attrib['name']) for c in cases}) == 49
+          assert not any(any(c.find(t) is not None for t in ['failure', 'error', 'skipped']) for c in cases)
+          PY
+      - name: Retrieve pinned QuPath 0.6.0 isolated host
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libgl1 libgtk-3-0 libnss3 libasound2
+          curl --fail --location --retry 3 https://github.com/qupath/qupath/releases/download/v0.6.0/QuPath-v0.6.0-Linux.tar.xz -o build/candidate-input/qupath.tar.xz
+          echo '19ec6d821678c99b943a61852d05c88a770b9fbc48bb09cd0209742a00015ee6  build/candidate-input/qupath.tar.xz' | sha256sum --check -
+          mkdir build/qupath-host
+          tar -xJf build/candidate-input/qupath.tar.xz -C build/qupath-host
+          executable=$(find "$PWD/build/qupath-host" -type f -path '*/bin/QuPath' -print -quit)
+          test -n "$executable"
+          echo "QUPATH_ACCEPTANCE_BIN=$executable" >> "$GITHUB_ENV"
+      - name: Real QuPath CLI synthetic integration
+        run: python3 tools/accept-candidate.py --candidate "$CANDIDATE" --run-metadata build/candidate-input/run.json --artifact-metadata build/candidate-input/artifact.json --archive build/candidate-input/artifact.zip --work build/host-acceptance --qupath "$QUPATH_ACCEPTANCE_BIN"
+      - name: Upload evidence only (no JAR or workshop distribution)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: candidate-${{ matrix.candidate }}-acceptance-reports
+          path: |
+            build/provenance/*.json
+            build/host-acceptance/*.json
+            build/host-acceptance/*.log
+            build/candidate-input/run.json
+            build/candidate-input/artifact.json
+            build/test-results/test/*.xml
+          if-no-files-found: warn
