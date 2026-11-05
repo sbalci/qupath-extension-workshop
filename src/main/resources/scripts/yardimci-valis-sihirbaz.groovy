@@ -1738,7 +1738,7 @@ def exportAnnotations = { imageData, File outFile, anns ->
 }
 
 // ── QuPath: warp'lı GeoJSON'u HEDEF slayta içe aktar (sentinel + kilit; idempotent) ──
-// srcAreaUm2 (opsiyonel, >0): kaynaktaki dışa aktarılan anotasyonun alanı (µm²) — verilirse hedefin
+// srcAreaUm2 (isteğe bağlı, >0): kaynaktaki dışa aktarılan anotasyonun alanı (µm²) — verilirse hedefin
 // KENDİ piksel kalibrasyonuyla hesaplanan alanla oranlanır; oran [WARP_SCALE_RATIO_MIN, WARP_SCALE_RATIO_MAX]
 // dışındaysa dönüşte 'scaleWarn' doldurulur. Bu bir ÖRTÜŞME/Dice DOĞRULUĞU ölçüsü DEĞİLDİR — yalnız
 // ölçek/piramit-seviyesi karışıklığı gibi kaba hataları yakalayan bir tutarlılık kontrolüdür.
@@ -2197,7 +2197,7 @@ def prepareRun = { cfg, boolean reuseRegistrar = false, boolean warpOnly = false
     def mergeColors = [colorFor(srcEntry, srcFile)]
     selFiles.each { mergeColors << colorFor(it.entry, it.file) }
 
-    // ── Anotasyon warp — YALNIZ bir/daha fazla hedef seçildiyse (opsiyonel; ÇOKLU). Aksi halde sadece kayıt+merge. ──
+    // ── Anotasyon warp — YALNIZ bir/daha fazla hedef seçildiyse (isteğe bağlı; ÇOKLU). Aksi halde sadece kayıt+merge. ──
     // BİR kaynak GeoJSON (gjIn) dışa aktarılır (kaç hedef olursa olsun tek export); HER hedef için AYRI bir
     // warp çıktı yolu hesaplanır (warpPlan) — çalıştırıldığında runner tek süreçte hepsini warp eder (bkz. runArgs).
     def gjIn = null; int annCount = 0
@@ -2664,7 +2664,7 @@ def applyAddPreview = { Map res ->
 // yalnız BİRİNCİL merge çıktısı için anlamlıdır, burada üretilmez (withPreview=false).
 def doAddOme = {
     def project = QP.getProject(); def od = lastOmeDirRef.get()
-    if (project == null || od == null) return   // sessiz — merge birincil; ayrı OME opsiyonel
+    if (project == null || od == null) return   // sessiz — merge birincil; ayrı OME isteğe bağlı
     def files = []
     try { od.listFiles({ d, n -> def ln = n.toLowerCase(java.util.Locale.ROOT); ln.endsWith('.ome.tiff') || ln.endsWith('.ome.tif') } as java.io.FilenameFilter)?.each { files << it } } catch (Throwable ignore) {}
     if (files.isEmpty()) return   // ayrı hizalı OME üretilmemiş (--no-ome) → sessiz geç; merge doAddMergeOut ile eklenir
@@ -3219,7 +3219,7 @@ render = { ->
                 'beyaz zemin, doğal boya renkleri, "SLAYT GİBİ" görünür — ama TEK görüntüdür, kanal seçilemez. Tek slaytta doğal görünüm; ' +
                 'çok slaytta sentetik bileşik (çakışan boyalar koyulaşır).')
 
-            // ── Anotasyon warp hedefleri (opsiyonel; ÇOK-SEÇİM) — kaynağın anotasyonu işaretli HER hedefe warp edilir ──
+            // ── Anotasyon warp hedefleri (isteğe bağlı; ÇOK-SEÇİM) — kaynağın anotasyonu işaretli HER hedefe warp edilir ──
             def targetIds = targetIdsRef.get() ?: new java.util.LinkedHashSet()
             def otherIds0 = others.collect { it.getID()?.toString() }.findAll { it != null }
             targetIds.retainAll(otherIds0)   // artık listede olmayan (silinmiş/kaynağa dönüşmüş) ID'leri sessizce temizle
@@ -3590,7 +3590,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ VALIS hizalama sihirbazı açıldı."

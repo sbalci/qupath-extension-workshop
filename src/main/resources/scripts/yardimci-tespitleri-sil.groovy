@@ -58,7 +58,7 @@ def chooseAction = { String windowTitle, String windowBody ->
             def scrollPane = new javafx.scene.control.ScrollPane(label)
             scrollPane.setFitToWidth(true)
 
-            def orphanBtn = new javafx.scene.control.Button("Sadece orphan'ları sil")
+            def orphanBtn = new javafx.scene.control.Button("Yalnızca sahipsiz tespitleri sil")
             orphanBtn.setDefaultButton(true)
             orphanBtn.setOnAction({ choice.set("orphan"); stage.close() })
 
@@ -199,12 +199,12 @@ def secim = chooseAction(
     "Tespitleri Sil — Hangileri?",
     "Bu slayttaki detection durumu:\n\n" +
     String.format(java.util.Locale.US, "  Toplam tespit             : %,d\n", allDetections.size()) +
-    String.format(java.util.Locale.US, "  Orphan (anotasyon yok)    : %,d\n", orphanDetections.size()) +
+    String.format(java.util.Locale.US, "  Sahipsiz (anotasyon dışı) : %,d\n", orphanDetections.size()) +
     String.format(java.util.Locale.US, "  Anotasyon altında         : %,d\n", nestedDetections) +
     String.format(java.util.Locale.US, "  Olanaksız küçük (≤ %.2f µm²): %,d\n\n", DEFAULT_MIN_AREA, smallPreview) +
     "Üç seçenek:\n\n" +
-    "  • Sadece orphan'ları sil (varsayılan, güvenli):\n" +
-    "    Bir anotasyona ait olmayan tespitleri temizler.\n\n" +
+    "  • Yalnızca sahipsiz tespitleri sil (varsayılan, güvenli):\n" +
+    "    Hiçbir anotasyonun içinde olmayan (örn. anotasyonu silinmiş)\n    tespitleri temizler.\n\n" +
     "  • Tümünü sil:\n" +
     "    Slayttaki BÜTÜN tespitleri siler — anotasyonlar dokunulmaz.\n\n" +
     "  • Küçük çekirdekleri sil…:\n" +
@@ -226,6 +226,11 @@ def silinen = 0
 def mod = ""
 
 if (secim == "all") {
+    if (!isHeadless && !Dialogs.showConfirmDialog("Tüm tespitler silinsin mi?",
+            String.format(java.util.Locale.US, "Bu slayttaki %,d tespitin TAMAMI silinecek (anotasyonlar korunur).\n\nDevam edilsin mi?", allDetections.size()))) {
+        println "Kullanıcı iptal etti."
+        return
+    }
     silinen = allDetections.size()
     QP.clearDetections()
     mod = "Tüm tespitler silindi"
@@ -248,7 +253,7 @@ if (secim == "all") {
     if (silinen > 0) {
         QP.removeObjects(orphanDetections, true)
     }
-    mod = "Sadece orphan tespitler silindi (anotasyon altındakiler korundu)"
+    mod = "Yalnızca sahipsiz tespitler silindi (anotasyon altındakiler korundu)"
 }
 
 QP.fireHierarchyUpdate()

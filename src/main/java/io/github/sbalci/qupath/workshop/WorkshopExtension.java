@@ -600,8 +600,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         if (scriptBody == null) {
             Dialogs.showErrorMessage(
                 "Betik bulunamadı",
-                "Eklenti içinde betik kaynağı bulunamadı:\n  " + entry.resource +
-                "\n\nLütfen güncel sürümü kullandığınızdan emin olun ve atölye organizatörüne bildirin."
+                "\"" + entry.label + "\" aracı bu eklenti sürümünde bulunamadı.\n\n" +
+                "Eklentiniz eski ya da eksik kurulmuş olabilir. Atölye kurulum rehberindeki sürümü " +
+                "yeniden kurup QuPath'i yeniden başlatın; sorun sürerse atölye düzenleyicisine bildirin.\n\n" +
+                "Teknik ayrıntı: " + entry.resource
             );
             return;
         }
@@ -628,12 +630,16 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             } catch (Throwable t) {
                 logger.error("Script execution failed: {}", entry.label, t);
                 String msg = t.getMessage();
-                String detail = t.getClass().getSimpleName() + ": " + (msg != null ? msg : "(no message)");
+                String detail = t.getClass().getSimpleName() + ": " + (msg != null ? msg : "(ileti yok)");
                 Platform.runLater(() -> Dialogs.showErrorMessage(
                     "Betik hatası — " + entry.label,
-                    "Betik çalıştırılırken bir hata oluştu:\n\n" +
-                    detail +
-                    "\n\nİpucu: Bir slaytın ve gerekli alan anotasyonunun seçili olduğundan emin olun. Teknik ayrıntılar için View → Show log menüsüne bakabilirsiniz."
+                    "Araç çalışırken beklenmeyen bir sorun oluştu.\n\n" +
+                    "Yapabilecekleriniz:\n" +
+                    "  1. Bir slaytın açık olduğundan emin olun.\n" +
+                    "  2. Araç bir bölge istiyorsa, alan anotasyonunu çizip tıklayarak seçin (kenarı sarı olmalı).\n" +
+                    "  3. QuPath'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n" +
+                    "  4. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\n" +
+                    "Teknik ayrıntı: " + detail
                 ));
             }
         }, "WorkshopScript-" + entry.resource);
@@ -725,7 +731,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "QuPath baseline:   " + getQuPathVersion() + "+\n\n" +
             "Açık görüntü:      " + (hasImage ? "var" : "yok — File → Open ile bir slayt açın") + "\n" +
             "Açık proje:        " + (hasProject ? "var" : "yok") + "\n\n" +
-            "Opsiyonel bileşenler (yalnızca ileri modüller için):\n" +
+            "İsteğe bağlı bileşenler (yalnızca ileri modüller için):\n" +
             "  • Cellpose eklentisi:   " + (cellpose ? found : missing) + "\n" +
             "  • StarDist eklentisi:   " + (stardist ? found : missing) + "\n" +
             "  • InstanSeg eklentisi:  " + (instanseg ? found : missing) + "\n" +

@@ -176,7 +176,7 @@ def showExportOptions = { Map d ->
 
             // --- İsimlendirme ---
             def prefixField = new javafx.scene.control.TextField((d.prefix ?: "") as String)
-            prefixField.setPromptText("(opsiyonel önek)")
+            prefixField.setPromptText("(isteğe bağlı önek)")
             def cbDate = new javafx.scene.control.CheckBox("Tarihli alt klasör (YYYY-MM-DD_HHmmss)")
             cbDate.setSelected(d.dateSubfolder as boolean)
 

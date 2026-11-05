@@ -15,7 +15,7 @@
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Çıktı: tespit edilen hücre nesneleri + adet + (kalibreyse) yoğunluk
- *     (hücre/mm²) + (opsiyonel) İHK yoğunluk sınıflandırması (0/1+/2+/3+ adet).
+ *     (hücre/mm²) + (isteğe bağlı) İHK yoğunluk sınıflandırması (0/1+/2+/3+ adet).
  *   • Hiçbir hastalık/tanı sınıfı, grade ya da klinik karar üretmez; segmentasyon
  *     bir derin öğrenme tahminidir ve görsel doğrulama gerekir (Yapay Zekâ Araçlarını Değerlendirme eki).
  *
@@ -116,7 +116,7 @@ def runDetection = { String family, String model, String channelMode,
         if (!existing.isEmpty()) QP.removeObjects(existing, false)
     }
 
-    // Builder zincirini Groovy tarafında kur (opsiyonel parçalar koşullu eklenir).
+    // Builder zincirini Groovy tarafında kur (isteğe bağlı parçalar koşullu eklenir).
     def modelName = (family == 'cpsam') ? 'cpsam' : model
     def envFlag = ''
     if (family == 'cpsam')        envFlag = '.useCellposeSAM()'
@@ -168,7 +168,7 @@ def runDetection = { String family, String model, String channelMode,
         return [ok:false, error:"Cellpose çalıştırılamadı: ${reason}\n\nİpuçları: Python yolu ayarlı mı (Edit → Preferences → Cellpose/Omnipose)? Model ilk çalıştırmada indiriliyor olabilir. cpsam ayrı venv ister."]
     }
 
-    // Opsiyonel İHK yoğunluk binning
+    // İsteğe bağlı İHK yoğunluk binning
     if (ihcBin) {
         try { QP.setCellIntensityClassifications(compartment, t1, t2, t3) }
         catch (Throwable bErr) { /* ölçüm yoksa binning atlanır; tespit sonucu geçerli */ }
@@ -362,7 +362,7 @@ javafx.application.Platform.runLater {
         grid.addRow(8, new javafx.scene.control.Label('Floresan 2-kanal — sito · çekirdek (1-tabanlı)'),
             new javafx.scene.layout.HBox(6, spCyto, spNuc))
 
-        // İHK yoğunluk binning (opsiyonel, gelişmiş)
+        // İHK yoğunluk binning (isteğe bağlı, gelişmiş)
         def binChk = new javafx.scene.control.CheckBox('İHK yoğunluk binning uygula (0/1+/2+/3+)')
         binChk.setSelected(Boolean.parseBoolean(cfg.ihcBin))
         def compartBox = new javafx.scene.control.ChoiceBox()
@@ -378,7 +378,7 @@ javafx.application.Platform.runLater {
         binGrid.addRow(1, new javafx.scene.control.Label('Bölme (compartment)'), compartBox)
         binGrid.addRow(2, new javafx.scene.control.Label('OD eşikleri 1+/2+/3+'),
             new javafx.scene.layout.HBox(6, spT1, spT2, spT3))
-        def advBin = new javafx.scene.control.TitledPane('⚙ İHK yoğunluk binning (opsiyonel)', binGrid)
+        def advBin = new javafx.scene.control.TitledPane('⚙ İHK yoğunluk binning (isteğe bağlı)', binGrid)
         advBin.setExpanded(false); advBin.setAnimated(false)
 
         def status = new javafx.scene.control.Label('Hazır.')

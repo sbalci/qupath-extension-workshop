@@ -12,7 +12,7 @@
  *   Eşikler: 0.10 / 0.30 / 0.60 OD (atölye varsayılanı), 0.05 H OD maskesi.
  *   → Slayt-spesifik kalibrasyon için referans noktaları kullanın.
  *
- * İKİNCİL METRİK — HÜCRE BAZLI (karşılaştırma, opsiyonel):
+ * İKİNCİL METRİK — HÜCRE BAZLI (karşılaştırma, isteğe bağlı):
  *   Cellpose ya da WatershedCellMembraneDetection ile hücreler tespit edilir,
  *   "Membrane: DAB OD mean" ölçümüyle 0/1+/2+/3+ olarak sınıflanır.
  *   Cellpose / Python yoksa veya hata oluşursa bu adım atlanır — birincil
@@ -28,7 +28,7 @@
  *   5. Pencere açık kalır: eşikleri değiştirip (Gelişmiş ayarlar) tekrar
  *      çalıştırabilirsiniz; sonuçlar aynı pencerede güncellenir
  *
- * CELLPOSE KURULUMU (opsiyonel — ikincil hücre bazlı metrik için):
+ * CELLPOSE KURULUMU (isteğe bağlı — ikincil hücre bazlı metrik için):
  *   • qupath-extension-cellpose JAR + Python + `cellpose` paketi
  *   • Detaylar: https://atolye.patoloji.dev/kaynaklar.html#ileri-kurulumlar
  *
@@ -566,7 +566,7 @@ javafx.application.Platform.runLater {
         def info = new javafx.scene.control.Label(
             'Bir TÜMÖR (epitel) anotasyonu çizip SEÇİN (kenarı sarı), sonra "Çalıştır".\n' +
             'Birincil metrik piksel bazlı H-score (her zaman çalışır); hücre bazlı ring\n' +
-            'H-score opsiyoneldir (Cellpose varsa kullanılır, yoksa Watershed ile çalışır).\n' +
+            'H-score isteğe bağlıdır (Cellpose varsa kullanılır, yoksa Watershed ile çalışır).\n' +
             'Eşikleri değiştirince "Eşikleri yeniden uygula (hızlı)" ile hücre tespitini tekrarlamadan güncelleyebilirsiniz.')
         info.setWrapText(true)
 
@@ -657,7 +657,7 @@ javafx.application.Platform.runLater {
         runBtn.setOnAction({
             [spM1, spM2, spM3, spPD1, spPD2, spPD3, spPH].each { commitSpinner(it) }
             runBtn.setDisable(true); recountBtn.setDisable(true)
-            status.setStyle(''); status.setText('… hesaplanıyor (piksel + opsiyonel hücre)…')
+            status.setStyle(''); status.setText('… hesaplanıyor (piksel + isteğe bağlı hücre)…')
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             double m1  = spM1.getValue()  as double
             double m2  = spM2.getValue()  as double

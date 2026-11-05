@@ -487,7 +487,7 @@ def runPython = { List cmd, Closure onLine ->
 // ── Kalıcı çalışan (persistent worker) — modeli bellekte tutar ───────────────
 // SAM/samapi'nin kalıcı-sunucu dersinin uyarlaması: köprüyü 'serve' modunda BİR
 // KEZ başlat, modeli bir kez yükle, sonraki train/predict'leri aynı sürece
-// stdin/stdout JSON ile gönder. Opsiyonel; varsayılan KAPALI (alt çubuktaki onay
+// stdin/stdout JSON ile gönder. İsteğe bağlı; varsayılan KAPALI (alt çubuktaki onay
 // kutusu). Kapalıyken davranış eskisiyle birebir aynıdır (çağrı-başına süreç).
 def READY_MARK  = '##KAIKO-READY##'
 def RESP_PREFIX = '##KAIKO-RESP## '
@@ -873,7 +873,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ Kaiko Midnight sınıflandırıcı sihirbazı açıldı."

@@ -241,9 +241,18 @@ public final class WorkshopSettingsDialog {
                 sp.set(tf.getText() == null ? "" : tf.getText());
             }
         } catch (NumberFormatException nfe) {
-            // revert field to current stored value
+            // Revert to the stored value, but SAY so: a silent revert lets a novice believe
+            // a mistyped value ("0.2 5", "yirmi") was accepted.
+            String rejected = tf.getText();
             tf.setText(String.valueOf(p.getValue()));
+            badge.setText("geçersiz sayı — eski değer korundu");
+            badge.setStyle("-fx-text-fill: #b94a00; -fx-font-size: 10px; -fx-font-weight: bold;");
+            Tooltip.install(badge, new Tooltip("\"" + rejected + "\" bir sayı olarak okunamadı. "
+                    + "Örnek biçim: 0.25 (ondalık için nokta veya virgül kullanabilirsiniz)."));
+            validateThresholdOrder();
+            return;
         }
+        badge.setStyle("-fx-text-fill: #b8860b; -fx-font-size: 10px;");
         badge.setText(WorkshopPrefs.isDefault(key) ? "" : "değiştirildi");
         validateThresholdOrder();
     }
@@ -293,28 +302,28 @@ public final class WorkshopSettingsDialog {
             case "atolye.cellposeModel": return "Cellpose modeli";
             case "atolye.cellposeDiameter": return "Cellpose çapı (px)";
             case "atolye.cellposeFamily": return "Cellpose model ailesi";
-            case "atolye.cellposeFlow": return "Cellpose akış eşiği (flow)";
-            case "atolye.cellposeCellprob": return "Cellpose hücre olasılığı (cellprob)";
+            case "atolye.cellposeFlow": return "Cellpose hücre sınırı toleransı (flow)";
+            case "atolye.cellposeCellprob": return "Cellpose soluk hücre eşiği (cellprob)";
             case "atolye.stardistThreshold": return "StarDist olasılık eşiği";
             case "atolye.stardistPixelSize": return "StarDist piksel boyutu (µm)";
             case "atolye.stardistCellExpansion": return "StarDist hücre genişlemesi (µm)";
             case "atolye.pixelSize": return "Piksel boyutu (µm)";
             case "atolye.cellExpansionNuclear": return "Hücre genişlemesi — nükleer (µm)";
             case "atolye.cellExpansionCyto": return "Hücre genişlemesi — sitoplazma (µm)";
-            case "atolye.sigma": return "Sigma (µm)";
+            case "atolye.sigma": return "Gürültü yumuşatma — Sigma (µm)";
             case "atolye.backgroundRadius": return "Arka plan yarıçapı (µm)";
             case "atolye.minArea": return "En küçük alan (µm²)";
             case "atolye.maxArea": return "En büyük alan (µm²)";
             case "atolye.medianRadius": return "Medyan filtre (µm)";
             case "atolye.detectionThreshold": return "Çekirdek eşiği (OD)";
             case "atolye.detectionChannel": return "Tespit kanalı";
-            case "atolye.watershed": return "Watershed ile bölme";
+            case "atolye.watershed": return "Bitişik çekirdekleri ayır (Watershed)";
             case "atolye.pixScale": return "Piksel ölçeği (alt örnekleme)";
             case "atolye.classifierName": return "Sınıflandırıcı adı";
             case "atolye.minObjectArea": return "En küçük nesne alanı (µm²)";
             case "atolye.minHoleArea": return "En küçük boşluk alanı (µm²)";
             case "atolye.maxTrainingSamples": return "En fazla eğitim örneği (0 = sınırsız)";
-            case "atolye.warnNuclearCount": return "Uyarı: düşük çekirdek sayısı (Nielsen)";
+            case "atolye.warnNuclearCount": return "Az çekirdek uyarı eşiği (Nielsen önerisi)";
             case "atolye.warnGenericCount": return "Uyarı: düşük hücre sayısı";
             case "atolye.warnTissueAreaMm2": return "Uyarı: küçük doku (mm²)";
             case "atolye.exportFolder": return "Dışa aktarma klasörü";

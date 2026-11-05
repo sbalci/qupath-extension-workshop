@@ -21,7 +21,7 @@
  *
  * KULLANIM:
  *   1. WSInfer çıkarımını çalıştırmış bir slayt açın (karolar sınıflı olmalı)
- *   2. (Opsiyonel) özetlenecek bölgeyi anotasyon olarak çizip SEÇİN
+ *   2. (İsteğe bağlı) özetlenecek bölgeyi anotasyon olarak çizip SEÇİN
  *      (seçim yoksa tüm görüntüdeki karolar özetlenir)
  *   3. [Extensions → Atölye → Yardımcılar → WSInfer karo özeti (sınıf alanı / %)]
  *      (ya da [Automate → Project scripts → bu betik])
@@ -195,7 +195,7 @@ summary.setLocked(true)
 QP.addObjects([summary])
 QP.fireHierarchyUpdate()
 
-// ── 4) (Opsiyonel) sınıf başına birleştirilmiş anotasyon ────────────
+// ── 4) (İsteğe bağlı) sınıf başına birleştirilmiş anotasyon ────────────
 int mergedClasses = 0
 boolean doMerge = false
 if (!isHeadless) {
