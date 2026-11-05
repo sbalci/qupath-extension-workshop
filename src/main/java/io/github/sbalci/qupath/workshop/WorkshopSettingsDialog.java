@@ -247,11 +247,12 @@ public final class WorkshopSettingsDialog {
             tf.setText(String.valueOf(p.getValue()));
             badge.setText("geçersiz sayı — eski değer korundu");
             badge.setStyle("-fx-text-fill: #b94a00; -fx-font-size: 10px; -fx-font-weight: bold;");
-            Tooltip.install(badge, new Tooltip("\"" + rejected + "\" bir sayı olarak okunamadı. "
+            badge.setTooltip(new Tooltip("\"" + rejected + "\" bir sayı olarak okunamadı. "
                     + "Örnek biçim: 0.25 (ondalık için nokta veya virgül kullanabilirsiniz)."));
             validateThresholdOrder();
             return;
         }
+        badge.setTooltip(null);   // clear a previous "geçersiz sayı" tooltip once a valid value is saved
         badge.setStyle("-fx-text-fill: #b8860b; -fx-font-size: 10px;");
         badge.setText(WorkshopPrefs.isDefault(key) ? "" : "değiştirildi");
         validateThresholdOrder();
