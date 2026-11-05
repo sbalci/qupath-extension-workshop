@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Nükleer boya, ER/PR H-score, Membran boya, Sitoplazmik boya veya Tümör içi Ki-67
  * modüllerinden biriyle hücre tespiti yaptıktan sonra: bu sihirbaz **hücre tespitini
- * yeniden çalıştırmadan** üç bin eşiğini (1+ / 2+ / 3+) GÖRSEL olarak ayarlar.
+ * yeniden çalıştırmadan** üç sınıf eşiğini (1+ / 2+ / 3+) GÖRSEL olarak ayarlar.
  *
  * NE İŞE YARAR?
  *   • Slaytınızın KENDİ kromojen renklerinden üretilen renk şeridi + gerçek hücre
@@ -14,7 +14,7 @@
  *     Negatif|1+|2+|3+ kategori bandı ve alanların altında kümülatif yüzdeler canlı izlenir.
  *   • "Otomatik öner": 3-eşik Otsu ile veri-güdümlü bir BAŞLANGIÇ önerisi üretir
  *     (yalnız öneridir; yöntem referansınızla sabitleyip belgeleyin).
- *   • "Canlı uygula" açıkken her sürükleme bırakışında hücreler yeni bin'lerine
+ *   • "Canlı uygula" açıkken her sürükleme bırakışında hücreler yeni sınıflarına
  *     yeniden sınıflandırılır — değişikliği ana görüntüde görürsünüz.
  *   • Kapsam seçilebilir: Seçili anotasyon(lar) ya da Tüm slayt.
  *   • Ölçüm sütunu otomatik keşfedilir: "Membrane/Nucleus/Cytoplasm: <boya> OD mean"
@@ -263,7 +263,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Scriptleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -834,7 +834,7 @@ javafx.application.Platform.runLater {
                 'tanım gereği değiştirir; "doğru" tek eşik yoktur. Yöntem referansınızla tutarlı bir eşik seçip ' +
                 'belgeleyin; aynı çalışmada slayttan slayta değiştirmeyin. "Otomatik öner" (3-eşik Otsu) yalnızca ' +
                 'veri-güdümlü bir başlangıç önerisidir — yöntemsel doğruluk iddiası taşımaz.'),
-            limitLabel('5) Yalnızca yeniden bin\'ler — tespit/genişletme parametrelerine dokunmaz (onlar için modülü ' +
+            limitLabel('5) Yalnızca yeniden sınıflandırır — tespit/genişletme parametrelerine dokunmaz (onlar için modülü ' +
                 'yeniden çalıştırın). Piksel-bazlı H-score yeniden HESAPLANMAZ; bayat ölçümler her uygulamada temizlenir.'),
             limitLabel('6) Canlı uygulamanın boyut maliyeti — büyük kümelerde her bırakışta yeniden sınıflandırma ' +
                 'gecikebilir; bu yüzden açma/kapama seçeneğidir.'),

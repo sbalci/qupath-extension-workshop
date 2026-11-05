@@ -48,6 +48,7 @@ import qupath.fx.dialogs.Dialogs
 
 def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
+def openSlideHint = 'Sol paneldeki Project sekmesinden bir slayta çift tıklayın veya bir slayt dosyasını (.svs, .ndpi, .tiff) doğrudan QuPath penceresine sürükleyip bırakın.'
 
 // ── Tur sayfaları (id · vurgu bölgesi · hedef · demo · başlık · gövde) ───────
 // bolge ∈ {TOOLBAR, SIDEBAR, VIEWER, null}: belirli hedef çözülemezse geri çekilme.
@@ -63,7 +64,8 @@ def pages = [
      govde: 'Bu tur QuPath arayüzünü adım adım tanıtır. Her sayfada bir öğe anlatılır; ' +
             'ilgili sekme, düğme ya da bölge canlı pencerede turuncu bir çerçeveyle işaretlenir. ' +
             'Bazı adımlarda ilgili komut örnek olarak kendiliğinden çalıştırılır (ör. Parlaklık/Kontrast ' +
-            'diyaloğu açılır, Points aracı etkinleşir). En verimli kullanım için önce bir slayt açın — ' +
+            'diyaloğu açılır, Points aracı etkinleşir). En verimli kullanım için önce bir slayt açın ' +
+            '(' + openSlideHint + ') — ' +
             'böylece görüntüleyici ve meta veri sekmeleri de dolu olur.\n\n' +
             'İleri / Geri düğmeleriyle gezinin; sihirbaz penceresi her zaman üstte kalsın ' +
             'isterseniz alttaki "Üstte tut" kutusu işaretli kalsın. "Otomatik göster" kutusu, her sayfada ' +
@@ -575,7 +577,7 @@ def setupPractice = { page, javafx.scene.control.Label statusLabel, int pageIdx 
     def imageData = null
     try { imageData = gui.getImageData() } catch (Throwable t) {}
     if (imageData == null) {
-        statusLabel.setText('⚠ Bu alıştırma için önce bir slayt açın. "İleri ▶" ile atlayabilirsiniz.')
+        statusLabel.setText('⚠ Bu alıştırma için önce bir slayt açın (' + openSlideHint + '). "İleri ▶" ile atlayabilirsiniz.')
         statusLabel.setStyle('-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: -fx-text-base-color; -fx-opacity: 0.8;')
         return
     }

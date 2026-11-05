@@ -185,7 +185,7 @@ def summaryOf = { String choice, double ds, double thr, boolean useOtsu, double 
     def b = new StringBuilder()
     b << "DOKU TESPİTİ (native)\n"
     b << "Eşik tabanı  : ${choice}\n"
-    b << String.format(java.util.Locale.US, "Downsample   : %.0f%n", ds)
+    b << String.format(java.util.Locale.US, "Alt örnekleme (downsample): %.0f%n", ds)
     b << String.format(java.util.Locale.US, "Eşik         : %.4f  (%s)%n", thr, useOtsu ? "Otsu" : "elle")
     b << String.format(java.util.Locale.US, "Minimum alan : %.2f mm²%n", minAreaMm2)
     b << String.format(java.util.Locale.US, "Parça sayısı : %d → birleştirildi%n", pieces)
@@ -270,6 +270,8 @@ javafx.application.Platform.runLater {
         summaryArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
         summaryArea.setPromptText("Parametreleri ayarlayın; 'Uygula' ile 'Doku' anotasyonunu ekleyin.")
 
+        def previewBtn = new javafx.scene.control.Button("Önizle / Doku Bul")
+        previewBtn.setOnAction({ rebuild(true) })
         def applyBtn = new javafx.scene.control.Button("Uygula (Doku anotasyonu)")
         applyBtn.setDefaultButton(true); applyBtn.setDisable(true)
         def copyBtn = new javafx.scene.control.Button("Özeti kopyala")
@@ -435,7 +437,7 @@ javafx.application.Platform.runLater {
         form.getColumnConstraints().addAll(col0, col1, col2)
         int rr = 0
         form.add(new javafx.scene.control.Label("Eşik tabanı"), 0, rr); form.add(choiceBox, 1, rr, 2, 1); rr++
-        form.add(new javafx.scene.control.Label("Downsample"), 0, rr); form.add(dsSlider, 1, rr); form.add(dsVal, 2, rr); rr++
+        form.add(new javafx.scene.control.Label("Alt örnekleme (downsample):"), 0, rr); form.add(dsSlider, 1, rr); form.add(dsVal, 2, rr); rr++
         form.add(otsuChk, 0, rr, 3, 1); rr++
         form.add(new javafx.scene.control.Label("Eşik"), 0, rr); form.add(thrSlider, 1, rr); form.add(thrVal, 2, rr); rr++
         form.add(new javafx.scene.control.Label("Minimum alan"), 0, rr); form.add(minSlider, 1, rr); form.add(minVal, 2, rr); rr++
@@ -460,7 +462,7 @@ javafx.application.Platform.runLater {
 
         def spacer = new javafx.scene.layout.Region()
         javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-        def bar = new javafx.scene.layout.HBox(10, alwaysTop, spacer, copyBtn, applyBtn, closeBtn)
+        def bar = new javafx.scene.layout.HBox(10, alwaysTop, spacer, copyBtn, previewBtn, applyBtn, closeBtn)
         bar.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
         bar.setPadding(new javafx.geometry.Insets(8, 12, 8, 12))
 

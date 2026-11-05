@@ -395,8 +395,11 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                 }
             }
 
-            // Header item (disabled) so the menu purpose is obvious
-            var header = new MenuItem("— Atölye betikleri —");
+            // Header item (disabled) so the menu purpose is obvious; shows a friendly hint when no slide is open.
+            var header = new MenuItem();
+            header.textProperty().bind(javafx.beans.binding.Bindings.when(qupath.imageDataProperty().isNull())
+                    .then("⚠ Önce bir slayt açın (çoğu araç açık görüntü ister)")
+                    .otherwise("— Atölye betikleri —"));
             header.setDisable(true);
             menu.getItems().add(header);
             menu.getItems().add(new SeparatorMenuItem());
@@ -514,8 +517,13 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
 
             installPreferences(qupath);
 
-            logger.info("Workshop extension installed with {} module + {} utility (in {} groups) + {} upcoming (disabled) scripts.",
-                    SCRIPTS.size(), UTILITY_GROUPS.stream().mapToInt(g -> g.entries().size()).sum(), UTILITY_GROUPS.size(), UPCOMING_SCRIPTS.size());
+            int totalModuleScripts = SCRIPTS.size()
+                    + TISSUE_MODULE.entries().size()
+                    + MITOSIS_MODULE.entries().size()
+                    + ALIGNMENT_MODULE.entries().size();
+            int totalUtilityScripts = UTILITY_GROUPS.stream().mapToInt(g -> g.entries().size()).sum();
+            logger.info("Workshop extension installed with {} module + {} utility (in {} groups) + 1 top-level (Senkron Izgara) + {} upcoming (disabled) scripts.",
+                    totalModuleScripts, totalUtilityScripts, UTILITY_GROUPS.size(), UPCOMING_SCRIPTS.size());
         } catch (Exception ex) {
             logger.error("Failed to install Workshop extension menu", ex);
         }
@@ -544,17 +552,18 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
 
             for (String key : WorkshopPrefs.keys()) {
                 Property<?> p = WorkshopPrefs.property(key);
-                String name = key.startsWith("atolye.") ? key.substring("atolye.".length()) : key;
+                String name = WorkshopSettingsDialog.labelFor(key);
+                String desc = WorkshopSettingsDialog.tooltipFor(key);
                 String category = "Atölye · " + WorkshopPrefs.section(key);
                 PropertySheet.Item item = null;
                 if (p instanceof DoubleProperty dp) {
-                    item = new PropertyItemBuilder<>(dp.asObject(), Double.class).name(name).category(category).build();
+                    item = new PropertyItemBuilder<>(dp.asObject(), Double.class).name(name).category(category).description(desc).build();
                 } else if (p instanceof IntegerProperty ip) {
-                    item = new PropertyItemBuilder<>(ip.asObject(), Integer.class).name(name).category(category).build();
+                    item = new PropertyItemBuilder<>(ip.asObject(), Integer.class).name(name).category(category).description(desc).build();
                 } else if (p instanceof BooleanProperty bp) {
-                    item = new PropertyItemBuilder<>(bp.asObject(), Boolean.class).name(name).category(category).build();
+                    item = new PropertyItemBuilder<>(bp.asObject(), Boolean.class).name(name).category(category).description(desc).build();
                 } else if (p instanceof StringProperty sp) {
-                    item = new PropertyItemBuilder<>(sp, String.class).name(name).category(category).build();
+                    item = new PropertyItemBuilder<>(sp, String.class).name(name).category(category).description(desc).build();
                 }
                 if (item != null) items.add(item);
             }
@@ -624,7 +633,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                     "Betik hatası — " + entry.label,
                     "Betik çalıştırılırken bir hata oluştu:\n\n" +
                     detail +
-                    "\n\nAyrıntılar için View → Show log menüsüne bakın."
+                    "\n\nİpucu: Bir slaytın ve gerekli alan anotasyonunun seçili olduğundan emin olun. Teknik ayrıntılar için View → Show log menüsüne bakabilirsiniz."
                 ));
             }
         }, "WorkshopScript-" + entry.resource);
@@ -721,11 +730,15 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "  • StarDist eklentisi:   " + (stardist ? found : missing) + "\n" +
             "  • InstanSeg eklentisi:  " + (instanseg ? found : missing) + "\n" +
             "  • Deep Java Library:    " + (djl ? found : missing) + "  (InstanSeg/WSInfer/StarDist-TF ortak çalışma zamanı)\n\n" +
-            "Çekirdek modüller (2, 3, 3b, 5, 6, 7, 9) yalnızca QuPath gerektirir; Modül 4 (HER2) Cellpose eklentisi + Python venv, Modül 8 StarDist eklentisi ister.\n" +
+            "Temel iş akışları (Hücre tespiti, Nükleer boya (Ki-67), ER / PR H-score, Sitoplazmik boya (CD68),\n" +
+            "Tümör/Stroma sihirbazı, Tümör içi Ki-67, Veri dışa aktarma) yalnızca QuPath gerektirir.\n" +
+            "Membran boya (HER2) için Cellpose eklentisi + Python venv, QuANTUM cTCF için StarDist eklentisi\n" +
+            "önerilir; bu eklentiler kurulu değilse her iki modül de otomatik olarak yerleşik Watershed\n" +
+            "hücre tespitine yedeklenir ve çalışmaya devam eder.\n" +
             "InstanSeg ayrı bir Python ortamı gerektirmez (en sade derin öğrenme seçeneği).\n" +
             (cellpose ? "Cellpose için python.exe yolunu ayarlayın: Edit → Preferences → Cellpose/Omnipose.\n"
-                      : "Modül 4 için Cellpose eklentisi + Python venv gerekir (bkz. kaynaklar → ileri kurulumlar).\n") +
-            "\"bulunamadı\" görünen bileşenler yalnızca ilgili ileri modül için gerekir;\n" +
+                      : "Cellpose ile membran segmentasyonu için Cellpose eklentisi + Python venv kurulabilir (bkz. kaynaklar → ileri kurulumlar).\n") +
+            "\"bulunamadı\" görünen bileşenler yalnızca ilgili derin öğrenme seçeneği için gerekir;\n" +
             "kurulum rehberi: https://atolye.patoloji.dev/kaynaklar.html#ileri-kurulumlar\n\n" +
             "Yalnızca araştırma ve eğitim amaçlıdır.";
         // Diyalog + "Python ortam yöneticisi…" düğmesi: kullanıcı buradan doğrudan Python
@@ -775,17 +788,22 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "QuPath Atölye Betikleri",
             "Patologlar için dijital patoloji ve yapay zekâ atölyesinin\n" +
             "tek tıkla çalışan betikleri bir araya getirir.\n\n" +
-            "Modüller:\n" +
-            "  1 — Arayüz turu (etkileşimli arayüz gezintisi; açık slayt gerekmez)\n" +
-            "  2 — Hücre tespiti\n" +
-            "  3 — Nükleer boya (Ki-67)\n" +
-            "  3b — ER / PR H-score\n" +
-            "  4 — Membran boya (HER2)\n" +
-            "  5 — Sitoplazmik boya (CD68)\n" +
-            "  6 — Tümör/Stroma modelini oluştur (eğit) ve uygula\n" +
-            "  7 — Tümör içi Ki-67\n" +
-            "  8 — QuANTUM cTCF (StarDist + nesne sınıflandırıcı eğitimi)\n" +
-            "  9 — Veri dışa aktarma (TSV / GeoJSON)\n\n" +
+            "Modüller (Extensions → Atölye → Modüller):\n" +
+            "  • Arayüz turu (etkileşimli arayüz gezintisi; açık slayt gerekmez)\n" +
+            "  • Doku tespiti (Yerleşik Otsu, Piksel eşikleyici, GrandQC, TIA Toolbox)\n" +
+            "  • Hücre tespiti\n" +
+            "  • Nükleer boya (Ki-67)\n" +
+            "  • ER / PR H-score\n" +
+            "  • Membran boya (HER2)\n" +
+            "  • Sitoplazmik boya (CD68)\n" +
+            "  • Tümör/Stroma sihirbazı (model kur / eğit / uygula)\n" +
+            "  • Tümör içi Ki-67\n" +
+            "  • QuANTUM cTCF (StarDist / Watershed + nesne sınıflandırıcı eğitimi)\n" +
+            "  • Mitoz tespiti (KongNet, MIDOG25 FCOS, DA-RetinaNet, EffNetV2, karşılaştırma)\n" +
+            "  • Görüntü Hizalama (VALIS, Warpy, Afin)\n" +
+            "  • Veri dışa aktarma (TSV / CSV / GeoJSON)\n\n" +
+            "Üst düzey kısayol:\n" +
+            "  • Extensions → Senkron Izgara (seri slaytları eş zamanlı çoklu görünümde açar)\n\n" +
             "Yardımcılar — konuya göre gruplu alt menüler (Yardımcılar → <konu> → betik):\n" +
             "  • Temel araçlar · Boya ve renk · Hücre ve çekirdek tespiti\n" +
             "  • Skorlama ve ölçüm · Uzamsal analiz · İçe ve dışa aktarma / veri\n" +

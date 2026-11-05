@@ -79,32 +79,38 @@ if (imageData == null) {
     return
 }
 
-def imageTypeName = imageData.getImageType()?.toString() ?: ""
-def normalizedImageType = imageTypeName.toUpperCase(java.util.Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
-if (!normalizedImageType.contains('H_DAB')) {
-    Dialogs.showErrorMessage(
-        "Yanlış görüntü tipi",
-        "Image type 'Brightfield' olmalı. Şu anki: ${imageTypeName}\n\n" +
-        "İHK için: Image type → 'Brightfield (H-DAB)' seçin."
-    )
-    return
+// Image type kontrolü (Brightfield (H-DAB) zorunlu — DAB ayrımı için).
+// Modal pencere yerine: pencere her zaman açılır; tip yanlışsa kullanıcı
+// pencere içinde tek tıkla "Brightfield (H-DAB)" olarak ayarlayabilir.
+def imageTypeOk = { ->
+    def n = (imageData.getImageType()?.toString() ?: "")
+        .toUpperCase(java.util.Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
+    n.contains('H_DAB')
+}
+def imageTypeGuidance = { ->
+    "Bu slayt 'Brightfield (H-DAB)' olarak ayarlı değil.\n" +
+    "Şu anki tip: ${imageData.getImageType()?.toString() ?: ''}\n\n" +
+    "Çözüm:\n" +
+    "  • Penceredeki \"Görüntü tipini 'Brightfield (H-DAB)' olarak ayarla\" düğmesine tıklayın, VEYA\n" +
+    "  1. Image panelini açın (sol-üst)\n" +
+    "  2. 'Image type' → 'Brightfield (H-DAB)' seçin (DAB ayrımı için gerekli)\n" +
+    "  3. Yukarıdaki 'Çalıştır' düğmesine tekrar basın"
 }
 
 // "Hematoxylin OD" kanalı yalnızca H-DAB boya vektörleri ayarlanmışsa görünür.
-// Image type 'Brightfield (other)' veya boya vektörleri eksikse parametre reddedilir
-// ("Unable to set parameter detectionImageBrightfield with value Hematoxylin OD").
-// Hematoxylin boyası tanımlı değilse otomatik olarak BRIGHTFIELD_H_DAB'a geç.
-def stains = imageData.getColorDeconvolutionStains()
-def hasHematoxylin = false
-if (stains != null) {
-    for (int i = 1; i <= 3; i++) {
-        def name = stains.getStain(i)?.getName()?.toLowerCase(java.util.Locale.ROOT)
-        if (name != null && name.contains("hematoxylin")) { hasHematoxylin = true; break }
+if (imageTypeOk()) {
+    def stains = imageData.getColorDeconvolutionStains()
+    def hasHematoxylin = false
+    if (stains != null) {
+        for (int i = 1; i <= 3; i++) {
+            def name = stains.getStain(i)?.getName()?.toLowerCase(java.util.Locale.ROOT)
+            if (name != null && name.contains("hematoxylin")) { hasHematoxylin = true; break }
+        }
     }
-}
-if (!hasHematoxylin) {
-    println "⚠ H-DAB boya vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
-    QP.setImageType('BRIGHTFIELD_H_DAB')
+    if (!hasHematoxylin) {
+        println "⚠ H-DAB boya vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
+        QP.setImageType('BRIGHTFIELD_H_DAB')
+    }
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -175,7 +181,9 @@ def suggestStainVectors = { ->
             'Tahmin yapılamadı: ' + (svErr.getMessage() ?: svErr.getClass().getSimpleName()))
     }
 }
-suggestStainVectors()
+if (QP.getSelectedObject() instanceof PathAnnotationObject && QP.getSelectedObject().getROI()?.isArea()) {
+    suggestStainVectors()
+}
 
 // ──────────────────────────────────────────────────────────────
 // Cellpose algıla
@@ -195,7 +203,11 @@ try {
 //      ph          — piksel Hematoxylin maskesi OD eşiği
 //    Dönüş: [ok:true, text:<sonuç dizisi>] | [ok:false, error:<mesaj>]
 // ──────────────────────────────────────────────────────────────
-def runDetection = { double m1, double m2, double m3, double pd1, double pd2, double pd3, double ph ->
+def runDetection = { double m1, double m2, double m3, double pd1, double pd2, double pd3, double ph, boolean reuseCells = false ->
+    if (!(m1 < m2 && m2 < m3) || !(pd1 < pd2 && pd2 < pd3))
+        return [ok:false, error:'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.']
+    if (!imageTypeOk())
+        return [ok:false, error: imageTypeGuidance(), imageTypeIssue:true]
 
     def selected = QP.getSelectedObject()
     if (selected == null || !(selected instanceof PathAnnotationObject))
@@ -203,9 +215,12 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
 
     def targetAnnotation = selected
 
-    // RE-RUN SAFETY: mevcut child detections temizle (birikim önlenir)
     def existingDetections = targetAnnotation.getChildObjects().findAll { it.isDetection() }
-    if (!existingDetections.isEmpty()) {
+    if (reuseCells) {
+        if (existingDetections.isEmpty())
+            return [ok:false, error:'Bu anotasyonda hücre tespiti yok. Önce "Çalıştır" ile tespit yapın, sonra "Eşikleri yeniden uygula (hızlı)" kullanın.']
+    } else if (!existingDetections.isEmpty()) {
+        // RE-RUN SAFETY: mevcut child detections temizle (birikim önlenir)
         QP.removeObjects(existingDetections, false)
     }
 
@@ -319,122 +334,97 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
     def warnCount          = atolyeI('atolye.warnGenericCount',     200)
 
     try {
-        def cellposeAvailable = cellposeHere
-        if (!cellposeAvailable) {
-            println "Cellpose eklentisi bulunamadı → WatershedCellMembraneDetection'a düşülüyor."
-        }
-
-        detector = cellposeAvailable ? "Cellpose (cyto3, DAB + H OD)" : "WatershedCellMembraneDetection (DAB-temelli)"
-        println "Hücre bazlı tespit başlatılıyor (ikincil)..."
-        println "  • Dedektör: ${detector}"
-        println "  • Grup eşikleri (Membrane: DAB OD mean): ${m1} / ${m2} / ${m3}"
-        println "  • Hücre genişletme (cell expansion): ${cellExpansion} µm"
-
         def t0 = System.currentTimeMillis()
+        if (reuseCells) {
+            detector = "Mevcut hücreler (yeniden sınıflandırıldı)"
+        } else {
+            def cellposeAvailable = cellposeHere
+            if (!cellposeAvailable) {
+                println "Cellpose eklentisi bulunamadı → WatershedCellMembraneDetection'a düşülüyor."
+            }
 
-        QP.selectObjects(targetAnnotation)
+            detector = cellposeAvailable ? "Cellpose (cyto3, DAB + H OD)" : "WatershedCellMembraneDetection (DAB-temelli)"
+            println "Hücre bazlı tespit başlatılıyor (ikincil)..."
+            println "  • Dedektör: ${detector}"
+            println "  • Grup eşikleri (Membrane: DAB OD mean): ${m1} / ${m2} / ${m3}"
+            println "  • Hücre genişletme (cell expansion): ${cellExpansion} µm"
 
-        // Yardımcı kapatma: Watershed-tabanlı yedek dedektör.
-        def runWatershedFallback = {
-            QP.runPlugin(
-                'qupath.imagej.detect.cells.WatershedCellMembraneDetection',
-                '{' +
-                    '"detectionImageBrightfield":"Hematoxylin OD",' +
-                    "\"requestedPixelSizeMicrons\":${pixelSize}," +
-                    "\"backgroundRadiusMicrons\":${backgroundRadius}," +
-                    '"medianRadiusMicrons":0.0,' +
-                    "\"sigmaMicrons\":${sigma}," +
-                    "\"minAreaMicrons\":${minArea}," +
-                    '"maxAreaMicrons":1000.0,' +
-                    "\"threshold\":${detectionThreshold}," +
-                    '"maxBackground":2.0,' +
-                    '"watershedPostProcess":true,' +
-                    '"excludeDAB":true,' +
-                    "\"cellExpansionMicrons\":${cellExpansion}," +
-                    '"limitExpansionByNucleusSize":false,' +
-                    '"includeNuclei":true,' +
-                    '"smoothBoundaries":false,' +
-                    '"makeMeasurements":true' +
-                '}'
-            )
-        }
+            QP.selectObjects(targetAnnotation)
 
-        if (cellposeAvailable) {
-            // İç betiği ayrı bir GroovyShell'de çalıştır: `import qupath.ext.biop.cellpose.Cellpose2D`
-            // ifadesi yalnızca eklenti classpath'te ise parse olabildiği için, dış betik Cellpose
-            // yüklü olmayan kurulumlarda da çalışsın diye iç bloğa kapatıyoruz.
-            //
-            // KANAL HAZIRLIĞI (HER2 için kritik):
-            //   • Doğrudan RGB → Cellpose modeli "bright nuclei on dark background"
-            //     beklediği için brightfield görüntüde zayıf çalışır.
-            //   • Çözüm: önce **renk dekonvolüsyonu** uygulayıp DAB ve Hematoxylin
-            //     OD kanallarını çıkarıyoruz (boya bölgelerinde yüksek değer alan,
-            //     arka planda sıfıra yakın olan kanallar — Cellpose'un sevdiği biçim).
-            //   • ImageOps.Channels.extract(1, 0) → sırasıyla DAB (cyto/membran sinyali)
-            //     ve Hematoxylin (çekirdek sinyali) verir; Cellpose chan=DAB, chan2=H
-            //     olarak işler.
-            //
-            // PARAMETRELER:
-            //   • normalizePercentilesGlobal(0.1, 99.8, 10) — Cellpose normalize edilmiş
-            //     input bekler; bu adım atlanırsa hücreler büyük olasılıkla bulunmaz.
-            //   • diameter(25) — 0.5 µm/px'de yaklaşık 12.5 µm çaplı epitel hücreleri.
-            //     Çok küçük tümör hücreleri için 18-20, büyük apokrin hücreler için 30-35
-            //     deneyin. diameter(0) otomatik tahmin yapar (daha yavaş, daha tutarsız).
-            //   • cellExpansion(5.0) — çekirdek + sitoplazma sınırından dışarıya 5 µm
-            //     halka oluşturur; "Membrane: DAB OD mean" ölçümü bu halkadan alınır.
-            //
-            // ÇALIŞMA ZAMANI HATA YAKALAMA: Cellpose JAR'ı yüklü olabilir ama Python
-            // ortamı ayarlanmamış, model indirilmemiş veya bir tile başarısız olabilir.
-            // Bu durumda Watershed yedeğine geçiyoruz, betik kesintisiz tamamlanır.
-            def innerScript = """
-                import qupath.ext.biop.cellpose.Cellpose2D
-                import qupath.lib.scripting.QP
-                import qupath.opencv.ops.ImageOps
+            // Yardımcı kapatma: Watershed-tabanlı yedek dedektör.
+            def runWatershedFallback = {
+                QP.runPlugin(
+                    'qupath.imagej.detect.cells.WatershedCellMembraneDetection',
+                    '{' +
+                        '"detectionImageBrightfield":"Hematoxylin OD",' +
+                        "\"requestedPixelSizeMicrons\":${pixelSize}," +
+                        "\"backgroundRadiusMicrons\":${backgroundRadius}," +
+                        '"medianRadiusMicrons":0.0,' +
+                        "\"sigmaMicrons\":${sigma}," +
+                        "\"minAreaMicrons\":${minArea}," +
+                        '"maxAreaMicrons":1000.0,' +
+                        "\"threshold\":${detectionThreshold}," +
+                        '"maxBackground":2.0,' +
+                        '"watershedPostProcess":true,' +
+                        '"excludeDAB":true,' +
+                        "\"cellExpansionMicrons\":${cellExpansion}," +
+                        '"limitExpansionByNucleusSize":false,' +
+                        '"includeNuclei":true,' +
+                        '"smoothBoundaries":false,' +
+                        '"makeMeasurements":true' +
+                    '}'
+                )
+            }
 
-                def stainVectors = QP.getCurrentImageData().getColorDeconvolutionStains()
+            if (cellposeAvailable) {
+                def innerScript = """
+                    import qupath.ext.biop.cellpose.Cellpose2D
+                    import qupath.lib.scripting.QP
+                    import qupath.opencv.ops.ImageOps
 
-                def cellpose = Cellpose2D.builder("${cellposeModel}")
-                    .pixelSize(${pixelSize})
-                    .preprocess(
-                        ImageOps.Channels.deconvolve(stainVectors),
-                        ImageOps.Channels.extract(1, 0)   // 1=DAB (cyto), 0=Hematoxylin (nuclei)
-                    )
-                    .cellposeChannels(1, 2)               // Cellpose CLI: --chan 1 (DAB) --chan2 2 (H)
-                                                          // .preprocess() çıktısı 2 kanallı TIFF olarak yazılır;
-                                                          // bu çağrı olmadan CLI grayscale'e düşer -> 0 hücre.
-                    .normalizePercentilesGlobal(0.1, 99.8, 10)
-                    .diameter(${cellposeDiameter})
-                    .cellExpansion(${cellExpansion})
-                    .measureShape()
-                    .measureIntensity()
-                    .build()
+                    def stainVectors = QP.getCurrentImageData().getColorDeconvolutionStains()
 
-                cellpose.detectObjects(QP.getCurrentImageData(), QP.getSelectedObjects())
-            """
-            try {
-                new groovy.lang.GroovyShell(this.class.classLoader).evaluate(innerScript)
-            } catch (Throwable cellposeError) {
-                def reason = cellposeError.getMessage() ?: cellposeError.getClass().getSimpleName()
-                println "⚠ Cellpose çalıştırılamadı: ${reason}"
-                println "→ WatershedCellMembraneDetection yedeğine düşülüyor."
-                cellposeAvailable = false
-                detector = "WatershedCellMembraneDetection (Cellpose başarısız oldu)"
-                // Cellpose kısmi nesneler bırakmış olabilir — temizle.
-                def partial = targetAnnotation.getChildObjects().findAll { it.isDetection() }
-                if (!partial.isEmpty()) {
-                    QP.removeObjects(partial, true)
+                    def cellpose = Cellpose2D.builder("${cellposeModel}")
+                        .pixelSize(${pixelSize})
+                        .preprocess(
+                            ImageOps.Channels.deconvolve(stainVectors),
+                            ImageOps.Channels.extract(1, 0)   // 1=DAB (cyto), 0=Hematoxylin (nuclei)
+                        )
+                        .cellposeChannels(1, 2)               // Cellpose CLI: --chan 1 (DAB) --chan2 2 (H)
+                        .normalizePercentilesGlobal(0.1, 99.8, 10)
+                        .diameter(${cellposeDiameter})
+                        .cellExpansion(${cellExpansion})
+                        .measureShape()
+                        .measureIntensity()
+                        .build()
+
+                    cellpose.detectObjects(QP.getCurrentImageData(), QP.getSelectedObjects())
+                """
+                try {
+                    new groovy.lang.GroovyShell(this.class.classLoader).evaluate(innerScript)
+                } catch (Throwable cellposeError) {
+                    def reason = cellposeError.getMessage() ?: cellposeError.getClass().getSimpleName()
+                    println "⚠ Cellpose çalıştırılamadı: ${reason}"
+                    println "→ WatershedCellMembraneDetection yedeğine düşülüyor."
+                    cellposeAvailable = false
+                    detector = "WatershedCellMembraneDetection (Cellpose başarısız oldu)"
+                    def partial = targetAnnotation.getChildObjects().findAll { it.isDetection() }
+                    if (!partial.isEmpty()) {
+                        QP.removeObjects(partial, true)
+                    }
+                    QP.selectObjects(targetAnnotation)
+                    runWatershedFallback()
                 }
-                QP.selectObjects(targetAnnotation)
+            } else {
                 runWatershedFallback()
             }
-        } else {
-            runWatershedFallback()
         }
 
-        // Cell-by-cell intensity binning by membrane DAB OD (yalnız hedef anotasyondaki hücreler)
+        // Cell-by-cell intensity classification by membrane DAB OD (yalnız hedef anotasyondaki hücreler)
         // Creates classes: "Negative", "1+", "2+", "3+"
         def cells = targetAnnotation.getChildObjects().findAll { it.isDetection() }
         QP.setIntensityClassifications(cells, "Membrane: DAB OD mean", m1, m2, m3)
+        QP.fireHierarchyUpdate()
 
         cellElapsed = (System.currentTimeMillis() - t0) / 1000.0
 
@@ -560,6 +550,12 @@ if (isHeadless) {
 // ──────────────────────────────────────────────────────────────
 javafx.application.Platform.runLater {
     try {
+        def hasDetections = new java.util.concurrent.atomic.AtomicBoolean(false)
+        def initSel = QP.getSelectedObject()
+        if (initSel instanceof PathAnnotationObject && !initSel.getChildObjects().findAll { it.isDetection() }.isEmpty()) {
+            hasDetections.set(true)
+        }
+
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
         stage.setTitle('Membran Boya (HER2) - HER2 / Membran İHK skorlaması')
@@ -571,9 +567,22 @@ javafx.application.Platform.runLater {
             'Bir TÜMÖR (epitel) anotasyonu çizip SEÇİN (kenarı sarı), sonra "Çalıştır".\n' +
             'Birincil metrik piksel bazlı H-score (her zaman çalışır); hücre bazlı ring\n' +
             'H-score opsiyoneldir (Cellpose varsa kullanılır, yoksa Watershed ile çalışır).\n' +
-            'Eşikleri değiştirip yeniden çalıştırabilirsiniz; sonuç aşağıda güncellenir.')
+            'Eşikleri değiştirince "Eşikleri yeniden uygula (hızlı)" ile hücre tespitini tekrarlamadan güncelleyebilirsiniz.')
         info.setWrapText(true)
 
+        def commitSpinner = { javafx.scene.control.Spinner sp ->
+            try {
+                def vf = sp.getValueFactory()
+                def conv = vf?.getConverter()
+                def txt = sp.getEditor()?.getText()?.trim()?.replace(',', '.')
+                if (vf != null && conv != null && txt != null && !txt.isEmpty()) {
+                    vf.setValue(conv.fromString(txt))
+                }
+            } catch (Throwable ignore) {
+                if (sp.getValueFactory() != null && sp.getEditor() != null)
+                    sp.getEditor().setText(String.valueOf(sp.getValueFactory().getValue()))
+            }
+        }
         // 7 spinner: Membran 1+/2+/3+, Piksel DAB 1+/2+/3+, Piksel H maskesi
         def spM1  = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.membrane1', 0.15), 0.01)
         def spM2  = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.membrane2', 0.40), 0.01)
@@ -582,7 +591,10 @@ javafx.application.Platform.runLater {
         def spPD2 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.pixDab2',   0.30), 0.01)
         def spPD3 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.pixDab3',   0.60), 0.01)
         def spPH  = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.pixHmask',  0.05), 0.01)
-        [spM1, spM2, spM3, spPD1, spPD2, spPD3, spPH].each { it.setEditable(true); it.setPrefWidth(110) }
+        [spM1, spM2, spM3, spPD1, spPD2, spPD3, spPH].each { sp ->
+            sp.setEditable(true); sp.setPrefWidth(110)
+            sp.focusedProperty().addListener({ obs, was, now -> if (!now) commitSpinner(sp) } as javafx.beans.value.ChangeListener)
+        }
 
         def grid = new javafx.scene.layout.GridPane()
         grid.setHgap(8); grid.setVgap(6); grid.setPadding(new javafx.geometry.Insets(6))
@@ -605,8 +617,46 @@ javafx.application.Platform.runLater {
         resultArea.setStyle("-fx-font-family: 'Consolas','Menlo','Courier New',monospace; -fx-font-size: 12px;")
 
         def runBtn = new javafx.scene.control.Button('Çalıştır'); runBtn.setDefaultButton(true)
+        def recountBtn = new javafx.scene.control.Button('Eşikleri yeniden uygula (hızlı)'); recountBtn.setDisable(!hasDetections.get())
+        def fixTypeBtn = new javafx.scene.control.Button("Görüntü tipini 'Brightfield (H-DAB)' olarak ayarla")
+        fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
+        fixTypeBtn.setOnAction({
+            imageData.setImageType(qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_H_DAB)
+            QP.setImageType('BRIGHTFIELD_H_DAB')
+            fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
+            status.setStyle(''); status.setText("✓ Görüntü tipi 'Brightfield (H-DAB)' olarak ayarlandı. Şimdi bir alan anotasyonu seçip 'Çalıştır'a basın.")
+            resultArea.setText('')
+        })
+
+        if (!imageTypeOk()) {
+            status.setStyle('-fx-text-fill: -qp-script-error-color;')
+            status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz.")
+            resultArea.setText(imageTypeGuidance())
+            fixTypeBtn.setVisible(true); fixTypeBtn.setManaged(true)
+        }
+
+        def handleResult = { res ->
+            progress.setVisible(false); progress.setManaged(false)
+            runBtn.setDisable(false)
+            recountBtn.setDisable(!hasDetections.get())
+            if (res.ok) {
+                fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
+                hasDetections.set(true); recountBtn.setDisable(false)
+                status.setStyle(''); status.setText('Tamamlandı ✅ — eşikleri değiştirip "Eşikleri yeniden uygula (hızlı)" deneyin.')
+                resultArea.setText(res.text)
+            } else if (res.imageTypeIssue) {
+                status.setStyle('-fx-text-fill: -qp-script-error-color;')
+                status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz.")
+                resultArea.setText(res.error)
+                fixTypeBtn.setVisible(true); fixTypeBtn.setManaged(true)
+            } else {
+                status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + res.error)
+            }
+        }
+
         runBtn.setOnAction({
-            runBtn.setDisable(true)
+            [spM1, spM2, spM3, spPD1, spPD2, spPD3, spPH].each { commitSpinner(it) }
+            runBtn.setDisable(true); recountBtn.setDisable(true)
             status.setStyle(''); status.setText('… hesaplanıyor (piksel + opsiyonel hücre)…')
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             double m1  = spM1.getValue()  as double
@@ -617,17 +667,28 @@ javafx.application.Platform.runLater {
             double pd3 = spPD3.getValue() as double
             double ph  = spPH.getValue()  as double
             def worker = new Thread({
-                def res = runDetection(m1, m2, m3, pd1, pd2, pd3, ph)
-                javafx.application.Platform.runLater {
-                    progress.setVisible(false); progress.setManaged(false); runBtn.setDisable(false)
-                    if (res.ok) {
-                        status.setStyle(''); status.setText('Tamamlandı ✅ — eşikleri değiştirip tekrar çalıştırabilirsiniz.')
-                        resultArea.setText(res.text)
-                    } else {
-                        status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + res.error)
-                    }
-                }
+                def res = runDetection(m1, m2, m3, pd1, pd2, pd3, ph, false)
+                javafx.application.Platform.runLater { handleResult(res) }
             }, 'Modul4Detect')
+            worker.setDaemon(true); worker.start()
+        })
+
+        recountBtn.setOnAction({
+            [spM1, spM2, spM3, spPD1, spPD2, spPD3, spPH].each { commitSpinner(it) }
+            runBtn.setDisable(true); recountBtn.setDisable(true)
+            status.setStyle(''); status.setText('Eşikler yeniden uygulanıyor… (hücre tespiti tekrarlanmaz)')
+            progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
+            double m1  = spM1.getValue()  as double
+            double m2  = spM2.getValue()  as double
+            double m3  = spM3.getValue()  as double
+            double pd1 = spPD1.getValue() as double
+            double pd2 = spPD2.getValue() as double
+            double pd3 = spPD3.getValue() as double
+            double ph  = spPH.getValue()  as double
+            def worker = new Thread({
+                def res = runDetection(m1, m2, m3, pd1, pd2, pd3, ph, true)
+                javafx.application.Platform.runLater { handleResult(res) }
+            }, 'Modul4Recount')
             worker.setDaemon(true); worker.start()
         })
 
@@ -647,10 +708,10 @@ javafx.application.Platform.runLater {
 
         def spacer = new javafx.scene.layout.Region()
         javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-        def btnRow = new javafx.scene.layout.HBox(8, alwaysTop, spacer, copyBtn, runBtn, closeBtn)
+        def btnRow = new javafx.scene.layout.HBox(8, alwaysTop, spacer, copyBtn, recountBtn, runBtn, closeBtn)
         btnRow.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
 
-        def content = new javafx.scene.layout.VBox(10, title, info, adv, status, progress, resultArea)
+        def content = new javafx.scene.layout.VBox(10, title, info, adv, status, fixTypeBtn, progress, resultArea)
         content.setPadding(new javafx.geometry.Insets(14))
         javafx.scene.layout.VBox.setVgrow(resultArea, javafx.scene.layout.Priority.ALWAYS)
         def bottom = new javafx.scene.layout.VBox(8, footer, btnRow)

@@ -4,15 +4,15 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Atölye için "hızlı deneme" betiği. Sitoplazmik DAB boyamasını (CD68,
  * CD163 ve sitokeratinler gibi belirteçleri) ölçer. Her hücre sitoplazmik DAB yoğunluğuna göre
- * Negative / Weak / Moderate / Strong bin'lerine atanır.
+ * 0 (negatif) / 1+ (zayıf) / 2+ (orta) / 3+ (güçlü) sınıflarına atanır.
  *
  * KULLANIM:
  *   1. CD68 (veya benzeri sitoplazmik DAB) İHK slaytını açın
  *   2. Image type → "Brightfield (H-DAB)"
  *   3. [R] tuşu → ~1×1 mm dikdörtgen anotasyon çizin ve SEÇİN
  *   4. Bu betiği çalıştırın → açılan TEK pencerede "Çalıştır"
- *   5. Pencere açık kalır: eşikleri değiştirip (Gelişmiş ayarlar) tekrar
- *      çalıştırabilir, sonuçları aynı pencerede güncel görebilirsiniz
+ *   5. Pencere açık kalır: eşikleri değiştirip "Yeniden say (hızlı)" ile
+ *      hücre tespitini TEKRAR ÇALIŞTIRMADAN saniyeler içinde yeniden sınıflandırın
  *
  * NEDEN SİTOPLAZMA FARKLI?
  *   • Sitoplazma çekirdekten **çok daha büyük hacme** sahip
@@ -51,28 +51,38 @@ if (imageData == null) {
     return
 }
 
-def imageTypeName = imageData.getImageType()?.toString() ?: ""
-def normalizedImageType = imageTypeName.toUpperCase(java.util.Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
-if (!normalizedImageType.contains('H_DAB')) {
-    Dialogs.showErrorMessage(
-        "Yanlış görüntü tipi",
-        "Image type 'Brightfield (H-DAB)' olmalı. Şu anki: ${imageTypeName}"
-    )
-    return
+// Image type kontrolü (Brightfield (H-DAB) zorunlu — DAB ayrımı için).
+// Modal pencere yerine: pencere her zaman açılır; tip yanlışsa kullanıcı
+// pencere içinde tek tıkla "Brightfield (H-DAB)" olarak ayarlayabilir.
+def imageTypeOk = { ->
+    def n = (imageData.getImageType()?.toString() ?: "")
+        .toUpperCase(java.util.Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
+    n.contains('H_DAB')
+}
+def imageTypeGuidance = { ->
+    "Bu slayt 'Brightfield (H-DAB)' olarak ayarlı değil.\n" +
+    "Şu anki tip: ${imageData.getImageType()?.toString() ?: ''}\n\n" +
+    "Çözüm:\n" +
+    "  • Penceredeki \"Görüntü tipini 'Brightfield (H-DAB)' olarak ayarla\" düğmesine tıklayın, VEYA\n" +
+    "  1. Image panelini açın (sol-üst)\n" +
+    "  2. 'Image type' → 'Brightfield (H-DAB)' seçin (DAB ayrımı için gerekli)\n" +
+    "  3. Yukarıdaki 'Çalıştır' düğmesine tekrar basın"
 }
 
-// "Hematoxylin OD" kanalı yalnızca H-DAB boya vektörleri ayarlanmışsa görünür.
-def stains = imageData.getColorDeconvolutionStains()
-def hasHematoxylin = false
-if (stains != null) {
-    for (int i = 1; i <= 3; i++) {
-        def name = stains.getStain(i)?.getName()?.toLowerCase(java.util.Locale.ROOT)
-        if (name != null && name.contains("hematoxylin")) { hasHematoxylin = true; break }
+// H-DAB ise ve boya vektörleri eksikse atölye varsayılanını uygula.
+if (imageTypeOk()) {
+    def stains = imageData.getColorDeconvolutionStains()
+    def hasHematoxylin = false
+    if (stains != null) {
+        for (int i = 1; i <= 3; i++) {
+            def name = stains.getStain(i)?.getName()?.toLowerCase(java.util.Locale.ROOT)
+            if (name != null && name.contains("hematoxylin")) { hasHematoxylin = true; break }
+        }
     }
-}
-if (!hasHematoxylin) {
-    println "⚠ H-DAB boya vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
-    QP.setImageType('BRIGHTFIELD_H_DAB')
+    if (!hasHematoxylin) {
+        println "⚠ H-DAB boya vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
+        QP.setImageType('BRIGHTFIELD_H_DAB')
+    }
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -143,53 +153,19 @@ def suggestStainVectors = { ->
             'Tahmin yapılamadı: ' + (svErr.getMessage() ?: svErr.getClass().getSimpleName()))
     }
 }
-suggestStainVectors()
+if (QP.getSelectedObject() instanceof PathAnnotationObject && QP.getSelectedObject().getROI()?.isArea()) {
+    suggestStainVectors()
+}
 
 // ──────────────────────────────────────────────────────────────
 // 2) Tespit + sonuç toplama tek yerde — pencere kapanmadan tekrar
 //    (eşikleri değiştirip) çağrılabilir. Dönüş: [ok, text] | [ok:false, error].
 // ──────────────────────────────────────────────────────────────
-def runDetection = { double cyto1, double cyto2, double cyto3, double cellExpansionCyto ->
-    def selected = QP.getSelectedObject()
-    if (selected == null || !(selected instanceof PathAnnotationObject))
-        return [ok:false, error:'Önce ölçmek istediğiniz dikdörtgen anotasyonu çizip SEÇİN (kenarı sarı görünür).']
-    def targetAnnotation = selected
-    double pixelSize       = atolyeD('atolye.pixelSize', 0.5)
-    double backgroundRadius = atolyeD('atolye.backgroundRadius', 8.0)
-    double medianRadius    = atolyeD('atolye.medianRadius', 0.0)
-    double sigma           = atolyeD('atolye.sigma', 1.5)
-    double minArea         = atolyeD('atolye.minArea', 10.0)
-    double maxArea         = atolyeD('atolye.maxArea', 400.0)
-    double detectionThreshold = atolyeD('atolye.detectionThreshold', 0.1)
-    boolean watershed      = atolyeB('atolye.watershed', true)
-    int warnGenericCount   = atolyeI('atolye.warnGenericCount', 200)
+def finishCytoMetrics = { targetAnnotation, double cyto1, double cyto2, double cyto3, double cellExpansionCyto, double detectElapsed ->
     long t0 = System.currentTimeMillis()
-    QP.selectObjects(targetAnnotation)
-    QP.runPlugin(
-        'qupath.imagej.detect.cells.PositiveCellDetection',
-        '{' +
-            '"detectionImageBrightfield":"Hematoxylin OD",' +
-            '"requestedPixelSizeMicrons":' + pixelSize + ',' +
-            '"backgroundRadiusMicrons":' + backgroundRadius + ',' +
-            '"medianRadiusMicrons":' + medianRadius + ',' +
-            '"sigmaMicrons":' + sigma + ',' +
-            '"minAreaMicrons":' + minArea + ',' +
-            '"maxAreaMicrons":' + maxArea + ',' +
-            '"threshold":' + detectionThreshold + ',' +
-            '"watershedPostProcess":' + watershed + ',' +
-            '"cellExpansionMicrons":' + cellExpansionCyto + ',' +
-            '"includeNuclei":true,' +
-            '"smoothBoundaries":true,' +
-            '"makeMeasurements":true,' +
-            '"thresholdCompartment":"Cytoplasm: DAB OD mean",' +
-            '"thresholdPositive1":' + cyto1 + ',' +
-            '"thresholdPositive2":' + cyto2 + ',' +
-            '"thresholdPositive3":' + cyto3 + ',' +
-            '"singleThreshold":false' +
-        '}'
-    )
-    double elapsed = (System.currentTimeMillis() - t0) / 1000.0
     def cells = targetAnnotation.getChildObjects().findAll { it.isDetection() }
+    QP.setIntensityClassifications(cells, "Cytoplasm: DAB OD mean", cyto1, cyto2, cyto3)
+    QP.fireHierarchyUpdate()
     def totalCells = cells.size()
     def nNeg = 0, n1 = 0, n2 = 0, n3 = 0
     cells.each { c ->
@@ -217,20 +193,22 @@ def runDetection = { double cyto1, double cyto2, double cyto3, double cellExpans
     def pct1   = totalCells > 0 ? 100.0 * n1 / totalCells : 0.0
     def pct2   = totalCells > 0 ? 100.0 * n2 / totalCells : 0.0
     def pct3   = totalCells > 0 ? 100.0 * n3 / totalCells : 0.0
+    int warnGenericCount = atolyeI('atolye.warnGenericCount', 200)
     def uyari = ""
     if (totalCells < warnGenericCount) {
         uyari = String.format(java.util.Locale.US, "\n⚠️ Sadece %,d hücre — istatistiksel olarak güvenilmez (≥500 önerilir).", totalCells)
     }
+    double elapsed = detectElapsed + (System.currentTimeMillis() - t0) / 1000.0
     def text = String.format(java.util.Locale.US,
         "CD68 / Sitoplazmik İHK bitti.\n\n" +
         "Parametreler : 1+=%.2f  2+=%.2f  3+=%.2f  genişletme=%.1f µm\n" +
         "────────────────────────────────────\n" +
         "📊 Hücre dağılımı (n = %,d toplam)\n" +
         "────────────────────────────────────\n" +
-        "  Negative            : %,d  (%%%.1f)\n" +
-        "  Weak (1+)           : %,d  (%%%.1f)\n" +
-        "  Moderate (2+)       : %,d  (%%%.1f)\n" +
-        "  Strong (3+)         : %,d  (%%%.1f)\n\n" +
+        "  0  (negatif)        : %,d  (%%%.1f)\n" +
+        "  1+ (zayıf)          : %,d  (%%%.1f)\n" +
+        "  2+ (orta)           : %,d  (%%%.1f)\n" +
+        "  3+ (güçlü)          : %,d  (%%%.1f)\n\n" +
         "🎯 Bütünleşik metrikler\n" +
         "────────────────────────\n" +
         "  Pozitif yüzdesi       : %%%.1f\n" +
@@ -250,6 +228,67 @@ def runDetection = { double cyto1, double cyto2, double cyto3, double cellExpans
     return [ok:true, text:text]
 }
 
+def runDetection = { double cyto1, double cyto2, double cyto3, double cellExpansionCyto ->
+    if (!(cyto1 < cyto2 && cyto2 < cyto3))
+        return [ok:false, error:'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.']
+    if (!imageTypeOk())
+        return [ok:false, error: imageTypeGuidance(), imageTypeIssue:true]
+    def selected = QP.getSelectedObject()
+    if (selected == null || !(selected instanceof PathAnnotationObject))
+        return [ok:false, error:'Önce ölçmek istediğiniz alan anotasyonunu seçin (üst araç çubuğundan Dikdörtgen [R], Çokgen [P] veya Fırça [B] ile çizip üzerine tıklayın; seçili anotasyonun kenarı SARI görünür).']
+    def targetAnnotation = selected
+    double pixelSize       = atolyeD('atolye.pixelSize', 0.5)
+    double backgroundRadius = atolyeD('atolye.backgroundRadius', 8.0)
+    double medianRadius    = atolyeD('atolye.medianRadius', 0.0)
+    double sigma           = atolyeD('atolye.sigma', 1.5)
+    double minArea         = atolyeD('atolye.minArea', 10.0)
+    double maxArea         = atolyeD('atolye.maxArea', 400.0)
+    double detectionThreshold = atolyeD('atolye.detectionThreshold', 0.1)
+    boolean watershed      = atolyeB('atolye.watershed', true)
+    long t0 = System.currentTimeMillis()
+    QP.selectObjects(targetAnnotation)
+    QP.runPlugin(
+        'qupath.imagej.detect.cells.PositiveCellDetection',
+        '{' +
+            '"detectionImageBrightfield":"Hematoxylin OD",' +
+            '"requestedPixelSizeMicrons":' + pixelSize + ',' +
+            '"backgroundRadiusMicrons":' + backgroundRadius + ',' +
+            '"medianRadiusMicrons":' + medianRadius + ',' +
+            '"sigmaMicrons":' + sigma + ',' +
+            '"minAreaMicrons":' + minArea + ',' +
+            '"maxAreaMicrons":' + maxArea + ',' +
+            '"threshold":' + detectionThreshold + ',' +
+            '"watershedPostProcess":' + watershed + ',' +
+            '"cellExpansionMicrons":' + cellExpansionCyto + ',' +
+            '"includeNuclei":true,' +
+            '"smoothBoundaries":true,' +
+            '"makeMeasurements":true,' +
+            '"thresholdCompartment":"Cytoplasm: DAB OD mean",' +
+            '"thresholdPositive1":' + cyto1 + ',' +
+            '"thresholdPositive2":' + cyto2 + ',' +
+            '"thresholdPositive3":' + cyto3 + ',' +
+            '"singleThreshold":false' +
+        '}'
+    )
+    double detectElapsed = (System.currentTimeMillis() - t0) / 1000.0
+    return finishCytoMetrics(targetAnnotation, cyto1, cyto2, cyto3, cellExpansionCyto, detectElapsed)
+}
+
+// Hızlı yeniden say (tespit YOK): yalnızca mevcut hücreleri yeni eşiklerle sınıflandırır.
+def recount = { double cyto1, double cyto2, double cyto3, double cellExpansionCyto ->
+    if (!(cyto1 < cyto2 && cyto2 < cyto3))
+        return [ok:false, error:'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.']
+    if (!imageTypeOk())
+        return [ok:false, error: imageTypeGuidance(), imageTypeIssue:true]
+    def selected = QP.getSelectedObject()
+    if (selected == null || !(selected instanceof PathAnnotationObject))
+        return [ok:false, error:'Önce ölçmek istediğiniz alan anotasyonunu seçin (üst araç çubuğundan Dikdörtgen [R], Çokgen [P] veya Fırça [B] ile çizip üzerine tıklayın; seçili anotasyonun kenarı SARI görünür).']
+    def existing = selected.getChildObjects().findAll { it.isDetection() }
+    if (existing.isEmpty())
+        return [ok:false, error:'Bu anotasyonda hücre tespiti yok. Önce "Çalıştır" ile tespit yapın, sonra "Yeniden say (hızlı)" kullanın.']
+    return finishCytoMetrics(selected, cyto1, cyto2, cyto3, cellExpansionCyto, 0.0)
+}
+
 // Headless: tek sefer atölye varsayılanlarıyla çalıştır + yazdır.
 if (isHeadless) {
     def r = runDetection(
@@ -267,6 +306,12 @@ if (isHeadless) {
 // ──────────────────────────────────────────────────────────────
 javafx.application.Platform.runLater {
     try {
+        def hasDetections = new java.util.concurrent.atomic.AtomicBoolean(false)
+        def initSel = QP.getSelectedObject()
+        if (initSel instanceof PathAnnotationObject && !initSel.getChildObjects().findAll { it.isDetection() }.isEmpty()) {
+            hasDetections.set(true)
+        }
+
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
         stage.setTitle('Sitoplazmik Boya - CD68 / Sitoplazmik İHK kantifikasyonu')
@@ -276,14 +321,30 @@ javafx.application.Platform.runLater {
         title.setStyle('-fx-font-size: 14px; -fx-font-weight: bold;')
         def info = new javafx.scene.control.Label(
             'Bir dikdörtgen anotasyon (R) çizip SEÇİN (kenarı sarı), sonra "Çalıştır".\n' +
-            'Eşikleri değiştirip yeniden çalıştırabilirsiniz; sonuç aşağıda güncellenir.')
+            'Eşik değiştirince "Yeniden say (hızlı)" tespiti tekrarlamadan saniyeler içinde günceller.')
         info.setWrapText(true)
 
+        def commitSpinner = { javafx.scene.control.Spinner sp ->
+            try {
+                def vf = sp.getValueFactory()
+                def conv = vf?.getConverter()
+                def txt = sp.getEditor()?.getText()?.trim()?.replace(',', '.')
+                if (vf != null && conv != null && txt != null && !txt.isEmpty()) {
+                    vf.setValue(conv.fromString(txt))
+                }
+            } catch (Throwable ignore) {
+                if (sp.getValueFactory() != null && sp.getEditor() != null)
+                    sp.getEditor().setText(String.valueOf(sp.getValueFactory().getValue()))
+            }
+        }
         def spCyto1 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.cyto1', 0.10), 0.01)
         def spCyto2 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.cyto2', 0.20), 0.01)
         def spCyto3 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.cyto3', 0.35), 0.01)
         def spExp   = new javafx.scene.control.Spinner(0.0, 20.0, atolyeD('atolye.cellExpansionCyto', 7.0), 0.5)
-        [spCyto1, spCyto2, spCyto3, spExp].each { it.setEditable(true); it.setPrefWidth(110) }
+        [spCyto1, spCyto2, spCyto3, spExp].each { sp ->
+            sp.setEditable(true); sp.setPrefWidth(110)
+            sp.focusedProperty().addListener({ obs, was, now -> if (!now) commitSpinner(sp) } as javafx.beans.value.ChangeListener)
+        }
         def grid = new javafx.scene.layout.GridPane()
         grid.setHgap(8); grid.setVgap(6); grid.setPadding(new javafx.geometry.Insets(6))
         grid.addRow(0, new javafx.scene.control.Label('1+ eşiği (zayıf, DAB OD)'), spCyto1)
@@ -302,8 +363,46 @@ javafx.application.Platform.runLater {
         resultArea.setStyle("-fx-font-family: 'Consolas','Menlo','Courier New',monospace; -fx-font-size: 12px;")
 
         def runBtn = new javafx.scene.control.Button('Çalıştır'); runBtn.setDefaultButton(true)
+        def recountBtn = new javafx.scene.control.Button('Yeniden say (hızlı)'); recountBtn.setDisable(!hasDetections.get())
+        def fixTypeBtn = new javafx.scene.control.Button("Görüntü tipini 'Brightfield (H-DAB)' olarak ayarla")
+        fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
+        fixTypeBtn.setOnAction({
+            imageData.setImageType(qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_H_DAB)
+            QP.setImageType('BRIGHTFIELD_H_DAB')
+            fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
+            status.setStyle(''); status.setText("✓ Görüntü tipi 'Brightfield (H-DAB)' olarak ayarlandı. Şimdi bir alan anotasyonu seçip 'Çalıştır'a basın.")
+            resultArea.setText('')
+        })
+
+        if (!imageTypeOk()) {
+            status.setStyle('-fx-text-fill: -qp-script-error-color;')
+            status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz.")
+            resultArea.setText(imageTypeGuidance())
+            fixTypeBtn.setVisible(true); fixTypeBtn.setManaged(true)
+        }
+
+        def handleResult = { res ->
+            progress.setVisible(false); progress.setManaged(false)
+            runBtn.setDisable(false)
+            recountBtn.setDisable(!hasDetections.get())
+            if (res.ok) {
+                fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
+                hasDetections.set(true); recountBtn.setDisable(false)
+                status.setStyle(''); status.setText('Tamamlandı ✅ — eşikleri değiştirip "Yeniden say (hızlı)" deneyin.')
+                resultArea.setText(res.text)
+            } else if (res.imageTypeIssue) {
+                status.setStyle('-fx-text-fill: -qp-script-error-color;')
+                status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz.")
+                resultArea.setText(res.error)
+                fixTypeBtn.setVisible(true); fixTypeBtn.setManaged(true)
+            } else {
+                status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + res.error)
+            }
+        }
+
         runBtn.setOnAction({
-            runBtn.setDisable(true)
+            [spCyto1, spCyto2, spCyto3, spExp].each { commitSpinner(it) }
+            runBtn.setDisable(true); recountBtn.setDisable(true)
             status.setStyle(''); status.setText('Hücreler tespit ediliyor…')
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             double c1  = spCyto1.getValue() as double
@@ -312,16 +411,24 @@ javafx.application.Platform.runLater {
             double exp = spExp.getValue() as double
             def worker = new Thread({
                 def res = runDetection(c1, c2, c3, exp)
-                javafx.application.Platform.runLater {
-                    progress.setVisible(false); progress.setManaged(false); runBtn.setDisable(false)
-                    if (res.ok) {
-                        status.setStyle(''); status.setText('Tamamlandı ✅ — eşikleri değiştirip tekrar çalıştırabilirsiniz.')
-                        resultArea.setText(res.text)
-                    } else {
-                        status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + res.error)
-                    }
-                }
+                javafx.application.Platform.runLater { handleResult(res) }
             }, 'Modul5Detect')
+            worker.setDaemon(true); worker.start()
+        })
+
+        recountBtn.setOnAction({
+            [spCyto1, spCyto2, spCyto3, spExp].each { commitSpinner(it) }
+            runBtn.setDisable(true); recountBtn.setDisable(true)
+            status.setStyle(''); status.setText('Yeniden sayılıyor… (tespit yok, yalnızca sınıflandırma)')
+            progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
+            double c1  = spCyto1.getValue() as double
+            double c2  = spCyto2.getValue() as double
+            double c3  = spCyto3.getValue() as double
+            double exp = spExp.getValue() as double
+            def worker = new Thread({
+                def res = recount(c1, c2, c3, exp)
+                javafx.application.Platform.runLater { handleResult(res) }
+            }, 'Modul5Recount')
             worker.setDaemon(true); worker.start()
         })
 
@@ -341,10 +448,10 @@ javafx.application.Platform.runLater {
 
         def spacer = new javafx.scene.layout.Region()
         javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-        def btnRow = new javafx.scene.layout.HBox(8, alwaysTop, spacer, copyBtn, runBtn, closeBtn)
+        def btnRow = new javafx.scene.layout.HBox(8, alwaysTop, spacer, copyBtn, recountBtn, runBtn, closeBtn)
         btnRow.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
 
-        def content = new javafx.scene.layout.VBox(10, title, info, adv, status, progress, resultArea)
+        def content = new javafx.scene.layout.VBox(10, title, info, adv, status, fixTypeBtn, progress, resultArea)
         content.setPadding(new javafx.geometry.Insets(14))
         javafx.scene.layout.VBox.setVgrow(resultArea, javafx.scene.layout.Priority.ALWAYS)
         def bottom = new javafx.scene.layout.VBox(8, footer, btnRow)

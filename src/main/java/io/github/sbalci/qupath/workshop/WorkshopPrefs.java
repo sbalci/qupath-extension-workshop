@@ -10,6 +10,7 @@ package io.github.sbalci.qupath.workshop;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
@@ -202,10 +203,21 @@ public final class WorkshopPrefs {
         Property<?> p = PROPS.get(key);
         Object def = DEFAULTS.get(key);
         if (p == null) return;
-        if (p instanceof DoubleProperty) ((DoubleProperty) p).set((double) def);
-        else if (p instanceof IntegerProperty) ((IntegerProperty) p).set((int) def);
-        else if (p instanceof BooleanProperty) ((BooleanProperty) p).set((boolean) def);
-        else if (p instanceof StringProperty) ((StringProperty) p).set((String) def);
+        Runnable update = () -> {
+            if (p instanceof DoubleProperty) ((DoubleProperty) p).setValue((Double) def);
+            else if (p instanceof IntegerProperty) ((IntegerProperty) p).setValue((Integer) def);
+            else if (p instanceof BooleanProperty) ((BooleanProperty) p).setValue((Boolean) def);
+            else if (p instanceof StringProperty) ((StringProperty) p).setValue((String) def);
+        };
+        if (Platform.isFxApplicationThread()) {
+            update.run();
+        } else {
+            try {
+                Platform.runLater(update);
+            } catch (IllegalStateException ex) {
+                update.run();
+            }
+        }
     }
 
     public static void resetAll() {

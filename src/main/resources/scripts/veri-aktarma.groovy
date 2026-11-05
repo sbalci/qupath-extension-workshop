@@ -64,12 +64,32 @@ def atolyeSetB = { String k, boolean v -> __wpCall('setBool', [String.class, boo
 def exportFolder = atolyeS('atolye.exportFolder', 'exports')
 
 // Sütun "alt küme" modunda sunulan aday liste. "" tercih değeri ⇒ bu listenin tamamı.
-def COLUMN_MASTER = [
+// Açık slaytta henüz nesne/ölçüm yoksa açık projedeki kayıtlı slaytlardan da sütun örneklenir.
+def allCols = new LinkedHashSet<String>([
     'Image', 'Name', 'Class',
     'Centroid X µm', 'Centroid Y µm',
-    'Nucleus: DAB OD mean', 'Cytoplasm: DAB OD mean', 'Cell: DAB OD mean',
-    'Area µm^2', 'Num Detections', 'Positive %', 'H-score'
-]
+    'Nucleus: DAB OD mean', 'Cytoplasm: DAB OD mean', 'Membrane: DAB OD mean', 'Cell: DAB OD mean',
+    'Area µm^2', 'Num Detections', 'Positive %', 'H-score', 'Pixelwise H-score', 'cTCF (%)'
+])
+try {
+    def curH = QP.getCurrentHierarchy()
+    def sampleObjs = curH != null ? (curH.getAnnotationObjects().take(20) + curH.getDetectionObjects().take(50)) : []
+    if (sampleObjs.isEmpty() && QP.getProject() != null) {
+        for (entry in QP.getProject().getImageList()) {
+            try {
+                if (entry.hasImageData()) {
+                    def h = entry.readHierarchy()
+                    sampleObjs = (h.getAnnotationObjects().take(20) + h.getDetectionObjects().take(50))
+                    if (!sampleObjs.isEmpty()) break
+                }
+            } catch (Throwable ignored) {}
+        }
+    }
+    sampleObjs.each { obj ->
+        try { allCols.addAll(obj.getMeasurementList().getNames()) } catch (Throwable ignored) {}
+    }
+} catch (Throwable ignored) {}
+def COLUMN_MASTER = new ArrayList<String>(allCols)
 
 // ──────────────────────────────────────────────────────────────
 // Etkileşimli seçenek penceresi — bir Map döndürür (İptal'de null).

@@ -78,7 +78,7 @@ if (curImageType == qupath.lib.images.ImageData.ImageType.FLUORESCENCE) {
 def runDetection = { double thr, double sig, double exp ->
     def selected = QP.getSelectedObject()
     if (selected == null || !(selected instanceof PathAnnotationObject))
-        return [ok:false, error:'Önce ölçmek istediğiniz dikdörtgen anotasyonu çizip SEÇİN (kenarı sarı görünür).']
+        return [ok:false, error:'Önce ölçmek istediğiniz alan anotasyonunu seçin (üst araç çubuğundan Dikdörtgen [R], Çokgen [P] veya Fırça [B] ile çizip üzerine tıklayın; seçili anotasyonun kenarı SARI görünür).']
     def target = selected
     def cal = imageData.getServer().getPixelCalibration()
     double pw = cal.getPixelWidthMicrons(), ph = cal.getPixelHeightMicrons()
@@ -155,10 +155,26 @@ javafx.application.Platform.runLater {
             'slaytınızda görmek için: Yardımcılar → Görüntü işleme kavramları.')
         info.setWrapText(true)
 
+        def commitSpinner = { javafx.scene.control.Spinner sp ->
+            try {
+                def vf = sp.getValueFactory()
+                def conv = vf?.getConverter()
+                def txt = sp.getEditor()?.getText()?.trim()?.replace(',', '.')
+                if (vf != null && conv != null && txt != null && !txt.isEmpty()) {
+                    vf.setValue(conv.fromString(txt))
+                }
+            } catch (Throwable ignore) {
+                if (sp.getValueFactory() != null && sp.getEditor() != null)
+                    sp.getEditor().setText(String.valueOf(sp.getValueFactory().getValue()))
+            }
+        }
         def spThr = new javafx.scene.control.Spinner(0.0, 1.0, atolyeD('atolye.detectionThreshold', 0.1), 0.01)
         def spSig = new javafx.scene.control.Spinner(0.5, 5.0, atolyeD('atolye.sigma', 1.5), 0.1)
         def spExp = new javafx.scene.control.Spinner(0.0, 20.0, atolyeD('atolye.cellExpansionNuclear', 5.0), 0.5)
-        [spThr, spSig, spExp].each { it.setEditable(true); it.setPrefWidth(110) }
+        [spThr, spSig, spExp].each { sp ->
+            sp.setEditable(true); sp.setPrefWidth(110)
+            sp.focusedProperty().addListener({ obs, was, now -> if (!now) commitSpinner(sp) } as javafx.beans.value.ChangeListener)
+        }
         // Her parametrenin "perde arkası" görüntü-işleme karşılığı (Bankhead, dijital
         // patoloji için görüntü-işleme sözlüğü) — kavramı kullanım anında açıklar.
         spThr.setTooltip(new javafx.scene.control.Tooltip(
@@ -191,6 +207,7 @@ javafx.application.Platform.runLater {
 
         def runBtn = new javafx.scene.control.Button('Çalıştır'); runBtn.setDefaultButton(true)
         runBtn.setOnAction({
+            [spThr, spSig, spExp].each { commitSpinner(it) }
             runBtn.setDisable(true)
             status.setStyle(''); status.setText('Hücreler tespit ediliyor…')
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)

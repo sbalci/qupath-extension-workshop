@@ -172,55 +172,77 @@ def computeState = { ->
     return st
 }
 
-// DETECT — TCR içinde StarDist çekirdek tespiti (+ model çöz, +pürüzsüzleştirme).
+// DETECT — TCR içinde StarDist çekirdek tespiti (StarDist yoksa Watershed yedeği).
 //   Dönüş: [ok:true, count:n] | [ok:false, error:…]
 def runStarDist = { regionAnno ->
     try {
         def imageData = QP.getCurrentImageData()
         if (imageData == null) return [ok:false, error:'Görüntü açık değil.']
 
-        // Model çöz — yoksa otomatik indir.
-        def mf = new File(modelPath)
-        if (!mf.exists()) {
-            def progress = makeProgressStage('StarDist modeli indiriliyor…\n(he_heavy_augment.pb, ~5.7 MB)')
-            boolean dok = false
-            try { downloadModel(mf); dok = true; println '  ✓ Model indirildi ve doğrulandı.' }
-            catch (Throwable t) { println "  ✗ Otomatik indirme başarısız: ${t.message}" }
-            finally { if (progress != null) javafx.application.Platform.runLater { progress.close() } }
-            if (!dok) return [ok:false, error:
-                'StarDist modeli bulunamadı ve indirilemedi.\n' +
-                "Beklenen yol:\n  ${modelPath}\n\n" +
-                'İnternet bağlıyken tekrar deneyin ya da he_heavy_augment.pb dosyasını\n' +
-                'bu konuma elle kopyalayın (kaynaklar.qmd § ileri kurulumlar).']
-        }
-
         // Önceki tespitleri temizle (yeniden çalıştırılabilirlik).
         def oldDet = regionAnno.getChildObjects().findAll { it.isDetection() }
         if (!oldDet.isEmpty()) regionAnno.removePathObjects(oldDet)
 
         long t0 = System.currentTimeMillis()
-        def stardist = qupath.ext.stardist.StarDist2D
-                .builder(modelPath)
-                .threshold(atolyeD('atolye.stardistThreshold', 0.5))
-                // Global (tüm-görüntü) normalizasyon — karo-karo normalizasyonun arka planda
-                // ürettiği "hayalet çekirdek"leri önler (resmî StarDist dokümanının uyardığı pitfall).
-                .preprocess(
-                    qupath.ext.stardist.StarDist2D.imageNormalizationBuilder()
-                        .maxDimension(4096)
-                        .percentiles(0.2, 99.8)
-                        .build()
-                )
-                .pixelSize(atolyeD('atolye.stardistPixelSize', 0.5))
-                .cellExpansion(atolyeD('atolye.stardistCellExpansion', 5.0))
-                .constrainToParent(true)
-                .measureShape()
-                .measureIntensity()
-                .build()
-        try {
+        if (stardistAvailable()) {
+            // Model çöz — yoksa otomatik indir.
+            def mf = new File(modelPath)
+            if (!mf.exists()) {
+                def progress = makeProgressStage('StarDist modeli indiriliyor…\n(he_heavy_augment.pb, ~5.7 MB)')
+                boolean dok = false
+                try { downloadModel(mf); dok = true; println '  ✓ Model indirildi ve doğrulandı.' }
+                catch (Throwable t) { println "  ✗ Otomatik indirme başarısız: ${t.message}" }
+                finally { if (progress != null) javafx.application.Platform.runLater { progress.close() } }
+                if (!dok) return [ok:false, error:
+                    'StarDist modeli bulunamadı ve indirilemedi.\n' +
+                    "Beklenen yol:\n  ${modelPath}\n\n" +
+                    'İnternet bağlıyken tekrar deneyin ya da he_heavy_augment.pb dosyasını\n' +
+                    'bu konuma elle kopyalayın (kaynaklar.qmd § ileri kurulumlar).']
+            }
+            def stardist = qupath.ext.stardist.StarDist2D
+                    .builder(modelPath)
+                    .threshold(atolyeD('atolye.stardistThreshold', 0.5))
+                    // Global (tüm-görüntü) normalizasyon — karo-karo normalizasyonun arka planda
+                    // ürettiği "hayalet çekirdek"leri önler (resmî StarDist dokümanının uyardığı pitfall).
+                    .preprocess(
+                        qupath.ext.stardist.StarDist2D.imageNormalizationBuilder()
+                            .maxDimension(4096)
+                            .percentiles(0.2, 99.8)
+                            .build()
+                    )
+                    .pixelSize(atolyeD('atolye.stardistPixelSize', 0.5))
+                    .cellExpansion(atolyeD('atolye.stardistCellExpansion', 5.0))
+                    .constrainToParent(true)
+                    .measureShape()
+                    .measureIntensity()
+                    .build()
+            try {
+                QP.selectObjects(regionAnno)
+                stardist.detectObjects(imageData, [regionAnno])
+            } finally {
+                stardist.close()
+            }
+        } else {
+            println '⚠ StarDist eklentisi yüklü değil → klasik WatershedCellDetection yedeği kullanılıyor.'
             QP.selectObjects(regionAnno)
-            stardist.detectObjects(imageData, [regionAnno])
-        } finally {
-            stardist.close()
+            QP.runPlugin(
+                'qupath.imagej.detect.cells.WatershedCellDetection',
+                '{' +
+                    '"detectionImageBrightfield":"Hematoxylin OD",' +
+                    '"requestedPixelSizeMicrons":' + atolyeD('atolye.pixelSize', 0.5) + ',' +
+                    '"backgroundRadiusMicrons":' + atolyeD('atolye.backgroundRadius', 8.0) + ',' +
+                    '"medianRadiusMicrons":' + atolyeD('atolye.medianRadius', 0.0) + ',' +
+                    '"sigmaMicrons":' + atolyeD('atolye.sigma', 1.5) + ',' +
+                    '"minAreaMicrons":' + atolyeD('atolye.minArea', 10.0) + ',' +
+                    '"maxAreaMicrons":' + atolyeD('atolye.maxArea', 400.0) + ',' +
+                    '"threshold":' + atolyeD('atolye.detectionThreshold', 0.1) + ',' +
+                    '"watershedPostProcess":true,' +
+                    '"cellExpansionMicrons":' + atolyeD('atolye.stardistCellExpansion', 5.0) + ',' +
+                    '"includeNuclei":true,' +
+                    '"smoothBoundaries":true,' +
+                    '"makeMeasurements":true' +
+                '}'
+            )
         }
         double elapsed = (System.currentTimeMillis() - t0) / 1000.0
 
@@ -325,76 +347,6 @@ def computeResult = { regionAnno, int tumorCount, int nonNeoCount, int ignoreCou
 }
 
 // ──────────────────────────────────────────────────────────────
-// Boya vektörü önerisi + tek tıklamalı tahmin (DAB-OD modüllerinde aynı blok; H&E slaytta sessiz geçer).
-//   • Aktif vektörler QuPath VARSAYILANI ise uyarır: kantitatif ölçümden önce bu
-//     slayttan tahmin etmeyi önerir (eşikler mutlak DAB OD; yanlış vektör skoru kaydırır).
-//   • "Tamam" → SEÇİLİ alan anotasyonundan tahmin edip uygular (Boya vektörleri
-//     sihirbazı ile aynı yöntem). "İptal" → yine de devam. Kalibre görünüyorsa sessiz geçer.
-// ──────────────────────────────────────────────────────────────
-double SV_TOL = 0.02d
-double[] SV_DEF_HEMA = [0.651d, 0.701d, 0.290d] as double[]
-double[] SV_DEF_DAB  = [0.269d, 0.568d, 0.776d] as double[]
-try {
-    def svEnum = Class.forName('qupath.lib.color.ColorDeconvolutionStains$DefaultColorDeconvolutionStains')
-    def svDab = Class.forName('qupath.lib.color.ColorDeconvolutionStains')
-                     .getMethod('makeDefaultColorDeconvolutionStains', svEnum)
-                     .invoke(null, Enum.valueOf(svEnum, 'H_DAB'))
-    SV_DEF_HEMA = [svDab.getStain(1).getRed(), svDab.getStain(1).getGreen(), svDab.getStain(1).getBlue()] as double[]
-    SV_DEF_DAB  = [svDab.getStain(2).getRed(), svDab.getStain(2).getGreen(), svDab.getStain(2).getBlue()] as double[]
-} catch (Throwable svIgnore) { /* tablo değerleri kullanılır */ }
-def svVecOf = { s -> [s.getRed() as double, s.getGreen() as double, s.getBlue() as double] as double[] }
-def svClose = { double[] a, double[] b ->
-    Math.abs(a[0] - b[0]) <= SV_TOL && Math.abs(a[1] - b[1]) <= SV_TOL && Math.abs(a[2] - b[2]) <= SV_TOL
-}
-def suggestStainVectors = { ->
-    def svId = QP.getCurrentImageData()
-    if (svId == null) return
-    def svStains = svId.getColorDeconvolutionStains()
-    if (svStains == null) return
-    def svS2 = (svStains.getStain(2)?.getName() ?: '').toLowerCase(java.util.Locale.ROOT)
-    if (!svS2.contains('dab')) return
-    boolean svDefault = svClose(svVecOf(svStains.getStain(1)), SV_DEF_HEMA) &&
-                        svClose(svVecOf(svStains.getStain(2)), SV_DEF_DAB)
-    if (!svDefault) { println '✓ Boya vektörleri bu slayttan tahmin/kalibre edilmiş görünüyor.'; return }
-    def svMsg =
-        '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu slayttan tahmin EDİLMEMİŞ.\n\n' +
-        'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n' +
-        'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n' +
-        'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n' +
-        '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n' +
-        '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et'
-    if (isHeadless) { println svMsg; return }
-    if (!qupath.fx.dialogs.Dialogs.showConfirmDialog('Boya vektörleri — öneri', svMsg)) return
-    def svSel = QP.getSelectedObjects().findAll { it.hasROI() && it.getROI().isArea() }
-    if (svSel.isEmpty()) {
-        qupath.fx.dialogs.Dialogs.showWarningNotification('Boya vektörleri',
-            'Önce iki boya + biraz arka plan içeren temsilî bir alan anotasyonu çizip SEÇİN, sonra tekrar deneyin.')
-        return
-    }
-    try {
-        def svRoi = svSel[0].getROI()
-        def svServer = svId.getServer()
-        double svPix = (svRoi.getBoundsWidth() as double) * (svRoi.getBoundsHeight() as double)
-        double svDown = Math.max(1.0d, Math.sqrt(svPix / 16_000_000d))
-        def svImg = svServer.readRegion(
-            qupath.lib.regions.RegionRequest.createInstance(svServer.getPath(), svDown, svRoi))
-        def svOld = svId.getColorDeconvolutionStains()
-        def svNew = qupath.lib.analysis.algorithms.EstimateStainVectors.estimateStains(
-            svImg, svOld, 0.05d, 1.0d, 1.0d, true)
-        svId.setColorDeconvolutionStains(svNew.changeName('Bölgeden tahmin (Atölye)'))
-        javafx.application.Platform.runLater {
-            try { qupath.lib.gui.QuPathGUI.getInstance()?.getViewer()?.repaintEntireImage() } catch (Throwable svR) { }
-        }
-        qupath.fx.dialogs.Dialogs.showMessageDialog('Boya vektörleri',
-            'Vektörler seçili bölgeden tahmin edilip uygulandı. Modülü şimdi çalıştırabilirsiniz.')
-    } catch (Throwable svErr) {
-        qupath.fx.dialogs.Dialogs.showMessageDialog('Boya vektörleri',
-            'Tahmin yapılamadı: ' + (svErr.getMessage() ?: svErr.getClass().getSimpleName()))
-    }
-}
-suggestStainVectors()
-
-// ──────────────────────────────────────────────────────────────
 // Headless: seçili TCR üzerinde tespit (+ varsa sınıflandırıcı) → yazdır.
 // ──────────────────────────────────────────────────────────────
 if (isHeadless) {
@@ -403,7 +355,6 @@ if (isHeadless) {
     if (imageData == null || !(sel instanceof PathAnnotationObject)) {
         println 'QuANTUM modülü (headless): bir görüntü ve seçili TCR anotasyonu gerekir.'; return
     }
-    if (!stardistAvailable()) { println 'QuANTUM modülü (headless): StarDist eklentisi yüklü değil.'; return }
     def d = runStarDist(sel)
     if (!d.ok) { println 'QuANTUM modülü (headless) hata: ' + d.error; return }
     def clf = 'he-tumor-nonneo'
@@ -565,9 +516,8 @@ render = { ->
             "  ${s.heType ? '✓' : '✗'} Görüntü tipi Brightfield (H&E)\n" +
             "  ${s.calib ? '✓' : '✗'} Piksel kalibrasyonu (µm/px)\n" +
             "  ${s.project ? '✓' : '✗'} Açık proje (sınıflandırıcı kaydı için)\n" +
-            "  ${s.stardist ? '✓' : '✗'} StarDist eklentisi\n" +
-            "  ${s.model ? '✓' : '⏳'} StarDist modeli " + (s.model ? '(hazır)' : '(ilk tespitte indirilecek, ~5.7 MB)') + '\n' +
-            (s.stardist ? '' : "\nStarDist eksik: [Extensions → Manage extensions] ile kurup QuPath'i yeniden başlatın.\n") +
+            "  ${s.stardist ? '✓' : '⚠'} StarDist eklentisi " + (s.stardist ? '(hazır)' : '(kurulu değil — klasik Watershed yedeği kullanılacak)') + '\n' +
+            "  ${s.model ? '✓' : '⏳'} StarDist modeli " + (s.model ? '(hazır)' : '(StarDist varsa ilk tespitte indirilecek, ~5.7 MB)') + '\n' +
             "\nEksikleri düzeltip 'Yenile'.")
         def fixType = navButton('Görüntü tipini ayarla', {
             if (stage != null) stage.setAlwaysOnTop(false)
@@ -578,7 +528,7 @@ render = { ->
             if (!launchBundled('yardimci-kalibrasyon.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu)')
         })
         content.getChildren().add(new javafx.scene.layout.HBox(8, fixType, fixCal))
-        boolean ready = s.image && s.heType && s.calib && s.project && s.stardist
+        boolean ready = s.image && s.heType && s.calib && s.project
         def cont = navButton('Devam ▶', { step.set('DETECT_REGION'); render() })
         cont.setDisable(!ready)
         buttons.getChildren().addAll(navButton('İptal', { stage.close() }), navButton('⟳ Yenile', { render() }), cont)

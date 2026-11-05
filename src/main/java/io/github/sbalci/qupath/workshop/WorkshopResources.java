@@ -15,7 +15,12 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPInputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public final class WorkshopResources {
+
+    private static final Logger logger = LoggerFactory.getLogger(WorkshopResources.class);
 
     private WorkshopResources() {}
 
@@ -43,6 +48,7 @@ public final class WorkshopResources {
                 return out.toString(StandardCharsets.UTF_8);
             }
         } catch (IOException ex) {
+            logger.warn("Failed to read bundled classifier resource: {}", TUMOR_STROMA_CLASSIFIER_GZ, ex);
             return null;
         }
     }
@@ -70,6 +76,7 @@ public final class WorkshopResources {
             }
             return out.toString(StandardCharsets.UTF_8);
         } catch (IOException ex) {
+            logger.warn("Failed to read bundled script resource: {}", path, ex);
             return null;
         }
     }

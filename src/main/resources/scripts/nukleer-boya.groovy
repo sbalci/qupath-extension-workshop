@@ -14,7 +14,7 @@
  *   3. [R] tuşu → tümör içeren ~1×1 mm dikdörtgen anotasyon çizin ve SEÇİN
  *   4. Bu betiği çalıştırın → açılan TEK pencerede "Çalıştır"
  *   5. Pencere açık kalır: eşikleri değiştirip "Yeniden say (hızlı)" ile
- *      hücre tespitini TEKRAR ÇALIŞTIRMADAN saniyeler içinde yeniden bin'leyin.
+ *      hücre tespitini TEKRAR ÇALIŞTIRMADAN saniyeler içinde yeniden sınıflandırın.
  *      "Öğretim modu" açıkken varsayılan ↔ sizin eşik karşılaştırması da gösterilir
  *      (parametrenin etkisini görmek için — HMS-IAC keşif yöntemiyle aynı mantık).
  *
@@ -99,6 +99,7 @@ def imageTypeGuidance = { ->
     "Bu slayt 'Brightfield (H-DAB)' olarak ayarlı değil.\n" +
     "Şu anki tip: ${imageData.getImageType()?.toString() ?: ''}\n\n" +
     "Çözüm:\n" +
+    "  • Penceredeki \"Görüntü tipini 'Brightfield (H-DAB)' olarak ayarla\" düğmesine tıklayın, VEYA\n" +
     "  1. Image panelini açın (sol-üst)\n" +
     "  2. 'Image type' → 'Brightfield (H-DAB)' seçin (DAB ayrımı için gerekli)\n" +
     "  3. Yukarıdaki 'Çalıştır' düğmesine tekrar basın"
@@ -189,11 +190,13 @@ def suggestStainVectors = { ->
             'Tahmin yapılamadı: ' + (svErr.getMessage() ?: svErr.getClass().getSimpleName()))
     }
 }
-suggestStainVectors()
+if (QP.getSelectedObject() instanceof PathAnnotationObject && QP.getSelectedObject().getROI()?.isArea()) {
+    suggestStainVectors()
+}
 
 // ──────────────────────────────────────────────────────────────
 // 2) Ölçüm + sonuç oluşturma — paylaşılan yardımcılar.
-//    Hücreler "Nucleus: DAB OD mean" sütununda bin'lenir (3a/3b/7 nükleer).
+//    Hücreler "Nucleus: DAB OD mean" sütununda sınıflandırılır (3a/3b/7 nükleer).
 //    Eşik değişince hücre tespitini yeniden çalıştırmak yerine sadece bu sütun
 //    üzerinden yeniden sınıflandırırız (setIntensityClassifications) — saniyeler
 //    yerine milisaniyeler. "recount" bunu kullanır, "runDetection" tam tespit yapar.
@@ -211,7 +214,7 @@ def resolveTarget = { ->
         return [ok:false, error: imageTypeGuidance(), imageTypeIssue:true]
     def selected = QP.getSelectedObject()
     if (selected == null || !(selected instanceof PathAnnotationObject))
-        return [ok:false, error:'Önce ölçmek istediğiniz dikdörtgen anotasyonu çizip SEÇİN (kenarı sarı görünür).']
+        return [ok:false, error:'Önce ölçmek istediğiniz alan anotasyonunu seçin (üst araç çubuğundan Dikdörtgen [R], Çokgen [P] veya Fırça [B] ile çizip üzerine tıklayın; seçili anotasyonun kenarı SARI görünür).']
     def cal = imageData.getServer().getPixelCalibration()
     def pw = cal.getPixelWidthMicrons()
     def ph = cal.getPixelHeightMicrons()
@@ -220,7 +223,7 @@ def resolveTarget = { ->
     return [ok:true, ann:selected, pw:pw, ph:ph]
 }
 
-// Verili eşiklerle (yeniden tespit YOK) seçili anotasyonun hücrelerini bin'le + say.
+// Verili eşiklerle (yeniden tespit YOK) seçili anotasyonun hücrelerini sınıflandır + say.
 def metricsAt = { targetAnnotation, double pw, double ph, double thr1, double thr2, double thr3 ->
     def cells = targetAnnotation.getChildObjects().findAll { it.isDetection() }
     QP.setIntensityClassifications(cells, COMPARTMENT, thr1, thr2, thr3)
@@ -280,7 +283,7 @@ def buildResultText = { m, double thr1, double thr2, double thr3, double elapsed
     )
     if (baseline != null) {
         text += String.format(java.util.Locale.US,
-            "\n🎓 Öğretim — varsayılan ↔ sizin (aynı hücreler, yeniden bin'lendi)\n" +
+            "\n🎓 Öğretim — varsayılan ↔ sizin (aynı hücreler, yeniden sınıflandırıldı)\n" +
             "──────────────────────────────────────────────\n" +
             "  Varsayılan %.2f/%.2f/%.2f → LI %%%.1f  (%,d/%,d pozitif)\n" +
             "  Sizin      %.2f/%.2f/%.2f → LI %%%.1f  (%,d/%,d pozitif)\n" +
@@ -294,7 +297,7 @@ def buildResultText = { m, double thr1, double thr2, double thr3, double elapsed
     return text
 }
 
-// Bin'le + (öğretim modunda) varsayılanla karşılaştır + metni kur. Son durum daima
+// Sınıflandır + (öğretim modunda) varsayılanla karşılaştır + metni kur. Son durum daima
 // kullanıcı eşikleridir. extraElapsed = tespit süresi (recount'ta 0).
 def finishWithMetrics = { t, double thr1, double thr2, double thr3, boolean teaching, double extraElapsed ->
     long t0 = System.currentTimeMillis()
@@ -318,8 +321,10 @@ def finishWithMetrics = { t, double thr1, double thr2, double thr3, boolean teac
     return [ok:true, text:text]
 }
 
-// Tam tespit (yavaş): PositiveCellDetection çalıştırır, sonra bin'ler + özetler.
+// Tam tespit (yavaş): PositiveCellDetection çalıştırır, sonra sınıflandırır + özetler.
 def runDetection = { double thr1, double thr2, double thr3, boolean teaching ->
+    if (!(thr1 < thr2 && thr2 < thr3))
+        return [ok:false, error:'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.']
     def t = resolveTarget()
     if (!t.ok) return t
     def targetAnnotation = t.ann
@@ -377,8 +382,10 @@ def runDetection = { double thr1, double thr2, double thr3, boolean teaching ->
     return finishWithMetrics(t, thr1, thr2, thr3, teaching, detectElapsed)
 }
 
-// Hızlı yeniden say (tespit YOK): yalnızca mevcut hücreleri yeni eşiklerle bin'ler.
+// Hızlı yeniden say (tespit YOK): yalnızca mevcut hücreleri yeni eşiklerle sınıflandırır.
 def recount = { double thr1, double thr2, double thr3, boolean teaching ->
+    if (!(thr1 < thr2 && thr2 < thr3))
+        return [ok:false, error:'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.']
     def t = resolveTarget()
     if (!t.ok) return t
     def existing = t.ann.getChildObjects().findAll { it.isDetection() }
@@ -400,6 +407,10 @@ if (isHeadless) {
 javafx.application.Platform.runLater {
     try {
         def hasDetections = new java.util.concurrent.atomic.AtomicBoolean(false)
+        def initSel = QP.getSelectedObject()
+        if (initSel instanceof PathAnnotationObject && !initSel.getChildObjects().findAll { it.isDetection() }.isEmpty()) {
+            hasDetections.set(true)
+        }
 
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
@@ -413,10 +424,26 @@ javafx.application.Platform.runLater {
             'Eşik değiştirince "Yeniden say (hızlı)" tespiti tekrarlamadan saniyeler içinde günceller.')
         info.setWrapText(true)
 
+        def commitSpinner = { javafx.scene.control.Spinner sp ->
+            try {
+                def vf = sp.getValueFactory()
+                def conv = vf?.getConverter()
+                def txt = sp.getEditor()?.getText()?.trim()?.replace(',', '.')
+                if (vf != null && conv != null && txt != null && !txt.isEmpty()) {
+                    vf.setValue(conv.fromString(txt))
+                }
+            } catch (Throwable ignore) {
+                if (sp.getValueFactory() != null && sp.getEditor() != null)
+                    sp.getEditor().setText(String.valueOf(sp.getValueFactory().getValue()))
+            }
+        }
         def spThr1 = new javafx.scene.control.Spinner(0.0, 2.0, DEF1, 0.01)
         def spThr2 = new javafx.scene.control.Spinner(0.0, 2.0, DEF2, 0.01)
         def spThr3 = new javafx.scene.control.Spinner(0.0, 2.0, DEF3, 0.01)
-        [spThr1, spThr2, spThr3].each { it.setEditable(true); it.setPrefWidth(110) }
+        [spThr1, spThr2, spThr3].each { sp ->
+            sp.setEditable(true); sp.setPrefWidth(110)
+            sp.focusedProperty().addListener({ obs, was, now -> if (!now) commitSpinner(sp) } as javafx.beans.value.ChangeListener)
+        }
         // Feature 2 — parametre açıklayıcısı: DAB optik yoğunluğu (OD) nedir, ne yapar.
         def thrTip = new javafx.scene.control.Tooltip(
             'DAB optik yoğunluğu (OD) eşiği: bir çekirdeğin "Nucleus: DAB OD mean" değeri\n' +
@@ -449,13 +476,23 @@ javafx.application.Platform.runLater {
         resultArea.setStyle("-fx-font-family: 'Consolas','Menlo','Courier New',monospace; -fx-font-size: 12px;")
 
         def runBtn = new javafx.scene.control.Button('Çalıştır'); runBtn.setDefaultButton(true)
-        def recountBtn = new javafx.scene.control.Button('Yeniden say (hızlı)'); recountBtn.setDisable(true)
+        def recountBtn = new javafx.scene.control.Button('Yeniden say (hızlı)'); recountBtn.setDisable(!hasDetections.get())
+        def fixTypeBtn = new javafx.scene.control.Button("Görüntü tipini 'Brightfield (H-DAB)' olarak ayarla")
+        fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
+        fixTypeBtn.setOnAction({
+            imageData.setImageType(qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_H_DAB)
+            QP.setImageType('BRIGHTFIELD_H_DAB')
+            fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
+            status.setStyle(''); status.setText("✓ Görüntü tipi 'Brightfield (H-DAB)' olarak ayarlandı. Şimdi bir alan anotasyonu seçip 'Çalıştır'a basın.")
+            resultArea.setText('')
+        })
 
         // İlk açılışta görüntü tipi yanlışsa kullanıcıyı pencere içinde yönlendir (modal yok).
         if (!imageTypeOk()) {
             status.setStyle('-fx-text-fill: -qp-script-error-color;')
-            status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — adımlar aşağıda.")
+            status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz.")
             resultArea.setText(imageTypeGuidance())
+            fixTypeBtn.setVisible(true); fixTypeBtn.setManaged(true)
         }
 
         def handleResult = { res ->
@@ -463,19 +500,22 @@ javafx.application.Platform.runLater {
             runBtn.setDisable(false)
             recountBtn.setDisable(!hasDetections.get())
             if (res.ok) {
+                fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
                 hasDetections.set(true); recountBtn.setDisable(false)
                 status.setStyle(''); status.setText('Tamamlandı ✅ — eşikleri değiştirip "Yeniden say (hızlı)" deneyin.')
                 resultArea.setText(res.text)
             } else if (res.imageTypeIssue) {
                 status.setStyle('-fx-text-fill: -qp-script-error-color;')
-                status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — adımlar aşağıda.")
+                status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz.")
                 resultArea.setText(res.error)
+                fixTypeBtn.setVisible(true); fixTypeBtn.setManaged(true)
             } else {
                 status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + res.error)
             }
         }
 
         runBtn.setOnAction({
+            [spThr1, spThr2, spThr3].each { commitSpinner(it) }
             runBtn.setDisable(true); recountBtn.setDisable(true)
             status.setStyle(''); status.setText('Çalışıyor… (hücre tespiti)')
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
@@ -491,8 +531,9 @@ javafx.application.Platform.runLater {
         })
 
         recountBtn.setOnAction({
+            [spThr1, spThr2, spThr3].each { commitSpinner(it) }
             runBtn.setDisable(true); recountBtn.setDisable(true)
-            status.setStyle(''); status.setText('Yeniden sayılıyor… (tespit yok, sadece bin)')
+            status.setStyle(''); status.setText('Yeniden sayılıyor… (tespit yok, yalnızca sınıflandırma)')
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             double thr1 = spThr1.getValue() as double
             double thr2 = spThr2.getValue() as double
@@ -524,7 +565,7 @@ javafx.application.Platform.runLater {
         def btnRow = new javafx.scene.layout.HBox(8, alwaysTop, spacer, copyBtn, recountBtn, runBtn, closeBtn)
         btnRow.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
 
-        def content = new javafx.scene.layout.VBox(10, title, info, adv, teachChk, status, progress, resultArea)
+        def content = new javafx.scene.layout.VBox(10, title, info, adv, teachChk, status, fixTypeBtn, progress, resultArea)
         content.setPadding(new javafx.geometry.Insets(14))
         javafx.scene.layout.VBox.setVgrow(resultArea, javafx.scene.layout.Priority.ALWAYS)
         def bottom = new javafx.scene.layout.VBox(8, footer, btnRow)

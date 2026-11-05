@@ -69,6 +69,8 @@ def menuHint = { String where ->
 //   Dönüş: [ok:true, text:…] | [ok:false, error:…]. Pencere kapanmadan tekrar çağrılır.
 // ──────────────────────────────────────────────────────────────
 def runDetection = { double nuclear1, double nuclear2, double nuclear3 ->
+    if (!(nuclear1 < nuclear2 && nuclear2 < nuclear3))
+        return [ok:false, error:'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.']
 
     def imageData = QP.getCurrentImageData()
     if (imageData == null) return [ok:false, error:'Görüntü açık değil.']
@@ -330,6 +332,8 @@ def applyClassifier = { regionAnno, String name ->
 
 // Yol B — INTENSITY: yalnız Tumor hücrelerini DAB eşiğiyle derecele → Ki-67 LI.
 def scoreIntensity = { regionAnno, double n1, double n2, double n3 ->
+    if (!(n1 < n2 && n2 < n3))
+        return [ok:false, error:'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.']
     try {
         def cells = regionAnno.getChildObjects().findAll { it.isDetection() }
         def tumorCells = cells.findAll(isTumorCell)
@@ -467,7 +471,9 @@ def suggestStainVectors = { ->
             'Tahmin yapılamadı: ' + (svErr.getMessage() ?: svErr.getClass().getSimpleName()))
     }
 }
-suggestStainVectors()
+if (QP.getSelectedObject() instanceof PathAnnotationObject && QP.getSelectedObject().getROI()?.isArea()) {
+    suggestStainVectors()
+}
 
 // Headless: yalnız Yol A — atölye varsayılanlarıyla bir kez çalıştır + yazdır.
 if (isHeadless) {
@@ -519,10 +525,26 @@ def busyBar = { ->
 // Eşik + sonuç paneli — hem Yol A (Hızlı Ki-67) hem Yol B (yoğunluk) yerinde tekrar çalışır.
 def buildScorePanel = { content, buttons, String infoText, boolean advExpanded, Closure runner, resultRef, Closure backAction ->
     def info = new javafx.scene.control.Label(infoText); info.setWrapText(true)
+    def commitSpinner = { javafx.scene.control.Spinner sp ->
+        try {
+            def vf = sp.getValueFactory()
+            def conv = vf?.getConverter()
+            def txt = sp.getEditor()?.getText()?.trim()?.replace(',', '.')
+            if (vf != null && conv != null && txt != null && !txt.isEmpty()) {
+                vf.setValue(conv.fromString(txt))
+            }
+        } catch (Throwable ignore) {
+            if (sp.getValueFactory() != null && sp.getEditor() != null)
+                sp.getEditor().setText(String.valueOf(sp.getValueFactory().getValue()))
+        }
+    }
     def spN1 = new javafx.scene.control.Spinner(0.0, 1.0, (double) spN1Val.get(), 0.01)
     def spN2 = new javafx.scene.control.Spinner(0.0, 1.0, (double) spN2Val.get(), 0.01)
     def spN3 = new javafx.scene.control.Spinner(0.0, 1.0, (double) spN3Val.get(), 0.01)
-    [spN1, spN2, spN3].each { it.setEditable(true); it.setPrefWidth(110) }
+    [spN1, spN2, spN3].each { sp ->
+        sp.setEditable(true); sp.setPrefWidth(110)
+        sp.focusedProperty().addListener({ obs, was, now -> if (!now) commitSpinner(sp) } as javafx.beans.value.ChangeListener)
+    }
     def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(6); grid.setPadding(new javafx.geometry.Insets(6))
     grid.addRow(0, new javafx.scene.control.Label('DAB eşiği 1+ (Nucleus: DAB OD mean)'), spN1)
     grid.addRow(1, new javafx.scene.control.Label('DAB eşiği 2+ (Nucleus: DAB OD mean)'), spN2)
@@ -536,6 +558,7 @@ def buildScorePanel = { content, buttons, String infoText, boolean advExpanded, 
     if (resultRef.get() != null) resultArea.setText((String) resultRef.get())
     def runBtn = new javafx.scene.control.Button('Çalıştır'); runBtn.setDefaultButton(true)
     runBtn.setOnAction({
+        [spN1, spN2, spN3].each { commitSpinner(it) }
         runBtn.setDisable(true); status.setStyle(''); status.setText('Çalışıyor…')
         progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
         double a = spN1.getValue() as double, b = spN2.getValue() as double, c = spN3.getValue() as double
