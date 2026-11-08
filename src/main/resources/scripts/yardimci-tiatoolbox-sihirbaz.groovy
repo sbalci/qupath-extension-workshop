@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   Warwick TIA Centre'in **TIA Toolbox** kütüphanesinin iki "temel işlevini" tek
+ *   Warwick TIA Centre'ın **TIA Toolbox** kütüphanesinin iki "temel işlevini" tek
  *   pencereden çalıştırır (Python köprüsü: tiatoolbox_bridge.py):
  *     1. Boya normalizasyonu — bölge önizleme : seçili alan anotasyonunu tek PNG
  *        olarak dışa aktarır → Macenko/Vahadane/Reinhard ile bir referans H&E
@@ -22,7 +22,7 @@
  *
  * ÖNEMLİ — OpenSlide gerekmez:
  *   Python köprüsü WSI AÇMAZ; yalnız bu betiğin dışa aktardığı PNG'leri okur (SPIDER /
- *   Kaiko köprüsüyle aynı tasarım). WSI'ı doğrudan okuyan TIA Toolbox MODEL iş akışları
+ *   Kaiko köprüsüyle aynı tasarım). WSI'yi doğrudan okuyan TIA Toolbox MODEL iş akışları
  *   (BCSS / KongNet / IDARS) için: Ek — TIA Toolbox.
  *
  * NE ÜRETİR (ve ne ÜRETMEZ):

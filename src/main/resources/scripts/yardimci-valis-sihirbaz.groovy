@@ -470,7 +470,7 @@ def _merge_slides_composite(registrar, dst_f, level, non_rigid, crop, mode, name
     """DOGAL-RENK parlak-alan RGB bilesik (Beer-Lambert). Her slaytin (boya tipine gore) ayristirilan
     boya OD katkilarini TOPLAR ve I = 255 * 10^(-OD_toplam) ile beyaz-zeminli RGB uretir. TEK slaytta o
     slaytin dogal gorunumudur (or. H&E gibi); COK slaytta SENTETIK bir bilesiktir — gercek bir slayta
-    karsilik GELMEZ, cakisan boyalar koyulasir (fiziksel gecirgenlik modeli). Marker'lari ayirt etmek
+    karsilik GELMEZ, cakisan boyalar koyulasir (fiziksel gecirgenlik modeli). Belirtecleri ayirt etmek
     icin cok-kanalli multipleks daha uygundur; bu, 'slayt gibi gozuksun' isteyenler icindir.
     RGB parlak-alan OME-TIFF yazar (QuPath 'Brightfield' acar). Doner: ['Kirmizi','Yesil','Mavi']."""
     from valis import slide_io, valtils
@@ -1668,7 +1668,7 @@ def runArgs = { cfg, String srcDir, String dstDir, String omeDir, String crop, L
 }
 // Docker komutu — host çalışma-kökü /work'e bağlanır; runner ve tüm yollar /work altında.
 // name: konteynere isim verir → iptal/zaman aşımında `docker stop <name>` ile durdurulabilir
-// (yalnız yerel `docker` CLI'yı öldürmek konteyneri durdurmaz).
+// (yalnız yerel `docker` CLI'yi öldürmek konteyneri durdurmaz).
 def dockerCmd = { cfg, File workRoot, String name, List runnerArgsContainer ->
     def cmd = ['docker', 'run', '--rm']
     if (name?.trim()) cmd += ['--name', name.trim()]

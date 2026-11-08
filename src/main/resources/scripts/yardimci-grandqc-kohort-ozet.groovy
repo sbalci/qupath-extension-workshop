@@ -12,7 +12,7 @@
  *     • her artefakt sınıfı için alan (mm²) + anotasyon (bölge) sayısı
  *   GrandQC anotasyonu olmayan slaytlar atlanır (hata değil).
  *
- *   GrandQC sihirbazının per-slayt sonuç penceresini KOHORT düzeyine taşır:
+ *   GrandQC sihirbazının slayt başına sonuç penceresini KOHORT düzeyine taşır:
  *   "tüm slayt setimde kalite nasıldı?" sorusunu tek tabloda yanıtlar. Yerleşik
  *   "Kohort özet toplayıcı" ile aynı proje-döngüsü kalıbını izler.
  *

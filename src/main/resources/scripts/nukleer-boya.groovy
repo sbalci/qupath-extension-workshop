@@ -351,7 +351,7 @@ def runDetection = { double thr1, double thr2, double thr3, boolean teaching ->
     //     eğitimleri Ki-67 için bu kanalı önerir (DAB-yoğun pozitiflerde daha güvenli).
     //     Trade-off: arka plan gürültüsüne biraz daha duyarlı; eşiklerin yeniden
     //     kalibre edilmesi gerekebilir.
-    // Atölye varsayılanı "Hematoxylin OD" — düşük-orta LI'da daha temiz segmentasyon verir.
+    // Atölye varsayılanı "Hematoxylin OD" — düşük-orta LI'de daha temiz segmentasyon verir.
     // Yüksek-LI vakada WorkshopPrefs'ten 'atolye.detectionChannel' → 'Optical density sum' yapın
     // ve eşikleri referans hücrelerde yeniden test edin.
     QP.runPlugin(

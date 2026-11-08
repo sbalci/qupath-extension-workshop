@@ -36,7 +36,7 @@
  *   1. Önce hücre tespiti üretin (ilgili modüllerde) ve "özellik matrisi" ile dışa aktarın.
  *   2. Python tarafında kümeleme yapıp object_id + sınıf + (UMAP vb.) sütunlu bir
  *      TSV üretin (bkz. Ek: Hücre Fenotipleme).
- *   3. Eşleşen WSI'ı QuPath'te açın → bu betiği çalıştırın → TSV'yi seçin.
+ *   3. Eşleşen WSI'yi QuPath'te açın → bu betiği çalıştırın → TSV'yi seçin.
  *
  * ÇIKTI:
  *   • Eşleşen tespitlerde sınıf (ör. "Cluster N") + sayısal ölçümler (ör. UMAP1/2)
@@ -120,7 +120,7 @@ def NON_MEASUREMENT  = ["object_id", "centroid_x_um", "centroid_y_um", "image", 
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce etiketlerin ait olduğu WSI'ı açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce etiketlerin ait olduğu WSI'yi açın.")
     return
 }
 def dets = QP.getDetectionObjects()

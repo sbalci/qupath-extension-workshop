@@ -84,7 +84,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Sitoplazmik boya (CD68)",        "sitoplazmik-boya.groovy"),
         // Tümör/Stroma: tek pencere sihirbaz — örnek modeli kur YA DA yeni eğit, sonra
         // seçili bölge / tüm slayt ölçümü (Ignore* dışlama dahil) hepsi burada.
-        // Eski eğit/uygula adımları sihirbaza katlandı; scriptler JAR'da +
+        // Eski eğit/uygula adımları sihirbaza katlandı; betikler JAR'da +
         // handson/scripts'te kalır (Automate → Project scripts'ten erişilebilir).
         // Menüye geri eklemek için aşağıdaki iki satırın yorumunu kaldırın.
         new ScriptEntry("Tümör/Stroma sihirbazı", "sihirbaz.groovy"),

@@ -33,7 +33,7 @@
  *
  * KULLANIM:
  *   1. Tahmin GeoJSON dosyasını hazırlayın (yukarıdaki Python hattı, Derin Öğrenme Eğitimi eki).
- *   2. Karşılık gelen WSI'ı QuPath'te açın.
+ *   2. Karşılık gelen WSI'yi QuPath'te açın.
  *   3. Bu betiği çalıştırın; dosya seçim penceresi açılır, dosyayı seçin.
  *
  * ÇIKTI:
@@ -129,7 +129,7 @@ int minVertexCount        = 4                    // dejenere poligonları ele
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce tahminlerin ait olduğu WSI'ı açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce tahminlerin ait olduğu WSI'yi açın.")
     return
 }
 if (isHeadless) {

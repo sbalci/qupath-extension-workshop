@@ -46,7 +46,7 @@
  *   • Her kaynak için "Merkez (eşit alanlı)" / "Çevre (eşit alanlı)" (+ ara bölge)
  *     sınıflı bölge anotasyonları (alan + % + tespit ölçümleriyle)
  *   • Sonuç penceresinde bölge alanları ve bölgeler-arası maks. % fark
- *     (eşit alanlı doğruluğu — makalede 48 WSI'da <%0,4)
+ *     (eşit alanlı doğruluğu — makalede 48 WSI'de <%0,4)
  *   • Her çalıştırma önceki eşit alanlı bölgelerini YENİLER
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı geometri/ölçüm üretir.
@@ -314,7 +314,7 @@ if (!srcAccuracy.isEmpty()) {
     double worst = srcAccuracy.collect { it.diff as double }.max() as double
     body << "──────────────────────────────────────────────\n"
     body << String.format(java.util.Locale.US, "Eşit-alan doğruluğu: bölgeler-arası maks. fark %.2f%%%n", worst)
-    body << "(DANEELpath makalesinde 48 WSI'da bu fark <%0,4)\n"
+    body << "(DANEELpath makalesinde 48 WSI'de bu fark <%0,4)\n"
 }
 body << "\n"
 body << "Bölgeler '${CLS_CENTER}' / '${CLS_PERIPH}'"

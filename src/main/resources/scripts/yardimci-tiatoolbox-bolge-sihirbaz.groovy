@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   Warwick TIA Centre'in **TIA Toolbox** model motorlarını (KongNet MIDOG mitoz,
+ *   Warwick TIA Centre'ın **TIA Toolbox** model motorlarını (KongNet MIDOG mitoz,
  *   PanNuke / CoNIC / MONKEY / PUMA çekirdek, MapDe) bir WSI üzerinde çalıştırır.
  *   Üç KAPSAM seçilebilir:
  *     • Anotasyon bölgesi — yalnız QuPath'te çizdiğiniz alan içinde (tek bölge),
@@ -20,7 +20,7 @@
  *   yalnız "Current image" / "All project images". Bu sihirbaz, patoloğun beklediği
  *   "bir alan seç, modeli yalnız orada çalıştır" akışını sağlar (ör. 10 BBA sıcak-nokta
  *   içinde mitoz say). Boya-normalizasyonu sihirbazından (yardimci-tiatoolbox-sihirbaz)
- *   farkı: o PNG'leri işler ve torch GEREKMEZ; bu, WSI'ı doğrudan açan TIA Toolbox
+ *   farkı: o PNG'leri işler ve torch GEREKMEZ; bu, WSI'yi doğrudan açan TIA Toolbox
  *   MODEL motorlarını çalıştırır (tiatoolbox + torch ortamı gerekir).
  *
  * ÇALIŞMA ZAMANI:
@@ -212,7 +212,7 @@ def resolveWorkDir = { cfg, imageData ->
 
 def imageNameOf = { imageData -> (imageData.getServer().getMetadata().getName() ?: 'slide').replaceAll(/\.[^.\/\\]+$/, '') }
 
-// WSI'in yerel dosya yolu (tiatoolbox doğrudan açar)
+// WSI'nin yerel dosya yolu (tiatoolbox doğrudan açar)
 def wsiPathOf = { imageData ->
     try {
         def uris = imageData.getServer().getURIs()

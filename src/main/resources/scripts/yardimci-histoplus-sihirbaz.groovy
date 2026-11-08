@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   QuPath'te ÇİZİP SEÇTİĞİNİZ alan(lar)da HistoPLUS'u (Owkin; CellViT mimarisi + H0-mini temel model
+ *   QuPath'te ÇİZİP SEÇTİĞİNİZ alan(lar)da HistoPLUS'ı (Owkin; CellViT mimarisi + H0-mini temel model
  *   kodlayıcısı) çalıştırır: çekirdekleri segmente eder ve 13 hücre tipinden (+ makalede tanımlanmamış
  *   "Minor Stromal Cell" çıkışı) birine atar. Sihirbaz seçili alanları birleştirip GeoJSON olarak yazar →
  *   Python köprüsü (histoplus/histoplus_runner.py) upstream'in KENDİ yapı taşlarını süreç içinde çağırır →

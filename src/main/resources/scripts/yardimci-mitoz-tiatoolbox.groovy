@@ -5,7 +5,7 @@
  *
  * NE YAPAR:
  *   QuPath'te ÇİZDİĞİNİZ alan anotasyonu içinde — ve YALNIZ orada — Warwick TIA
- *   Centre'in **KongNet-Det (MIDOG)** H&E mitoz dedektörünü canlı çalıştırır.
+ *   Centre'ın **KongNet-Det (MIDOG)** H&E mitoz dedektörünü canlı çalıştırır.
  *   Seçtiğiniz bölge ikili bir maskeye rasterlenir → Python köprüsü (region_runner.py)
  *   `engine.run(masks=[...], auto_get_mask=False)` ile yalnız o bölgede KongNet_Det_MIDOG_1
  *   modelini çalıştırır → mitoz merkezleri GeoJSON olarak geri alınır, bölgeye göre

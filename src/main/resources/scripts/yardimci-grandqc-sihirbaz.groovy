@@ -1342,7 +1342,7 @@ render = { ->
                 reportPathRef.set(reportFile)
                 reportTextRef.set('Dosya: ' + reportFile.getAbsolutePath() + '\n\n' + rtxt)
                 step.set('REPORT'); render()
-            }, 'GrandQC per-slayt istatistik raporu (büyütme/MPP, karo sayısı, boyut, süre)'))
+            }, 'GrandQC slayt başına istatistik raporu (büyütme/MPP, karo sayısı, boyut, süre)'))
         actions.add(navButton('↻ Yeniden çalıştır', { step.set('READY'); render() }))
     } else if (cur == 'REPORT') {
         title.setText('GrandQC istatistik raporu')

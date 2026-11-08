@@ -255,7 +255,7 @@ def effectiveTorchBackend = { spec ->
     def dev = selectedDeviceRef.get() ?: 'auto'
     if (dev == 'auto') dev = detectAccelerator()
     // cpuStandardWheel: CPU'da PyTorch CPU indeksi YERİNE standart PyPI tekerleği. xformers PyTorch CPU
-    // indeksinde yoktur (histoplus: 'torch==2.7.1 + xformers' --torch-backend=cpu ile ÇÖZÜLEMEZ); PyPI'nin
+    // indeksinde yoktur (histoplus: 'torch==2.7.1 + xformers' --torch-backend=cpu ile ÇÖZÜLEMEZ); PyPI'ın
     // Windows torch tekerleği zaten yalnız-CPU'dur (Linux'ta CUDA'lı ama CPU'da da çalışır).
     if (dev == 'cpu') return spec.cpuStandardWheel ? null : 'cpu'
     if (dev == 'mps') return null

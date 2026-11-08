@@ -26,13 +26,13 @@
  *   • Sınıf adları ya geometri tipinden (Sectra: CIRCLE …) ya da kullanıcının kendi
  *     Sectra etiketinden türetilir; betik hiçbir tanı sınıfı sabitlemez.
  *   • Koordinat dönüşümü görüntü boyutuna dayanır; yanlış boyut anotasyonları kaydırır.
- *     Sihirbaz boyutu açık WSI'dan otomatik alır.
+ *     Sihirbaz boyutu açık WSI'den otomatik alır.
  *
  * KULLANIM:
  *   1. Sectra köprü ortamını kurun (venv + pydicom). Bkz. Ekler → Klinik PACS → QuPath
  *      Entegrasyonu, ya da Kaynaklar → İleri kurulumlar § H.
  *   2. Sectra'da bir slaytta anotasyon çizip DICOM grafik (.dcm) dışa aktarın.
- *   3. Aynı WSI'ı QuPath'te açın.
+ *   3. Aynı WSI'yi QuPath'te açın.
  *   4. [Extensions → Atölye → Yardımcılar → Sectra PACS anotasyon sihirbazı]
  *   5. İlk açılışta yapılandırın: python.exe + sectra_dicom_to_qupath.py yolu.
  *   6. Renk şemasını seçin → ".dcm seç ve Aktar" → anotasyonlar otomatik içe aktarılır.

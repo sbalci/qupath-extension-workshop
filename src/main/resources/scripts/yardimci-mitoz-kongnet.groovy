@@ -14,7 +14,7 @@
  *   • Tanımlı bir alandaki KongNet-tespitli mitoz NOKTALARININ sayım ve
  *     YOĞUNLUĞUNU ölçer. Bu bir SAYIM/YOĞUNLUKtur — mitoz derecesi, grade
  *     eşiği veya klinik yorum DEĞİL.
- *   • KongNet doğrudan H&E üzerinde çalışır (PHH3 Mitoz ekindeki PHH3-İHK'nın aksine
+ *   • KongNet doğrudan H&E üzerinde çalışır (PHH3 Mitoz ekindeki PHH3-İHK'nin aksine
  *     immün boya gerekmez). Çıktı bir derin öğrenme tahminidir; alan kayması /
  *     genelleme sınırları için bkz. Yapay Zekâ Araçlarını Değerlendirme eki. Görsel doğrulama gerekir.
  *
