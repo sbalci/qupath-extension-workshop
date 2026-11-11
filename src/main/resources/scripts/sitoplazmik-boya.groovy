@@ -196,7 +196,7 @@ def finishCytoMetrics = { targetAnnotation, double cyto1, double cyto2, double c
     int warnGenericCount = atolyeI('atolye.warnGenericCount', 200)
     def uyari = ""
     if (totalCells < warnGenericCount) {
-        uyari = String.format(java.util.Locale.US, "\n⚠️ Sadece %,d hücre — istatistiksel olarak güvenilmez (≥500 önerilir).", totalCells)
+        uyari = String.format(java.util.Locale.US, "\n⚠️ Sadece %,d hücre — istatistiksel olarak güvenilmez (≥%d önerilir).", totalCells, warnGenericCount)
     }
     double elapsed = detectElapsed + (System.currentTimeMillis() - t0) / 1000.0
     def text = String.format(java.util.Locale.US,

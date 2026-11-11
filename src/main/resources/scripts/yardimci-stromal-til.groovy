@@ -125,7 +125,7 @@ double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0) || !(ph > 0)) {
     Dialogs.showErrorMessage("Kalibrasyon yok", "Slaytta piksel boyutu (µm) tanımlı değil; yoğunluk hesaplanamaz." +
-        "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).")
+        "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).")
     return
 }
 

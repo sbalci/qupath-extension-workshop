@@ -35,8 +35,8 @@
  *   • GrandQC'nin YERİNE GEÇMEZ: GrandQC piksel maskesi üretir (nerede);
  *     HistoART karo düzeyinde sınıflandırır (ne kadar, hangi tür) ve maske
  *     üretmez — "temiz doku" zinciri GrandQC ile kurulur.
- *   • HistoART bir ÖN BASKIDIR (hakem değerlendirmesinden geçmemiştir) ve
- *     FDA'nın RST kataloğunda yer almaz.
+ *   • HistoART hakemli bir yayındır (Kahaki ve ark. 2026, Neural Comput Appl),
+ *     ancak FDA'nın RST kataloğunda yer almaz (MDDT olarak nitelendirilmemiştir).
  *
  * KULLANIM:
  *   1. [Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller →
@@ -54,7 +54,8 @@
  *   • KBA köprülenmez (turlanmış SVM + doğrulanmamış öznitelik hattı).
  *
  * YÖNTEM / KAYNAK REFERANSLARI:
- *   • Kahaki S ve ark. (2025), arXiv:2507.00044 — HistoART. Kod: CC0-1.0.
+ *   • Kahaki S ve ark. (2026), Neural Comput Appl 38(18), doi:10.1007/s00521-026-12454-9
+ *     (ön baskı: arXiv:2507.00044) — HistoART. Kod: CC0-1.0.
  *   • Veri: HistoArtifacts (CC BY 4.0) — 224×224 @ 40×; Zenodo 10809442.
  *   • Ağırlıklar: https://huggingface.co/didsr/HistoArt
  *
@@ -498,7 +499,7 @@ def buildResultText = { File workDir, exp, imp, cfg, imageData ->
     sb << "Measurements panelinde.\n"
     sb << "\nKabul/ret KARARI üretilmez — eşiği lab protokolünüze göre siz seçersiniz\n"
     sb << "(Ek → WSI Kalite Kontrol Metrikleri § 4).\n"
-    sb << "HistoART bir ÖN BASKIDIR ve piksel maskesi ÜRETMEZ — 'temiz doku' zinciri için\n"
+    sb << "HistoART FDA'nın RST kataloğunda yer almaz ve piksel maskesi ÜRETMEZ — 'temiz doku' zinciri için\n"
     sb << "GrandQC'yi kullanın (§ 7.5). Çıktı bir derin öğrenme tahminidir; görsel doğrulama gerekir.\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()

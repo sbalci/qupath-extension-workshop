@@ -28,7 +28,7 @@
  *
  * KULLANIM:
  *   1. H&E slaytını açın; piksel boyutu (µm/px) kalibre olsun
- *      (Extensions → Atölye → Yardımcılar → Kalibrasyon).
+ *      (Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)).
  *   2. İlgili bölge(ler)i anotasyon olarak çizin ve açıkça SEÇİN.
  *   3. Bu betiği çalıştırın; KongNet GeoJSON dosyasını seçin.
  *
@@ -40,7 +40,8 @@
  *   • Kilitli "KongNet Mitoz Özet" anotasyonu (Veri dışa aktarma modülü ile dışa aktarılır)
  *
  * YÖNTEM / KAYNAK REFERANSLARI:
- *   • Lv J ve ark. (2025) KongNet — arXiv:2510.23559; MIDOG 2025 mitoz tespiti
+ *   • Lv J ve ark. (2026) KongNet — Med Image Anal 114:104233, doi:10.1016/j.media.2026.104233
+ *     (arXiv:2510.23559); MIDOG 2025 mitoz tespiti
  *     birincisi (KongNet-Det). Resmi çıkarım deposu + output_to_qupath.py:
  *     github.com/Jiaqi-Lv/KongNet_Inference_Main. Kod BSD-3; ağırlıklar
  *     CC BY-NC-SA (ticari-dışı).

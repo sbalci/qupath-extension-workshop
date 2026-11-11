@@ -34,7 +34,7 @@
  * YÖNTEM REFERANSLARI:
  *   • Gonzalez AD et al. (2025), J Neuropathol Exp Neurol 84(8):692–706 — %
  *     pozitiflik en güvenilir tau metriği; QuPath Braak korelasyonu. doi:10.1093/jnen/nlaf026
- *   • Finney CA et al. (2020), J Neurosci Methods 348:108994 — ölçeklenebilir
+ *   • Finney CA et al. (2021), J Neurosci Methods 348:108994 — ölçeklenebilir
  *     bölgesel İHK % kantifikasyonu (astrosit). doi:10.1016/j.jneumeth.2020.108994
  *   • Bankhead P et al. (2017), Sci Rep — QuPath. doi:10.1038/s41598-017-17204-5
  *
@@ -205,10 +205,10 @@ body << String.format(java.util.Locale.US, "Pozitif alan         : %.4f µm²%n"
 body << String.format(java.util.Locale.US, "Toplam sınıflı alan  : %.4f µm²%n", totalAllArea)
 body << String.format(java.util.Locale.US, "%% pozitif alan       : %.2f %%%n", overallPct)
 body << "\n"
-body << "Sınıflandırıcı: \"" << classifierName << "\" (eşikleri Alan-bazlı Pozitiflik ekine göre kalibre edin)\n"
+body << "Sınıflandırıcı: \"" << classifierName << "\" (eşikleri Alan temelli pozitiflik ekine göre kalibre edin)\n"
 body << "Bu bir ORAN/ALANdır — klinik skor, H-score veya yorum DEĞİL.\n"
-body << "(Gonzalez 2025; Finney 2020; Bankhead 2017)\n\n"
+body << "(Gonzalez 2025; Finney 2021; Bankhead 2017)\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
-showResultWindow("Alan-bazlı pozitiflik", body.toString())
+showResultWindow("Alan temelli pozitiflik", body.toString())
 println "✓ % pozitif alan yazıldı (her anotasyon)."

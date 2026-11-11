@@ -297,6 +297,7 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3, boolean 
     double maxArea          = atolyeD('atolye.maxArea', 400.0)
     double detectionThreshold = atolyeD('atolye.detectionThreshold', 0.1)
     double cellExpansion    = atolyeD('atolye.cellExpansionNuclear', 5.0)
+    String detectionChannel = atolyeS('atolye.detectionChannel', 'Hematoxylin OD')
     boolean watershedPostProcess = atolyeB('atolye.watershed', true)
 
     long t0 = System.currentTimeMillis()
@@ -304,7 +305,7 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3, boolean 
     QP.runPlugin(
         'qupath.imagej.detect.cells.PositiveCellDetection',
         '{' +
-            '"detectionImageBrightfield":"Hematoxylin OD",' +
+            '"detectionImageBrightfield":"' + detectionChannel + '",' +
             '"requestedPixelSizeMicrons":' + pixelSizeMicrons + ',' +
             '"backgroundRadiusMicrons":' + backgroundRadius + ',' +
             '"medianRadiusMicrons":' + medianRadius + ',' +

@@ -36,17 +36,19 @@
  *   • Sonuç penceresi: sınıf tablosu + toplamlar + kalibrasyon notu
  *
  * YÖNTEM / KAYNAK:
- *   • Renk ayrışma (H-DAB): getColorDeconvolutionStains() → stain2 = DAB.
- *     OD = -log10(px/255); DAB OD değeri stain2 katsayısıyla elde edilir.
- *   • IOD konsepti: Bacus JW & Grace LJ (1987), Anal Quant Cytol Histol 9(1):9-18.
- *   • Kalibrasyon bağımlılığı: van der Loos CM (2008), J Histochem Cytochem 56:
- *     533-541. doi:10.1369/jhc.2008.950592
+ *   • Renk ayrışma (H-DAB): getColorDeconvolutionStains() + ColorTransformer (Stain_2 = DAB;
+ *     Ruifrok AC & Johnston DA 2001, Anal Quant Cytol Histol 23(4):291-299).
+ *   • IOD konsepti: Bacus JW & Grace LJ (1987), Appl Opt 26(16):3280-3293. doi:10.1364/AO.26.003280
+ *   • Kalibrasyon bağımlılığı: van der Loos CM (2008), J Histochem Cytochem 56(4):313-328.
+ *     doi:10.1369/jhc.2007.950170
  *   • Bankhead P et al. (2017), Sci Rep — QuPath. doi:10.1038/s41598-017-17204-5
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  */
 
 import qupath.fx.dialogs.Dialogs
+import qupath.lib.color.ColorTransformer
+import qupath.lib.color.ColorTransformer.ColorTransformMethod
 import qupath.lib.scripting.QP
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
@@ -177,7 +179,6 @@ if (dabStain == null || !((dabStain.getName() ?: '').toLowerCase(java.util.Local
     if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage("DAB boyası bulunamadı", msg)
     return
 }
-double[] dabCoeffs = [dabStain.getRed(), dabStain.getGreen(), dabStain.getBlue()]
 
 // Kapsam bölgesini downsample'lı görüntü olarak oku
 def request = qupath.lib.regions.RegionRequest.createInstance(
@@ -187,10 +188,12 @@ int imgW = img.getWidth()
 int imgH = img.getHeight()
 int[] pixels = new int[imgW * imgH]
 img.getRGB(0, 0, imgW, imgH, pixels, 0, imgW)
+float[] dabChannel = ColorTransformer.getTransformedPixels(pixels, ColorTransformMethod.Stain_2, null, stains)
 
 // Koordinat dönüşümü: piksel (ix,iy) → görüntü koordinatı
 double originX = request.getX()
 double originY = request.getY()
+def scopeGeom = scopeROI.getGeometry()
 
 // Her sınıf için kümülatif OD ve piksel sayısı
 def classCounts = [:]
@@ -218,6 +221,7 @@ pixels.eachWithIndex { rgb, idx ->
     double gx = originX + ix * DOWNSAMPLE
     double gy = originY + iy * DOWNSAMPLE
     def pt = gf.createPoint(new org.locationtech.jts.geom.Coordinate(gx, gy))
+    if (scopeGeom != null && !scopeGeom.contains(pt)) return
 
     // Hangi sınıf geometrisi bu noktayı içeriyor?
     String hitClass = null
@@ -227,15 +231,9 @@ pixels.eachWithIndex { rgb, idx ->
     }
     if (hitClass == null) return
 
-    // DAB OD hesapla: normalize → log dönüşüm → stain projection
-    int r = (rgb >> 16) & 0xFF
-    int g2 = (rgb >> 8) & 0xFF
-    int b  = rgb & 0xFF
-    double odR = (r > 0) ? -Math.log10(r / 255.0) : 0.0
-    double odG = (g2 > 0) ? -Math.log10(g2 / 255.0) : 0.0
-    double odB = (b > 0) ? -Math.log10(b / 255.0) : 0.0
-    double dabOD = odR * dabCoeffs[0] + odG * dabCoeffs[1] + odB * dabCoeffs[2]
-    if (dabOD < 0) dabOD = 0.0
+    // Gerçek 3×3 ters renk dekonvolüsyonu (Stain_2 = DAB OD; QuPath "DAB OD mean" ile birebir uyumlu)
+    double dabOD = (double) dabChannel[idx]
+    if (Double.isNaN(dabOD) || dabOD < 0.0d) dabOD = 0.0d
 
     classCounts[hitClass] = classCounts[hitClass] + 1
     classSumOD[hitClass]  = classSumOD[hitClass]  + dabOD

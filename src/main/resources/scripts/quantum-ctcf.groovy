@@ -287,8 +287,10 @@ def applyClassifier = { regionAnno, String name ->
     }
     int tumor = 0, nonNeo = 0, ignore = 0
     cells.each { c ->
-        def cls = c.getPathClass()?.getName()?.toLowerCase(java.util.Locale.ROOT) ?: ''
-        if (cls.contains('tumor')) tumor++
+        def pc = c.getPathClass()
+        def baseCls = pc?.getBaseClass()?.getName()?.toLowerCase(java.util.Locale.ROOT) ?: ''
+        def cls = pc?.getName()?.toLowerCase(java.util.Locale.ROOT) ?: ''
+        if ((baseCls == 'tumor' || cls == 'tumor') && !cls.contains('non')) tumor++
         else if (cls.contains('non-neoplastic') || cls.contains('non neoplastic') || cls.contains('nonneoplastic')) nonNeo++
         else ignore++
     }
@@ -521,11 +523,11 @@ render = { ->
             "\nEksikleri düzeltip 'Yenile'.")
         def fixType = navButton('Görüntü tipini ayarla', {
             if (stage != null) stage.setAlwaysOnTop(false)
-            if (!launchBundled('yardimci-image-type.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Görüntü tipi ayarla')
+            if (!launchBundled('yardimci-image-type.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla')
         })
         def fixCal = navButton('Kalibrasyonu ayarla', {
             if (stage != null) stage.setAlwaysOnTop(false)
-            if (!launchBundled('yardimci-kalibrasyon.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu)')
+            if (!launchBundled('yardimci-kalibrasyon.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)')
         })
         content.getChildren().add(new javafx.scene.layout.HBox(8, fixType, fixCal))
         boolean ready = s.image && s.heType && s.calib && s.project
@@ -571,7 +573,7 @@ render = { ->
     } else if (cur == 'NONNEO_EXAMPLES') {
         title.setText('3/5 — Non-neoplastic hücre örnekleri')
         bodyLbl.setText(
-            'Şimdi tümör DIŞI hücrelerin (lenfosit, fibroblast, endotel, normal epitel) bulunduğu\n' +
+            'Şimdi tümör DIŞI hücrelerin (lenfosit, fibroblast, endotel, sıkışmış benign parankimal epitel) bulunduğu\n' +
             'bölgelerden birkaç örnek çizin ve sınıfını TAM OLARAK "Non-neoplastic" yapın\n' +
             '(büyük N, tireli, küçük n — yanlış yazım sessizce Ignore sayılır).\n' +
             'İsteğe bağlı: artefakt/belirsiz hücreleri "Ignore" sınıfıyla işaretleyebilirsiniz.\n' +

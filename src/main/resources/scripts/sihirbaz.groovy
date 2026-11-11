@@ -595,11 +595,11 @@ render = { ->
             "Eksik olanı aşağıdaki düğmelerle düzeltin, sonra 'Yenile'.")
         def fixType = navButton('Görüntü tipini ayarla', {
             if (stage != null) stage.setAlwaysOnTop(false)
-            if (!launchBundled('yardimci-image-type.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Görüntü tipi ayarla')
+            if (!launchBundled('yardimci-image-type.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla')
         })
         def fixCal = navButton('Kalibrasyonu ayarla', {
             if (stage != null) stage.setAlwaysOnTop(false)
-            if (!launchBundled('yardimci-kalibrasyon.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu)')
+            if (!launchBundled('yardimci-kalibrasyon.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)')
         })
         content.getChildren().add(new javafx.scene.layout.HBox(8, fixType, fixCal))
         def cont = navButton('Devam ▶', { step.set('CLASSES'); render() })

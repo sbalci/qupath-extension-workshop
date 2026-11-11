@@ -38,7 +38,8 @@
  *   • Kilitli "KongNet MIDOG mitoz özeti" anotasyonu (Veri dışa aktarma ile dışa aktarılır)
  *
  * YÖNTEM / KAYNAK REFERANSLARI:
- *   • Lv J ve ark. (2025) KongNet — MIDOG 2025 mitoz tespiti birincisi (KongNet-Det).
+ *   • Lv J ve ark. (2026) KongNet — Med Image Anal 114:104233, doi:10.1016/j.media.2026.104233
+ *     (arXiv:2510.23559); MIDOG 2025 mitoz tespiti birincisi (KongNet-Det).
  *     TIA Toolbox model kayıtlı adı: KongNet_Det_MIDOG_1 (class "Mitotic_Figure", 0.5 µm/px).
  *   • Alan-tabanlı mitoz birimi (mitoz/2 mm²): bkz. PHH3 Mitoz eki (Dessauvagie 2015).
  *
@@ -436,7 +437,7 @@ def resultText = { imageData, cfg, imp, dens, cal ->
         else
             sb << String.format(java.util.Locale.US, "Mitoz / %.0f mm²: hesaplanmadı (alan %.3f mm²; ROI'yi ~2 mm² yapın)%n", WHO_AREA_MM2, a)
     } else {
-        sb << "Yoğunluk     : hesaplanmadı — piksel boyutu (µm/px) kalibre değil (Yardımcılar → Kalibrasyon).\n"
+        sb << "Yoğunluk     : hesaplanmadı — piksel boyutu (µm/px) kalibre değil (Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)).\n"
     }
     if ((int)(imp?.inside ?: 0) == 0) {
         sb << "\n⚠ Bölgede 0 mitoz — model çalıştı ama eşiği geçen tespit yok.\n"
@@ -871,7 +872,7 @@ render = { ->
             : '○ Yerel model yok — "Modeli yerel indir" ile bir kez indirin (sonra çevrimdışı çalışabilirsiniz).')
         mcLbl.setWrapText(true); mcLbl.setMaxWidth(Double.MAX_VALUE); mcLbl.setStyle('-fx-opacity: 0.85; -fx-font-size: 11px;')
         center.getChildren().add(mcLbl)
-        addGuidance('Model: Bu modül H&E mitoz için sabit "KongNet MIDOG" (MIDOG 2025 birincisi) kullanır — TIA Toolbox\'ta mitoza uygun TEK model. Çekirdek/hücre dedektörleriyle (PanNuke/CoNIC/MONKEY/MapDe) deney için → Yardımcılar → Python köprüleri → "TIA Toolbox — bölge modelleri" (hepsini sınıf-başına içe alımla çalıştırır). Model listesi ve lisanslar: modül sayfası "Mitoz modelleri".\n' +
+        addGuidance('Model: Bu modül H&E mitoz için sabit "KongNet MIDOG" (MIDOG 2025 birincisi) kullanır — TIA Toolbox\'ta mitoza uygun TEK model. Çekirdek/hücre dedektörleriyle (PanNuke/CoNIC/MONKEY/MapDe) deney için → Yardımcılar → Python köprüleri ve temel modeller → "TIA Toolbox — bölge modelleri" (hepsini sınıf-başına içe alımla çalıştırır). Model listesi ve lisanslar: modül sayfası "Mitoz modelleri".\n' +
             'Python + köprü otomatik bulunur (tiatoolbox-runtime/.venv ve handson/python/tiatoolbox/). Cihaz: GPU için cuda.\n' +
             'Duyarlılık eşiği: KongNet varsayılanı 0.99 (çok tutucu — az/hiç tespit). Daha çok mitoz için düşürün (ör. 0.5); boş = model varsayılanı. ' +
             'Düşük eşik daha çok tespit ama daha çok yanlış-pozitif demektir — tahminleri görsel doğrulayın.\n' +

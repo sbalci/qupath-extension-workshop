@@ -239,8 +239,12 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
     double pixHthreshold = ph
 
     def imgData  = QP.getCurrentImageData()
+    if (imgData == null)
+        return [ok:false, error:'Açık görüntü bulunamadı.']
     def cal      = imgData.getServer().getPixelCalibration()
     def pixStains = imgData.getColorDeconvolutionStains()
+    if (pixStains == null)
+        return [ok:false, error: imageTypeGuidance(), imageTypeIssue:true]
     double pixScale = atolyeD('atolye.pixScale', 1.0)
 
     def op = ImageOps.buildImageDataOp().appendOps(
@@ -761,7 +765,8 @@ class HScoreThresholdOp implements ImageOp {
         OpenCVTools.apply(matDAB, this.&applyDABThresholds)
         def matH = split[0]
         OpenCVTools.apply(matH, this.&applyHematoxylinThreshold)
-        // Hem H hem DAB sıfırsa pikseli "Ignore" (255) olarak işaretle
+        // Hem H (< minThreshold) hem DAB (< t1) eşik altıysa boş cam/lümen olarak "Ignore*" (255) işaretle;
+        // saf DAB+ membran pikselleri çekirdek dışında da bulunsa (matH == 0, matDAB >= 1) doku paydasında korunur.
         def matMask = opencv_core.equals(
             opencv_core.max(matH, matDAB).asMat(),
             0.0

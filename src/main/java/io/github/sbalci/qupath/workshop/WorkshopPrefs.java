@@ -56,7 +56,7 @@ public final class WorkshopPrefs {
     public static final String SEC_DETECTION  = "Hücre tespiti";
     public static final String SEC_ADVANCED   = "İleri düzey";
     public static final String SEC_CLASSIFIER = "Sınıflandırıcı";
-    public static final String SEC_STARDIST   = "StarDist (Modül 8)";
+    public static final String SEC_STARDIST   = "StarDist (QuANTUM)";
     public static final String SEC_WARN       = "Uyarı eşikleri";
     public static final String SEC_EXPORT     = "Dışa aktarma";
 
@@ -86,7 +86,7 @@ public final class WorkshopPrefs {
     public static final DoubleProperty  cellposeFlow = regD(SEC_DETECTION, "atolye.cellposeFlow", 0.4);
     public static final DoubleProperty  cellposeCellprob = regD(SEC_DETECTION, "atolye.cellposeCellprob", 0.0);
 
-    // --- StarDist (Modül 8) ---
+    // --- StarDist (QuANTUM) ---
     public static final DoubleProperty stardistThreshold     = regD(SEC_STARDIST, "atolye.stardistThreshold", 0.5);
     public static final DoubleProperty stardistPixelSize     = regD(SEC_STARDIST, "atolye.stardistPixelSize", 0.5);
     public static final DoubleProperty stardistCellExpansion = regD(SEC_STARDIST, "atolye.stardistCellExpansion", 5.0);
