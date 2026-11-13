@@ -29,7 +29,7 @@
  *   (sınıfı olsun olmasın) hedef alır ve tek, temiz bir ölçüm sütunu yazar.
  *
  * KULLANIM:
- *   1. Hücre tespiti yapılmış, kalibre (µm/px) bir slayt açın
+ *   1. Hücre tespiti yapılmış, kalibre (µm/px) bir lam açın
  *   2. Yapıyı anotasyon olarak çizin ve SEÇİN (birden çok da olabilir)
  *   3. [Extensions → Atölye → Yardımcılar → Yapıya uzaklık (sınıra mesafe)]
  *      (ya da [Automate → Project scripts → bu betik])
@@ -127,21 +127,21 @@ String summaryName = "Yapıya Uzaklık Özet"
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce hücre tespiti yapılmış bir slayt açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce hücre tespiti yapılmış bir lam açın.")
     return
 }
 def cal = imageData.getServer().getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0) || !(ph > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok", "Slaytta piksel boyutu (µm) tanımlı değil; mesafe µm olarak hesaplanamaz." +
+    Dialogs.showErrorMessage("Kalibrasyon yok", "Lamda piksel boyutu (µm) tanımlı değil; mesafe µm olarak hesaplanamaz." +
         "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).")
     return
 }
 
 def detections = QP.getDetectionObjects().findAll { it.getROI() != null }
 if (detections.isEmpty()) {
-    def msg = "Slaytta hücre tespiti yok.\nÖnce Hücre Tespiti, Nükleer Boya, Sitoplazmik Boya ya da Tümör içi Ki-67 modülü ile tespit yapın."
+    def msg = "Lamda hücre tespiti yok.\nÖnce Hücre Tespiti, Nükleer Boya, Sitoplazmik Boya ya da Tümör içi Ki-67 modülü ile tespit yapın."
     if (isHeadless) println msg else Dialogs.showWarningNotification("Tespit yok", msg)
     return
 }

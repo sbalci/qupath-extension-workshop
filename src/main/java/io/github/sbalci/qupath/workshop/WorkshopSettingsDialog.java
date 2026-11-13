@@ -100,6 +100,22 @@ public final class WorkshopSettingsDialog {
         sub.setWrapText(true);
         sub.setStyle("-fx-text-fill: #555; -fx-font-size: 11px;");
 
+        ChoiceBox<String> preset = new ChoiceBox<>();
+        preset.getItems().addAll("Nükleer sayım (Ki-67 / ER-PR)", "Membran sayımı (HER2)", "Sitoplazmik sayım (CD68)");
+        preset.getSelectionModel().selectFirst();
+        preset.setAccessibleText("Atölye başlangıç ayarı");
+        Button applyPreset = new Button("Başlangıç ayarını yükle");
+        applyPreset.setTooltip(new Tooltip("İlgili DAB eşiklerini, piksel boyutunu ve hücre genişlemesini atölye varsayılanına döndürür. Klinik karar eşiği yüklemez; küçük bir alanda sayımı denetleyin."));
+        applyPreset.setOnAction(ev -> {
+            int index = preset.getSelectionModel().getSelectedIndex();
+            String prefix = index == 0 ? "nuclear" : index == 1 ? "membrane" : "cyto";
+            for (int i = 1; i <= 3; i++) restoreDouble("atolye." + prefix + i);
+            restoreDouble("atolye.pixelSize");
+            restoreDouble(index == 0 ? "atolye.cellExpansionNuclear" : "atolye.cellExpansionCyto");
+            rebuild();
+        });
+        javafx.scene.layout.FlowPane presets = new javafx.scene.layout.FlowPane(8, 8, preset, applyPreset);
+
         sections = new VBox(8);
         warningLabel = new Label("");
         warningLabel.setWrapText(true);
@@ -129,14 +145,20 @@ public final class WorkshopSettingsDialog {
         scroll.setFitToWidth(true);
         VBox.setVgrow(scroll, Priority.ALWAYS);
 
-        root.getChildren().addAll(header, sub, scroll, warningLabel, footer);
+        root.getChildren().addAll(header, sub, presets, scroll, warningLabel, footer);
 
         stage = new Stage();
         stage.initModality(Modality.NONE);
         stage.setAlwaysOnTop(alwaysTop.isSelected());
         stage.setTitle("Atölye Ayarları");
         stage.setScene(new Scene(root, 580, 650));
+        stage.setMinWidth(520);
+        stage.setMinHeight(420);
         stage.show();
+    }
+
+    private static void restoreDouble(String key) {
+        WorkshopPrefs.setDbl(key, (double) WorkshopPrefs.defaultValue(key));
     }
 
     private static void populateSections() {
@@ -170,6 +192,10 @@ public final class WorkshopSettingsDialog {
             Label badge = new Label(WorkshopPrefs.isDefault(key) ? "" : "değiştirildi");
             badge.setStyle("-fx-text-fill: #b8860b; -fx-font-size: 10px;");
             Region ctrl = controlFor(key, badge);
+            rowLabel.setWrapText(true);
+            rowLabel.setMaxWidth(240);
+            rowLabel.setLabelFor(ctrl);
+            ctrl.setAccessibleText(labelFor(key));
             String tipText = tooltipFor(key);
             if (tipText != null && !tipText.isEmpty()) {
                 Tooltip tip = new Tooltip(tipText);
@@ -177,6 +203,7 @@ public final class WorkshopSettingsDialog {
                 tip.setMaxWidth(360);
                 rowLabel.setTooltip(tip);
                 Tooltip.install(ctrl, tip);
+                ctrl.setAccessibleHelp(tipText);
             }
             grid.add(rowLabel, 0, row);
             grid.add(ctrl, 1, row);
@@ -230,32 +257,46 @@ public final class WorkshopSettingsDialog {
         String text = tf.getText() == null ? "" : tf.getText().trim().replace(',', '.');
         try {
             if (p instanceof DoubleProperty dp) {
-                if (text.isEmpty()) { dp.set((double) WorkshopPrefs.defaultValue(key)); }
-                else dp.set(Double.parseDouble(text));
+                double candidate = text.isEmpty() ? (double) WorkshopPrefs.defaultValue(key) : Double.parseDouble(text);
+                checkNumber(key, candidate);
+                dp.set(candidate);
                 tf.setText(String.valueOf(dp.get()));
             } else if (p instanceof IntegerProperty ip) {
-                if (text.isEmpty()) { ip.set((int) WorkshopPrefs.defaultValue(key)); }
-                else ip.set(Integer.parseInt(text));
+                int candidate = text.isEmpty() ? (int) WorkshopPrefs.defaultValue(key) : Integer.parseInt(text);
+                checkNumber(key, candidate);
+                ip.set(candidate);
                 tf.setText(String.valueOf(ip.get()));
             } else if (p instanceof StringProperty sp) {
                 sp.set(tf.getText() == null ? "" : tf.getText());
             }
-        } catch (NumberFormatException nfe) {
+        } catch (IllegalArgumentException nfe) {
             // Revert to the stored value, but SAY so: a silent revert lets a novice believe
             // a mistyped value ("0.2 5", "yirmi") was accepted.
             String rejected = tf.getText();
             tf.setText(String.valueOf(p.getValue()));
             badge.setText("geçersiz sayı — eski değer korundu");
             badge.setStyle("-fx-text-fill: #b94a00; -fx-font-size: 10px; -fx-font-weight: bold;");
-            badge.setTooltip(new Tooltip("\"" + rejected + "\" bir sayı olarak okunamadı. "
-                    + "Örnek biçim: 0.25 (ondalık için nokta veya virgül kullanabilirsiniz)."));
-            validateThresholdOrder();
+            badge.setTooltip(new Tooltip("\"" + rejected + "\" kabul edilmedi. "
+                    + "Örnek biçim: 0.25 (ondalık için nokta veya virgül kullanabilirsiniz).\n" + nfe.getMessage()));
+            badge.setText("Kaydedilmedi — eski değer korundu");
+            tf.setAccessibleHelp(nfe.getMessage());
+            warningLabel.setText(labelFor(key) + ": " + (nfe instanceof NumberFormatException
+                    ? "Sayı girin; örneğin 0,25. Eski değer korundu." : nfe.getMessage()));
+            warningLabel.setVisible(true);
+            warningLabel.setManaged(true);
             return;
         }
         badge.setTooltip(null);   // clear a previous "geçersiz sayı" tooltip once a valid value is saved
+        tf.setAccessibleHelp(tooltipFor(key));
         badge.setStyle("-fx-text-fill: #b8860b; -fx-font-size: 10px;");
         badge.setText(WorkshopPrefs.isDefault(key) ? "" : "değiştirildi");
         validateThresholdOrder();
+    }
+
+    private static void checkNumber(String key, double value) {
+        String problem = WorkshopParameterValidation.problem(key, value, other ->
+                ((Number) WorkshopPrefs.property(other).getValue()).doubleValue());
+        if (problem != null) throw new IllegalArgumentException(problem);
     }
 
     private static void validateThresholdOrder() {
@@ -264,7 +305,7 @@ public final class WorkshopSettingsDialog {
             double v1 = WorkshopPrefs.dbl(triple[0], 0.1);
             double v2 = WorkshopPrefs.dbl(triple[1], 0.2);
             double v3 = WorkshopPrefs.dbl(triple[2], 0.3);
-            boolean bad = (v1 >= v2) || (v2 >= v3);
+            boolean bad = !Double.isFinite(v1) || !Double.isFinite(v2) || !Double.isFinite(v3) || (v1 >= v2) || (v2 >= v3);
             if (bad) anyInvalid = true;
             String style = bad ? "-fx-border-color: #e67e22; -fx-border-width: 1.5px; -fx-border-radius: 3px;" : "";
             for (String k : triple) {

@@ -20,7 +20,7 @@
  *   ağırlık merkezi farkı (µm). Klinik eşik, skor veya yorum ÜRETMEZ.
  *
  * KULLANIM:
- *   1. Denetlemek istediğiniz anotasyonları içeren slaytı açın.
+ *   1. Denetlemek istediğiniz anotasyonları içeren lamı açın.
  *   2. [Extensions → Atölye → Yardımcılar → Temel araçlar → Anotasyon yapısı QC (denetçi)]
  *      ya da [Automate → Project scripts → bu betik]
  *
@@ -107,7 +107,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     if (isHeadless) { println "Hata: Görüntü açık değil."; return }
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce anotasyon içeren bir slayt açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce anotasyon içeren bir lam açın.")
     return
 }
 

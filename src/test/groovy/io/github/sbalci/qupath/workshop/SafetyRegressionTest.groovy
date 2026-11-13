@@ -18,9 +18,9 @@ class SafetyRegressionTest extends GroovyTestCase {
 
     static String source(String file) {
         String jar = System.getenv('WORKSHOP_SCRIPT_JAR')
-        if (!jar) return new File(ROOT + file).getText('UTF-8')
+        if (!jar) return new File(ROOT + file).getText('UTF-8').replace('\r\n', '\n')
         new java.util.zip.ZipFile(jar).withCloseable { zip ->
-            zip.getInputStream(zip.getEntry('scripts/' + file)).withCloseable { it.getText('UTF-8') }
+            zip.getInputStream(zip.getEntry('scripts/' + file)).withCloseable { it.getText('UTF-8').replace('\r\n', '\n') }
         }
     }
 

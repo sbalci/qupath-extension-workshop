@@ -5,15 +5,15 @@
  *
  * NE YAPAR:
  *   Açık projedeki HER görüntü için hiyerarşiyi diskten okur; GrandQC sihirbazının
- *   ürettiği "GrandQC KK" adlı (sentinel) anotasyonları toplar ve slayt başına
+ *   ürettiği "GrandQC KK" adlı (sentinel) anotasyonları toplar ve lam başına
  *   kalite-kontrol özetini GENİŞ TABLO (bir satır = bir görüntü) TSV'ye yazar:
  *     • doku alanı (mm²), temiz doku alanı (mm²), artefakt alanı (mm²) ve doku içi %
  *     • doku parça (bağlı bileşen) sayısı
  *     • her artefakt sınıfı için alan (mm²) + anotasyon (bölge) sayısı
- *   GrandQC anotasyonu olmayan slaytlar atlanır (hata değil).
+ *   GrandQC anotasyonu olmayan lamlar atlanır (hata değil).
  *
- *   GrandQC sihirbazının slayt başına sonuç penceresini KOHORT düzeyine taşır:
- *   "tüm slayt setimde kalite nasıldı?" sorusunu tek tabloda yanıtlar. Yerleşik
+ *   GrandQC sihirbazının lam başına sonuç penceresini KOHORT düzeyine taşır:
+ *   "tüm lam setimde kalite nasıldı?" sorusunu tek tabloda yanıtlar. Yerleşik
  *   "Kohort özet toplayıcı" ile aynı proje-döngüsü kalıbını izler.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
@@ -22,12 +22,12 @@
  *   • Hiçbir imageData'yı KAYDETMEZ (saveImageData çağrısı yoktur) — salt okunur.
  *   • Alanlar yalnız kalibre görüntülerde mm² verilir; kalibre değilse hücre boş kalır.
  *   • Artefakt alanı doğrudan (artefakt sınıfları ∩ doku) olarak ölçülür — ayrı saklanan
- *     "Temiz doku" anotasyonuna bağlı DEĞİLDİR; böylece %100 artefaktlı slaytta da doludur.
+ *     "Temiz doku" anotasyonuna bağlı DEĞİLDİR; böylece %100 artefaktlı lamda da doludur.
  *     "temiz_doku_mm2" ise "Temiz doku" anotasyonundan gelir (sihirbaz üretmediyse boş kalır).
  *
  * KULLANIM:
- *   1. Önce GrandQC sihirbazıyla slaytları işleyip GeoJSON'u içe aktarın
- *      (tek slayt ya da "Proje geneli içe aktar"). Anotasyonlar "GrandQC KK" adını taşır.
+ *   1. Önce GrandQC sihirbazıyla lamları işleyip GeoJSON'u içe aktarın
+ *      (tek lam ya da "Proje geneli içe aktar"). Anotasyonlar "GrandQC KK" adını taşır.
  *   2. [Extensions → Atölye → Yardımcılar → Klinik ve kohort → GrandQC kohort KK özeti]
  *      (ya da [Automate → Project scripts → bu betik])
  *   3. TSV <proje>/grandqc-kohort/ altında oluşur; sonuç penceresinde yol + özet görünür.
@@ -147,7 +147,7 @@ def areaAndFrags = { roi, double pw, double ph, boolean cal ->
     return [mm2: (cal ? (aPx * pw * ph / 1_000_000.0d) : Double.NaN), frags: frags]
 }
 // İki ROI'nin KESİŞİM alanı (mm²). Artefakt alanını doğrudan (artefakt∩doku) ölç →
-// ayrı saklanan "Temiz doku" anotasyonuna bağımlılığı kaldırır; %100 artefaktlı slaytta
+// ayrı saklanan "Temiz doku" anotasyonuna bağımlılığı kaldırır; %100 artefaktlı lamda
 // (Temiz doku üretilememiş olsa bile) artefakt alanı yine doğru çıkar.
 def intersectArea = { roiA, roiB, double pw, double ph, boolean cal ->
     if (roiA == null || roiB == null || !cal) return Double.NaN
@@ -163,7 +163,7 @@ def fmtPct  = { double v -> Double.isNaN(v) ? '' : String.format(java.util.Local
 // ── 1) Ön kontrol: açık proje zorunlu ────────────────────────────────────────
 def project = QP.getProject()
 if (project == null) {
-    def msg = "Önce bir QuPath projesi açın. (Dosya → Proje aç…)\nBu betik tek slayt modunda çalışmaz."
+    def msg = "Önce bir QuPath projesi açın. (Dosya → Proje aç…)\nBu betik tek lam modunda çalışmaz."
     if (isHeadless) { println msg; return }
     Dialogs.showErrorMessage("Proje açık değil", msg)
     return
@@ -251,7 +251,7 @@ entries.eachWithIndex { entry, idx ->
 
 if (rows.isEmpty()) {
     def msg = "Hiçbir görüntüde GrandQC anotasyonu (\"" + GRANDQC_SENTINEL + "\") bulunamadı.\n" +
-              "Önce GrandQC sihirbazıyla slaytları işleyip GeoJSON'u içe aktarın."
+              "Önce GrandQC sihirbazıyla lamları işleyip GeoJSON'u içe aktarın."
     if (isHeadless) { println msg; return }
     Dialogs.showWarningNotification("GrandQC kohort KK özeti", msg)
     return
@@ -283,7 +283,7 @@ body << "\nTSV dosyası:\n  " + tsvFile.getAbsolutePath() + "\n"
 body << "\nSütunlar: doku/temiz doku/artefakt alanı (mm²) + doku içi artefakt %,\n"
 body << "doku parça sayısı ve her artefakt sınıfı için alan (mm²) + bölge sayısı.\n"
 body << "Alanlar yalnız kalibre görüntülerde doldurulur; kalibre değilse hücre boş.\n"
-body << "Anotasyon üretmez, hiçbir slaytı kaydetmez — salt okunur.\n\n"
+body << "Anotasyon üretmez, hiçbir lamı kaydetmez — salt okunur.\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
 showResultWindow("GrandQC Kohort KK Özeti", body.toString())

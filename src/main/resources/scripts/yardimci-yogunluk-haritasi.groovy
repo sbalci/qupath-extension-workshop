@@ -13,7 +13,7 @@
  *   modülü ile dışa aktarılabilen karşılığıdır.
  *
  * GİRDİ (ÖN KOŞUL):
- *   • Slaytta hücre tespitleri olmalı (Hücre Tespiti, Nükleer Boya, Sitoplazmik Boya
+ *   • Lamda hücre tespitleri olmalı (Hücre Tespiti, Nükleer Boya, Sitoplazmik Boya
  *     veya Tümör İçi Ki-67 modüllerinden biriyle üretilmiş). Betik tespit YAPMAZ.
  *
  * ÇIKTI:
@@ -100,7 +100,7 @@ int maxTiles = 600
 // ── 1) Açık görüntü, kalibrasyon ve açıkça seçilmiş analiz sınırı ──
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage('Görüntü açık değil', 'Önce hücre tespiti yapılmış bir slayt açın.')
+    Dialogs.showErrorMessage('Görüntü açık değil', 'Önce hücre tespiti yapılmış bir lam açın.')
     return
 }
 def cal = imageData.getServer().getPixelCalibration()

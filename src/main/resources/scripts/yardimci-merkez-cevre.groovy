@@ -36,7 +36,7 @@
  *   • Yalnız ALAN anotasyonlarıyla çalışır (nokta/çizgi ROI atlanır).
  *
  * KULLANIM:
- *   1. Kalibre (µm/px) bir slayt açın; kaynak alanı anotasyon olarak çizip SEÇİN
+ *   1. Kalibre (µm/px) bir lam açın; kaynak alanı anotasyon olarak çizip SEÇİN
  *      (birden çok da olabilir — her biri ayrı bölünür)
  *   2. [Extensions → Atölye → Yardımcılar → Uzamsal analiz → Eşit-alan merkez/çevre]
  *      (ya da [Automate → Project scripts → bu betik])
@@ -136,7 +136,7 @@ def cal = imageData.getServer().getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0) || !(ph > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok", "Slaytta piksel boyutu (µm) tanımlı değil; alan µm² olarak üretilemez." +
+    Dialogs.showErrorMessage("Kalibrasyon yok", "Lamda piksel boyutu (µm) tanımlı değil; alan µm² olarak üretilemez." +
         "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).")
     return
 }

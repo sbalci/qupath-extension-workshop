@@ -14,7 +14,7 @@
  *   betik bu değişkenliği bir ÖLÇÜME çevirir.
  *
  * GİRDİ (ÖN KOŞUL):
- *   • Slaytta zaten Ki-67 hücre tespitleri olmalı (Nükleer boya modülünü ya
+ *   • Lamda zaten Ki-67 hücre tespitleri olmalı (Nükleer boya modülünü ya
  *     da Tümör içi Ki-67 modülünü önce çalıştırın). Betik tespit YAPMAZ; var
  *     olanı kullanır.
  *   • Patolog tarafından gözden geçirilmiş "Tumor" anotasyonu zorunludur.
@@ -114,7 +114,7 @@ String dabKey = 'Nucleus: DAB OD mean'
 // ── 1) Görüntü, kalibrasyon ve gözden geçirilmiş Tumor sınırı ──────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage('Görüntü açık değil', 'Önce Ki-67 tespiti yapılmış bir slayt açın.')
+    Dialogs.showErrorMessage('Görüntü açık değil', 'Önce Ki-67 tespiti yapılmış bir lam açın.')
     return
 }
 def cal = imageData.getServer().getPixelCalibration()

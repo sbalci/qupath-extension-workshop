@@ -10,7 +10,7 @@
  *   Negative / 1+ / 2+ / 3+ olarak sınıflanır → alan ağırlıklı H-score.
  *   Hücre tespitinden bağımsız, her zaman çalışır.
  *   Eşikler: 0.10 / 0.30 / 0.60 OD (atölye varsayılanı), 0.05 H OD maskesi.
- *   → Slayt-spesifik kalibrasyon için referans noktaları kullanın.
+ *   → Lam-spesifik kalibrasyon için referans noktaları kullanın.
  *
  * İKİNCİL METRİK — HÜCRE BAZLI (karşılaştırma, isteğe bağlı):
  *   Cellpose ya da WatershedCellMembraneDetection ile hücreler tespit edilir,
@@ -20,7 +20,7 @@
  *   Eşikler: 0.15 / 0.40 / 0.70 OD (Membrane: DAB OD mean).
  *
  * KULLANIM:
- *   1. HER2 İHK slaytını açın
+ *   1. HER2 İHK lamını açın
  *   2. Image type → "Brightfield (H-DAB)" olduğundan emin olun
  *   3. [R] tuşu → TÜMÖR (epitel) içeren ~1×1 mm dikdörtgen anotasyon çizin
  *      ve SEÇİN (kenarı sarı görünür)
@@ -74,7 +74,7 @@ def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     Dialogs.showErrorMessage(
         "Görüntü açık değil",
-        "Önce bir HER2 İHK slaytı açın, sonra bu betiği tekrar çalıştırın."
+        "Önce bir HER2 İHK lamı açın, sonra bu betiği tekrar çalıştırın."
     )
     return
 }
@@ -88,7 +88,7 @@ def imageTypeOk = { ->
     n.contains('H_DAB')
 }
 def imageTypeGuidance = { ->
-    "Bu slayt 'Brightfield (H-DAB)' olarak ayarlı değil.\n" +
+    "Bu lam 'Brightfield (H-DAB)' olarak ayarlı değil.\n" +
     "Şu anki tip: ${imageData.getImageType()?.toString() ?: ''}\n\n" +
     "Çözüm:\n" +
     "  • Penceredeki \"Görüntü tipini 'Brightfield (H-DAB)' olarak ayarla\" düğmesine tıklayın, VEYA\n" +
@@ -116,7 +116,7 @@ if (imageTypeOk()) {
 // ──────────────────────────────────────────────────────────────
 // Boya vektörü önerisi + tek tıklamalı tahmin (tüm DAB-OD modüllerinde aynı blok).
 //   • Aktif vektörler QuPath VARSAYILANI ise uyarır: kantitatif ölçümden önce bu
-//     slayttan tahmin etmeyi önerir (eşikler mutlak DAB OD; yanlış vektör skoru kaydırır).
+//     lamdan tahmin etmeyi önerir (eşikler mutlak DAB OD; yanlış vektör skoru kaydırır).
 //   • "Tamam" → SEÇİLİ alan anotasyonundan tahmin edip uygular (Boya vektörleri
 //     sihirbazı ile aynı yöntem). "İptal" → yine de devam. Kalibre görünüyorsa sessiz geçer.
 // ──────────────────────────────────────────────────────────────
@@ -144,9 +144,9 @@ def suggestStainVectors = { ->
     if (!svS2.contains('dab')) return
     boolean svDefault = svClose(svVecOf(svStains.getStain(1)), SV_DEF_HEMA) &&
                         svClose(svVecOf(svStains.getStain(2)), SV_DEF_DAB)
-    if (!svDefault) { println '✓ Boya vektörleri bu slayttan tahmin/kalibre edilmiş görünüyor.'; return }
+    if (!svDefault) { println '✓ Boya vektörleri bu lamdan tahmin/kalibre edilmiş görünüyor.'; return }
     def svMsg =
-        '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu slayttan tahmin EDİLMEMİŞ.\n\n' +
+        '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu lamdan tahmin EDİLMEMİŞ.\n\n' +
         'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n' +
         'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n' +
         'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n' +

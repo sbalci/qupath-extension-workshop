@@ -22,7 +22,7 @@
  *   Görünürlük anahtarları (anotasyon/tespit göster-gizle) yalnızca vurgulanır,
  *   çalıştırılmaz — çünkü tetiklenirse nesneleri gizlerler.
  *
- *   Öğe bulunamazsa (slayt açık değil ya da QuPath sürümü farklı) sayfa yine de
+ *   Öğe bulunamazsa (lam açık değil ya da QuPath sürümü farklı) sayfa yine de
  *   metniyle çalışır; erişilemeyen öğe için bütün bölgeye (araç çubuğu / kenar
  *   paneli / görüntüleyici) düşülür veya vurgu düğmesi pasifleşir.
  *
@@ -31,7 +31,7 @@
  *   İngilizce, buton-düzeyinde canlı vurgu + otomatik ekran görüntüleri sunar.
  *
  * KULLANIM:
- *   1. (Önerilir) Bir slayt açın — görüntüleyici/meta veri bölgeleri dolu olsun.
+ *   1. (Önerilir) Bir lam açın — görüntüleyici/meta veri bölgeleri dolu olsun.
  *   2. [Extensions → Atölye → Modüller → Arayüz turu]
  *   3. İleri / Geri ile gezinin; "Otomatik göster" açıkken her sayfa ilgili öğeyi
  *      vurgular ve (varsa) komutu çalıştırır; kapatmak için kutunun işaretini kaldırın.
@@ -48,7 +48,7 @@ import qupath.fx.dialogs.Dialogs
 
 def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
-def openSlideHint = 'Sol paneldeki Project sekmesinden bir slayta çift tıklayın veya bir slayt dosyasını (.svs, .ndpi, .tiff) doğrudan QuPath penceresine sürükleyip bırakın.'
+def openSlideHint = 'Sol paneldeki Project sekmesinden bir lama çift tıklayın veya bir lam dosyasını (.svs, .ndpi, .tiff) doğrudan QuPath penceresine sürükleyip bırakın.'
 
 // ── Tur sayfaları (id · vurgu bölgesi · hedef · demo · başlık · gövde) ───────
 // bolge ∈ {TOOLBAR, SIDEBAR, VIEWER, null}: belirli hedef çözülemezse geri çekilme.
@@ -64,7 +64,7 @@ def pages = [
      govde: 'Bu tur QuPath arayüzünü adım adım tanıtır. Her sayfada bir öğe anlatılır; ' +
             'ilgili sekme, düğme ya da bölge canlı pencerede turuncu bir çerçeveyle işaretlenir. ' +
             'Bazı adımlarda ilgili komut örnek olarak kendiliğinden çalıştırılır (ör. Parlaklık/Kontrast ' +
-            'diyaloğu açılır, Points aracı etkinleşir). En verimli kullanım için önce bir slayt açın ' +
+            'diyaloğu açılır, Points aracı etkinleşir). En verimli kullanım için önce bir lam açın ' +
             '(' + openSlideHint + ') — ' +
             'böylece görüntüleyici ve meta veri sekmeleri de dolu olur.\n\n' +
             'İleri / Geri düğmeleriyle gezinin; sihirbaz penceresi her zaman üstte kalsın ' +
@@ -73,15 +73,15 @@ def pages = [
             'qupath-extension-training eklentisinden esinlenmiştir (son sayfadaki bağlantı).'],
 
     [id: 'viewer', bolge: 'VIEWER',
-     baslik: 'Görüntüleyici — slaytın görüldüğü merkez alan',
-     govde: 'Görüntüleyici, slaytın görüntülendiği merkezdeki büyük alandır. WSI\'yi Google ' +
+     baslik: 'Görüntüleyici — lamın görüldüğü merkez alan',
+     govde: 'Görüntüleyici, lamın görüntülendiği merkezdeki büyük alandır. WSI\'yi Google ' +
             'Haritalar gibi bir çözünürlük piramidi üzerinde gezersiniz: fare tekerleğiyle ' +
             'yakınlaşıp uzaklaşır, Move aracı etkinken tıklayıp sürükleyerek kaydırırsınız. ' +
-            'Tüm tespit ve anotasyonlar bu alanın üzerine çizilir. Tüm slaytı pencereye sığdırmak için View → Zoom → Zoom to fit.'],
+            'Tüm tespit ve anotasyonlar bu alanın üzerine çizilir. Tüm lamı pencereye sığdırmak için View → Zoom → Zoom to fit.'],
 
     [id: 'overview', bolge: 'VIEWER',
      baslik: 'Genel bakış navigatörü (görüntüleyicinin sağ-üst köşesi)',
-     govde: 'Görüntüleyicinin sağ-üst köşesindeki küçük genel bakış (navigatör) penceresi, tüm slayttaki ' +
+     govde: 'Görüntüleyicinin sağ-üst köşesindeki küçük genel bakış (navigatör) penceresi, tüm lamdaki ' +
             'konumunuzu gösterir — yüksek büyütmede "kayboldum" hissini önler. Üzerindeki dikdörtgen ' +
             'şu an görünen alandır; küçük pencereye tıklayarak hızla başka bir bölgeye atlayabilirsiniz. ' +
             'Konumu sabittir — QuPath onu her zaman sağ-üst köşeye yerleştirir (taşınamaz). ' +
@@ -98,15 +98,15 @@ def pages = [
             'kenarından tutup genişletebilirsiniz.'],
 
     [id: 'tab-project', bolge: 'SIDEBAR', hedef: [tab: 'Project'], safeActivate: true,
-     baslik: 'Project sekmesi — slayt listesi',
-     govde: 'Project sekmesi, projedeki tüm slaytları küçük resimleriyle listeler. Bir küçük resme ' +
-            'çift tıklamak slaytı görüntüleyicide açar; sağ tıklamak açıklama ekleme, görüntü tipi ' +
-            'atama gibi işlemleri sunar. Projeler birden çok slaytı bir arada tutmanın ve aynı analizi ' +
+     baslik: 'Project sekmesi — lam listesi',
+     govde: 'Project sekmesi, projedeki tüm lamları küçük resimleriyle listeler. Bir küçük resme ' +
+            'çift tıklamak lamı görüntüleyicide açar; sağ tıklamak açıklama ekleme, görüntü tipi ' +
+            'atama gibi işlemleri sunar. Projeler birden çok lamı bir arada tutmanın ve aynı analizi ' +
             'hepsine uygulamanın profesyonel yoludur. Henüz proje açmadıysanız bu sekme boş görünür.'],
 
     [id: 'tab-image', bolge: 'SIDEBAR', hedef: [tab: 'Image'], safeActivate: true,
      baslik: 'Image sekmesi — piksel boyutu ve meta veri',
-     govde: 'Image sekmesi açık slaytın meta verisini gösterir: piksel boyutu (µm/px), görüntü ' +
+     govde: 'Image sekmesi açık lamın meta verisini gösterir: piksel boyutu (µm/px), görüntü ' +
             'boyutları, tarayıcı modeli ve boya tipi. Buradaki en kritik sayı piksel boyutudur — ' +
             'QuPath fiziksel ölçeği buradan bilir ve her tespit/ölçüm buna bağlıdır. 1.0 µm/px ' +
             'görüyorsanız meta veri eksik demektir; Giriş modülündeki kalibrasyon adımına dönün. Görüntü ' +
@@ -121,7 +121,7 @@ def pages = [
 
     [id: 'tab-hierarchy', bolge: 'SIDEBAR', hedef: [tab: 'Hierarchy'], safeActivate: true,
      baslik: 'Hierarchy sekmesi — nesne ağacı (anotasyon → tespit)',
-     govde: 'Hierarchy sekmesi nesnelerin ağaç yapısını gösterir: slayt → anotasyon → tespit. Bir ' +
+     govde: 'Hierarchy sekmesi nesnelerin ağaç yapısını gösterir: lam → anotasyon → tespit. Bir ' +
             'anotasyonun içinde bulunan hücre tespitleri bu ağaçta onun altında yer alır. Anotasyon ile ' +
             'tespit arasındaki fark burada görünür hâle gelir: anotasyon elle çizilen bölgedir, tespit ise ' +
             'algoritmanın bulduğu nesnedir ve daima bir anotasyonun içindedir.'],
@@ -130,7 +130,7 @@ def pages = [
      baslik: 'Workflow sekmesi — yaptıklarınızın kaydı',
      govde: 'Workflow sekmesi, oturumda yaptığınız işlemleri sırayla kaydeder — bir tür otomatik günlük. ' +
             'Buradan tüm adımları yeniden çalıştırılabilir bir Groovy betiğine dönüştürebilirsiniz ' +
-            '(Create script), böylece aynı analizi başka slaytlara tekrarlamak kolaylaşır. Bir girdiye ' +
+            '(Create script), böylece aynı analizi başka lamlara tekrarlamak kolaylaşır. Bir girdiye ' +
             'çift tıklamak o komutu aynı ayarlarla yeniden açar.'],
 
     [id: 'toolbar', bolge: 'TOOLBAR',
@@ -159,7 +159,7 @@ def pages = [
      baslik: 'Alıştırma — bir DİKDÖRTGEN çizin',
      govde: 'Sıra sizde! Rectangle (R) aracı sizin için seçildi. Görüntü üzerinde tıklayıp sürükleyerek bir ' +
             'dikdörtgen anotasyon çizin. Sihirbaz çizimi algılayınca kendiliğinden bir sonraki alıştırmaya geçer. ' +
-            '(Bu alıştırma açık bir slayt ister; istemezseniz "İleri ▶" ile atlayabilirsiniz.)'],
+            '(Bu alıştırma açık bir lam ister; istemezseniz "İleri ▶" ile atlayabilirsiniz.)'],
 
     [id: 'practice-ellipse', bolge: 'TOOLBAR', hedef: [tools: 'ELLIPSE'], demo: 'TOOL_ELLIPSE', practice: 'ELLIPSE',
      baslik: 'Alıştırma — bir ELİPS çizin',
@@ -195,7 +195,7 @@ def pages = [
     [id: 'visibility', bolge: 'TOOLBAR',
      hedef: [actions: ['SHOW_ANNOTATIONS', 'FILL_ANNOTATIONS', 'SHOW_DETECTIONS', 'FILL_DETECTIONS']],
      baslik: 'Görünürlük: anotasyon/tespit göster-gizle, doldur',
-     govde: 'Araç çubuğundaki görünürlük anahtarları kalabalık bir slaytta neyi gördüğünüzü denetler: ' +
+     govde: 'Araç çubuğundaki görünürlük anahtarları kalabalık bir lamda neyi gördüğünüzü denetler: ' +
             'anotasyonları göster/gizle, tespitleri göster/gizle ve bunların içini doldur/boşalt. Binlerce hücre ' +
             'dış çizgisini "doldurulmuş" yapmak uzaktan dağılımı çok daha okunaklı kılar. Bağlantıları ' +
             '(connections) ve sınıflandırma kaplamasını da buradan açıp kapatırsınız. (Bu anahtarlar yalnızca ' +
@@ -577,7 +577,7 @@ def setupPractice = { page, javafx.scene.control.Label statusLabel, int pageIdx 
     def imageData = null
     try { imageData = gui.getImageData() } catch (Throwable t) {}
     if (imageData == null) {
-        statusLabel.setText('⚠ Bu alıştırma için önce bir slayt açın (' + openSlideHint + '). "İleri ▶" ile atlayabilirsiniz.')
+        statusLabel.setText('⚠ Bu alıştırma için önce bir lam açın (' + openSlideHint + '). "İleri ▶" ile atlayabilirsiniz.')
         statusLabel.setStyle('-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: -fx-text-base-color; -fx-opacity: 0.8;')
         return
     }
@@ -694,7 +694,7 @@ render = { ->
         def hi = new javafx.scene.control.ToggleButton('Bu bölgeyi vurgula')
         hi.setDisable(true)
         hi.setTooltip(new javafx.scene.control.Tooltip(
-            'Bu öğe şu an erişilemiyor (slayt açık değil ya da QuPath sürümü farklı). Sayfa metni yine de geçerli.'))
+            'Bu öğe şu an erişilemiyor (lam açık değil ya da QuPath sürümü farklı). Sayfa metni yine de geçerli.'))
         center.getChildren().add(hi)
     }
 
@@ -806,7 +806,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println '✓ QuPath arayüz turu açıldı.'

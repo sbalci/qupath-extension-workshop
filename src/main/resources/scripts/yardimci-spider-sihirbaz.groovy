@@ -6,7 +6,7 @@
  * NE YAPAR:
  *   HistAI'nin **SPIDER** organa özgüleşmiş, ÖN-EĞİTİMLİ doku sınıflandırıcı
  *   modellerini (histai/SPIDER-{colorectal,skin,thorax,breast}-model; Hibou-L
- *   omurgası) kullanarak açık slayttaki anotasyonları sınıflandırır — tek
+ *   omurgası) kullanarak açık lamdaki anotasyonları sınıflandırır — tek
  *   pencereden:
  *     1. Organ modelini + granülariteyi seçin.
  *     2. SINIFLANDIR — anotasyonların 1120×1120 karolarını diske yazar; Python
@@ -32,7 +32,7 @@
  * KULLANIM:
  *   1. SPIDER Python ortamını kurun (venv) + KAPILI modele erişim. Bkz. Ekler →
  *      SPIDER Doku Sınıflandırıcı § kurulum veya Kaynaklar → § İleri kurulumlar G.
- *   2. Bir slayt açın; sınıflandırmak istediğiniz bölge(ler) için alan anotasyonu
+ *   2. Bir lam açın; sınıflandırmak istediğiniz bölge(ler) için alan anotasyonu
  *      çizin (PathClass atamaya gerek yok — model sınıfı kendisi verir).
  *   3. [Extensions → Atölye → Yardımcılar → SPIDER doku sınıflandırıcı sihirbazı]
  *   4. İlk açılışta yapılandırın: python.exe, spider_bridge.py, (ops.) model dizini.
@@ -136,7 +136,7 @@ def configComplete = { cfg -> configMissing(cfg).isEmpty() }
 def parseIntOr = { s, int d -> try { return Integer.parseInt((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
 def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
 
-// ── Çalışma dizinini çöz (proje dizini → slayt klasörü → geçici) ────────────
+// ── Çalışma dizinini çöz (proje dizini → lam klasörü → geçici) ────────────
 def resolveWorkDir = { cfg, imageData ->
     def wd = cfg.workDir?.trim()
     if (wd) return new File(wd)
@@ -473,7 +473,7 @@ def buildResultText = { File workDir, exp, imp ->
 // ── Headless: yapılandırmayı raporla, etkileşim yok ─────────────────────────
 if (isHeadless) {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { println "Önce bir slayt açın."; return }
+    if (imageData == null) { println "Önce bir lam açın."; return }
     def cfg = loadConfig()
     def miss = configMissing(cfg)
     println "SPIDER yapılandırması: python=${cfg.python ?: '(ayarsız)'} köprü=${cfg.bridge ?: '(ayarsız)'} model=${cfg.modelDir ?: '(HF hub — KAPILI)'} organ=${cfg.organ} granülarite=${cfg.granularity} aygıt=${cfg.device}"
@@ -692,7 +692,7 @@ render = { ->
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce bir slayt açın ve sınıflandırmak istediğiniz bölge(ler) için alan anotasyonu çizin, sonra "⟳ Yenile".')
+            addGuidance('Önce bir lam açın ve sınıflandırmak istediğiniz bölge(ler) için alan anotasyonu çizin, sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
@@ -701,7 +701,7 @@ render = { ->
             def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() }
             title.setText('SPIDER — hazır')
             def sb = new StringBuilder()
-            sb << "Slayt          : " << imageNameOf(imageData) << "\n"
+            sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Çalışma dizini : " << workDir.getAbsolutePath() << "\n"
             sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
             sb << "Model          : " << (cfg.modelDir?.trim() ? cfg.modelDir : ('HuggingFace (histai/SPIDER-' + (cfg.organ ?: 'colorectal') + '-model, KAPILI)')) << "\n"
@@ -795,7 +795,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ SPIDER doku sınıflandırıcı sihirbazı açıldı."

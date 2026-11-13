@@ -12,12 +12,12 @@
  *     eğit/kaydet → uygula → Ki-67'yi YALNIZ Tumor hücrelerinde derecele. Böylece
  *     Ki-67+ lenfositler ve stromal hücreler indeksten dışlanır.
  *
- * Yol B'nin sınıflandırıcısı, İHK (Ki-67 H-DAB) slaytı üzerinde eğitilen ayrı bir
+ * Yol B'nin sınıflandırıcısı, İHK (Ki-67 H-DAB) lamı üzerinde eğitilen ayrı bir
  * NESNE (hücre) sınıflandırıcısıdır; Tümör/Stroma modülünün H&E PİKSEL sınıflandırıcısından
  * farklıdır. Yoğunluk derecelemesi (DAB eşiği) ayrı, alt adımdır.
  *
  * KULLANIM:
- *   1. Bir Ki-67 H-DAB slaytı açın (Yol B için ayrıca bir proje açık olmalı)
+ *   1. Bir Ki-67 H-DAB lamı açın (Yol B için ayrıca bir proje açık olmalı)
  *   2. Bu betiği çalıştırın → açılan pencerede yolu seçin
  *
  * Çıktılar yalnız sayım, alan, yoğunluk ve pozitif yüzdesidir.
@@ -88,9 +88,9 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3 ->
     }
     if (tumorObjects.isEmpty())
         return [ok:false, error:
-            'Ki-67 slaytında ölçülecek tümör epitelini anotasyonla çevreleyin, sınıfını tam\n' +
+            'Ki-67 lamında ölçülecek tümör epitelini anotasyonla çevreleyin, sınıfını tam\n' +
             'olarak "Tumor" yapın ve bu anotasyon(lar)ı SEÇİN. Betik yalnız seçili Tumor\n' +
-            'anotasyonlarını ölçer; H&E sınıflandırıcısı bu İHK slaytına otomatik uygulanmaz.']
+            'anotasyonlarını ölçer; H&E sınıflandırıcısı bu İHK lamına otomatik uygulanmaz.']
 
     def tumorUnion = RoiTools.union(tumorObjects.collect { it.getROI() })
     if (tumorUnion == null || tumorUnion.isEmpty())
@@ -257,7 +257,7 @@ def isTumorCell = { c ->
 // Yol B — DETECT: seçili ROI içinde yoğunluksuz hücre tespiti (önce bu bölgedeki tespitleri sil).
 def runCellDetection = { regionAnno ->
     try {
-        // Yalnızca bu bölgenin altındaki tespitleri sil — slayttaki diğer
+        // Yalnızca bu bölgenin altındaki tespitleri sil — lamdaki diğer
         // anotasyonların (ör. Hücre Tespiti / Nükleer Boya modülleri) tespitleri korunur.
         def existing = regionAnno.getChildObjects().findAll { it.isDetection() }
         if (!existing.isEmpty()) QP.removeObjects(existing, false)
@@ -406,7 +406,7 @@ def scoreIntensity = { regionAnno, double n1, double n2, double n3 ->
 // ──────────────────────────────────────────────────────────────
 // Boya vektörü önerisi + tek tıklamalı tahmin (tüm DAB-OD modüllerinde aynı blok).
 //   • Aktif vektörler QuPath VARSAYILANI ise uyarır: kantitatif ölçümden önce bu
-//     slayttan tahmin etmeyi önerir (eşikler mutlak DAB OD; yanlış vektör skoru kaydırır).
+//     lamdan tahmin etmeyi önerir (eşikler mutlak DAB OD; yanlış vektör skoru kaydırır).
 //   • "Tamam" → SEÇİLİ alan anotasyonundan tahmin edip uygular (Boya vektörleri
 //     sihirbazı ile aynı yöntem). "İptal" → yine de devam. Kalibre görünüyorsa sessiz geçer.
 // ──────────────────────────────────────────────────────────────
@@ -434,9 +434,9 @@ def suggestStainVectors = { ->
     if (!svS2.contains('dab')) return
     boolean svDefault = svClose(svVecOf(svStains.getStain(1)), SV_DEF_HEMA) &&
                         svClose(svVecOf(svStains.getStain(2)), SV_DEF_DAB)
-    if (!svDefault) { println '✓ Boya vektörleri bu slayttan tahmin/kalibre edilmiş görünüyor.'; return }
+    if (!svDefault) { println '✓ Boya vektörleri bu lamdan tahmin/kalibre edilmiş görünüyor.'; return }
     def svMsg =
-        '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu slayttan tahmin EDİLMEMİŞ.\n\n' +
+        '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu lamdan tahmin EDİLMEMİŞ.\n\n' +
         'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n' +
         'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n' +
         'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n' +
@@ -744,7 +744,7 @@ render = { ->
     } else if (cur == 'DETECT_REGION') {
         title.setText('1/5 — Tespit bölgesini seçin')
         bodyLbl.setText(
-            'Ki-67 slaytında ölçmek istediğiniz tümör alanını kapsayan GENİŞ bir anotasyon çizin\n' +
+            'Ki-67 lamında ölçmek istediğiniz tümör alanını kapsayan GENİŞ bir anotasyon çizin\n' +
             '(Brush/Polygon) ve SEÇİN. Sınıf atamanıza gerek yok — bu yalnız hücre tespitinin sınırıdır.\n\n' +
             "Şu an seçili alan anotasyonu: ${s.selectedArea}")
         buttons.getChildren().addAll(

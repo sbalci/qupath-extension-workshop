@@ -3,7 +3,7 @@
  * --------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
- * Bu betik, slayta ÇİZDİĞİNİZ Tumor / Stroma anotasyonlarından bir **Random
+ * Bu betik, lama ÇİZDİĞİNİZ Tumor / Stroma anotasyonlarından bir **Random
  * Forest piksel sınıflandırıcı** eğitir ve projeye `tumor-stroma-RF` adıyla
  * kaydeder — `[Classify → Pixel classification → Train pixel classifier]`
  * diyaloğunu açmadan. Kaydedilen model, **Tümör/Stroma sihirbazı** tarafından
@@ -11,18 +11,18 @@
  * Akış: birkaç eğitim bölgesi çiz → modeli eğit → ölçüm sınırını seç → ölç.
  *
  * ÖN KOŞUL — anotasyonlar:
- *   1. H&E slaytı açık ve görüntü tipi Brightfield (H&E) olmalı (boya
+ *   1. H&E lamı açık ve görüntü tipi Brightfield (H&E) olmalı (boya
  *      vektörleri tanımlı). Değilse: Yardımcılar → Görüntü tipi ayarla.
  *   2. Piksel boyutu (µm/px) kalibre olmalı. Değilse: Yardımcılar → Kalibrasyon.
- *   3. Slaytta en az birer **Tumor** ve **Stroma** sınıflı anotasyon olmalı
+ *   3. Lamda en az birer **Tumor** ve **Stroma** sınıflı anotasyon olmalı
  *      (Tümör/Stroma modülü §2'deki gibi 3-5 küçük temsili bölge). İsterseniz Background* /
  *      Necrosis* gibi ek sınıflar da çizebilirsiniz; sona eklenen * o sınıfı hem
  *      nesne üretiminden hem de alan ölçümünden çıkarır (Tümör/Stroma modülündeki Ignore* kuralı).
  *
  * KULLANIM:
- *   1. H&E slaytında Tumor (kırmızı) + Stroma (yeşil) bölgeleri çizin
+ *   1. H&E lamında Tumor (kırmızı) + Stroma (yeşil) bölgeleri çizin
  *   2. [Automate → Project scripts → model-egit] (ya da Tümör/Stroma sihirbazından 'Yeni sınıflandırıcı eğit')
- *   3. Model kaydedilir; isterseniz bu slaytta hızlı önizleme yapın
+ *   3. Model kaydedilir; isterseniz bu lamda hızlı önizleme yapın
  *   4. Ölçüm sınırını seçin; Tümör/Stroma sihirbazı ile alan ölçümlerini alın
  *
  * MODEL (atölye varsayılanı — sabit, "küçük" model):
@@ -32,7 +32,7 @@
  *   Bu ayarlar Tümör/Stroma modülü §3'te öğretilen ayarlarla birebir aynıdır.
  *
  * METODOLOJI NOTU:
- *   Az sayıda küçük bölgeden eğitilen RF, tek slaytta iyi; başka slaytlara
+ *   Az sayıda küçük bölgeden eğitilen RF, tek lamda iyi; başka lamlara
  *   genelleme sınırlıdır (Tümör/Stroma modülü §4.2/§4.4). Çoklu-slayt eğitimi ve hazır
  *   modeller için Tümör/Stroma modülü §4.4 ve Hazır Tümör/Stroma Modelleri ekine bakın.
  *
@@ -62,7 +62,7 @@ import org.bytedeco.opencv.opencv_ml.RTrees
 //   - showResultWindow  : sonuç penceresi — açık kalır, QuPath kullanılmaya devam edilebilir
 //   - askOverwrite      : 3-seçenekli (üzerine yaz / sürümle / iptal) küçük seçim penceresi
 //
-// İlk ikisi always-on-top açık başlar; kullanıcı kapatmadan slaytta dolaşabilir,
+// İlk ikisi always-on-top açık başlar; kullanıcı kapatmadan lamda dolaşabilir,
 // sonuçları kopyalayabilir. (Diğer modül betikleriyle aynı affordance.)
 // ──────────────────────────────────────────────────────────────
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
@@ -273,7 +273,7 @@ def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     Dialogs.showErrorMessage(
         "Görüntü açık değil",
-        "Önce bir H&E slaytı açın, Tumor/Stroma bölgeleri çizin, sonra bu betiği tekrar çalıştırın."
+        "Önce bir H&E lamı açın, Tumor/Stroma bölgeleri çizin, sonra bu betiği tekrar çalıştırın."
     )
     return
 }
@@ -283,7 +283,7 @@ if (project == null) {
     Dialogs.showErrorMessage(
         "Proje açık değil",
         "Bu betik modeli proje klasörüne kaydeder.\n" +
-        "Önce [File → Project → Create project] ile bir proje oluşturun ve slaytlarınızı ekleyin."
+        "Önce [File → Project → Create project] ile bir proje oluşturun ve lamlarınızı ekleyin."
     )
     return
 }
@@ -309,7 +309,7 @@ def basePixelMicrons = cal.getAveragedPixelSizeMicrons()
 if (!(basePixelMicrons > 0)) {
     Dialogs.showErrorMessage(
         "Kalibrasyon yok",
-        "Slaytta piksel boyutu (µm/px) tanımlı değil; sınıflandırıcı çözünürlüğü hesaplanamaz.\n\n" +
+        "Lamda piksel boyutu (µm/px) tanımlı değil; sınıflandırıcı çözünürlüğü hesaplanamaz.\n\n" +
         "Çözüm: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).\n" +
         "Sonra bu betiği tekrar çalıştırın."
     )
@@ -331,7 +331,7 @@ def stromaCount = classCounts['Stroma'] ?: 0
 if (tumorCount == 0 || stromaCount == 0) {
     Dialogs.showErrorMessage(
         "Eğitim anotasyonu eksik",
-        "Bir Random Forest eğitmek için slaytta en az birer **Tumor** ve **Stroma**\n" +
+        "Bir Random Forest eğitmek için lamda en az birer **Tumor** ve **Stroma**\n" +
         "sınıflı (alan) anotasyon gerekir.\n\n" +
         "Şu an bulunan: Tumor = ${tumorCount}, Stroma = ${stromaCount}\n\n" +
         "Çözüm (Tümör/Stroma modülü §2):\n" +
@@ -369,9 +369,9 @@ def extraClasses = classCounts.keySet().findAll { !(it in ['Tumor', 'Stroma']) }
 
 def devam = waitForConfirm(
     "Tümör/Stroma (Adım 1) - Tümör/Stroma modeli eğit",
-    "Bu betik AÇIK slayttaki çizdiğiniz anotasyonlardan bir Random Forest piksel\n" +
+    "Bu betik AÇIK lamdaki çizdiğiniz anotasyonlardan bir Random Forest piksel\n" +
     "sınıflandırıcı eğitir ve projeye '${targetName}' adıyla kaydeder.\n\n" +
-    "Eğitim verisi (bu slayt):\n" +
+    "Eğitim verisi (bu lam):\n" +
     "  • Tumor  : ${tumorCount} anotasyon\n" +
     "  • Stroma : ${stromaCount} anotasyon\n" +
     (extraClasses ? "  • Ek sınıflar: ${extraClasses.join(', ')}\n" : "") +
@@ -379,7 +379,7 @@ def devam = waitForConfirm(
     "  • Sınıflandırıcı : Random Forest\n" +
     "  • Özellikler     : Hematoxylin OD + Eosin OD; ham + Gaussian σ = 1, 2, 4 µm\n" +
     "  • Çözünürlük     : ${trainResolutionMicrons} µm/px\n\n" +
-    "Not: Bu işlem yalnızca modeli EĞİTİP KAYDEDER — slayttaki anotasyonlarınıza\n" +
+    "Not: Bu işlem yalnızca modeli EĞİTİP KAYDEDER — lamdaki anotasyonlarınıza\n" +
     "dokunmaz (silmez). Modeli seçili anotasyon sınırında ölçmek için sonra\n" +
     "'Tümör/Stroma sihirbazı' betiğini çalıştırın.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
@@ -393,7 +393,7 @@ if (!devam) { println "İptal."; return }
 println "─────────────────────────────────────"
 println "Tümör/Stroma (Adım 1) - Tümör/Stroma modeli eğit"
 println "─────────────────────────────────────"
-println "Slayt: ${QP.getProjectEntry()?.getImageName() ?: 'unnamed'}"
+println "Lam: ${QP.getProjectEntry()?.getImageName() ?: 'unnamed'}"
 println String.format(java.util.Locale.US,
     "Eğitim verisi: Tumor=%d, Stroma=%d  |  Çözünürlük: %.1f µm/px",
     tumorCount, stromaCount, trainResolutionMicrons)
@@ -475,7 +475,7 @@ def elapsed = (System.currentTimeMillis() - t0) / 1000.0
 println String.format(java.util.Locale.US, "Model kaydedildi: %s  |  Süre: %.1f sn", targetName, elapsed)
 
 // ──────────────────────────────────────────────────────────────
-// 5) İsteğe bağlı önizleme (tahribatsız) — slayttaki anotasyonlara dokunmaz.
+// 5) İsteğe bağlı önizleme (tahribatsız) — lamdaki anotasyonlara dokunmaz.
 //   Ölçüm sınırı: SEÇİLİ anotasyonlar (seçim yoksa sınıfı 'Region' olanlar);
 //   hiçbir nesne oluşturmaz/silmez (aktif öğrenme döngüsü korunur).
 // ──────────────────────────────────────────────────────────────
@@ -521,10 +521,10 @@ def baseResult = String.format(java.util.Locale.US,
     "Model kaydedildi ✅\n\n" +
     "  Ad        : %s\n" +
     "  Konum     : <proje>/classifiers/%s.json\n" +
-    "  Eğitim    : Tumor=%d, Stroma=%d (bu slayt)\n" +
+    "  Eğitim    : Tumor=%d, Stroma=%d (bu lam)\n" +
     "  Çözünürlük: %.1f µm/px  |  Süre: %.1f sn\n\n" +
     "Sıradaki: ölçüm sınırını seçin; 'Tümör/Stroma sihirbazı' ile alanları ölçün.\n" +
-    "Slaytta canlı renk haritasını görmek için: [Classify → Pixel classification →\n" +
+    "Lamda canlı renk haritasını görmek için: [Classify → Pixel classification →\n" +
     "Load classifier] → %s.\n\n" +
     "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
     targetName, targetName, tumorCount, stromaCount, trainResolutionMicrons, elapsed, targetName)

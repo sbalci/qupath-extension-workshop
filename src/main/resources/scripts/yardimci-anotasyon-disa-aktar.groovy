@@ -32,7 +32,7 @@
  *     QuPath'i -p ile ÇALIŞTIRMAYIN (betik projeyi kendisi açar); bilinmeyen anahtar/biçim hata verir (çıkış kodu 1).
  *
  * ÇIKTI:
- *   <çıkış>/_manifest.tsv · geojson/<görüntü adı>.geojson · imagescope/<slayt>.xml · asap/<slayt>.xml ·
+ *   <çıkış>/_manifest.tsv · geojson/<görüntü adı>.geojson · imagescope/<lam>.xml · asap/<lam>.xml ·
  *   coco.json · merkezler.tsv (ya da .csv)
  *
  * YÖNTEM / KAYNAK REFERANSLARI:
@@ -884,7 +884,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println '✓ Toplu anotasyon dışa aktarma sihirbazı açıldı.'

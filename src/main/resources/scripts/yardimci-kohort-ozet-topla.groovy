@@ -112,7 +112,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ── 1) Ön kontrol: açık proje zorunlu ────────────────────────────────────────
 def project = QP.getProject()
 if (project == null) {
-    def msg = "Önce bir QuPath projesi açın. (Dosya → Proje aç…)\nBu betik tek slayt modunda çalışmaz."
+    def msg = "Önce bir QuPath projesi açın. (Dosya → Proje aç…)\nBu betik tek lam modunda çalışmaz."
     if (isHeadless) { println msg; return }
     Dialogs.showErrorMessage("Proje açık değil", msg)
     return

@@ -7,7 +7,7 @@
  * yeniden çalıştırmadan** üç sınıf eşiğini (1+ / 2+ / 3+) GÖRSEL olarak ayarlar.
  *
  * NE İŞE YARAR?
- *   • Slaytınızın KENDİ kromojen renklerinden üretilen renk şeridi + gerçek hücre
+ *   • Lamınızın KENDİ kromojen renklerinden üretilen renk şeridi + gerçek hücre
  *     kesitlerinden oluşan örnek şeridi üzerinde, histogramdaki üç eşik çizgisini
  *     SÜRÜKLEYEREK ayarlarsınız; sayım / yüzde / H-score anında güncellenir.
  *   • Renk şeridi hücre YOĞUNLUĞUYLA dokulanır (yoğunluk-barkodu); eksen boyunca
@@ -16,14 +16,14 @@
  *     (yalnız öneridir; yöntem referansınızla sabitleyip belgeleyin).
  *   • "Canlı uygula" açıkken her sürükleme bırakışında hücreler yeni sınıflarına
  *     yeniden sınıflandırılır — değişikliği ana görüntüde görürsünüz.
- *   • Kapsam seçilebilir: Seçili anotasyon(lar) ya da Tüm slayt.
+ *   • Kapsam seçilebilir: Seçili anotasyon(lar) ya da Tüm lam.
  *   • Ölçüm sütunu otomatik keşfedilir: "Membrane/Nucleus/Cytoplasm: <boya> OD mean"
  *     desenindeki her sütun tanınır (DAB varsayılan; AEC gibi diğer kromojenler de
  *     çalışır — birden çok aday varsa sütun seçici görünür).
  *
  * EŞİK NOTU (Bankhead): Eşik değerleri 1+/2+/3+ dağılımını ve H-score'u DOĞRUDAN
  *   kaydırır; "doğru" tek bir eşik yoktur. Yöntem referansınızla tutarlı, sabit bir
- *   eşik seçip belgeleyin — aynı çalışmada slayttan slayta değiştirmeyin.
+ *   eşik seçip belgeleyin — aynı çalışmada lamdan lama değiştirmeyin.
  *
  * NE YAPMAZ:
  *   • Hücre tespit adımını yeniden çalıştırmaz; tespit parametrelerini değiştiremez.
@@ -59,14 +59,14 @@ def atolyeD = { String k, double d -> (double) __wpCall('dbl', [String.class, do
 
 // ── Sabitler ────────────────────────────────────────────────────────
 String SCOPE_SELECTED = 'Seçili anotasyon(lar)'
-String SCOPE_ALL      = 'Tüm slayt'
+String SCOPE_ALL      = 'Tüm lam'
 String WINDOW_TITLE   = 'Eşik paleti — Eşikleri ayarla'
 
 // ── Ön kontrol ──────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     if (isHeadless) { println 'Görüntü açık değil.'; return }
-    Dialogs.showErrorMessage('Görüntü açık değil', 'Önce bir slayt açın.')
+    Dialogs.showErrorMessage('Görüntü açık değil', 'Önce bir lam açın.')
     return
 }
 def server = imageData.getServer()
@@ -307,7 +307,7 @@ if (isHeadless) {
 def uiPrefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/esik-ayarla')
 boolean defLive = Boolean.parseBoolean(uiPrefs.get('liveApply', 'true'))
 
-// Açılış kapsamı: geçerli sütunlu seçili anotasyon varsa Seçili, yoksa Tüm slayt
+// Açılış kapsamı: geçerli sütunlu seçili anotasyon varsa Seçili, yoksa Tüm lam
 String initialScope = SCOPE_ALL
 if (!discoverColumns(cellsForScope(SCOPE_SELECTED)).isEmpty()) initialScope = SCOPE_SELECTED
 if (discoverColumns(cellsForScope(initialScope)).isEmpty()) initialScope = SCOPE_ALL
@@ -832,7 +832,7 @@ javafx.application.Platform.runLater {
                 'çevresindeki çeşitliliği gösteremez. Tüm dağılım histogramdadır.'),
             limitLabel('4) Eşik sonucu doğrudan kaydırır — bir eşiği sürüklemek 1+/2+/3+ dağılımını ve H-score\'u ' +
                 'tanım gereği değiştirir; "doğru" tek eşik yoktur. Yöntem referansınızla tutarlı bir eşik seçip ' +
-                'belgeleyin; aynı çalışmada slayttan slayta değiştirmeyin. "Otomatik öner" (3-eşik Otsu) yalnızca ' +
+                'belgeleyin; aynı çalışmada lamdan lama değiştirmeyin. "Otomatik öner" (3-eşik Otsu) yalnızca ' +
                 'veri-güdümlü bir başlangıç önerisidir — yöntemsel doğruluk iddiası taşımaz.'),
             limitLabel('5) Yalnızca yeniden sınıflandırır — tespit/genişletme parametrelerine dokunmaz (onlar için modülü ' +
                 'yeniden çalıştırın). Piksel-bazlı H-score yeniden HESAPLANMAZ; bayat ölçümler her uygulamada temizlenir.'),

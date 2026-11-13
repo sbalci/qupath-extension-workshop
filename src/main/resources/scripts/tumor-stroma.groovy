@@ -170,7 +170,7 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
             def scopeGroup = new javafx.scene.control.ToggleGroup()
             def rRegion = new javafx.scene.control.RadioButton('Seçili anotasyon(lar)')
             rRegion.setToggleGroup(scopeGroup); rRegion.setSelected(true)
-            def rSlide = new javafx.scene.control.RadioButton('Tüm slayt (seçim gerekmez — kaba tahmin)')
+            def rSlide = new javafx.scene.control.RadioButton('Tüm lam (seçim gerekmez — kaba tahmin)')
             rSlide.setToggleGroup(scopeGroup)
             def scopeBox = new javafx.scene.layout.VBox(4,
                 new javafx.scene.control.Label('Kapsam:'), rRegion, rSlide)
@@ -242,7 +242,7 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
 // ── Ön kontroller ──────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage('Görüntü açık değil', 'Önce bir H&E slaytı açın.')
+    Dialogs.showErrorMessage('Görüntü açık değil', 'Önce bir H&E lamı açın.')
     return
 }
 def project = QP.getProject()
@@ -268,7 +268,7 @@ if (!(pixelWidth > 0) || !(pixelHeight > 0)) {
     Dialogs.showErrorMessage(
         'Kalibrasyon yok',
         'Piksel boyutu tanımlı değil; mm² alan ölçümleri hesaplanamaz.\n' +
-        'Önce kalibrasyonu metadata veya bir kalibrasyon slaytıyla doğrulayın.'
+        'Önce kalibrasyonu metadata veya bir kalibrasyon lamıyla doğrulayın.'
     )
     return
 }
@@ -349,7 +349,7 @@ if (wholeSlide) {
             'Anotasyon seçili değil',
             'Seçili bölge modunda ölçülecek dokuyu bir anotasyonla çevreleyip o\n' +
             'anotasyon(lar)ı SEÇİN (sınıf fark etmez) — ya da anotasyon sınıfını\n' +
-            '"Region" yapın, ya da kapsam olarak "Tüm slayt" seçin.')
+            '"Region" yapın, ya da kapsam olarak "Tüm lam" seçin.')
         return
     }
     scopeRoi = RoiTools.union(scopeRegions.collect { it.getROI() })
@@ -363,7 +363,7 @@ if (wholeSlide) {
 }
 
 // İsteğe bağlı: sınıfı 'Ignore*' olan alanları (boş cam/artefakt) kapsamdan çıkar
-// (hem seçili bölge hem tüm slayt modunda geçerli).
+// (hem seçili bölge hem tüm lam modunda geçerli).
 def ignoreObjects = annotations.findAll { it.getROI()?.isArea() && it.getPathClass()?.getName() == 'Ignore*' }
 if (scopeRoi != null && !ignoreObjects.isEmpty()) {
     try {
@@ -407,7 +407,7 @@ boolean multi = selectedModelNames.size() > 1
 def keyPrefix = { String model -> multi ? "[${model}] " : '' }
 
 // Özet anotasyonu: tek bir bölge seçiliyse o anotasyon YENİDEN KULLANILIR (kopya
-// üretilmez); çok bölge/tüm slaytta yeni bir birleşim özeti yaratılır.
+// üretilmez); çok bölge/tüm lamda yeni bir birleşim özeti yaratılır.
 boolean reuse = (!wholeSlide && scopeRegions.size() == 1)
 def summary
 if (reuse) {
@@ -533,9 +533,9 @@ QP.fireHierarchyUpdate()
 def body = new StringBuilder()
 body << 'TÜMÖR/STROMA ALAN ÖLÇÜMÜ\n'
 body << '════════════════════════════════════════\n\n'
-body << "Kapsam              : ${wholeSlide ? 'Tüm slayt' : 'Seçili anotasyon(lar)'}\n"
-if (wholeSlide) body << 'Not: Tüm slayt modunda boş cam/arka plan da Tumor/Stroma sayılabilir (kaba tahmin).\n'
-body << "Slayttaki bindirme  : ${primary.model}\n\n"
+body << "Kapsam              : ${wholeSlide ? 'Tüm lam' : 'Seçili anotasyon(lar)'}\n"
+if (wholeSlide) body << 'Not: Tüm lam modunda boş cam/arka plan da Tumor/Stroma sayılabilir (kaba tahmin).\n'
+body << "Lamdaki bindirme  : ${primary.model}\n\n"
 
 if (perModel.size() == 1) {
     def a = primary.aggregate

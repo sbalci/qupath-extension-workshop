@@ -14,7 +14,7 @@
  *   • Çıktı bir SAYIM/YOĞUNLUKtur — yüzde TIL, klinik eşik veya yorum DEĞİL.
  *
  * KULLANIM:
- *   1. H&E slaytını açın, Image type → "Brightfield (H&E)" veya "(H-DAB)"
+ *   1. H&E lamını açın, Image type → "Brightfield (H&E)" veya "(H-DAB)"
  *   2. Önce Tümör/Stroma modülünü çalıştırın → "Stroma" anotasyonları oluşsun
  *   3. [Automate → Project scripts → bu betik]
  *
@@ -107,13 +107,13 @@ String detectionChannel    = "Hematoxylin OD"
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir H&E slaytı açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir H&E lamı açın.")
     return
 }
 
 def stromaAnnotations = QP.getAnnotationObjects().findAll { it.getPathClass()?.getName() == "Stroma" }
 if (stromaAnnotations.isEmpty()) {
-    def msg = "Bu slaytta 'Stroma' anotasyonu yok.\n\n" +
+    def msg = "Bu lamda 'Stroma' anotasyonu yok.\n\n" +
               "Önce Tümör/Stroma modülünü (Tümör vs stroma sınıflandırıcı) çalıştırın; o betik\n" +
               "tümör/stroma alanlarını ayırır. Sonra bu betiği tekrar çalıştırın."
     if (isHeadless) println msg else Dialogs.showWarningNotification("Stroma bulunamadı", msg)
@@ -124,7 +124,7 @@ def cal = imageData.getServer().getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0) || !(ph > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok", "Slaytta piksel boyutu (µm) tanımlı değil; yoğunluk hesaplanamaz." +
+    Dialogs.showErrorMessage("Kalibrasyon yok", "Lamda piksel boyutu (µm) tanımlı değil; yoğunluk hesaplanamaz." +
         "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).")
     return
 }

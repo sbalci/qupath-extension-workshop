@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   "Analiz etmeden önce verine bak." Açık slaytın (veya seçili bir ROI'nin)
+ *   "Analiz etmeden önce verine bak." Açık lamın (veya seçili bir ROI'nin)
  *   temel görüntü künyesini tek pencerede gösterir — Pete Bankhead'in ücretsiz
  *   kitabı *Introduction to Bioimage Analysis* (CC-BY 4.0) Bölüm 1'in QuPath
  *   içindeki tek tıklamalı karşılığı:
@@ -19,7 +19,7 @@
  *
  * NASIL ÖRNEKLER (ve sınırları):
  *   • Bir anotasyon/ROI seçiliyse yalnız o bölge; değilse tüm görüntü okunur.
- *   • Büyük slaytlarda bellek taşmasını önlemek için bölge, uzun kenarı ~1536
+ *   • Büyük lamlarda bellek taşmasını önlemek için bölge, uzun kenarı ~1536
  *     piksele inecek bir altörnekleme (downsample) oranıyla okunur; bu yüzden
  *     histogram ve istatistikler YAKLAŞIK'tır (örneklem üzerinden).
  *   • Brightfield (H&E/İHK) görüntülerde beyaz arka plan doğal olarak %@max'ı
@@ -30,7 +30,7 @@
  *   • Hiçbir klinik yorum, tanı veya skor üretmez.
  *
  * KULLANIM:
- *   1. Bir slayt açın (isterseniz bir bölge anotasyonu seçin).
+ *   1. Bir lam açın (isterseniz bir bölge anotasyonu seçin).
  *   2. [Extensions → Atölye → Yardımcılar → Görüntü künyesi ve histogram]
  *   3. Künyeyi inceleyin; "Kopyala" ile panoya alın.
  *
@@ -310,7 +310,7 @@ def showResultWindow = { String text ->
 // ── Çalıştır ─────────────────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    def msg = 'Önce bir slayt açın. (İsterseniz tek bir bölge anotasyonu seçin; yoksa tüm görüntü örneklenir.)'
+    def msg = 'Önce bir lam açın. (İsterseniz tek bir bölge anotasyonu seçin; yoksa tüm görüntü örneklenir.)'
     if (isHeadless) println msg
     else Dialogs.showMessageDialog('Görüntü künyesi ve histogram', msg)
     return

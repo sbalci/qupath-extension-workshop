@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   DICOM-WSI slaytlarını SVS-benzeri piramidal TIFF'e çevirir — Bertrand
+ *   DICOM-WSI lamlarını SVS-benzeri piramidal TIFF'e çevirir — Bertrand
  *   Chauveau'nun açık kaynaklı **DICOMtoSVS** aracını (pydicom + tifffile +
  *   imagecodecs) QuPath içinden sürer. Dönüşüm KAYIPSIZDIR: JPEG/JPEG2000
  *   karoları yeniden kodlanmadan kopyalanır; piramit düzeyleri ve ICC profili
@@ -34,7 +34,7 @@
  *   2. [Extensions → Atölye → Yardımcılar → İçe ve dışa aktarma / veri →
  *      DICOM → SVS dönüştürme (DICOMtoSVS)]
  *   3. İlk açılışta "İndir/Güncelle" ile betiği indirin (bir kez).
- *   4. Girdi klasörünü seçin (her slayt kendi alt klasöründe ya da kendi .zip
+ *   4. Girdi klasörünü seçin (her lam kendi alt klasöründe ya da kendi .zip
  *      dosyasında), seçenekleri işaretleyin, "Dönüştür ▶".
  *   5. Sonuç ekranından "Projeye aktar" ya da "Klasörü aç".
  *
@@ -379,11 +379,11 @@ def startRun = {
                 sb << 'Çıktı klasörü : ' << outDir.getAbsolutePath() << '\n'
                 sb << 'Dönüştürülen  : ' << converted.size() << ' dosya\n'
                 if (!r.ok)
-                    sb << '\n⚠ Süreç ' << r.exitCode << ' koduyla bitti — bazı slaytlar atlanmış/başarısız olabilir (konsola bakın).\n'
+                    sb << '\n⚠ Süreç ' << r.exitCode << ' koduyla bitti — bazı lamlar atlanmış/başarısız olabilir (konsola bakın).\n'
                 sb << '\nDosyalar:\n'
                 converted.take(30).each { f -> sb << '  • ' << f.getName() << '\n' }
                 if (converted.size() > 30) sb << '  … (+' << (converted.size() - 30) << ' dosya)\n'
-                sb << '\nDesteklenmeyen slaytlar (multipleks, z-stack, JPEG/J2K dışı) araç tarafından atlanır.\n'
+                sb << '\nDesteklenmeyen lamlar (multipleks, z-stack, JPEG/J2K dışı) araç tarafından atlanır.\n'
                 sb << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
                 resultTextRef.set(sb.toString())
                 resultDirRef.set(outDir)
@@ -518,7 +518,7 @@ render = { ->
         int row = 0
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('DICOM girdi klasörü:'), inField, navButton('…', { browseDir(inField) }))
         center.getChildren().add(grid)
-        def zipChk   = new javafx.scene.control.CheckBox('Slaytlar zip\'li (her slayt kendi .zip dosyasında)')
+        def zipChk   = new javafx.scene.control.CheckBox('Lamlar zip\'li (her lam kendi .zip dosyasında)')
         def labelChk = new javafx.scene.control.CheckBox('Etiket (label) görüntüsünü ekle')
         def macroChk = new javafx.scene.control.CheckBox('Makro (overview) görüntüsünü ekle')
         def anonChk  = new javafx.scene.control.CheckBox('Anonimleştir (dosya adı yenilenir; etiket/makro atılır; duyarlı meta veri temizlenir)')
@@ -536,18 +536,18 @@ render = { ->
         syncAnon()
         def opts = new javafx.scene.layout.VBox(6, zipChk, labelChk, macroChk, anonChk, tagsChk)
         center.getChildren().add(opts)
-        addGuidance('Girdi klasörü her slaytı kendi ALT KLASÖRÜNDE (ya da zip\'li seçeneğiyle kendi .zip dosyasında) barındırmalıdır. ' +
-            'Çıktılar "<girdi-klasörü>_output" içine yazılır. Dönüşüm kayıpsızdır; multipleks/z-stack slaytlar atlanır.')
+        addGuidance('Girdi klasörü her lamı kendi ALT KLASÖRÜNDE (ya da zip\'li seçeneğiyle kendi .zip dosyasında) barındırmalıdır. ' +
+            'Çıktılar "<girdi-klasörü>_output" içine yazılır. Dönüşüm kayıpsızdır; multipleks/z-stack lamlar atlanır.')
         addWarnLabel('⚠ İnternetten indirilen araçlar için kurumunuzun BT onayını alın; yalnız güvendiğiniz kaynaklardan gelen DICOM dosyalarını işleyin.')
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('Yapılandır', { persistRunFields(); step.set('CONFIG'); render() }))
         actions.add(navButton('Resmî uygulama…', { persistRunFields(); step.set('EXE'); render() }, 'İndirdiğiniz DICOMtoSVS uygulamasını (exe) başlat'))
-        def runBtn = navButton('Dönüştür ▶', { startRun() }, 'Klasördeki tüm DICOM slaytlarını SVS-benzeri TIFF\'e çevirir')
+        def runBtn = navButton('Dönüştür ▶', { startRun() }, 'Klasördeki tüm DICOM lamlarını SVS-benzeri TIFF\'e çevirir')
         runBtn.setDisable(!configComplete(cfg))
         actions.add(runBtn)
     } else if (cur == 'RUNNING') {
         title.setText('Dönüştürülüyor…')
-        addGuidance('DICOMtoSVS köprüsü çalışıyor; ilerleme aşağıda akıyor. ~1 GB\'lık bir slayt tipik olarak saniyeler sürer. ' +
+        addGuidance('DICOMtoSVS köprüsü çalışıyor; ilerleme aşağıda akıyor. ~1 GB\'lık bir lam tipik olarak saniyeler sürer. ' +
             'Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
         center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
@@ -627,7 +627,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ DICOM → SVS dönüştürme sihirbazı açıldı."

@@ -26,7 +26,7 @@
  * KULLANIM:
  *   1. StarDist eklentisini kurun: [Extensions → Manage extensions] → StarDist.
  *      Ayrıntılı kurulum: Ekler → StarDist (StarDist Eklentisi).
- *   2. Bir H&E slaytı açın; ölçülecek bölge için bir ALAN anotasyonu çizin ve SEÇİN.
+ *   2. Bir H&E lamı açın; ölçülecek bölge için bir ALAN anotasyonu çizin ve SEÇİN.
  *   3. [Extensions → Atölye → Yardımcılar → StarDist çekirdek tespiti sihirbazı]
  *   4. (Ops.) eşik / piksel boyutu / hücre genişletmeyi ayarlayın → "Çekirdek tespiti".
  *
@@ -175,7 +175,7 @@ def buildResultText = { String slideName, int n, double areaMm2, double density,
     def sb = new StringBuilder()
     sb << "STARDIST — ÇEKİRDEK TESPİTİ\n"
     sb << "═══════════════════════════════\n\n"
-    sb << "Slayt          : " << slideName << "\n"
+    sb << "Lam          : " << slideName << "\n"
     sb << String.format(java.util.Locale.US, "Eşik           : %.2f%n", thr)
     sb << String.format(java.util.Locale.US, "Piksel boyutu  : %.2f µm/px%n", px)
     sb << String.format(java.util.Locale.US, "Hücre genişletme: %s%n", (exp > 0 ? String.format(java.util.Locale.US, "%.1f µm", exp) : "yok (yalnız çekirdek)"))
@@ -197,7 +197,7 @@ def buildResultText = { String slideName, int n, double areaMm2, double density,
 // ── Headless: yapılandırmayı raporla, etkileşim yok ─────────────────────────
 if (isHeadless) {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { println "Önce bir slayt açın."; return }
+    if (imageData == null) { println "Önce bir lam açın."; return }
     println String.format(java.util.Locale.US, "StarDist sihirbazı: eşik=%.2f px=%.2f genişletme=%.1f",
         loadThreshold(), loadPixelSize(), loadCellExp())
     println "StarDist eklentisi: ${stardistInstalled() ? 'bulundu' : 'BULUNAMADI — Extensions → Manage extensions → StarDist'}"
@@ -273,7 +273,7 @@ def startDetection = {
 
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
-        appendLine('Slayt: ' + imageNameOf(imageData))
+        appendLine('Lam: ' + imageNameOf(imageData))
         appendLine(String.format(java.util.Locale.US, 'Parametreler: eşik %.2f · px %.2f µm · genişletme %.1f µm', thr, px, exp))
 
         // 1) Model dosyası (otomatik indir → SHA-256 → gerekirse elle seç)
@@ -381,7 +381,7 @@ def startDetection = {
         if (n == 0) {
             javafx.application.Platform.runLater {
                 errorTextRef.set(String.format(java.util.Locale.US,
-                    'StarDist 0 çekirdek buldu.\nOlası nedenler:\n  • Eşik çok yüksek (%.2f) — düşürmeyi deneyin (%.2f)\n  • ROI çok küçük\n  • Slayt H&E için tipik boyama aralığında değil',
+                    'StarDist 0 çekirdek buldu.\nOlası nedenler:\n  • Eşik çok yüksek (%.2f) — düşürmeyi deneyin (%.2f)\n  • ROI çok küçük\n  • Lam H&E için tipik boyama aralığında değil',
                     thr, thr * 0.6d))
                 step.set('ERROR'); render()
             }
@@ -518,13 +518,13 @@ render = { ->
     } else if (cur == 'READY') {
         title.setText('StarDist — çekirdek tespiti')
         if (imageData == null) {
-            addGuidance('Önce bir H&E slaytı açın ve ölçülecek bölge için bir alan anotasyonu çizip SEÇİN, sonra "⟳ Yenile".')
+            addGuidance('Önce bir H&E lamı açın ve ölçülecek bölge için bir alan anotasyonu çizip SEÇİN, sonra "⟳ Yenile".')
         } else {
             def selected = QP.getSelectedObject()
             boolean selOk = (selected != null && selected instanceof PathAnnotationObject && selected.hasROI() && selected.getROI().isArea())
             def modelFile = new File(loadModelPath())
             def sb = new StringBuilder()
-            sb << "Slayt           : " << imageNameOf(imageData) << "\n"
+            sb << "Lam           : " << imageNameOf(imageData) << "\n"
             sb << "Seçili anotasyon: " << (selOk ? 'var (alan ROI)' : 'YOK — bir alan anotasyonu seçin') << "\n"
             sb << "StarDist        : yüklü ✓\n"
             sb << "Model           : " << (modelFile.exists() ? (modelFile.getName() + ' (mevcut)') : 'eksik — tespitte otomatik iner') << "\n"
@@ -598,7 +598,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ StarDist çekirdek tespiti sihirbazı açıldı."

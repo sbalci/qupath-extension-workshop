@@ -1,10 +1,10 @@
 /**
- * Yardımcı — Senkron ızgara: seri slaytları birlikte aç
+ * Yardımcı — Senkron ızgara: seri lamları birlikte aç
  * ------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   Aynı projedeki 2+ slaytı QuPath'in ÇOKLU GÖRÜNÜM (multi-view) ızgarasına yan yana
+ *   Aynı projedeki 2+ lamı QuPath'in ÇOKLU GÖRÜNÜM (multi-view) ızgarasına yan yana
  *   açar ve "Synchronize viewers"ı açar — bir panelde kaydırma/yakınlaştırma diğerlerini
  *   birlikte hareket ettirir. Bir vakanın seri kesitlerini (ör. H&E + CK7 + CDX2 + CK20)
  *   birlikte incelemenin en hızlı yolu. QuPath'in ViewerManager API'sini çağırır:
@@ -16,12 +16,12 @@
  *   seri kesitler birlikte kayar ama derine yakınlaştıkça ÖRTÜŞMEYEBİLİR (her kesitin
  *   kendi koordinat başlangıcı farklıdır). Gerçek ÖRTÜŞME için panellere ÖNCEDEN
  *   HİZALANMIŞ görüntüler verin: VALIS çıktısı (Ekler → Görüntü Hizalama §7) ya da
- *   dönüşümü OME-TIFF'e gömülmüş slaytlar (§6). Bu yardımcı hem ham seri kesitlerle
+ *   dönüşümü OME-TIFF'e gömülmüş lamlar (§6). Bu yardımcı hem ham seri kesitlerle
  *   (birlikte kayar) hem de hizalanmış çıktılarla (birlikte kayar + örtüşür) çalışır.
  *   Ayrıntı: Ekler → Görüntü Hizalama §9.
  *
  * NE ÖLÇER: Hiçbir şey — yalnız bir GÖRÜNTÜLEME düzenidir (nesne/ölçüm üretmez, açık
- *   slaytları değiştirmez; panellere projedeki slaytların KAYITLI hâlini yükler).
+ *   lamları değiştirmez; panellere projedeki lamların KAYITLI hâlini yükler).
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı görüntüleme.
  */
@@ -44,7 +44,7 @@ if (gui == null) { println 'Bu yardımcı QuPath arayüzü gerektirir (arayüzs�
 
 def project = gui.getProject()
 if (project == null) {
-    Platform.runLater { Dialogs.showMessageDialog('Senkron ızgara', 'Önce bir PROJE açın — ızgara projedeki slaytlardan doldurulur.') }
+    Platform.runLater { Dialogs.showMessageDialog('Senkron ızgara', 'Önce bir PROJE açın — ızgara projedeki lamlardan doldurulur.') }
     return
 }
 def entries = new ArrayList(project.getImageList())
@@ -57,7 +57,7 @@ int MAX_PANELS = 6   // ızgara en fazla 2×3 (doğrulanmış); fazlası ilk 6'y
 
 def gm = gui.getViewerManager()
 
-// Açık slayttan "vaka ön-eki" çıkar → aynı vakanın kardeş slaytlarını ön-işaretle
+// Açık lamdan "vaka ön-eki" çıkar → aynı vakanın kardeş lamlarını ön-işaretle
 def activeData = gui.getImageData()
 def openEntry = null
 try { openEntry = activeData != null ? project.getEntry(activeData) : null } catch (Throwable ignore) {}
@@ -82,10 +82,10 @@ def gridFor = { int c ->
 
 Platform.runLater {
     def stage = new Stage()
-    stage.setTitle('Senkron ızgara — seri slaytları birlikte aç')
+    stage.setTitle('Senkron ızgara — seri lamları birlikte aç')
 
     def info = new Label(
-        'Açılacak slaytları işaretleyin (aynı vakanın seri kesitleri). QuPath çoklu görünüm ' +
+        'Açılacak lamları işaretleyin (aynı vakanın seri kesitleri). QuPath çoklu görünüm ' +
         'ızgarası kurar ve panelleri SENKRONLAR — birinde kaydır/yakınlaştır, hepsi birlikte hareket eder. ' +
         'En fazla ' + MAX_PANELS + ' panel (2×3).')
     info.setWrapText(true); info.setMaxWidth(560)
@@ -105,7 +105,7 @@ Platform.runLater {
         boxes << cb
         listBox.getChildren().add(cb)
     }
-    // Hiç ön-işaret oluşmadıysa açık slaytı işaretle (en az bir başlangıç seçimi)
+    // Hiç ön-işaret oluşmadıysa açık lamı işaretle (en az bir başlangıç seçimi)
     if (openEntry != null && boxes.every { !it.isSelected() }) {
         boxes.find { it.getUserData() == openEntry }?.setSelected(true)
     }
@@ -128,7 +128,7 @@ Platform.runLater {
 
     openBtn.setOnAction {
         def selected = boxes.findAll { it.isSelected() }.collect { it.getUserData() }
-        if (selected.size() < 2) { status.setText('En az 2 slayt seçin.'); return }
+        if (selected.size() < 2) { status.setText('En az 2 lam seçin.'); return }
         int n = selected.size()
         String note = ''
         if (n > MAX_PANELS) {
@@ -136,7 +136,7 @@ Platform.runLater {
             selected = new ArrayList(selected.subList(0, MAX_PANELS))
             n = MAX_PANELS
         }
-        // Açık slaytı ilk panele al (kararlı yerleşim — getAllViewers'ın ilki)
+        // Açık lamı ilk panele al (kararlı yerleşim — getAllViewers'ın ilki)
         if (openEntry != null && selected.contains(openEntry)) {
             selected = [openEntry] + selected.findAll { it != openEntry }
         }
@@ -177,7 +177,7 @@ Platform.runLater {
         }
         gm.setSynchronizeViewers(true)
         if (!viewers.isEmpty()) gm.setActiveViewer(viewers[0])
-        status.setText(m + ' slayt senkron ızgarada açılıyor' + note + '. Kaydırma/yakınlaştırma artık ' +
+        status.setText(m + ' lam senkron ızgarada açılıyor' + note + '. Kaydırma/yakınlaştırma artık ' +
             'birlikte. (Yakınlaştırmayı tam eşitlemek için: View → Multi-view → Match viewer resolutions.)')
     }
 

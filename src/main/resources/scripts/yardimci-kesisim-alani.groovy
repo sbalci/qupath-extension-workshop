@@ -25,7 +25,7 @@
  *   gerekir. Bu betik seçilen iki sınıf için bunu tek adımda üretir.
  *
  * KULLANIM:
- *   1. Kalibre (µm/px) bir slayt açın; A ve B sınıflı alan anotasyonları bulunsun
+ *   1. Kalibre (µm/px) bir lam açın; A ve B sınıflı alan anotasyonları bulunsun
  *   2. [Extensions → Atölye → Yardımcılar → Uzamsal analiz → Kesişim alanı (örtüşme)]
  *      (ya da [Automate → Project scripts → bu betik])
  *   3. Açılan iletişimlerde A ve B sınıflarını seçin
@@ -119,14 +119,14 @@ String summaryName = "Kesişim Alanı Özet"
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce A ve B sınıflı alan anotasyonları olan bir slayt açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce A ve B sınıflı alan anotasyonları olan bir lam açın.")
     return
 }
 def cal = imageData.getServer().getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0) || !(ph > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok", "Slaytta piksel boyutu (µm) tanımlı değil; alan µm² olarak hesaplanamaz." +
+    Dialogs.showErrorMessage("Kalibrasyon yok", "Lamda piksel boyutu (µm) tanımlı değil; alan µm² olarak hesaplanamaz." +
         "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).")
     return
 }

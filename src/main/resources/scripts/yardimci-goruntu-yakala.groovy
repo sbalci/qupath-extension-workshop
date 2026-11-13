@@ -173,7 +173,7 @@ javafx.application.Platform.runLater {
             }
             if (img == null) {
                 statusLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
-                statusLbl.setText('⚠ Yakalanacak içerik bulunamadı (önce bir slayt açın).')
+                statusLbl.setText('⚠ Yakalanacak içerik bulunamadı (önce bir lam açın).')
                 return
             }
 

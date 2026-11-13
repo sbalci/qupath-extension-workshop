@@ -4,12 +4,12 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Hücre tespitlerini temizlemek için tek tıkla bir araç. Atölye sırasında
  * "Delete objects → Keep descendant objects → Yes" diyerek anotasyonu silip
- * çocuk tespitleri **slaytta öksüz** bırakırsanız, bu betik onları temizler.
+ * çocuk tespitleri **lamda öksüz** bırakırsanız, bu betik onları temizler.
  *
  * ÜÇ MOD:
- *   • "Tümünü sil"           — clearDetections() çağrısı, slayttaki TÜM
+ *   • "Tümünü sil"           — clearDetections() çağrısı, lamdaki TÜM
  *                              detection nesnelerini siler.
- *   • "Sadece orphan'ları"   — yalnızca üst nesnesi kök (slayt) olan
+ *   • "Sadece orphan'ları"   — yalnızca üst nesnesi kök (lam) olan
  *                              tespitleri siler — bir anotasyon içinde
  *                              hâlâ ait olan tespitler korunur.
  *   • "Küçük çekirdekleri"   — 'Nucleus: Area' ölçümü bir eşiğin (varsayılan
@@ -161,13 +161,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ──────────────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir slayt açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir lam açın.")
     return
 }
 
 // ──────────────────────────────────────────────────────────────
 // 2) Sayım — toplam vs orphan vs anotasyon-altında
-//    Orphan: parent kök (slayt) → bir anotasyona değil doğrudan slayta bağlı.
+//    Orphan: parent kök (lam) → bir anotasyona değil doğrudan lama bağlı.
 //    Bu durum çoğunlukla "Delete annotation → Keep descendant objects" sonrası
 //    oluşur.
 // ──────────────────────────────────────────────────────────────
@@ -188,7 +188,7 @@ def nucleusArea = { d ->
 int smallPreview = allDetections.count { double a = nucleusArea(it); !Double.isNaN(a) && a > 0 && a <= DEFAULT_MIN_AREA } as int
 
 if (allDetections.isEmpty()) {
-    Dialogs.showMessageDialog("Silinecek tespit yok", "Bu slaytta hiç detection nesnesi bulunmuyor.")
+    Dialogs.showMessageDialog("Silinecek tespit yok", "Bu lamda hiç detection nesnesi bulunmuyor.")
     return
 }
 
@@ -197,7 +197,7 @@ if (allDetections.isEmpty()) {
 // ──────────────────────────────────────────────────────────────
 def secim = chooseAction(
     "Tespitleri Sil — Hangileri?",
-    "Bu slayttaki detection durumu:\n\n" +
+    "Bu lamdaki detection durumu:\n\n" +
     String.format(java.util.Locale.US, "  Toplam tespit             : %,d\n", allDetections.size()) +
     String.format(java.util.Locale.US, "  Sahipsiz (anotasyon dışı) : %,d\n", orphanDetections.size()) +
     String.format(java.util.Locale.US, "  Anotasyon altında         : %,d\n", nestedDetections) +
@@ -206,7 +206,7 @@ def secim = chooseAction(
     "  • Yalnızca sahipsiz tespitleri sil (varsayılan, güvenli):\n" +
     "    Hiçbir anotasyonun içinde olmayan (örn. anotasyonu silinmiş)\n    tespitleri temizler.\n\n" +
     "  • Tümünü sil:\n" +
-    "    Slayttaki BÜTÜN tespitleri siler — anotasyonlar dokunulmaz.\n\n" +
+    "    Lamdaki BÜTÜN tespitleri siler — anotasyonlar dokunulmaz.\n\n" +
     "  • Küçük çekirdekleri sil…:\n" +
     "    'Nucleus: Area' bir eşiğin altında kalan olanaksız küçük\n" +
     "    tespitleri siler (eşiği bir sonraki adımda girersiniz).\n\n" +
@@ -227,7 +227,7 @@ def mod = ""
 
 if (secim == "all") {
     if (!isHeadless && !Dialogs.showConfirmDialog("Tüm tespitler silinsin mi?",
-            String.format(java.util.Locale.US, "Bu slayttaki %,d tespitin TAMAMI silinecek (anotasyonlar korunur).\n\nDevam edilsin mi?", allDetections.size()))) {
+            String.format(java.util.Locale.US, "Bu lamdaki %,d tespitin TAMAMI silinecek (anotasyonlar korunur).\n\nDevam edilsin mi?", allDetections.size()))) {
         println "Kullanıcı iptal etti."
         return
     }

@@ -258,7 +258,7 @@ def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = 
         double pw = cal.getPixelWidthMicrons(), ph = cal.getPixelHeightMicrons()
         if (!(pw > 0) || !(ph > 0)) return [ok:false, error:'Piksel kalibrasyonu yok (mm² hesaplanamaz).']
 
-        // Kapsam: tüm slayt VEYA seçili anotasyon(lar). Kapsam dışı tutulanlar:
+        // Kapsam: tüm lam VEYA seçili anotasyon(lar). Kapsam dışı tutulanlar:
         // özet anotasyonu, Tumor/Stroma (çıktı/eğitim sınıfları) ve 'Ignore*'
         // (boş cam/artefakt — ölçümden çıkarılacak alanlar).
         def summaryNames = ['Tümör-Stroma Özet', 'TSR Özet']
@@ -418,7 +418,7 @@ def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = 
         def text =
             "Model                : ${modelName}\n" +
             (wholeSlide
-                ? "Kapsam               : Tüm slayt (boş cam/arka plan da sayılabilir — kaba tahmin)\n"
+                ? "Kapsam               : Tüm lam (boş cam/arka plan da sayılabilir — kaba tahmin)\n"
                 : "Ölçülen bölge sayısı : ${regionCount}\n") +
             "Görsel çıktı         : ${asDetections ? 'sınıf tespitleri (Detections paneli)' : 'etiketli sınıf anotasyonları'}\n" +
             "Özet anotasyonu      : ${createSummary ? 'yazıldı (TSR Özet sınıfı — göz simgesiyle gizlenebilir)' : 'oluşturulmadı (yalnız bu pencere)'}\n" +
@@ -574,7 +574,7 @@ render = { ->
                 ? "'${nm}' zaten projenizde mevcut — kullanıma hazır.\n\n"
                 : "Örnek sınıflandırıcı '${nm}' projenize kuruldu.\n\n") +
             'Çalıştırmak için:\n' +
-            '  1. Slaytta ölçmek istediğiniz dokuyu bir anotasyonla çizin (Brush/Polygon).\n' +
+            '  1. Lamda ölçmek istediğiniz dokuyu bir anotasyonla çizin (Brush/Polygon).\n' +
             '  2. Bu anotasyonu SEÇİN (üzerine tıklayın).\n' +
             '  3. Aşağıdan "Seçili bölgede ölç".\n\n' +
             'Seçim yapmazsanız sınıfı "Region" olan anotasyonlar kullanılır.\n' +
@@ -582,8 +582,8 @@ render = { ->
         content.getChildren().addAll(detectionCheckBox(), summaryCheckBox())
         buttons.getChildren().addAll(
             navButton('◀ Geri', { step.set('CHOICE'); render() }),
-            navButton('Tüm slaytta ölç', { startMeasure(nm, true) },
-                'Tüm slaytta çalıştırır (seçim gerekmez; boş cam da sayılabilir — kaba tahmin)'),
+            navButton('Tüm lamda ölç', { startMeasure(nm, true) },
+                'Tüm lamda çalıştırır (seçim gerekmez; boş cam da sayılabilir — kaba tahmin)'),
             navButton('Seçili bölgede ölç ▶', { startMeasure(nm, false) },
                 "Seçili anotasyon(lar)da '${nm}' modelini çalıştırır; seçim yoksa sınıfı 'Region' olanlar"))
     } else if (cur == 'PREREQ') {
@@ -623,7 +623,7 @@ render = { ->
             'Tümör/Stroma\'ya zorlamasını engeller). İsteğe bağlı sınıfları işaretlerseniz\n' +
             'modele ayrı sınıf olarak katılır; işaretsizler eğitime girmez.\n' +
             'Küçük ve çeşitli örnekler çizin; geniş dolu alan örnek bütçesini boşa harcar.\n' +
-            'Not: Model yalnız BU slayttan öğrenir; başka slaytlara genellemesi sınırlıdır —\n' +
+            'Not: Model yalnız BU lamdan öğrenir; başka lamlara genellemesi sınırlıdır —\n' +
             'çoklu-slayt eğitim için Anotasyon Stratejisi eki §4b.')
         def grid = new javafx.scene.layout.VBox(4)
         MANDATORY_CLASSES.each { nm ->
@@ -660,7 +660,7 @@ render = { ->
         def dataLine = chosen.collect { "${it}=${s.counts[it] ?: 0}" }.join(', ')
         title.setText('2/2 — Sınıflandırıcıya ad verin')
         bodyLbl.setText(
-            "Eğitim verisi (bu slayt): ${dataLine}.\n" +
+            "Eğitim verisi (bu lam): ${dataLine}.\n" +
             'Modeli kaydetmek için bir ad girin, sonra "Eğit & kaydet".')
         def nameField = new javafx.scene.control.TextField(atolyeS('atolye.classifierName', 'tumor-stroma-RF'))
         nameField.setPrefColumnCount(28)
@@ -715,13 +715,13 @@ render = { ->
         content.getChildren().addAll(detectionCheckBox(), summaryCheckBox())
         buttons.getChildren().addAll(
             navButton('Kapat', { stage.close() }),
-            navButton('Tüm slaytta ölç', { startMeasure(nm, true) },
-                'Tüm slaytta çalıştırır (seçim gerekmez; boş cam da sayılabilir — kaba tahmin)'),
+            navButton('Tüm lamda ölç', { startMeasure(nm, true) },
+                'Tüm lamda çalıştırır (seçim gerekmez; boş cam da sayılabilir — kaba tahmin)'),
             navButton('Seçili bölgede ölç ▶', { startMeasure(nm, false) },
                 "Seçili anotasyon(lar)da '${nm}' modelini çalıştırır; seçim yoksa sınıfı 'Region' olanlar"))
     } else if (cur == 'MEASURING') {
         title.setText('Ölçülüyor…')
-        bodyLbl.setText("'${activeModel.get()}' ${activeWholeSlide.get() ? 'tüm slaytta' : 'seçili bölgede'} çalıştırılıyor (alanlar + poligonlar). Lütfen bekleyin…")
+        bodyLbl.setText("'${activeModel.get()}' ${activeWholeSlide.get() ? 'tüm lamda' : 'seçili bölgede'} çalıştırılıyor (alanlar + poligonlar). Lütfen bekleyin…")
         content.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
         def r = measureResult.get()
@@ -767,6 +767,6 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }

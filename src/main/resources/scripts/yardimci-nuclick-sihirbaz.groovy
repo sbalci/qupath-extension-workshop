@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   Slaytta **nokta işareti** (Points aracı) koyduğunuz her çekirdek için o
+ *   Lamda **nokta işareti** (Points aracı) koyduğunuz her çekirdek için o
  *   çekirdeğin **piksel düzeyinde sınırını** üretir — tek pencereden:
  *     1. Aygıt + eşik seçin; gerekiyorsa ortamı kurun ve ağırlıkları indirin
  *        (② ③ düğmeleri).
@@ -26,7 +26,7 @@
  *   Her çalıştırma, mevcut TÜM noktalardan TÜM çekirdekleri yeniden üretir.
  *   Nokta anotasyonlarınıza hiçbir kipte dokunulmaz.
  *
- *   ÖNCEKİ SONUÇLAR VARSAYILAN OLARAK SİLİNMEZ (ev kuralı): slaytta önceki bir
+ *   ÖNCEKİ SONUÇLAR VARSAYILAN OLARAK SİLİNMEZ (ev kuralı): lamda önceki bir
  *   NuClick katmanı varsa sihirbaz, ÇIKARIMDAN ÖNCE ne yapılacağını SORAR —
  *     • Önceki NuClick sonucuna dokunma — yeni katman olarak ekle (VARSAYILAN).
  *       Hiçbir şey silinmez; sonuç "NuClick çekirdekleri (2)", "(3)" … adlı yeni
@@ -42,7 +42,7 @@
  *
  * ÖLÇEK (sessiz hata kaynağı):
  *   NuClick ağırlıkları PanNuke ile, **~0,25 µm/px (40×)** ve 128×128 yama ile
- *   eğitilmiştir. Bu sihirbaz downsample'ı slaytın µm/px değerinden KENDİSİ
+ *   eğitilmiştir. Bu sihirbaz downsample'ı lamın µm/px değerinden KENDİSİ
  *   türetir ve kalibrasyon yoksa / hedeften uzaksa UYARIR. Yanlış ölçekte model
  *   hata vermez — yalnızca yanlış cevap verir (WSInfer dersi).
  *   GT450 (~0,26 µm/px) ve AT2 (~0,25 µm/px) için bu pratikte level 0'dır.
@@ -69,7 +69,7 @@
  *   1. [Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller →
  *      Atölye Python ortam yöneticisi] ile 'nuclick' ortamını kurun (② düğmesi
  *      bunu doğrudan açar).
- *   2. Bir slayt açın. Araç çubuğundan **Points** aracını seçin ve saymak
+ *   2. Bir lam açın. Araç çubuğundan **Points** aracını seçin ve saymak
  *      istediğiniz çekirdeklerin ortasına tıklayın.
  *   3. Bu sihirbazı açın → ③ "Model ağırlıklarını indir" → "Çalıştır".
  *
@@ -173,7 +173,7 @@ def effectiveDownsample = { cfg, imageData ->
 def scaleWarning = { cfg, imageData ->
     double mpp = slideMpp(imageData)
     if (Double.isNaN(mpp))
-        return '⚠ Slayt KALİBRE DEĞİL (µm/px yok). NuClick 40× (~0,25 µm/px) bekler; ölçek doğrulanamıyor — sonuçlar sessizce yanlış olabilir.'
+        return '⚠ Lam KALİBRE DEĞİL (µm/px yok). NuClick 40× (~0,25 µm/px) bekler; ölçek doğrulanamıyor — sonuçlar sessizce yanlış olabilir.'
     double ds = effectiveDownsample(cfg, imageData)
     double eff = mpp * ds
     if (Math.abs(eff - NUCLICK_MPP) > (NUCLICK_MPP * 0.25d))
@@ -191,12 +191,12 @@ def resolveWorkDir = { cfg, imageData ->
     return new File(System.getProperty('java.io.tmpdir'), 'nuclick_work')
 }
 def imageNameOf = { imageData ->
-    try { return imageData.getServer().getMetadata().getName() ?: 'slayt' } catch (Throwable t) { return 'slayt' }
+    try { return imageData.getServer().getMetadata().getName() ?: 'lam' } catch (Throwable t) { return 'lam' }
 }
 
 // ── Önceki NuClick katmanları ───────────────────────────────────────────────
 //   Bu sihirbazın ürettiği her anotasyon ya tam SENTINEL adını taşır ya da
-//   "SENTINEL (n)" biçimindedir — hepsi AYNI KAYNAKTAN (bu sihirbaz, bu slayt)
+//   "SENTINEL (n)" biçimindedir — hepsi AYNI KAYNAKTAN (bu sihirbaz, bu lam)
 //   gelir, bu yüzden "değiştir" kipi hepsini birlikte siler. Kullanıcının kendi
 //   anotasyonlarına hiçbir kipte dokunulmaz.
 //   Ad kalıbı SIKI tutulur: ya tam "base" ya da "base (<sayı>)". Sadece ön eke
@@ -241,7 +241,7 @@ def writeJson = { obj, File f ->
 }
 
 // ── Noktaları topla ─────────────────────────────────────────────────────────
-//   Seçili nokta anotasyonları varsa yalnız onlar; yoksa slayttaki TÜM nokta
+//   Seçili nokta anotasyonları varsa yalnız onlar; yoksa lamdaki TÜM nokta
 //   anotasyonları. Bir anotasyon birden çok nokta taşıyabilir — hepsi açılır.
 def collectPoints = { imageData ->
     def hierarchy = imageData.getHierarchy()
@@ -270,7 +270,7 @@ def exportPatches = { imageData, File workDir, cfg, Closure appendLine ->
     if (pts.isEmpty())
         return [ok: false, error: 'Hiç NOKTA işareti bulunamadı.\n\nAraç çubuğundan "Points" aracını seçip saymak istediğiniz\nçekirdeklerin ortasına tıklayın, sonra yeniden çalıştırın.']
     if (phys > sw || phys > sh)
-        return [ok: false, error: 'Slayt 128×128 yama için çok küçük (downsample çok yüksek).']
+        return [ok: false, error: 'Lam 128×128 yama için çok küçük (downsample çok yüksek).']
 
     int maxPoints = parseIntOr(cfg.maxPoints, 2000)
     boolean capped = (maxPoints > 0 && pts.size() > maxPoints)
@@ -291,7 +291,7 @@ def exportPatches = { imageData, File workDir, cfg, Closure appendLine ->
         idx++
         String id = String.format(java.util.Locale.US, 'p%06d', idx)
         double half = phys / 2.0d
-        // Yamanın sol-üstü; slayt kenarında içeri doğru kaydırılır.
+        // Yamanın sol-üstü; lam kenarında içeri doğru kaydırılır.
         double ox = p.x - half, oy = p.y - half
         if (ox < 0) ox = 0
         if (oy < 0) oy = 0
@@ -333,7 +333,7 @@ def exportPatches = { imageData, File workDir, cfg, Closure appendLine ->
     }
 
     if (items.isEmpty())
-        return [ok: false, error: 'Hiçbir yama okunamadı (slayt erişilemez olabilir).']
+        return [ok: false, error: 'Hiçbir yama okunamadı (lam erişilemez olabilir).']
 
     writeJson([tile_size: TILE, items: items], new File(workDir, 'points.json'))
     appendLine('Yama yazıldı: ' + items.size() + (skipped > 0 ? (' (atlanan: ' + skipped + ')') : ''))
@@ -440,7 +440,7 @@ def importResults = { File workDir, imageData, exp, String mode ->
         double[] xs = new double[n]
         double[] ys = new double[n]
         for (int i = 0; i < n; i++) {
-            // Yama-yerel piksel → slayt (level 0) koordinatı
+            // Yama-yerel piksel → lam (level 0) koordinatı
             xs[i] = ((double) g.ox) + (((double) r.contour[i][0]) * ds)
             ys[i] = ((double) g.oy) + (((double) r.contour[i][1]) * ds)
         }
@@ -497,15 +497,15 @@ def buildResultText = { exp, imp, cfg, imageData ->
     def sb = new StringBuilder()
     sb << "NuClick — ÇEKİRDEK SINIRLARI\n"
     sb << "═══════════════════════════\n\n"
-    sb << "Slayt          : " << imageNameOf(imageData) << "\n"
-    sb << "Kaynak noktalar: " << exp.nTotal << (exp.fromSelection ? "  (seçili anotasyonlardan)" : "  (slayttaki tüm nokta anotasyonları)") << "\n"
+    sb << "Lam          : " << imageNameOf(imageData) << "\n"
+    sb << "Kaynak noktalar: " << exp.nTotal << (exp.fromSelection ? "  (seçili anotasyonlardan)" : "  (lamdaki tüm nokta anotasyonları)") << "\n"
     if (exp.capped) sb << "                 ⚠ sınır nedeniyle yalnız " << exp.n << " tanesi işlendi\n"
     double mpp = slideMpp(imageData)
     if (!Double.isNaN(mpp))
         sb << String.format(java.util.Locale.US, "Ölçek          : %.3f µm/px × downsample %.2f = %.3f µm/px (hedef %.2f)\n",
                 mpp, (double) exp.ds, mpp * ((double) exp.ds), NUCLICK_MPP)
     else
-        sb << "Ölçek          : slayt KALİBRE DEĞİL — ölçek doğrulanamadı\n"
+        sb << "Ölçek          : lam KALİBRE DEĞİL — ölçek doğrulanamadı\n"
     sb << "\n"
     sb << "Sınırlandırılan: " << imp.nOk << " / " << exp.n << "\n"
     if (imp.nFail > 0)  sb << "Başarısız      : " << imp.nFail << "  (boş maske — eşiği düşürmeyi deneyin)\n"
@@ -639,7 +639,7 @@ def startRun = {
     def miss = configMissing(cfg)
     if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Önce bir slayt açın.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set('Önce bir lam açın.'); step.set('ERROR'); render(); return }
 
     // ── Önceki sonuçlar için kullanıcıya SOR ────────────────────────────────
     //   Çıkarımdan ÖNCE sorulur: İptal'de GPU/CPU geçişi hiç çalıştırılmaz ve
@@ -652,7 +652,7 @@ def startRun = {
     if (nPrevLayers > 0) {
         def sb = new StringBuilder()
         sb << String.format(java.util.Locale.US,
-            'Bu slaytta zaten %,d NuClick katmanı ve içinde %,d çekirdek var.',
+            'Bu lamda zaten %,d NuClick katmanı ve içinde %,d çekirdek var.',
             nPrevLayers, nPrevDets)
         sb << '\n\n"Ekle" seçilirse hiçbir şey silinmez; sonuç yeni bir katman olur. '
         sb << 'Her çalıştırma TÜM noktalardan yeniden ürettiği için aynı çekirdeklerin '
@@ -741,7 +741,7 @@ render = {
     if (cur == 'READY' || cur == 'CONFIG_INCOMPLETE' || cur == 'CHECK_DONE' || cur == 'DL_DONE') {
         title.setText('NuClick — tıkla → çekirdek sınırı')
         def info = new javafx.scene.control.Label(
-            'Slaytta "Points" aracıyla işaretlediğiniz her çekirdeğin sınırını üretir.\n' +
+            'Lamda "Points" aracıyla işaretlediğiniz her çekirdeğin sınırını üretir.\n' +
             'Hücre TİPİ atamaz — yalnız sınır çizer.')
         info.setWrapText(true)
         body.getChildren().add(info)
@@ -762,7 +762,7 @@ render = {
                 body.getChildren().add(w)
             }
         } else {
-            def l = new javafx.scene.control.Label('⚠ Açık slayt yok.')
+            def l = new javafx.scene.control.Label('⚠ Açık lam yok.')
             l.setStyle('-fx-text-fill: #b45309;')
             body.getChildren().add(l)
         }
@@ -821,7 +821,7 @@ render = {
         grid.add(new javafx.scene.control.Label('Aygıt:'), 0, r); grid.add(devChoice, 1, r); r++
         body.getChildren().add(grid)
         def hint = new javafx.scene.control.Label(
-            'Downsample boş bırakılırsa slaytın µm/px değerinden hedef 0,25 µm/px (40×) için otomatik hesaplanır — önerilen budur.')
+            'Downsample boş bırakılırsa lamın µm/px değerinden hedef 0,25 µm/px (40×) için otomatik hesaplanır — önerilen budur.')
         hint.setWrapText(true)
         body.getChildren().add(hint)
         actions.add(navButton('◀ Geri', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))

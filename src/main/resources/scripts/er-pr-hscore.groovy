@@ -7,7 +7,7 @@
  * reseptörlerini skorlar ve **H-score**'u (0–300) kaydeder.
  *
  * KULLANIM:
- *   1. ER veya PR İHK slaytını açın
+ *   1. ER veya PR İHK lamını açın
  *   2. Image type → "Brightfield (H-DAB)"
  *   3. [R] tuşu → tümör içeren ~1×1 mm dikdörtgen anotasyon çizin ve SEÇİN
  *   4. Bu betiği çalıştırın → açılan TEK pencerede "Çalıştır"
@@ -48,7 +48,7 @@ def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     Dialogs.showErrorMessage(
         "Görüntü açık değil",
-        "Önce bir ER veya PR İHK slaytı açın."
+        "Önce bir ER veya PR İHK lamı açın."
     )
     return
 }
@@ -63,7 +63,7 @@ def imageTypeOk = { ->
     n.contains('H_DAB')
 }
 def imageTypeGuidance = { ->
-    "Bu slayt 'Brightfield (H-DAB)' olarak ayarlı değil.\n" +
+    "Bu lam 'Brightfield (H-DAB)' olarak ayarlı değil.\n" +
     "Şu anki tip: ${imageData.getImageType()?.toString() ?: ''}\n\n" +
     "Çözüm:\n" +
     "  • Penceredeki \"Görüntü tipini 'Brightfield (H-DAB)' olarak ayarla\" düğmesine tıklayın, VEYA\n" +
@@ -73,7 +73,7 @@ def imageTypeGuidance = { ->
 }
 
 // H-DAB ise ve boya vektörleri eksikse atölye varsayılanını uygula.
-// (Yanlış tipteki slaytları otomatik dönüştürmeyiz — yönlendirme pencerede gösterilir.)
+// (Yanlış tipteki lamları otomatik dönüştürmeyiz — yönlendirme pencerede gösterilir.)
 if (imageTypeOk()) {
     def stains = imageData.getColorDeconvolutionStains()
     def hasHematoxylin = false
@@ -92,7 +92,7 @@ if (imageTypeOk()) {
 // ──────────────────────────────────────────────────────────────
 // Boya vektörü önerisi + tek tıklamalı tahmin (tüm DAB-OD modüllerinde aynı blok).
 //   • Aktif vektörler QuPath VARSAYILANI ise uyarır: kantitatif ölçümden önce bu
-//     slayttan tahmin etmeyi önerir (eşikler mutlak DAB OD; yanlış vektör skoru kaydırır).
+//     lamdan tahmin etmeyi önerir (eşikler mutlak DAB OD; yanlış vektör skoru kaydırır).
 //   • "Tamam" → SEÇİLİ alan anotasyonundan tahmin edip uygular (Boya vektörleri
 //     sihirbazı ile aynı yöntem). "İptal" → yine de devam. Kalibre görünüyorsa sessiz geçer.
 // ──────────────────────────────────────────────────────────────
@@ -120,9 +120,9 @@ def suggestStainVectors = { ->
     if (!svS2.contains('dab')) return
     boolean svDefault = svClose(svVecOf(svStains.getStain(1)), SV_DEF_HEMA) &&
                         svClose(svVecOf(svStains.getStain(2)), SV_DEF_DAB)
-    if (!svDefault) { println '✓ Boya vektörleri bu slayttan tahmin/kalibre edilmiş görünüyor.'; return }
+    if (!svDefault) { println '✓ Boya vektörleri bu lamdan tahmin/kalibre edilmiş görünüyor.'; return }
     def svMsg =
-        '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu slayttan tahmin EDİLMEMİŞ.\n\n' +
+        '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu lamdan tahmin EDİLMEMİŞ.\n\n' +
         'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n' +
         'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n' +
         'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n' +

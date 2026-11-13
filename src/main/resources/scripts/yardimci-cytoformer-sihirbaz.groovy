@@ -315,7 +315,7 @@ def keepableCells = { List cells ->
 }
 // Hedef alan(lar) içindeki hücre-benzeri (tile OLMAYAN) tespitler — Check 3: getChildObjects() DEĞİL,
 // hiyerarşinin UZAMSAL İNDEKSİ (getAllDetectionsForRegion, 0.6.0'da mevcut) ile ROI'nin sınırlayıcı
-// kutusuna ÖNCE daraltılır (tüm slaytın değil), SONRA aynı centroid+contains testi UYGULANIR — sonuç
+// kutusuna ÖNCE daraltılır (tüm lamın değil), SONRA aynı centroid+contains testi UYGULANIR — sonuç
 // eski düz-tarama ile birebir aynıdır, yalnız tüm hiyerarşiyi taramaz (proto_export.groovy ile aynı örüntü).
 def detectionsIn = { imageData, unionRoi ->
     def hierarchy = imageData.getHierarchy()
@@ -571,7 +571,7 @@ def buildResultText = { imageData, cfg, String organKey, Map pipeline, Map apply
     int tot = applyStats.assigned as int
     sb << "CYTOFORMER — SEÇİLİ ALANDA HÜCRE TİPLERİ\n"
     sb << "══════════════════════════════════════════\n\n"
-    sb << "Slayt   : " << imageNameOf(imageData) << "\n"
+    sb << "Lam   : " << imageNameOf(imageData) << "\n"
     sb << "Organ   : " << organTrOf(organKey) << " (" << organKey << ")\n"
     sb << "Cihaz   : " << (cfg.device ?: 'auto') << "\n"
     if (Double.isFinite(areaMm2) && areaMm2 > 0) sb << String.format(java.util.Locale.US, "Alan    : %.3f mm²\n", areaMm2)
@@ -681,7 +681,7 @@ if (isHeadless) {
     println "③ Model dosyası: ${(effModelDir != null && new File(effModelDir, 'checkpoint.pth').isFile()) ? 'VAR' : 'yok'} — ${effModelDir?.getAbsolutePath() ?: '(klasör yok)'}"
 
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { println "Görüntü açık değil (bkz. QuPath script -i <slayt>)."; println "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."; return }
+    if (imageData == null) { println "Görüntü açık değil (bkz. QuPath script -i <lam>)."; println "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."; return }
     if (!cfg.organ?.trim() || !organById.containsKey(cfg.organ)) { println "HATA: organ zorunlu — -a organ=<${ORGANS.collect { it.id }.join('|')}>"; return }
     if (!st.pythonOk || !st.runnerOk) { println "HATA: Python ortamı/köprü eksik — GUI'de Kurulum ekranından tamamlayın."; return }
     if (effModelDir == null || !new File(effModelDir, 'checkpoint.pth').isFile()) { println "HATA: model dosyası bulunamadı — -a model=<klasör> ya da GUI'de ③ Ağırlık adımını tamamlayın."; return }
@@ -1096,7 +1096,7 @@ render = { ->
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce bir H&E slaytı açın, hücre tespiti çalıştırın, ilgi alanınızı çizip seçin, sonra "⟳ Yenile".')
+            addGuidance('Önce bir H&E lamı açın, hücre tespiti çalıştırın, ilgi alanınızı çizip seçin, sonra "⟳ Yenile".')
             actions.add(navButton('◀ Kurulum', { step.set('CONFIG_INCOMPLETE'); render() })); actions.add(navButton('⟳ Yenile', { render() }))
         } else {
             def st = setupStatus(cfg)
@@ -1116,7 +1116,7 @@ render = { ->
 
             def rd = readiness(imageData, cfg, selectedTargets)
             def sb = new StringBuilder()
-            sb << "Slayt        : " << imageNameOf(imageData) << "\n"
+            sb << "Lam        : " << imageNameOf(imageData) << "\n"
             sb << "④ Hücre sayısı (seçili alanda): " << rd.cells.size() << "\n"
             sb << "Kalibrasyon  : " << (Double.isFinite(rd.mpp) && rd.mpp > 0 ? String.format(java.util.Locale.US, '%.4f µm/px', rd.mpp) : 'KALİBRE DEĞİL') << "\n"
             if (Double.isFinite(rd.areaMm2)) sb << String.format(java.util.Locale.US, "Alan         : %.3f mm²%n", rd.areaMm2)
@@ -1211,7 +1211,7 @@ javafx.application.Platform.runLater {
         } as javafx.event.EventHandler)
         render(); stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ CytoFormer hücre tipi sınıflama sihirbazı açıldı."

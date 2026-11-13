@@ -23,7 +23,7 @@
  *   • Sınıfsız (classification = yok) tespitler "(sınıfsız)" altında sayılır.
  *
  * KULLANIM:
- *   1. Sınıflandırılmış tespitler içeren bir slayt açın
+ *   1. Sınıflandırılmış tespitler içeren bir lam açın
  *   2. Saymak istediğiniz bölgeyi anotasyon olarak çizin ve SEÇİN
  *      (ölçülecek anotasyonlar açıkça seçilmelidir)
  *   3. [Extensions → Atölye → Yardımcılar → Sınıf bazlı hücre sayımı (% dağılım)]
@@ -114,7 +114,7 @@ String summaryName = "Sınıf Sayım Özet"
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce sınıflandırılmış tespitler içeren bir slayt açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce sınıflandırılmış tespitler içeren bir lam açın.")
     return
 }
 

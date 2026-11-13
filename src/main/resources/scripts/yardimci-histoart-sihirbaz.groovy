@@ -5,10 +5,10 @@
  *
  * NE YAPAR:
  *   FDA CDRH/OSEL (DIDSR) **HistoART** artefakt sınıflandırıcılarıyla açık
- *   slayttaki karoları (tile) etiketler — tek pencereden:
+ *   lamdaki karoları (tile) etiketler — tek pencereden:
  *     1. Varyant (DLA/FMA) + eşik + aygıt seçin; gerekiyorsa ortamı kurun ve
  *        model ağırlıklarını indirin (② ③ düğmeleri).
- *     2. ÇALIŞTIR — seçili anotasyonların (yoksa tüm slaytın) karolarını diske
+ *     2. ÇALIŞTIR — seçili anotasyonların (yoksa tüm lamın) karolarını diske
  *        yazar; Python köprüsü (histoart_bridge.py) iki aşamada sınıflandırır.
  *     3. İçe aktarım — her karo için renkli ALT-TESPİT (KK ısı haritası) +
  *        kopyalanabilir bir "kalite karnesi".
@@ -24,13 +24,13 @@
  *
  * ÖLÇEK (sessiz hata kaynağı):
  *   HistoART eğitim yamaları 224×224 ve **40× (~0,25 µm/px)**'tir. Bu sihirbaz
- *   slaytın µm/px değerinden hedef 0,25 µm/px'e göre downsample'ı KENDİSİ önerir
+ *   lamın µm/px değerinden hedef 0,25 µm/px'e göre downsample'ı KENDİSİ önerir
  *   ve kalibrasyon yoksa/uzaksa uyarır. Yanlış ölçekte model hata vermez —
  *   yalnızca yanlış cevap verir.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Çıktı: karo başına artefakt olasılığı + (artefaktlıysa) tür etiketi ve
- *     tür olasılıkları; slayt düzeyinde temiz/artefaktlı karo sayımı ve oranı.
+ *     tür olasılıkları; lam düzeyinde temiz/artefaktlı karo sayımı ve oranı.
  *   • Kabul/ret KARARI üretmez — eşiği siz lab protokolünüze göre seçersiniz.
  *   • GrandQC'nin YERİNE GEÇMEZ: GrandQC piksel maskesi üretir (nerede);
  *     HistoART karo düzeyinde sınıflandırır (ne kadar, hangi tür) ve maske
@@ -42,7 +42,7 @@
  *   1. [Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller →
  *      Atölye Python ortam yöneticisi] ile 'histoart' ortamını kurun (② düğmesi
  *      bunu doğrudan açar).
- *   2. Bir slayt açın; istersen bölge anotasyonu çizin (çizmezseniz tüm slayt
+ *   2. Bir lam açın; istersen bölge anotasyonu çizin (çizmezseniz tüm lam
  *      örneklenir, "maks. karo" sınırıyla).
  *   3. Bu sihirbazı açın → ③ "Model ağırlıklarını indir" → "Çalıştır".
  *
@@ -135,7 +135,7 @@ def loadConfig = { ->
       bridge    : prefs.get(PREF_BRIDGE, ''),
       modelDir  : ({ -> def __m = prefs.get(PREF_MODEL, ''); (__m?.trim()) ? __m.trim() : defaultModelDir().getAbsolutePath() }).call(),
       workDir   : prefs.get(PREF_WORK,   ''),
-      downsample: prefs.get(PREF_DS,     ''),          // boş = slayttan türet
+      downsample: prefs.get(PREF_DS,     ''),          // boş = lamdan türet
       maxTiles  : prefs.get(PREF_MAXT,   '2000'),
       variant   : prefs.get(PREF_VARIANT,'dla'),
       threshold : prefs.get(PREF_THRESH, '0.5'),
@@ -155,7 +155,7 @@ def configComplete = { cfg -> configMissing(cfg).isEmpty() }
 def parseIntOr = { s, int d -> try { return Integer.parseInt((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
 def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
 
-// ── Ölçek: slayt µm/px → HistoART'ın beklediği 0,25 µm/px ───────────────────
+// ── Ölçek: lam µm/px → HistoART'ın beklediği 0,25 µm/px ───────────────────
 def slideMpp = { imageData ->
     try {
         def cal = imageData.getServer().getPixelCalibration()
@@ -163,7 +163,7 @@ def slideMpp = { imageData ->
     } catch (Throwable ignore) {}
     return Double.NaN
 }
-// Önerilen downsample = hedef µm/px ÷ slayt µm/px. Kalibrasyon yoksa 1.0.
+// Önerilen downsample = hedef µm/px ÷ lam µm/px. Kalibrasyon yoksa 1.0.
 def suggestedDownsample = { imageData ->
     double mpp = slideMpp(imageData)
     if (Double.isNaN(mpp) || mpp <= 0.0d) return 1.0d
@@ -177,7 +177,7 @@ def effectiveDownsample = { cfg, imageData ->
 def scaleWarning = { cfg, imageData ->
     double mpp = slideMpp(imageData)
     if (Double.isNaN(mpp))
-        return '⚠ Slayt KALİBRE DEĞİL (µm/px yok). HistoART 40× (~0,25 µm/px) bekler; ölçek doğrulanamıyor — sonuçlar sessizce yanlış olabilir.'
+        return '⚠ Lam KALİBRE DEĞİL (µm/px yok). HistoART 40× (~0,25 µm/px) bekler; ölçek doğrulanamıyor — sonuçlar sessizce yanlış olabilir.'
     double ds = effectiveDownsample(cfg, imageData)
     double eff = mpp * ds
     if (Math.abs(eff - HISTOART_MPP) > (HISTOART_MPP * 0.25d))
@@ -262,7 +262,7 @@ def writeJson = { obj, File f ->
 }
 
 // ── Karoları dışa aktar + manifest yaz ──────────────────────────────────────
-//   Anotasyon varsa her alan anotasyonu; yoksa TÜM SLAYT (maks. karo sınırıyla).
+//   Anotasyon varsa her alan anotasyonu; yoksa TÜM LAM (maks. karo sınırıyla).
 def exportTiles = { imageData, File workDir, cfg, Closure appendLine ->
     def server = imageData.getServer()
     double downsample = effectiveDownsample(cfg, imageData)
@@ -286,7 +286,7 @@ def exportTiles = { imageData, File workDir, cfg, Closure appendLine ->
     if (wholeSlide) {
         def plane = qupath.lib.regions.ImagePlane.getDefaultPlane()
         def full = qupath.lib.roi.ROIs.createRectangleROI(0, 0, server.getWidth(), server.getHeight(), plane)
-        appendLine('Anotasyon yok — tüm slayt örnekleniyor (maks. ' + maxTiles + ' karo).')
+        appendLine('Anotasyon yok — tüm lam örnekleniyor (maks. ' + maxTiles + ' karo).')
         total = gridTiles(server, full, downsample, HISTOART_PATCH, maxTiles, { x, y, phys, img ->
             emit(null, x, y, phys, img)
         })
@@ -468,14 +468,14 @@ def buildResultText = { File workDir, exp, imp, cfg, imageData ->
     def sb = new StringBuilder()
     sb << "HistoART — KALİTE KARNESİ\n"
     sb << "═════════════════════════\n\n"
-    sb << "Slayt        : " << imageNameOf(imageData) << "\n"
+    sb << "Lam        : " << imageNameOf(imageData) << "\n"
     sb << "Varyant      : " << ((exp?.variant == 'fma') ? 'FMA (UNI)' : 'DLA (ResNet50)') << "\n"
     sb << "Eşik         : " << (cfg.threshold ?: '0.5') << "\n"
-    sb << "Kapsam       : " << (exp?.wholeSlide ? 'tüm slayt (örneklem)' : ('anotasyon (' + (exp?.nAnns ?: 0) + ')')) << "\n"
+    sb << "Kapsam       : " << (exp?.wholeSlide ? 'tüm lam (örneklem)' : ('anotasyon (' + (exp?.nAnns ?: 0) + ')')) << "\n"
     double mpp = slideMpp(imageData)
     sb << String.format(java.util.Locale.US, "Ölçek        : downsample %.3f", (double) (exp?.downsample ?: 1.0d))
     if (!Double.isNaN(mpp)) sb << String.format(java.util.Locale.US, "  ·  etkin %.3f µm/px (hedef %.2f)", mpp * (double) (exp?.downsample ?: 1.0d), HISTOART_MPP)
-    else sb << "  ·  slayt KALİBRE DEĞİL"
+    else sb << "  ·  lam KALİBRE DEĞİL"
     sb << "\n\n"
     if (imp != null && imp.ok) {
         int scored = (int) imp.nScored
@@ -508,7 +508,7 @@ def buildResultText = { File workDir, exp, imp, cfg, imageData ->
 // ── Headless: yapılandırmayı raporla, etkileşim yok ─────────────────────────
 if (isHeadless) {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { println "Önce bir slayt açın."; return }
+    if (imageData == null) { println "Önce bir lam açın."; return }
     def cfg = loadConfig()
     def miss = configMissing(cfg)
     println "HistoART yapılandırması: python=${cfg.python ?: '(ayarsız)'} köprü=${cfg.bridge ?: '(ayarsız)'} model=${cfg.modelDir} varyant=${cfg.variant} eşik=${cfg.threshold} aygıt=${cfg.device}"
@@ -764,7 +764,7 @@ render = { ->
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Maks. karo (0=tümü):'), mtField)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Aygıt:'), deviceChoice)
         center.getChildren().add(grid)
-        addGuidance('Karo boyutu 224 px olarak SABİTTİR (HistoART eğitim yaması). Downsample boş bırakılırsa slaytın µm/px değerinden ' +
+        addGuidance('Karo boyutu 224 px olarak SABİTTİR (HistoART eğitim yaması). Downsample boş bırakılırsa lamın µm/px değerinden ' +
             'hedef 0,25 µm/px (40×) için otomatik hesaplanır — GT450/AT2 gibi 40× tarayıcılarda bu ~1,0 olur. ' +
             'Eşik yalnız ikili aşamayı etkiler; tür sınıflandırması yalnızca eşiği geçen karolara uygulanır.')
         if (cfg.variant == 'fma')
@@ -797,7 +797,7 @@ render = { ->
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce bir slayt açın, sonra "⟳ Yenile". İstersen bölge anotasyonu çizin; çizmezseniz tüm slayt örneklenir.')
+            addGuidance('Önce bir lam açın, sonra "⟳ Yenile". İstersen bölge anotasyonu çizin; çizmezseniz tüm lam örneklenir.')
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
@@ -808,15 +808,15 @@ render = { ->
             double mpp = slideMpp(imageData)
             title.setText('HistoART — hazır')
             def sb = new StringBuilder()
-            sb << "Slayt          : " << imageNameOf(imageData) << "\n"
+            sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Çalışma dizini : " << workDir.getAbsolutePath() << "\n"
             sb << "Model dizini   : " << cfg.modelDir << "\n"
             sb << "Varyant        : " << ((cfg.variant == 'fma') ? 'FMA (UNI, KAPILI)' : 'DLA (ResNet50, açık)') << "\n"
             sb << "Eşik / aygıt   : " << (cfg.threshold ?: '0.5') << "  /  " << cfg.device << "\n"
             sb << String.format(java.util.Locale.US, "Karo           : %d px  ·  downsample %.3f%n", HISTOART_PATCH, ds)
-            if (!Double.isNaN(mpp)) sb << String.format(java.util.Locale.US, "Çözünürlük     : slayt %.3f µm/px  →  etkin %.3f µm/px (hedef %.2f)%n", mpp, mpp * ds, HISTOART_MPP)
-            else sb << "Çözünürlük     : slayt KALİBRE DEĞİL\n"
-            sb << String.format(java.util.Locale.US, "Kapsam         : %s%n", anns.isEmpty() ? ('tüm slayt (maks. ' + (cfg.maxTiles ?: '2000') + ' karo)') : ('alan anotasyonu: ' + anns.size()))
+            if (!Double.isNaN(mpp)) sb << String.format(java.util.Locale.US, "Çözünürlük     : lam %.3f µm/px  →  etkin %.3f µm/px (hedef %.2f)%n", mpp, mpp * ds, HISTOART_MPP)
+            else sb << "Çözünürlük     : lam KALİBRE DEĞİL\n"
+            sb << String.format(java.util.Locale.US, "Kapsam         : %s%n", anns.isEmpty() ? ('tüm lam (maks. ' + (cfg.maxTiles ?: '2000') + ' karo)') : ('alan anotasyonu: ' + anns.size()))
             addMonoArea(sb.toString())
 
             def sw = scaleWarning(cfg, imageData)
@@ -893,7 +893,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ HistoART artefakt tespiti sihirbazı açıldı."

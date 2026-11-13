@@ -73,8 +73,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
      */
     private static final List<ScriptEntry> SCRIPTS = List.of(
         // Modül 1: etkileşimli arayüz turu (arayuz-turu). QuPath arayüzünü
-        // gezdirir; nesne/ölçüm DEĞİŞTİRMEZ ve açık slayt gerektirmez (needsImage=false)
-        // — atölyenin ilk adımı, slayt açılmadan çalıştırılabilir. Statik karşılığı
+        // gezdirir; nesne/ölçüm DEĞİŞTİRMEZ ve açık lam gerektirmez (needsImage=false)
+        // — atölyenin ilk adımı, lam açılmadan çalıştırılabilir. Statik karşılığı
         // Modül 1 (qupath-tanitim); ilham: qupath-extension-training (Apache-2.0).
         new ScriptEntry("Arayüz turu",                    "arayuz-turu.groovy", false, false),
         new ScriptEntry("Hücre tespiti",                  "hucre-tespiti.groovy"),
@@ -83,7 +83,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("Membran boya (HER2)",            "membran-boya.groovy"),
         new ScriptEntry("Sitoplazmik boya (CD68)",        "sitoplazmik-boya.groovy"),
         // Tümör/Stroma: tek pencere sihirbaz — örnek modeli kur YA DA yeni eğit, sonra
-        // seçili bölge / tüm slayt ölçümü (Ignore* dışlama dahil) hepsi burada.
+        // seçili bölge / tüm lam ölçümü (Ignore* dışlama dahil) hepsi burada.
         // Eski eğit/uygula adımları sihirbaza katlandı; betikler JAR'da +
         // handson/scripts'te kalır (Automate → Project scripts'ten erişilebilir).
         // Menüye geri eklemek için aşağıdaki iki satırın yorumunu kaldırın.
@@ -123,7 +123,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
      */
     private static final ScriptGroup MITOSIS_MODULE = new ScriptGroup("Mitoz tespiti", List.of(
         // Başlangıç/liste ekranı: aşağıdaki sihirbazları tek pencerede listeler; her sihirbazın
-        // "◀ Mitoz listesi" düğmesi buraya döner. Salt gezinme — açık slayt gerekmez.
+        // "◀ Mitoz listesi" düğmesi buraya döner. Salt gezinme — açık lam gerekmez.
         new ScriptEntry("Mitoz modelleri listesi", "yardimci-mitoz-merkez.groovy", false, false),
         new ScriptEntry("KongNet MIDOG (TIA Toolbox)", "yardimci-mitoz-tiatoolbox.groovy"),
         new ScriptEntry("MIDOG25 FCOS (torchvision)",  "yardimci-mitoz-fcos.groovy"),
@@ -172,7 +172,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
     private static final List<ScriptGroup> UTILITY_GROUPS = List.of(
         new ScriptGroup("Temel araçlar", List.of(
             new ScriptEntry("Tespitleri sil",              "yardimci-tespitleri-sil.groovy"),
-            new ScriptEntry("Görüntü tipi ayarla",         "yardimci-image-type.groovy", false, false),  // tüm-proje kapsamı: açık slayt gerekmez
+            new ScriptEntry("Görüntü tipi ayarla",         "yardimci-image-type.groovy", false, false),  // tüm-proje kapsamı: açık lam gerekmez
             new ScriptEntry("Eşikleri ayarla",             "yardimci-esik-ayarla.groovy"),
             new ScriptEntry("Kalibrasyon (piksel boyutu)", "yardimci-kalibrasyon.groovy"),
             // "Analiz etmeden önce verine bak" — bioimagebook Bölüm 1: salt okunur künye + kanal
@@ -189,7 +189,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Boya kalitesi QC ölçümü", "yardimci-boya-kalite-qc.groovy"),
             // Salt okunur ICC denetçisi — gömülü profili okur; UYGULAMAZ (qupath#982). bkz. Ekler → Renk Yönetimi (ICC).
             new ScriptEntry("ICC renk profili denetçisi", "yardimci-icc-denetci-sihirbaz.groovy"),
-            // Proje geneli boya OD drift raporu (tarayıcı/zaman karşılaştırma → CSV + IQR aykırı işareti); proje-düzeyi, açık slayt gerekmez.
+            // Proje geneli boya OD drift raporu (tarayıcı/zaman karşılaştırma → CSV + IQR aykırı işareti); proje-düzeyi, açık lam gerekmez.
             new ScriptEntry("Kohort boya OD sürüklenme raporu", "yardimci-kohort-boya-qc.groovy", false, false)
         )),
         new ScriptGroup("Hücre ve çekirdek tespiti", List.of(
@@ -272,8 +272,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             // Toplu anotasyon aktarımı — proje geneli GeoJSON / ImageScope XML / ASAP XML (+ COCO, merkez tablosu dışa).
             // _manifest.tsv ile tam ad eşleşmesi; içe aktarım önizlemeli ve önceki anotasyonları SORAR (varsayılan: silme).
             // Arayüzsüz de çalışır (--args). bkz. Ekler → Toplu Anotasyon Aktarımı.
-            new ScriptEntry("Toplu anotasyon dışa aktarma", "yardimci-anotasyon-disa-aktar.groovy", false, false),  // proje geneli: açık slayt gerekmez
-            new ScriptEntry("Toplu anotasyon içe aktarma",  "yardimci-anotasyon-ice-aktar.groovy",  false, false),  // proje geneli: açık slayt gerekmez
+            new ScriptEntry("Toplu anotasyon dışa aktarma", "yardimci-anotasyon-disa-aktar.groovy", false, false),  // proje geneli: açık lam gerekmez
+            new ScriptEntry("Toplu anotasyon içe aktarma",  "yardimci-anotasyon-ice-aktar.groovy",  false, false),  // proje geneli: açık lam gerekmez
             new ScriptEntry("Karo (tile) dışa aktarma",    "yardimci-karo-disa-aktarma.groovy"),
             // QuPath'in YERLEŞİK OME-Zarr (OME-NGFF) yazıcısını saran sihirbaz; parçalı+piramidal .ome.zarr.
             new ScriptEntry("OME-Zarr dışa aktarma",       "yardimci-omezarr-disa-aktarma.groovy"),
@@ -296,15 +296,15 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("TMA çekirdek bazlı dışa aktarım",      "yardimci-tma-cekirdek-aktarim.groovy"),
             // DICOM → SVS-benzeri TIFF (Chauveau 2025, Virchows Archiv; DICOMtoSVS köprüsü — kayıpsız karo kopyalama).
             // Depo LİSANSSIZ → betik çalışma anında SHA-sabitli indirilir, JAR'a paketlenmez. bkz. Ekler → WSI Dosya Formatları.
-            new ScriptEntry("DICOM → SVS dönüştürme (DICOMtoSVS)",  "yardimci-dicom-svs-sihirbaz.groovy", false, false),  // dosya düzeyi: açık slayt gerekmez
-            new ScriptEntry("Örnek tümör/stroma sınıflandırıcısını projeye kaydet", "yardimci-ornek-siniflandirici.groovy", false, false)  // proje düzeyi: açık slayt gerekmez
+            new ScriptEntry("DICOM → SVS dönüştürme (DICOMtoSVS)",  "yardimci-dicom-svs-sihirbaz.groovy", false, false),  // dosya düzeyi: açık lam gerekmez
+            new ScriptEntry("Örnek tümör/stroma sınıflandırıcısını projeye kaydet", "yardimci-ornek-siniflandirici.groovy", false, false)  // proje düzeyi: açık lam gerekmez
         )),
         new ScriptGroup("Python köprüleri ve temel modeller", List.of(
             // uv tabanlı ortam yöneticisi — Python köprülerinin izole venv'lerini kurar/onarır (proje/sistem düzeyi).
             new ScriptEntry("Atölye Python ortam yöneticisi",        "yardimci-python-ortam-yoneticisi.groovy", false, false),
             // NOT: GrandQC artık "Doku tespiti" grubunda (doku segmentasyonu + artefakt KK birlikte).
-            // TIA Toolbox: boya normalizasyonu (Macenko/Vahadane/Reinhard; QuPath'in YAPMADIĞI) + doku maskesi. handson/python/tiatoolbox.
-            new ScriptEntry("TIA Toolbox boya normalizasyonu / doku maskesi sihirbazı", "yardimci-tiatoolbox-sihirbaz.groovy"),
+            // TIA Toolbox: boyama normalizasyonu (Macenko/Vahadane/Reinhard; QuPath'in YAPMADIĞI) + doku maskesi. handson/python/tiatoolbox.
+            new ScriptEntry("TIA Toolbox boyama normalizasyonu / doku maskesi sihirbazı", "yardimci-tiatoolbox-sihirbaz.groovy"),
             // TIA Toolbox model çıkarımını SEÇİLİ BÖLGEYLE sınırlar (KongNet MIDOG mitoz vb.); tiatoolbox-runtime/.venv.
             new ScriptEntry("TIA Toolbox bölgede çekirdek/mitoz tespiti", "yardimci-tiatoolbox-bolge-sihirbaz.groovy"),
             // Kaiko Midnight (Python) — denetimli FM sınıflandırıcı (eğit → tahmin). bkz. Ekler → Kaiko Midnight.
@@ -323,26 +323,26 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Python ve yapay zekâ ajanı köprü denetimi", "yardimci-ajan-kopru-denetimi.groovy", false, false)
         )),
         new ScriptGroup("Klinik ve kohort", List.of(
-            // metadata-qupath (sbalci, MIT) köprüsü — proje geneli slayt/tarayıcı üst verisi → CSV + Proje sütunları.
-            new ScriptEntry("Kohort üst veri sihirbazı", "yardimci-metadata-sihirbaz.groovy", false, false),  // proje geneli, salt okunur: açık slayt gerekmez
+            // metadata-qupath (sbalci, MIT) köprüsü — proje geneli lam/tarayıcı üst verisi → CSV + Proje sütunları.
+            new ScriptEntry("Kohort üst veri sihirbazı", "yardimci-metadata-sihirbaz.groovy", false, false),  // proje geneli, salt okunur: açık lam gerekmez
             // sectra-qupath (sbalci, MIT) köprüsü — Sectra PACS DICOM (GSPS) → GeoJSON. bkz. Ekler → Klinik PACS.
             new ScriptEntry("Sectra PACS anotasyon sihirbazı", "yardimci-sectra-iceaktar.groovy"),
-            // Denetim (salt okunur) + anonimleştirme: açık görüntü YA DA seçilen/tüm proje görüntüleri → açık slayt gerekmez.
+            // Denetim (salt okunur) + anonimleştirme: açık görüntü YA DA seçilen/tüm proje görüntüleri → açık lam gerekmez.
             new ScriptEntry("WSI anonimleştirme sihirbazı",         "yardimci-anonim-sihirbaz.groovy", false, false),
-            // Proje geneli kilitli özet anotasyon ölçümlerini tek satır/görüntü geniş TSV'ye toplar; salt okunur, açık slayt gerekmez.
+            // Proje geneli kilitli özet anotasyon ölçümlerini tek satır/görüntü geniş TSV'ye toplar; salt okunur, açık lam gerekmez.
             new ScriptEntry("Kohort özet toplayıcı (proje tablosu)", "yardimci-kohort-ozet-topla.groovy", false, false),
-            // GrandQC sentinel anotasyonlarını (doku/temiz/artefakt alan + parça) proje geneli geniş TSV'ye toplar; salt okunur, açık slayt gerekmez.
+            // GrandQC sentinel anotasyonlarını (doku/temiz/artefakt alan + parça) proje geneli geniş TSV'ye toplar; salt okunur, açık lam gerekmez.
             new ScriptEntry("GrandQC kohort KK özeti", "yardimci-grandqc-kohort-ozet.groovy", false, false),
-            // Salt okunur işlem kaydı: kimlik + boya vektörleri + sınıf bazlı sayımlar → provenance JSON; açık slayt gerekmez.
+            // Salt okunur işlem kaydı: kimlik + boya vektörleri + sınıf bazlı sayımlar → provenance JSON; açık lam gerekmez.
             new ScriptEntry("İşlem kaydı (provenance JSON)", "yardimci-kosu-manifesti.groovy", false, false)
         )),
         new ScriptGroup("Eğitim, sunum ve ImageJ", List.of(
-            // Bankhead'in görüntü-işleme sözlüğünü kendi slaytında canlı önizlemelerle gezdiren tur (Modül 2'nin perde arkası).
+            // Bankhead'in görüntü-işleme sözlüğünü kendi lamında canlı önizlemelerle gezdiren tur (Modül 2'nin perde arkası).
             new ScriptEntry("Görüntü işleme kavramları", "yardimci-goruntu-isleme-turu.groovy"),
             // Ekran kaydı / canlı sunum — bastığınız tuş ve fare işlemlerini gösterir (InputDisplay aç/kapa).
-            new ScriptEntry("Tuş/fare göstergesi (kayıt için)", "yardimci-tus-fare-gostergesi.groovy", false, false),  // global ekran katmanı: açık slayt gerekmez
+            new ScriptEntry("Tuş/fare göstergesi (kayıt için)", "yardimci-tus-fare-gostergesi.groovy", false, false),  // global ekran katmanı: açık lam gerekmez
             // Görüntüleyiciyi/pencereyi PNG/JPEG'e veya panoya alır (rapor & sunum). GuiTools.makeSnapshot.
-            new ScriptEntry("Görüntü yakala (rapor/sunum)", "yardimci-goruntu-yakala.groovy", false, false),  // açık slayt şart değil — pencere/UI de yakalanır
+            new ScriptEntry("Görüntü yakala (rapor/sunum)", "yardimci-goruntu-yakala.groovy", false, false),  // açık lam şart değil — pencere/UI de yakalanır
             // I2K 2024 (Bankhead) uyarlamaları — ImageJ köprüsü (Otsu eşik / spline) + QuPath-içi grafik.
             new ScriptEntry("ImageJ ile otomatik eşik → anotasyon", "yardimci-imagej-otsu-anotasyon.groovy"),
             new ScriptEntry("ImageJ ile sınır yumuşat (spline)",    "yardimci-imagej-spline-duzeltme.groovy"),
@@ -398,7 +398,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             // Header item (disabled) so the menu purpose is obvious; shows a friendly hint when no slide is open.
             var header = new MenuItem();
             header.textProperty().bind(javafx.beans.binding.Bindings.when(qupath.imageDataProperty().isNull())
-                    .then("⚠ Önce bir slayt açın (çoğu araç açık görüntü ister)")
+                    .then("⚠ Önce bir lam açın (çoğu araç açık görüntü ister)")
                     .otherwise("— Atölye betikleri —"));
             header.setDisable(true);
             menu.getItems().add(header);
@@ -578,6 +578,18 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
      * thread isn't blocked while the script displays its own dialogs.
      */
     private void runScriptSafely(QuPathGUI qupath, ScriptEntry entry) {
+        for (String key : WorkshopPrefs.keys()) {
+            Object stored = WorkshopPrefs.property(key).getValue();
+            if (!(stored instanceof Number number)) continue;
+            String problem = WorkshopParameterValidation.problem(key, number.doubleValue(), other ->
+                    ((Number) WorkshopPrefs.property(other).getValue()).doubleValue());
+            if (problem != null) {
+                Dialogs.showErrorMessage("Atölye ayarını düzeltin",
+                        WorkshopSettingsDialog.labelFor(key) + ": " + problem
+                        + "\n\nExtensions → Atölye → Atölye Ayarları penceresini açın. İlgili değeri düzeltin veya bölüm varsayılanlarını geri yükleyin.");
+                return;
+            }
+        }
         String scriptBody;
         try {
             scriptBody = readScriptResource(entry.resource);
@@ -629,17 +641,11 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                 shell.evaluate(scriptBody, entry.resource);
             } catch (Throwable t) {
                 logger.error("Script execution failed: {}", entry.label, t);
-                String msg = t.getMessage();
-                String detail = t.getClass().getSimpleName() + ": " + (msg != null ? msg : "(ileti yok)");
+                String guidance = WorkshopErrors.guidance(t);
                 Platform.runLater(() -> Dialogs.showErrorMessage(
                     "Betik hatası — " + entry.label,
                     "Araç çalışırken beklenmeyen bir sorun oluştu.\n\n" +
-                    "Yapabilecekleriniz:\n" +
-                    "  1. Bir slaytın açık olduğundan emin olun.\n" +
-                    "  2. Araç bir bölge istiyorsa, alan anotasyonunu çizip tıklayarak seçin (kenarı sarı olmalı).\n" +
-                    "  3. QuPath'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n" +
-                    "  4. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\n" +
-                    "Teknik ayrıntı: " + detail
+                    guidance + "\n\nSorun sürerse View → Show log penceresindeki hata kaydını inceleyin. Yardım isterken hasta bilgisi içeren dosya adlarını paylaşmadan önce kaldırın."
                 ));
             }
         }, "WorkshopScript-" + entry.resource);
@@ -729,7 +735,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "QuPath sürümü:     " + GeneralTools.getVersion() + "\n" +
             "Atölye eklentisi:  v" + getVersion() + "  (derlenme " + BUILD_TIMESTAMP + ")\n" +
             "QuPath baseline:   " + getQuPathVersion() + "+\n\n" +
-            "Açık görüntü:      " + (hasImage ? "var" : "yok — File → Open ile bir slayt açın") + "\n" +
+            "Açık görüntü:      " + (hasImage ? "var" : "yok — File → Open ile bir lam açın") + "\n" +
             "Açık proje:        " + (hasProject ? "var" : "yok") + "\n\n" +
             "İsteğe bağlı bileşenler (yalnızca ileri modüller için):\n" +
             "  • Cellpose eklentisi:   " + (cellpose ? found : missing) + "\n" +
@@ -795,7 +801,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "Patologlar için dijital patoloji ve yapay zekâ atölyesinin\n" +
             "tek tıkla çalışan betikleri bir araya getirir.\n\n" +
             "Modüller (Extensions → Atölye → Modüller):\n" +
-            "  • Arayüz turu (etkileşimli arayüz gezintisi; açık slayt gerekmez)\n" +
+            "  • Arayüz turu (etkileşimli arayüz gezintisi; açık lam gerekmez)\n" +
             "  • Doku tespiti (Yerleşik Otsu, Piksel eşikleyici, GrandQC, TIA Toolbox)\n" +
             "  • Hücre tespiti\n" +
             "  • Nükleer boya (Ki-67)\n" +
@@ -809,7 +815,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             "  • Görüntü Hizalama (VALIS, Warpy, Afin)\n" +
             "  • Veri dışa aktarma (TSV / CSV / GeoJSON)\n\n" +
             "Üst düzey kısayol:\n" +
-            "  • Extensions → Senkron Izgara (seri slaytları eş zamanlı çoklu görünümde açar)\n\n" +
+            "  • Extensions → Senkron Izgara (seri lamları eş zamanlı çoklu görünümde açar)\n\n" +
             "Yardımcılar — konuya göre gruplu alt menüler (Yardımcılar → <konu> → betik):\n" +
             "  • Temel araçlar · Boya ve renk · Hücre ve çekirdek tespiti\n" +
             "  • Skorlama ve ölçüm · Uzamsal analiz · İçe ve dışa aktarma / veri\n" +

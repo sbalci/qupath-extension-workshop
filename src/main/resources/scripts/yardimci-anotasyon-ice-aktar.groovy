@@ -22,7 +22,7 @@
  *   • VERİ AKTARIM betiğidir: dosyadaki geometriyi ve sınıf adlarını QuPath nesnesine çevirir.
  *     Patoloji yorumu, tanı, grade veya klinik karar üretmez.
  *   • Koordinatlar görüntünün taban (level-0) piksel uzayında olmalıdır; betik ölçekleme yapmaz.
- *     Nesneleri görüntü sınırını %1'den fazla aşan dosyalar işaretlenir (yanlış slayt ya da
+ *     Nesneleri görüntü sınırını %1'den fazla aşan dosyalar işaretlenir (yanlış lam ya da
  *     küçültülmüş koordinat olasılığı).
  *
  * KULLANIM:
@@ -521,8 +521,8 @@ def outOfBounds = { List objs, int w, int h ->
     double tx = w * BOUNDS_TOL, ty = h * BOUNDS_TOL
     return minX < -tx || minY < -ty || maxX > w + tx || maxY > h + ty
 }
-// Kaynak anahtarı = "<biçim> · <kanonik dosya yolu>". Yalnız dosya ADI yetmez: dışa aktarıcı imagescope/<slayt>.xml
-// ile asap/<slayt>.xml'i AYNI adla yazar; ada göre eşleşen "değiştir" öbür kaynağın nesnelerini silerdi.
+// Kaynak anahtarı = "<biçim> · <kanonik dosya yolu>". Yalnız dosya ADI yetmez: dışa aktarıcı imagescope/<lam>.xml
+// ile asap/<lam>.xml'i AYNI adla yazar; ada göre eşleşen "değiştir" öbür kaynağın nesnelerini silerdi.
 def sourceKeyOf = { String fmt, File f -> fmt + ' · ' + f.getPath() }
 // Hedefte bu KAYNAKTAN daha önce içe aktarılmış nesneler (etiket "<kaynak anahtarı> · <zaman>")
 def sameFileTagged = { h, String sourceKey ->
@@ -906,7 +906,7 @@ def startImport = {
     if (todo.any { it.target.entry == null && !(curData != null && curData.is(it.target.live)) }) {
         showError('Açık görüntü değişti; önizlemeyi yeniden oluşturun.'); return
     }
-    // Pencere kalıcıdır: önizlemeden sonra bir hedef slayt açılmış olabilir → açık slaytların sayımlarını ŞİMDİ tazele
+    // Pencere kalıcıdır: önizlemeden sonra bir hedef lam açılmış olabilir → açık lamların sayımlarını ŞİMDİ tazele
     def projNow = QP.getProject()
     todo.each { r ->
         def ld = (r.target.entry != null) ? liveDataFor(projNow, r.target.entry) : r.target.live
@@ -1161,7 +1161,7 @@ render = { ->
         title.setText('İçe aktarılıyor…')
         addProgress('Başlıyor…')
         addGuidance('İptal, sıradaki görüntüden önce durur; işlenmekte olan görüntü tamamlanır ve kaydedilir. ' +
-            'Çalışma sürerken hedef slaytları açıp kapatmayın; açık bir slayt işlem sırasında değişirse o görüntü atlanır ya da hata olarak raporlanır.')
+            'Çalışma sürerken hedef lamları açıp kapatmayın; açık bir lam işlem sırasında değişirse o görüntü atlanır ya da hata olarak raporlanır.')
         actions.add(navButton('İptal et', { cancelledRef.set(true) }))
     } else if (cur == 'RESULT') {
         title.setText(resultTitleRef.get())
@@ -1217,7 +1217,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println '✓ Toplu anotasyon içe aktarma sihirbazı açıldı.'

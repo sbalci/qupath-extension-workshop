@@ -3,7 +3,7 @@
  * -----------------------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  * Yayınlanmış (L'Imperio ve ark., Virchows Archiv 2025) QuANTUM iş akışının
- * basitleştirilmiş, tek pencerede yönlendirilen bir uyarlamasıdır. H&E slaytında
+ * basitleştirilmiş, tek pencerede yönlendirilen bir uyarlamasıdır. H&E lamında
  * **cTCF** (Computational Tumor Cellular Fraction) hesaplar:
  *     cTCF = Tumor / (Tumor + Non-neoplastic) × 100   (Ignore paydadan dışlanır)
  *
@@ -342,7 +342,7 @@ def computeResult = { regionAnno, int tumorCount, int nonNeoCount, int ignoreCou
     body << 'cTCF = Tumor ÷ (Tumor + Non-neoplastic) × 100; Ignore paydadan dışlanır.\n\n'
     body << "Yöntem bağlamı (L'Imperio ve ark., Virchows Archiv 2025): özgün çalışmada 121\n"
     body << 'NSCLC olgusunda manuel TCF %52±19 iken cTCF %30±10 ölçülmüş. Bu sayılar yöntemin\n'
-    body << 'bağlamıdır; sizin slaytınıza/laboratuvarınıza taşınmaz (yerel validasyon gerekir).\n\n'
+    body << 'bağlamıdır; sizin lamınıza/laboratuvarınıza taşınmaz (yerel validasyon gerekir).\n\n'
     body << 'Bu çıktı betimsel bir ölçümdür; yeterlilik, tedavi ya da başka bir klinik karar üretmez.\n'
     body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
     return [cTCF:cTCF, text:body.toString()]

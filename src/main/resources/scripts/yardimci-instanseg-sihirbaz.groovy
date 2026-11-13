@@ -24,7 +24,7 @@
  *   1. InstanSeg eklentisini kurun: [Extensions → Manage extensions] → InstanSeg.
  *   2. Bir model indirin: InstanSeg arayüzünden (ör. "brightfield_nuclei") ya da
  *      instanseg.pt + rdf.yaml içeren bir model klasörünü hazır bulundurun.
- *   3. Bir slayt açın; ölçülecek bölge için bir ALAN anotasyonu çizip SEÇİN.
+ *   3. Bir lam açın; ölçülecek bölge için bir ALAN anotasyonu çizip SEÇİN.
  *   4. [Extensions → Atölye → Yardımcılar → InstanSeg çekirdek/hücre tespiti sihirbazı]
  *   5. Model klasörü + cihazı (cpu/gpu) ayarlayın → "Tespit".
  *
@@ -80,7 +80,7 @@ def buildResultText = { String slideName, int n, double areaMm2, double density,
     def sb = new StringBuilder()
     sb << "INSTANSEG — TESPİT\n"
     sb << "═══════════════════════════════\n\n"
-    sb << "Slayt          : " << slideName << "\n"
+    sb << "Lam          : " << slideName << "\n"
     sb << "Model klasörü  : " << modelDir << "\n"
     sb << "Cihaz          : " << device << "\n"
     sb << "\n"
@@ -101,7 +101,7 @@ def buildResultText = { String slideName, int n, double areaMm2, double density,
 // ── Headless: yapılandırmayı raporla, etkileşim yok ─────────────────────────
 if (isHeadless) {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { println "Önce bir slayt açın."; return }
+    if (imageData == null) { println "Önce bir lam açın."; return }
     println "InstanSeg eklentisi: ${instansegInstalled() ? 'bulundu' : 'BULUNAMADI — Extensions → Manage extensions → InstanSeg'}"
     println "Model: ${loadModelDir() ?: '(ayarlanmadı)'} (${isValidModelDir(loadModelDir()) ? 'geçerli' : 'geçersiz/eksik'})"
     println "Cihaz: ${loadDevice()}"
@@ -171,7 +171,7 @@ def startDetection = {
 
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
-        appendLine('Slayt: ' + imageNameOf(imageData))
+        appendLine('Lam: ' + imageNameOf(imageData))
         appendLine('Model: ' + modelDir)
         appendLine('Cihaz: ' + device)
 
@@ -220,7 +220,7 @@ def startDetection = {
 
         if (n == 0) {
             javafx.application.Platform.runLater {
-                errorTextRef.set('InstanSeg 0 tespit buldu.\nOlası nedenler:\n  • Model görüntü tipine uymuyor (model H&E parlak alan ise floresan slaytta çalışmaz)\n  • ROI çok küçük\n  • Yanlış model klasörü')
+                errorTextRef.set('InstanSeg 0 tespit buldu.\nOlası nedenler:\n  • Model görüntü tipine uymuyor (model H&E parlak alan ise floresan lamda çalışmaz)\n  • ROI çok küçük\n  • Yanlış model klasörü')
                 step.set('ERROR'); render()
             }
             return
@@ -344,13 +344,13 @@ render = { ->
     } else if (cur == 'READY') {
         title.setText('InstanSeg — çekirdek/hücre tespiti')
         if (imageData == null) {
-            addGuidance('Önce bir slayt açın ve ölçülecek bölge için bir alan anotasyonu çizip SEÇİN, sonra "⟳ Yenile".')
+            addGuidance('Önce bir lam açın ve ölçülecek bölge için bir alan anotasyonu çizip SEÇİN, sonra "⟳ Yenile".')
         } else {
             def selected = QP.getSelectedObject()
             boolean selOk = (selected != null && selected instanceof PathAnnotationObject && selected.hasROI() && selected.getROI().isArea())
             boolean modelOk = isValidModelDir(loadModelDir())
             def sb = new StringBuilder()
-            sb << "Slayt           : " << imageNameOf(imageData) << "\n"
+            sb << "Lam           : " << imageNameOf(imageData) << "\n"
             sb << "Seçili anotasyon: " << (selOk ? 'var (alan ROI)' : 'YOK — bir alan anotasyonu seçin') << "\n"
             sb << "InstanSeg        : yüklü ✓\n"
             sb << "Model klasörü    : " << (modelOk ? 'geçerli ✓' : 'ayarlanmadı/geçersiz — aşağıdan seçin') << "\n"
@@ -424,7 +424,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ InstanSeg çekirdek/hücre tespiti sihirbazı açıldı."

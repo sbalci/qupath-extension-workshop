@@ -10,7 +10,7 @@
  *   başlatabilirsiniz. Her satırda modelin Python ortamının kurulu olup olmadığı gösterilir.
  *
  * NE ÜRETİR (ve ne ÜRETMEZ):
- *   Bu pencere ölçüm yapmaz ve slayta hiçbir şey yazmaz; yalnızca sihirbazları açar.
+ *   Bu pencere ölçüm yapmaz ve lama hiçbir şey yazmaz; yalnızca sihirbazları açar.
  *   Sayım ve yoğunluk, açılan sihirbazın kendisi tarafından üretilir.
  *
  * ÖNERİLEN SIRA:
@@ -188,8 +188,8 @@ render = { ->
         addGuidance('Bir model seçip "Aç ▶" ile başlatın (bu liste kapanır). O modelle işiniz bitince sihirbaz penceresindeki "◀ Mitoz listesi" düğmesi sizi bu listeye geri getirir; buradan başka bir model başlatabilirsiniz.\n' +
             'Önerilen sıra: ① bir dedektörle mitozları bulun → ② isteğe bağlı: atipik sınıflandırıcıyla tipik/atipik ayırın → ③ isteğe bağlı: dedektörleri aynı bölgede karşılaştırın.')
         def slideLbl = new javafx.scene.control.Label(imageData == null
-            ? 'Açık slayt: yok — sihirbazlar bir H&E slaytı ve seçili bir alan anotasyonu bekler.'
-            : ('Açık slayt: ' + slideNameOf(imageData)))
+            ? 'Açık lam: yok — sihirbazlar bir H&E lamı ve seçili bir alan anotasyonu bekler.'
+            : ('Açık lam: ' + slideNameOf(imageData)))
         slideLbl.setWrapText(true); slideLbl.setMaxWidth(Double.MAX_VALUE); slideLbl.setStyle('-fx-opacity: 0.85;')
         center.getChildren().add(slideLbl)
 

@@ -4,8 +4,8 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   Aynı projedeki bir KAYNAK slaytın üst düzey anotasyonlarını, bir AFİN
- *   dönüşüm uygulayarak şu anki (HEDEF) slayta kopyalar. Afin dönüşümü İKİ
+ *   Aynı projedeki bir KAYNAK lamın üst düzey anotasyonlarını, bir AFİN
+ *   dönüşüm uygulayarak şu anki (HEDEF) lama kopyalar. Afin dönüşümü İKİ
  *   yoldan elde edebilirsiniz:
  *     (A) OTOMATİK — Align eklentisinin AutoAligner'ı ile kaynak↔hedef arasında
  *         yoğunluk/anotasyon tabanlı afin hizalamayı BURADAN hesaplar (ayrı
@@ -13,7 +13,7 @@
  *     (B) ELLE — [Analyze → Alignment → Interactive image alignment] penceresindeki
  *         6 sayıyı (m00 m01 m02 m10 m11 m12) yapıştırırsınız.
  *   Böylece H&E üzerinde çizdiğiniz tümör/bölge anotasyonunu, hizaladığınız İHK
- *   slaytına TEK TIKLA ve YİNELENEBİLİR biçimde aktarırsınız.
+ *   lamına TEK TIKLA ve YİNELENEBİLİR biçimde aktarırsınız.
  *
  *   Kavram + yöntem: Pete Bankhead'in "transfer objects between images" betiği
  *   (gist c696ffb…) — kaynak hiyerarşiyi okur, PathObjectTools.transformObject(...)
@@ -36,8 +36,8 @@
  *   • Esnek (non-rigid) deformasyon için afin yetmez → Warpy sihirbazı (Ek § Warpy).
  *
  * KULLANIM:
- *   1. Kaynak (anotasyonların çizili olduğu) ve hedef slayt AYNI projede olsun.
- *   2. HEDEF slaytı açın.
+ *   1. Kaynak (anotasyonların çizili olduğu) ve hedef lam AYNI projede olsun.
+ *   2. HEDEF lamı açın.
  *   3. Bu sihirbazı çalıştırın → kaynağı seçin → (A) "Otomatik hizala + aktar"
  *      VEYA (B) matrisi yapıştırıp "Elle matrisle aktar".
  *
@@ -146,21 +146,21 @@ def parseMatrix = { String text ->
 // ── Ön kontroller ───────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Aktarımın HEDEF slaytını açın (anotasyonların kopyalanacağı slayt).")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Aktarımın HEDEF lamını açın (anotasyonların kopyalanacağı lam).")
     return
 }
 def project = QP.getProject()
 if (project == null) {
-    Dialogs.showErrorMessage("Proje açık değil", "Kaynak ve hedef slayt AYNI QuPath projesinde olmalıdır.")
+    Dialogs.showErrorMessage("Proje açık değil", "Kaynak ve hedef lam AYNI QuPath projesinde olmalıdır.")
     return
 }
 def entries = project.getImageList()
 if (entries == null || entries.isEmpty()) {
-    Dialogs.showErrorMessage("Projede slayt yok", "Hizalama aktarımı için projede en az bir kaynak slayt olmalı.")
+    Dialogs.showErrorMessage("Projede lam yok", "Hizalama aktarımı için projede en az bir kaynak lam olmalı.")
     return
 }
 if (isHeadless) {
-    println "Bu yardımcı QuPath arayüzü gerektirir (kaynak slayt seçimi + otomatik hizalama veya matris girişi)."
+    println "Bu yardımcı QuPath arayüzü gerektirir (kaynak lam seçimi + otomatik hizalama veya matris girişi)."
     return
 }
 
@@ -179,12 +179,12 @@ def applyTransferred = { List srcAnns, AffineTransform finalTf, boolean copyMeas
 def doTransferManual = { String sourceName, List<Double> m, boolean inv, boolean copyMeas, boolean lock ->
     try {
         def entry = project.getImageList().find { it.getImageName() == sourceName }
-        if (entry == null) return [ok:false, error:"Kaynak slayt bulunamadı: ${sourceName}"]
+        if (entry == null) return [ok:false, error:"Kaynak lam bulunamadı: ${sourceName}"]
         def srcHier
         try { srcHier = entry.readHierarchy() }
-        catch (Throwable t) { return [ok:false, error:"Kaynak hiyerarşi okunamadı (${t.getClass().getSimpleName()}). Kaynak slaytı projede bir kez açıp kaydetmeyi deneyin."] }
+        catch (Throwable t) { return [ok:false, error:"Kaynak hiyerarşi okunamadı (${t.getClass().getSimpleName()}). Kaynak lamı projede bir kez açıp kaydetmeyi deneyin."] }
         def srcAnns = srcHier.getRootObject().getChildObjectsAsArray().findAll { it.isAnnotation() }
-        if (srcAnns.isEmpty()) return [ok:false, error:"Kaynak slaytta üst düzey anotasyon yok: ${sourceName}"]
+        if (srcAnns.isEmpty()) return [ok:false, error:"Kaynak lamda üst düzey anotasyon yok: ${sourceName}"]
 
         // Matris sırası: dialog m00 m01 m02 / m10 m11 m12 → AffineTransform(m00,m10,m01,m11,m02,m12)
         def tf = new AffineTransform(m[0], m[3], m[1], m[4], m[2], m[5])
@@ -204,7 +204,7 @@ def doTransferAuto = { String sourceName, String typeName, String transformName,
     def A = alignerClass()
     if (A == null) return [ok:false, kind:'noclass', error:"Align eklentisi (qupath-extension-align) kurulu değil; otomatik hizalama yok. Resmî katalogdan kurun ya da (B) elle matris yolunu kullanın."]
     def entry = project.getImageList().find { it.getImageName() == sourceName }
-    if (entry == null) return [ok:false, error:"Kaynak slayt bulunamadı: ${sourceName}"]
+    if (entry == null) return [ok:false, error:"Kaynak lam bulunamadı: ${sourceName}"]
     def srcImageData = null
     try {
         def base = QP.getCurrentImageData()          // HEDEF (şu anki) = base; KAPATMA (açık görüntü)
@@ -248,7 +248,7 @@ def doTransferAuto = { String sourceName, String typeName, String transformName,
         catch (Throwable t) { return [ok:false, kind:'compute', error:"Hesaplanan dönüşümün tersi alınamadı (tekil): " + (t.getMessage() ?: '')] }
 
         def srcAnns = srcImageData.getHierarchy().getRootObject().getChildObjectsAsArray().findAll { it.isAnnotation() }
-        if (srcAnns.isEmpty()) return [ok:false, error:"Kaynak slaytta üst düzey anotasyon yok: ${sourceName}"]
+        if (srcAnns.isEmpty()) return [ok:false, error:"Kaynak lamda üst düzey anotasyon yok: ${sourceName}"]
         def count = applyTransferred(srcAnns, finalTf, copyMeas, lock)
         return [ok:true, count:count, source:sourceName, ds:ds]
     } catch (Throwable t) {
@@ -270,7 +270,7 @@ javafx.application.Platform.runLater {
         stage.setAlwaysOnTop(true)
 
         def info = new javafx.scene.control.Label(
-            'Kaynak slaytı seçin. (A) Otomatik: Align eklentisi kaynağı bu (HEDEF) slayta afin hizalar ve\n' +
+            'Kaynak lamı seçin. (A) Otomatik: Align eklentisi kaynağı bu (HEDEF) lama afin hizalar ve\n' +
             'anotasyonları aktarır. (B) Elle: [Analyze → Alignment → Interactive image alignment] penceresindeki\n' +
             '6 sayıyı yapıştırın. Her iki durumda kaynağın üst düzey anotasyonları buraya kilitli kopyalanır;\n' +
             'örtüşmeyi opaklık kaydırıcısıyla gözle doğrulayın.')
@@ -292,7 +292,7 @@ javafx.application.Platform.runLater {
         def dsField = new javafx.scene.control.TextField(); dsField.setPromptText('boş = otomatik'); dsField.setPrefColumnCount(6)
         def autoBtn = new javafx.scene.control.Button('Otomatik hizala + aktar')
         def autoNote = new javafx.scene.control.Label(
-            alignPresent ? 'INTENSITY: anotasyon gerektirmez (yoğunluk/ECC). AREA/POINT: her iki slaytta uygun anotasyon ister.' :
+            alignPresent ? 'INTENSITY: anotasyon gerektirmez (yoğunluk/ECC). AREA/POINT: her iki lamda uygun anotasyon ister.' :
             alignGuiOnly ? '⚠ Align KURULU ama bu SÜRÜM otomatik-hizalama sınıfını (AutoAligner) içermez (yayınlanmış 0.5.0 böyle — AutoAligner yalnız geliştirme/main dalında). [Analyze → Alignment → Interactive image alignment] ile hizalayıp 6 sayıyı (B)\'ye yapıştırın. Ayrıntı: "Otomatik neden kapalı?" düğmesi.'
                          : '⚠ qupath-extension-align YÜKLENMEDİ — otomatik hizalama devre dışı. "Align eklentisini kur (nasıl?)" düğmesine basın (kurulu ama tanınmıyorsa: sürüm uyumsuzluğu — düğme log/çözümü açıklar). Ya da (B) elle matrisi kullanın.')
         autoNote.setWrapText(true); autoNote.setMaxWidth(Double.MAX_VALUE)
@@ -331,11 +331,11 @@ javafx.application.Platform.runLater {
 
         autoBtn.setOnAction({
             def src = sourceBox.getValue()
-            if (!src) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Önce kaynak slaytı seçin.'); return }
+            if (!src) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Önce kaynak lamı seçin.'); return }
             Integer userDs = null
             def dsTxt = dsField.getText()?.trim()
             if (dsTxt) { try { userDs = Integer.parseInt(dsTxt); if (userDs < 1) throw new NumberFormatException() } catch (Throwable t) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Downsample pozitif tam sayı olmalı (ya da boş).'); return } }
-            autoBtn.setDisable(true); manualBtn.setDisable(true); status.setStyle(''); status.setText('Otomatik hizalanıyor… (kaynak görüntü açılıyor, büyük slayt yavaş olabilir)')
+            autoBtn.setDisable(true); manualBtn.setDisable(true); status.setStyle(''); status.setText('Otomatik hizalanıyor… (kaynak görüntü açılıyor, büyük lam yavaş olabilir)')
             def worker = new Thread({
                 def r = doTransferAuto(src, typeBox.getValue(), transformBox.getValue(), userDs, measChk.isSelected(), lockChk.isSelected())
                 javafx.application.Platform.runLater { autoBtn.setDisable(false); manualBtn.setDisable(false); showResult(r) }
@@ -344,7 +344,7 @@ javafx.application.Platform.runLater {
 
         manualBtn.setOnAction({
             def src = sourceBox.getValue()
-            if (!src) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Önce kaynak slaytı seçin.'); return }
+            if (!src) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Önce kaynak lamı seçin.'); return }
             def m = parseMatrix(matrixField.getText())
             if (m == null) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Matris tam 6 sayı olmalı (boşluk/virgül ayrılmış).'); return }
             autoBtn.setDisable(true); manualBtn.setDisable(true); status.setStyle(''); status.setText('Aktarılıyor…')
@@ -357,7 +357,7 @@ javafx.application.Platform.runLater {
         // — Yerleşim —
         def grid = new javafx.scene.layout.GridPane()
         grid.setHgap(8); grid.setVgap(8); grid.setPadding(new javafx.geometry.Insets(4))
-        grid.addRow(0, new javafx.scene.control.Label('Kaynak slayt:'), sourceBox)
+        grid.addRow(0, new javafx.scene.control.Label('Kaynak lam:'), sourceBox)
         javafx.scene.layout.GridPane.setHgrow(sourceBox, javafx.scene.layout.Priority.ALWAYS)
 
         def autoTitle = new javafx.scene.control.Label('(A) Otomatik hizala (qupath-extension-align)'); autoTitle.setStyle('-fx-font-weight: bold;')

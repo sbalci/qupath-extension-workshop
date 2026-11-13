@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   Sınıflı anotasyonlardan, TÜM slaytı kaplayan TEK bir indeksli maske PNG'si
+ *   Sınıflı anotasyonlardan, TÜM lamı kaplayan TEK bir indeksli maske PNG'si
  *   yazar (arka plan = 0, her sınıf = 1, 2, ...). Maske, bir Python derin öğrenme
  *   kütüphanesinde — özellikle TIA Toolbox `engine.run(masks=[maske.png], ...)` —
  *   çıkarımı yalnızca anote ettiğiniz bölgeyle sınırlamak için kullanılır.
@@ -17,7 +17,7 @@
  *
  * KARO DIŞA AKTARMA EKİNDEN FARKI:
  *   Karo Dışa Aktarma eki çok sayıda KÜÇÜK karo (+ tiled maske) üretir; bu betik
- *   TEK, düşük çözünürlüklü, tüm slayt maskesi üretir — TIA Toolbox'ın `masks=`
+ *   TEK, düşük çözünürlüklü, tüm lam maskesi üretir — TIA Toolbox'ın `masks=`
  *   parametresinin beklediği biçim. İki betik birbirini tamamlar, çakışmaz.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
@@ -25,13 +25,13 @@
  *   üretmez. Maskenin doğruluğu çizdiğiniz anotasyonların doğruluğuna bağlıdır.
  *
  * KULLANIM:
- *   1. Bir slayt açın; ilgi bölgesini anote edip SINIFLANDIRIN (ör. Tumor / Stroma
+ *   1. Bir lam açın; ilgi bölgesini anote edip SINIFLANDIRIN (ör. Tumor / Stroma
  *      — bkz. Tümör/Stroma modülü). Sınıfsız anotasyonlar maskeye dâhil edilmez.
  *   2. [Extensions → Atölye → Yardımcılar → TIA Toolbox için bölge maskesi]
  *   3. Maske çözünürlüğünü (µm/px) girin (düşük çözünürlük = küçük dosya).
  *
  * ÇIKTI:
- *   <proje-klasörü>/exports/masks/<slayt-slug>__<tarih>/
+ *   <proje-klasörü>/exports/masks/<lam-slug>__<tarih>/
  *     ├── <slug>_mask.png   → tek kanallı indeksli maske (TIA Toolbox masks=)
  *     ├── <slug>_mask.json  → ölçek/koordinat üst verisi
  *     └── labels.txt        → sınıf → indeks haritası
@@ -66,7 +66,7 @@ def atolyeS = { String k, String d -> (String) __wpCall('str', [String.class, St
 def exportFolder = atolyeS('atolye.exportFolder', 'exports')
 
 // ──────────────────────────────────────────────────────────────
-// Türkçe karakter + boşluk içeren slayt isimlerini güvenli slug'a çevirir
+// Türkçe karakter + boşluk içeren lam isimlerini güvenli slug'a çevirir
 // ──────────────────────────────────────────────────────────────
 def toSlug = { String s ->
     if (s == null) return "untitled"
@@ -141,7 +141,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ──────────────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir slayt açın, sonra bu betiği tekrar çalıştırın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir lam açın, sonra bu betiği tekrar çalıştırın.")
     return
 }
 def server = imageData.getServer()
@@ -156,7 +156,7 @@ if (classifiedAnns.isEmpty()) {
     Dialogs.showErrorMessage(
         "Sınıflı anotasyon yok",
         "Bölge maskesi üretmek için anotasyonların bir SINIFI (PathClass) olmalı\n" +
-        "(ör. Tumor, Stroma). Slaytta sınıflı anotasyon bulunamadı.\n\n" +
+        "(ör. Tumor, Stroma). Lamda sınıflı anotasyon bulunamadı.\n\n" +
         "Çözüm: anotasyonları sınıflandırın (Tümör/Stroma modülü)."
     )
     return

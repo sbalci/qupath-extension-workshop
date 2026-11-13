@@ -14,13 +14,13 @@
  *   • DAB kanalının piksel-düzeyinde optik yoğunluğunu ve bunun integralini
  *     (IOD) ölçer — bu bir ORAN/ALAN ölçümüdür, klinik skor veya yorum DEĞİL.
  *   • IOD kalibrasyon bağımlıdır: ışık kaynağı, tarayıcı, boya partisi,
- *     renk ayrışma matriksi slayttan slayta değişir; değerleri yalnızca
+ *     renk ayrışma matriksi lamdan lama değişir; değerleri yalnızca
  *     aynı koşullar altında karşılaştırın.
  *   • Piksel sınıflandırıcı çıktısının hiyerarşide bulunması GEREKİR
  *     (ör. Tümör/Stroma modülü → sınıflandırıcı çalıştırılmış + deteksiyonlar var).
  *
  * KULLANIM:
- *   1. DAB-İHK slaytı açın, Image type → "Brightfield (H-DAB)".
+ *   1. DAB-İHK lamı açın, Image type → "Brightfield (H-DAB)".
  *   2. Ölçmek istediğiniz bölgeyi alan anotasyonu olarak çizin ve SEÇİN.
  *   3. Tümör/Stroma modülü piksel sınıflandırıcısını önce çalıştırın (sınıflı deteksiyonlar
  *      hiyerarşide bulunmalı), VEYA sadece "Pozitif" sınıf adıyla devam edin.
@@ -119,7 +119,7 @@ int DOWNSAMPLE = 2   // örnekleme için tam sayı ölçek düşürme (2x → ~%
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    if (isHeadless) println "HATA: Görüntü açık değil." else Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir DAB-İHK slaytı açın.")
+    if (isHeadless) println "HATA: Görüntü açık değil." else Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir DAB-İHK lamı açın.")
     return
 }
 
@@ -128,7 +128,7 @@ def cal = server.getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0) || !(ph > 0)) {
-    def msg = "Slaytta piksel boyutu (µm) tanımlı değil; alan µm² olarak hesaplanamaz.\n\nKalibrasyon için: Extensions → Atölye → Yardımcılar → Kalibrasyon."
+    def msg = "Lamda piksel boyutu (µm) tanımlı değil; alan µm² olarak hesaplanamaz.\n\nKalibrasyon için: Extensions → Atölye → Yardımcılar → Kalibrasyon."
     if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage("Kalibrasyon yok", msg)
     return
 }
@@ -175,7 +175,7 @@ def dabStain = stains.getStain(2)
 if (dabStain == null || !((dabStain.getName() ?: '').toLowerCase(java.util.Locale.ROOT).contains('dab'))) {
     def msg = "2. boya vektörü DAB değil (bulunan: '${dabStain?.getName() ?: '(yok)'}').\n\n" +
               "Image type → 'Brightfield (H-DAB)' olduğundan ve boya vektörlerinin doğru\n" +
-              "ayarlandığından emin olun (Boya Normalizasyonu eki · boya vektörleri sihirbazı)."
+              "ayarlandığından emin olun (Boyama normalizasyonu eki · boya vektörleri sihirbazı)."
     if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage("DAB boyası bulunamadı", msg)
     return
 }

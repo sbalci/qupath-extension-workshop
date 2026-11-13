@@ -26,7 +26,7 @@
  *
  * KULLANIM:
  *   [Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller →
- *    Python ve yapay zekâ ajanı köprü denetimi] (açık slayt gerekmez)
+ *    Python ve yapay zekâ ajanı köprü denetimi] (açık lam gerekmez)
  *   ya da [Automate → Project scripts → bu betik].
  *
  * ÇIKTI:
@@ -313,7 +313,7 @@ if (imageData == null) {
     body << "   Gömülü görüntüler: ${associated.isEmpty() ? '(yok)' : associated.join(', ')}\n"
     if (!identifying.isEmpty()) {
         body << "   ⚠ Etiket/makro görüntüsü var; hasta bilgisi taşıyabilir.\n"
-        warnings << "Slaytta etiket/makro görüntüsü var."
+        warnings << "Lamda etiket/makro görüntüsü var."
     }
     body << "   Kesin denetim için: [Yardımcılar → Klinik ve kohort → WSI anonimleştirme sihirbazı → Denetle].\n"
 }

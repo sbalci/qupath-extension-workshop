@@ -2,23 +2,23 @@
  * Yardımcı - Görüntü Tipi Ayarla
  * --------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
- * QuPath'in **Image type** ayarını tek tıkla değiştirir — açık slayt için ya da
- * projedeki TÜM slaytlar için. Doğru image type, sonraki tüm boya analizi
+ * QuPath'in **Image type** ayarını tek tıkla değiştirir — açık lam için ya da
+ * projedeki TÜM lamlar için. Doğru image type, sonraki tüm boya analizi
  * modüllerinin (Hücre Tespiti'nden Tümör içi Ki-67'ye kadar) düzgün çalışması için zorunludur:
- *   • H&E slaytları → BRIGHTFIELD_H_E
- *   • İHK / DAB slaytları → BRIGHTFIELD_H_DAB
+ *   • H&E lamları → BRIGHTFIELD_H_E
+ *   • İHK / DAB lamları → BRIGHTFIELD_H_DAB
  *   • Diğer brightfield → BRIGHTFIELD_OTHER
  *   • Floresan → FLUORESCENCE
  *   • Other → OTHER (bilinmeyen / belirsiz)
  *
  * NE YAPAR:
  *   1. Görüntü tipi seçici dialog (radio button)
- *   2. Kapsam seçici (yalnızca aktif slayt / projedeki tüm slaytlar)
+ *   2. Kapsam seçici (yalnızca aktif lam / projedeki tüm lamlar)
  *   3. Toplu uygulama + ImageData kaydetme
- *   4. Sonuç penceresinde hangi slaytların güncellendiği listelenir
+ *   4. Sonuç penceresinde hangi lamların güncellendiği listelenir
  *
  * NEDEN ÖNEMLİ:
- *   "Brightfield (other)" veya "Fluorescence" olarak ayarlı bir İHK slaytında
+ *   "Brightfield (other)" veya "Fluorescence" olarak ayarlı bir İHK lamında
  *   Positive Cell Detection "Hematoxylin OD" kanalını bulamaz ve
  *   "Unable to set parameter detectionImageBrightfield" hatası verir.
  *   Bu betik o adımdan önce hızlıca toplu düzeltme yapar.
@@ -37,7 +37,7 @@ def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 // Görüntü tipi etiketleri ve enum karşılıkları
 // ──────────────────────────────────────────────────────────────
 def TYPE_OPTIONS = [
-    ["BRIGHTFIELD_H_DAB",  "Brightfield (H-DAB) — İHK / DAB slaytları (Nükleer Boya, ER/PR H-score, Membran Boya, Sitoplazmik Boya, Tümör içi Ki-67 modülleri)"],
+    ["BRIGHTFIELD_H_DAB",  "Brightfield (H-DAB) — İHK / DAB lamları (Nükleer Boya, ER/PR H-score, Membran Boya, Sitoplazmik Boya, Tümör içi Ki-67 modülleri)"],
     ["BRIGHTFIELD_H_E",    "Brightfield (H&E) — Hematoksilen-Eozin (Hücre Tespiti, Tümör/Stroma modülleri)"],
     ["BRIGHTFIELD_OTHER",  "Brightfield (other) — diğer brightfield boyamaları"],
     ["FLUORESCENCE",       "Fluorescence — floresan / immünofloresan"],
@@ -45,8 +45,8 @@ def TYPE_OPTIONS = [
 ]
 
 def SCOPE_OPTIONS = [
-    ["current", "Yalnızca AÇIK slayt"],
-    ["project", "Projedeki TÜM slaytlar (toplu)"]
+    ["current", "Yalnızca AÇIK lam"],
+    ["project", "Projedeki TÜM lamlar (toplu)"]
 ]
 
 // ──────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ def SCOPE_OPTIONS = [
 def showSelectionDialog = { ->
     if (isHeadless) {
         println "=== Görüntü tipi ayarla (headless) ==="
-        println "Varsayılan: BRIGHTFIELD_H_DAB, yalnızca açık slayt"
+        println "Varsayılan: BRIGHTFIELD_H_DAB, yalnızca açık lam"
         return [type: "BRIGHTFIELD_H_DAB", scope: "current"]
     }
     def latch = new java.util.concurrent.CountDownLatch(1)
@@ -232,7 +232,7 @@ if (targetType == null) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// 2) Uygulama — açık slayt VEYA tüm proje
+// 2) Uygulama — açık lam VEYA tüm proje
 // ──────────────────────────────────────────────────────────────
 def t0 = System.currentTimeMillis()
 def updated = []
@@ -241,12 +241,12 @@ def skipped = []
 if (scope == "current") {
     def imageData = QP.getCurrentImageData()
     if (imageData == null) {
-        Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir slayt açın.")
+        Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir lam açın.")
         return
     }
     def previous = imageData.getImageType()?.toString() ?: "—"
     if (imageData.getImageType() == targetType) {
-        skipped << "Açık slayt (zaten ${targetTypeName})"
+        skipped << "Açık lam (zaten ${targetTypeName})"
     } else {
         imageData.setImageType(targetType)
         // Açık görüntüde değişikliği diske de yansıt
@@ -258,7 +258,7 @@ if (scope == "current") {
         } catch (Throwable t) {
             println "⚠ ImageData kaydedilemedi (proje açık değil mi?): ${t.message}"
         }
-        updated << "Açık slayt: ${previous} → ${targetTypeName}"
+        updated << "Açık lam: ${previous} → ${targetTypeName}"
     }
 } else { // "project"
     def project = QP.getProject()
@@ -292,7 +292,7 @@ def elapsed = (System.currentTimeMillis() - t0) / 1000.0
 // ──────────────────────────────────────────────────────────────
 // 3) Sonuç penceresi
 // ──────────────────────────────────────────────────────────────
-def scopeLabel = scope == "current" ? "Yalnızca açık slayt" : "Projedeki tüm slaytlar"
+def scopeLabel = scope == "current" ? "Yalnızca açık lam" : "Projedeki tüm lamlar"
 def summary = new StringBuilder()
 summary << String.format(java.util.Locale.US, "Görüntü tipi → %s%n", targetTypeName)
 summary << String.format(java.util.Locale.US, "Kapsam        : %s%n", scopeLabel)

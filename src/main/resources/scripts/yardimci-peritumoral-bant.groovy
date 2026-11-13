@@ -31,7 +31,7 @@
  *   bir bant üretir; "Her iki yön" seçeneği sınırı saran bandı tek adımda verir.
  *
  * KULLANIM:
- *   1. Kalibre (µm/px) bir slayt açın; kaynak yapıyı anotasyon olarak çizip SEÇİN
+ *   1. Kalibre (µm/px) bir lam açın; kaynak yapıyı anotasyon olarak çizip SEÇİN
  *      (birden çok da olabilir)
  *   2. [Extensions → Atölye → Yardımcılar → Uzamsal analiz → Peritümöral bant (halka)]
  *      (ya da [Automate → Project scripts → bu betik])
@@ -139,7 +139,7 @@ double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 double avgUm = cal.getAveragedPixelSizeMicrons()
 if (!(pw > 0) || !(ph > 0) || !(avgUm > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok", "Slaytta piksel boyutu (µm) tanımlı değil; bant µm cinsinden üretilemez." +
+    Dialogs.showErrorMessage("Kalibrasyon yok", "Lamda piksel boyutu (µm) tanımlı değil; bant µm cinsinden üretilemez." +
         "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).")
     return
 }

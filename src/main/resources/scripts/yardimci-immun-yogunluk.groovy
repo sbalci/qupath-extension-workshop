@@ -14,7 +14,7 @@
  *     pozitifliğini sayar.
  *
  * KULLANIM:
- *   1. DAB-İHK slaytını açın, Image type → "Brightfield (H-DAB)"
+ *   1. DAB-İHK lamını açın, Image type → "Brightfield (H-DAB)"
  *   2. Ölçmek istediğiniz alanı anotasyon olarak çizin ve SEÇİN
  *      (ölçülecek anotasyonlar açıkça seçilmelidir)
  *   3. [Automate → Project scripts → bu betik]
@@ -43,7 +43,7 @@ def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 // ──────────────────────────────────────────────────────────────
 // Boya vektörü önerisi + tek tıklamalı tahmin (tüm DAB-OD modüllerinde aynı blok).
 //   • Aktif vektörler QuPath VARSAYILANI ise uyarır: kantitatif ölçümden önce bu
-//     slayttan tahmin etmeyi önerir (eşikler mutlak DAB OD; yanlış vektör skoru kaydırır).
+//     lamdan tahmin etmeyi önerir (eşikler mutlak DAB OD; yanlış vektör skoru kaydırır).
 //   • "Tamam" → SEÇİLİ alan anotasyonundan tahmin edip uygular (Boya vektörleri
 //     sihirbazı ile aynı yöntem). "İptal" → yine de devam. Kalibre görünüyorsa sessiz geçer.
 // ──────────────────────────────────────────────────────────────
@@ -71,9 +71,9 @@ def suggestStainVectors = { ->
     if (!svS2.contains('dab')) return
     boolean svDefault = svClose(svVecOf(svStains.getStain(1)), SV_DEF_HEMA) &&
                         svClose(svVecOf(svStains.getStain(2)), SV_DEF_DAB)
-    if (!svDefault) { println '✓ Boya vektörleri bu slayttan tahmin/kalibre edilmiş görünüyor.'; return }
+    if (!svDefault) { println '✓ Boya vektörleri bu lamdan tahmin/kalibre edilmiş görünüyor.'; return }
     def svMsg =
-        '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu slayttan tahmin EDİLMEMİŞ.\n\n' +
+        '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu lamdan tahmin EDİLMEMİŞ.\n\n' +
         'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n' +
         'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n' +
         'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n' +
@@ -182,7 +182,7 @@ String summaryName             = "İmmün Yoğunluk Özet"
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir DAB-İHK slaytı açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir DAB-İHK lamı açın.")
     return
 }
 
@@ -190,7 +190,7 @@ def cal = imageData.getServer().getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0) || !(ph > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok", "Slaytta piksel boyutu (µm) tanımlı değil; yoğunluk hesaplanamaz." +
+    Dialogs.showErrorMessage("Kalibrasyon yok", "Lamda piksel boyutu (µm) tanımlı değil; yoğunluk hesaplanamaz." +
         "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).")
     return
 }

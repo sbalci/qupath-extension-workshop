@@ -1,22 +1,22 @@
 /**
- * Yardımcı - TIA Toolbox boya normalizasyonu / doku maskesi sihirbazı (tek pencere köprü)
+ * Yardımcı - TIA Toolbox boyama normalizasyonu / doku maskesi sihirbazı (tek pencere köprü)
  * --------------------------------------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
  *   Warwick TIA Centre'ın **TIA Toolbox** kütüphanesinin iki "temel işlevini" tek
  *   pencereden çalıştırır (Python köprüsü: tiatoolbox_bridge.py):
- *     1. Boya normalizasyonu — bölge önizleme : seçili alan anotasyonunu tek PNG
+ *     1. Boyama normalizasyonu — bölge önizleme : seçili alan anotasyonunu tek PNG
  *        olarak dışa aktarır → Macenko/Vahadane/Reinhard ile bir referans H&E
  *        görünümüne eşitler → orijinal | normalize yan-yana montaj üretir (KK).
- *     2. Boya normalizasyonu — karo grubu      : alan anotasyonlarının karolarını
+ *     2. Boyama normalizasyonu — karo grubu      : alan anotasyonlarının karolarını
  *        dışa aktarır → hepsini normalize eder → <çalışma>/normalized/ klasörüne
  *        yazar (downstream ML için ön-işleme; çıktı GÖRÜNTÜdür, QuPath nesnesi değil).
  *     3. Doku maskesi (Otsu / Morphological)   : küçük-çözünürlüklü bir küçükresim
  *        dışa aktarır → doku/arka plan maskesi üretir → maskeyi AÇIK SLAYDA hizalı
  *        "Doku" anotasyonuna çevirir (yerinde, tek tık — raster maske içe-aktarım eşi).
  *
- *   Derin öğrenme/torch GEREKMEZ; boya normalizasyonu + doku maskesi saf numpy/opencv.
+ *   Derin öğrenme/torch GEREKMEZ; boyama normalizasyonu + doku maskesi saf numpy/opencv.
  *   QuPath color *deconvolution* yapar ama boya *normalizasyonu* YAPMAZ — bu, bu
  *   sihirbazın doldurduğu boşluktur (tarayıcıdan-tarayıcıya, ör. GT450 ↔ AT2, renk farkı).
  *
@@ -26,15 +26,15 @@
  *   (BCSS / KongNet / IDARS) için: Ek — TIA Toolbox.
  *
  * NE ÜRETİR (ve ne ÜRETMEZ):
- *   • Boya normalizasyonu: disktedeki normalize görüntü dosyaları (QuPath nesnesi değil).
+ *   • Boyama normalizasyonu: disktedeki normalize görüntü dosyaları (QuPath nesnesi değil).
  *   • Doku maskesi: "Doku" sınıflı, kilitli anotasyon + alan (mm²) ölçümü.
  *   • Hiçbir klinik eşik/alt-tip/grade/yorum üretmez. Sonuçları görsel doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki).
  *
  * KULLANIM:
  *   1. TIA Toolbox Python ortamını kurun (venv) — Ek → TIA Toolbox § Kurulum ya da
  *      handson/python/tiatoolbox/README.md. (pip install tiatoolbox numpy pillow)
- *   2. Bir slayt açın; (normalize için) bölge/alan anotasyonu çizin/seçin.
- *   3. [Extensions → Atölye → Yardımcılar → TIA Toolbox boya normalizasyonu / doku maskesi sihirbazı]
+ *   2. Bir lam açın; (normalize için) bölge/alan anotasyonu çizin/seçin.
+ *   3. [Extensions → Atölye → Yardımcılar → TIA Toolbox boyama normalizasyonu / doku maskesi sihirbazı]
  *   4. İlk açılışta yapılandırın: python.exe, tiatoolbox_bridge.py, (ops.) referans PNG.
  *   5. Mod + yöntem seçip "Çalıştır" → çıktı üretilir / içe aktarılır.
  *
@@ -66,8 +66,8 @@ def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-
 def NORM_METHODS = ['macenko', 'vahadane', 'reinhard']
 def MASK_METHODS = ['otsu', 'morphological']
 def MODE_LABELS = [
-    'normalize-region': 'Boya normalizasyonu — bölge önizleme',
-    'normalize-tiles' : 'Boya normalizasyonu — karo grubu',
+    'normalize-region': 'Boyama normalizasyonu — bölge önizleme',
+    'normalize-tiles' : 'Boyama normalizasyonu — karo grubu',
     'tissue-mask'     : 'Doku maskesi (Otsu / Morphological)'
 ]
 def modeLabelToKey = { String lbl -> def k = MODE_LABELS.find { it.value == lbl }?.key; return (k ?: 'normalize-region') }
@@ -147,7 +147,7 @@ def configComplete = { cfg -> configMissing(cfg).isEmpty() }
 def parseIntOr = { s, int d -> try { return Integer.parseInt((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
 def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim().replace(',', '.')) } catch (Throwable t) { return d } }
 
-// ── Çalışma dizinini çöz (proje dizini → slayt klasörü → geçici) ────────────
+// ── Çalışma dizinini çöz (proje dizini → lam klasörü → geçici) ────────────
 def resolveWorkDir = { cfg, imageData ->
     def wd = cfg.workDir?.trim()
     if (wd) return new File(wd)
@@ -377,7 +377,7 @@ def importTissueMask = { File workDir, imageData, double downsample ->
 // ── Özet metinleri ────────────────────────────────────────────────────────────
 def normRegionResultText = { File workDir, cfg, exp ->
     def sb = new StringBuilder()
-    sb << "BOYA NORMALİZASYONU — BÖLGE ÖNİZLEME\n"
+    sb << "Boyama normalizasyonU — BÖLGE ÖNİZLEME\n"
     sb << "════════════════════════════════════\n\n"
     sb << "Yöntem    : " << (cfg.normMethod ?: 'macenko') << "\n"
     sb << "Referans  : " << (cfg.useBuiltin == 'true' ? 'TIA Toolbox yerleşik (stain_norm_target)' : (cfg.reference?.trim() ?: '(yok)')) << "\n"
@@ -392,7 +392,7 @@ def normRegionResultText = { File workDir, cfg, exp ->
 }
 def normTilesResultText = { File workDir, cfg, exp, int normalized ->
     def sb = new StringBuilder()
-    sb << "BOYA NORMALİZASYONU — KARO GRUBU\n"
+    sb << "Boyama normalizasyonU — KARO GRUBU\n"
     sb << "═════════════════════════════════\n\n"
     sb << "Yöntem    : " << (cfg.normMethod ?: 'macenko') << "\n"
     sb << "Referans  : " << (cfg.useBuiltin == 'true' ? 'TIA Toolbox yerleşik (stain_norm_target)' : (cfg.reference?.trim() ?: 'ilk dolu karo')) << "\n"
@@ -415,7 +415,7 @@ def tissueResultText = { File workDir, cfg, exp, imp ->
         sb << String.format(java.util.Locale.US, "Doku alanı: %.3f mm²%n", (double) imp.mm2)
     else
         sb << "Doku alanı: (görüntü kalibre değil — mm² verilemedi)\n"
-    sb << "\nMaske açık slayta hizalı 'Doku' anotasyonu olarak eklendi.\n"
+    sb << "\nMaske açık lama hizalı 'Doku' anotasyonu olarak eklendi.\n"
     sb << "Maske bir tahmindir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki). Klinik yorum üretilmez.\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
@@ -558,7 +558,7 @@ def startRun = {
                            '--output-dir', workDir.getAbsolutePath(),
                            '--method', (cfg.normMethod ?: 'macenko')]
                 addRefArgs(cmd, cfg, true)
-                javafx.application.Platform.runLater { runPhaseRef.set('Boya normalizasyonu (2/2)…'); render() }
+                javafx.application.Platform.runLater { runPhaseRef.set('Boyama normalizasyonu (2/2)…'); render() }
                 def r = runPython(cmd, appendLine)
                 if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set('Normalize başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return }
                 int normalized = exp.nTiles
@@ -576,7 +576,7 @@ def startRun = {
                            '--output-dir', workDir.getAbsolutePath(),
                            '--method', (cfg.normMethod ?: 'macenko')]
                 addRefArgs(cmd, cfg, false)
-                javafx.application.Platform.runLater { runPhaseRef.set('Boya normalizasyonu (2/2)…'); render() }
+                javafx.application.Platform.runLater { runPhaseRef.set('Boyama normalizasyonu (2/2)…'); render() }
                 def r = runPython(cmd, appendLine)
                 if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set('Normalize başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return }
                 def montage = new File(workDir, 'montage.png')
@@ -622,7 +622,7 @@ def openUrl = { String u -> try { qupath.lib.gui.QuPathGUI.openInBrowser(u) } ca
 // sürerken ekran değiştirilmez; yalnız pencere öne gelir.
 def envReturnHook = [
     envId   : 'tiatoolbox-stain',
-    wizard  : 'TIA Toolbox boya normalizasyonu / doku maskesi',
+    wizard  : 'TIA Toolbox boyama normalizasyonu / doku maskesi',
     onReturn: { reopen ->
         javafx.application.Platform.runLater {
             if (stage == null || (!stage.isShowing() && !reopen)) return
@@ -719,12 +719,12 @@ render = { ->
             (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
             '\n\nKOLAY KURULUM:\n' +
             '  1) Python ortamı → [Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller →\n' +
-            '     Atölye Python ortam yöneticisi] penceresinde "TIA Toolbox — boya normalizasyonu / doku maskesi"\n' +
+            '     Atölye Python ortam yöneticisi] penceresinde "TIA Toolbox — boyama normalizasyonu / doku maskesi"\n' +
             '     ortamını tek tıkla kurun (hafif; torch gerekmez). Model ağırlıklarını TIA Toolbox ilk kullanımda kendi indirir.\n' +
             '  2) Köprü betiği → handson/python/tiatoolbox/tiatoolbox_bridge.py (repoda hazır gelir).\n' +
             'Sonra bu pencerede "Yapılandır ▶" ile python.exe ve köprü yolunu seçin.')
         actions.add(navButton('▶ Python ortamını kur', { launchEnvManager() },
-            'Atölye Python ortam yöneticisini açar → "TIA Toolbox — boya normalizasyonu / doku maskesi" ortamını tek tıkla kurun'))
+            'Atölye Python ortam yöneticisini açar → "TIA Toolbox — boyama normalizasyonu / doku maskesi" ortamını tek tıkla kurun'))
         actions.add(navButton('📄 Belge', { openUrl('https://atolye.patoloji.dev/ekler/tiatoolbox.html') },
             'Ekler → TIA Toolbox kurulum sayfasını tarayıcıda açar'))
         actions.add(navButton('Kapat', { stage.close() }))
@@ -783,7 +783,7 @@ render = { ->
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce bir slayt açın (boya normalizasyonu için bölge/alan anotasyonu çizin), sonra "⟳ Yenile".')
+            addGuidance('Önce bir lam açın (boyama normalizasyonu için bölge/alan anotasyonu çizin), sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
@@ -791,7 +791,7 @@ render = { ->
             def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() }
             title.setText('TIA Toolbox — hazır')
             def sb = new StringBuilder()
-            sb << "Slayt          : " << imageNameOf(imageData) << "\n"
+            sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
             sb << String.format(java.util.Locale.US, "Alan anotasyonu: %,d%n", anns.size())
             addMonoArea(sb.toString())
@@ -816,7 +816,7 @@ render = { ->
                 r.getChildren().addAll(new javafx.scene.control.Label('Doku maske yöntemi:'), maskChoice,
                     new javafx.scene.control.Label('   downsample: ' + (cfg.maskDownsample ?: '16.0')))
                 center.getChildren().add(r)
-                addGuidance('Doku maskesi açık slaytın TAMAMINDAN üretilir ve hizalı "Doku" anotasyonu olarak içe aktarılır. Anotasyon gerekmez.')
+                addGuidance('Doku maskesi açık lamın TAMAMINDAN üretilir ve hizalı "Doku" anotasyonu olarak içe aktarılır. Anotasyon gerekmez.')
             } else {
                 def normChoice = makeNormChoice()
                 normChoice.valueProperty().addListener({ obs, o, n ->
@@ -840,7 +840,7 @@ render = { ->
             def runLabel = isTissue ? 'Doku maskesi çıkar ▶' : 'Normalize et ▶'
             def runBtn = navButton(runLabel, { startRun() }, 'Seçili modu çalıştırır')
             runBtn.setDisable(!canRun)
-            if (!canRun && needAnn && anns.size() < 1) addWarnLabel('⚠ Boya normalizasyonu için en az 1 alan anotasyonu gerekir.')
+            if (!canRun && needAnn && anns.size() < 1) addWarnLabel('⚠ Boyama normalizasyonu için en az 1 alan anotasyonu gerekir.')
             actions.add(runBtn)
         }
     } else if (cur == 'RUN_RUNNING') {
@@ -899,12 +899,12 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('TIA Toolbox boya normalizasyonu / doku maskesi sihirbazı')
+        stage.setTitle('TIA Toolbox boyama normalizasyonu / doku maskesi sihirbazı')
         stage.setAlwaysOnTop(alwaysTop.get())
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
-println "✓ TIA Toolbox boya normalizasyonu / doku maskesi sihirbazı açıldı."
+println "✓ TIA Toolbox boyama normalizasyonu / doku maskesi sihirbazı açıldı."

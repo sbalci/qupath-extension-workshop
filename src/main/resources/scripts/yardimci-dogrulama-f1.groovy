@@ -27,10 +27,10 @@
  *   • Tespit/sınıflandırma YAPMAZ. Önce bir tespit adımı çalıştırın; referansı
  *     elle işaretleyin (Nokta aracı ya da küçük poligonlar, ayrı bir sınıfla).
  *   • Küçük bir doğrulama yaması içindir (onlarca – birkaç yüz nesne); tüm
- *     slaytta ÇALIŞTIRMAYIN (eşleştirme nesne sayısının karesiyle büyür).
+ *     lamda ÇALIŞTIRMAYIN (eşleştirme nesne sayısının karesiyle büyür).
  *
  * KULLANIM:
- *   1. Tespit içeren bir slayt açın ve bir tespit adımı çalıştırın (Hücre tespiti modülü vb.)
+ *   1. Tespit içeren bir lam açın ve bir tespit adımı çalıştırın (Hücre tespiti modülü vb.)
  *   2. Küçük bir bölge anotasyonu çizin = "doğrulama bölgesi"
  *   3. O bölgenin içindeki gerçek çekirdekleri ELLE işaretleyin: ayrı bir sınıf
  *      verin (ör. "Altın standart"). Nokta aracı ya da küçük poligon kullanın.
@@ -401,7 +401,7 @@ def buildOptions = { inPatch ->
 if (isHeadless) {
     def ctx = gatherContext()
     if (!ctx.ok) {
-        if (ctx.reason == 'NO_IMAGE') println "Önce bir slayt açın."
+        if (ctx.reason == 'NO_IMAGE') println "Önce bir lam açın."
         else println "Önce bir doğrulama bölgesi anotasyonu çizip SEÇİN."
         return
     }
@@ -520,12 +520,12 @@ render = { ->
         def ctx = gatherContext()
         if (!ctx.ok) {
             if (ctx.reason == 'NO_IMAGE') {
-                addGuidance('Önce bir slayt açın, sonra "⟳ Yenile".')
+                addGuidance('Önce bir lam açın, sonra "⟳ Yenile".')
             } else {
                 addGuidance(
                     'Önce bir DOĞRULAMA BÖLGESİ seçin.\n\n' +
                     'Yapın:\n' +
-                    '  1. Tespit içeren bir slaytta küçük bir bölge anotasyonu çizin\n' +
+                    '  1. Tespit içeren bir lamda küçük bir bölge anotasyonu çizin\n' +
                     '  2. O bölge içindeki gerçek çekirdekleri ELLE işaretleyin; ayrı bir\n' +
                     '     sınıf verin (ör. "Altın standart"). Nokta aracı ya da küçük poligon.\n' +
                     '  3. Doğrulama bölgesi anotasyonunu SEÇİN\n' +
@@ -635,7 +635,7 @@ render = { ->
         actions.add(navButton('Kapat', { stage.close() }))
     } else if (cur == 'NO_IMAGE') {
         title.setText('Görüntü açık değil')
-        addGuidance('Önce bir slayt açın, sonra "◀ Forma dön".')
+        addGuidance('Önce bir lam açın, sonra "◀ Forma dön".')
         actions.add(navButton('◀ Forma dön', { step.set('FORM'); render() }))
         actions.add(navButton('Kapat', { stage.close() }))
     } else if (cur == 'NO_SELECTION') {
@@ -705,7 +705,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ Tespit doğrulama sihirbazı açıldı (altın standart ↔ tespit; F1 / IoU)."

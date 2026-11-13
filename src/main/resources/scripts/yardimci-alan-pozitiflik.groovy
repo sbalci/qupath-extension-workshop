@@ -23,7 +23,7 @@
  *   Ayrıntı: Alan-bazlı pozitiflik eki.
  *
  * KULLANIM:
- *   1. DAB-İHK slaytını açın, Image type → "Brightfield (H-DAB)"
+ *   1. DAB-İHK lamını açın, Image type → "Brightfield (H-DAB)"
  *   2. Bölgeyi anotasyon olarak çizin ve SEÇİN (ölçülecek anotasyonlar açıkça seçilmelidir)
  *   3. [Automate → Project scripts → bu betik]
  *
@@ -113,7 +113,7 @@ String summaryName    = "Alan-pozitiflik Özet"
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir DAB-İHK slaytı açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir DAB-İHK lamı açın.")
     return
 }
 

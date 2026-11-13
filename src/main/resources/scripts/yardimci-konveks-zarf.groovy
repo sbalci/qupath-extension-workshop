@@ -21,7 +21,7 @@
  *   JTS `Geometry.convexHull()` API'siyle hesaplanır.
  *
  * KULLANIM:
- *   1. Kalibre (µm/px) bir slayt açın; ilgilenilen nesneleri (ör. pozitif hücreler)
+ *   1. Kalibre (µm/px) bir lam açın; ilgilenilen nesneleri (ör. pozitif hücreler)
  *      tespit edin/sınıflayın
  *   2. Zarfını istediğiniz nesneleri SEÇİN — ya da bir sınıf üzerinden çalıştırın
  *   3. [Extensions → Atölye → Yardımcılar → Uzamsal analiz → Dış bükey zarf (convex hull)]
@@ -114,7 +114,7 @@ String SEL_OPT    = "▸ Seçili nesneler"
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce nesneleri (hücre tespiti/anotasyon) olan bir slayt açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce nesneleri (hücre tespiti/anotasyon) olan bir lam açın.")
     return
 }
 def cal = imageData.getServer().getPixelCalibration()

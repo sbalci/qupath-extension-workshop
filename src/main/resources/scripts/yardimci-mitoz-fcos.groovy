@@ -32,7 +32,7 @@
  *   yöneticisi → "MIDOG25 FCOS — mitoz dedektörü".
  *
  * KULLANIM:
- *   1. H&E slaytını açın; piksel boyutu (µm/px) kalibre olsun.
+ *   1. H&E lamını açın; piksel boyutu (µm/px) kalibre olsun.
  *   2. İlgi ALANINI anotasyon olarak çizin ve SEÇİN (ör. 10 BBA sıcak-nokta).
  *   3. Bu modülü çalıştırın → "Bölgede çalıştır".
  *
@@ -97,7 +97,7 @@ int    ROI_WARN_PX = 12000       // bu boyutu aşan ROI için bellek uyarısı
 // "tüm alan anotasyonları" geri dönüşlerine girmez), SINIFSIZ (sınıf-tabanlı sayımlara
 // girmez) ve kilitli. Bağ: noktanın metadata'sı = dedektör, halkanınki = noktanın ID'si.
 double MARKER_RING_UM = 8.0      // halka yarıçapı (µm) — tipik mitoz figürünü içine alır
-double MARKER_RING_PX = 32.0     // kalibrasyonsuz slaytta yarıçap (px; ≈ 8 µm @ 0.25 µm/px)
+double MARKER_RING_PX = 32.0     // kalibrasyonsuz lamda yarıçap (px; ≈ 8 µm @ 0.25 µm/px)
 int MARKER_RING_VERTICES = 64
 def META_SOURCE = 'atolye.mitoz.kaynak'        // noktada: hangi dedektör (yeniden çalıştırmada temizlik)
 def META_POINT  = 'atolye.mitoz.nokta'         // halkada: bağlı noktanın ID'si
@@ -273,9 +273,9 @@ def calibrationInfo = { imageData ->
 def resampleNote = { double mpp, double targetMpp ->
     if (!Double.isFinite(mpp) || mpp <= 0) return ''
     double ratio = targetMpp / mpp
-    if (Math.abs(ratio - 1.0) < 0.05) return 'slayt zaten ~hedef çözünürlükte — yeniden örnekleme yok.'
-    if (ratio > 1.0) return String.format(java.util.Locale.US, 'slaytınız daha yüksek çözünürlükte; ROI ~%.1f× AŞAĞI örneklenir (normal).', ratio)
-    return 'slaytınız daha düşük çözünürlükte; hedef çözünürlüğe çıkılamaz (native beslenir; mitoz kaçabilir).'
+    if (Math.abs(ratio - 1.0) < 0.05) return 'lam zaten ~hedef çözünürlükte — yeniden örnekleme yok.'
+    if (ratio > 1.0) return String.format(java.util.Locale.US, 'lamınız daha yüksek çözünürlükte; ROI ~%.1f× AŞAĞI örneklenir (normal).', ratio)
+    return 'lamınız daha düşük çözünürlükte; hedef çözünürlüğe çıkılamaz (native beslenir; mitoz kaçabilir).'
 }
 
 // Seçili (yoksa tüm) alan anotasyonları — mitozu YALNIZ bunların içinde sayarız.
@@ -417,7 +417,7 @@ def resultText = { imageData, cfg, imp, dens, cal ->
     def sb = new StringBuilder()
     sb << "FCOS (MIDOG25 Track-1) — BÖLGEDE MİTOZ\n"
     sb << "══════════════════════════════════════\n\n"
-    sb << "Slayt   : " << imageNameOf(imageData) << "\n"
+    sb << "Lam   : " << imageNameOf(imageData) << "\n"
     sb << "Model   : " << MODEL << "\n"
     sb << "Cihaz   : " << (cfg.device ?: 'cuda') << "\n"
     sb << String.format(java.util.Locale.US, "Tespit  : BÖLGE İÇİ %,d%n", (int)(imp?.inside ?: 0))
@@ -881,7 +881,7 @@ render = { ->
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce bir H&E slaytı açın, ilgi ALANINI çizip seçin, sonra "⟳ Yenile".')
+            addGuidance('Önce bir H&E lamı açın, ilgi ALANINI çizip seçin, sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
@@ -894,7 +894,7 @@ render = { ->
             boolean isHE = typeName.contains('BRIGHTFIELD_H_E')
             title.setText('Mitoz tespiti — FCOS MIDOG25 (bölgede)')
             def sb = new StringBuilder()
-            sb << "Slayt          : " << imageNameOf(imageData) << "\n"
+            sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Model          : " << MODEL << "\n"
             sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
             sb << "Cihaz          : " << (cfg.device ?: 'cuda') << "\n"
@@ -976,7 +976,7 @@ javafx.application.Platform.runLater {
         stage.setAlwaysOnTop(alwaysTop.get())
         render(); stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ Mitoz tespiti (FCOS · MIDOG25 Track-1) sihirbazı açıldı."

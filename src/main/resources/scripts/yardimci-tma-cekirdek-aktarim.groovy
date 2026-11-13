@@ -102,14 +102,14 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce dearray edilmiş bir TMA slaytı açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce dearray edilmiş bir TMA lamı açın.")
     return
 }
 
 def hierarchy = imageData.getHierarchy()
 def tmaGrid = hierarchy.getTMAGrid()
 if (tmaGrid == null || tmaGrid.nCores() == 0) {
-    def msg = "Bu slaytta TMA ızgarası yok.\n\n" +
+    def msg = "Bu lamda TMA ızgarası yok.\n\n" +
               "Önce [TMA → TMA dearrayer] ile çekirdekleri ızgaraya ayırın,\n" +
               "sonra bir tespit modülü (Hücre Tespiti, Nükleer Boya vb.) çalıştırın."
     if (isHeadless) println msg else Dialogs.showWarningNotification("TMA bulunamadı", msg)

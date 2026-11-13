@@ -30,7 +30,7 @@
  *   Python köprüleri → Atölye Python ortam yöneticisi → "HoVer-NeXt — çekirdek segmentasyon + 7 sınıf".
  *
  * KULLANIM:
- *   1. H&E slaytını açın; piksel boyutu (µm/px) KALİBRE olmalı (kalibrasyonsuz çalıştırılmaz).
+ *   1. H&E lamını açın; piksel boyutu (µm/px) KALİBRE olmalı (kalibrasyonsuz çalıştırılmaz).
  *   2. İlgi ALANINI anotasyon olarak çizin ve SEÇİN.
  *   3. Bu sihirbazı çalıştırın → (ilk kez) Yapılandır → "Modeli yerel indir" → "Bölgede çalıştır".
  *
@@ -219,7 +219,7 @@ def pixelMicrons = { imageData ->
 
 // Kalibrasyon + ÖLÇEK KAPISI. HoVer-NeXt 0.5 µm/px için eğitildi ve son-işlemesi PİKSEL-tabanlı
 // boyut eşikleri kullanır → yanlış ölçekte hem segmentasyon hem sınıf bozulur. Bu yüzden
-// kalibrasyonsuz ya da modelden kaba çözünürlüklü slaytta ÇALIŞTIRILMAZ (sessiz ölçek hatası).
+// kalibrasyonsuz ya da modelden kaba çözünürlüklü lamda ÇALIŞTIRILMAZ (sessiz ölçek hatası).
 def calibrationInfo = { imageData ->
     def cal = pixelMicrons(imageData)
     double mag = Double.NaN
@@ -234,7 +234,7 @@ def calibrationInfo = { imageData ->
     } else if (Math.abs(mpp - 1.0d) < 1e-6) {
         block = 'Piksel boyutu tam 1.000 µm/px — bu genelde QuPath\'in KALİBRESİZ varsayılanıdır. Tarayıcının gerçek değerini girin (tipik: 0.25 @40x, 0.50 @20x).'
     } else if (Math.max(mpp, MODEL_MPP) > MODEL_MPP * (1.0d + MPP_TOL)) {
-        block = String.format(java.util.Locale.US, 'Slayt çözünürlüğü %.3f µm/px — modelin 0.5 µm/px çözünürlüğünden kaba (izin ≤ %.2f µm/px). Daha yüksek büyütmeli tarama gerekir.', mpp, MODEL_MPP * (1.0d + MPP_TOL))
+        block = String.format(java.util.Locale.US, 'Lam çözünürlüğü %.3f µm/px — modelin 0.5 µm/px çözünürlüğünden kaba (izin ≤ %.2f µm/px). Daha yüksek büyütmeli tarama gerekir.', mpp, MODEL_MPP * (1.0d + MPP_TOL))
     } else if (mpp < 0.10d) {
         warn = String.format(java.util.Locale.US, 'Piksel boyutu %.3f µm/px H&E WSI için sıra dışı — kalibrasyonu doğrulayın.', mpp)
     }
@@ -243,9 +243,9 @@ def calibrationInfo = { imageData ->
 def resampleNote = { double mpp ->
     if (!Double.isFinite(mpp) || mpp <= 0) return ''
     double ratio = MODEL_MPP / mpp
-    if (Math.abs(ratio - 1.0d) < 0.05d) return 'slayt zaten ~0.5 µm/px — yeniden örnekleme yok.'
+    if (Math.abs(ratio - 1.0d) < 0.05d) return 'lam zaten ~0.5 µm/px — yeniden örnekleme yok.'
     if (ratio > 1.0d) return String.format(java.util.Locale.US, 'ROI ~%.1f× AŞAĞI örneklenerek 0.5 µm/px çözünürlüğe getirilir.', ratio)
-    return 'slayt 0.5 µm/px çözünürlükten biraz kaba — native beslenir (izin bandı içinde).'
+    return 'lam 0.5 µm/px çözünürlükten biraz kaba — native beslenir (izin bandı içinde).'
 }
 
 // Seçili (yoksa tüm) alan anotasyonları — çekirdekleri YALNIZ bunların içinde sayarız.
@@ -411,7 +411,7 @@ def resultText = { imageData, cfg, imp, dens, cal ->
     def sb = new StringBuilder()
     sb << "HoVer-NeXt (Lizard) — BÖLGEDE ÇEKİRDEK SINIFLARI\n"
     sb << "═══════════════════════════════════════════════\n\n"
-    sb << "Slayt   : " << imageNameOf(imageData) << "\n"
+    sb << "Lam   : " << imageNameOf(imageData) << "\n"
     sb << "Model   : " << modelLabelOf(cfg.model) << "\n"
     int tot = (imp?.inside ?: 0) as int
     sb << String.format(java.util.Locale.US, "Çekirdek: BÖLGE İÇİ %,d%n", tot)
@@ -859,7 +859,7 @@ render = { ->
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce bir H&E slaytı açın, ilgi ALANINI çizip seçin, sonra "⟳ Yenile".')
+            addGuidance('Önce bir H&E lamı açın, ilgi ALANINI çizip seçin, sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
@@ -871,7 +871,7 @@ render = { ->
             boolean localReady = codeReady() && weightsReady(cfg.model)
             title.setText('HoVer-NeXt — çekirdek segmentasyonu + 7 sınıf (bölgede)')
             def sb = new StringBuilder()
-            sb << "Slayt            : " << imageNameOf(imageData) << "\n"
+            sb << "Lam            : " << imageNameOf(imageData) << "\n"
             sb << "Model            : " << modelLabelOf(cfg.model) << "\n"
             sb << "Python           : " << (cfg.python ?: '(ayarsız)') << "\n"
             sb << "Cihaz            : CUDA GPU (zorunlu)\n"
@@ -952,7 +952,7 @@ javafx.application.Platform.runLater {
         stage.setAlwaysOnTop(alwaysTop.get())
         render(); stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ HoVer-NeXt çekirdek segmentasyonu + sınıflandırma sihirbazı açıldı."

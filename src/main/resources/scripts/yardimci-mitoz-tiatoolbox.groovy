@@ -26,7 +26,7 @@
  *   yöneticisi → "TIA Toolbox — bölge modelleri".
  *
  * KULLANIM:
- *   1. H&E slaytını (tercihen OpenSlide) açın; piksel boyutu (µm/px) kalibre olsun.
+ *   1. H&E lamını (tercihen OpenSlide) açın; piksel boyutu (µm/px) kalibre olsun.
  *   2. İlgi ALANINI anotasyon olarak çizin ve SEÇİN (ör. 10 BBA sıcak-nokta).
  *   3. Bu modülü çalıştırın → "Bölgede çalıştır".
  *
@@ -93,7 +93,7 @@ double AREA_TOL_MM2 = 0.01
 // "tüm alan anotasyonları" geri dönüşlerine girmez), SINIFSIZ (sınıf-tabanlı sayımlara
 // girmez) ve kilitli. Bağ: noktanın metadata'sı = dedektör, halkanınki = noktanın ID'si.
 double MARKER_RING_UM = 8.0      // halka yarıçapı (µm) — tipik mitoz figürünü içine alır
-double MARKER_RING_PX = 32.0     // kalibrasyonsuz slaytta yarıçap (px; ≈ 8 µm @ 0.25 µm/px)
+double MARKER_RING_PX = 32.0     // kalibrasyonsuz lamda yarıçap (px; ≈ 8 µm @ 0.25 µm/px)
 int MARKER_RING_VERTICES = 64
 def META_SOURCE = 'atolye.mitoz.kaynak'        // noktada: hangi dedektör (yeniden çalıştırmada temizlik)
 def META_POINT  = 'atolye.mitoz.nokta'         // halkada: bağlı noktanın ID'si
@@ -286,13 +286,13 @@ def calibrationInfo = { imageData ->
     }
     return [cal: cal, mag: mag, warn: warn, mpp: (cal != null ? (cal.pw + cal.ph) / 2.0 : Double.NaN)]
 }
-// KongNet'in slaytı hangi yönde yeniden örnekleyeceğini açıkla (0.5 µm/px hedef).
+// KongNet'in lamı hangi yönde yeniden örnekleyeceğini açıkla (0.5 µm/px hedef).
 def resampleNote = { double mpp ->
     if (!Double.isFinite(mpp) || mpp <= 0) return ''
     double ratio = MODEL_MPP / mpp
-    if (Math.abs(ratio - 1.0) < 0.05) return 'slayt zaten ~0.5 µm/px — yeniden örnekleme yok.'
-    if (ratio > 1.0) return String.format(java.util.Locale.US, 'slaytınız daha yüksek çözünürlükte; KongNet ~%.1f× AŞAĞI örnekler (normal).', ratio)
-    return String.format(java.util.Locale.US, 'slaytınız daha düşük çözünürlükte; KongNet ~%.1f× YUKARI örnekler (mitoz kaçırabilir).', 1.0 / ratio)
+    if (Math.abs(ratio - 1.0) < 0.05) return 'lam zaten ~0.5 µm/px — yeniden örnekleme yok.'
+    if (ratio > 1.0) return String.format(java.util.Locale.US, 'lamınız daha yüksek çözünürlükte; KongNet ~%.1f× AŞAĞI örnekler (normal).', ratio)
+    return String.format(java.util.Locale.US, 'lamınız daha düşük çözünürlükte; KongNet ~%.1f× YUKARI örnekler (mitoz kaçırabilir).', 1.0 / ratio)
 }
 
 // Seçili (yoksa tüm) alan anotasyonları — mitozu YALNIZ bunların içinde sayarız.
@@ -424,7 +424,7 @@ def resultText = { imageData, cfg, imp, dens, cal ->
     def sb = new StringBuilder()
     sb << "KONGNET MIDOG — BÖLGEDE MİTOZ\n"
     sb << "═════════════════════════════\n\n"
-    sb << "Slayt   : " << imageNameOf(imageData) << "\n"
+    sb << "Lam   : " << imageNameOf(imageData) << "\n"
     sb << "Model   : " << MODEL << "  (H&E mitoz, 0.5 µm/px)\n"
     sb << "Cihaz   : " << (cfg.device ?: 'cuda') << "\n"
     sb << String.format(java.util.Locale.US, "Tespit  : toplam %,d   ·   BÖLGE İÇİ %,d%n", (int)(imp?.total ?: 0), (int)(imp?.inside ?: 0))
@@ -649,7 +649,7 @@ def startRun = {
     if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
     def wsi = wsiPathOf(imageData)
-    if (wsi == null) { errorTextRef.set('Slaytın yerel dosya yolu yok (WSI tiatoolbox tarafından açılamaz).\nSlaytı OpenSlide ile açın.'); step.set('ERROR'); render(); return }
+    if (wsi == null) { errorTextRef.set('Lamın yerel dosya yolu yok (WSI tiatoolbox tarafından açılamaz).\nSlaytı OpenSlide ile açın.'); step.set('ERROR'); render(); return }
     def targets = regionAnnotationsOf(imageData)
     if (targets.isEmpty()) { errorTextRef.set('Bölge yok.\nÖnce bir alan anotasyonu çizin/seçin.'); step.set('ERROR'); render(); return }
     def regionRois = targets.collect { it.getROI() }
@@ -906,7 +906,7 @@ render = { ->
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce bir H&E slaytı açın (tercihen OpenSlide), ilgi ALANINI çizip seçin, sonra "⟳ Yenile".')
+            addGuidance('Önce bir H&E lamı açın (tercihen OpenSlide), ilgi ALANINI çizip seçin, sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
@@ -918,7 +918,7 @@ render = { ->
             boolean isHE = typeName.contains('BRIGHTFIELD_H_E')
             title.setText('Mitoz tespiti — KongNet MIDOG (bölgede)')
             def sb = new StringBuilder()
-            sb << "Slayt          : " << imageNameOf(imageData) << "\n"
+            sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Model          : " << MODEL << "  (H&E mitoz)\n"
             sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
             sb << "Cihaz          : " << (cfg.device ?: 'cuda') << "\n"
@@ -1000,7 +1000,7 @@ javafx.application.Platform.runLater {
         stage.setAlwaysOnTop(alwaysTop.get())
         render(); stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ Mitoz tespiti (TIA Toolbox · KongNet MIDOG) sihirbazı açıldı."

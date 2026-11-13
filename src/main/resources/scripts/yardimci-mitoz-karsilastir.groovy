@@ -30,7 +30,7 @@
  *   ortam yöneticisi ("TIA Toolbox — bölge modelleri" ve "MIDOG25 FCOS — mitoz dedektörü").
  *
  * KULLANIM:
- *   1. H&E slaytını açın; piksel boyutu (µm/px) kalibre olsun.
+ *   1. H&E lamını açın; piksel boyutu (µm/px) kalibre olsun.
  *   2. İlgi ALANINI anotasyon olarak çizin ve SEÇİN.
  *   3. Karşılaştırılacak modelleri işaretleyin → "Karşılaştır".
  *
@@ -80,7 +80,7 @@ int    ROI_WARN_PX = 12000
 // "tüm alan anotasyonları" geri dönüşlerine girmez), SINIFSIZ (sınıf-tabanlı sayımlara
 // girmez) ve kilitli. Bağ: noktanın metadata'sı = dedektör, halkanınki = noktanın ID'si.
 double MARKER_RING_UM = 8.0      // halka yarıçapı (µm) — tipik mitoz figürünü içine alır
-double MARKER_RING_PX = 32.0     // kalibrasyonsuz slaytta yarıçap (px; ≈ 8 µm @ 0.25 µm/px)
+double MARKER_RING_PX = 32.0     // kalibrasyonsuz lamda yarıçap (px; ≈ 8 µm @ 0.25 µm/px)
 int MARKER_RING_VERTICES = 64
 double CONSENSUS_RING_SCALE = 1.25  // konsensüs halkası model halkalarının dışında kalsın
 def META_SOURCE = 'atolye.mitoz.kaynak'        // noktada: hangi dedektör (yeniden çalıştırmada temizlik)
@@ -119,7 +119,7 @@ def removeOrphanRings = { hier ->
 // ── Dedektör tanımları (per-detector descriptor) ─────────────────────────────
 // Her dedektörün KENDİ ortamı/köprüsü/girdi-türü/CLI'si var; ortak sözleşme YOK —
 // bu yüzden buildCmd her modelin argümanlarını kendi şablonundan kurar. inputKind:
-// 'mask' = tüm slayt ikili maske (region_runner) · 'roi' = hedef-mpp ROI görüntüsü (fcos_runner).
+// 'mask' = tüm lam ikili maske (region_runner) · 'roi' = hedef-mpp ROI görüntüsü (fcos_runner).
 def DETECTORS = [
     [ id:'kongnet', label:'KongNet MIDOG (TIA Toolbox)', envId:'tiatoolbox-region',
       runnerRel:'python/tiatoolbox/region_runner.py', inputKind:'mask',
@@ -258,7 +258,7 @@ def regionAnnotationsOf = { imageData ->
     return new ArrayList(h.getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() && notSummary(it) })
 }
 
-// ── Girdi üretimi: tüm slayt maskesi (KongNet) + hedef-mpp ROI görüntüsü (FCOS) ──
+// ── Girdi üretimi: tüm lam maskesi (KongNet) + hedef-mpp ROI görüntüsü (FCOS) ──
 def exportRegionMask = { imageData, File workDir, double downsample, List regionRois, Closure appendLine ->
     def server = imageData.getServer()
     int W = server.getWidth(), H = server.getHeight()
@@ -505,7 +505,7 @@ def startRun = { List chosen, String device, double radiusUm, Double thr ->
         try {
             boolean needMask = chosen.any { it.inputKind == 'mask' }
             boolean needRoi  = chosen.any { it.inputKind == 'roi' }
-            if (needMask && wsi == null) { javafx.application.Platform.runLater { errorTextRef.set('KongNet için slaytın yerel dosya yolu gerekli (OpenSlide ile açın) — ya da yalnız FCOS seçin.'); step.set('ERROR'); render() }; return }
+            if (needMask && wsi == null) { javafx.application.Platform.runLater { errorTextRef.set('KongNet için lamın yerel dosya yolu gerekli (OpenSlide ile açın) — ya da yalnız FCOS seçin.'); step.set('ERROR'); render() }; return }
             def art = [wsi: wsi, saveDir: new File(workDir, 'karsilastir_out_' + base).getAbsolutePath()]
             if (needMask) {
                 setPhase('Bölge maskesi yazılıyor…')
@@ -699,7 +699,7 @@ render = { ->
     if (cur == 'READY') {
         title.setText('Mitoz modelleri karşılaştırma')
         if (imageData == null) {
-            addGuidance('Önce bir H&E slaytı açın, ilgi ALANINI çizip seçin, sonra "⟳ Yenile".')
+            addGuidance('Önce bir H&E lamı açın, ilgi ALANINI çizip seçin, sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() })); actions.add(navButton('⟳ Yenile', { render() }))
         } else {
             def targets = regionAnnotationsOf(imageData); def cal = pixelMicrons(imageData)
@@ -794,6 +794,6 @@ javafx.application.Platform.runLater {
         stage = new javafx.stage.Stage(); stage.initModality(javafx.stage.Modality.NONE)
         stage.setTitle('Mitoz modelleri karşılaştırma'); stage.setAlwaysOnTop(alwaysTop.get())
         render(); stage.show()
-    } catch (Throwable t) { Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)')) }
+    } catch (Throwable t) { Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)')) }
 }
 println "✓ Mitoz modelleri karşılaştırma sihirbazı açıldı."

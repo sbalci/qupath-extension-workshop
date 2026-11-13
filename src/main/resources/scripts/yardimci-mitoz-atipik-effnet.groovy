@@ -391,7 +391,7 @@ def startRun = {
                     int tot = nAtyp + nTyp
                     def sb = new StringBuilder()
                     sb << "ATİPİK MİTOZ SINIFLAMA (EfficientNetV2)\n═══════════════════════════════════════\n\n"
-                    sb << "Slayt        : " << imageNameOf(imageData) << "\n"
+                    sb << "Lam        : " << imageNameOf(imageData) << "\n"
                     sb << "Sınıflanan   : " << tot << " mitoz noktası\n"
                     sb << "  • Atipik   : " << nAtyp << (tot > 0 ? String.format(java.util.Locale.US, "  (%.0f%%)", 100.0 * nAtyp / tot) : "") << "\n"
                     sb << "  • Tipik    : " << nTyp << "\n\n"
@@ -544,14 +544,14 @@ render = { ->
         if (dlOkRef.get()) actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, 'İndirme tamam — bölgede çalıştırma ekranına döner'))
     } else if (cur == 'READY') {
         if (imageData == null) {
-            title.setText('Görüntü açık değil'); addGuidance('Önce bir H&E slaytı açıp bir dedektör çalıştırın, ilgi ALANINI seçin, sonra "⟳ Yenile".')
+            title.setText('Görüntü açık değil'); addGuidance('Önce bir H&E lamı açıp bir dedektör çalıştırın, ilgi ALANINI seçin, sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() })); actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() })); actions.add(navButton('⟳ Yenile', { render() }))
         } else {
             def regions = selectedRegions(imageData); def regionRois = regions.collect { it.getROI() }
             def points = mitosisPointsIn(imageData, regionRois); def cal = pixelMicrons(imageData)
             title.setText('Atipik mitoz sınıflama — EfficientNetV2')
             def sb = new StringBuilder()
-            sb << "Slayt          : " << imageNameOf(imageData) << "\n"
+            sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Model          : " << MODEL << "\n"
             sb << "Cihaz          : " << (cfg.device ?: 'cuda') << "\n"
             sb << "Yerel model    : " << (modelCacheFile().isFile() ? 'VAR' : 'yok — "Modeli yerel indir"') << "\n"
@@ -609,6 +609,6 @@ javafx.application.Platform.runLater {
         stage = new javafx.stage.Stage(); stage.initModality(javafx.stage.Modality.NONE)
         stage.setTitle('Atipik mitoz sınıflama — EfficientNetV2 (MIDOG25 Track-2)'); stage.setAlwaysOnTop(alwaysTop.get())
         render(); stage.show()
-    } catch (Throwable t) { Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)')) }
+    } catch (Throwable t) { Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)')) }
 }
 println "✓ Atipik mitoz sınıflama (EfficientNetV2 · MIDOG25 Track-2) sihirbazı açıldı."

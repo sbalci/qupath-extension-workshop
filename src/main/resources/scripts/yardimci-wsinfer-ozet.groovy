@@ -20,7 +20,7 @@
  *   • Sınıfsız (classification = yok) karolar "(sınıfsız)" altında toplanır.
  *
  * KULLANIM:
- *   1. WSInfer çıkarımını çalıştırmış bir slayt açın (karolar sınıflı olmalı)
+ *   1. WSInfer çıkarımını çalıştırmış bir lam açın (karolar sınıflı olmalı)
  *   2. (İsteğe bağlı) özetlenecek bölgeyi anotasyon olarak çizip SEÇİN
  *      (seçim yoksa tüm görüntüdeki karolar özetlenir)
  *   3. [Extensions → Atölye → Yardımcılar → WSInfer karo özeti (sınıf alanı / %)]
@@ -111,7 +111,7 @@ String summaryName = "WSInfer Alan Özet"
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce WSInfer çıkarımı yapılmış bir slayt açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce WSInfer çıkarımı yapılmış bir lam açın.")
     return
 }
 

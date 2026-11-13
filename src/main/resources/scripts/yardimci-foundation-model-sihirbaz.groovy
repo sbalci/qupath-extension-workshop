@@ -4,15 +4,15 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   Açık slaytı bir patoloji TEMEL MODELİ (foundation model) hattına beslemeden
+ *   Açık lamı bir patoloji TEMEL MODELİ (foundation model) hattına beslemeden
  *   önce hızlı, SALT OKUNUR bir "hazırlık + sağlamlık" denetimi yapar — hepsi tek
  *   pencereden:
  *     1. HAZIRLIK OLGULARI — piksel boyutu (µm/px) ve buna göre 224 px karo için
  *        önerilen downsample / etkin µm/px; kestirilen/gömülü büyütme; piramit
  *        durumu; küratörlü karo dışa aktarımı için anotasyon var mı.
- *     2. SAĞLAMLIK KONTROL LİSTESİ — slayt durumuna göre uyarlanmış FARKINDALIK
+ *     2. SAĞLAMLIK KONTROL LİSTESİ — lam durumuna göre uyarlanmış FARKINDALIK
  *        notları: tek- vs çok-kaynak / batch etkisi; girdi bütünlüğü ve düşmanca
- *        (adversarial) kırılganlık (UTAP — Wang ve ark. 2026); boya normalizasyonu
+ *        (adversarial) kırılganlık (UTAP — Wang ve ark. 2026); boyama normalizasyonu
  *        ve doğrulama işaretçileri.
  *
  *   Tümüyle SALT OKUNUR: hücre tespiti, sınıflandırma, anotasyon veya hiyerarşi
@@ -27,7 +27,7 @@
  *   bkz. Ekler → Patolojide Temel Modeller — Genel Bakış.
  *
  * KULLANIM:
- *   1. Bir slayt açın.
+ *   1. Bir lam açın.
  *   2. [Extensions → Atölye → Yardımcılar → Foundation model hazırlık ve sağlamlık sihirbazı]
  *   3. Raporu inceleyin; "Kopyala" ile panoya alıp not/protokolünüze ekleyin.
  *
@@ -49,7 +49,7 @@ final int    TILE_PX     = 224
 def fmt = { double d, int dec -> Double.isNaN(d) ? '—' : String.format(java.util.Locale.US, '%.' + dec + 'f', d) }
 def fmtInt = { long v -> String.format(java.util.Locale.US, '%,d', v) }
 
-// ── Açık slayttan FM-hazırlık olgularını çıkar (salt okunur) ──────────────────
+// ── Açık lamdan FM-hazırlık olgularını çıkar (salt okunur) ──────────────────
 def extractReadiness = { imageData ->
     def m = new java.util.LinkedHashMap()
     def server = imageData.getServer()
@@ -137,7 +137,7 @@ def buildReport = { m ->
     else                   item('•', 'Anotasyon yok — arka plan/artefakt karoları gömmeyi/dikkati seyreltir. Önce doku maskesi/anotasyon çıkarın (bkz. Kalite Kontrol eki).')
 
     // Batch etkisi (genelleme)
-    item('•', 'Genelleme/batch etkisi: FM gömmeleri biyolojiden çok tarayıcı/merkez imzasını kodlayabilir (de Jong 2025). Çok-merkez doğrulayın; gerekirse boya normalizasyonu (Boya Normalizasyonu eki) uygulayın.')
+    item('•', 'Genelleme/batch etkisi: FM gömmeleri biyolojiden çok tarayıcı/merkez imzasını kodlayabilir (de Jong 2025). Çok-merkez doğrulayın; gerekirse boyama normalizasyonu (Boyama normalizasyonu eki) uygulayın.')
 
     // Düşmanca / girdi bütünlüğü (UTAP — farkındalık)
     item('•', 'Girdi bütünlüğü: FM çıktısı gözle görülmeyen düşmanca pertürbasyonlarla bozulabilir (UTAP — Wang ve ark. 2026). Yalnız güvenilir, değiştirilmemiş pikselleri besleyin; çıktıyı makullük açısından denetleyin.')
@@ -149,10 +149,10 @@ def buildReport = { m ->
     return sb.toString()
 }
 
-// ── Headless: yalnız açık slaytı raporla (UI yok, değişiklik yok) ────────────
+// ── Headless: yalnız açık lamı raporla (UI yok, değişiklik yok) ────────────
 if (isHeadless) {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { println 'Önce bir slayt açın (headless modda yalnız açık slayt raporlanır).'; return }
+    if (imageData == null) { println 'Önce bir lam açın (headless modda yalnız açık lam raporlanır).'; return }
     println buildReport(extractReadiness(imageData))
     return
 }
@@ -202,16 +202,16 @@ render = { ->
     if (imageData != null) {
         def rep
         try { rep = buildReport(extractReadiness(imageData)) }
-        catch (Throwable t) { rep = 'Açık slayt okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName()) }
+        catch (Throwable t) { rep = 'Açık lam okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName()) }
         reportRef.set(rep)
         addMonoArea(rep)
     } else {
         reportRef.set('')
-        addGuidance('Önce bir slayt açın. Bu sihirbaz açık slaytın FM-hazırlık olgularını ve sağlamlık kontrol listesini raporlar (salt okunur).')
+        addGuidance('Önce bir lam açın. Bu sihirbaz açık lamın FM-hazırlık olgularını ve sağlamlık kontrol listesini raporlar (salt okunur).')
     }
     actions.add(navButton('Kapat', { stage.close() }))
     if (imageData != null) actions.add(navButton('Kopyala', { copyToClipboard(reportRef.get()) }, 'Raporu panoya kopyala'))
-    actions.add(navButton('⟳ Yenile', { render() }, 'Slayt/anotasyon değiştiyse yeniden hesapla'))
+    actions.add(navButton('⟳ Yenile', { render() }, 'Lam/anotasyon değiştiyse yeniden hesapla'))
 
     // Alt çubuk: "Üstte tut" (sol) + disclaimer + eylem düğmeleri (sağ)
     def topChk = new javafx.scene.control.CheckBox('Üstte tut')
@@ -250,7 +250,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println '✓ Foundation model hazırlık ve sağlamlık sihirbazı açıldı.'

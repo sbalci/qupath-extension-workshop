@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir; Python GEREKMEZ).
  *
  * İKİ KİP:
- *   1. DENETLE (salt okunur) — "Bu slayt / bu proje anonim mi?" sorusunu yanıtlar.
+ *   1. DENETLE (salt okunur) — "Bu lam / bu proje anonim mi?" sorusunu yanıtlar.
  *      Her dosya için: etiket/makro görüntüsü var mı, hangi kimlik alanları
  *      (Filename, Date, User, ScanScope ID, ImageID …) HANGİ IFD'lerde dolu, standart
  *      TIFF etiketleri (DateTime, Artist …) dolu mu, dosya adı dosyanın içinde geçiyor mu.
@@ -13,9 +13,9 @@
  *      (ZXing core 3.5.3, Apache-2.0; paketlenmez — ilk kullanımda Maven Central'dan SHA-256 sabitli
  *      indirilir) ve yalnız ÇÖZÜLMÜŞ kod "ANON" ile başlıyorsa etiketi anonim sayar; fotoğraf benzeri
  *      etiket ve dolu makro EKSİK'tir. ANON ile başlamayan kodun metni gösterilmez. Varsa Sectra
- *      <slayt>.import yan dosyasındaki RequestId de karşılaştırılır. Arayüzde etiket/makro galerisi.
- *      Karar: TEMİZ / EKSİK / BELİRSİZ. Hiçbir slayta yazmaz.
- *   2. ANONİMLEŞTİR — seçilen slaytların anonim KOPYALARINI yeni bir klasöre yazar:
+ *      <lam>.import yan dosyasındaki RequestId de karşılaştırılır. Arayüzde etiket/makro galerisi.
+ *      Karar: TEMİZ / EKSİK / BELİRSİZ. Hiçbir lama yazmaz.
+ *   2. ANONİMLEŞTİR — seçilen lamların anonim KOPYALARINI yeni bir klasöre yazar:
  *      • Seviye I   : dosya adı → case_1, case_2 … ya da UUID.
  *      • Seviye III : etiket + makro görüntüsü IFD zincirinden çıkarılır VE piksel
  *                     verisi sıfırlanır (yalnız "bağlantı kesme" = Seviye II'de kalmaz).
@@ -42,14 +42,14 @@
  *   • MRXS / VSI / DICOM / OME-Zarr gibi çok dosyalı biçimler → ATLANIR (wsi-anon / üretici aracı).
  *   • Doku görüntüsünün kendisi (Seviye V) bu araçla anonimleştirilemez.
  *
- * GÜVENLİ TASARIM: orijinal slaytlar yalnız OKUNUR; açık proje DEĞİŞTİRİLMEZ; çıktı klasöründe
+ * GÜVENLİ TASARIM: orijinal lamlar yalnız OKUNUR; açık proje DEĞİŞTİRİLMEZ; çıktı klasöründe
  *   var olan dosyanın üzerine yazılmaz; yeni proje yalnız BOŞ bir klasöre kurulur.
  *
  * EŞLEŞTİRME ANAHTARI = PHI: geri alınabilir modda yazılan CSV/JSON orijinal kimlikleri içerir.
  *   Tuz (salt.bin), eklemeli anahtar tablosu (anahtar.csv), kaynak parmak izleri ve eşleştirme/manifest
  *   dosyaları ÇIKTI KLASÖRÜNÜN DIŞINDA, "anahtar klasöründe" tutulur (varsayılan <veri kökü>/anonim-anahtar/;
  *   çıktı klasörünün içinde olamaz). Güvenli, erişimi kısıtlı bir yerde tutun; salt.bin'i YEDEKLEYİN;
- *   anonim slaytlarla ASLA paylaşmayın. Çıktı klasöründeki "anonimlestirme_raporu_*.txt" orijinal ad
+ *   anonim lamlarla ASLA paylaşmayın. Çıktı klasöründeki "anonimlestirme_raporu_*.txt" orijinal ad
  *   İÇERMEZ (paylaşılabilir); başarılı çalışmadan sonra SHA256SUMS.txt (LF) + BENIOKU.md de yazılır.
  *   KANIT: her kaynağın parmak izi (boyut + zaman + ilk/son 16 MB SHA-256) işlemden önce/sonra/çalışma
  *   sonunda karşılaştırılır; fark → o birim HATA. Paylaşılabilir dosyaların zaman damgaları 2000-01-01Z.
@@ -59,7 +59,7 @@
  *
  * KULLANIM (arayüzsüz):
  *   QuPath script yardimci-anonim-sihirbaz.groovy --args "proje=<proje.qpproj>" [--args "kip=denetle"]
- *   QuPath script yardimci-anonim-sihirbaz.groovy -i <slayt.svs> --args "kip=anonimlestir" --args "cikti=<klasör>"
+ *   QuPath script yardimci-anonim-sihirbaz.groovy -i <lam.svs> --args "kip=anonimlestir" --args "cikti=<klasör>"
  *     Anahtarlar: proje, cikti, kip (denetle|anonimlestir; varsayılan denetle), onek, adlandirma
  *     (sirali|uuid|hmac), anahtarklasor (tuz + anahtar tablosu; çıktının DIŞINDA), desen (kayıt no regex'i;
  *     boş = varsayılan), tarama (ana görüntü kenar şeridi denetimi; evet/hayır),
@@ -517,7 +517,7 @@ def thumbOf = { BufferedImage img, int maxW ->
     g.drawImage(img, 0, 0, tw, th, null); g.dispose(); return out
 }
 // ── Ana tarama alanı kenar bandı (ders 7) ────────────────────────────────────
-// Etiket/makro silme ANA taranmış görüntünün İÇİNDEKİ kimliği silemez: bazı GT450 slaytları taramanın kenarında
+// Etiket/makro silme ANA taranmış görüntünün İÇİNDEKİ kimliği silemez: bazı GT450 lamları taramanın kenarında
 // basılı etiket şeridini (koyu bant) yakalar. Ölçüt: ~1024 px küçük resimde en soldaki YA DA en sağdaki %12
 // sütun; satırların > %60'ında bandın ortalama parlaklığı < 120 ise bayraklanır. Bu bir İNCELEME uyarısıdır —
 // TEMİZ/EKSİK kararını tek başına değiştirmez.
@@ -619,7 +619,7 @@ def assocCheck = { File f, Closure decoder, boolean keepThumbs, File saveDir ->
         if (keepThumbs) res.macroThumb = thumbOf(img, 300)
         if (saveDir != null) { saveDir.mkdirs(); javax.imageio.ImageIO.write(img, 'png', new File(saveDir, f.getName() + '__makro.png')) }
     }
-    // Sectra yan dosyası: <slayt>.import (JSON; RequestId/ExamId)
+    // Sectra yan dosyası: <lam>.import (JSON; RequestId/ExamId)
     File side = new File(f.getParentFile(), f.getName() + '.import')
     if (side.isFile()) {
         try {
@@ -1070,7 +1070,7 @@ def runAudit = { List items, Closure log, AtomicBoolean cancel, Map opts = [:] -
             }
             switch (ac.macro.state) {
                 case 'BOS': notes << 'Makro: boş (tek renk) ✓'; break
-                case 'ICERIK': findings << 'Makro görüntüsü içerik taşıyor (slaytın tamamı; etiket bölgesi görünebilir)'; break
+                case 'ICERIK': findings << 'Makro görüntüsü içerik taşıyor (lamın tamamı; etiket bölgesi görünebilir)'; break
                 case 'OKUNAMADI': unsure << 'Makro görüntüsü var ama okunamadı — gözle doğrulayın'; break
                 default: break
             }
@@ -1172,7 +1172,7 @@ def parseCsvLine = { String line ->
 }
 def hexOf = { byte[] b -> b.collect { String.format(java.util.Locale.US, '%02x', it & 0xff) }.join('') }
 // Takma ad = önek + '_' + HMAC-SHA256(anahtar = tuz, ileti = ÖZGÜN DOSYA ADI) onaltılı gösteriminin ilk 10 karakteri.
-// Kararlı anahtar olarak yol DEĞİL dosya adı seçildi: aynı slayt başka klasöre taşınsa da aynı takma ad çıkar.
+// Kararlı anahtar olarak yol DEĞİL dosya adı seçildi: aynı lam başka klasöre taşınsa da aynı takma ad çıkar.
 // Bedeli: iki farklı klasördeki aynı adlı iki ayrı dosya aynı takma adı alırdı → bir planda aynı ad iki kez
 // geçerse hmac kipi REDDEDER. Çarpışma (farklı adlar, aynı 10 karakter) → 12, sonra 16 karaktere uzatılır;
 // sessiz ek (a, b …) HİÇBİR ZAMAN eklenmez.
@@ -1713,10 +1713,10 @@ def buildBenioku = { plan, String ts, String reportName, String sumsName, String
     def sb = new StringBuilder()
     String day = ts.substring(0, 8)
     def edge = edgeFlagged(plan); def rev = reviewUnits(plan)
-    sb << '# WSI anonim slayt paketi — BENİOKU\n\n'
+    sb << '# WSI anonim lam paketi — BENİOKU\n\n'
     sb << 'Hazırlanma tarihi: ' << day << '\n\n'
     sb << '## İçindekiler\n\n'
-    sb << '- ' << nSlides << ' anonimleştirilmiş slayt kopyası\n'
+    sb << '- ' << nSlides << ' anonimleştirilmiş lam kopyası\n'
     sb << '- `' << reportName << '` — işlem raporu (özgün ad içermez)\n'
     sb << '- `' << sumsName << '` — dosya bütünlüğü sağlama toplamları (SHA-256)\n'
     sb << '- `' << readmeName << '` — bu dosya\n\n'
@@ -1888,7 +1888,7 @@ def buildApplyText = { plan, projInfo, List keyFiles, boolean showOrig, Map ext 
     sb << '\nDurumlar: TAMAM = Seviye I+III+IV, doğrulandı · KISMİ = yazıldı ama en az bir katman kapsanmadı ·\n'
     sb << '          İNCELE = yazıldı ama kayıt numarası benzeri desen kaldı; gözle doğrulayın ·\n'
     sb << '          HATA = doğrulama geçmedi, kopya silindi · ATLANDI = biçim desteklenmiyor / iptal.\n'
-    if (cfg.reversible) sb << '⚠ Eşleştirme anahtarı (anahtar klasörü) PHI içerir — güvenli saklayın, anonim slaytlarla paylaşmayın.\n'
+    if (cfg.reversible) sb << '⚠ Eşleştirme anahtarı (anahtar klasörü) PHI içerir — güvenli saklayın, anonim lamlarla paylaşmayın.\n'
     else sb << '⚠ Geri alınamaz mod: orijinal↔anonim bağlantısı YAZILMADI.\n'
     sb << '⚠ Doku görüntüsünün kendisi (Seviye V) anonimleştirilmez; her kopyayı QuPath\'te gözle de kontrol edin.\n'
     sb << '⚠️ Yalnızca araştırma/eğitim amaçlıdır; klinik karar üretmez.'
@@ -1988,7 +1988,7 @@ def runApply = { plan, Closure log, AtomicBoolean cancel ->
     try {
         rep = new File(plan.outDir, "anonimlestirme_raporu_${ts}.txt")
         def shareExt = [pkgPlanned: willPackage,
-                        pkgSkipped: willPackage ? null : (cancel.get() ? 'çalışma iptal edildi' : 'üretilen slayt yok')]
+                        pkgSkipped: willPackage ? null : (cancel.get() ? 'çalışma iptal edildi' : 'üretilen lam yok')]
         Files.write(rep.toPath(), buildApplyText(plan, projInfo, [], false, shareExt).getBytes(StandardCharsets.UTF_8),
             java.nio.file.StandardOpenOption.CREATE_NEW, java.nio.file.StandardOpenOption.WRITE)   // orijinal ad İÇERMEZ
     } catch (Throwable t) { log('Rapor yazılamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())); rep = null }
@@ -2000,7 +2000,7 @@ def runApply = { plan, Closure log, AtomicBoolean cancel ->
     if (pkg != null && pkg.notCreation > 0) log('⚠ ' + pkg.notCreation + ' dosyada oluşturma zamanı sabitlenemedi (dosya sistemi desteklemiyor); değiştirilme zamanı sabitlendi.')
     ext.pkg = pkg
     if (rep != null && rep.isFile()) pinTimes(rep)       // paket yazılmasa bile paylaşılabilir rapor sabitlenir
-    if (pkg == null) ext.pkgSkipped = willPackage ? 'yazma hatası (günlüğe bakın)' : (cancel.get() ? 'çalışma iptal edildi' : 'üretilen slayt yok')
+    if (pkg == null) ext.pkgSkipped = willPackage ? 'yazma hatası (günlüğe bakın)' : (cancel.get() ? 'çalışma iptal edildi' : 'üretilen lam yok')
     return [text: buildApplyText(plan, projInfo, keyFiles, true, ext), projInfo: projInfo, saltCreated: ks.saltCreated,
             saltNotice: ext.saltNotice, pkg: pkg, foreign: foreign]
 }
@@ -2089,7 +2089,7 @@ if (isHeadless) {
     def items = (project != null) ? collectItems('proje', null, project, null)
                                   : collectItems('acik', null, null, QP.getCurrentImageData())
     if (items.isEmpty())
-        throw new IllegalArgumentException('Kapsamda görüntü yok: --args "proje=<proje.qpproj>" ya da -i <slayt> verin.')
+        throw new IllegalArgumentException('Kapsamda görüntü yok: --args "proje=<proje.qpproj>" ya da -i <lam> verin.')
     def cancel = new AtomicBoolean(false)
     def logc = { String s -> println s }
     if (kip == 'denetle') {
@@ -2278,7 +2278,7 @@ render = { ->
     if (cur == 'NO_SOURCE') {
         title.setText('Proje ya da görüntü açık değil')
         addGuidance('Anonimleştirme/denetim bir proje ya da açık bir görüntü üzerinde çalışır.\n\n' +
-            'Bir QuPath projesi ya da slayt açın, sonra "⟳ Yenile".')
+            'Bir QuPath projesi ya da lam açın, sonra "⟳ Yenile".')
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('⟳ Yenile', {
             step.set((QP.getProject() == null && QP.getCurrentImageData() == null) ? 'NO_SOURCE' : 'CONFIG'); render()
@@ -2379,7 +2379,7 @@ render = { ->
         syncScope()
 
         addWarnLabel('⚠ Eşleştirme anahtarı ve tuz PHI içerir — güvenli saklayın, çıktı klasörüne KOYMAYIN. Çıktı klasörünün yolunda hasta adı/numarası olmasın.')
-        addGuidance('Orijinal slaytlar yalnız okunur. "Denetle" hiçbir dosyaya yazmaz; mevcut slaytların ne kadar anonim olduğunu raporlar.')
+        addGuidance('Orijinal lamlar yalnız okunur. "Denetle" hiçbir dosyaya yazmaz; mevcut lamların ne kadar anonim olduğunu raporlar.')
 
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('Denetle (salt okunur)', { goAudit(null) },'Etiket/makro, dolu kimlik alanları ve standart etiketleri raporlar; yazmaz'))
@@ -2412,7 +2412,7 @@ render = { ->
         actions.add(navButton('İptal', { cancelFlag.set(true) }, 'Geçerli adımdan sonra durur; yarım kopya silinir'))
     } else if (cur == 'AUDIT_DONE') {
         title.setText('Denetim sonucu')
-        // Etiket / makro galerisi: kullanıcının GÖZLE doğrulaması için (en çok 60 slayt)
+        // Etiket / makro galerisi: kullanıcının GÖZLE doğrulaması için (en çok 60 lam)
         def gal = resultRef.get()?.gallery ?: []
         if (!gal.isEmpty()) {
             def flow = new javafx.scene.layout.FlowPane(10, 10)
@@ -2448,7 +2448,7 @@ render = { ->
         actions.add(navButton('Etiketleri klasöre kaydet…', {
             def d = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Etiket/makro PNG klasörü', null)
             if (d != null) goAudit(d)
-        }, 'Denetimi yeniden çalıştırır ve her slaytın etiket + makro görüntüsünü tam boyutta PNG olarak yazar'))
+        }, 'Denetimi yeniden çalıştırır ve her lamın etiket + makro görüntüsünü tam boyutta PNG olarak yazar'))
         actions.add(navButton('Anonimleştirmeye geç ▶', { goPreview() }))
     } else if (cur == 'DONE') {
         title.setText('Tamamlandı')
@@ -2510,7 +2510,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println '✓ WSI anonimleştirme sihirbazı açıldı.'

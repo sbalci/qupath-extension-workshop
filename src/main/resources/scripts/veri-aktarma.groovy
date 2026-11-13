@@ -23,12 +23,12 @@
  *   <taban>/YYYY-MM-DD_HHmmss/
  *     ├── _all_detections.tsv          (yalnız "tüm proje" modunda)
  *     ├── _all_annotations.tsv         (yalnız "tüm proje" modunda)
- *     ├── <slayt-adı>__detections.tsv
- *     ├── <slayt-adı>__annotations.tsv
- *     └── <slayt-adı>__annotations.geojson
+ *     ├── <lam-adı>__detections.tsv
+ *     ├── <lam-adı>__annotations.tsv
+ *     └── <lam-adı>__annotations.geojson
  *   <taban> = seçilen kayıt yeri, yoksa <proje-klasörü>/exports
  *
- * Not: Türkçe karakterler ve özel sembolleri içeren slayt adları
+ * Not: Türkçe karakterler ve özel sembolleri içeren lam adları
  * ASCII-güvenli bir slug'a çevrilerek dosya adında kullanılır.
  */
 
@@ -64,7 +64,7 @@ def atolyeSetB = { String k, boolean v -> __wpCall('setBool', [String.class, boo
 def exportFolder = atolyeS('atolye.exportFolder', 'exports')
 
 // Sütun "alt küme" modunda sunulan aday liste. "" tercih değeri ⇒ bu listenin tamamı.
-// Açık slaytta henüz nesne/ölçüm yoksa açık projedeki kayıtlı slaytlardan da sütun örneklenir.
+// Açık lamda henüz nesne/ölçüm yoksa açık projedeki kayıtlı lamlardan da sütun örneklenir.
 def allCols = new LinkedHashSet<String>([
     'Image', 'Name', 'Class',
     'Centroid X µm', 'Centroid Y µm',
@@ -354,7 +354,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 }
 
 // ──────────────────────────────────────────────────────────────
-// Yardımcı: Türkçe karakter + boşluk içeren slayt isimlerini güvenli slug'a çevirir
+// Yardımcı: Türkçe karakter + boşluk içeren lam isimlerini güvenli slug'a çevirir
 // ──────────────────────────────────────────────────────────────
 def toSlug = { String s ->
     if (s == null) return "untitled"
@@ -428,7 +428,7 @@ def projectMode = (opt.scope == "project")
 if (!projectMode && currentImageData == null) {
     Dialogs.showErrorMessage(
         "Görüntü açık değil",
-        "'Sadece bu görüntü' modu için bir slaytın açık olması gerekir."
+        "'Sadece bu görüntü' modu için bir lamın açık olması gerekir."
     )
     return
 }
@@ -437,16 +437,16 @@ if (!projectMode && currentEntry == null) {
     // Açık görüntü var ama projeye dahil değil — MeasurementExporter ve
     // entry.saveImageData çağrılarımız bir ProjectImageEntry gerektirir.
     Dialogs.showErrorMessage(
-        "Slayt projeye eklenmemiş",
-        "Açık olan slayt projenin parçası değil; dışa aktarılamaz.\n\n" +
-        "Çözüm: Project panelinden bu slaytı projeye ekleyin\n" +
+        "Lam projeye eklenmemiş",
+        "Açık olan lam projenin parçası değil; dışa aktarılamaz.\n\n" +
+        "Çözüm: Project panelinden bu lamı projeye ekleyin\n" +
         "(sol üstte + ikonu) ve betiği tekrar çalıştırın."
     )
     return
 }
 
 // ──────────────────────────────────────────────────────────────
-// 2.5) Açık slaytı diske kaydet — kritik
+// 2.5) Açık lamı diske kaydet — kritik
 // MeasurementExporter ve readImageData her ikisi de .qpdata dosyasından
 // okur. Kaydedilmemiş anotasyon / tespit değişiklikleri dışa aktarımda görünmez,
 // dosyalar boş çıkar. Burada savunmacı bir kaydetme yapıyoruz.
@@ -457,13 +457,13 @@ if (currentImageData != null && currentEntry != null) {
     try {
         currentEntry.saveImageData(currentImageData)
         currentSaved = true
-        println "✓ Açık slayt diske kaydedildi: ${currentEntry.getImageName()}"
+        println "✓ Açık lam diske kaydedildi: ${currentEntry.getImageName()}"
     } catch (Throwable t) {
         currentSaveError = "${t.getClass().getSimpleName()}: ${t.getMessage()}"
-        println "⚠ Açık slayt kaydedilemedi: ${currentSaveError}"
+        println "⚠ Açık lam kaydedilemedi: ${currentSaveError}"
     }
 } else if (projectMode) {
-    println "(Açık görüntü yok — projedeki tüm slaytlar son kayıtlı halinden okunur.)"
+    println "(Açık görüntü yok — projedeki tüm lamlar son kayıtlı halinden okunur.)"
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -572,12 +572,12 @@ def exportEntry = { entry, imageDataForGeo ->
 // ──────────────────────────────────────────────────────────────
 if (projectMode) {
     def imageList = project.getImageList()
-    println "  ${imageList.size()} slayt işlenecek..."
+    println "  ${imageList.size()} lam işlenecek..."
 
     // Per-image dosyalar
     imageList.each { entry ->
         try {
-            // ImageData 0.6'da AutoCloseable — proje döngüsünde her slaytı kapatarak
+            // ImageData 0.6'da AutoCloseable — proje döngüsünde her lamı kapatarak
             // sunucu/karo-önbelleği tanıtıcılarının birikmesini önle (bkz. sib. kohort betikleri).
             entry.readImageData().withCloseable { imgData ->
                 exportEntry(entry, imgData)
@@ -620,7 +620,7 @@ if (projectMode) {
     }
 
 } else {
-    // Sadece açık slayt
+    // Sadece açık lam
     exportEntry(currentEntry, currentImageData)
     imagesProcessed = 1
 }
@@ -643,23 +643,23 @@ def errSection = errors.isEmpty()
 
 def saveStatusLine
 if (currentSaved) {
-    saveStatusLine = "✓ Açık slayt diske kaydedildi (anotasyon/tespitler dahildir)"
+    saveStatusLine = "✓ Açık lam diske kaydedildi (anotasyon/tespitler dahildir)"
 } else if (currentSaveError != null) {
-    saveStatusLine = "⚠ Açık slayt KAYDEDİLEMEDİ — son değişiklikler dışa aktarımda görünmeyebilir.\n" +
+    saveStatusLine = "⚠ Açık lam KAYDEDİLEMEDİ — son değişiklikler dışa aktarımda görünmeyebilir.\n" +
                      "  Detay: " + currentSaveError + "\n" +
                      "  Çözüm: QuPath ana penceresinde [Ctrl+S] basın, betiği tekrar çalıştırın."
 } else {
-    saveStatusLine = "(Açık slayt yok — projedeki tüm slaytlar son kayıtlı halinden okundu.)"
+    saveStatusLine = "(Açık lam yok — projedeki tüm lamlar son kayıtlı halinden okundu.)"
 }
 
 // Eğer dışa aktarım toplamları sıfırsa — çoğunlukla kaydedilmemiş slayt göstergesi
 def emptyHint = ""
 if (annotationsTotal == 0 && detectionsTotal == 0 && currentSaveError == null) {
     emptyHint = "\n\n💡 Çıktıda 0 anotasyon / 0 tespit görünüyor. Olası nedenler:\n" +
-                "  1. Bu slaytta gerçekten hiç anotasyon / tespit yoktu — önce ilgili modüllerden birini çalıştırın.\n" +
-                "  2. Slayt betikten ÖNCE QuPath dışında değiştirildi ve .qpdata kaydedilmedi.\n" +
+                "  1. Bu lamda gerçekten hiç anotasyon / tespit yoktu — önce ilgili modüllerden birini çalıştırın.\n" +
+                "  2. Lam betikten ÖNCE QuPath dışında değiştirildi ve .qpdata kaydedilmedi.\n" +
                 "  3. ROI seçilip içinde tespit üretildi ama anotasyon kaydedilmedi.\n" +
-                "QuPath'te [Ctrl+S] ile slaytı kaydedin ve betiği tekrar çalıştırın."
+                "QuPath'te [Ctrl+S] ile lamı kaydedin ve betiği tekrar çalıştırın."
 }
 
 def fmtName = (ext == "tsv") ? "TSV (TAB)" : "CSV (virgül)"
@@ -682,7 +682,7 @@ def resultBody =
     "  ${saveStatusLine}\n\n" +
     "📊 Özet\n" +
     "──────\n" +
-    "  Slayt sayısı         : ${imagesProcessed}\n" +
+    "  Lam sayısı         : ${imagesProcessed}\n" +
     "  Toplam anotasyon     : ${annotationsTotal}\n" +
     "  Toplam tespit        : ${detectionsTotal}\n" +
     "  Yazılan dosya sayısı : ${filesWritten.size()}\n" +
@@ -699,7 +699,7 @@ def resultBody =
 showResultWindow("Veri dışa aktarma — Tamamlandı 📤", resultBody)
 
 println "─────────────────────────────────────"
-println String.format(java.util.Locale.US, "Tamamlandı: %d slayt, %d dosya, %.1f sn",
+println String.format(java.util.Locale.US, "Tamamlandı: %d lam, %d dosya, %.1f sn",
     imagesProcessed, filesWritten.size(), elapsed)
 println "Çıktı: ${outDir.getAbsolutePath()}"
 println "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."

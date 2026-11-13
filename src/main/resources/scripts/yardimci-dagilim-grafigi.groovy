@@ -7,7 +7,7 @@
  *   Tespitlerin (hücrelerin) iki ölçümünü QuPath'in YERLEŞİK dağılım grafiği
  *   (Charts.scatterChart) ile çizer — matplotlib/Python gerekmez. İki ölçüm
  *   açılır listeden seçilir; grafik QuPath içinde ayrı bir pencerede açılır ve
- *   görüntüleyiciye bağlıdır (noktalar slayttaki sınıf renkleriyle gösterilir).
+ *   görüntüleyiciye bağlıdır (noktalar lamdaki sınıf renkleriyle gösterilir).
  *
  *   Tipik kullanım: denetimsiz fenotipleme sonrası UMAP1–UMAP2 gömmesini
  *   QuPath içinde görselleştirmek (bkz. Ekler → Hücre Fenotipleme; canlı köprü
@@ -20,7 +20,7 @@
  *     özellik matrisi, fenotipleme TSV içe aktarımı).
  *
  * KULLANIM:
- *   1. Ölçümlü tespitler içeren bir slayt açın (örn. Hücre tespiti / Nükleer boya /
+ *   1. Ölçümlü tespitler içeren bir lam açın (örn. Hücre tespiti / Nükleer boya /
  *      Sitoplazmik boya / Tümör içi Ki-67 modüllerinden sonra,
  *      ya da fenotip/UMAP etiketleri içe aktarıldıktan sonra).
  *   2. [Extensions → Atölye → İleri analiz → Dağılım grafiği (scatter chart)]
@@ -59,7 +59,7 @@ def collectMeasurementNames = { ->
 // ── Headless: ölçüm adlarını raporla, etkileşim yok ─────────────────────────
 if (isHeadless) {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { println "Önce bir slayt açın."; return }
+    if (imageData == null) { println "Önce bir lam açın."; return }
     def names = collectMeasurementNames()
     println "Dağılım grafiği sihirbazı: ${QP.getDetectionObjects().size()} tespit, ${names.size()} ölçüm."
     println "Bu sihirbaz QuPath arayüzü gerektirir (headless çalıştırılamaz)."
@@ -145,7 +145,7 @@ render = { ->
         xComboRef.set(xCombo); yComboRef.set(yCombo)
 
         def info = new javafx.scene.control.Label(
-            "${dets.size()} tespit · ${names.size()} ölçüm. Noktalar slayttaki sınıf renkleriyle gösterilir.")
+            "${dets.size()} tespit · ${names.size()} ölçüm. Noktalar lamdaki sınıf renkleriyle gösterilir.")
         info.setWrapText(true)
 
         def grid = new javafx.scene.layout.GridPane()
@@ -200,7 +200,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ Dağılım grafiği sihirbazı açıldı."

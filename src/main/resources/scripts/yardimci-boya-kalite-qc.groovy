@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   Seçili bölgede (yoksa tüm slaytta) H&E/İHK boya KALİTESİNİ niceler. QuPath'in
+ *   Seçili bölgede (yoksa tüm lamda) H&E/İHK boya KALİTESİNİ niceler. QuPath'in
  *   renk dekonvolüsyonuyla doku piksellerinde:
  *     • Boya-1 (Hematoksilen) ve Boya-2 (Eozin/DAB) ortalama optik yoğunluğu (OD)
  *     • Boya-1 : Boya-2 OD oranı (yoğunluk dengesi)
@@ -20,15 +20,15 @@
  *   kapsamı dışındadır. Yalnız ölçüm üretir; hiçbir klinik eşik/yorum üretmez.
  *
  * KULLANIM:
- *   1. Parlak-alan bir H&E (ya da İHK) slaytı açın; boya vektörleri tanımlı olmalı
+ *   1. Parlak-alan bir H&E (ya da İHK) lamı açın; boya vektörleri tanımlı olmalı
  *      (Image type = Brightfield H&E/H-DAB; gerekirse Boya vektörleri sihirbazı).
- *   2. (Önerilir) temsilî bir doku bölgesini anote edip SEÇİN; yoksa tüm slayt kullanılır.
+ *   2. (Önerilir) temsilî bir doku bölgesini anote edip SEÇİN; yoksa tüm lam kullanılır.
  *   3. [Extensions → Atölye → Yardımcılar → Boya kalitesi QC ölçümü]
  *
  * YÖNTEM / KAYNAK:
  *   Dunn C, Brettle D, Hodgson C, Hughes R, Treanor D (2025) "An international study of
  *   stain variability in histopathology using qualitative and quantitative analysis."
- *   J Pathol Inform 17:100423. doi:10.1016/j.jpi.2025.100423.  (Boya Normalizasyonu eki)
+ *   J Pathol Inform 17:100423. doi:10.1016/j.jpi.2025.100423.  (Boyama normalizasyonu eki)
  *   API: ColorTransformer.getTransformedPixels (Stain_1/Stain_2/Optical_density_sum), QuPath 0.6.0+.
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
@@ -93,7 +93,7 @@ def labL = { double r, double g, double b ->
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     if (isHeadless) { println "Görüntü açık değil."; return }
-    Dialogs.showErrorMessage("Görüntü yok", "Önce bir slayt açın."); return
+    Dialogs.showErrorMessage("Görüntü yok", "Önce bir lam açın."); return
 }
 def server = imageData.getServer()
 def stains = imageData.getColorDeconvolutionStains()
@@ -110,7 +110,7 @@ double[] svH = stains.getStain(1).getArray()
 double maxR = stains.getMaxRed(), maxG = stains.getMaxGreen(), maxB = stains.getMaxBlue()
 if (!(maxR > 0)) maxR = 255.0d; if (!(maxG > 0)) maxG = 255.0d; if (!(maxB > 0)) maxB = 255.0d
 
-// ── Bölgeyi seç: seçili alan anotasyonu, yoksa tüm slayt ────────────────────
+// ── Bölgeyi seç: seçili alan anotasyonu, yoksa tüm lam ────────────────────
 def sel = imageData.getHierarchy().getSelectionModel().getSelectedObjects().findAll { it.isAnnotation() && it.getROI()?.isArea() }
 def roi = sel.isEmpty() ? null : sel.iterator().next().getROI()
 int rx, ry, rw, rh
@@ -172,7 +172,7 @@ def sb = new StringBuilder()
 sb << "BOYA KALİTESİ QC ÖLÇÜMÜ\n"
 sb << "═══════════════════════\n\n"
 sb << "Görüntü : " << (server.getMetadata().getName() ?: "(adsız)") << "\n"
-sb << "Bölge   : " << (roi != null ? "seçili anotasyon" : "tüm slayt") << String.format(java.util.Locale.US, "  (%,d × %,d px, downsample %.2f)%n", rw, rh, downsample)
+sb << "Bölge   : " << (roi != null ? "seçili anotasyon" : "tüm lam") << String.format(java.util.Locale.US, "  (%,d × %,d px, downsample %.2f)%n", rw, rh, downsample)
 sb << String.format(java.util.Locale.US, "Doku    : %,d piksel  (%.1f%% örneklenen alan; OD-sum ≥ %.2f)%n", nTissue, 100.0d*tissueFrac, BG_OD)
 sb << "\n📊  Yoğunluk (optik yoğunluk, OD)\n"
 sb << "──────────────────────────────\n"
@@ -188,7 +188,7 @@ sb << "\n📝 Yorum (ölçüm, yorum değil)\n"
 sb << "──────────────────────────\n"
 sb << "  • OD ↑ = boya daha koyu/yoğun; OD ↓ = soluk/zayıf boyama.\n"
 sb << "  • Aynı ölçümü TARAYICI başına (GT450 ↔ AT2) ve ZAMAN içinde izleyin;\n"
-sb << "    eşik dışı slaytları işaretleyip (gerekirse) boya normalizasyonu uygulayın (Boya Normalizasyonu eki §8).\n"
+sb << "    eşik dışı lamları işaretleyip (gerekirse) boyama normalizasyonu uygulayın (Boyama normalizasyonu eki §8).\n"
 sb << "  • Yönlü ΔE (dΔE) burada YOK: çok-slaytlı bir referans havuzu gerektirir (Dunn 2025).\n"
 sb << "\nYöntem: Dunn ve ark. 2025, J Pathol Inform 17:100423 (doi:10.1016/j.jpi.2025.100423).\n"
 sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik yorum içermez."

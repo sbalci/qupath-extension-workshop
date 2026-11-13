@@ -16,7 +16,7 @@
  *     görüntüleyicide canlı kaplama; sonucu anotasyon/ölçüm nesnelerine çevirebilir.
  *
  * KULLANIM:
- *   1. Bir slayt açın (ideali bir ROI de seçin).
+ *   1. Bir lam açın (ideali bir ROI de seçin).
  *   2. [Extensions → Atölye → Yardımcılar → Doku tespiti → Piksel eşikleyici]
  *   3. Açılan pencerede ölçümü (ör. Hematoksilen OD) ve eşiği seçin; önizleyin;
  *      "Create objects" ile doku bölgelerini anotasyona çevirin.
@@ -35,7 +35,7 @@ if (gui == null) {
     return
 }
 if (QP.getCurrentImageData() == null) {
-    Dialogs.showWarningNotification("Piksel eşikleyici", "Önce bir slayt açın; eşikleyici açık görüntü ister.")
+    Dialogs.showWarningNotification("Piksel eşikleyici", "Önce bir lam açın; eşikleyici açık görüntü ister.")
     return
 }
 

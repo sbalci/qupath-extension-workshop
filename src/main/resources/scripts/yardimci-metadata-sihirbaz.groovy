@@ -1,12 +1,12 @@
 /**
- * Yardımcı - Kohort Üst Veri Sihirbazı (tek pencere: bu slayt + tüm proje)
+ * Yardımcı - Kohort Üst Veri Sihirbazı (tek pencere: bu lam + tüm proje)
  * ------------------------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   "Analiz etmeden önce ne elinde olduğunu bil." Açık slaytın VEYA tüm
+ *   "Analiz etmeden önce ne elinde olduğunu bil." Açık lamın VEYA tüm
  *   projenin teknik/tarayıcı üst verisini (metadata) okur — hepsi tek pencereden:
- *     1. BU SLAYT — açık slaytın boyut, piksel boyutu (µm/px), kestirilen
+ *     1. BU LAM — açık lamın boyut, piksel boyutu (µm/px), kestirilen
  *        büyütme, piramit, dosya bilgisi vb. üst verisini anında raporlar.
  *     2. TÜM PROJE — projedeki her görüntüyü arka planda gezer; çekirdek
  *        alanları (+ okunabiliyorsa gömülü tarayıcı anahtarları) bir CSV'ye
@@ -21,7 +21,7 @@
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Çekirdek alanlar (boyut, piksel boyutu, alan, piramit, dosya) QuPath'in
  *     kararlı genel API'sinden gelir; güvenilirdir.
- *   • "Kestirilen büyütme" bir SEZGİSEL'dir (0.25 µm/px ≈ 40×). Slayt gömülü
+ *   • "Kestirilen büyütme" bir SEZGİSEL'dir (0.25 µm/px ≈ 40×). Lam gömülü
  *     "objektif büyütme" varsa (getMagnification) ayrıca raporlanır.
  *   • Gömülü tarayıcı anahtarları (tarayıcı markası, tarama tarihi, MPP vb.)
  *     yalnız okuyucu/biçim bunları açığa çıkardığında doldurulur (örn. bazı
@@ -29,9 +29,9 @@
  *   • Hiçbir klinik yorum, tanı veya skor üretmez.
  *
  * KULLANIM:
- *   1. Bir QuPath projesi açın (tek slayt raporu için bir de slayt açın).
+ *   1. Bir QuPath projesi açın (tek lam raporu için bir de lam açın).
  *   2. [Extensions → Atölye → Yardımcılar → Klinik ve kohort → Kohort üst veri sihirbazı]
- *   3. "Bu slayt" panosunu inceleyin VEYA "Tüm projeyi tara → CSV".
+ *   3. "Bu lam" panosunu inceleyin VEYA "Tüm projeyi tara → CSV".
  *   4. CSV'yi Excel/R/Python'da açıp kohort dahil/dışlama ölçütlerinizi tanımlayın.
  *
  * KAYNAK:
@@ -213,11 +213,11 @@ def extractMetadata = { imageData, entry, project ->
     return m
 }
 
-// ── Tek slayt için okunabilir pano metni ────────────────────────────────────
+// ── Tek lam için okunabilir pano metni ────────────────────────────────────
 def reportText = { m ->
     def sb = new StringBuilder()
     def line = { String label, Object val -> sb << String.format(java.util.Locale.US, '  %-22s : %s%n', label, (val == null ? '—' : val.toString())) }
-    sb << 'SLAYT ÜST VERİSİ\n'
+    sb << 'LAM ÜST VERİSİ\n'
     sb << '═════════════════\n'
     line('Görüntü', m.image_name)
     line('Boyut (px)', fmtInt((long) m.width_pixels) + ' × ' + fmtInt((long) m.height_pixels))
@@ -275,10 +275,10 @@ def writeProjectColumns = { entry, m ->
     } catch (Throwable ignore) {}
 }
 
-// ── Headless: yalnız açık slaytı raporla (UI yok, değişiklik yok) ────────────
+// ── Headless: yalnız açık lamı raporla (UI yok, değişiklik yok) ────────────
 if (isHeadless) {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { println 'Önce bir slayt açın (headless modda yalnız açık slayt raporlanır).'; return }
+    if (imageData == null) { println 'Önce bir lam açın (headless modda yalnız açık lam raporlanır).'; return }
     println reportText(extractMetadata(imageData, QP.getProjectEntry(), QP.getProject()))
     def project = QP.getProject()
     if (project != null) println '\nTüm proje taraması + CSV için sihirbazı QuPath arayüzünde açın.'
@@ -327,7 +327,7 @@ def buildSummary = { List rows, List errors, File outDir, File csvFile, boolean 
     def sb = new StringBuilder()
     sb << 'KOHORT ÜST VERİSİ — ÖZET\n'
     sb << '════════════════════════\n\n'
-    sb << String.format(java.util.Locale.US, '  Taranan slayt   : %,d%n', rows.size())
+    sb << String.format(java.util.Locale.US, '  Taranan lam   : %,d%n', rows.size())
     sb << String.format(java.util.Locale.US, '  Atlanan / hatalı: %,d%n', errors.size())
     def pixels = rows.collect { it.pixel_width_um }.findAll { it != null && !Double.isNaN((double) it) && it > 0 }
     if (!pixels.isEmpty()) {
@@ -449,12 +449,12 @@ render = { ->
         if (imageData != null) {
             def rep
             try { rep = reportText(extractMetadata(imageData, QP.getProjectEntry(), project)) }
-            catch (Throwable t) { rep = 'Açık slayt okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName()) }
+            catch (Throwable t) { rep = 'Açık lam okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName()) }
             reportRef.set(rep)
             addMonoArea(rep)
         } else {
             reportRef.set('')
-            addGuidance('Tek slayt raporu için bir slayt açın. Tüm projeyi taramak için bir proje açıp aşağıdaki düğmeyi kullanın.')
+            addGuidance('Tek lam raporu için bir lam açın. Tüm projeyi taramak için bir proje açıp aşağıdaki düğmeyi kullanın.')
         }
         def chk = new javafx.scene.control.CheckBox('Proje sütunlarına da yaz (sıralanabilir)')
         chk.setSelected(writeColsRef.get())
@@ -463,7 +463,7 @@ render = { ->
         center.getChildren().add(chk)
 
         actions.add(navButton('Kapat', { stage.close() }))
-        if (imageData != null) actions.add(navButton('Kopyala', { copyToClipboard(reportRef.get()) }, 'Bu slayt raporunu panoya kopyala'))
+        if (imageData != null) actions.add(navButton('Kopyala', { copyToClipboard(reportRef.get()) }, 'Bu lam raporunu panoya kopyala'))
         actions.add(navButton('⟳ Yenile', { render() }))
         def scanBtn = navButton('Tüm projeyi tara → CSV ▶', { startScan() }, 'Projedeki her görüntünün üst verisini CSV\'ye yazar')
         scanBtn.setDisable(project == null)
@@ -530,7 +530,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println '✓ Kohort üst veri sihirbazı açıldı.'

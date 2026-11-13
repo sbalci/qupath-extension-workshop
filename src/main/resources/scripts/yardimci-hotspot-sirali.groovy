@@ -27,7 +27,7 @@
  *
  * KULLANIM:
  *   1. Karo anotasyonları olan (ör. piksel sınıflandırıcı çıktısı,
- *      Ki-67 heterojenlik ızgarası) bir slayt açın.
+ *      Ki-67 heterojenlik ızgarası) bir lam açın.
  *   2. [Extensions → Atölye → Yardımcılar → Uzamsal analiz → Sıralı Hotspot Seçici]
  *      (ya da [Automate → Project scripts → bu betik])
  *   3. Sınıf → ölçüm → N iletişimlerini yanıtlayın.
@@ -122,7 +122,7 @@ String hotspotClass   = "Hotspot"
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     if (isHeadless) println "Görüntü açık değil."
-    else Dialogs.showErrorMessage("Görüntü açık değil", "Önce karo anotasyonları olan bir slayt açın.")
+    else Dialogs.showErrorMessage("Görüntü açık değil", "Önce karo anotasyonları olan bir lam açın.")
     return
 }
 def cal = imageData.getServer().getPixelCalibration()

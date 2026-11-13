@@ -8,7 +8,7 @@
  *   PanNuke / CoNIC / MONKEY / PUMA çekirdek, MapDe) bir WSI üzerinde çalıştırır.
  *   Üç KAPSAM seçilebilir:
  *     • Anotasyon bölgesi — yalnız QuPath'te çizdiğiniz alan içinde (tek bölge),
- *     • Tüm görüntü       — açık slaytın tamamında (tüm-görüntü maskesi),
+ *     • Tüm görüntü       — açık lamın tamamında (tüm-görüntü maskesi),
  *     • Tüm proje         — projedeki her görüntüde tek tek (sonuç her girdiye kaydedilir).
  *   Kapsam ikili (binary) bir maske PNG'sine rasterlenir → Python köprüsü
  *   (region_runner.py) `engine.run(masks=[...], auto_get_mask=False)` ile yalnız maske
@@ -37,7 +37,7 @@
  * KULLANIM:
  *   1. Resmî TIA Toolbox eklentisini bir kez kurup çalışma zamanını yükleyin
  *      (Extensions → TIAToolbox → Install Python runtime…) — venv'i paylaşırız.
- *   2. Bir slayt açın (tercihen OpenSlide ile); ilgi BÖLGESİNİ çizip seçin.
+ *   2. Bir lam açın (tercihen OpenSlide ile); ilgi BÖLGESİNİ çizip seçin.
  *   3. [Extensions → Atölye → Yardımcılar → TIA Toolbox bölgede çekirdek/mitoz tespiti]
  *   4. İlk açılışta python.exe + region_runner.py otomatik bulunur (gerekirse Gözat).
  *   5. Model seçip "Çalıştır" → bölge maskesi yazılır, çıkarım çalışır, sonuç içe alınır.
@@ -325,7 +325,7 @@ def resultText = { imageData, cfg, model, exp, imp, scope = 'annotation' ->
     def sb = new StringBuilder()
     sb << "TIA TOOLBOX — TESPİT\n"
     sb << "════════════════════\n\n"
-    sb << "Slayt   : " << imageNameOf(imageData) << "\n"
+    sb << "Lam   : " << imageNameOf(imageData) << "\n"
     sb << "Kapsam  : " << scopeLbl << "\n"
     sb << "Model   : " << model.name << "  (" << model.task << ")\n"
     sb << "Cihaz   : " << (cfg.device ?: 'cuda') << "\n"
@@ -357,7 +357,7 @@ def projectResultText = { cfg, model, summary ->
         summary.perImage.each { e -> sb << String.format(java.util.Locale.US, "  • %-34s %,d%n", (e.name ?: '?').toString(), (int)(e.count ?: 0)) }
     else sb << "  (kaydedilmiş sonuç yok)\n"
     sb << "\nHer görüntünün sonuçları o girdiye kaydedildi (nokta-anotasyonu '" << SENTINEL_PREFIX << "…').\n"
-    sb << "Atlananlar: yerel WSI yolu olmayan görüntüler (tiatoolbox slaytı doğrudan açamaz).\n"
+    sb << "Atlananlar: yerel WSI yolu olmayan görüntüler (tiatoolbox lamı doğrudan açamaz).\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
 }
@@ -473,7 +473,7 @@ def startSelftest = {
 // Dönüş: [ok, error?, exp?, imp?]. appendLine ile ilerleme yazar; setPhase ile faz.
 def runOnImageData = { imageData, cfg, model, List regionRois, Closure appendLine, Closure setPhase ->
     def wsi = wsiPathOf(imageData)
-    if (wsi == null) return [ok: false, error: 'Slaytın yerel dosya yolu yok (WSI tiatoolbox tarafından açılamaz).']
+    if (wsi == null) return [ok: false, error: 'Lamın yerel dosya yolu yok (WSI tiatoolbox tarafından açılamaz).']
     if (regionRois == null || regionRois.isEmpty()) return [ok: false, error: 'Çıkarım bölgesi yok.']
     def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs()
     def base    = imageNameOf(imageData)
@@ -697,7 +697,7 @@ render = { ->
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce bir slayt açın (tercihen OpenSlide), ilgi BÖLGESİNİ çizip seçin, sonra "⟳ Yenile".')
+            addGuidance('Önce bir lam açın (tercihen OpenSlide), ilgi BÖLGESİNİ çizip seçin, sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
@@ -707,7 +707,7 @@ render = { ->
             def project = QP.getProject()
             title.setText('TIA Toolbox — tespit')
             def sb = new StringBuilder()
-            sb << "Slayt          : " << imageNameOf(imageData) << "\n"
+            sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
             sb << String.format(java.util.Locale.US, "Bölge anotasyonu: %,d   (seçili → seçili kullanılır)%n", rois.size())
             sb << "Projedeki görüntü: " << ((project != null) ? project.getImageList().size().toString() : '(proje yok)') << "\n"
@@ -732,7 +732,7 @@ render = { ->
             scopeRow.getChildren().addAll(new javafx.scene.control.Label('Kapsam:'), scopeChoice)
             center.getChildren().add(scopeRow)
             def scopeHint = (scope == 'annotation') ? 'Yalnız çizili/seçili alan(lar) içinde çalışır (tek bölge tespiti).'
-                          : (scope == 'image')      ? 'Açık slaytın TAMAMINDA çalışır (tüm-görüntü maskesi).'
+                          : (scope == 'image')      ? 'Açık lamın TAMAMINDA çalışır (tüm-görüntü maskesi).'
                           :                            'Projedeki TÜM görüntülerde tek tek çalışır; sonuç her girdiye kaydedilir.'
             addGuidance('Kapsam — ' + scopeHint)
 
@@ -833,7 +833,7 @@ javafx.application.Platform.runLater {
         stage.setAlwaysOnTop(alwaysTop.get())
         render(); stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ TIA Toolbox bölgede çekirdek/mitoz tespiti sihirbazı açıldı."

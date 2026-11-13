@@ -23,7 +23,7 @@
  *   • Birincil: `object_id` (QuPath UUID) sütunu — özellik matrisi yardımcısı bu
  *     sütunu yazar; birebir, kesin eşleşme.
  *   • Yedek: `object_id` yoksa `centroid_x_um` + `centroid_y_um` ile en yakın
- *     tespit (≤ 1 µm tolerans). Kalibrasyonsuz slaytta piksel cinsindendir.
+ *     tespit (≤ 1 µm tolerans). Kalibrasyonsuz lamda piksel cinsindendir.
  *
  * SÜTUN SÖZLEŞMESİ (başlık satırı zorunlu):
  *   • Anahtar : object_id   (ya da centroid_x_um + centroid_y_um)

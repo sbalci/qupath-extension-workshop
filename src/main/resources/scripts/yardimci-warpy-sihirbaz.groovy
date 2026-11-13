@@ -5,17 +5,17 @@
  *
  * NE YAPAR:
  *   Warpy (BIOP) ile hesaplanmış ESNEK (non-rigid) bir hizalama dönüşümünü
- *   kullanarak, bir KAYNAK slayttaki üst düzey anotasyonları — VE içlerindeki
+ *   kullanarak, bir KAYNAK lamdaki üst düzey anotasyonları — VE içlerindeki
  *   yuvalanmış tespitleri/hücreleri (alt nesneler özyinelemeli) — şu anki (HEDEF)
- *   slayta TEK TIKLA aktarır. Yalnız "anotasyon" değil: bir anotasyonun içinde
+ *   lama TEK TIKLA aktarır. Yalnız "anotasyon" değil: bir anotasyonun içinde
  *   hücre tespitleri varsa onlar da (ad/ID/ölçümleriyle) taşınır. Afin (§ Hizalama
  *   aktarımı) yetmeyen, kesitler arası kırışma/gerilme olan durumlar içindir
  *   (hücre düzeyi doğruluk).
  *
  *   İsteğe bağlı — aktarım sonrası "yoğunluk ölçümü ekle": aktarılan nesnelere
- *   HEDEF slaytta o boyanın (İHK) sinyali ölçülür (Warpy, QuPath çekirdeği
+ *   HEDEF lamda o boyanın (İHK) sinyali ölçülür (Warpy, QuPath çekirdeği
  *   ObjectMeasurements'ı sarmalar; parlak-alan boya ayrıştırmasını kendisi yapar;
- *   downsample seçilebilir). ⚠️ Seri kesitte AYNI hücre iki slaytta olmadığından
+ *   downsample seçilebilir). ⚠️ Seri kesitte AYNI hücre iki lamda olmadığından
  *   HÜCRE düzeyi yeniden-ölçüm bir VEKİLDİR — bölge/anotasyon düzeyi ölçüm daha güvenlidir.
  *
  * ÖNEMLİ — HİZALAMA (registration) FIJI'DE YAPILIR, QuPath'te DEĞİL:
@@ -35,7 +35,7 @@
  *   3. [Plugins → BigDataViewer-Playground → Sources → Register → QuPath - Create Warpy Registration]:
  *      kaba rigid → elastix afin (ROI) → elastix spline → (ops.) BigWarp düzeltme →
  *      dönüşümü QuPath projesine yazar (transform_<hedef>_<kaynak>.json).
- *   4. QuPath'e dönüp HEDEF (sabit) slaytı açın; bu sihirbazla aktarın.
+ *   4. QuPath'e dönüp HEDEF (sabit) lamı açın; bu sihirbazla aktarın.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Yalnız nesneleri TAŞIR (koordinat dönüşümü). Hizalama kalitesini,
@@ -139,7 +139,7 @@ def callStatic = { Class c, String name, List args ->
 // ── Ön kontroller ───────────────────────────────────────────────────
 def project = QP.getProject()
 if (project == null) {
-    Dialogs.showErrorMessage("Proje açık değil", "Kaynak ve hedef slayt AYNI QuPath projesinde olmalıdır.")
+    Dialogs.showErrorMessage("Proje açık değil", "Kaynak ve hedef lam AYNI QuPath projesinde olmalıdır.")
     return
 }
 if (isHeadless) {
@@ -153,7 +153,7 @@ def doTransfer = { Object sourceEntry, boolean addMeas, double downsample, boole
         def W = warpyClass()
         if (W == null) return [ok:false, kind:'noclass', error:"Warpy eklentisi kurulu değil (BIOP kataloğu). Kurup QuPath'i yeniden başlatın."]
         def targetEntry = QP.getProjectEntry()
-        if (targetEntry == null) return [ok:false, kind:'notarget', error:"Hedef slayt bulunamadı; aktarımın HEDEF (sabit) slaytını açın."]
+        if (targetEntry == null) return [ok:false, kind:'notarget', error:"Hedef lam bulunamadı; aktarımın HEDEF (sabit) lamını açın."]
 
         def transform, objs, transferred
         try {
@@ -168,7 +168,7 @@ def doTransfer = { Object sourceEntry, boolean addMeas, double downsample, boole
         }
 
         def n = (transferred == null) ? 0 : transferred.size()
-        if (n == 0) return [ok:false, kind:'empty', error:"Kaynak slaytta aktarılacak nesne yok."]
+        if (n == 0) return [ok:false, kind:'empty', error:"Kaynak lamda aktarılacak nesne yok."]
 
         transferred.each { o -> o.setName(SENTINEL); if (lock) o.setLocked(true) }
 
@@ -252,7 +252,7 @@ javafx.application.Platform.runLater {
                 new ProcessBuilder([p]).start()
                 Dialogs.showMessageDialog('Fiji başlatıldı',
                     'Fiji açılıyor. ③. adımdaki komutları izleyin (a: Create BDV Dataset (QuPath) → project.qpproj, b: Create Warpy Registration).\n' +
-                    'Hizalama bittiğinde QuPath\'e dönün, HEDEF slaytı açıp ④. adımdan aktarın.')
+                    'Hizalama bittiğinde QuPath\'e dönün, HEDEF lamı açıp ④. adımdan aktarın.')
             } catch (Throwable t) {
                 Dialogs.showErrorMessage('Fiji başlatılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
             }
@@ -280,10 +280,10 @@ javafx.application.Platform.runLater {
         refreshBtn.setOnAction({ refreshSources()
             if (sourceBox.getItems().isEmpty())
                 Dialogs.showMessageDialog('Warpy dönüşümü yok',
-                    'Bu (HEDEF) slayt için kayıtlı Warpy dönüşümü bulunamadı. Önce Fiji\'de hizalamayı tamamlayıp bu slaytı açın.')
+                    'Bu (HEDEF) lam için kayıtlı Warpy dönüşümü bulunamadı. Önce Fiji\'de hizalamayı tamamlayıp bu lamı açın.')
         })
 
-        def measChk = new javafx.scene.control.CheckBox('Aktarım sonrası HEDEF slaytta yoğunluk ölçümü ekle — aktarılan nesnelere hedef boyanın (İHK) sinyalini ölçer (yavaş; hata verirse aktarım yine tamamlanır)')
+        def measChk = new javafx.scene.control.CheckBox('Aktarım sonrası HEDEF lamda yoğunluk ölçümü ekle — aktarılan nesnelere hedef boyanın (İHK) sinyalini ölçer (yavaş; hata verirse aktarım yine tamamlanır)')
         measChk.setSelected(false); measChk.setWrapText(true)
         def dsField = new javafx.scene.control.TextField('1'); dsField.setPrefColumnCount(4)
         dsField.disableProperty().bind(measChk.selectedProperty().not())
@@ -297,7 +297,7 @@ javafx.application.Platform.runLater {
 
         aktarBtn.setOnAction({
             if (!warpyOk) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Warpy eklentisi kurulu değil.'); return }
-            if (QP.getCurrentImageData() == null) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Aktarımın HEDEF slaytını açın.'); return }
+            if (QP.getCurrentImageData() == null) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Aktarımın HEDEF lamını açın.'); return }
             def srcName = sourceBox.getValue()
             if (!srcName) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Kaynak yok — önce Fiji\'de hizalamayı tamamlayıp "Kaynakları tazele"ye basın.'); return }
             def srcEntry = sourceEntries[srcName]
@@ -359,15 +359,15 @@ javafx.application.Platform.runLater {
                   '     rigid → elastix afin → elastix spline → (ops.) BigWarp → dönüşüm QuPath projesine YAZILIR (transform_<hedef>_<kaynak>.json).'))
 
         // ④ QuPath'e dön → anotasyonları aktar
-        def srcRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Kaynak slayt:'), sourceBox, refreshBtn)
+        def srcRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Kaynak lam:'), sourceBox, refreshBtn)
         srcRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
         javafx.scene.layout.HBox.setHgrow(sourceBox, javafx.scene.layout.Priority.ALWAYS)
         sourceBox.setMaxWidth(Double.MAX_VALUE)
-        def srcNote = new javafx.scene.control.Label('Kaynak listesi, ③\'teki Fiji hizalaması projeye yazıldıktan SONRA "↻ Kaynakları tazele" ile dolar. HEDEF (sabit) slayt AÇIK olmalı; henüz hizalama yoksa liste BOŞTUR.')
+        def srcNote = new javafx.scene.control.Label('Kaynak listesi, ③\'teki Fiji hizalaması projeye yazıldıktan SONRA "↻ Kaynakları tazele" ile dolar. HEDEF (sabit) lam AÇIK olmalı; henüz hizalama yoksa liste BOŞTUR.')
         srcNote.setWrapText(true); srcNote.setMaxWidth(Double.MAX_VALUE); srcNote.setStyle('-fx-opacity: 0.8; -fx-font-size: 11px;')
         def step4 = new javafx.scene.layout.VBox(6,
             stepHeader('④ QuPath\'e dön → anotasyonları aktar'),
-            instr('HEDEF (sabit) slaytı QuPath\'te açın, "↻ Kaynakları tazele" deyin, kaynağı seçip "Anotasyonları aktar"a basın. Örtüşmeyi opaklık kaydırıcısıyla doğrulayın.'),
+            instr('HEDEF (sabit) lamı QuPath\'te açın, "↻ Kaynakları tazele" deyin, kaynağı seçip "Anotasyonları aktar"a basın. Örtüşmeyi opaklık kaydırıcısıyla doğrulayın.'),
             srcRow, srcNote,
             new javafx.scene.layout.VBox(4, measChk, dsRow, lockChk),
             status)

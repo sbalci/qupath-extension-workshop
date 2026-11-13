@@ -25,7 +25,7 @@
  *     içe aktarma öncesinde otomatik silinir.
  *
  * GeoJSON ÜRETİMİ (ön koşul, QuPath dışında):
- *   Bir Python segmentasyon hattı çalıştırın — slaytı karolara bölün, U-Net ile
+ *   Bir Python segmentasyon hattı çalıştırın — lamı karolara bölün, U-Net ile
  *   çıkarım yapın, maskeleri birleştirip poligon GeoJSON'a dönüştürün. Tam akış,
  *   örnek kod ve sınırlar: Derin Öğrenme Eğitimi ve Segmentasyon eki
  *   (atolye.patoloji.dev/ekler/derin-ogrenme-egitimi.html). Yöntem ilhamı:

@@ -3,7 +3,7 @@
  * ---------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
- * Pan-sitokeratin (CK) DAB parlak alan slaytlarında tümör tomurcuklarını
+ * Pan-sitokeratin (CK) DAB parlak alan lamlarında tümör tomurcuklarını
  * yarı otomatik sayar. Yöntem: gömülü bir DAB piksel sınıflandırıcısı CK⁺
  * bölgeleri ayırır → boyut penceresi (varsayılan 40–700 µm², ≈ ITBCC'nin
  * 1–4 hücrelik tomurcuğu) ile süzülür → kalan nesneler "Tumor bud" sınıfına
@@ -36,7 +36,7 @@
  *   • ITBCC 2016: Lugli A ve ark. Mod Pathol 2017;30(9):1299-1311.
  *     DOI: 10.1038/modpathol.2017.46
  *
- * NOT: Gömülü sınıflandırıcının boya vektörleri ("Cam5.2") kaynak slayta
+ * NOT: Gömülü sınıflandırıcının boya vektörleri ("Cam5.2") kaynak lama
  * özgüdür. Kendi CK antikoru/tarayıcınız için [Boya vektörleri sihirbazı] ile
  * vektörleri yeniden kestirip eşiği uyarlamanız gerekebilir.
  *
@@ -66,7 +66,7 @@ final String BAND_NAME = 'Tomurcuk bandı (invazif cephe)'
 
 // ── Gömülü CK/DAB piksel sınıflandırıcısı (handson/classifiers/.../ck-tumor-dab.json) ──
 // Aynı JSON proje klasöründe de bulunur; sihirbaz, projeye bağımlı olmadan
-// kendi kopyasından çalışır. Boya vektörleri kaynak slayta özgüdür (yukarıdaki NOT).
+// kendi kopyasından çalışır. Boya vektörleri kaynak lama özgüdür (yukarıdaki NOT).
 final String CK_CLASSIFIER_JSON = '''{
   "pixel_classifier_type": "OpenCVPixelClassifier",
   "metadata": {
@@ -472,6 +472,6 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }

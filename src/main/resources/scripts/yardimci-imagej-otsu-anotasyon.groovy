@@ -12,7 +12,7 @@
  *
  *   QuPath ⇄ ImageJ köprüsünün küçük bir gösterimidir: eşik DÜŞÜK
  *   çözünürlükte hesaplanır, ama ROI tam çözünürlükte yeniden ölçeklenip
- *   görüntülenir — yani tüm slayt görüntülerinde de çalışır.
+ *   görüntülenir — yani tüm kesit görüntülerinde de çalışır.
  *
  * NE ÜRETİR (ve ne ÜRETMEZ):
  *   • Yalnız bir alan anotasyonu + (kalibre ise) alanı (mm²) üretir.

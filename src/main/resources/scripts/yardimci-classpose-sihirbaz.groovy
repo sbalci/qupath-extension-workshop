@@ -20,7 +20,7 @@
  * NE ÖLÇER (ve ne ÖLÇMEZ):
  *   • Seçili alandaki model-tespitli hücrelerin sınıf başına sayımı, yüzdesi ve yoğunluğu (hücre/mm²).
  *   • Sınıf adları modelin eğitim veri setinin kategorileridir; tanı değildir. Klinik yorum ÜRETMEZ.
- *   • µm/px değerini Classpose SLAYT DOSYASINDAN okur; QuPath'te elle girilen kalibrasyon aktarılamaz.
+ *   • µm/px değerini Classpose LAM DOSYASINDAN okur; QuPath'te elle girilen kalibrasyon aktarılamaz.
  *
  * LİSANS SINIRI:
  *   Classpose kodu CC BY-NC 4.0 (bu eklenti Apache-2.0) → kod PAKETLENMEZ/KOPYALANMAZ; sabit commit
@@ -243,7 +243,7 @@ def safeName = { String s ->
     def cleaned = original.replaceAll(/[^A-Za-z0-9._-]+/, '_')
     return cleaned == original ? cleaned : (cleaned + '_' + Integer.toHexString(original.hashCode()))
 }
-// Çalışma klasörü: ayar → <proje>/classpose_work/<görüntü> → <slayt klasörü>/classpose_work/<görüntü> → geçici klasör.
+// Çalışma klasörü: ayar → <proje>/classpose_work/<görüntü> → <lam klasörü>/classpose_work/<görüntü> → geçici klasör.
 def resolveWorkDir = { cfg, imageData ->
     def name = safeName(imageNameOf(imageData))
     def wd = cfg.workDir?.trim()
@@ -539,19 +539,19 @@ def writeRoiGeoJson = { roi, File f ->
     return true
 }
 
-// ── Slayt dosyası: Classpose dosyayı DOĞRUDAN okur → yerel, türetilmemiş tek dosya olmalı ──
+// ── Lam dosyası: Classpose dosyayı DOĞRUDAN okur → yerel, türetilmemiş tek dosya olmalı ──
 def slideFileOf = { imageData ->
     def server = imageData.getServer()
     boolean derived = (server instanceof qupath.lib.images.servers.TransformingImageServer) ||
                       (server instanceof qupath.lib.images.servers.SparseImageServer) ||
                       (server instanceof qupath.lib.images.servers.ConcatChannelsImageServer) ||
                       (server instanceof qupath.lib.images.servers.ZConcatenatedImageServer)
-    if (derived) return [ok: false, error: 'Bu görüntü kırpılmış/döndürülmüş ya da birleştirilmiş bir görünüm. Classpose slayt dosyasını doğrudan okur; koordinatlar dosyayla eşleşmez — özgün dosyayı açın.']
+    if (derived) return [ok: false, error: 'Bu görüntü kırpılmış/döndürülmüş ya da birleştirilmiş bir görünüm. Classpose lam dosyasını doğrudan okur; koordinatlar dosyayla eşleşmez — özgün dosyayı açın.']
     def uris = null
     try { uris = server.getURIs() } catch (Throwable ignore) {}
-    if (uris == null || uris.size() != 1) return [ok: false, error: 'Görüntü tek bir yerel slayt dosyasına karşılık gelmiyor (Classpose dosyayı doğrudan okur).']
+    if (uris == null || uris.size() != 1) return [ok: false, error: 'Görüntü tek bir yerel lam dosyasına karşılık gelmiyor (Classpose dosyayı doğrudan okur).']
     def uri = uris.iterator().next()
-    if (!'file'.equals(uri.getScheme())) return [ok: false, error: 'Görüntü yerel bir dosya değil (' + uri.getScheme() + '). Classpose yalnız yerel slayt dosyası okur (OMERO/URL/DZI desteklenmez).']
+    if (!'file'.equals(uri.getScheme())) return [ok: false, error: 'Görüntü yerel bir dosya değil (' + uri.getScheme() + '). Classpose yalnız yerel lam dosyası okur (OMERO/URL/DZI desteklenmez).']
     // Paths.get(URI) korur (aynı deyim resolveWorkDir'de) — file://host/share/... UNC'ye (\\host\share\...) çözülür.
     // new File(uri) host bileşenini SESSİZCE atar ve yanlış yerel yol üretir (D:\share\... gibi).
     def f
@@ -562,7 +562,7 @@ def slideFileOf = { imageData ->
         def rawPath = (uri.getPath() ?: uri.getSchemeSpecificPart() ?: '').replace((char) '/', (char) '\\')
         f = (host != null && !host.trim().isEmpty()) ? new File('\\\\' + host + rawPath) : new File(rawPath)
     }
-    if (!f.isFile()) return [ok: false, error: 'Slayt dosyası bulunamadı: ' + f.getAbsolutePath()]
+    if (!f.isFile()) return [ok: false, error: 'Lam dosyası bulunamadı: ' + f.getAbsolutePath()]
     def kind = ((server.getServerType() ?: '') + ' ' + server.getClass().getName()).toLowerCase(java.util.Locale.ROOT)
     return [ok: true, file: f, openslide: kind.contains('openslide')]
 }
@@ -623,7 +623,7 @@ def ensurePrecheck = { File slide, cfg ->
 def calForAreas = { imageData, Map pc ->
     def cal = pixelMicrons(imageData)
     if (cal != null) return [pw: cal.pw, ph: cal.ph, source: 'QuPath kalibrasyonu']
-    if (pc != null && pc.mpp_x) return [pw: (pc.mpp_x as double), ph: (pc.mpp_y as double), source: 'slayt dosyası']
+    if (pc != null && pc.mpp_x) return [pw: (pc.mpp_x as double), ph: (pc.mpp_y as double), source: 'lam dosyası']
     return null
 }
 
@@ -639,16 +639,16 @@ def readiness = { imageData, cfg ->
     if (!sf.ok) blocks << sf.error
     def pcRes = sf.ok ? ensurePrecheck(sf.file, cfg) : null
     def pc = pcRes?.pc
-    if (sf.ok && pcRes == null && setupComplete(cfg)) blocks << 'Slayt dosyası denetleniyor… (birkaç saniye)'
+    if (sf.ok && pcRes == null && setupComplete(cfg)) blocks << 'Lam dosyası denetleniyor… (birkaç saniye)'
     if (pc != null && pc.ok != '1') {
-        if (pc.reason == 'no_mpp') blocks << 'Slayt dosyasında µm/px bilgisi yok. Classpose µm/px değerini dosyadan okur; QuPath\'te girilen kalibrasyon aktarılamaz.'
-        else if (pc.reason == 'unreadable') blocks << 'OpenSlide bu slayt dosyasını açamıyor (ör. CZI desteklenmez).' + (pcRes.text ? ('\n' + pcRes.text) : '')
-        else if (pc.reason == 'timeout') blocks << 'Slayt ön denetimi 60 saniyede yanıt vermedi (ağ sürücüsü yavaş olabilir) — "⟳ Yenile" ile yeniden deneyin.'
-        else blocks << 'Slayt ön denetimi başarısız.' + (pcRes.text ? ('\n' + pcRes.text) : '')
+        if (pc.reason == 'no_mpp') blocks << 'Lam dosyasında µm/px bilgisi yok. Classpose µm/px değerini dosyadan okur; QuPath\'te girilen kalibrasyon aktarılamaz.'
+        else if (pc.reason == 'unreadable') blocks << 'OpenSlide bu lam dosyasını açamıyor (ör. CZI desteklenmez).' + (pcRes.text ? ('\n' + pcRes.text) : '')
+        else if (pc.reason == 'timeout') blocks << 'Lam ön denetimi 60 saniyede yanıt vermedi (ağ sürücüsü yavaş olabilir) — "⟳ Yenile" ile yeniden deneyin.'
+        else blocks << 'Lam ön denetimi başarısız.' + (pcRes.text ? ('\n' + pcRes.text) : '')
     }
     boolean boundsNonZero = pc != null && pc.ok == '1' && ((pc.bounds_x ?: '0') != '0' || (pc.bounds_y ?: '0') != '0')
     if (boundsNonZero && !sf.openslide) {
-        blocks << 'Slayt dosyasında OpenSlide sınır ofseti var ama QuPath görüntüyü OpenSlide ile açmamış — hücre konturları kayar. Görüntüyü OpenSlide ile yeniden ekleyin.'
+        blocks << 'Lam dosyasında OpenSlide sınır ofseti var ama QuPath görüntüyü OpenSlide ile açmamış — hücre konturları kayar. Görüntüyü OpenSlide ile yeniden ekleyin.'
     } else if (boundsNonZero && sf.openslide && pc.width && pc.height) {
         try {
             long serverW = imageData.getServer().getWidth()
@@ -657,13 +657,13 @@ def readiness = { imageData, cfg ->
             long pcH = pc.height as long
             if (serverW == pcW && serverH == pcH)
                 blocks << String.format(java.util.Locale.US,
-                    'Slayt dosyasında OpenSlide sınır ofseti var; QuPath görüntü boyutu (%d×%d) OpenSlide\'ın ham boyutuyla aynı — görüntü sınırlara göre kırpılmamış, hücre konturları kayar. Görüntüyü sınırlara göre kırpılmış biçimde yeniden ekleyin.',
+                    'Lam dosyasında OpenSlide sınır ofseti var; QuPath görüntü boyutu (%d×%d) OpenSlide\'ın ham boyutuyla aynı — görüntü sınırlara göre kırpılmamış, hücre konturları kayar. Görüntüyü sınırlara göre kırpılmış biçimde yeniden ekleyin.',
                     serverW, serverH)
         } catch (NumberFormatException ignore) {}
     }
     if (cfg.tissue && !st.grandqcOk) blocks << 'Doku tespiti açık ama GrandQC ağırlıkları yok — ③ ile indirin ya da doku tespitini kapatın.'
-    // Task 6 ölçümü: artefakt tespiti seçili alandan bağımsız olarak TÜM slaytı 1 µm/px'te tarar (111 780 × 87 041 px, RTX A4000: ~8 dk, ~12 GB RAM).
-    if (cfg.tissue && cfg.artefact && st.grandqcOk) warns << 'Artefakt filtreleme açık: GrandQC seçili alan küçük olsa da tüm slaytı tarar — büyük bir slaytta ~8 dk ve ~12 GB bellek gerekebilir.'
+    // Task 6 ölçümü: artefakt tespiti seçili alandan bağımsız olarak TÜM lamı 1 µm/px'te tarar (111 780 × 87 041 px, RTX A4000: ~8 dk, ~12 GB RAM).
+    if (cfg.tissue && cfg.artefact && st.grandqcOk) warns << 'Artefakt filtreleme açık: GrandQC seçili alan küçük olsa da tüm lamı tarar — büyük bir lamda ~8 dk ve ~12 GB bellek gerekebilir.'
     if (cfg.device == 'cuda' && cfg.cuda == '0') blocks << 'GPU seçili ama denetimde CUDA bulunamadı — Otomatik ya da CPU seçin.'
     int batchSize = parseIntOr(cfg.batchSize, 0)
     if (batchSize < 1) blocks << 'Batch size geçersiz (en az 1 olmalı) — "Gelişmiş" bölümünden düzeltin.'
@@ -804,9 +804,9 @@ def resultText = { imageData, cfg, Map rd, Map imp, Map dens, Map stats, long el
     int tot = imp.cells.size()
     sb << "CLASSPOSE — SEÇİLİ ALANDA HÜCRE SINIFLARI\n"
     sb << "═════════════════════════════════════════\n\n"
-    sb << "Slayt   : " << imageNameOf(imageData) << "\n"
+    sb << "Lam   : " << imageNameOf(imageData) << "\n"
     sb << "Model   : " << modelLabelOf(cfg.model) << "\n"
-    if (rd.pc?.mpp_x) sb << "µm/px   : " << rd.pc.mpp_x << " (slayt dosyası; Classpose bunu kullanır)\n"
+    if (rd.pc?.mpp_x) sb << "µm/px   : " << rd.pc.mpp_x << " (lam dosyası; Classpose bunu kullanır)\n"
     double a = dens.areaMm2 as double
     boolean haveArea = rd.calA != null && Double.isFinite(a) && a > 0
     if (haveArea) sb << String.format(java.util.Locale.US, "Alan    : %.3f mm² (alan için: %s)\n", a, rd.calA.source)
@@ -1039,7 +1039,7 @@ render = { ->
 
         section('③ GrandQC (isteğe bağlı: doku/artefakt filtresi)')
         statusLine(st.grandqcOk, (st.grandqcOk ? 'Ağırlıklar hazır: ' : 'Ağırlıklar yok: ') + grandqcModelsDir().getAbsolutePath())
-        addGuidance('GrandQC sihirbazıyla AYNI dosyalar ve klasör kullanılır; ikinci kopya indirilmez. "İndir" eksik dosyaları (4 dosya, ~100 MB) Zenodo MD5 ile doğrulayarak indirir. Not: artefakt tespiti yalnız seçili alanı değil tüm slaytı 1 µm/px\'te tarar.')
+        addGuidance('GrandQC sihirbazıyla AYNI dosyalar ve klasör kullanılır; ikinci kopya indirilmez. "İndir" eksik dosyaları (4 dosya, ~100 MB) Zenodo MD5 ile doğrulayarak indirir. Not: artefakt tespiti yalnız seçili alanı değil tüm lamı 1 µm/px\'te tarar.')
         if (!st.grandqcOk) rowOf([navButton('GrandQC ağırlıklarını indir (~100 MB)', { startGrandqcDownload() })])
 
         actions.add(navButton('Kapat', { closeWizard() }))
@@ -1059,14 +1059,14 @@ render = { ->
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce bir H&E slaytı açın, ilgi alanını çizip seçin, sonra "⟳ Yenile".')
+            addGuidance('Önce bir H&E lamı açın, ilgi alanını çizip seçin, sonra "⟳ Yenile".')
             actions.add(navButton('◀ Kurulum', { step.set('CONFIG_INCOMPLETE'); render() }))
             actions.add(navButton('⟳ Yenile', { refreshPrecheck() }))
         } else {
             def rd = readiness(imageData, cfg)
             title.setText('Classpose — seçili alanda hücre sınıfları')
             def sb = new StringBuilder()
-            sb << "Slayt        : " << imageNameOf(imageData) << "\n"
+            sb << "Lam        : " << imageNameOf(imageData) << "\n"
             sb << "Dosya        : " << (rd.slide.ok ? rd.slide.file.getAbsolutePath() : '—') << "\n"
             sb << "Model        : " << modelLabelOf(cfg.model) << "\n"
             sb << "Model dosyası: " << (modelFileOf(cfg)?.getAbsolutePath() ?: '—') << "\n"
@@ -1096,7 +1096,7 @@ render = { ->
             // yalnız KAPALIYKEN VE ön koşul yokken devre dışıdır — zaten açık bir ayar her zaman kapatılabilir.
             tisChk.setSelected(cfg.tissue); tisChk.setDisable(!gqOk && !cfg.tissue)
             tisChk.selectedProperty().addListener({ obs, o, n -> putBool(PREF_TISSUE, n as boolean); later { render() } } as javafx.beans.value.ChangeListener)
-            def artChk = new javafx.scene.control.CheckBox('Artefakt filtreleme (GrandQC; tüm slaytı tarar)')
+            def artChk = new javafx.scene.control.CheckBox('Artefakt filtreleme (GrandQC; tüm lamı tarar)')
             artChk.setSelected(cfg.artefact); artChk.setDisable(!cfg.artefact && !(gqOk && cfg.tissue))
             artChk.selectedProperty().addListener({ obs, o, n -> putBool(PREF_ARTEFACT, n as boolean); later { render() } } as javafx.beans.value.ChangeListener)
             rowOf([new javafx.scene.control.Label('Cihaz:'), devChoice, ttaChk])
@@ -1121,7 +1121,7 @@ render = { ->
 
             actions.add(navButton('Kapat', { closeWizard() }))
             actions.add(navButton('◀ Kurulum', { step.set('CONFIG_INCOMPLETE'); render() }))
-            actions.add(navButton('⟳ Yenile', { refreshPrecheck() }, 'Seçimi ve slayt ön denetimini yeniden okur'))
+            actions.add(navButton('⟳ Yenile', { refreshPrecheck() }, 'Seçimi ve lam ön denetimini yeniden okur'))
             def runBtn = navButton('Seçili alanda çalıştır ▶', { startRun() }, 'Classpose\'u seçili alanda çalıştırır')
             runBtn.setDisable(!rd.ok)
             actions.add(runBtn)
@@ -1186,7 +1186,7 @@ javafx.application.Platform.runLater {
         } as javafx.event.EventHandler)
         render(); stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ Classpose hücre fenotipleme sihirbazı açıldı."

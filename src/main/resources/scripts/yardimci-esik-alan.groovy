@@ -34,7 +34,7 @@
  *     • [Save] → bir ad verin (örn. "doku")
  *
  * KULLANIM:
- *   1. Slaytı açın; görüntü kalibre (µm/px) olmalı (yoksa "Kalibrasyon" yardımcısı)
+ *   1. Lamı açın; görüntü kalibre (µm/px) olmalı (yoksa "Kalibrasyon" yardımcısı)
  *   2. Ölçülecek bölgeyi anotasyon olarak çizin ve SEÇİN
  *   3. [Extensions → Atölye → Yardımcılar → Eşik ile alan ölçümü]
  *      (ya da [Automate → Project scripts → bu betik])
@@ -121,14 +121,14 @@ String preferredName = null   // headless/varsayılan seçim için (null → ilk
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir slayt açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir lam açın.")
     return
 }
 
 def project = QP.getProject()
 if (project == null) {
     def msg = "Bu betik bir proje gerektirir (kayıtlı sınıflandırıcılar projede tutulur).\n" +
-              "Slaytı bir QuPath projesine ekleyip tekrar deneyin."
+              "Lamı bir QuPath projesine ekleyip tekrar deneyin."
     if (isHeadless) println msg else Dialogs.showErrorMessage("Proje yok", msg)
     return
 }

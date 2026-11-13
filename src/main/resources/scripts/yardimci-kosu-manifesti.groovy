@@ -20,7 +20,7 @@
  *   risk kategorisi veya yorum ÜRETMEZ. saveImageData çağırmaz; salt okunur.
  *
  * KULLANIM:
- *   1. Bir slayt (veya proje) açın.
+ *   1. Bir lam (veya proje) açın.
  *   2. [Extensions → Atölye → Yardımcılar → Klinik ve kohort → İşlem kaydı (provenance JSON)]
  *   3. Kapsam seçin ("Açık görüntü" / "Tüm proje").
  *   4. İsteğe bağlı kullanıcı notu girin; Tamam'a basın.
@@ -112,7 +112,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ── Ön kontrol ───────────────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    def msg = "Önce bir slayt açın."
+    def msg = "Önce bir lam açın."
     if (isHeadless) { println msg; return }
     Dialogs.showErrorMessage("Görüntü açık değil", msg)
     return

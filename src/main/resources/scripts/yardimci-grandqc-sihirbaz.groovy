@@ -25,7 +25,7 @@
  *
  * KULLANIM:
  *   1. GrandQC Python ortamını kurun (venv + modeller). Bkz. Ekler → Kalite Kontrol § GrandQC.
- *   2. Bir H&E slaytını açın (yerel diskte).
+ *   2. Bir H&E lamını açın (yerel diskte).
  *   3. [Extensions → Atölye → Modüller → Doku tespiti → GrandQC modeli (doku & artefakt, Python)]
  *   4. İlk açılışta yapılandırın: python.exe, GrandQC betik dizini, model dizini, MPP.
  *   5. "Komut üret" (kopyala-çalıştır) ya da "Doğrudan çalıştır"; sonra otomatik içe aktarım.
@@ -197,7 +197,7 @@ def configMissing = { cfg ->
 }
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
 
-// ── Slayt yolunu çöz (yerel dosya → klasör + temel ad → beklenen geojson) ──
+// ── Lam yolunu çöz (yerel dosya → klasör + temel ad → beklenen geojson) ──
 def resolveSlide = { imageData ->
     def server = imageData.getServer()
     def slideFile = null
@@ -220,11 +220,11 @@ def resolveSlide = { imageData ->
 
 // geojson_qc içinde tam ad yoksa makul bir yedeğe düş.
 // NOT: `manualFolder` çağıranlarca effectiveFolder(slide) geçilir (elle seçilen
-// klasör → yoksa slaytın klasörü). O yüzden BURADA da aynı öncelik: manualFolder ÖNCE.
+// klasör → yoksa lamın klasörü). O yüzden BURADA da aynı öncelik: manualFolder ÖNCE.
 def findGeoJSON = { slide, manualFolder ->
     def folder = manualFolder ?: slide.folder
     if (folder == null) return null
-    // slide.geojson kısayolu YALNIZ etkin klasör slaytın kendi klasörüyse geçerli
+    // slide.geojson kısayolu YALNIZ etkin klasör lamın kendi klasörüyse geçerli
     // (klasör geçersiz kılındıysa slide.geojson eski/yanlış klasörü işaret eder).
     def exact = (folder == slide.folder && slide.geojson != null && slide.geojson.isFile())
         ? slide.geojson : new File(new File(folder, 'geojson_qc'), slide.name + '.geojson')
@@ -241,7 +241,7 @@ def findGeoJSON = { slide, manualFolder ->
 
 // ── Batch (proje geneli) GeoJSON çözümü: YALNIZ tam ad eşleşmesi ─────────────
 // Bulanık yedek (startsWith / tek-dosya) tek-slayt kolaylığıdır; proje döngüsünde
-// paylaşılan bir klasörde bir slaytın GeoJSON'unu YANLIŞ slayta yazma (ve kaydetme)
+// paylaşılan bir klasörde bir lamın GeoJSON'unu YANLIŞ lama yazma (ve kaydetme)
 // riskini taşır. Batch bu yüzden asla bulanık eşleşme kullanmaz.
 def exactGeoJSON = { slide, folder ->
     if (folder == null || slide?.name == null) return null
@@ -249,7 +249,7 @@ def exactGeoJSON = { slide, folder ->
     return f.isFile() ? f : null
 }
 
-// GrandQC'nin main.py'sinin ürettiği slayt-başı istatistik raporu (salt okunur):
+// GrandQC'nin main.py'sinin ürettiği lam-başı istatistik raporu (salt okunur):
 //   <output_dir>/report_<klasörAdı>_<baş>_<son>_stats_per_slide.txt
 // output_dir = kapsam klasörü; en yeni eşleşeni döndür (yoksa null).
 def findReportFile = { String folder ->
@@ -280,7 +280,7 @@ def cmdText = { cfg, folder, slideName ->
     def s1 = new File(cfg.scripts, 'wsi_tis_detect.py').getAbsolutePath()
     def s2 = new File(cfg.scripts, 'main.py').getAbsolutePath()
     def sb = new StringBuilder()
-    sb << "# GrandQC — bu klasördeki TÜM slaytları işler: " << folder << "\n"
+    sb << "# GrandQC — bu klasördeki TÜM lamları işler: " << folder << "\n"
     sb << "# NOT: GrandQC cihazı kaynakta sabitler. Bu iki .py dosyasında\n"
     sb << "#      DEVICE = '...' satırını cihazınıza göre ayarlayın (cuda / mps / cpu).\n"
     sb << "#      'Doğrudan çalıştır' bu yamayı sizin için otomatik yapar (seçili cihaz: " << effectiveDevice(cfg) << ").\n\n"
@@ -330,7 +330,7 @@ def ensureClass = { String name ->
 
 // ── GeoJSON içe aktarma (yardimci-tahmin-iceaktar kalıbından) ───────────────
 // hierarchy: hedef hiyerarşi (canlı görüntü ya da proje girdisi) — QP.* yerine bunu
-// kullanır; böylece hem tek slayt hem proje geneli (batch) yol aynı kodu paylaşır.
+// kullanır; böylece hem tek lam hem proje geneli (batch) yol aynı kodu paylaşır.
 def importGeoJSON = { File geojsonFile, hierarchy ->
     if (geojsonFile == null || !geojsonFile.isFile())
         return [ok: false, error: 'GeoJSON bulunamadı:\n' + (geojsonFile?.getAbsolutePath() ?: '(yol yok)') +
@@ -516,7 +516,7 @@ def buildResultText = { slide, imp, clean ->
     def sb = new StringBuilder()
     sb << "GrandQC KALİTE KONTROL — ÖZET\n"
     sb << "═══════════════════════════════\n\n"
-    sb << "Slayt   : " << slide.name << "\n"
+    sb << "Lam   : " << slide.name << "\n"
     sb << "GeoJSON : " << (imp.file?.getAbsolutePath() ?: '-') << "\n\n"
     sb << "Anotasyon dökümü (sınıf → adet):\n"
     int total = 0
@@ -556,7 +556,7 @@ def buildResultText = { slide, imp, clean ->
 // ── Headless: yapılandırmayı raporla, etkileşim yok ─────────────────────────
 if (isHeadless) {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { println "Önce bir slayt açın."; return }
+    if (imageData == null) { println "Önce bir lam açın."; return }
     def typeName = (imageData.getImageType()?.name() ?: '').toUpperCase(java.util.Locale.ROOT)
     if (!typeName.contains('BRIGHTFIELD_H_E'))
         println "Uyarı: Görüntü tipi H&E değil (${typeName}) — GrandQC H&E için tasarlanmıştır."
@@ -565,7 +565,7 @@ if (isHeadless) {
     println "GrandQC yapılandırması: python=${cfg.python ?: '(ayarsız)'} betikDizini=${cfg.scripts ?: '(ayarsız)'} mpp=${cfg.mpp}"
     if (!miss.isEmpty()) println "Eksik yapılandırma: ${miss.join(', ')}"
     def slide = resolveSlide(imageData)
-    println "Slayt klasörü: ${slide.folder ?: '(yerel değil)'}  beklenen GeoJSON: ${slide.geojson?.getAbsolutePath() ?: '-'}"
+    println "Lam klasörü: ${slide.folder ?: '(yerel değil)'}  beklenen GeoJSON: ${slide.geojson?.getAbsolutePath() ?: '-'}"
     println "GrandQC sihirbazı için QuPath arayüzü gerekir (headless çalıştırılamaz)."
     return
 }
@@ -594,7 +594,7 @@ def scriptsFieldRef= new java.util.concurrent.atomic.AtomicReference(null)
 def modelFieldRef  = new java.util.concurrent.atomic.AtomicReference(null)
 def mppChoiceRef   = new java.util.concurrent.atomic.AtomicReference(null)
 def deviceChoiceRef= new java.util.concurrent.atomic.AtomicReference(null)   // cuda/mps/cpu/Otomatik
-def manualFolderRef= new java.util.concurrent.atomic.AtomicReference(null)   // yerel olmayan slayt için
+def manualFolderRef= new java.util.concurrent.atomic.AtomicReference(null)   // yerel olmayan lam için
 def installLog     = new StringBuilder()                                     // ①②③ kurulum ilerleme günlüğü
 def installLogAreaRef = new java.util.concurrent.atomic.AtomicReference(null)
 def installBusyRef = new java.util.concurrent.atomic.AtomicBoolean(false)
@@ -616,8 +616,8 @@ def copyToClipboard = { String txt ->
     cb.setContent(content)
 }
 
-// Çalışan klasörü çöz — elle seçilen klasör (kapsam) öncelikli, yoksa slayt klasörü.
-// GrandQC daima bir KLASÖRDEKİ tüm slaytları işler; "kapsam" = hangi klasör.
+// Çalışan klasörü çöz — elle seçilen klasör (kapsam) öncelikli, yoksa lam klasörü.
+// GrandQC daima bir KLASÖRDEKİ tüm lamları işler; "kapsam" = hangi klasör.
 def effectiveFolder = { slide ->
     def mf = manualFolderRef.get()
     if (mf != null && mf.toString().trim()) return mf.toString().trim()
@@ -630,11 +630,11 @@ def runImportClean = { slide, manualFolder ->
     def worker = new Thread({
         def curData0 = QP.getCurrentImageData()
         if (curData0 == null) {
-            javafx.application.Platform.runLater { errorTextRef.set('Açık görüntü yok — içe aktarım için bir slayt açın.'); step.set('ERROR'); render() }
+            javafx.application.Platform.runLater { errorTextRef.set('Açık görüntü yok — içe aktarım için bir lam açın.'); step.set('ERROR'); render() }
             return
         }
         // Kimlik denetimi: pencere kipsiz (Modality.NONE) ve "Doğrudan çalıştır" işlemi dakikalarca
-        // sürebilir; bu arada kullanıcı açık slaytı değiştirebilir. Yakalanan `slide` ≠ şu an açık
+        // sürebilir; bu arada kullanıcı açık lamı değiştirebilir. Yakalanan `slide` ≠ şu an açık
         // görüntü ise YANLIŞ hiyerarşiye yazma (batch'teki getID denetiminin tek-slayt karşılığı).
         def curSlide0 = resolveSlide(curData0)
         boolean sameSlide = (slide.file != null && curSlide0.file != null) ?
@@ -642,7 +642,7 @@ def runImportClean = { slide, manualFolder ->
             (slide.name == curSlide0.name)
         if (!sameSlide) {
             javafx.application.Platform.runLater {
-                errorTextRef.set('Açık görüntü değişti — içe aktarım "' + slide.name + '" için başlatıldı ama şu an "' + curSlide0.name + '" açık.\n\n"' + slide.name + '" slaytını yeniden açıp tekrar deneyin.')
+                errorTextRef.set('Açık görüntü değişti — içe aktarım "' + slide.name + '" için başlatıldı ama şu an "' + curSlide0.name + '" açık.\n\n"' + slide.name + '" lamını yeniden açıp tekrar deneyin.')
                 step.set('ERROR'); render()
             }
             return
@@ -726,7 +726,7 @@ def runDiag = { ->
 // ── Proje geneli içe aktarım (batch) — HER girdinin KENDİ GeoJSON'unu içe aktarır ──
 // tiatoolbox-bolge kalıbı: canlı veriyi yalnız gerçekten o girdiyse kullan (getEntry/getID),
 // diğerlerini readImageData → import → temiz doku → saveImageData → server.close().
-// GeoJSON çözümü YALNIZ tam ad (exactGeoJSON) — yanlış slayta yazmayı önler.
+// GeoJSON çözümü YALNIZ tam ad (exactGeoJSON) — yanlış lama yazmayı önler.
 def runBatchImport = { manualFolder ->
     def project = QP.getProject()
     if (project == null) { errorTextRef.set('Proje açık değil — proje geneli içe aktarım için bir QuPath projesi açın.'); step.set('ERROR'); render(); return }
@@ -761,7 +761,7 @@ def runBatchImport = { manualFolder ->
                 data = (liveData != null) ? liveData : entry.readImageData()
                 opened = (liveData == null)
                 def slide = resolveSlide(data)
-                // SADECE tam ad: önce slaytın kendi klasörü, sonra (varsa) elle kapsam klasörü.
+                // SADECE tam ad: önce lamın kendi klasörü, sonra (varsa) elle kapsam klasörü.
                 def gj = exactGeoJSON(slide, slide.folder)
                 if (gj == null && manualFolder != null && manualFolder.toString().trim())
                     gj = exactGeoJSON(slide, manualFolder.toString().trim())
@@ -797,8 +797,8 @@ def runBatchImport = { manualFolder ->
             rb << String.format(java.util.Locale.US, "Görüntü: %,d   içe aktarıldı: %,d   atlandı: %,d   hata: %,d%n%n", entries.size(), okN, skipN, failN)
             lines.each { rb << it << "\n" }
             rb << "\nHer görüntünün GeoJSON'u KENDİ klasöründeki geojson_qc/ içinde TAM ADLA arandı.\n"
-            rb << (currentTouched ? "Açık slaytın TÜM güncel hâli diske kaydedildi (yalnız GrandQC nesneleri değil); görüntüleyici yenilendi.\n"
-                                  : "Açık slaytta değişiklik olduysa görmek için slaytı yeniden açın.\n")
+            rb << (currentTouched ? "Açık lamın TÜM güncel hâli diske kaydedildi (yalnız GrandQC nesneleri değil); görüntüleyici yenilendi.\n"
+                                  : "Açık lamda değişiklik olduysa görmek için lamı yeniden açın.\n")
             rb << "\nGrandQC çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın.\n"
             rb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
             resultFolderRef.set(null)   // batch: çok klasör olabilir → tek rapor butonu gösterme
@@ -862,7 +862,7 @@ def startDirectRun = { slide ->
     def cfg = loadConfig()
     def folder = effectiveFolder(slide)
     if (folder == null) {
-        errorTextRef.set('Slayt yerel diskte değil ve klasör elle girilmedi.\nKomut üret ekranında klasörü elle belirtin.')
+        errorTextRef.set('Lam yerel diskte değil ve klasör elle girilmedi.\nKomut üret ekranında klasörü elle belirtin.')
         step.set('ERROR'); render(); return
     }
     cancelledRef.set(false)
@@ -1241,7 +1241,7 @@ render = { ->
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce bir H&E slaytını açın, sonra "⟳ Yenile".')
+            addGuidance('Önce bir H&E lamını açın, sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
@@ -1253,28 +1253,28 @@ render = { ->
             boolean isHE = typeName.contains('BRIGHTFIELD_H_E')
             title.setText('GrandQC — hazır')
             def sb = new StringBuilder()
-            sb << "Slayt        : " << slide.name << "\n"
+            sb << "Lam        : " << slide.name << "\n"
             sb << "Kapsam       : " << (scopeFolder ?: '(yerel disk değil — klasör seçin)')
-            sb << (overridden ? '   [seçilen klasör]' : (scopeFolder != null ? '   [slaytın klasörü]' : '')) << "\n"
+            sb << (overridden ? '   [seçilen klasör]' : (scopeFolder != null ? '   [lamın klasörü]' : '')) << "\n"
             sb << "Python       : " << (cfg.python ?: '(ayarsız)') << "\n"
             sb << "MPP modeli   : " << cfg.mpp << "\n"
             sb << "Cihaz        : " << effectiveDevice(cfg) << (cfg.device?.trim() ? '' : ' (otomatik)') << "\n"
             def gj = findGeoJSON(slide, scopeFolder)
             sb << "GeoJSON      : " << ((gj != null && gj.isFile()) ? ('mevcut — ' + gj.getName()) : 'yok (henüz çalıştırılmadı)') << "\n"
             addMonoArea(sb.toString())
-            addGuidance('Kapsam: GrandQC seçili KLASÖRDEKİ tüm slaytları işler (tek slayt / anotasyon modu yoktur). ' +
-                        'Öntanımlı olarak açık slaytın klasörü kullanılır; tüm projeyi/başka bir klasörü işlemek için "Klasör seç…".')
+            addGuidance('Kapsam: GrandQC seçili KLASÖRDEKİ tüm lamları işler (tek lam / anotasyon modu yoktur). ' +
+                        'Öntanımlı olarak açık lamın klasörü kullanılır; tüm projeyi/başka bir klasörü işlemek için "Klasör seç…".')
             if (!isHE) addWarnLabel('⚠ Görüntü tipi H&E değil (' + typeName + '). GrandQC H&E için tasarlanmıştır; yine de deneyebilirsiniz.')
             boolean canRun = configComplete(cfg) && (scopeFolder != null)
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Klasör seç…', {
-                def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'İşlenecek slayt klasörü (kapsam)', scopeFolder != null ? new File(scopeFolder) : null)
+                def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'İşlenecek lam klasörü (kapsam)', scopeFolder != null ? new File(scopeFolder) : null)
                 if (x != null) { manualFolderRef.set(x.getAbsolutePath()); render() }
-            }, 'İşlenecek klasörü değiştir — o klasördeki tüm slaytlar işlenir'))
+            }, 'İşlenecek klasörü değiştir — o klasördeki tüm lamlar işlenir'))
             if (overridden)
-                actions.add(navButton('↺ Slaytın klasörü', { manualFolderRef.set(null); render() }, 'Kapsamı açık slaytın klasörüne döndür'))
+                actions.add(navButton('↺ Lamın klasörü', { manualFolderRef.set(null); render() }, 'Kapsamı açık lamın klasörüne döndür'))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('Komut üret ▶', { cmdTextRef.set(cmdText(cfg, (effectiveFolder(slide) ?: '<slayt-klasörü>'), slide.name)); step.set('CMD_READY'); render() }))
+            actions.add(navButton('Komut üret ▶', { cmdTextRef.set(cmdText(cfg, (effectiveFolder(slide) ?: '<lam-klasörü>'), slide.name)); step.set('CMD_READY'); render() }))
             if (gj != null && gj.isFile())
                 actions.add(navButton('GeoJSON içe aktar', { runImportClean(slide, effectiveFolder(slide)) }, 'Mevcut GrandQC GeoJSON çıktısını içe aktarır'))
             def runBtn = navButton('Doğrudan çalıştır ▶', { startDirectRun(slide) }, 'Python hattını QuPath içinden çalıştırır (venv gerekli)')
@@ -1289,7 +1289,7 @@ render = { ->
                     boolean go = Dialogs.showConfirmDialog('Proje geneli içe aktarım',
                         'Projedeki ' + nImg + ' görüntünün her biri için var olan GrandQC GeoJSON\'u içe aktarılacak:\n\n' +
                         '• Her görüntüdeki önceki "GrandQC KK" anotasyonları (varsa elle düzeltmeler dahil) silinip yeniden üretilir.\n' +
-                        '• Sonuç HER görüntü için diske KAYDEDİLİR (geri alınamaz); açık slaytın tüm güncel hâli de kaydedilir.\n\n' +
+                        '• Sonuç HER görüntü için diske KAYDEDİLİR (geri alınamaz); açık lamın tüm güncel hâli de kaydedilir.\n\n' +
                         'Devam edilsin mi?')
                     if (go) runBatchImport(manualFolderRef.get())
                 }, 'Projedeki TÜM görüntüler için her birinin KENDİ klasöründeki GeoJSON çıktısını içe aktarır ve diske kaydeder (tam ad eşleşmesi)'))
@@ -1342,11 +1342,11 @@ render = { ->
                 reportPathRef.set(reportFile)
                 reportTextRef.set('Dosya: ' + reportFile.getAbsolutePath() + '\n\n' + rtxt)
                 step.set('REPORT'); render()
-            }, 'GrandQC slayt başına istatistik raporu (büyütme/MPP, karo sayısı, boyut, süre)'))
+            }, 'GrandQC lam başına istatistik raporu (büyütme/MPP, karo sayısı, boyut, süre)'))
         actions.add(navButton('↻ Yeniden çalıştır', { step.set('READY'); render() }))
     } else if (cur == 'REPORT') {
         title.setText('GrandQC istatistik raporu')
-        addGuidance('main.py çıktısı: slayt başına büyütme/MPP, karo sayıları, görüntü boyutu ve işlem süresi. Salt okunur — kalite notu/derece üretmez.')
+        addGuidance('main.py çıktısı: lam başına büyütme/MPP, karo sayıları, görüntü boyutu ve işlem süresi. Salt okunur — kalite notu/derece üretmez.')
         addMonoArea(reportTextRef.get())
         actions.add(navButton('◀ Geri', { step.set('RESULT'); render() }))
         actions.add(navButton('Kopyala', { copyToClipboard(reportTextRef.get()) }))
@@ -1414,7 +1414,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ GrandQC kalite kontrol sihirbazı açıldı."

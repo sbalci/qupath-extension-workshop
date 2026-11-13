@@ -17,7 +17,7 @@
  *   tıkla otomatikleştirir ve sade bir özet yazar.
  *
  * GİRDİ (ÖN KOŞUL):
- *   • Slaytta hücre tespitleri olmalı (Hücre Tespiti, Nükleer Boya, Sitoplazmik
+ *   • Lamda hücre tespitleri olmalı (Hücre Tespiti, Nükleer Boya, Sitoplazmik
  *     Boya veya Tümör İçi Ki-67 modüllerinde üretilmiş olabilir). Betik tespit YAPMAZ.
  *
  * ÇIKTI:
@@ -27,7 +27,7 @@
  *
  * PARAMETRE:
  *   • maxEdgeMicrons > 0 ise yalnız bu mesafeden YAKIN komşular sayılır
- *     (uzun kenarları budar; yalnız kalibre slaytlarda etkilidir). 0 = sınırsız.
+ *     (uzun kenarları budar; yalnız kalibre lamlarda etkilidir). 0 = sınırsız.
  *
  * YÖNTEM REFERANSI:
  *   • Bankhead P et al. (2017), Sci Rep — QuPath. doi:10.1038/s41598-017-17204-5
@@ -108,7 +108,7 @@ double maxEdgeMicrons = 0.0   // 0 = sınırsız (saf Delaunay); >0 = uzun kenar
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce hücre tespiti yapılmış bir slayt açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce hücre tespiti yapılmış bir lam açın.")
     return
 }
 def cells = QP.getDetectionObjects().findAll { it.getROI() != null }

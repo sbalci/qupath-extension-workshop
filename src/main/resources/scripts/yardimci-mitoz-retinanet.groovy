@@ -84,7 +84,7 @@ int    ROI_WARN_PX = 12000
 // "tüm alan anotasyonları" geri dönüşlerine girmez), SINIFSIZ (sınıf-tabanlı sayımlara
 // girmez) ve kilitli. Bağ: noktanın metadata'sı = dedektör, halkanınki = noktanın ID'si.
 double MARKER_RING_UM = 8.0      // halka yarıçapı (µm) — tipik mitoz figürünü içine alır
-double MARKER_RING_PX = 32.0     // kalibrasyonsuz slaytta yarıçap (px; ≈ 8 µm @ 0.25 µm/px)
+double MARKER_RING_PX = 32.0     // kalibrasyonsuz lamda yarıçap (px; ≈ 8 µm @ 0.25 µm/px)
 int MARKER_RING_VERTICES = 64
 def META_SOURCE = 'atolye.mitoz.kaynak'        // noktada: hangi dedektör (yeniden çalıştırmada temizlik)
 def META_POINT  = 'atolye.mitoz.nokta'         // halkada: bağlı noktanın ID'si
@@ -224,9 +224,9 @@ def calibrationInfo = { imageData ->
 def resampleNote = { double mpp, double targetMpp ->
     if (!Double.isFinite(mpp) || mpp <= 0) return ''
     double ratio = targetMpp / mpp
-    if (Math.abs(ratio - 1.0) < 0.05) return 'slayt zaten ~hedef çözünürlükte — yeniden örnekleme yok.'
-    if (ratio > 1.0) return String.format(java.util.Locale.US, 'slaytınız daha yüksek çözünürlükte; ROI ~%.1f× AŞAĞI örneklenir (normal).', ratio)
-    return 'slaytınız daha düşük çözünürlükte; hedef çözünürlüğe çıkılamaz (native beslenir).'
+    if (Math.abs(ratio - 1.0) < 0.05) return 'lam zaten ~hedef çözünürlükte — yeniden örnekleme yok.'
+    if (ratio > 1.0) return String.format(java.util.Locale.US, 'lamınız daha yüksek çözünürlükte; ROI ~%.1f× AŞAĞI örneklenir (normal).', ratio)
+    return 'lamınız daha düşük çözünürlükte; hedef çözünürlüğe çıkılamaz (native beslenir).'
 }
 
 def notSummary = { ann -> ann.getName() == null || !ann.getName().startsWith(SUMMARY_NAME) }
@@ -350,7 +350,7 @@ def resultText = { imageData, cfg, imp, dens, cal ->
     def sb = new StringBuilder()
     sb << "DA-RetinaNet (MIDOG 2021/22) — BÖLGEDE MİTOZ\n"
     sb << "════════════════════════════════════════════\n\n"
-    sb << "Slayt   : " << imageNameOf(imageData) << "\n"
+    sb << "Lam   : " << imageNameOf(imageData) << "\n"
     sb << "Model   : " << MODEL << "\n"
     sb << "Cihaz   : " << (cfg.device ?: 'cuda') << " (eski/doğrulanmamış ortam)\n"
     sb << String.format(java.util.Locale.US, "Tespit  : BÖLGE İÇİ %,d%n", (int)(imp?.inside ?: 0))
@@ -711,7 +711,7 @@ render = { ->
         if (dlOkRef.get()) actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, 'İndirme tamam — bölgede çalıştırma ekranına döner'))
     } else if (cur == 'READY') {
         if (imageData == null) {
-            title.setText('Görüntü açık değil'); addGuidance('Önce bir H&E slaytı açın, ilgi ALANINI çizip seçin, sonra "⟳ Yenile".')
+            title.setText('Görüntü açık değil'); addGuidance('Önce bir H&E lamı açın, ilgi ALANINI çizip seçin, sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() })); actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() })); actions.add(navButton('⟳ Yenile', { render() }))
         } else {
             def targets = regionAnnotationsOf(imageData); def ci = calibrationInfo(imageData); def cal = ci.cal
@@ -719,7 +719,7 @@ render = { ->
             def typeName = (imageData.getImageType()?.name() ?: '').toUpperCase(java.util.Locale.ROOT); boolean isHE = typeName.contains('BRIGHTFIELD_H_E')
             title.setText('Mitoz tespiti — DA-RetinaNet (bölgede, eski)')
             def sb = new StringBuilder()
-            sb << "Slayt          : " << imageNameOf(imageData) << "\n"
+            sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Model          : " << MODEL << "\n"
             sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
             sb << "Cihaz          : " << (cfg.device ?: 'cuda') << " (eski stack; yoksa CPU)\n"
@@ -790,6 +790,6 @@ javafx.application.Platform.runLater {
         stage = new javafx.stage.Stage(); stage.initModality(javafx.stage.Modality.NONE)
         stage.setTitle('Mitoz tespiti — DA-RetinaNet (MIDOG 2021/22, eski)'); stage.setAlwaysOnTop(alwaysTop.get())
         render(); stage.show()
-    } catch (Throwable t) { Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)')) }
+    } catch (Throwable t) { Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)')) }
 }
 println "✓ Mitoz tespiti (DA-RetinaNet · MIDOG 2021/22) sihirbazı açıldı."

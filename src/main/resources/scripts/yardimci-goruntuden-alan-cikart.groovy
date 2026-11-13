@@ -2,7 +2,7 @@
  * Yardımcı - Dikdörtgen seçimlerden görüntü oluştur (kırpılmış proje girdileri)
  * -----------------------------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
- * Açık slaytta çizilmiş DİKDÖRTGEN anotasyonların her birinden, projeye
+ * Açık lamda çizilmiş DİKDÖRTGEN anotasyonların her birinden, projeye
  * KIRPILMIŞ yeni bir görüntü girdisi (project entry) ekler. Bölgenin piksel
  * verisi KOPYALANMAZ: yeni girdiler QuPath'in CroppedImageServer'ı üzerinden
  * orijinal dosyaya başvurur — bölge için bağımsız bir görüntü kopyası
@@ -10,7 +10,7 @@
  *
  * NE YAPAR:
  *   • Her uygun dikdörtgen → projeye yeni bir girdi. Girdi adı = anotasyonun
- *     adı; anotasyon adsızsa "<slayt> - kirpma N". Küçük resim (thumbnail)
+ *     adı; anotasyon adsızsa "<lam> - kirpma N". Küçük resim (thumbnail)
  *     otomatik yazılır.
  *   • İsteğe bağlı (varsayılan açık): dikdörtgenle örtüşen ANOTASYONLAR
  *     kesişim alınarak kırpılır ve yeni girdiye kopyalanır; koordinatlar yeni
@@ -22,7 +22,7 @@
  *
  * KAPSAM (diyalogdan seçilir):
  *   • Seçili dikdörtgenler — yalnızca seçtiğiniz dikdörtgen anotasyonlar.
- *   • Tüm dikdörtgenler   — slayttaki her dikdörtgen anotasyon.
+ *   • Tüm dikdörtgenler   — lamdaki her dikdörtgen anotasyon.
  *   • İsteğe bağlı sınıf filtresi (orijinal betik "ROI" sınıfını kullanır).
  *   Dikdörtgen DIŞI şekiller (elips, poligon, fırça) her zaman yok sayılır.
  *
@@ -129,14 +129,14 @@ def project = QP.getProject()
 if (project == null) {
     def msg = "Proje açık değil.\n\n" +
               "Kırpılmış girdiler bir PROJEYE eklenir. Önce [File → Project... → Create project]\n" +
-              "ile bir proje oluşturun (ya da mevcut projeyi açın), slaytı projeden açın."
+              "ile bir proje oluşturun (ya da mevcut projeyi açın), lamı projeden açın."
     if (isHeadless) println msg else Dialogs.showErrorMessage("Proje gerekli", msg)
     return
 }
 
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    def msg = "Görüntü açık değil. Önce projedeki bir slaytı açın ve dikdörtgen anotasyon(lar) çizin."
+    def msg = "Görüntü açık değil. Önce projedeki bir lamı açın ve dikdörtgen anotasyon(lar) çizin."
     if (isHeadless) println msg else Dialogs.showErrorMessage("Görüntü açık değil", msg)
     return
 }
@@ -155,7 +155,7 @@ def selRects = hierarchy.getSelectionModel().getSelectedObjects()
         .findAll { it.isAnnotation() && isRect(it) } as List
 
 if (allRects.isEmpty()) {
-    def msg = "Bu slaytta dikdörtgen anotasyon yok.\n\n" +
+    def msg = "Bu lamda dikdörtgen anotasyon yok.\n\n" +
               "Dikdörtgen aracıyla (R) bir ya da daha çok bölge çizin; girdiye ad vermek için\n" +
               "anotasyona sağ tık → [Annotations → Set properties] ile ad yazın, sonra bu betiği\n" +
               "tekrar çalıştırın. (Elips/poligon/fırça şekilleri bu betikte kullanılmaz.)"
@@ -220,7 +220,7 @@ def showOptionsForm = { int selCount, int allCount, List<String> classChoices ->
             int r = 0
             grid.add(new javafx.scene.control.Label("Kapsam:"), 0, r)
             grid.add(scopeBox, 1, r)
-            grid.add(help("Seçili: yalnız seçtiğiniz dikdörtgen anotasyonlar. Tüm: slayttaki her dikdörtgen anotasyon."), 2, r); r++
+            grid.add(help("Seçili: yalnız seçtiğiniz dikdörtgen anotasyonlar. Tüm: lamdaki her dikdörtgen anotasyon."), 2, r); r++
             grid.add(new javafx.scene.control.Label("Sınıf filtresi:"), 0, r)
             grid.add(classBox, 1, r)
             grid.add(help("Yalnız bu sınıfa atanmış dikdörtgenler kullanılır. Orijinal betik (Zindy, image.sc) 'ROI' sınıfını kullanır."), 2, r); r++
@@ -298,7 +298,7 @@ rects.each { rectAnn ->
     if (entryName == null || entryName.trim().isEmpty())
         entryName = String.format(java.util.Locale.US, "%s - kirpma %d", baseName, idx)
 
-    // Bölgeyi görüntü sınırlarına kırp (dikdörtgen slayt kenarından taşabilir)
+    // Bölgeyi görüntü sınırlarına kırp (dikdörtgen lam kenarından taşabilir)
     int x0 = Math.max(0, (int) Math.floor(roi.getBoundsX()))
     int y0 = Math.max(0, (int) Math.floor(roi.getBoundsY()))
     int x1 = Math.min(serverOriginal.getWidth(),  (int) Math.ceil(roi.getBoundsX() + roi.getBoundsWidth()))

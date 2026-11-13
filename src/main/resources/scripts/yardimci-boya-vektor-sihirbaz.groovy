@@ -6,7 +6,7 @@
  * Renk-dekonvolüsyon (boya) vektörlerini TEK pencerede yönetir; ayrı betik/pencere
  * açmaz. Akış adım adım aynı pencerede yürür:
  *   1. KONTROL — aktif görüntünün mevcut vektörlerini OKUR ve raporlar; bunların
- *      QuPath VARSAYILANI mı yoksa bu slayttan tahmin/kalibre mi edildiğini işaretler.
+ *      QuPath VARSAYILANI mı yoksa bu lamdan tahmin/kalibre mi edildiğini işaretler.
  *   2. TAHMİN  — SEÇİLİ temsilî bir bölgeden vektörleri yeniden tahmin eder,
  *      eski → yeni karşılaştırmasını (boya başına açısal değişim dahil) gösterir.
  *   3. UYGULA / GERİ AL — onayınızla görüntüye uygular; istenirse geri yükler.
@@ -27,13 +27,13 @@
  *   • Resmî rehber:
  *     https://qupath.readthedocs.io/en/stable/docs/tutorials/separating_stains.html
  *
- * BOYA AYRIMI ≠ BOYA NORMALİZASYONU:
- *   • Ayrım (bu betik): bu slaytı doğru OKUMAK için kanallara kalibre eder.
- *   • Normalizasyon: slaytları birbirine BENZETMEK için yeniden renklendirir
- *     (Macenko/Reinhard/Vahadane — bkz. Boya Normalizasyonu eki).
+ * BOYA AYRIMI ≠ Boyama normalizasyonU:
+ *   • Ayrım (bu betik): bu lamı doğru OKUMAK için kanallara kalibre eder.
+ *   • Normalizasyon: lamları birbirine BENZETMEK için yeniden renklendirir
+ *     (Macenko/Reinhard/Vahadane — bkz. Boyama normalizasyonu eki).
  *
  * KULLANIM:
- *   1. İHK/H&E slaytını açın; Image type'ı brightfield yapın
+ *   1. İHK/H&E lamını açın; Image type'ı brightfield yapın
  *      (gerekirse: Yardımcılar → Görüntü tipi ayarla)
  *   2. [Extensions → Atölye → Yardımcılar → Boya vektörleri sihirbazı]
  *      → açılışta mevcut vektörleri raporlar.
@@ -130,13 +130,13 @@ def buildReport = { ->
         boolean def1 = vecClose(v1, DEF_HEMA)
         boolean def2 = vecClose(v2, DEF_EOSIN)
         verdict = (def1 && def2)
-            ? "⚠ Vektörler QuPath H&E VARSAYILANI ile aynı — bu slayttan tahmin EDİLMEMİŞ olabilir."
+            ? "⚠ Vektörler QuPath H&E VARSAYILANI ile aynı — bu lamdan tahmin EDİLMEMİŞ olabilir."
             : "✓ Vektörler varsayılandan farklı — muhtemelen kalibre/tahmin edilmiş."
     } else if (isHDAB) {
         boolean def1 = vecClose(v1, DEF_HEMA)
         boolean def2 = vecClose(v2, DEF_DAB)
         verdict = (def1 && def2)
-            ? "⚠ Vektörler QuPath H-DAB VARSAYILANI ile aynı — bu slayttan tahmin EDİLMEMİŞ olabilir."
+            ? "⚠ Vektörler QuPath H-DAB VARSAYILANI ile aynı — bu lamdan tahmin EDİLMEMİŞ olabilir."
             : "✓ Vektörler varsayılandan farklı — muhtemelen kalibre/tahmin edilmiş."
     } else {
         unknownType = true
@@ -170,7 +170,7 @@ def buildReport = { ->
     body << "    bir boya NEGATİF değer alabilir — kantitatif eşiklerde bunu hesaba katın.\n"
     body << "  • Kuvvetli DAB-pozitif (kahverengi) pikseller genelde YÜKSEK hematoksilen\n"
     body << "    değeri de taşır; H kanalı pozitif alanlarda 'saf çekirdek' değildir.\n\n"
-    body << "Öneri: kantitatif H-DAB ölçümünde boya vektörlerini HER SLAYTTAN (ya da aynı\n"
+    body << "Öneri: kantitatif H-DAB ölçümünde boya vektörlerini HER LAMTAN (ya da aynı\n"
     body << "boyama/tarayıcı ile doğrulanmış bir grup için bir kez) tahmin edin.\n\n"
     body << "Tahmin için: küçük ve temsilî bir bölge (iki boya + biraz arka plan) çizip seçin,\n"
     body << "sonra aşağıdan \"Seçili bölgeden tahmin et\".\n\n"
@@ -178,7 +178,7 @@ def buildReport = { ->
     body << "  • Otomatik: Analyze → Preprocessing → Estimate stain vectors\n"
     body << "  • Elle: Image sekmesinde boyaya (Stain 1/2) ya da arka plana ÇİFT TIKLAYIN\n"
     body << "  • Resmî rehber: " << DOCS_URL << "\n\n"
-    body << "Boya normalizasyonu (slaytları birbirine benzetme) ayrı bir adımdır — bkz. Boya Normalizasyonu eki.\n\n"
+    body << "Boyama normalizasyonu (lamları birbirine benzetme) ayrı bir adımdır — bkz. Boyama normalizasyonu eki.\n\n"
     body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return [state: 'REPORT', text: body.toString()]
 }
@@ -248,7 +248,7 @@ def estimateFromSelection = { ->
 // ── Headless: yalnız raporla, UYGULAMA ──────────────────────────────
 if (isHeadless) {
     def r = buildReport()
-    if (r.state == 'NO_IMAGE') { println "Önce bir slayt açın."; return }
+    if (r.state == 'NO_IMAGE') { println "Önce bir lam açın."; return }
     if (r.state == 'NO_STAINS') {
         println "Bu görüntüde renk-dekonvolüsyon (boya) vektörleri tanımlı değil " +
                 "(görüntü tipi brightfield mi?). Görüntü tipi ayarla yardımcısına bakın."
@@ -422,7 +422,7 @@ render = { ->
         def r = buildReport()
         if (r.state == 'NO_IMAGE') {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce bir slayt açın, sonra "⟳ Yenile".')
+            addGuidance('Önce bir lam açın, sonra "⟳ Yenile".')
             actions.add(navButton('⟳ Yenile', { render() }))
             actions.add(navButton('Kapat', { stage.close() }))
         } else if (r.state == 'NO_STAINS') {
@@ -540,7 +540,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ Boya vektörleri sihirbazı açıldı (kontrol + tahmin tek pencerede)."

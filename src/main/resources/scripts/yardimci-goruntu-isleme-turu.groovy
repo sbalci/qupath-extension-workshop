@@ -1,5 +1,5 @@
 /**
- * Yardımcı - Görüntü işleme kavramları (kendi slaytınızda etkileşimli tur)
+ * Yardımcı - Görüntü işleme kavramları (kendi lamınızda etkileşimli tur)
  * ----------------------------------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
@@ -31,7 +31,7 @@
  *   • Hiçbir klinik yorum, tanı veya skor üretmez.
  *
  * KULLANIM:
- *   1. Bir slayt açın; isterseniz çekirdek içeren KÜÇÜK bir bölge çizip SEÇİN.
+ *   1. Bir lam açın; isterseniz çekirdek içeren KÜÇÜK bir bölge çizip SEÇİN.
  *   2. [Extensions → Atölye → Yardımcılar → Görüntü işleme kavramları]
  *   3. İleri / Geri ile gezinin; bölgeyi değiştirince "↻ Bölgeyi yeniden oku".
  *
@@ -55,11 +55,11 @@ def isHeadless = gui == null
 // onizleme ∈ {null, 'RGB_LUT', 'CHANNELS', 'DECONV', 'GAUSSIAN', 'THRESHOLD', 'WATERSHED', 'COMPOSE'}
 def pages = [
     [id: 'intro', onizleme: null,
-     baslik: 'Görüntü işleme kavramları — kendi slaytınızda',
-     govde: 'Bu tur, dijital patolojide hücre tespitinin "perde arkasını" kendi açık slaytınız ' +
+     baslik: 'Görüntü işleme kavramları — kendi lamınızda',
+     govde: 'Bu tur, dijital patolojide hücre tespitinin "perde arkasını" kendi açık lamınız ' +
             'üzerinde adım adım gösterir. En verimli kullanım için çekirdek içeren KÜÇÜK bir bölge ' +
             '(R aracı) çizip seçin; bir seçim yoksa görüntüleyici görünümü kullanılır. Önizlemeler ' +
-            'salt okunurdur — slaytınızı değiştirmez.\n\n' +
+            'salt okunurdur — lamınızı değiştirmez.\n\n' +
             'Kaynak: Pete Bankhead\'in dijital patoloji için görüntü-işleme sözlüğü (CC-BY 4.0). ' +
             'Aynı kavramların atölyedeki karşılıkları için: Ek — Görüntü Analizi Temelleri.'],
 
@@ -114,7 +114,7 @@ def pages = [
             'adımları kontrol eder.\n\n' +
             'Bankhead\'in uyarısı: bu kadar basit bir hat yalnız birkaç görüntüde ve düşük büyütmede iyi ' +
             'görünür; yüksek büyütmede hatalar belirginleşir. Gerçek uygulamalar çok daha fazla ayarlanabilir ' +
-            'parametre gerektirir — bu yüzden Hücre tespiti modülü sonrası eşikleri kendi slaytınızda kalibre edersiniz.\n\n' +
+            'parametre gerektirir — bu yüzden Hücre tespiti modülü sonrası eşikleri kendi lamınızda kalibre edersiniz.\n\n' +
             '⚠️ Yalnızca araştırma/eğitim amaçlı; ölçüm veya klinik karar üretmez.']
 ]
 
@@ -428,7 +428,7 @@ def buildPreview = { String kind, cache ->
 
 def startCompute = { ->
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { cacheRef.set([error: 'Önce bir slayt açın.']); render(); return }
+    if (imageData == null) { cacheRef.set([error: 'Önce bir lam açın.']); render(); return }
     if (computing.get()) return
     computing.set(true)
     cacheRef.set(null)
@@ -538,7 +538,7 @@ javafx.application.Platform.runLater {
         stage.show()
         if (QP.getCurrentImageData() != null) startCompute()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println '✓ Görüntü işleme kavramları turu açıldı.'

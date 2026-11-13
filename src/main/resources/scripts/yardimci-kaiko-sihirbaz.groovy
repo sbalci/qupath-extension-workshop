@@ -7,7 +7,7 @@
  *   Kaiko AI'nin **Midnight** patoloji foundation modelini (kaiko-ai/midnight,
  *   DINOv2-giant, MIT lisanslı) kullanarak DENETİMLİ bir doku sınıflandırıcısı
  *   eğitir ve uygular — hepsi tek pencereden:
- *     1. EĞİTİM — açık slayttaki SINIFLI (PathClass atanmış) anotasyonların
+ *     1. EĞİTİM — açık lamdaki SINIFLI (PathClass atanmış) anotasyonların
  *        karolarını diske yazar; Python köprüsü (kaiko_bridge.py) bu karolardan
  *        Midnight gömmeleri çıkarıp bir Random Forest eğitir.
  *     2. TAHMİN — SINIFSIZ (etiketsiz) anotasyonların karolarını yazar; köprü
@@ -27,7 +27,7 @@
  * KULLANIM:
  *   1. Kaiko Python ortamını kurun (venv). Bkz. Ekler → Kaiko Midnight § kurulum
  *      veya Kaynaklar → § İleri kurulumlar F.
- *   2. Bir slayt açın; en az 2 sınıf için sınıflı anotasyonlar + en az 1 sınıfsız
+ *   2. Bir lam açın; en az 2 sınıf için sınıflı anotasyonlar + en az 1 sınıfsız
  *      anotasyon çizin.
  *   3. [Extensions → Atölye → Yardımcılar → Kaiko Midnight sınıflandırıcı sihirbazı]
  *   4. İlk açılışta yapılandırın: python.exe, kaiko_bridge.py, (ops.) model dizini.
@@ -113,7 +113,7 @@ def configComplete = { cfg -> configMissing(cfg).isEmpty() }
 def parseIntOr = { s, int d -> try { return Integer.parseInt((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
 def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
 
-// ── Çalışma dizinini çöz (proje dizini → slayt klasörü → geçici) ────────────
+// ── Çalışma dizinini çöz (proje dizini → lam klasörü → geçici) ────────────
 def resolveWorkDir = { cfg, imageData ->
     def wd = cfg.workDir?.trim()
     if (wd) return new File(wd)
@@ -424,7 +424,7 @@ def buildResultText = { File workDir, exp, imp, boolean trained ->
 // ── Headless: yapılandırmayı raporla, etkileşim yok ─────────────────────────
 if (isHeadless) {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { println "Önce bir slayt açın."; return }
+    if (imageData == null) { println "Önce bir lam açın."; return }
     def cfg = loadConfig()
     def miss = configMissing(cfg)
     println "Kaiko yapılandırması: python=${cfg.python ?: '(ayarsız)'} köprü=${cfg.bridge ?: '(ayarsız)'} model=${cfg.modelDir ?: '(HF hub)'} aygıt=${cfg.device}"
@@ -763,7 +763,7 @@ render = { ->
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce bir slayt açın ve sınıflı + sınıfsız anotasyonlar çizin, sonra "⟳ Yenile".')
+            addGuidance('Önce bir lam açın ve sınıflı + sınıfsız anotasyonlar çizin, sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
@@ -777,7 +777,7 @@ render = { ->
             boolean classifierExists = (new File(workDir, 'classifier.pkl')).isFile()
             title.setText('Kaiko Midnight — hazır')
             def sb = new StringBuilder()
-            sb << "Slayt          : " << imageNameOf(imageData) << "\n"
+            sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Çalışma dizini : " << workDir.getAbsolutePath() << "\n"
             sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
             sb << "Model          : " << (cfg.modelDir?.trim() ? cfg.modelDir : 'HuggingFace (kaiko-ai/midnight)') << "\n"
@@ -873,7 +873,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ Kaiko Midnight sınıflandırıcı sihirbazı açıldı."

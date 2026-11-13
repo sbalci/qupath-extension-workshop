@@ -4,9 +4,9 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   Açık slaytın DOSYASINDA gömülü bir ICC renk profili olup olmadığını okur
+ *   Açık lamın DOSYASINDA gömülü bir ICC renk profili olup olmadığını okur
  *   ve raporlar — tek pencereden, görüntüyü/renkleri DEĞİŞTİRMEDEN:
- *     1. Slayt dosyasını (TIFF/SVS) QuPath'in paketlediği Bio-Formats TIFF
+ *     1. Lam dosyasını (TIFF/SVS) QuPath'in paketlediği Bio-Formats TIFF
  *        ayrıştırıcısıyla açar; yalnız ETİKET (IFD) verisini okur, pikselleri DEĞİL.
  *     2. ImageDescription (TIFF etiketi 270) → tarayıcı ipucunu (Aperio/GT450/AT2) verir.
  *     3. Gömülü ICC profilini iki konumda arar:
@@ -23,16 +23,16 @@
  *
  * NEDEN ÖNEMLİ:
  *   • Aperio SVS dosyaları gömülü bir ICC profili taşır; ImageScope bunu varsayılan
- *     olarak UYGULAR, QuPath UYGULAMAZ → aynı slayt iki yazılımda farklı renkte görünür.
+ *     olarak UYGULAR, QuPath UYGULAMAZ → aynı lam iki yazılımda farklı renkte görünür.
  *   • H-DAB / Ki-67 / H-score gibi OPTİK YOĞUNLUK (OD) tabanlı ölçümlerde doğru
- *     yaklaşım renk eşleme değil, boya vektörlerini HER SLAYT için yeniden tahmin
+ *     yaklaşım renk eşleme değil, boya vektörlerini HER LAM için yeniden tahmin
  *     etmektir (Yardımcılar → Boya vektörleri sihirbazı). Renk yönetimi çoğunlukla
  *     GÖRÜNÜMÜ etkiler, OD ölçümünü değil.
  *
  * KULLANIM:
- *   1. Bir slayt açın (yerel TIFF/SVS dosyası).
+ *   1. Bir lam açın (yerel TIFF/SVS dosyası).
  *   2. [Extensions → Atölye → Yardımcılar → ICC renk profili denetçisi]
- *   3. "Bu slaytı denetle" → raporu inceleyin / panoya kopyalayın.
+ *   3. "Bu lamı denetle" → raporu inceleyin / panoya kopyalayın.
  *
  * AYRINTI:
  *   Ekler → Renk Yönetimi (ICC). Arka plan: petebankhead/ICC-Profiles,
@@ -59,7 +59,7 @@ def fmtBytes = { long n ->
     return String.format(java.util.Locale.US, '%.1f MB', n / (1024.0d * 1024.0d))
 }
 
-// ── Açık slaytın dosya yolunu çöz (file: URI → mutlak yol) ──────────────────
+// ── Açık lamın dosya yolunu çöz (file: URI → mutlak yol) ──────────────────
 def serverFilePath = { server ->
     try {
         def uris = server.getURIs()
@@ -237,7 +237,7 @@ def buildReport = { String imageName, String path, Map g ->
     if (!g.ok) {
         sb << '\nDENETİM YAPILAMADI\n──────────────────\n'
         sb << '  ' + (g.error ?: 'Bilinmeyen hata') + '\n'
-        sb << '\n  İpucu: bu araç yerel TIFF tabanlı slaytlarda (.svs/.tif/.tiff) çalışır.\n'
+        sb << '\n  İpucu: bu araç yerel TIFF tabanlı lamlarda (.svs/.tif/.tiff) çalışır.\n'
         sb << '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
         return sb.toString()
     }
@@ -270,7 +270,7 @@ def buildReport = { String imageName, String path, Map g ->
     sb << '\nNE ANLAMA GELİYOR\n─────────────────\n'
     if (any) {
         sb << '  • ImageScope bu profili UYGULAR → renkler "doğru" görünür.\n'
-        sb << '  • QuPath / Bio-Formats UYGULAMAZ → aynı slayt QuPath\'te biraz\n'
+        sb << '  • QuPath / Bio-Formats UYGULAMAZ → aynı lam QuPath\'te biraz\n'
         sb << '    farklı (genelde daha soğuk/mavi) görünebilir. Bu bir HATA değildir.\n'
         if (g.hasFFFF) {
             sb << '  • Profil 0xFFFF etiketinde: GT450 sınıfı tarayıcılar profili buraya\n'
@@ -284,7 +284,7 @@ def buildReport = { String imageName, String path, Map g ->
 
     sb << '\nÖLÇÜME ETKİSİ\n─────────────\n'
     sb << '  • OD tabanlı ölçümde (Ki-67, H-score, HER2) doğru yaklaşım: boya\n'
-    sb << '    vektörlerini HER SLAYT için yeniden tahmin etmek (Yardımcılar →\n'
+    sb << '    vektörlerini HER LAM için yeniden tahmin etmek (Yardımcılar →\n'
     sb << '    Boya vektörleri sihirbazı). Renk yönetimi çoğunlukla GÖRÜNÜMÜ etkiler.\n'
     sb << '  • Sabit-RGB piksel sınıflandırıcı / derin öğrenme modelleri renk\n'
     sb << '    kaymasına duyarlı olabilir → renk-sağlam girdi ya da yeniden eğitim.\n'
@@ -294,10 +294,10 @@ def buildReport = { String imageName, String path, Map g ->
     return sb.toString()
 }
 
-// ── Headless: açık slaytı oku, raporu yazdır (UI yok, değişiklik yok) ─────────
+// ── Headless: açık lamı oku, raporu yazdır (UI yok, değişiklik yok) ─────────
 if (isHeadless) {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { println 'Önce bir slayt açın (headless modda yalnız açık slayt denetlenir).'; return }
+    if (imageData == null) { println 'Önce bir lam açın (headless modda yalnız açık lam denetlenir).'; return }
     def server = imageData.getServer()
     def path = serverFilePath(server)
     def name = server.getMetadata().getName() ?: 'slide'
@@ -329,10 +329,10 @@ def copyToClipboard = { String txt ->
     cb.setContent(content)
 }
 
-// ── Açık slaytı arka planda denetle ──────────────────────────────────────────
+// ── Açık lamı arka planda denetle ──────────────────────────────────────────
 def startInspect = {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Açık slayt yok. Önce bir TIFF/SVS slaytı açın.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set('Açık lam yok. Önce bir TIFF/SVS lamı açın.'); step.set('ERROR'); render(); return }
     def server = imageData.getServer()
     def path = serverFilePath(server)
     def name = server.getMetadata().getName() ?: 'slide'
@@ -370,18 +370,18 @@ render = { ->
     if (cur == 'READY') {
         def imageData = QP.getCurrentImageData()
         title.setText('ICC renk profili denetçisi')
-        addGuidance('Açık slaytın DOSYASINDA gömülü bir ICC renk profili olup olmadığını okur ' +
+        addGuidance('Açık lamın DOSYASINDA gömülü bir ICC renk profili olup olmadığını okur ' +
             've raporlar. Salt okunur: görüntüyü, renkleri veya analizinizi değiştirmez.\n\n' +
             'Aperio SVS dosyaları gömülü ICC profili taşır; ImageScope bunu uygular, QuPath uygulamaz ' +
-            '→ aynı slayt iki yazılımda farklı renkte görünür. Bu araç hangi durumun geçerli olduğunu gösterir.')
-        if (imageData == null) addGuidance('⚠ Açık slayt yok. Önce yerel bir TIFF/SVS slaytı açın.')
+            '→ aynı lam iki yazılımda farklı renkte görünür. Bu araç hangi durumun geçerli olduğunu gösterir.')
+        if (imageData == null) addGuidance('⚠ Açık lam yok. Önce yerel bir TIFF/SVS lamı açın.')
         actions.add(navButton('Kapat', { stage.close() }))
-        def go = navButton('Bu slaytı denetle ▶', { startInspect() }, 'Açık slaytın dosyasında gömülü ICC profilini arar')
+        def go = navButton('Bu lamı denetle ▶', { startInspect() }, 'Açık lamın dosyasında gömülü ICC profilini arar')
         go.setDisable(imageData == null)
         actions.add(go)
     } else if (cur == 'SCANNING') {
-        title.setText('Slayt dosyası okunuyor…')
-        addGuidance('Dosyanın etiket (IFD) verisi okunuyor; pikseller okunmaz, bu yüzden büyük slaytlarda da hızlıdır.')
+        title.setText('Lam dosyası okunuyor…')
+        addGuidance('Dosyanın etiket (IFD) verisi okunuyor; pikseller okunmaz, bu yüzden büyük lamlarda da hızlıdır.')
         center.getChildren().add(busyBar())
         actions.add(navButton('Kapat', { stage.close() }))
     } else if (cur == 'RESULT') {
@@ -434,7 +434,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println '✓ ICC renk profili denetçisi açıldı.'

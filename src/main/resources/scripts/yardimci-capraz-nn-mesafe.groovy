@@ -18,7 +18,7 @@
  *     Tümör İçi Ki-67 modüllerindeki tespitler sınıflı olmalıdır.
  *
  * KULLANIM:
- *   1. Sınıflı hücre tespitleri olan, kalibre (µm) bir slayt açın.
+ *   1. Sınıflı hücre tespitleri olan, kalibre (µm) bir lam açın.
  *   2. [Extensions → Atölye → Yardımcılar → Uzamsal analiz →
  *      Çapraz-tip En Yakın Komşu]
  *   3. Açılan iletişimlerde A ve B sınıflarını seçin; yarıçap girin.
@@ -113,7 +113,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ── 1) Ön kontroller ────────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce sınıflı hücre tespitleri olan bir slayt açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce sınıflı hücre tespitleri olan bir lam açın.")
     return
 }
 def cal = imageData.getServer().getPixelCalibration()
@@ -121,7 +121,7 @@ double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0)) {
     Dialogs.showErrorMessage("Kalibrasyon yok",
-        "Slaytta piksel boyutu (µm) tanımlı değil.\n\n" +
+        "Lamda piksel boyutu (µm) tanımlı değil.\n\n" +
         "Piksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).")
     return
 }

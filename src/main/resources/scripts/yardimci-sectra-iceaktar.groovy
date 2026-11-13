@@ -15,7 +15,7 @@
  *        / nokta) oluşturur; seçilen renk şemasıyla (geometri tipi veya etiket metni)
  *        sınıflandırır ve Sectra metin etiketini anotasyon adı olarak korur.
  *   Köprü QuPath DIŞINDA bir Python venv'inde çalışır; tek bağımlılığı pydicom'dur.
- *   TÜM PROJE kipi: bir klasördeki Sectra dışa aktarımlarını (<slayt dosyası>.graphics.<tarih>.dcm) proje
+ *   TÜM PROJE kipi: bir klasördeki Sectra dışa aktarımlarını (<lam dosyası>.graphics.<tarih>.dcm) proje
  *   görüntülerine AD ÖNEKİYLE birebir eşler, önce bir eşleştirme önizlemesi gösterir, sonra her görüntü için
  *   dönüştürüp içe aktarır ve kaydeder; çalıştırmadan önce mevcut anotasyonlar için ne yapılacağını SORAR
  *   (varsayılan: dokunma — yalnız ekle). Rapor: <proje>/exports/sectra_iceaktarma_<tarih>.tsv.
@@ -31,7 +31,7 @@
  * KULLANIM:
  *   1. Sectra köprü ortamını kurun (venv + pydicom). Bkz. Ekler → Klinik PACS → QuPath
  *      Entegrasyonu, ya da Kaynaklar → İleri kurulumlar § H.
- *   2. Sectra'da bir slaytta anotasyon çizip DICOM grafik (.dcm) dışa aktarın.
+ *   2. Sectra'da bir lamda anotasyon çizip DICOM grafik (.dcm) dışa aktarın.
  *   3. Aynı WSI'yi QuPath'te açın.
  *   4. [Extensions → Atölye → Yardımcılar → Sectra PACS anotasyon sihirbazı]
  *   5. İlk açılışta yapılandırın: python.exe + sectra_dicom_to_qupath.py yolu.
@@ -119,7 +119,7 @@ def imageNameOf = { imageData ->
     return nm.replaceAll(/\.[^.\/\\]+$/, '')
 }
 
-// ── Çalışma dizinini çöz (proje dizini → slayt klasörü → geçici) ────────────
+// ── Çalışma dizinini çöz (proje dizini → lam klasörü → geçici) ────────────
 def resolveWorkDir = { cfg, imageData ->
     def wd = cfg.workDir?.trim()
     if (wd) return new File(wd)
@@ -313,7 +313,7 @@ def buildResultText = { slideName, schemeDisp, imp, boolean replacedPrev = false
     def sb = new StringBuilder()
     sb << "SECTRA PACS ANOTASYON — İÇE AKTARMA\n"
     sb << "═════════════════════════════════════\n\n"
-    sb << "Slayt       : " << slideName << "\n"
+    sb << "Lam       : " << slideName << "\n"
     sb << "GeoJSON     : " << (imp.file?.getAbsolutePath() ?: '-') << "\n"
     sb << "Renk şeması : " << schemeDisp << "\n"
     sb << "Önceki      : " << (replacedPrev ? (String.valueOf(imp.removed) + ' Sectra bayraklı anotasyon değiştirildi') : 'mevcut anotasyonlara dokunulmadı (yalnız eklendi)') << "\n\n"
@@ -337,8 +337,8 @@ if (isHeadless) {
     println "Sectra yapılandırması: python=${cfg.python ?: '(ayarsız)'} köprü=${cfg.bridge ?: '(ayarsız)'} şema=${cfg.scheme}"
     if (!miss.isEmpty()) println "Eksik yapılandırma: ${miss.join(', ')}"
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) println "Önce bir slayt açın (içe aktarım için)."
-    else println "Açık slayt: ${imageNameOf(imageData)} (${imageData.getServer().getWidth()}x${imageData.getServer().getHeight()})"
+    if (imageData == null) println "Önce bir lam açın (içe aktarım için)."
+    else println "Açık lam: ${imageNameOf(imageData)} (${imageData.getServer().getWidth()}x${imageData.getServer().getHeight()})"
     println "Sectra sihirbazı için QuPath arayüzü gerekir (headless çalıştırılamaz)."
     println "⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar."
     return
@@ -478,9 +478,9 @@ def startConvert = { File dicomFile ->
 }
 
 // ── Tüm proje (batch) içe aktarım ───────────────────────────────────────────
-// Eşleştirme: <slayt dosyası UZANTISIYLA>.graphics.<YYYY-MM-DD_HH-MM-SS>.dcm — ad ÖNEKİ birebir (getURIs'ten).
-// sectra-qupath'in "herhangi bir .dcm / ilk bulunan" hatası burada yok: başka slaytın dosyası ya da kendi
-// .geojson çıktısı asla eşleşmez. Aynı slaytın birden çok dışa aktarımında en yeni zaman damgası önseçilidir.
+// Eşleştirme: <lam dosyası UZANTISIYLA>.graphics.<YYYY-MM-DD_HH-MM-SS>.dcm — ad ÖNEKİ birebir (getURIs'ten).
+// sectra-qupath'in "herhangi bir .dcm / ilk bulunan" hatası burada yok: başka lamın dosyası ya da kendi
+// .geojson çıktısı asla eşleşmez. Aynı lamın birden çok dışa aktarımında en yeni zaman damgası önseçilidir.
 def batchRowsRef = new java.util.concurrent.atomic.AtomicReference([project: null, rows: [], unmatched: []])
 def batchDirRef  = new java.util.concurrent.atomic.AtomicReference(null)
 def SECTRA_TS = ~/(?i)\.graphics\.(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})\.dcm$/
@@ -505,12 +505,12 @@ def buildSectraRows = { File dir ->
         String status = (sf == null) ? 'dosya URI\'si yok' : (cands.isEmpty() ? '.dcm yok' : (cands.size() > 1 ? (cands.size() + ' sürüm — en yenisi seçili') : 'eşleşti'))
         def row = [entry: e, name: e.getImageName(), slideFile: sf, candidates: cands, file: (cands ? cands[0] : null), include: !cands.isEmpty(), status: status]
         if (isTransformedEntry(e)) {
-            // kırpılmış/dönüştürülmüş görüntüde Sectra (tam slayt) koordinatları uymaz → önseçim yok
+            // kırpılmış/dönüştürülmüş görüntüde Sectra (tam lam) koordinatları uymaz → önseçim yok
             row.file = null; row.include = false; row.transformed = true; row.status = 'dönüştürülmüş görüntü (kırpma vb.) — Sectra koordinatları uymaz'
         }
         rows.add(row)
     }
-    // Aynı .dcm birden çok satıra önseçiliyorsa (aynı slayt dosyası adı, kırpma girdisi…) hepsi belirsiz
+    // Aynı .dcm birden çok satıra önseçiliyorsa (aynı lam dosyası adı, kırpma girdisi…) hepsi belirsiz
     def claims = [:]
     rows.each { r -> if (r.file != null) { String k = r.file.getPath(); claims.put(k, ((claims.get(k) ?: 0) as int) + 1) } }
     rows.each { r ->
@@ -551,7 +551,7 @@ def startBatch = {
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         // Açık görüntü sorgusu FX iş parçacığında yapılır (ImageData erişimi); başarısızlıkta KAPALI-BAŞARISIZ:
-        // o görüntü 'hata' olur ve hiçbir şey yazılmaz (yoksa açık slaytın ikinci kopyası diskten okunup kaydedilirdi).
+        // o görüntü 'hata' olur ve hiçbir şey yazılmaz (yoksa açık lamın ikinci kopyası diskten okunup kaydedilirdi).
         def onFx = { Closure c -> def ft = new java.util.concurrent.FutureTask(c as java.util.concurrent.Callable); javafx.application.Platform.runLater(ft); ft.get(10, java.util.concurrent.TimeUnit.SECONDS) }
         def report = new StringBuilder(['goruntu_adi', 'dcm', 'durum', 'eklenen', 'silinen', 'atlanan', 'not'].join('\t') + '\n')
         def clean = { v -> (v == null ? '' : String.valueOf(v)).replace('\t', ' ').replace('\n', ' ').replace('\r', ' ') }
@@ -596,7 +596,7 @@ def startBatch = {
                 def pr = runPython(convertCmd(cfg, r.file, outGeojson, server.getWidth(), server.getHeight()), { String ln -> })
                 if (!pr.ok && pr.exitCode == -3) throw new java.util.concurrent.CancellationException('iptal edildi')
                 if (!pr.ok) throw new IOException('dönüştürme başarısız (çıkış ' + pr.exitCode + '): ' + ((pr.error ?: pr.lastLines ?: '').readLines().takeRight(1).join(' ')))
-                // Dönüştürme sürerken kullanıcı slaytı açmış olabilir: içe aktarmadan önce yeniden çöz (başarısızlıkta KAPALI-BAŞARISIZ)
+                // Dönüştürme sürerken kullanıcı lamı açmış olabilir: içe aktarmadan önce yeniden çöz (başarısızlıkta KAPALI-BAŞARISIZ)
                 def live2 = findLive()
                 if (live != null && !live.is(live2)) throw new IOException('açık görüntü dönüştürme sırasında kapatıldı ya da değişti')
                 if (live2 != null && opened) {
@@ -727,7 +727,7 @@ render = { ->
             actions.add(navButton('⟳ Yenile', { render() }))
             if (QP.getProject() != null) {
                 addGuidance('Proje açık: "Tüm proje (klasörden)" ile bir klasördeki Sectra .dcm dosyalarını tüm proje görüntülerine aktarabilirsiniz.')
-                def batchBtn = navButton('Tüm proje (klasörden) ▶', { openBatchPreview() }, '<slayt>.graphics.<tarih>.dcm dosyalarını proje görüntüleriyle eşler')
+                def batchBtn = navButton('Tüm proje (klasörden) ▶', { openBatchPreview() }, '<lam>.graphics.<tarih>.dcm dosyalarını proje görüntüleriyle eşler')
                 batchBtn.setDisable(!configComplete(cfg))
                 actions.add(batchBtn)
             }
@@ -736,7 +736,7 @@ render = { ->
             def workDir = resolveWorkDir(cfg, imageData)
             title.setText('Sectra PACS anotasyon — hazır')
             def sb = new StringBuilder()
-            sb << "Slayt        : " << imageNameOf(imageData) << "\n"
+            sb << "Lam        : " << imageNameOf(imageData) << "\n"
             sb << "Boyut (px)   : " << server.getWidth() << " x " << server.getHeight() << "\n"
             sb << "Python       : " << (cfg.python ?: '(ayarsız)') << "\n"
             sb << "Köprü        : " << (cfg.bridge ?: '(ayarsız)') << "\n"
@@ -767,7 +767,7 @@ render = { ->
             runBtn.setDisable(!canRun)
             actions.add(runBtn)
             if (QP.getProject() != null) {
-                def batchBtn = navButton('Tüm proje (klasörden) ▶', { openBatchPreview() }, '<slayt>.graphics.<tarih>.dcm dosyalarını proje görüntüleriyle eşler')
+                def batchBtn = navButton('Tüm proje (klasörden) ▶', { openBatchPreview() }, '<lam>.graphics.<tarih>.dcm dosyalarını proje görüntüleriyle eşler')
                 batchBtn.setDisable(!canRun)
                 actions.add(batchBtn)
             }
@@ -830,7 +830,7 @@ render = { ->
         def sp = new javafx.scene.control.ScrollPane(grid); sp.setFitToWidth(true)
         javafx.scene.layout.VBox.setVgrow(sp, javafx.scene.layout.Priority.ALWAYS)
         center.getChildren().add(sp)
-        addGuidance('Eşleşme yalnız tam ad önekiyle yapılır: <slayt dosyası>.graphics.<tarih>.dcm. "İçe aktar" önce mevcut ' +
+        addGuidance('Eşleşme yalnız tam ad önekiyle yapılır: <lam dosyası>.graphics.<tarih>.dcm. "İçe aktar" önce mevcut ' +
             'anotasyonlar için ne yapılacağını sorar (varsayılan: dokunma).')
         actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
         def runBatchBtn = navButton('İçe aktar ▶', { startBatch() }, 'İşaretli görüntüleri dönüştürür, içe aktarır ve kaydeder')
@@ -840,7 +840,7 @@ render = { ->
     } else if (cur == 'BATCH_RUNNING') {
         title.setText('Tüm proje içe aktarılıyor (DICOM → GeoJSON → QuPath)…')
         addGuidance('Her görüntü için Python köprüsü çalışır; iptal, sıradaki görüntüden önce durur. ' +
-            'Çalışma sürerken hedef slaytları açıp kapatmayın; açık bir slayt işlem sırasında değişirse o görüntü atlanır ya da hata olarak raporlanır.')
+            'Çalışma sürerken hedef lamları açıp kapatmayın; açık bir lam işlem sırasında değişirse o görüntü atlanır ya da hata olarak raporlanır.')
         center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {
@@ -899,7 +899,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ Sectra PACS anotasyon sihirbazı açıldı."

@@ -34,7 +34,7 @@
  *   (downsample + "labels" {indeks→sınıf}) ölçek ve sınıf adları otomatik okunur.
  *
  * KULLANIM:
- *   1. Maskenin türetildiği slaytı QuPath'te açın.
+ *   1. Maskenin türetildiği lamı QuPath'te açın.
  *   2. [Extensions → Atölye → Yardımcılar → Maske görüntüsünü içe aktar]
  *   3. Maske dosyasını seçin; (yan dosya yoksa) downsample ve ön plan sınıf adını girin.
  *
@@ -125,7 +125,7 @@ int maxDistinctLabels     = 256                   // bunun üstünde maske ikili
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce maskenin türetildiği slaytı açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce maskenin türetildiği lamı açın.")
     return
 }
 if (isHeadless) {
@@ -209,14 +209,14 @@ if (sidecar != null && sidecar.downsample != null) {
 }
 if (!(downsample > 0)) downsample = 1.0d
 
-// Boyut tutarlılık uyarısı (yanlış slayt açık olabilir) — engelleyici değil
+// Boyut tutarlılık uyarısı (yanlış lam açık olabilir) — engelleyici değil
 double impliedW = maskW * downsample
 double tolerance = Math.max(8.0d, server.getWidth() * 0.02d)
 if (Math.abs(impliedW - server.getWidth()) > tolerance) {
     def proceed = Dialogs.showConfirmDialog("Boyut uyuşmuyor",
         String.format(java.util.Locale.US,
             "Maske × downsample = %,.0f px, açık görüntü genişliği = %,d px.%n%n" +
-            "Maske bu slayttan türememiş ya da downsample yanlış olabilir.%n" +
+            "Maske bu lamdan türememiş ya da downsample yanlış olabilir.%n" +
             "Yine de devam edilsin mi?",
             impliedW, server.getWidth()))
     if (!proceed) { println "Kullanıcı boyut-uyuşmazlığı onayını reddetti."; return }

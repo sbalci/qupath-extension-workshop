@@ -13,7 +13,7 @@
  *   hesaplar (uzamsal hash ızgarası ile hızlı + tam sonuç).
  *
  * GİRDİ (ÖN KOŞUL):
- *   • Slaytta hücre tespitleri olmalı (Hücre Tespiti / Nükleer Boya / Sitoplazmik Boya /
+ *   • Lamda hücre tespitleri olmalı (Hücre Tespiti / Nükleer Boya / Sitoplazmik Boya /
  *     Tümör İçi Ki-67 modüllerinden biriyle üretilmiş). Betik tespit YAPMAZ.
  *
  * ÇIKTI:
@@ -101,14 +101,14 @@ double bucketMicrons = 50.0   // uzamsal hash kovası kenarı (µm)
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce hücre tespiti yapılmış bir slayt açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce hücre tespiti yapılmış bir lam açın.")
     return
 }
 def cal = imageData.getServer().getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok", "Slaytta piksel boyutu (µm) tanımlı değil." +
+    Dialogs.showErrorMessage("Kalibrasyon yok", "Lamda piksel boyutu (µm) tanımlı değil." +
         "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).")
     return
 }

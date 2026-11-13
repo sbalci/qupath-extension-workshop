@@ -23,7 +23,7 @@
  *   1. BIOP Cellpose eklentisini kurun + [Edit → Preferences → Cellpose/Omnipose]
  *      altında en az "Cellpose 'python.exe' location" alanını doldurun.
  *      Bkz. Ekler → Cellpose § kurulum.
- *   2. Bir slayt açın; tümör (epitel) içeren bir anotasyon çizip SEÇİN (sarı kenar).
+ *   2. Bir lam açın; tümör (epitel) içeren bir anotasyon çizip SEÇİN (sarı kenar).
  *   3. [Extensions → Atölye → Yardımcılar → Cellpose hücre/çekirdek tespiti sihirbazı]
  *   4. Parametreleri seçip "Çalıştır" → sonuç aynı pencerede güncellenir.
  *
@@ -82,7 +82,7 @@ def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').t
 // ── Ön kontrol: görüntü açık mı? ──
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    def msg = "Önce bir slayt açın, sonra bu sihirbazı tekrar çalıştırın."
+    def msg = "Önce bir lam açın, sonra bu sihirbazı tekrar çalıştırın."
     if (isHeadless) { println msg } else { Dialogs.showErrorMessage("Görüntü açık değil", msg) }
     return
 }

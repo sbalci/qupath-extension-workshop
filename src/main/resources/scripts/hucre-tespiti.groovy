@@ -6,7 +6,7 @@
  * çekirdekleri H&E için atölye varsayılan parametreleriyle tespit eder.
  *
  * KULLANIM:
- *   1. Bir H&E slaytı açın
+ *   1. Bir H&E lamı açın
  *   2. [R] tuşu → tümör içeren küçük bir dikdörtgen (~1×1 mm) çizin ve SEÇİN
  *   3. Bu betiği çalıştırın → açılan TEK pencerede "Çalıştır"
  *   4. Pencere açık kalır: eşikleri değiştirip (Gelişmiş ayarlar) tekrar
@@ -46,7 +46,7 @@ def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     Dialogs.showErrorMessage(
         "Görüntü açık değil",
-        "Önce bir slayt açın (sol Proje panelinden çift tıklayın), sonra bu betiği tekrar çalıştırın."
+        "Önce bir lam açın (sol Proje panelinden çift tıklayın), sonra bu betiği tekrar çalıştırın."
     )
     return
 }
@@ -152,7 +152,7 @@ javafx.application.Platform.runLater {
             'Eşikleri değiştirip yeniden çalıştırabilirsiniz; sonuç aşağıda güncellenir.\n' +
             'Perde arkası: dekonvolüsyon → Gaussian (σ) yumuşatma → eşik (ikili maske) → ' +
             'mesafe dönüşümü + watershed (bitişik çekirdekleri ayır). Bu adımları kendi ' +
-            'slaytınızda görmek için: Yardımcılar → Görüntü işleme kavramları.')
+            'lamınızda görmek için: Yardımcılar → Görüntü işleme kavramları.')
         info.setWrapText(true)
 
         def commitSpinner = { javafx.scene.control.Spinner sp ->

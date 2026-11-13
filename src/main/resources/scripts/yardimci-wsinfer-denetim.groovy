@@ -23,7 +23,7 @@
  *   • Klinik skor, eşik, alt-tip veya yorum ÜRETMEZ.
  *
  * KULLANIM:
- *   1. Bir slayt açın (WSInfer öncesi ya da sonrası — her ikisinde de çalışır).
+ *   1. Bir lam açın (WSInfer öncesi ya da sonrası — her ikisinde de çalışır).
  *   2. [Extensions → Atölye → Yardımcılar → Skorlama ve ölçüm → WSInfer çıkarım denetimi]
  *      (ya da [Automate → Project scripts → bu betik])
  *
@@ -109,7 +109,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ── 1) Ön kontrol ───────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir slayt açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir lam açın.")
     return
 }
 

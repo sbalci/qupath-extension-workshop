@@ -2,7 +2,7 @@
  * Yardımcı - Karo (tile) dışa aktarma
  * ------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
- * Açık slayttan görüntü karoları (tiles) — isteğe bağlı olarak eşleşen etiket
+ * Açık lamdan görüntü karoları (tiles) — isteğe bağlı olarak eşleşen etiket
  * maskesi karolarıyla birlikte — dışa aktarır. Derin öğrenme / harici yapay
  * zekâ araçlarına veri hazırlamak, bir bölgeyi paylaşmak veya segmentasyon
  * eğitim seti üretmek içindir.
@@ -18,27 +18,27 @@
  *
  * KAPSAM (yalnızca AÇIK görüntü; diyalogdan seçilir):
  *   • Seçili anotasyon(lar)  — yalnızca seçtiğiniz ROI'lerin içindeki karolar.
- *   • Tüm anotasyonlar       — slayttaki her anotasyonun içindeki karolar.
- *   (Her iki kapsam da anotasyonla sınırlıdır — boş slayt döşenmez.)
+ *   • Tüm anotasyonlar       — lamdaki her anotasyonun içindeki karolar.
+ *   (Her iki kapsam da anotasyonla sınırlıdır — boş lam döşenmez.)
  *
  * SEÇENEKLER (diyalogda açıklamalı):
  *   Mod · Kapsam · Karo boyutu (px) · Çözünürlük (µm/px) · Örtüşme (px) · Format.
  *   Maske modunda format PNG'ye zorlanır (JPEG tamsayı etiketleri bozar).
  *
  * KULLANIM:
- *   1. Bir slayt açın; en az bir anotasyon çizin (maske modu için sınıflı
+ *   1. Bir lam açın; en az bir anotasyon çizin (maske modu için sınıflı
  *      anotasyon gerekir — bkz. Tümör/Stroma modülü).
  *   2. "Seçili" kapsam için anotasyon(lar)ı seçili tutun.
  *   3. [Extensions → Atölye → Yardımcılar → Karo (tile) dışa aktarma]
  *   4. Formdan seçenekleri ayarlayıp "Dışa aktar".
  *
  * ÇIKTI:
- *   <proje-klasörü>/exports/tiles/<slayt-slug>__<tarih>/
+ *   <proje-klasörü>/exports/tiles/<lam-slug>__<tarih>/
  *     ├── (sadece görüntü)        tile_*.png|jpg|tif
  *     └── (görüntü + maske)        images/ ...  labels/ ...  labels.txt
  *   (Proje yoksa çıktı kullanıcı ana klasörünün altına yazılır.)
  *
- * NE YAPMAZ: Tüm projeyi (çoklu slayt) ya da anotasyonsuz tüm slaytı döşemez.
+ * NE YAPMAZ: Tüm projeyi (çoklu lam) ya da anotasyonsuz tüm lamı döşemez.
  *
  * API / BELGE: TileExporter + LabeledImageServer.Builder (QuPath 0.6.0+).
  *   Maske modu tek kanallı indeksli çıktı verir (multichannelOutput=false).
@@ -72,7 +72,7 @@ def atolyeS = { String k, String d -> (String) __wpCall('str', [String.class, St
 def exportFolder = atolyeS('atolye.exportFolder', 'exports')
 
 // ──────────────────────────────────────────────────────────────
-// Türkçe karakter + boşluk içeren slayt isimlerini güvenli slug'a çevirir
+// Türkçe karakter + boşluk içeren lam isimlerini güvenli slug'a çevirir
 // ──────────────────────────────────────────────────────────────
 def toSlug = { String s ->
     if (s == null) return "untitled"
@@ -136,7 +136,7 @@ def showOptionsForm = { int selCount, int allCount ->
             grid.setPadding(new javafx.geometry.Insets(12))
             int r = 0
             grid.add(new javafx.scene.control.Label("Mod:"), 0, r);        grid.add(modeBox, 1, r); grid.add(help("Sadece görüntü: RGB karolar. Görüntü + etiket maskesi: anotasyon sınıflarından maske (segmentasyon eğitimi)."), 2, r); r++
-            grid.add(new javafx.scene.control.Label("Kapsam:"), 0, r);     grid.add(scopeBox, 1, r); grid.add(help("Seçili anotasyon(lar): yalnızca seçtiğiniz ROI'ler. Tüm anotasyonlar: slayttaki her anotasyon."), 2, r); r++
+            grid.add(new javafx.scene.control.Label("Kapsam:"), 0, r);     grid.add(scopeBox, 1, r); grid.add(help("Seçili anotasyon(lar): yalnızca seçtiğiniz ROI'ler. Tüm anotasyonlar: lamdaki her anotasyon."), 2, r); r++
             grid.add(new javafx.scene.control.Label("Karo boyutu (px):"), 0, r); grid.add(tileField, 1, r); grid.add(help("Her karonun kenar uzunluğu (piksel). Tipik: 256–512."), 2, r); r++
             grid.add(new javafx.scene.control.Label("Çözünürlük (µm/px):"), 0, r); grid.add(umField, 1, r); grid.add(help("Hedef çözünürlük. Kalibre değilse downsample katsayısı olarak yorumlanır. Küçük değer = daha ayrıntılı/daha çok karo."), 2, r); r++
             grid.add(new javafx.scene.control.Label("Örtüşme (px):"), 0, r); grid.add(overlapField, 1, r); grid.add(help("Komşu karolar arası örtüşme. Sınır hücreleri için >0 (ör. 64)."), 2, r); r++
@@ -249,7 +249,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ──────────────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir slayt açın, sonra bu betiği tekrar çalıştırın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir lam açın, sonra bu betiği tekrar çalıştırın.")
     return
 }
 def server = imageData.getServer()
@@ -261,7 +261,7 @@ def allAnns = QP.getAnnotationObjects().findAll { it.getROI() != null }
 if (allAnns.isEmpty()) {
     Dialogs.showErrorMessage(
         "Anotasyon yok",
-        "Karo dışa aktarımı anotasyonla sınırlıdır; slayttaki hiçbir anotasyon bulunamadı.\n\n" +
+        "Karo dışa aktarımı anotasyonla sınırlıdır; lamdaki hiçbir anotasyon bulunamadı.\n\n" +
         "Önce bir bölge çizin (dikdörtgen/çokgen) ya da maske için sınıflı anotasyon\n" +
         "üretin (Tümör/Stroma modülü), sonra tekrar deneyin."
     )
@@ -296,7 +296,7 @@ if (selectedScope && inScope.isEmpty()) {
     Dialogs.showErrorMessage(
         "Seçili anotasyon yok",
         "'Seçili anotasyon(lar)' kapsamı için önce bir veya birden çok anotasyon seçin\n" +
-        "(Project/Annotations panelinden ya da slayt üzerinde tıklayarak), sonra tekrar çalıştırın."
+        "(Project/Annotations panelinden ya da lam üzerinde tıklayarak), sonra tekrar çalıştırın."
     )
     return
 }

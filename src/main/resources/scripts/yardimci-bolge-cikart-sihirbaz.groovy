@@ -22,7 +22,7 @@
  *   Bu araç piksel dosyası üretir; nesne/ölçüm/hiyerarşiyi DEĞİŞTİRMEZ.
  *
  * KULLANIM:
- *   1. Bir slayt açın; Rectangle (R) ya da herhangi bir alan aracıyla bölgeyi
+ *   1. Bir lam açın; Rectangle (R) ya da herhangi bir alan aracıyla bölgeyi
  *      çizip SEÇİN (birden çok seçiliyse her biri ayrı dosyaya çıkar).
  *   2. [Extensions → Atölye → Yardımcılar → İçe ve dışa aktarma / veri → Görüntü alanı çıkart (Extract Region)]
  *   3. Biçim / çözünürlük / sıkıştırmayı seçip "Çıkart".
@@ -121,7 +121,7 @@ def uniqueFile = { File dir, String base, String ext ->
 // ── Headless: yapılandırmayı raporla, etkileşim yok ─────────────────────────────
 if (isHeadless) {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { println 'Önce bir slayt açın.'; return }
+    if (imageData == null) { println 'Önce bir lam açın.'; return }
     println 'Görüntü alanı çıkart sihirbazı: QuPath arayüzü gerektirir (headless çalıştırılamaz).'
     println 'Seçili alan anotasyonu sayısı: ' + selectedAreaAnns().size()
     println '⚠️ Yalnızca araştırma/eğitim amaçlıdır.'
@@ -297,7 +297,7 @@ def startExport = {
     if (maxBytes > 1_073_741_824L) {
         boolean ok = Dialogs.showConfirmDialog('Büyük çıkarım',
             'En büyük bölge yaklaşık ' + humanBytes(maxBytes) + ' (sıkıştırılmamış).\n' +
-            'Büyük slaytlarda dakikalar sürebilir ve diskte çok yer kaplayabilir.\n\nDevam edilsin mi?')
+            'Büyük lamlarda dakikalar sürebilir ve diskte çok yer kaplayabilir.\n\nDevam edilsin mi?')
         if (!ok) { return }
     }
 
@@ -380,7 +380,7 @@ render = { ->
     if (cur == 'READY' || (cur == 'CONFIG' && !hasSel)) {
         title.setText('Görüntü alanı çıkart (Extract Region)')
         if (imageData == null) {
-            addGuidance('Önce bir slayt açın. Sonra Rectangle (R) ya da herhangi bir alan aracıyla ' +
+            addGuidance('Önce bir lam açın. Sonra Rectangle (R) ya da herhangi bir alan aracıyla ' +
                 'çıkarmak istediğiniz bölgeyi çizip SEÇİN ve "⟳ Yenile"ye basın.')
         } else {
             addGuidance('Çıkarmak istediğiniz bölge için bir ALAN anotasyonu (dikdörtgen, poligon, fırça) ' +
@@ -508,7 +508,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println '✓ Görüntü alanı çıkart (Extract Region) sihirbazı açıldı.'

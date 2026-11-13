@@ -14,7 +14,7 @@
  * NEDEN KÖPRÜ, NEDEN upstream CLI DEĞİL:
  *   Upstream `histoplus` komutu / extract() Windows'ta çalışmaz (issue #29: çok-süreçli kuyruk modeli
  *   pickle etmeye çalışır; ayrıca son-işleme açık .npz dosyasını silmeye çalışıp WinError 32 verir) ve
- *   bölge seçimi yoktur (tüm slayt, Otsu doku tespiti). Köprü aynı upstream fonksiyonlarını aynı sırayla
+ *   bölge seçimi yoktur (tüm lam, Otsu doku tespiti). Köprü aynı upstream fonksiyonlarını aynı sırayla
  *   çağırır, yalnız bu iki tesisat adımını bellek içinde yapar ve karoları SEÇİLİ ALANDAN üretir.
  *
  * KURULUM (sihirbaz adım adım yönlendirir):
@@ -26,7 +26,7 @@
  *   • Seçili alandaki model-tespitli çekirdeklerin sınıf başına sayımı, yüzdesi ve yoğunluğu (hücre/mm²).
  *   • "Sınıf oy oranı": çekirdek piksellerinden çoğunluk sınıfına oy verenlerin kesri — OLASILIK DEĞİLDİR.
  *   • Sınıf adları modelin eğitim veri setinin kategorileridir; tanı değildir. Klinik yorum ÜRETMEZ.
- *   • µm/px değerini SLAYT DOSYASINDAN okur; dosyada yoksa ÇALIŞTIRMAZ (upstream sessizce 0.25 varsayardı).
+ *   • µm/px değerini LAM DOSYASINDAN okur; dosyada yoksa ÇALIŞTIRMAZ (upstream sessizce 0.25 varsayardı).
  *
  * LİSANS SINIRI:
  *   HistoPLUS kodu ve ağırlıkları CC BY-NC-ND 4.0 (bu eklenti Apache-2.0) → kod ve ağırlıklar
@@ -85,7 +85,7 @@ def RUNNER_VOTE  = 'HistoPLUS: sinif oy orani'   // köprünün GeoJSON'da yazd�
 def HF_REPO      = 'Owkin-Bioptimus/histoplus'
 def LICENSE_TOKEN = 'CC-BY-NC-ND-4.0@cde2eee'    // onay, bu lisans + ağırlık revizyonuna bağlıdır
 double MPP_DIFF_WARN     = 0.05   // QuPath ile dosyadaki µm/px farkı bu oranı aşarsa uyar
-double LEVEL_DIFF_WARN   = 0.10   // slayt seviyesi ile modelin µm/px'i arası fark (upstream %20'ye kadar kabul eder)
+double LEVEL_DIFF_WARN   = 0.10   // lam seviyesi ile modelin µm/px'i arası fark (upstream %20'ye kadar kabul eder)
 double AREA_WARN_GPU_MM2 = 25.0d  // ölçüm: RTX A4000, batch 4 → ~12 sn/mm² (25 mm² ≈ 5 dk)
 double AREA_WARN_CPU_MM2 = 0.25d  // ölçüm: CPU ~7 dk/mm² (0.25 mm² ≈ 2 dk)
 def WEIGHTS = [
@@ -239,7 +239,7 @@ def safeName = { String s ->
     def cleaned = original.replaceAll(/[^A-Za-z0-9._-]+/, '_')
     return cleaned == original ? cleaned : (cleaned + '_' + Integer.toHexString(original.hashCode()))
 }
-// Çalışma klasörü: ayar → <proje>/histoplus_work/<görüntü> → <slayt klasörü>/histoplus_work/<görüntü> → geçici klasör.
+// Çalışma klasörü: ayar → <proje>/histoplus_work/<görüntü> → <lam klasörü>/histoplus_work/<görüntü> → geçici klasör.
 def resolveWorkDir = { cfg, imageData ->
     def name = safeName(imageNameOf(imageData))
     def wd = cfg.workDir?.trim()
@@ -547,19 +547,19 @@ def writeRoiGeoJson = { roi, File f ->
     return true
 }
 
-// ── Slayt dosyası: köprü dosyayı DOĞRUDAN (OpenSlide) okur → yerel, türetilmemiş tek dosya olmalı ──
+// ── Lam dosyası: köprü dosyayı DOĞRUDAN (OpenSlide) okur → yerel, türetilmemiş tek dosya olmalı ──
 def slideFileOf = { imageData ->
     def server = imageData.getServer()
     boolean derived = (server instanceof qupath.lib.images.servers.TransformingImageServer) ||
                       (server instanceof qupath.lib.images.servers.SparseImageServer) ||
                       (server instanceof qupath.lib.images.servers.ConcatChannelsImageServer) ||
                       (server instanceof qupath.lib.images.servers.ZConcatenatedImageServer)
-    if (derived) return [ok: false, error: 'Bu görüntü kırpılmış/döndürülmüş ya da birleştirilmiş bir görünüm. HistoPLUS slayt dosyasını doğrudan okur; koordinatlar dosyayla eşleşmez — özgün dosyayı açın.']
+    if (derived) return [ok: false, error: 'Bu görüntü kırpılmış/döndürülmüş ya da birleştirilmiş bir görünüm. HistoPLUS lam dosyasını doğrudan okur; koordinatlar dosyayla eşleşmez — özgün dosyayı açın.']
     def uris = null
     try { uris = server.getURIs() } catch (Throwable ignore) {}
-    if (uris == null || uris.size() != 1) return [ok: false, error: 'Görüntü tek bir yerel slayt dosyasına karşılık gelmiyor (HistoPLUS dosyayı doğrudan okur).']
+    if (uris == null || uris.size() != 1) return [ok: false, error: 'Görüntü tek bir yerel lam dosyasına karşılık gelmiyor (HistoPLUS dosyayı doğrudan okur).']
     def uri = uris.iterator().next()
-    if (!'file'.equals(uri.getScheme())) return [ok: false, error: 'Görüntü yerel bir dosya değil (' + uri.getScheme() + '). HistoPLUS yalnız yerel slayt dosyası okur (OMERO/URL/DZI desteklenmez).']
+    if (!'file'.equals(uri.getScheme())) return [ok: false, error: 'Görüntü yerel bir dosya değil (' + uri.getScheme() + '). HistoPLUS yalnız yerel lam dosyası okur (OMERO/URL/DZI desteklenmez).']
     // Paths.get(URI) file://host/share/... UNC yollarını korur; new File(uri) host bileşenini sessizce atar.
     def f
     try {
@@ -569,7 +569,7 @@ def slideFileOf = { imageData ->
         def rawPath = (uri.getPath() ?: uri.getSchemeSpecificPart() ?: '').replace((char) '/', (char) '\\')
         f = (host != null && !host.trim().isEmpty()) ? new File('\\\\' + host + rawPath) : new File(rawPath)
     }
-    if (!f.isFile()) return [ok: false, error: 'Slayt dosyası bulunamadı: ' + f.getAbsolutePath()]
+    if (!f.isFile()) return [ok: false, error: 'Lam dosyası bulunamadı: ' + f.getAbsolutePath()]
     def kind = ((server.getServerType() ?: '') + ' ' + server.getClass().getName()).toLowerCase(java.util.Locale.ROOT)
     return [ok: true, file: f, openslide: kind.contains('openslide')]
 }
@@ -626,7 +626,7 @@ def ensurePrecheck = { File slide, cfg ->
 def calForAreas = { imageData, Map pc ->
     def cal = pixelMicrons(imageData)
     if (cal != null) return [pw: cal.pw, ph: cal.ph, source: 'QuPath kalibrasyonu']
-    if (pc != null && pc.mpp_x) return [pw: (pc.mpp_x as double), ph: (pc.mpp_y as double), source: 'slayt dosyası']
+    if (pc != null && pc.mpp_x) return [pw: (pc.mpp_x as double), ph: (pc.mpp_y as double), source: 'lam dosyası']
     return null
 }
 def modelLabelOf = { String key -> WEIGHTS[key]?.label ?: (key ?: '—') }
@@ -643,29 +643,29 @@ def readiness = { imageData, cfg ->
     if (!sf.ok) blocks << sf.error
     def pcRes = sf.ok ? ensurePrecheck(sf.file, cfg) : null
     def pc = pcRes?.pc
-    if (sf.ok && pcRes == null && setupComplete(cfg)) blocks << 'Slayt dosyası denetleniyor… (birkaç saniye)'
+    if (sf.ok && pcRes == null && setupComplete(cfg)) blocks << 'Lam dosyası denetleniyor… (birkaç saniye)'
     if (pc != null && pc.ok != '1') {
-        if (pc.reason == 'no_mpp') blocks << 'Slayt dosyasında µm/px bilgisi yok. Köprü µm/px değerini dosyadan okur (upstream bu durumda sessizce 0.25 µm/px varsayardı); QuPath\'te girilen kalibrasyon aktarılamaz.'
-        else if (pc.reason == 'no_level') blocks << 'Slaytta 0.25 ya da 0.5 µm/px\'e %20 yakın bir çözünürlük seviyesi yok (HistoPLUS yalnız 40× ve 20× modelleri sunar).' + (pcRes.text ? ('\n' + pcRes.text) : '')
-        else if (pc.reason == 'unreadable') blocks << 'OpenSlide bu slayt dosyasını açamıyor (ör. CZI desteklenmez).' + (pcRes.text ? ('\n' + pcRes.text) : '')
-        else if (pc.reason == 'timeout') blocks << 'Slayt ön denetimi 90 saniyede yanıt vermedi (ağ sürücüsü yavaş olabilir) — "⟳ Yenile" ile yeniden deneyin.'
-        else blocks << 'Slayt ön denetimi başarısız.' + (pcRes.text ? ('\n' + pcRes.text) : '')
+        if (pc.reason == 'no_mpp') blocks << 'Lam dosyasında µm/px bilgisi yok. Köprü µm/px değerini dosyadan okur (upstream bu durumda sessizce 0.25 µm/px varsayardı); QuPath\'te girilen kalibrasyon aktarılamaz.'
+        else if (pc.reason == 'no_level') blocks << 'Lamda 0.25 ya da 0.5 µm/px\'e %20 yakın bir çözünürlük seviyesi yok (HistoPLUS yalnız 40× ve 20× modelleri sunar).' + (pcRes.text ? ('\n' + pcRes.text) : '')
+        else if (pc.reason == 'unreadable') blocks << 'OpenSlide bu lam dosyasını açamıyor (ör. CZI desteklenmez).' + (pcRes.text ? ('\n' + pcRes.text) : '')
+        else if (pc.reason == 'timeout') blocks << 'Lam ön denetimi 90 saniyede yanıt vermedi (ağ sürücüsü yavaş olabilir) — "⟳ Yenile" ile yeniden deneyin.'
+        else blocks << 'Lam ön denetimi başarısız.' + (pcRes.text ? ('\n' + pcRes.text) : '')
     }
     def modelKey = (pc != null && pc.ok == '1') ? pc.model : null
     if (modelKey != null && WEIGHTS.containsKey(modelKey)) {
         def wf = weightFileOf(cfg, modelKey)
-        if (!isVerified(wf)) blocks << 'Bu slayt ' + modelLabelOf(modelKey) + ' modelini gerektirir ama ' + WEIGHTS[modelKey].file + ' yok ya da doğrulanmadı — "◀ Kurulum" → ②.'
+        if (!isVerified(wf)) blocks << 'Bu lam ' + modelLabelOf(modelKey) + ' modelini gerektirir ama ' + WEIGHTS[modelKey].file + ' yok ya da doğrulanmadı — "◀ Kurulum" → ②.'
         if (pc.level_mpp) {
             double lv = pc.level_mpp as double
             double mm = WEIGHTS[modelKey].mpp as double
             double diff = Math.abs(lv - mm) / mm
             if (diff > LEVEL_DIFF_WARN)
-                warns << String.format(java.util.Locale.US, 'Slayt seviyesi %.3f µm/px, model %.2f µm/px için eğitildi (%%%.0f fark). HistoPLUS yeniden örnekleme yapmaz (upstream %%20\'ye kadar kabul eder) — çekirdek boyutları modele farklı görünür.', lv, mm, diff * 100.0d)
+                warns << String.format(java.util.Locale.US, 'Lam seviyesi %.3f µm/px, model %.2f µm/px için eğitildi (%%%.0f fark). HistoPLUS yeniden örnekleme yapmaz (upstream %%20\'ye kadar kabul eder) — çekirdek boyutları modele farklı görünür.', lv, mm, diff * 100.0d)
         }
     }
     boolean boundsNonZero = pc != null && pc.ok == '1' && ((pc.bounds_x ?: '0') != '0' || (pc.bounds_y ?: '0') != '0')
     if (boundsNonZero && !sf.openslide) {
-        blocks << 'Slayt dosyasında OpenSlide sınır ofseti var ama QuPath görüntüyü OpenSlide ile açmamış — hücre konturları kayar. Görüntüyü OpenSlide ile yeniden ekleyin.'
+        blocks << 'Lam dosyasında OpenSlide sınır ofseti var ama QuPath görüntüyü OpenSlide ile açmamış — hücre konturları kayar. Görüntüyü OpenSlide ile yeniden ekleyin.'
     } else if (boundsNonZero && sf.openslide && pc.width && pc.height) {
         try {
             long serverW = imageData.getServer().getWidth()
@@ -674,7 +674,7 @@ def readiness = { imageData, cfg ->
             long pcH = pc.height as long
             if (serverW == pcW && serverH == pcH)
                 blocks << String.format(java.util.Locale.US,
-                    'Slayt dosyasında OpenSlide sınır ofseti var; QuPath görüntü boyutu (%d×%d) OpenSlide\'ın ham boyutuyla aynı — görüntü sınırlara göre kırpılmamış, hücre konturları kayar. Görüntüyü sınırlara göre kırpılmış biçimde yeniden ekleyin.',
+                    'Lam dosyasında OpenSlide sınır ofseti var; QuPath görüntü boyutu (%d×%d) OpenSlide\'ın ham boyutuyla aynı — görüntü sınırlara göre kırpılmamış, hücre konturları kayar. Görüntüyü sınırlara göre kırpılmış biçimde yeniden ekleyin.',
                     serverW, serverH)
         } catch (NumberFormatException ignore) {}
     }
@@ -831,9 +831,9 @@ def resultText = { imageData, cfg, Map rd, Map imp, Map dens, Map stats, long el
     int tot = imp.cells.size()
     sb << "HISTOPLUS — SEÇİLİ ALANDA HÜCRE SINIFLARI\n"
     sb << "═════════════════════════════════════════\n\n"
-    sb << "Slayt   : " << imageNameOf(imageData) << "\n"
+    sb << "Lam   : " << imageNameOf(imageData) << "\n"
     sb << "Model   : " << modelLabelOf(stats.model ?: rd.modelKey) << "  (HistoPLUS, CellViT + H0-mini)\n"
-    if (rd.pc?.mpp_x) sb << "µm/px   : " << rd.pc.mpp_x << " (slayt dosyası) · kullanılan seviye " << (rd.pc.level_mpp ?: '?') << "\n"
+    if (rd.pc?.mpp_x) sb << "µm/px   : " << rd.pc.mpp_x << " (lam dosyası) · kullanılan seviye " << (rd.pc.level_mpp ?: '?') << "\n"
     double a = dens.areaMm2 as double
     boolean haveArea = rd.calA != null && Double.isFinite(a) && a > 0
     if (haveArea) sb << String.format(java.util.Locale.US, "Alan    : %.3f mm² (alan için: %s)\n", a, rd.calA.source)
@@ -1114,7 +1114,7 @@ render = { ->
             else if (!isVerified(f)) statusLine(false, w.label + ': var ama doğrulanmadı — "Doğrula" (SHA-256)')
             else statusLine(true, w.label + ': doğrulandı — ' + f.getAbsolutePath())
         }
-        addGuidance('Tek bir model yeterlidir: 40× (≈0.25 µm/px) taramalar 40× modelini, 20× (≈0.5 µm/px) taramalar 20× modelini kullanır — seçimi köprü slayttan yapar. GT450/AT2 taramaları 40× modelini kullanır.')
+        addGuidance('Tek bir model yeterlidir: 40× (≈0.25 µm/px) taramalar 40× modelini, 20× (≈0.5 µm/px) taramalar 20× modelini kullanır — seçimi köprü lamdan yapar. GT450/AT2 taramaları 40× modelini kullanır.')
         def modelBtns = []
         if (!st.present.isEmpty() && st.verified.size() < st.present.size())
             modelBtns << navButton('Doğrula', { startVerify() }, 'SHA-256 sabitlenmiş Hugging Face revizyonuyla karşılaştırılır')
@@ -1143,16 +1143,16 @@ render = { ->
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce bir H&E slaytı açın, ilgi alanını çizip seçin, sonra "⟳ Yenile".')
+            addGuidance('Önce bir H&E lamı açın, ilgi alanını çizip seçin, sonra "⟳ Yenile".')
             actions.add(navButton('◀ Kurulum', { step.set('CONFIG_INCOMPLETE'); render() }))
             actions.add(navButton('⟳ Yenile', { refreshPrecheck() }))
         } else {
             def rd = readiness(imageData, cfg)
             title.setText('HistoPLUS — seçili alanda çekirdek segmentasyonu + sınıflama')
             def sb = new StringBuilder()
-            sb << "Slayt        : " << imageNameOf(imageData) << "\n"
+            sb << "Lam        : " << imageNameOf(imageData) << "\n"
             sb << "Dosya        : " << (rd.slide.ok ? rd.slide.file.getAbsolutePath() : '—') << "\n"
-            sb << "Model        : " << (rd.modelKey ? modelLabelOf(rd.modelKey) : '— (slayt denetlenince seçilir)') << "\n"
+            sb << "Model        : " << (rd.modelKey ? modelLabelOf(rd.modelKey) : '— (lam denetlenince seçilir)') << "\n"
             sb << "Ağırlık      : " << (rd.modelKey ? (weightFileOf(cfg, rd.modelKey)?.getAbsolutePath() ?: '—') : '—') << "\n"
             sb << "Seçili alan  : " << rd.targets.size() << " anotasyon"
             if (Double.isFinite(rd.areaMm2 as double)) sb << String.format(java.util.Locale.US, " · %.3f mm²", rd.areaMm2 as double)
@@ -1191,7 +1191,7 @@ render = { ->
 
             actions.add(navButton('Kapat', { closeWizard() }))
             actions.add(navButton('◀ Kurulum', { step.set('CONFIG_INCOMPLETE'); render() }))
-            actions.add(navButton('⟳ Yenile', { refreshPrecheck() }, 'Seçimi ve slayt ön denetimini yeniden okur'))
+            actions.add(navButton('⟳ Yenile', { refreshPrecheck() }, 'Seçimi ve lam ön denetimini yeniden okur'))
             def runBtn = navButton('Seçili alanda çalıştır ▶', { startRun() }, 'HistoPLUS\'u seçili alanda çalıştırır')
             runBtn.setDisable(!rd.ok)
             actions.add(runBtn)
@@ -1259,7 +1259,7 @@ javafx.application.Platform.runLater {
         } as javafx.event.EventHandler)
         render(); stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ HistoPLUS hücre segmentasyonu sihirbazı açıldı."

@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   KongNet (KongNet_Inference_Main, MIDOG) ile H&E slaytında bulunan mitoz
+ *   KongNet (KongNet_Inference_Main, MIDOG) ile H&E lamında bulunan mitoz
  *   merkezlerini içeren bir GeoJSON dosyasını QuPath'e aktarır; her mitozu
  *   "Mitosis" sınıflı bir nokta-tespiti (point detection) olarak oluşturur ve
  *   açıkça seçilmiş anotasyon(lar) için mitoz sayısı + yoğunluğu üretir:
@@ -27,7 +27,7 @@
  *   (atolye.patoloji.dev/ekler/mitoz-phh3.html#kongnet).
  *
  * KULLANIM:
- *   1. H&E slaytını açın; piksel boyutu (µm/px) kalibre olsun
+ *   1. H&E lamını açın; piksel boyutu (µm/px) kalibre olsun
  *      (Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)).
  *   2. İlgili bölge(ler)i anotasyon olarak çizin ve açıkça SEÇİN.
  *   3. Bu betiği çalıştırın; KongNet GeoJSON dosyasını seçin.
@@ -137,7 +137,7 @@ String metaPoint          = "atolye.mitoz.nokta"    // halkada: bağlı noktanı
 // ── 1) Ön kontroller ve açık analiz sınırı ─────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir H&E slaytı açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir H&E lamı açın.")
     return
 }
 

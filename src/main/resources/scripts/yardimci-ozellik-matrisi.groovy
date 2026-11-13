@@ -15,8 +15,8 @@
  *   • feature : her hücrenin MeasurementList'indeki tüm sayısal ölçümler
  *
  * İki mod:
- *   • Sadece bu görüntü — açık slaytın CANLI hiyerarşisinden okur
- *   • Tüm proje        — her slayt için ayrı dosya + birleştirilmiş
+ *   • Sadece bu görüntü — açık lamın CANLI hiyerarşisinden okur
+ *   • Tüm proje        — her lam için ayrı dosya + birleştirilmiş
  *                         _all_features.tsv
  *
  * KULLANIM:
@@ -29,11 +29,11 @@
  * ÇIKTI: <proje-klasörü>/exports/YYYY-MM-DD_HHmmss/
  *   ├── _all_features.tsv        (yalnız "tüm proje" modunda)
  *   ├── _feature_dictionary.tsv  (sütun → id/label/feature)
- *   └── <slayt-adı>__features.tsv
+ *   └── <lam-adı>__features.tsv
  *
  * NOT: "Tüm proje" modu birleştirilmiş matris için tüm tespitleri bellekte
  *   tutar; çok büyük kohortlarda (>100k hücre) bellek yoğun olabilir — bu
- *   durumda slayt-başına TSV'leri kullanıp harici olarak birleştirin.
+ *   durumda lam-başına TSV'leri kullanıp harici olarak birleştirin.
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
  * VARSAYIM: PathClass ve görüntü adları ayraç karakterini (varsayılan: sekme)
@@ -199,7 +199,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 }
 
 // ──────────────────────────────────────────────────────────────
-// Yardımcı: Türkçe karakter + boşluk içeren slayt isimlerini güvenli slug'a çevirir
+// Yardımcı: Türkçe karakter + boşluk içeren lam isimlerini güvenli slug'a çevirir
 // ──────────────────────────────────────────────────────────────
 def toSlug = { String s ->
     if (s == null) return "untitled"
@@ -342,8 +342,8 @@ def choice = waitForChoice(
     "Çıktı klasörü:\n" +
     "  <proje-klasörü>/${exportFolder}/YYYY-MM-DD_HHmmss/\n\n" +
     "Hangi modu istiyorsunuz?\n" +
-    "  • Sadece bu görüntü — açık slaytın canlı hiyerarşisi\n" +
-    "  • Tüm proje         — her slayt + birleştirilmiş _all_features.tsv",
+    "  • Sadece bu görüntü — açık lamın canlı hiyerarşisi\n" +
+    "  • Tüm proje         — her lam + birleştirilmiş _all_features.tsv",
     "Sadece bu görüntü", "Tüm proje"
 )
 
@@ -353,7 +353,7 @@ def projectMode = (choice == "B")
 if (!projectMode && currentImageData == null) {
     Dialogs.showErrorMessage(
         "Görüntü açık değil",
-        "'Sadece bu görüntü' modu için bir slaytın açık olması gerekir."
+        "'Sadece bu görüntü' modu için bir lamın açık olması gerekir."
     )
     return
 }
@@ -415,15 +415,15 @@ def processImage = { imageData, String imageName ->
 // 5) Modu uygula
 // ──────────────────────────────────────────────────────────────
 if (projectMode) {
-    // Açık slaytı önce diske kaydet — readImageData diskten okur
+    // Açık lamı önce diske kaydet — readImageData diskten okur
     if (currentImageData != null && currentEntry != null) {
         try { currentEntry.saveImageData(currentImageData) }
-        catch (Throwable t) { println "⚠ Açık slayt kaydedilemedi: ${t.getMessage()}" }
+        catch (Throwable t) { println "⚠ Açık lam kaydedilemedi: ${t.getMessage()}" }
     }
     def imageList = project.getImageList()
-    println "  ${imageList.size()} slayt işlenecek..."
+    println "  ${imageList.size()} lam işlenecek..."
     if (imageList.size() > 10)
-        println "⚠ Büyük proje: birleştirilmiş matris bellek yoğundur (${imageList.size()} slayt)."
+        println "⚠ Büyük proje: birleştirilmiş matris bellek yoğundur (${imageList.size()} lam)."
     imageList.each { entry ->
         try {
             def imgData = entry.readImageData()
@@ -477,9 +477,9 @@ if (totalRows == 0) {
 }
 
 def calibNote = uncalibratedImages.isEmpty() ? "" :
-    "\n\n⚠ Kalibrasyonsuz slayt(lar) — centroid PİKSEL cinsinden yazıldı:\n" +
+    "\n\n⚠ Kalibrasyonsuz lam(lar) — centroid PİKSEL cinsinden yazıldı:\n" +
     uncalibratedImages.take(5).collect { "  • ${it}" }.join("\n") +
-    (uncalibratedImages.size() > 5 ? "\n  ... ve ${uncalibratedImages.size() - 5} slayt daha" : "")
+    (uncalibratedImages.size() > 5 ? "\n  ... ve ${uncalibratedImages.size() - 5} lam daha" : "")
 
 def errSection = errors.isEmpty() ? "" :
     "\n\n⚠️ Bazı dosyalar yazılamadı:\n" + errors.take(10).collect { "  • ${it}" }.join("\n")
@@ -490,7 +490,7 @@ showResultWindow(
         "Mod: %s\n" +
         "Çıktı klasörü:\n  %s\n\n" +
         "📊 Özet\n──────\n" +
-        "  Slayt sayısı       : %d\n" +
+        "  Lam sayısı       : %d\n" +
         "  Toplam hücre (satır): %d\n" +
         "  Özellik sütunu     : %d\n" +
         "  Yazılan dosya      : %d\n" +
@@ -498,7 +498,7 @@ showResultWindow(
         "🏷 cell_class dağılımı\n──────────────────\n%s\n\n" +
         "🏷 region_class dağılımı\n────────────────────\n%s%s%s%s\n\n" +
         "📝 Sonraki adım:\n" +
-        "  • `${exportFolder}/%s/_all_features.tsv` (ya da <slayt>__features.tsv) dosyasını\n" +
+        "  • `${exportFolder}/%s/_all_features.tsv` (ya da <lam>__features.tsv) dosyasını\n" +
         "    Python (pandas) / R ile okuyun. X = feature sütunları, y = cell_class veya region_class.\n" +
         "  • Sütun grupları `_feature_dictionary.tsv` içinde id/label/feature olarak etiketlidir.\n" +
         "  • Veri dışa aktarma modülünün web sayfasındaki 'Makine öğrenmesi için özellik matrisi' bölümünde\n" +
@@ -514,6 +514,6 @@ showResultWindow(
     )
 )
 
-println String.format(java.util.Locale.US, "Tamamlandı: %d slayt, %d satır, %d özellik, %.1f sn",
+println String.format(java.util.Locale.US, "Tamamlandı: %d lam, %d satır, %d özellik, %.1f sn",
     imagesProcessed, totalRows, masterFeatures.size(), elapsed)
 println "─────────────────────────────────────"

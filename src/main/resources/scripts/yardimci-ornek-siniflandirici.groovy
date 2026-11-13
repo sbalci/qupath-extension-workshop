@@ -13,7 +13,7 @@
  *
  * Not: Tümör/Stroma modülünün sihirbazı, bu örnek modeli projeye kaydetmeseniz de otomatik kullanır
  * (aynı kurulum mantığını kendi içinde tekrarlar). Tümör içi Ki-67 modülü bu H&E piksel
- * sınıflandırıcısını HİÇ kullanmaz (H-DAB slaytında domain kayması olurdu — bkz.
+ * sınıflandırıcısını HİÇ kullanmaz (H-DAB lamında domain kayması olurdu — bkz.
  * Tümör içi Ki-67 modülü). Bu yardımcı yalnızca modeli görünür/incelenebilir kılmak için vardır.
  */
 import qupath.fx.dialogs.Dialogs

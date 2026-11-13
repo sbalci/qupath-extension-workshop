@@ -15,7 +15,7 @@
  *   Renk dekonvolüsyonu (H&E / H-DAB) tanımlı olmayan görüntüler atlanır.
  *   Sonuçlar <proje>/boya-qc/kohort_boya_qc_<zaman damgası>.csv dosyasına
  *   yazılır. Döngü tamamlandıktan sonra her metriğin kohort medyanı, IQR,
- *   min ve maksimumu hesaplanır; medyan ± 1,5·IQR aralığı dışındaki slaytlar
+ *   min ve maksimumu hesaplanır; medyan ± 1,5·IQR aralığı dışındaki lamlar
  *   "metriklerde kohort medyanından uzak" notu ile işaretlenir.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
@@ -348,7 +348,7 @@ sb << "\n"
 if (outlierRows.isEmpty()) {
     sb << "Tüm görüntüler kohort medyanının 1,5·IQR aralığı içinde.\n"
 } else {
-    sb << String.format(java.util.Locale.US, "Kohort medyanından uzak slaytlar (%d adet) — 1,5·IQR Tukey kuralı:%n", outlierRows.size())
+    sb << String.format(java.util.Locale.US, "Kohort medyanından uzak lamlar (%d adet) — 1,5·IQR Tukey kuralı:%n", outlierRows.size())
     outlierRows.each { r ->
         def flags = numCols.findAll { col ->
             def v = r[col]; if (!(v instanceof Number)) return false

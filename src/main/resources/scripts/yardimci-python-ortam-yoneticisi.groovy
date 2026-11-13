@@ -83,7 +83,7 @@ def CATALOG = [
     [id:'tiatoolbox-region', label:'TIA Toolbox — bölge modelleri (KongNet / MapDe)', python:'3.11',
      packages:['tiatoolbox>=2.1.2','torch','torchvision'], torchBackend:'auto', reuseOfficial:'tiatoolbox-runtime',
      note:'Bölge sihirbazı. Resmî TIAToolbox eklentisi kuruluysa onun ortamı kullanılır (ayrı kuruluma gerek yok).'],
-    [id:'tiatoolbox-stain', label:'TIA Toolbox — boya normalizasyonu / doku maskesi', python:'3.11',
+    [id:'tiatoolbox-stain', label:'TIA Toolbox — boyama normalizasyonu / doku maskesi', python:'3.11',
      packages:['tiatoolbox>=2.0','numpy','pillow'], torchBackend:null, reuseOfficial:null,
      note:'Hafif (torch gerekmez). Boya-normalizasyonu / doku-maskesi sihirbazı.'],
     [id:'grandqc', label:'GrandQC — doku & artefakt segmentasyonu', python:'3.10',
@@ -159,7 +159,7 @@ def CATALOG = [
      note:'⚠️ Yalnızca Python ortamı (~6 GB; GPU torch). HistoPLUS KODU (Owkin, CC BY-NC-ND 4.0 — ticari olmayan, türev PAYLAŞILMAZ) sabit commit\'ten (576b94e) bu ortama çalışma anında kurulur; atölyede paketlenmez ve DEĞİŞTİRİLMEZ. Ağırlıklar (Hugging Face Owkin-Bioptimus/histoplus, KAPILI, ~285 MB × 2) sihirbazın ② adımından kendi HF hesabınızla indirilir ya da yerel klasörden kullanılır. Sürümler upstream uv.lock\'a SABİTTİR (sabitlenmezse uv pandas 3 / OpenCV 5 çözer; upstream kodu bunlarla denenmedi). xformers torch 2.7.1\'e bağlıdır: CUDA 12.6/12.8 indeksinde var, CUDA 11.8\'de YOK (eski NVIDIA sürücüsü → sürücüyü güncelleyin ya da cihaz = CPU ile kurun). Cihaz = CPU ise standart PyPI tekerleği kullanılır (CPU indeksinde xformers yok). CPU çıkarımı çalışır ama çok yavaştır (~7 dk/mm²); GPU (RTX A4000) ~12 sn/mm².'],
     [id:'valis', label:'VALIS — WSI hizalama (native; JDK/Java AYRICA gerekir)', python:'3.10',
      packages:['valis-wsi', 'pyvips[binary]', 'openslide-python', 'openslide-bin'], torchBackend:'auto', reuseOfficial:null,
-     note:'⚠️ Yalnız NATIVE mod içindir. valis-wsi + pyvips[binary] (libvips ikilisi) + openslide-python & openslide-bin (OpenSlide ikilisi → .svs/.ndpi HIZLI okunur; yoksa VALIS yavaş Bio-Formats yoluna düşer) pip ile kurulur; torch CUDA wheel\'i --torch-backend=auto ile otomatik seçilir (RTX A4000; GPU özellik-eşleştirmeyi hızlandırır — SLAYT OKUMA/DÖNÜŞTÜRME ise disk/IO bağımlıdır, GPU kullanmaz). AYRICA bir JDK (Bio-Formats/JPype) gerekir — sistemde Java varsa yeterlidir. ÖNERİLEN yol: Docker (cdgatenbee/valis-wsi; tüm bağımlılıklar hazır). Bkz. Kaynaklar → İleri kurulumlar → VALIS. Lisans: VALIS = MIT.'],
+     note:'⚠️ Yalnız NATIVE mod içindir. valis-wsi + pyvips[binary] (libvips ikilisi) + openslide-python & openslide-bin (OpenSlide ikilisi → .svs/.ndpi HIZLI okunur; yoksa VALIS yavaş Bio-Formats yoluna düşer) pip ile kurulur; torch CUDA wheel\'i --torch-backend=auto ile otomatik seçilir (RTX A4000; GPU özellik-eşleştirmeyi hızlandırır — LAM OKUMA/DÖNÜŞTÜRME ise disk/IO bağımlıdır, GPU kullanmaz). AYRICA bir JDK (Bio-Formats/JPype) gerekir — sistemde Java varsa yeterlidir. ÖNERİLEN yol: Docker (cdgatenbee/valis-wsi; tüm bağımlılıklar hazır). Bkz. Kaynaklar → İleri kurulumlar → VALIS. Lisans: VALIS = MIT.'],
 ]
 def specById = { String id -> CATALOG.find { it.id == id } }
 

@@ -10,7 +10,7 @@
  *     1. Seçili / çizili alan anotasyonlarının taban (level-0) koordinatlarını +
  *        WKT geometrisini bir istek JSON'una yazar.
  *     2. hepatocyte-app'in `hepatocyte_qupath_inference.py` betiğini bir Python
- *        venv'inde (QuPath DIŞINDA) çalıştırır; betik slaytı openslide ile kendi
+ *        venv'inde (QuPath DIŞINDA) çalıştırır; betik lamı openslide ile kendi
  *        açar, modeli çalıştırır ve poligonları GeoJSON olarak döndürür.
  *     3. GeoJSON'u QuPath'e sınıflandırılmış anotasyon olarak geri aktarır; her ana
  *        ROI'ye sınıf başı hücre sayımı ölçümü yazar. Proje açıksa Excel raporu üretilir.
@@ -32,7 +32,7 @@
  *
  * KULLANIM:
  *   1. Hepatocyte Python ortamını kurun (①), depoyu indirin (②), modeli seçin (③).
- *   2. Yerel diskteki bir karaciğer H&E slaytı açın; segmentlemek istediğiniz bölge(ler)
+ *   2. Yerel diskteki bir karaciğer H&E lamı açın; segmentlemek istediğiniz bölge(ler)
  *      için alan anotasyonu çizin.
  *   3. [Extensions → Atölye → Yardımcılar → Hücre/çekirdek tespiti → Hepatosit segmentasyonu sihirbazı]
  *   4. "Bağımlılık kontrolü" ile ortamı doğrulayın; "Segmentle" ile çalıştırın.
@@ -124,7 +124,7 @@ def configComplete = { cfg -> configMissing(cfg).isEmpty() }
 def parseIntOr = { s, int d -> try { return Integer.parseInt((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
 def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
 
-// ── Slayt yolunu çöz (yalnız yerel dosya; Python openslide ile açar) ────────
+// ── Lam yolunu çöz (yalnız yerel dosya; Python openslide ile açar) ────────
 def resolveSlidePath = { imageData ->
     def server = imageData.getServer()
     def uris = []
@@ -248,7 +248,7 @@ def buildResultText = { slideName, exp, imp, File reportFile ->
     def sb = new StringBuilder()
     sb << "HEPATOSİT SEGMENTASYONU — ÖZET\n"
     sb << "════════════════════════════════\n\n"
-    sb << "Slayt      : " << (slideName ?: '?') << "\n"
+    sb << "Lam      : " << (slideName ?: '?') << "\n"
     sb << String.format(java.util.Locale.US, "Anotasyon  : %,d   ·   işlenen ROI: %,d%n", (int) (exp?.nAnns ?: 0), (int) (exp?.nRois ?: 0))
     if ((exp?.skippedSmall ?: 0) > 0)
         sb << String.format(java.util.Locale.US, "Atlanan    : %,d (bbox < min ROI, tek yamadan küçük)%n", (int) exp.skippedSmall)
@@ -272,13 +272,13 @@ def buildResultText = { slideName, exp, imp, File reportFile ->
 // ── Headless: yapılandırmayı raporla, etkileşim yok ─────────────────────────
 if (isHeadless) {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { println "Önce bir slayt açın."; return }
+    if (imageData == null) { println "Önce bir lam açın."; return }
     def cfg = loadConfig()
     def miss = configMissing(cfg)
     println "Hepatosit yapılandırması: python=${cfg.python ?: '(ayarsız)'} köprü=${cfg.bridge ?: '(ayarsız)'} model=${cfg.model ?: '(ayarsız — 🔒 talep üzerine)'} device=${cfg.device}"
     if (!miss.isEmpty()) println "Eksik yapılandırma: ${miss.join(', ')}"
     def sp = resolveSlidePath(imageData)
-    println "Slayt yolu: ${sp ?: '(yerel dosya değil — openslide açamaz)'}"
+    println "Lam yolu: ${sp ?: '(yerel dosya değil — openslide açamaz)'}"
     def anns = targetAnnotations(imageData)
     println "Alan anotasyonu: ${anns.size()}"
     println "Hepatosit sihirbazı için QuPath arayüzü gerekir (headless çalıştırılamaz)."
@@ -563,7 +563,7 @@ def startRun = {
     def cfg = loadConfig()
     def slidePath = resolveSlidePath(imageData)
     if (slidePath == null) {
-        errorTextRef.set('Slayt yerel bir dosya değil — Python (openslide) açamaz.\nYerel diskteki bir SVS/TIFF slaytı açın.'); step.set('ERROR'); render(); return
+        errorTextRef.set('Lam yerel bir dosya değil — Python (openslide) açamaz.\nYerel diskteki bir SVS/TIFF lamı açın.'); step.set('ERROR'); render(); return
     }
     // Çalışma dizini + Excel rapor yolu
     def project = QP.getProject()
@@ -597,7 +597,7 @@ def startRun = {
     runPhaseRef.set('Hepatosit segmentasyonu çalışıyor…'); step.set('RUN_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
-        appendLine('Slayt: ' + slidePath)
+        appendLine('Lam: ' + slidePath)
         appendLine('İşlenen ROI: ' + built.nRois + (built.skippedSmall > 0 ? ('  (atlanan küçük: ' + built.skippedSmall + ')') : ''))
         def cmd = [cfg.python, cfg.bridge, requestFile.getAbsolutePath(), outputFile.getAbsolutePath()]*.toString()
         def r = runPython(cmd, appendLine)
@@ -772,7 +772,7 @@ render = { ->
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce yerel diskteki bir karaciğer H&E slaytı açın ve segmentlemek istediğiniz bölge(ler) için alan anotasyonu çizin, sonra "⟳ Yenile".')
+            addGuidance('Önce yerel diskteki bir karaciğer H&E lamı açın ve segmentlemek istediğiniz bölge(ler) için alan anotasyonu çizin, sonra "⟳ Yenile".')
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
@@ -783,15 +783,15 @@ render = { ->
             int usable = anns.count { def r = it.getROI(); (int) Math.ceil(r.getBoundsWidth()) >= minRoi && (int) Math.ceil(r.getBoundsHeight()) >= minRoi }
             title.setText('Hepatosit segmentasyonu — hazır')
             def sb = new StringBuilder()
-            sb << "Slayt          : " << imageNameOf(imageData) << "\n"
-            sb << "Slayt yolu     : " << (slidePath ?: '(yerel dosya değil — openslide açamaz)') << "\n"
+            sb << "Lam          : " << imageNameOf(imageData) << "\n"
+            sb << "Lam yolu     : " << (slidePath ?: '(yerel dosya değil — openslide açamaz)') << "\n"
             sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
             sb << "Model          : " << (cfg.model ?: '(ayarsız — 🔒 talep üzerine)') << "\n"
             sb << "Aygıt          : " << cfg.device << "\n"
             sb << String.format(java.util.Locale.US, "Alan anotasyonu: %,d   ·   uygun (≥%d px): %,d%n", anns.size(), minRoi, usable)
             addMonoArea(sb.toString())
             addGuidance('Seçili alan anotasyonları işlenir (hiç seçili yoksa tüm alan anotasyonları). Model KENDİ eğitilmiş TorchScript modelidir; yalnız tahmin yapar.')
-            if (slidePath == null) addWarnLabel('⚠ Slayt yerel bir dosya değil — Python (openslide) açamaz. Yerel SVS/TIFF açın.')
+            if (slidePath == null) addWarnLabel('⚠ Lam yerel bir dosya değil — Python (openslide) açamaz. Yerel SVS/TIFF açın.')
             boolean canRun = configComplete(cfg) && (slidePath != null) && usable >= 1
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
@@ -802,7 +802,7 @@ render = { ->
         }
     } else if (cur == 'RUN_RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('Python köprüsü çalışıyor (slaytı openslide ile açar, modeli çalıştırır). Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance('Python köprüsü çalışıyor (lamı openslide ile açar, modeli çalıştırır). Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
         center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {
@@ -859,7 +859,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir slayt istiyorsa önce slaytı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ Hepatosit segmentasyonu sihirbazı açıldı."

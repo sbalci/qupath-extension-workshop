@@ -4,7 +4,7 @@
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
- *   Python veya ImageJ gerektirmeden, tamamen QuPath içinde (native) bir slaytın
+ *   Python veya ImageJ gerektirmeden, tamamen QuPath içinde (native) bir lamın
  *   doku bölgesini düşük çözünürlüklü piksele eşikleyerek tespit eder ve kilitli
  *   "Doku" sınıflı bir anotasyon üretir. TEK bir pencerede çalışır; parametreleri
  *   KAYDIRICILARLA (slider) ayarlarken maskeyi CANLI önizlersiniz.
@@ -21,7 +21,7 @@
  *   • Klinik yorum, eşik, grade veya patoloji tanısı üretmez.
  *
  * KULLANIM:
- *   1. Kalibre (µm/px) bir slayt açın.
+ *   1. Kalibre (µm/px) bir lam açın.
  *   2. [Extensions → Atölye → Yardımcılar → Doku Tespiti (native)]
  *   3. Eşik tabanını seçin; downsample / eşik / minimum alan kaydırıcılarını oynatın;
  *      önizleme yeterli görününce "Uygula".
@@ -58,7 +58,7 @@ def prefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/doku-tes
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     if (isHeadless) { println "Görüntü açık değil."; return }
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce analiz edilecek slaytı açın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce analiz edilecek lamı açın.")
     return
 }
 def server = imageData.getServer()

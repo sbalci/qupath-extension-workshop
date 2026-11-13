@@ -2,14 +2,14 @@
  * Yardımcı - OME-Zarr dışa aktarma
  * --------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
- * Açık slaytı — ya da seçili bir anotasyonun bölgesini — QuPath'in YERLEŞİK
+ * Açık lamı — ya da seçili bir anotasyonun bölgesini — QuPath'in YERLEŞİK
  * OME-Zarr (OME-NGFF v0.4) yazıcısıyla parçalı (chunked), çok düzeyli (piramidal),
  * cloud-native bir `.ome.zarr` deposuna dışa aktarır. Çok büyük WSI ölçeğinde
  * düz PNG karo yığını yerine tercih edilen biçimdir (bkz. Ekler → OME-Zarr / OME-NGFF
  * ve Karo Dışa Aktarma eki).
  *
  * KAPSAM (diyalogdan seçilir):
- *   • Tüm görüntü          — açık slaytın tamamı (büyük slaytlarda dakikalar/GB).
+ *   • Tüm görüntü          — açık lamın tamamı (büyük lamlarda dakikalar/GB).
  *   • Seçili anotasyon(lar) — yalnızca seçtiğiniz ROI'lerin sınırlayıcı kutusu.
  *
  * SEÇENEKLER (diyalogda açıklamalı):
@@ -18,18 +18,18 @@
  *   (downsample 1.0 her zaman yazılır); piramit seçilirse 2× katları eklenir.
  *
  * KULLANIM:
- *   1. Bir slayt açın. "Seçili" kapsam için bir anotasyon çizip seçili tutun.
+ *   1. Bir lam açın. "Seçili" kapsam için bir anotasyon çizip seçili tutun.
  *   2. [Extensions → Atölye → Yardımcılar → OME-Zarr dışa aktarma]
  *   3. Formdan seçenekleri ayarlayıp "Dışa aktar".
  *   4. Çıkan `.ome.zarr` deposunu QuPath'e geri sürükleyebilir ya da Python'da
  *      inceleyebilirsiniz (handson/python/omezarr/inspect_omezarr.py).
  *
  * ÇIKTI:
- *   <proje-klasörü>/exports/omezarr/<slayt-slug>__<tarih>.ome.zarr/   (klasör deposu)
+ *   <proje-klasörü>/exports/omezarr/<lam-slug>__<tarih>.ome.zarr/   (klasör deposu)
  *   (Proje yoksa çıktı kullanıcı ana klasörünün altına yazılır.)
  *
  * NE YAPMAZ: Klinik yorum üretmez; yalnızca biçim dönüştürür. Tüm projeyi
- *   (çoklu slayt) toplu yazmaz — yalnızca açık görüntüyü/seçili bölgeyi.
+ *   (çoklu lam) toplu yazmaz — yalnızca açık görüntüyü/seçili bölgeyi.
  *
  * API / BELGE: qupath.lib.images.writers.ome.zarr.OMEZarrWriter (QuPath 0.6.0+).
  *   Resmi belgeler:
@@ -60,7 +60,7 @@ def atolyeS = { String k, String d -> (String) __wpCall('str', [String.class, St
 def exportFolder = atolyeS('atolye.exportFolder', 'exports')
 
 // ──────────────────────────────────────────────────────────────
-// Türkçe karakter + boşluk içeren slayt isimlerini güvenli slug'a çevirir
+// Türkçe karakter + boşluk içeren lam isimlerini güvenli slug'a çevirir
 // ──────────────────────────────────────────────────────────────
 def toSlug = { String s ->
     if (s == null) return "untitled"
@@ -134,7 +134,7 @@ def showOptionsForm = { int selCount ->
             grid.setHgap(12); grid.setVgap(6)
             grid.setPadding(new javafx.geometry.Insets(12))
             int r = 0
-            grid.add(new javafx.scene.control.Label("Kapsam:"), 0, r);  grid.add(scopeBox, 1, r); grid.add(help("Tüm görüntü: açık slaytın tamamı (büyük slaytlarda yavaş/büyük). Seçili anotasyon(lar): seçtiğiniz ROI'lerin sınırlayıcı kutusu."), 2, r); r++
+            grid.add(new javafx.scene.control.Label("Kapsam:"), 0, r);  grid.add(scopeBox, 1, r); grid.add(help("Tüm görüntü: açık lamın tamamı (büyük lamlarda yavaş/büyük). Seçili anotasyon(lar): seçtiğiniz ROI'lerin sınırlayıcı kutusu."), 2, r); r++
             grid.add(new javafx.scene.control.Label("Parça boyutu (px):"), 0, r); grid.add(chunkField, 1, r); grid.add(help("OME-Zarr parça (chunk/tile) kenarı. Tipik: 256–1024. Varsayılan 512."), 2, r); r++
             grid.add(new javafx.scene.control.Label("Piramit:"), 0, r);  grid.add(pyramidCheck, 1, r); grid.add(help("İşaretliyse taban çözünürlük + 2× katları (çok düzeyli) yazılır — yakınlaş/uzaklaş için gereklidir. Kapalıysa yalnızca tam çözünürlük."), 2, r); r++
             grid.add(new javafx.scene.control.Label("Sıkıştırma:"), 0, r); grid.add(new javafx.scene.control.Label("blosc (QuPath varsayılanı)"), 1, r); grid.add(help("Parçalar varsayılan blosc kodlayıcısıyla sıkıştırılır; ayrı ayar gerekmez."), 2, r); r++
@@ -255,7 +255,7 @@ dirSize = { File dir ->
 // ──────────────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir slayt açın, sonra bu betiği tekrar çalıştırın.")
+    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir lam açın, sonra bu betiği tekrar çalıştırın.")
     return
 }
 def server = imageData.getServer()
@@ -282,7 +282,7 @@ if (selectedScope) {
         Dialogs.showErrorMessage(
             "Seçili anotasyon yok",
             "'Seçili anotasyon(lar)' kapsamı için önce bir veya birden çok anotasyon seçin\n" +
-            "(Annotations panelinden ya da slayt üzerinde tıklayarak), sonra tekrar çalıştırın."
+            "(Annotations panelinden ya da lam üzerinde tıklayarak), sonra tekrar çalıştırın."
         )
         return
     }
@@ -321,8 +321,8 @@ if (!isHeadless && !selectedScope && pixels > 100_000_000L) {
     def ok = Dialogs.showConfirmDialog(
         "Büyük dışa aktarım",
         String.format(java.util.Locale.US,
-            "Bu, tüm slaytı (%,d × %,d px) OME-Zarr'a yazacak.\n" +
-            "Büyük slaytlarda dakikalar sürebilir ve diskte GB'larca yer kaplayabilir.\n\n" +
+            "Bu, tüm lamı (%,d × %,d px) OME-Zarr'a yazacak.\n" +
+            "Büyük lamlarda dakikalar sürebilir ve diskte GB'larca yer kaplayabilir.\n\n" +
             "Devam edilsin mi? (Yalnızca bir bölge istiyorsanız iptal edip bir anotasyon\n" +
             "seçin ve 'Seçili anotasyon(lar)' kapsamını kullanın.)", expW, expH)
     )
@@ -386,7 +386,7 @@ if (errorMsg != null) {
         "Dışa aktarım sırasında bir hata oluştu:\n\n" + errorMsg + "\n\n" +
         "Olası nedenler:\n" +
         "  • Disk dolu ya da çıktı klasörüne yazma izni yok.\n" +
-        "  • Çok büyük tüm slayt yazımı kesildi — bir bölge (anotasyon) deneyin.\n" +
+        "  • Çok büyük tüm lam yazımı kesildi — bir bölge (anotasyon) deneyin.\n" +
         "  • QuPath 0.6.0+ gerekir (OME-Zarr yazıcısı bu sürümde geldi).\n\n" +
         "Detay: View → Show log dialogue.\n\n" +
         "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."

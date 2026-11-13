@@ -2,7 +2,7 @@
  * Yardımcı - Kalibrasyon (piksel boyutu)
  * --------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
- * Açık slaytın piksel boyutunu (µm/px) ayarlar. QuPath fiziksel ölçeği bu
+ * Açık lamın piksel boyutunu (µm/px) ayarlar. QuPath fiziksel ölçeği bu
  * sayıdan bilir; eksikse alan/yoğunluk/çap ölçümleri yanlış olur — "Kalibrasyon
  * yok" uyarısının çözümü budur.
  *
@@ -218,7 +218,7 @@ render = { ->
     if (cur == 'CHOICE') {
         if (!s.image) {
             title.setText('Görüntü açık değil')
-            bodyLbl.setText('Önce bir slayt açın, sonra "⟳ Yenile"ye basın.')
+            bodyLbl.setText('Önce bir lam açın, sonra "⟳ Yenile"ye basın.')
             buttons.getChildren().addAll(
                 navButton('Kapat', { stage.close() }),
                 navButton('⟳ Yenile', { render() }))
