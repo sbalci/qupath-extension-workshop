@@ -83,6 +83,7 @@ def applyCacheEnv = { pb ->
         def hf = new File(cache, 'huggingface'); def env = pb.environment()
         env.put('HF_HOME', hf.getAbsolutePath()); env.put('HF_HUB_CACHE', new File(hf, 'hub').getAbsolutePath())
         env.put('TORCH_HOME', new File(cache, 'torch').getAbsolutePath())
+        env.put('PYTHONIOENCODING', 'utf-8')   // boru stdin/stdout ANSI kod sayfasına düşmesin (Türkçe sınıf adları/yollar)
     } catch (Throwable ignore) {}
 }
 
@@ -664,7 +665,7 @@ def startRun = { boolean wantTrain ->
             javafx.application.Platform.runLater { errorTextRef.set('Tahmin başarısız (çıkış: ' + r2.exitCode + ')\n' + (r2.error ?: '') + '\n' + (r2.lastLines ?: '')); step.set('ERROR'); render() }; return
         }
         javafx.application.Platform.runLater { busyLabelRef.set('Tahminler QuPath\'e aktarılıyor…'); step.set('BUSY'); render() }
-        def imp = importPredictions(workDir, QP.getCurrentImageData())
+        def imp = importPredictions(workDir, imageData)   /* çalıştırma başlarken yakalanan görüntü — sonuç başka lama yazılmasın */
         javafx.application.Platform.runLater {
             if (!imp.ok) { errorTextRef.set(imp.error); step.set('ERROR'); render() }
             else { resultTextRef.set(buildResultText(workDir, exp, imp, wantTrain)); step.set('RESULT'); render() }

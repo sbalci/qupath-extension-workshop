@@ -138,8 +138,10 @@ if (isHeadless) {
 }
 
 // ── 2) GeoJSON dosyasını seç ─────────────────────────────────────────
-def geojsonFile = Dialogs.promptForFile(
-    "AI tahmin GeoJSON dosyasını seçin", null, "AI Tahmin GeoJSON", "geojson", "json")
+// qupath.fx.dialogs.Dialogs'ta promptForFile YOK (0.6/0.7'de doğrulandı) → FileChoosers kullanılır.
+def geojsonFile = qupath.fx.dialogs.FileChoosers.promptForFile(
+    "AI tahmin GeoJSON dosyasını seçin",
+    qupath.fx.dialogs.FileChoosers.createExtensionFilter("AI Tahmin GeoJSON (*.geojson, *.json)", "*.geojson", "*.json"))
 if (geojsonFile == null) {
     println "İptal edildi — dosya seçilmedi."
     return
@@ -253,8 +255,24 @@ if (newAnnotations.isEmpty()) {
     return
 }
 
-// ── 4) Önceki içe aktarımı temizle ve yenilerini ekle ───────────────
-QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() == importSentinelName }, false)
+// ── 4) Önceki içe aktarım varsa SOR (öntanımlı: hiçbir şeyi silme), sonra ekle ──
+// Eski davranış önceki içe aktarımı ve ALTINDAKİ her şeyi (ör. içinde çalıştırılmış hücre
+// tespitleri) sormadan siliyordu. Artık: öntanımlı yalnız ekler; "değiştir" seçilirse yalnız
+// bu yardımcının kendi anotasyonları kaldırılır, altlarındaki nesneler korunur.
+def oldImports = QP.getAnnotationObjects().findAll { it.getName() == importSentinelName }
+if (!oldImports.isEmpty()) {
+    def optAdd = "Ekle — hiçbir şeyi silme"
+    def optRep = "Önceki içe aktarımı değiştir"
+    def ch = Dialogs.showChoiceDialog("Önceki içe aktarım bulundu",
+        "Bu görüntüde önceki bir içe aktarımdan " + oldImports.size() + " anotasyon var (\"" + importSentinelName + "\").\n\n" +
+        "• Ekle: hiçbir şey silinmez; yeni poligonlar öncekilerin yanına eklenir (aynı dosyayı\n" +
+        "  yeniden içe aktarıyorsanız çift kopya oluşur).\n" +
+        "• Değiştir: yalnız bu önceki anotasyonlar kaldırılır (elle düzelttiğiniz sınırlar dahil);\n" +
+        "  altlarındaki tespitler ve diğer anotasyonlar korunur.",
+        [optAdd, optRep], optAdd)
+    if (ch == null) { println "İptal edildi — hiçbir şey değiştirilmedi."; return }
+    if (ch == optRep) QP.removeObjects(oldImports, true)
+}
 QP.addObjects(newAnnotations)
 QP.fireHierarchyUpdate()
 

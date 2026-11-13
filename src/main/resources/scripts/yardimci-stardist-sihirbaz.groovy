@@ -67,7 +67,9 @@ def PREF_EXP   = 'cellExpansion'
 def PREF_CLS   = 'classifierFilter'
 def PREF_FALSE = 'falseClass'
 
-def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
+// Türkçe klavyede ondalık virgül ("0,3") yazılır → noktaya çevir; aksi hâlde girilen değer
+// sessizce öntanımlıyla değiştirilirdi.
+def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim().replace(',', '.')) } catch (Throwable t) { return d } }
 
 // ── Atölye ayarları köprüsü (reflective; eklenti JAR'ı olmadan da çalışır) ────
 def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
@@ -293,7 +295,8 @@ def startDetection = {
                 javafx.application.Platform.runLater {
                     try {
                         if (stage != null) stage.setAlwaysOnTop(false)
-                        pickedRef.set(Dialogs.promptForFile("StarDist modelini seç (.pb)", null, "StarDist Model (.pb)", "pb"))
+                        pickedRef.set(qupath.fx.dialogs.FileChoosers.promptForFile("StarDist modelini seç (.pb)",
+                            qupath.fx.dialogs.FileChoosers.createExtensionFilter("StarDist Model (*.pb)", "*.pb")))   // Dialogs.promptForFile yok (0.6/0.7)
                     } catch (Throwable ig) {
                     } finally {
                         if (stage != null) stage.setAlwaysOnTop(alwaysTop.get())

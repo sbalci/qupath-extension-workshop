@@ -111,10 +111,12 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
 // ── Ön kontrol ───────────────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
-if (imageData == null) {
-    def msg = "Önce bir lam açın."
+// Açık görüntü yoksa bile "Tüm proje" kapsamı çalışabilmeli (proje girdilerini kendisi okur).
+// Yalnız HEM görüntü HEM proje yoksa dur.
+if (imageData == null && QP.getProject() == null) {
+    def msg = "Önce bir lam ya da bir QuPath projesi açın."
     if (isHeadless) { println msg; return }
-    Dialogs.showErrorMessage("Görüntü açık değil", msg)
+    Dialogs.showErrorMessage("Görüntü ve proje açık değil", msg)
     return
 }
 
@@ -124,15 +126,21 @@ def defScope = prefs.get('scope', scopeOpts[0])
 if (!scopeOpts.contains(defScope)) defScope = scopeOpts[0]
 
 String scope
-if (isHeadless) {
+if (imageData == null) {
+    // Açık görüntü yok → tek anlamlı kapsam proje geneli.
+    scope = "Tüm proje"
+    println "Açık görüntü yok — kapsam: Tüm proje."
+} else if (isHeadless) {
     scope = defScope
 } else {
     scope = Dialogs.showChoiceDialog("İşlem kaydı — kapsam",
         "Manifest hangi kapsamda oluşturulsun?", scopeOpts, defScope)
     if (scope == null) { println "İptal edildi."; return }
 }
-prefs.put('scope', scope)
-try { prefs.flush() } catch (Throwable ig) {}
+if (imageData != null) {   // zorunlu (görüntüsüz) kapsam kullanıcının tercihi sayılmaz
+    prefs.put('scope', scope)
+    try { prefs.flush() } catch (Throwable ig) {}
+}
 
 // ── Kullanıcı notu ────────────────────────────────────────────────────────────
 String userNote = ''

@@ -480,7 +480,7 @@ def importGeoJSON = { File geojsonFile, hierarchy ->
     // Önceki içe aktarımı temizle → idempotent (verilen hiyerarşi üzerinde)
     hierarchy.removeObjects(hierarchy.getAnnotationObjects().findAll { it.getName() == GRANDQC_SENTINEL }, false)
     hierarchy.addObjects(newAnns)
-    hierarchy.fireHierarchyUpdate()
+    QP.fireHierarchyUpdate(hierarchy)   // PathObjectHierarchy'de fireHierarchyUpdate() YOK (0.6/0.7) → MissingMethodException
     return [ok: true, annotations: newAnns, counts: counts, skipped: skipped, file: geojsonFile]
 }
 
@@ -538,7 +538,7 @@ def computeCleanTissue = { imageData, importedAnns, hierarchy ->
     cleanAnn.setName(GRANDQC_SENTINEL)
     cleanAnn.setLocked(true)
     hierarchy.addObjects([cleanAnn])
-    hierarchy.fireHierarchyUpdate()
+    QP.fireHierarchyUpdate(hierarchy)   // PathObjectHierarchy'de fireHierarchyUpdate() YOK (0.6/0.7) → MissingMethodException
 
     double tissueMm2 = areaMm2(tissueUnion)
     double cleanMm2  = areaMm2(cleanRoi)

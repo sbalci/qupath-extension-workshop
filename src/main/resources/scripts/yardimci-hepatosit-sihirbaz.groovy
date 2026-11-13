@@ -91,6 +91,7 @@ def applyCacheEnv = { pb ->
         def hf = new File(cache, 'huggingface'); def env = pb.environment()
         env.put('HF_HOME', hf.getAbsolutePath()); env.put('HF_HUB_CACHE', new File(hf, 'hub').getAbsolutePath())
         env.put('TORCH_HOME', new File(cache, 'torch').getAbsolutePath())
+        env.put('PYTHONIOENCODING', 'utf-8')   // boru stdin/stdout ANSI kod sayfasına düşmesin (Türkçe sınıf adları/yollar)
     } catch (Throwable ignore) {}
 }
 def hepatoBase = { -> new File(atolyeDataRoot(), 'hepatocyte') }
@@ -364,10 +365,12 @@ def runPython = { List cmd, Closure onLine ->
 // Model yolu AYRI argv (tırnak/backslash sorunu yok; ProcessBuilder cmd.exe'ye girmez).
 def selftestCmd = { cfg ->
     def code = 'import sys, os; import numpy, pandas, torch, cv2, openslide, albumentations, openpyxl, shapely; from PIL import Image; ' +
-        'print("deps OK"); ' +
-        'm = sys.argv[1] if len(sys.argv) > 1 else ""; ' +
-        'torch.jit.load(m, map_location="cpu") if (m and os.path.isfile(m)) else print("model AYARSIZ (yalniz bagimliliklar dogrulandi)"); ' +
-        'print("SELFTEST OK")'
+        // YALNIZ tek tırnaklı Python literalleri: Windows'ta ProcessBuilder argümandaki çift tırnağı
+        // kaçışlamaz → python kırpılmış kod alır (SyntaxError) ve kontrol hep "BAŞARISIZ" çıkardı.
+        "print('deps OK'); " +
+        "m = sys.argv[1] if len(sys.argv) > 1 else ''; " +
+        "torch.jit.load(m, map_location='cpu') if (m and os.path.isfile(m)) else print('model AYARSIZ (yalniz bagimliliklar dogrulandi)'); " +
+        "print('SELFTEST OK')"
     return [cfg.python, '-c', code, (cfg.model ?: '')]*.toString()
 }
 
@@ -605,7 +608,7 @@ def startRun = {
             javafx.application.Platform.runLater { errorTextRef.set('Segmentasyon başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return
         }
         javafx.application.Platform.runLater { busyLabelRef.set('Sonuçlar QuPath\'e aktarılıyor…'); step.set('BUSY'); render() }
-        def imp = importResult(outputFile, QP.getCurrentImageData(), targetAnns)
+        def imp = importResult(outputFile, imageData, targetAnns)   /* çalıştırma başlarken yakalanan görüntü — sonuç başka lama yazılmasın */
         javafx.application.Platform.runLater {
             try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {}
             if (!imp.ok) { errorTextRef.set(imp.error); step.set('ERROR'); render() }

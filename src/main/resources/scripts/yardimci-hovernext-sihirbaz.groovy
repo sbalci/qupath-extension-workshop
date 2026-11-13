@@ -133,6 +133,7 @@ def applyCacheEnv = { pb ->
         env.put('HF_HOME', new File(cache, 'huggingface').getAbsolutePath())
         env.put('TORCH_HOME', new File(cache, 'torch').getAbsolutePath())
         env.put('TIATOOLBOX_HOME', new File(cache, 'tiatoolbox').getAbsolutePath())
+        env.put('PYTHONIOENCODING', 'utf-8')   // boru çıktısı ANSI kod sayfasına düşmesin (ş/ğ/İ içeren yollar)
     } catch (Throwable ignore) {}
 }
 

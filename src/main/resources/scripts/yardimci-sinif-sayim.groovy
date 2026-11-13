@@ -170,6 +170,13 @@ targets.each { ann ->
     overallTotal += annTotal
     overallAreaMm2 += aMm2
 
+    // Önceki çalıştırmadan kalan "Sınıf sayım: …" ölçümlerini temizle: artık bulunmayan bir
+    // sınıfın eski sayısı/yüzdesi yeni değerlerin yanında kalır ve toplam %100'ü tutmazdı.
+    try {
+        def ml = ann.getMeasurementList()
+        new ArrayList<String>(ml.getNames()).findAll { it != null && it.startsWith("Sınıf sayım: ") }.each { ml.remove(it) }
+    } catch (Throwable ignore) {}
+
     counts.each { cls, cnt ->
         overallCounts[cls] = (overallCounts.containsKey(cls) ? overallCounts[cls] : 0) + cnt
         ann.measurements["Sınıf sayım: ${cls} (adet)"] = cnt as double

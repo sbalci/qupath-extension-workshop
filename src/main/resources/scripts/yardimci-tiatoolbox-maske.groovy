@@ -145,7 +145,9 @@ if (imageData == null) {
     return
 }
 def server = imageData.getServer()
-double avgPx = server.getPixelCalibration().getAveragedPixelSize()   // kalibre değilse NaN/0
+// getAveragedPixelSize() kalibre OLMAYAN görüntüde NaN/0 DEĞİL 1.0 döndürür → önce hasPixelSizeMicrons().
+def __cal = server.getPixelCalibration()
+double avgPx = __cal.hasPixelSizeMicrons() ? (__cal.getAveragedPixelSizeMicrons() as double) : Double.NaN
 boolean calibrated = (avgPx > 0 && !Double.isNaN(avgPx))
 
 // ──────────────────────────────────────────────────────────────

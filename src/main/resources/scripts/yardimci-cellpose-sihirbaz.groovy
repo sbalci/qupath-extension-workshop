@@ -244,7 +244,7 @@ if (isHeadless) {
         cfg.family, cfg.model, cfg.channelMode,
         parseIntOr(cfg.diameter, 25), parseDoubleOr(cfg.pixelSize, 0.5),
         parseDoubleOr(cfg.flow, 0.4), parseDoubleOr(cfg.cellprob, 0.0), parseDoubleOr(cfg.cellExpansion, 5.0),
-        false, 0.15, 0.40, 0.70, cfg.compartment)
+        false, 0.15, 0.40, 0.70, cfg.compartment, 1, 2)   // cytoCh, nucCh — eksikken MissingMethodException
     println r.ok ? r.text : ("Hata: " + r.error)
     return
 }

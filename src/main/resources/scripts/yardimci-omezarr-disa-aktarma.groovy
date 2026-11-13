@@ -374,6 +374,14 @@ try {
     }
 } catch (Throwable t) {
     errorMsg = "${t.getClass().getSimpleName()}: ${t.getMessage()}"
+    // Yarım kalan depo geçerli bir .ome.zarr gibi görünür → adını değiştirerek işaretle (silme yok).
+    try {
+        def partial = new File(outPath.toString())
+        if (partial.exists()) {
+            def failed = new File(partial.getParentFile(), partial.getName() + ".BASARISIZ")
+            if (partial.renameTo(failed)) errorMsg += "\n\nYarım kalan çıktı şu adla işaretlendi (kullanmayın, silebilirsiniz):\n" + failed.getAbsolutePath()
+        }
+    } catch (Throwable ignore) {}
 }
 def elapsed = (System.currentTimeMillis() - t0) / 1000.0
 

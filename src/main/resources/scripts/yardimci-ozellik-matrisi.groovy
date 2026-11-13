@@ -426,8 +426,10 @@ if (projectMode) {
         println "⚠ Büyük proje: birleştirilmiş matris bellek yoğundur (${imageList.size()} lam)."
     imageList.each { entry ->
         try {
-            def imgData = entry.readImageData()
-            processImage(imgData, entry.getImageName())
+            // ImageData AutoCloseable (0.6+): kapatılmazsa her lamın okuyucusu/dosya tutamacı açık kalır.
+            entry.readImageData().withCloseable { imgData ->
+                processImage(imgData, entry.getImageName())
+            }
         } catch (Throwable t) {
             errors << "${entry.getImageName()} → readImageData: ${t.getMessage()}"
         }

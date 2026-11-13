@@ -130,12 +130,40 @@ def applyCacheEnv = { pb ->
     env.put('TIATOOLBOX_HOME', new File(new File(root, 'cache'), 'tiatoolbox').getAbsolutePath())
     env.put('TORCH_HOME',      new File(new File(root, 'cache'), 'torch').getAbsolutePath())
     env.put('HF_HOME',         new File(new File(root, 'cache'), 'huggingface').getAbsolutePath())
+    env.put('PYTHONIOENCODING', 'utf-8')   // boru çıktısı ANSI kod sayfasına düşmesin (ş/ğ/İ içeren yollar)
     return pb
 }
 
+// ── Otomatik tespit (tercih boşsa): ortam yöneticisinin kurduğu python + proje içindeki köprü ──
+// Bunlar olmadan "② Ortamı kur" sonrası sihirbaz yapılandırma ekranında kalıyor, yolların elle
+// seçilmesi gerekiyordu.
+def detectPython = { ->
+    try {
+        def rec = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('py.nuclick', '')
+        if (rec?.trim() && new File(rec.trim()).isFile()) return rec.trim()
+    } catch (Throwable ignore) {}
+    def at = new File(new File(atolyeDataRoot(), 'runtimes'), 'nuclick/.venv')
+    def aw = new File(at, 'Scripts/python.exe'); def an = new File(at, 'bin/python')
+    if (aw.isFile()) return aw.getAbsolutePath()
+    if (an.isFile()) return an.getAbsolutePath()
+    return ''
+}
+def detectBridge = { ->
+    try {
+        def project = QP.getProject()
+        if (project != null && project.getPath() != null) {
+            def handson = project.getPath().getParent().toFile()
+            def roots = [handson]
+            if (handson.getParentFile() != null) roots << new File(handson.getParentFile(), 'handson')
+            for (r in roots) { def f = new File(r, 'python/nuclick/nuclick_bridge.py'); if (f.isFile()) return f.getAbsolutePath() }
+        }
+    } catch (Throwable ignore) {}
+    return ''
+}
+
 def loadConfig = { ->
-    [python    : prefs.get(PREF_PYTHON, ''),
-     bridge    : prefs.get(PREF_BRIDGE, ''),
+    [python    : (prefs.get(PREF_PYTHON, '')?.trim() ?: detectPython()),
+     bridge    : (prefs.get(PREF_BRIDGE, '')?.trim() ?: detectBridge()),
      workDir   : prefs.get(PREF_WORK, ''),
      downsample: prefs.get(PREF_DS, ''),
      maxPoints : prefs.get(PREF_MAXP, '2000'),
@@ -151,7 +179,7 @@ def configMissing = { cfg ->
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
 
 def parseIntOr = { s, int d -> try { return Integer.parseInt((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
-def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
+def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim().replace(',', '.')) } catch (Throwable t) { return d } }   // "0,5" (TR klavye) → 0.5
 
 // ── Ölçek ───────────────────────────────────────────────────────────────────
 def slideMpp = { imageData ->

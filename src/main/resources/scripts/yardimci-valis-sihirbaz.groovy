@@ -1763,7 +1763,7 @@ def importWarpedToTarget = { project, targetEntry, File warpedFile, double srcAr
         def hier = data.getHierarchy()
         hier.removeObjects(hier.getAnnotationObjects().findAll { it.getName() == VALIS_SENTINEL }, false)
         hier.addObjects(objs)
-        hier.fireHierarchyUpdate()
+        QP.fireHierarchyUpdate(hier)   // PathObjectHierarchy'de fireHierarchyUpdate() YOK (0.6/0.7) → MissingMethodException
         // ── Ölçek tutarlılık kontrolü — HEDEFİN KENDİ kalibrasyonuyla (kaynağınkiyle DEĞİL) ──
         String scaleWarn = null
         if (srcAreaUm2 > 0) {
@@ -1896,6 +1896,7 @@ def applyCacheEnv = { pb ->
         def hf = new File(cache, 'huggingface'); def env = pb.environment()
         env.put('HF_HOME', hf.getAbsolutePath()); env.put('HF_HUB_CACHE', new File(hf, 'hub').getAbsolutePath())
         env.put('TORCH_HOME', new File(cache, 'torch').getAbsolutePath())
+        env.put('PYTHONIOENCODING', 'utf-8')   // boru stdin/stdout ANSI kod sayfasına düşmesin (Türkçe sınıf adları/yollar)
     } catch (Throwable ignore) {}
 }
 
@@ -2747,7 +2748,7 @@ def importGeojsonToCurrent = { File gjFile ->
         def hier = data.getHierarchy()
         hier.removeObjects(hier.getAnnotationObjects().findAll { it.getName() == VALIS_SENTINEL }, false)
         hier.addObjects(objs)
-        hier.fireHierarchyUpdate()
+        QP.fireHierarchyUpdate(hier)   // PathObjectHierarchy'de fireHierarchyUpdate() YOK (0.6/0.7) → MissingMethodException
         javafx.application.Platform.runLater { try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {} }
         return [ok: true, count: objs.size()]
     } catch (Throwable t) { return [ok: false, error: (t.getMessage() ?: t.getClass().getSimpleName())] }

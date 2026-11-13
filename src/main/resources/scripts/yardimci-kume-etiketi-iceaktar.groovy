@@ -135,8 +135,10 @@ if (isHeadless) {
 }
 
 // ── 2) TSV / CSV dosyasını seç ───────────────────────────────────────
-def tsvFile = Dialogs.promptForFile(
-    "Küme / fenotip etiketi tablosunu seçin", null, "Küme/Fenotip TSV", "tsv", "csv", "txt")
+// qupath.fx.dialogs.Dialogs'ta promptForFile YOK (0.6/0.7'de doğrulandı) → FileChoosers kullanılır.
+def tsvFile = qupath.fx.dialogs.FileChoosers.promptForFile(
+    "Küme / fenotip etiketi tablosunu seçin",
+    qupath.fx.dialogs.FileChoosers.createExtensionFilter("Küme/Fenotip TSV (*.tsv, *.csv, *.txt)", "*.tsv", "*.csv", "*.txt"))
 if (tsvFile == null) {
     println "İptal edildi — dosya seçilmedi."
     return
@@ -144,6 +146,8 @@ if (tsvFile == null) {
 
 // ── 3) Başlığı oku, ayracı sapta ─────────────────────────────────────
 def lines = tsvFile.readLines("UTF-8")
+// UTF-8 BOM (pandas `utf-8-sig`, Excel) ilk başlığı "﻿object_id" yapar → sütun bulunamaz.
+if (lines != null && !lines.isEmpty() && lines[0].startsWith('﻿')) lines[0] = lines[0].substring(1)
 if (lines == null || lines.size() < 2) {
     Dialogs.showErrorMessage("Boş dosya", "Tabloda başlık + en az bir veri satırı bekleniyor.")
     return

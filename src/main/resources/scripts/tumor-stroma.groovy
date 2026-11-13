@@ -498,8 +498,20 @@ if (!reuse) QP.addObjects([summary])
 def primary = perModel[0]
 def before = QP.getAnnotationObjects() as Set
 QP.selectObjects(summary)
-QP.createAnnotationsFromPixelClassifier(primary.classifier, minObjectArea, minHoleArea,
-    'DELETE_EXISTING')
+if (reuse) {
+    // Yeniden kullanılan özet KULLANICININ KENDİ anotasyonudur. DELETE_EXISTING onun TÜM alt
+    // nesnelerini siler — aynı dikdörtgende daha önce çalıştırılmış hücre tespitleri (Ki-67,
+    // ER/PR…) sessizce yok olurdu. Bu yüzden yalnız bu modülün ÖNCEKİ sınıf bölgeleri
+    // (açıklama etiketiyle tanınır) kaldırılır; başka hiçbir alt nesneye dokunulmaz.
+    def priorOwn = imageData.getHierarchy().getObjects(null, null).findAll {
+        it.getParent() == summary && (it.getDescription() ?: '').contains('— Tümör/Stroma modülü (')
+    }
+    if (!priorOwn.isEmpty()) QP.removeObjects(priorOwn, false)
+    QP.createAnnotationsFromPixelClassifier(primary.classifier, minObjectArea, minHoleArea)
+} else {
+    QP.createAnnotationsFromPixelClassifier(primary.classifier, minObjectArea, minHoleArea,
+        'DELETE_EXISTING')
+}
 def generated = QP.getAnnotationObjects().findAll { !before.contains(it) && it.getPathClass() != null }
 def byClass = generated.groupBy { it.getPathClass().getName() }
 if (!generated.isEmpty()) QP.removeObjectsAndDescendants(generated)

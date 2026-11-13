@@ -229,7 +229,8 @@ targets.each { ann ->
     }
     // findAll yeni bir liste döndürür → ölçüm haritasını güncellerken CME olmaz
     def areaKeys = ann.measurements.keySet().findAll {
-        it.startsWith(chosen) && it.toLowerCase(java.util.Locale.ROOT).contains("area")
+        // "<ad>: " tam öneki: "doku" seçiliyken "doku2: …" anahtarlarını da toplamasın.
+        it.startsWith(chosen + ":") && it.toLowerCase(java.util.Locale.ROOT).contains("area")
     }
     areaKeys.each { k ->
         String cn = deriveClass(k)

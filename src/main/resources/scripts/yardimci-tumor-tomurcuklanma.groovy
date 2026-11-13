@@ -334,8 +334,13 @@ def fmtNum = { double v -> String.format(java.util.Locale.US, '%.0f', v) }
 def numField = { holder ->
     def tf = new javafx.scene.control.TextField(fmtNum(((Number) holder.get()).doubleValue()))
     tf.setPrefColumnCount(6)
+    // Türkçe klavyede ondalık virgül ("40,5") yazılır → noktaya çevir; aksi hâlde değer sessizce
+    // eski hâlinde kalırdı. Ayrıştırılamayan metin kırmızı çerçeveyle işaretlenir.
     tf.textProperty().addListener({ obs, o, n ->
-        try { holder.set(Double.valueOf(Double.parseDouble(n.trim()))) } catch (Throwable ignored) { }
+        try {
+            holder.set(Double.valueOf(Double.parseDouble((n ?: '').trim().replace(',', '.'))))
+            tf.setStyle('')
+        } catch (Throwable ignored) { tf.setStyle('-fx-border-color: #c0392b; -fx-border-width: 1.5;') }
     } as javafx.beans.value.ChangeListener)
     return tf
 }

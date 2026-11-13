@@ -106,6 +106,14 @@ def applyCacheEnv = { pb ->
         def hf = new File(cache, 'huggingface'); def env = pb.environment()
         env.put('HF_HOME', hf.getAbsolutePath()); env.put('HF_HUB_CACHE', new File(hf, 'hub').getAbsolutePath())
         env.put('TORCH_HOME', new File(cache, 'torch').getAbsolutePath())
+        env.put('PYTHONIOENCODING', 'utf-8')   // boru stdin/stdout ANSI kod sayfasına düşmesin (Türkçe sınıf adları/yollar)
+        // HF_HOME yönlendirilince huggingface_hub oturum belirtecini $HF_HOME/token'da arar; oysa
+        // `huggingface-cli login` onu ~/.cache/huggingface/token'a yazar → KAPILI SPIDER modelleri
+        // 401 verirdi. Belirteç dosyasının yerini açıkça göster (HF_TOKEN zaten ayarlıysa dokunma).
+        if (!env.get('HF_TOKEN') && !env.get('HF_TOKEN_PATH') && !new File(hf, 'token').isFile()) {
+            def defTok = new File(new File(new File(System.getProperty('user.home'), '.cache'), 'huggingface'), 'token')
+            if (defTok.isFile()) env.put('HF_TOKEN_PATH', defTok.getAbsolutePath())
+        }
     } catch (Throwable ignore) {}
 }
 
@@ -576,7 +584,7 @@ def startRun = {
             javafx.application.Platform.runLater { errorTextRef.set('Tahmin başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return
         }
         javafx.application.Platform.runLater { busyLabelRef.set('SPIDER sonuçları QuPath\'e aktarılıyor…'); step.set('BUSY'); render() }
-        def imp = importPredictions(workDir, QP.getCurrentImageData(), exp.mode)
+        def imp = importPredictions(workDir, imageData, exp.mode)   /* çalıştırma başlarken yakalanan görüntü — sonuç başka lama yazılmasın */
         javafx.application.Platform.runLater {
             if (!imp.ok) { errorTextRef.set(imp.error); step.set('ERROR'); render() }
             else { resultTextRef.set(buildResultText(workDir, exp, imp)); step.set('RESULT'); render() }

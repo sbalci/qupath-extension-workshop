@@ -323,6 +323,7 @@ def computeResult = { regionAnno, int tumorCount, int nonNeoCount, int ignoreCou
     // Ölçümleri TCR anotasyonuna yaz → Veri dışa aktarma modülü TSV'sinde görünür.
     regionAnno.measurements['TCR alanı (mm2)'] = tcrAreaMm2
     if (!Double.isNaN(cTCF)) regionAnno.measurements['cTCF (%)'] = cTCF
+    else regionAnno.measurements.remove('cTCF (%)')   // hesaplanamadıysa önceki çalıştırmanın değeri kalmasın
     regionAnno.measurements['Tümör hücre sayısı']  = tumorCount as double
     regionAnno.measurements['Non-neoplastik sayı'] = nonNeoCount as double
     regionAnno.measurements['Ignore / sınıflandırılmamış sayı'] = ignoreCount as double

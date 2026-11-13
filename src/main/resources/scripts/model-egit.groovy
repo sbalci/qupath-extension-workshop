@@ -365,7 +365,7 @@ if (existingNames.contains(baseName)) {
 // 3) Karşılama / onay
 // ──────────────────────────────────────────────────────────────
 def trainResolutionMicrons = 2.0   // atölye sabiti — Tümör/Stroma modülü §3 başlangıç çözünürlüğü (2 µm/px, doku-ölçekli)
-def extraClasses = classCounts.keySet().findAll { !(it in ['Tumor', 'Stroma']) }
+def extraClasses = classCounts.keySet().findAll { !(it in ['Tumor', 'Stroma', 'Region', 'TSR Özet']) }   // Region/TSR Özet eğitime girmez
 
 def devam = waitForConfirm(
     "Tümör/Stroma (Adım 1) - Tümör/Stroma modeli eğit",
@@ -421,9 +421,22 @@ try {
     // Anotasyonlardan eğitim verisi (özellik + etiket) çıkar.
     def training = new PixelClassifierTraining(featureOp)
     training.setResolution(resolution)
-    def trainingData = training.createTrainingData(imageData)
+    // Etiket haritası AÇIKÇA kurulur. createTrainingData(imageData) sınıflı HER alan anotasyonunu
+    // etiket sayar: ölçüm kapsamı için çizilen 'Region' ve özet sınıfı 'TSR Özet' de modele ek
+    // sınıf olarak girer; Tumor/Stroma yüzdeleri küçülmüş bir paydada ölçülürdü. Bu iki
+    // yardımcı sınıf eğitime alınmaz; Tumor, Stroma ve kullanıcının çizdiği diğer sınıflar alınır.
+    def NON_TRAINING_CLASSES = ['Region', 'TSR Özet'] as Set
+    def labelMap = new java.util.LinkedHashMap()       // Map<PathClass, Integer>
+    QP.getAnnotationObjects().each { a ->
+        def pc = a.getPathClass()
+        if (pc == null || a.getROI() == null || !a.getROI().isArea()) return
+        if (pc.getName() in NON_TRAINING_CLASSES) return
+        if (!labelMap.containsKey(pc)) labelMap.put(pc, labelMap.size())
+    }
+    def trainingData = (labelMap.size() >= 2)
+        ? training.createTrainingDataForLabelMap(java.util.Collections.singletonList(imageData), labelMap)
+        : null
 
-    def labelMap = trainingData.getLabelMap()          // Map<PathClass, Integer>
     if (labelMap == null || labelMap.size() < 2) {
         Dialogs.showErrorMessage(
             "Eğitim verisi yetersiz",

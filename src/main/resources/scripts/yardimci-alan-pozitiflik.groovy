@@ -157,7 +157,12 @@ def areaKeyFor = { ann, String cls ->
     // the unordered find() — silently picking the wrong classifier's area. Mirrors
     // allAreaKeysFor below so numerator and denominator come from the same classifier.
     def k = ann.measurements.keySet().find {
-        it.startsWith(classifierName) && it.toLowerCase(java.util.Locale.ROOT).contains(cls.toLowerCase(java.util.Locale.ROOT)) && it.toLowerCase(java.util.Locale.ROOT).contains("area")
+        // Sınıf adı YALNIZ sınıflandırıcı önekinden SONRAKİ kısımda aranır: öntanımlı ad
+        // "DAB-pozitif" kendisi "pozitif" içerir → tüm anahtar üzerinde aramak "…: Negatif area"
+        // anahtarını da eşleştirir ve pay sessizce yanlış sınıfın alanı olabilirdi.
+        it.startsWith(classifierName) &&
+            it.substring(classifierName.length()).toLowerCase(java.util.Locale.ROOT).contains(cls.toLowerCase(java.util.Locale.ROOT)) &&
+            it.toLowerCase(java.util.Locale.ROOT).contains("area")
     }
     k != null ? (ann.measurements[k] ?: Double.NaN) as double : Double.NaN
 }

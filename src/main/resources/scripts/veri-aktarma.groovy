@@ -469,7 +469,10 @@ if (currentImageData != null && currentEntry != null) {
 // ──────────────────────────────────────────────────────────────
 // 3) Seçimlerden çıktı parametrelerini türet + çıktı klasörünü hazırla
 // ──────────────────────────────────────────────────────────────
-def exportSeparatorChar = ((opt.separator ?: "\t") as String).charAt(0) as char
+// MeasurementExporter.separator(...) YALNIZ String kabul eder (0.6.0 + 0.7.0'da doğrulandı). Eskiden
+// burada `char` üretiliyordu → her TSV/CSV dışa aktarımı MissingMethodException ile düşüyor,
+// yalnız GeoJSON yazılıyordu. Ad geriye dönük uyum için korunur; değer tek karakterlik String'dir.
+def exportSeparatorChar = ((opt.separator ?: "\t") as String).substring(0, 1)
 def ext = ((opt.separator ?: "\t") == "\t") ? "tsv" : "csv"
 def pfx = (opt.prefix) ? (opt.prefix + "_") : ""
 def colList = (opt.columns ?: []) as List

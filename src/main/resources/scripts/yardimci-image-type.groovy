@@ -270,16 +270,28 @@ if (scope == "current") {
     }
     def entries = project.getImageList()
     println "Projedeki ${entries.size()} görüntü taranıyor..."
+    // Görüntüleyicide AÇIK olan girdi diskten ayrı bir kopya olarak okunursa: diskteki tip değişir
+    // ama kullanıcının üzerinde çalıştığı bellek içi kopya eski tipte kalır ve sonraki kayıt
+    // değişikliği geri ezer → o girdi için canlı ImageData kullanılır.
+    def liveData = QP.getCurrentImageData()
+    def liveEntry = null
+    try { liveEntry = (liveData != null) ? project.getEntry(liveData) : null } catch (Throwable ignore) {}
     entries.each { entry ->
         try {
-            def imageData = entry.readImageData()
-            def previous = imageData.getImageType()?.toString() ?: "—"
-            if (imageData.getImageType() == targetType) {
-                skipped << "${entry.getImageName()} (zaten ${targetTypeName})"
-            } else {
-                imageData.setImageType(targetType)
-                entry.saveImageData(imageData)
-                updated << "${entry.getImageName()}: ${previous} → ${targetTypeName}"
+            boolean isLive = (liveEntry != null && entry == liveEntry)
+            def imageData = isLive ? liveData : entry.readImageData()
+            try {
+                def previous = imageData.getImageType()?.toString() ?: "—"
+                if (imageData.getImageType() == targetType) {
+                    skipped << "${entry.getImageName()} (zaten ${targetTypeName})"
+                } else {
+                    imageData.setImageType(targetType)
+                    entry.saveImageData(imageData)
+                    updated << "${entry.getImageName()}: ${previous} → ${targetTypeName}"
+                }
+            } finally {
+                // Diskten okunan kopyanın sunucusunu kapat (açık kalan dosya tutamaçları); canlıya dokunma.
+                if (!isLive) { try { imageData.close() } catch (Throwable ignore) {} }
             }
         } catch (Throwable t) {
             skipped << "${entry.getImageName()} (HATA: ${t.getClass().getSimpleName()})"

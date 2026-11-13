@@ -187,7 +187,8 @@ def summaryOf = { String choice, double ds, double thr, boolean useOtsu, double 
     b << "Eşik tabanı  : ${choice}\n"
     b << String.format(java.util.Locale.US, "Alt örnekleme (downsample): %.0f%n", ds)
     b << String.format(java.util.Locale.US, "Eşik         : %.4f  (%s)%n", thr, useOtsu ? "Otsu" : "elle")
-    b << String.format(java.util.Locale.US, "Minimum alan : %.2f mm²%n", minAreaMm2)
+    b << String.format(java.util.Locale.US, "Minimum alan : %.2f mm²%s%n", minAreaMm2,
+        calibrated ? "" : "  — UYGULANMADI (görüntü kalibre değil; mm² hesaplanamaz)")
     b << String.format(java.util.Locale.US, "Parça sayısı : %d → birleştirildi%n", pieces)
     if (calibrated)
         b << String.format(java.util.Locale.US, "Doku alanı   : %.2f mm²%n", tissuePx2 * pw * ph / 1_000_000.0d)

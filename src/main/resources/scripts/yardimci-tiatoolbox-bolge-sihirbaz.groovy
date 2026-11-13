@@ -119,6 +119,7 @@ def applyCacheEnv = { pb ->
         def hf = new File(cache, 'huggingface'); def env = pb.environment()
         env.put('HF_HOME', hf.getAbsolutePath()); env.put('HF_HUB_CACHE', new File(hf, 'hub').getAbsolutePath())
         env.put('TORCH_HOME', new File(cache, 'torch').getAbsolutePath())
+        env.put('PYTHONIOENCODING', 'utf-8')   // boru stdin/stdout ANSI kod sayfasına düşmesin (Türkçe sınıf adları/yollar)
         env.put('TIATOOLBOX_HOME', new File(cache, 'tiatoolbox').getAbsolutePath())
     } catch (Throwable ignore) {}
 }

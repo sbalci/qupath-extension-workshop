@@ -208,6 +208,7 @@ if (doMerge) {
     Map<String, List> byClass = new LinkedHashMap<String, List>()
     tiles.each { d ->
         def roi = d.getROI(); if (roi == null) return
+        if (d.getPathClass() == null) return   // sınıfsız karo: "(sınıfsız)" adlı sahte bir PathClass oluşturma
         String cls = classOf(d)
         byClass.computeIfAbsent(cls, { [] }).add(roi)
     }

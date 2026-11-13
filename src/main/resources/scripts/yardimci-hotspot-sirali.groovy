@@ -185,7 +185,7 @@ if (isHeadless) {
 
     def nStr = Dialogs.showInputDialog("Top-N", "Kaç hotspot karosu seçilsin? (ör. 3)", prefs.get('topN', '3'))
     if (nStr == null) { println "İptal edildi."; return }
-    topN = (nStr.trim().isInteger() ? nStr.trim().toInteger() : 3).coerceToType(int)
+    topN = nStr.trim().isInteger() ? nStr.trim().toInteger() : 3   // (eski .coerceToType(int) Integer'da yok → MissingMethodException)
     if (topN < 1) topN = 1
 
     assignHotspotClass = Dialogs.showConfirmDialog("Sınıf ata",
@@ -211,12 +211,23 @@ if (tiles.isEmpty()) {
     if (isHeadless) println msg else Dialogs.showErrorMessage("Karo yok", msg)
     return
 }
-def scoredTiles = tiles.collect { tile ->
+// Seçili ölçümü TAŞIMAYAN karolar sıralamaya girmez: eskiden -Double.MAX_VALUE nöbetçi değeriyle
+// listeye alınıp rank/"Hotspot" sınıfı alabiliyor ve ortalamayı (~ -1e308) bozuyordu.
+def scoredTiles = tiles.findAll { tile ->
     def raw = tile.measurements[chosenKey]
-    double val = (raw != null && Double.isFinite((raw as double))) ? (raw as double) : -Double.MAX_VALUE
+    raw != null && Double.isFinite((raw as double))
+}.collect { tile ->
+    double val = tile.measurements[chosenKey] as double
     double area = hasCalibration ? tile.getROI().getArea() * pw * ph : tile.getROI().getArea()
     [tile: tile, value: val, area: area]
 }.sort { -it.value }
+if (scoredTiles.isEmpty()) {
+    def msg = "'${chosenClass}' sınıfındaki ${tiles.size()} karonun hiçbirinde '${chosenKey}' ölçümü yok."
+    if (isHeadless) println msg else Dialogs.showErrorMessage("Ölçüm yok", msg)
+    return
+}
+if (scoredTiles.size() < tiles.size())
+    println "Not: ${tiles.size() - scoredTiles.size()} karo '${chosenKey}' ölçümünü taşımıyor — sıralamaya alınmadı."
 
 int actualN = Math.min(topN, scoredTiles.size())
 def topTiles = scoredTiles.take(actualN)

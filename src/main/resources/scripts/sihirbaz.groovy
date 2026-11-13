@@ -377,7 +377,11 @@ def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = 
         double minHole = atolyeD('atolye.minHoleArea', 5000.0)
         def before = QP.getAnnotationObjects() as Set
         QP.selectObjects(summary)
-        QP.createAnnotationsFromPixelClassifier(classifier, minObj, minHole, 'DELETE_EXISTING')
+        // reuse: özet KULLANICININ KENDİ anotasyonudur → DELETE_EXISTING onun tüm alt nesnelerini
+        // (ör. aynı bölgede daha önce çalıştırılmış hücre tespitleri) sessizce silerdi. Bu modülün
+        // önceki sınıf bölgeleri yukarıda OUTPUT_TAG ile zaten kaldırıldı; burada silme yapılmaz.
+        if (reuse) QP.createAnnotationsFromPixelClassifier(classifier, minObj, minHole)
+        else QP.createAnnotationsFromPixelClassifier(classifier, minObj, minHole, 'DELETE_EXISTING')
         def generated = QP.getAnnotationObjects().findAll { !before.contains(it) && it.getPathClass() != null }
         def byClass = generated.groupBy { it.getPathClass().getName() }
         if (!generated.isEmpty()) QP.removeObjectsAndDescendants(generated)

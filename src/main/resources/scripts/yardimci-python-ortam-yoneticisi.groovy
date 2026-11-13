@@ -367,13 +367,19 @@ def importNameOf = { String pkg ->
     if (b == 'pyyaml') return 'yaml'
     if (b == 'simpleitk') return 'SimpleITK'      // import adı büyük/küçük harfe duyarlı
     if (b == 'pylibczirw') return 'pylibCZIrw'
+    if (b == 'valis-wsi') return 'valis'          // dağıtım adı valis-wsi, modül adı valis
     return b.replace('-', '_')
 }
 
 def installEnv = { spec, String uvPath, Closure appendLine ->
     def venv = venvDirOf(spec.id); venv.getParentFile().mkdirs()
     appendLine(''); appendLine('── ' + spec.id + ' — venv oluşturuluyor (Python ' + spec.python + ') ──')
-    def r1 = runProc([uvPath, 'venv', venv.getAbsolutePath(), '--python', spec.python], appendLine)
+    // Güncel uv, VAR OLAN bir venv üzerinde `uv venv` çalıştırılınca hata (çıkış 2) verir →
+    // "Onar / güncelle" ve yarım kalmış kurulumun yeniden denenmesi ilk adımda düşüyordu.
+    // --allow-existing mevcut ortamı korur ve devam eder.
+    def venvCmd = [uvPath, 'venv', venv.getAbsolutePath(), '--python', spec.python]
+    if (venv.isDirectory() && new File(venv, 'pyvenv.cfg').isFile()) venvCmd << '--allow-existing'
+    def r1 = runProc(venvCmd, appendLine)
     if (!r1.ok) return r1
     if (cancelledRef.get()) return [ok:false, error:'İptal edildi']
     def py = venvPython(spec.id).getAbsolutePath()

@@ -174,7 +174,9 @@ if (isHeadless) {
     println "GeoJSON dosya seçimi için QuPath arayüzü gerekir (headless çalıştırılamaz)."
     return
 }
-def geojsonFile = Dialogs.promptForFile("KongNet mitoz GeoJSON dosyasını seçin", null, "KongNet GeoJSON", "geojson", "json")
+// qupath.fx.dialogs.Dialogs'ta promptForFile YOK (0.6/0.7'de doğrulandı) → FileChoosers kullanılır.
+def geojsonFile = qupath.fx.dialogs.FileChoosers.promptForFile("KongNet mitoz GeoJSON dosyasını seçin",
+    qupath.fx.dialogs.FileChoosers.createExtensionFilter("KongNet GeoJSON (*.geojson, *.json)", "*.geojson", "*.json"))
 if (geojsonFile == null) {
     println "İptal edildi — dosya seçilmedi."
     return

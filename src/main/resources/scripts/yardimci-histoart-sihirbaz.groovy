@@ -127,13 +127,27 @@ def applyCacheEnv = { pb ->
         def hf = new File(cache, 'huggingface'); def env = pb.environment()
         env.put('HF_HOME', hf.getAbsolutePath()); env.put('HF_HUB_CACHE', new File(hf, 'hub').getAbsolutePath())
         env.put('TORCH_HOME', new File(cache, 'torch').getAbsolutePath())
+        env.put('PYTHONIOENCODING', 'utf-8')   // boru çıktısı ANSI kod sayfasına düşmesin (ş/ğ/İ içeren yollar)
     } catch (Throwable ignore) {}
+}
+// Köprü betiğini proje klasörüne göre bul (tercih boşsa): <proje>/python/histoart/ ya da ../handson/python/histoart/
+def detectBridge = { ->
+    try {
+        def project = QP.getProject()
+        if (project != null && project.getPath() != null) {
+            def handson = project.getPath().getParent().toFile()
+            def roots = [handson]
+            if (handson.getParentFile() != null) roots << new File(handson.getParentFile(), 'handson')
+            for (r in roots) { def f = new File(r, 'python/histoart/histoart_bridge.py'); if (f.isFile()) return f.getAbsolutePath() }
+        }
+    } catch (Throwable ignore) {}
+    return ''
 }
 
 def loadConfig = { ->
-    [ python    : ({ -> def __p = prefs.get(PREF_PYTHON, ''); if (__p?.trim()) return __p; def __r = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('py.histoart', ''); if (__r?.trim() && new File(__r.trim()).isFile()) return __r.trim(); def __v = new File(new File(atolyeDataRoot(), 'runtimes'), 'histoart/.venv'); def __w = new File(__v, 'Scripts/python.exe'); def __n = new File(__v, 'bin/python'); __w.isFile() ? __w.getAbsolutePath() : (__n.isFile() ? __n.getAbsolutePath() : '') }).call(),
-      bridge    : prefs.get(PREF_BRIDGE, ''),
-      modelDir  : ({ -> def __m = prefs.get(PREF_MODEL, ''); (__m?.trim()) ? __m.trim() : defaultModelDir().getAbsolutePath() }).call(),
+    [ python   : ({ -> def __p = prefs.get(PREF_PYTHON, ''); if (__p?.trim()) return __p; def __r = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('py.histoart', ''); if (__r?.trim() && new File(__r.trim()).isFile()) return __r.trim(); def __v = new File(new File(atolyeDataRoot(), 'runtimes'), 'histoart/.venv'); def __w = new File(__v, 'Scripts/python.exe'); def __n = new File(__v, 'bin/python'); __w.isFile() ? __w.getAbsolutePath() : (__n.isFile() ? __n.getAbsolutePath() : '') }).call(),
+      bridge    : (prefs.get(PREF_BRIDGE, '')?.trim() ?: detectBridge()),
+      modelDir : ({ -> def __m = prefs.get(PREF_MODEL, ''); (__m?.trim()) ? __m.trim() : defaultModelDir().getAbsolutePath() }).call(),
       workDir   : prefs.get(PREF_WORK,   ''),
       downsample: prefs.get(PREF_DS,     ''),          // boş = lamdan türet
       maxTiles  : prefs.get(PREF_MAXT,   '2000'),
@@ -153,7 +167,7 @@ def configMissing = { cfg ->
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
 
 def parseIntOr = { s, int d -> try { return Integer.parseInt((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
-def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
+def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim().replace(',', '.')) } catch (Throwable t) { return d } }   // "0,5" (TR klavye) → 0.5
 
 // ── Ölçek: lam µm/px → HistoART'ın beklediği 0,25 µm/px ───────────────────
 def slideMpp = { imageData ->
@@ -271,7 +285,9 @@ def exportTiles = { imageData, File workDir, cfg, Closure appendLine ->
     if (tilesRoot.isDirectory()) tilesRoot.deleteDir()
     tilesRoot.mkdirs()
 
-    def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() }
+    // Sihirbazın KENDİ tam-görüntü özet anotasyonu bölge sayılmaz: sayılırsa yeniden çalıştırmada
+    // tüm lam + seçilen bölge birlikte karolanır ve örtüşen karolar çift sayılır.
+    def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() && it.getName() != HISTOART_SENTINEL }
     def manifest = []
     int total = 0
     boolean wholeSlide = anns.isEmpty()
@@ -675,10 +691,18 @@ def startRun = {
             javafx.application.Platform.runLater { errorTextRef.set('Tahmin başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return
         }
         javafx.application.Platform.runLater { busyLabelRef.set('HistoART sonuçları QuPath\'e aktarılıyor…'); step.set('BUSY'); render() }
-        def imp = importPredictions(workDir, QP.getCurrentImageData(), exp)
+        // Sonuçlar, çalıştırma BAŞLARKEN yakalanan görüntüye yazılır: dakikalar süren tahmin
+        // sırasında başka bir lam açılırsa A'nın karoları B'ye yazılmasın. Hata BUSY'de takılı bırakmaz.
+        def imp
+        try { imp = importPredictions(workDir, imageData, exp) }
+        catch (Throwable t) { imp = [ok: false, error: 'İçe aktarma hatası:\n' + (t.getMessage() ?: t.getClass().getSimpleName())] }
         javafx.application.Platform.runLater {
             if (!imp.ok) { errorTextRef.set(imp.error); step.set('ERROR'); render() }
-            else { resultTextRef.set(buildResultText(workDir, exp, imp, cfg, QP.getCurrentImageData())); step.set('RESULT'); render() }
+            else {
+                try { resultTextRef.set(buildResultText(workDir, exp, imp, cfg, imageData)); step.set('RESULT') }
+                catch (Throwable t) { errorTextRef.set('Sonuç özeti üretilemedi:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR') }
+                render()
+            }
         }
     }, 'AtolyeHistoART-Run')
     worker.setDaemon(true); worker.start()
@@ -803,7 +827,7 @@ render = { ->
             actions.add(navButton('⟳ Yenile', { render() }))
         } else {
             def workDir = resolveWorkDir(cfg, imageData)
-            def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() }
+            def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() && it.getName() != HISTOART_SENTINEL }
             double ds = effectiveDownsample(cfg, imageData)
             double mpp = slideMpp(imageData)
             title.setText('HistoART — hazır')
