@@ -114,7 +114,13 @@ public final class WorkshopSettingsDialog {
             restoreDouble(index == 0 ? "atolye.cellExpansionNuclear" : "atolye.cellExpansionCyto");
             rebuild();
         });
-        javafx.scene.layout.FlowPane presets = new javafx.scene.layout.FlowPane(8, 8, preset, applyPreset);
+        Button okabeBtn = new Button("🎨 Okabe–Ito paleti (renk körü dostu)");
+        okabeBtn.setTooltip(new Tooltip("Sınıf renklerini (Negatif, Pozitif, 1+/2+/3+, Tümör, Stroma, İmmün) kırmızı-yeşil renk körlüğüne güvenli yüksek kontrastlı Okabe–Ito paletine geçirir; ölçüm sayılarını değiştirmez."));
+        okabeBtn.setOnAction(ev -> applyVisualPalette(true));
+        Button classicBtn = new Button("🔬 Klasik H&E / DAB paleti");
+        classicBtn.setTooltip(new Tooltip("Sınıf renklerini standart H&E ve DAB patoloji görünüm renklerine geri döndürür; ölçüm sayılarını değiştirmez."));
+        classicBtn.setOnAction(ev -> applyVisualPalette(false));
+        javafx.scene.layout.FlowPane presets = new javafx.scene.layout.FlowPane(8, 8, preset, applyPreset, okabeBtn, classicBtn);
 
         sections = new VBox(8);
         warningLabel = new Label("");
@@ -327,116 +333,24 @@ public final class WorkshopSettingsDialog {
     }
 
     static String labelFor(String key) {
-        switch (key) {
-            case "atolye.nuclear1": return "Nükleer 1+";
-            case "atolye.nuclear2": return "Nükleer 2+";
-            case "atolye.nuclear3": return "Nükleer 3+";
-            case "atolye.membrane1": return "Membran 1+";
-            case "atolye.membrane2": return "Membran 2+";
-            case "atolye.membrane3": return "Membran 3+";
-            case "atolye.cyto1": return "Sitoplazmik 1+";
-            case "atolye.cyto2": return "Sitoplazmik 2+";
-            case "atolye.cyto3": return "Sitoplazmik 3+";
-            case "atolye.pixDab1": return "Piksel H-score 1+";
-            case "atolye.pixDab2": return "Piksel H-score 2+";
-            case "atolye.pixDab3": return "Piksel H-score 3+";
-            case "atolye.pixHmask": return "Piksel Hematoksilen maskesi";
-            case "atolye.cellposeModel": return "Cellpose modeli";
-            case "atolye.cellposeDiameter": return "Cellpose çapı (px)";
-            case "atolye.cellposeFamily": return "Cellpose model ailesi";
-            case "atolye.cellposeFlow": return "Cellpose hücre sınırı toleransı (flow)";
-            case "atolye.cellposeCellprob": return "Cellpose soluk hücre eşiği (cellprob)";
-            case "atolye.stardistThreshold": return "StarDist olasılık eşiği";
-            case "atolye.stardistPixelSize": return "StarDist piksel boyutu (µm)";
-            case "atolye.stardistCellExpansion": return "StarDist hücre genişlemesi (µm)";
-            case "atolye.pixelSize": return "Piksel boyutu (µm)";
-            case "atolye.cellExpansionNuclear": return "Hücre genişlemesi — nükleer (µm)";
-            case "atolye.cellExpansionCyto": return "Hücre genişlemesi — sitoplazma (µm)";
-            case "atolye.sigma": return "Gürültü yumuşatma — Sigma (µm)";
-            case "atolye.backgroundRadius": return "Arka plan yarıçapı (µm)";
-            case "atolye.minArea": return "En küçük alan (µm²)";
-            case "atolye.maxArea": return "En büyük alan (µm²)";
-            case "atolye.medianRadius": return "Medyan filtre (µm)";
-            case "atolye.detectionThreshold": return "Çekirdek eşiği (OD)";
-            case "atolye.detectionChannel": return "Tespit kanalı";
-            case "atolye.watershed": return "Bitişik çekirdekleri ayır (Watershed)";
-            case "atolye.pixScale": return "Piksel ölçeği (alt örnekleme)";
-            case "atolye.classifierName": return "Sınıflandırıcı adı";
-            case "atolye.minObjectArea": return "En küçük nesne alanı (µm²)";
-            case "atolye.minHoleArea": return "En küçük boşluk alanı (µm²)";
-            case "atolye.maxTrainingSamples": return "En fazla eğitim örneği (0 = sınırsız)";
-            case "atolye.warnNuclearCount": return "Az çekirdek uyarı eşiği (Nielsen önerisi)";
-            case "atolye.warnGenericCount": return "Uyarı: düşük hücre sayısı";
-            case "atolye.warnTissueAreaMm2": return "Uyarı: küçük doku (mm²)";
-            case "atolye.exportFolder": return "Dışa aktarma klasörü";
-            case "atolye.exportSeparator": return "Ayraç";
-            case "atolye.exportScope": return "Varsayılan kapsam";
-            case "atolye.exportDet": return "Dışa aktar: tespit TSV";
-            case "atolye.exportAnn": return "Dışa aktar: anotasyon TSV";
-            case "atolye.exportGeo": return "Dışa aktar: anotasyon GeoJSON";
-            case "atolye.exportColumnsMode": return "Sütun seçimi";
-            case "atolye.exportColumns": return "Seçili sütunlar (| ile)";
-            case "atolye.exportPrefix": return "Dosya adı öneki";
-            case "atolye.exportDateSubfolder": return "Tarihli alt klasör";
-            case "atolye.exportLocation": return "Kayıt yeri (boş = proje/exports)";
-            default: return key;
+        return WorkshopMicrocopy.labelFor(key);
+    }
+
+    private static void applyVisualPalette(boolean colorblindSafe) {
+        int updated = WorkshopColorPalettes.applyPalette(colorblindSafe);
+        qupath.lib.gui.QuPathGUI gui = qupath.lib.gui.QuPathGUI.getInstance();
+        if (gui != null && gui.getAllViewers() != null) {
+            Platform.runLater(() -> gui.getAllViewers().forEach(v -> v.repaint()));
+        }
+        if (warningLabel != null) {
+            warningLabel.setText((colorblindSafe ? "✓ Okabe–Ito renk körlüğüne güvenli palet " : "✓ Klasik H&E / DAB paleti ")
+                    + updated + " sınıfa uygulandı (ölçüm sayıları değişmez).");
+            warningLabel.setVisible(true);
+            warningLabel.setManaged(true);
         }
     }
 
     static String tooltipFor(String key) {
-        switch (key) {
-            case "atolye.nuclear1": return "Nükleer DAB optik yoğunluk (OD) 1+ (zayıf pozitif) alt eşiği. Tipik aralık: 0.10–0.25 (varsayılan: 0.20).";
-            case "atolye.nuclear2": return "Nükleer DAB optik yoğunluk (OD) 2+ (orta pozitif) alt eşiği. Tipik aralık: 0.30–0.50 (varsayılan: 0.40).";
-            case "atolye.nuclear3": return "Nükleer DAB optik yoğunluk (OD) 3+ (güçlü pozitif) alt eşiği. Tipik aralık: 0.50–0.80 (varsayılan: 0.60).";
-            case "atolye.membrane1": return "Membran DAB optik yoğunluk (OD) 1+ (zayıf pozitif) alt eşiği (HER2). Tipik aralık: 0.10–0.25 (varsayılan: 0.15).";
-            case "atolye.membrane2": return "Membran DAB optik yoğunluk (OD) 2+ (orta pozitif) alt eşiği (HER2). Tipik aralık: 0.30–0.50 (varsayılan: 0.40).";
-            case "atolye.membrane3": return "Membran DAB optik yoğunluk (OD) 3+ (güçlü pozitif) alt eşiği (HER2). Tipik aralık: 0.55–0.85 (varsayılan: 0.70).";
-            case "atolye.cyto1": return "Sitoplazmik DAB optik yoğunluk (OD) 1+ (zayıf pozitif) alt eşiği (CD68). Tipik aralık: 0.05–0.15 (varsayılan: 0.10).";
-            case "atolye.cyto2": return "Sitoplazmik DAB optik yoğunluk (OD) 2+ (orta pozitif) alt eşiği (CD68). Tipik aralık: 0.15–0.30 (varsayılan: 0.20).";
-            case "atolye.cyto3": return "Sitoplazmik DAB optik yoğunluk (OD) 3+ (güçlü pozitif) alt eşiği (CD68). Tipik aralık: 0.30–0.50 (varsayılan: 0.35).";
-            case "atolye.pixDab1": return "Piksel tabanlı H-score için DAB 1+ (zayıf) optik yoğunluk alt eşiği. Tipik aralık: 0.08–0.15 (varsayılan: 0.10).";
-            case "atolye.pixDab2": return "Piksel tabanlı H-score için DAB 2+ (orta) optik yoğunluk alt eşiği. Tipik aralık: 0.20–0.40 (varsayılan: 0.30).";
-            case "atolye.pixDab3": return "Piksel tabanlı H-score için DAB 3+ (güçlü) optik yoğunluk alt eşiği. Tipik aralık: 0.45–0.75 (varsayılan: 0.60).";
-            case "atolye.pixHmask": return "Piksel tabanlı H-score'da çekirdek/doku varlığını doğrulayan Hematoksilen OD alt eşiği (boş arka planı dışlar). Tipik aralık: 0.03–0.10 (varsayılan: 0.05).";
-            case "atolye.cellposeModel": return "Membran boya (HER2) modülünde Cellpose için kullanılacak ön-eğitimli model (cyto3: genel hücre, cyto2: önceki sürüm, nuclei: yalnız çekirdek).";
-            case "atolye.cellposeDiameter": return "Cellpose'un beklediği ortalama hücre çapı (piksel cinsinden; 0 girilirse otomatik tahmin edilir). Tipik aralık: 15–40 px (varsayılan: 25).";
-            case "atolye.cellposeFamily": return "Cellpose sihirbazında (Yardımcılar) seçilen model ailesi (cyto3, cyto2, nuclei veya cpsam).";
-            case "atolye.cellposeFlow": return "Cellpose akış hatası eşiği (flow threshold). Daha yüksek değer daha fazla hücre kabul eder. Tipik aralık: 0.2–0.8 (varsayılan: 0.4).";
-            case "atolye.cellposeCellprob": return "Cellpose hücre olasılık eşiği (cellprob). Düşürülürse soluk hücreler de dahil edilir; yükseltilirse yalnız belirgin hücreler alınır. Tipik aralık: -2.0 ile +2.0 (varsayılan: 0.0).";
-            case "atolye.stardistThreshold": return "StarDist çekirdek tespiti olasılık eşiği (QuANTUM cTCF). Yükseltildikçe yanlış pozitifler azalır. Tipik aralık: 0.3–0.7 (varsayılan: 0.5).";
-            case "atolye.stardistPixelSize": return "StarDist çıkarımında kullanılacak piksel boyutu (µm/px). 0.5 µm ≈ 20× büyütme çözünürlüğüdür. Tipik aralık: 0.25–1.0 µm (varsayılan: 0.5).";
-            case "atolye.stardistCellExpansion": return "StarDist ile bulunan çekirdek sınırından dışa doğru tahmin edilen sitoplazma halkası genişliği (µm). Tipik aralık: 3.0–8.0 µm (varsayılan: 5.0).";
-            case "atolye.pixelSize": return "Klasik hücre tespitinde (Watershed) görüntünün işleneceği piksel boyutu (µm). Küçük değer daha ayrıntılı ama yavaştır. Tipik aralık: 0.25–1.0 µm (varsayılan: 0.5).";
-            case "atolye.cellExpansionNuclear": return "Nükleer boya ve H&E modüllerinde çekirdek etrafına eklenen tahmini sitoplazma sınırı (µm). Tipik aralık: 3.0–7.0 µm (varsayılan: 5.0).";
-            case "atolye.cellExpansionCyto": return "Sitoplazmik (CD68) ve membran (HER2) modüllerinde çekirdek etrafına eklenen sitoplazma/membran genişlemesi (µm). Tipik aralık: 5.0–10.0 µm (varsayılan: 7.0).";
-            case "atolye.sigma": return "Gaussian yumuşatma (bulanıklaştırma) yarıçapı (µm). Çekirdek içi beneklenmeyi azaltıp tek çekirdeğin parçalanmasını önler. Tipik aralık: 1.0–2.5 µm (varsayılan: 1.5).";
-            case "atolye.backgroundRadius": return "Yerel arka plan çıkarma yarıçapı (µm). Düzensiz boyanma aydınlatmasını dengeler (0 = kapalı). Tipik aralık: 6.0–15.0 µm (varsayılan: 8.0).";
-            case "atolye.minArea": return "Kabul edilecek en küçük çekirdek alanı (µm²). Daha küçük kırıntı ve artefaktlar elenir. Tipik aralık: 5.0–25.0 µm² (varsayılan: 10.0).";
-            case "atolye.maxArea": return "Kabul edilecek en büyük çekirdek alanı (µm²). Daha büyük kümeler elenir veya bölünür. Tipik aralık: 200.0–600.0 µm² (varsayılan: 400.0).";
-            case "atolye.medianRadius": return "Ön işlemede medyan filtre yarıçapı (µm). Tuz-biber gürültüsünü azaltır (0 = kapalı). Tipik aralık: 0.0–2.0 µm (varsayılan: 0.0).";
-            case "atolye.detectionThreshold": return "Çekirdek varlığını kabul etmek için gereken en düşük optik yoğunluk (OD) eşiği. Düşürülürse soluk çekirdekler de yakalanır. Tipik aralık: 0.05–0.25 (varsayılan: 0.1).";
-            case "atolye.detectionChannel": return "Çekirdek tespitinin yapılacağı renk dekonvolüsyon kanalı (Hematoxylin OD veya Optical density sum).";
-            case "atolye.watershed": return "Birbirine değen komşu çekirdekleri şekil ve yoğunluk vadilerinden ayırır (Watershed). Açık kalması önerilir.";
-            case "atolye.pixScale": return "Piksel tabanlı H-score hesaplamasında alt örnekleme (downsample) çarpanı. 1.0 = tam çözünürlük; yüksek değerler daha hızlıdır (varsayılan: 1.0).";
-            case "atolye.classifierName": return "Projede kaydedilecek veya yüklenecek tümör/stroma piksel sınıflandırıcısının dosya adı (varsayılan: tumor-stroma-RF).";
-            case "atolye.minObjectArea": return "Tümör/stroma sınıflandırıcısı anotasyon üretirken korunacak en küçük adacık alanı (µm²). Küçük gürültü parçalarını temizler (varsayılan: 10000.0).";
-            case "atolye.minHoleArea": return "Tümör/stroma anotasyonları içindeki doldurulacak en küçük boşluk/delik alanı (µm²) (varsayılan: 5000.0).";
-            case "atolye.maxTrainingSamples": return "Piksel sınıflandırıcı eğitiminde kullanılacak en fazla örnek piksel sayısı (0 = sınırsız; varsayılan: 100000).";
-            case "atolye.warnNuclearCount": return "Ki-67 ve ER/PR modüllerinde düşük hücre sayısı uyarısı için eşik (ör. 500 çekirdek altı uyarı verir).";
-            case "atolye.warnGenericCount": return "Genel hücre sayımı modüllerinde düşük hücre sayısı uyarısı için eşik (varsayılan: 200).";
-            case "atolye.warnTissueAreaMm2": return "Ölçülen bölge alanı bu değerin (mm²) altındaysa küçük doku alanı uyarısı gösterilir (varsayılan: 1.0 mm²).";
-            case "atolye.exportFolder": return "Proje klasörü altında dışa aktarılan tabloların kaydedileceği varsayılan alt klasör adı (varsayılan: exports).";
-            case "atolye.exportSeparator": return "Dışa aktarılan tablolarda sütun ayracı: TAB (.tsv, önerilen) veya Virgül (.csv).";
-            case "atolye.exportScope": return "Veri dışa aktarma penceresi açıldığında varsayılan kapsam (yalnız bu görüntü veya tüm proje).";
-            case "atolye.exportDet": return "Hücre/tespit düzeyi ölçümlerin (her satır bir hücre) dışa aktarılıp aktarılmayacağı.";
-            case "atolye.exportAnn": return "Anotasyon/bölge düzeyi özet ölçümlerin (her satır bir bölge) dışa aktarılıp aktarılmayacağı.";
-            case "atolye.exportGeo": return "Anotasyon sınır geometrilerinin GeoJSON biçiminde dışa aktarılıp aktarılmayacağı.";
-            case "atolye.exportColumnsMode": return "Dışa aktarmada tüm sütunların mı yoksa yalnız seçili alt kümenin mi yazılacağı.";
-            case "atolye.exportColumns": return "Alt küme modunda dışa aktarılacak sütun adları ('|' karakteri ile ayrılmış liste; boşsa varsayılan özet sütunlar).";
-            case "atolye.exportPrefix": return "Dışa aktarılan dosya adlarının başına eklenecek isteğe bağlı önek (ör. çalışma veya kohort kodu).";
-            case "atolye.exportDateSubfolder": return "Dışa aktarma klasörü içinde günün tarihiyle (YYYY-AA-GG) ayrı bir alt klasör oluşturulup oluşturulmayacağı.";
-            case "atolye.exportLocation": return "Özel dışa aktarma klasör yolu. Boş bırakılırsa aktif QuPath projesinin içindeki dışa aktarma klasörü kullanılır.";
-            default: return "";
-        }
+        return WorkshopMicrocopy.tooltipFor(key);
     }
 }

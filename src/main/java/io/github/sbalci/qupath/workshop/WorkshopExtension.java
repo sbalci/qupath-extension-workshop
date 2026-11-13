@@ -230,6 +230,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("Tespit doğrulama (F1 / IoU)", "yardimci-dogrulama-f1.groovy")
         )),
         new ScriptGroup("Skorlama ve ölçüm", List.of(
+            // Göz kararı değerlendirme vs. QuPath sayısal ölçüm (kör tahmin, 4×4 ızgara, Bland–Altman oturum özeti).
+            new ScriptEntry("Göz kararı kalibrasyon alıştırması", "yardimci-goz-karari-kalibrasyon.groovy"),
             new ScriptEntry("Eşik ile alan ölçümü",        "yardimci-esik-alan.groovy"),
             // Var olan sınıflandırmaları seçili bölgede sayar; her sınıfın adet + % dağılımı (tespit YAPMAZ).
             new ScriptEntry("Sınıf bazlı hücre sayımı (% dağılım)", "yardimci-sinif-sayim.groovy"),
