@@ -77,6 +77,41 @@ def PY_DIAG = "import importlib, sys\n" +
     "except Exception:\n" +
     "    pass\n"
 
+// ── Model ağırlıklarının sabitlenmiş SHA-256 özetleri ───────────────────────
+// Kaynak: GrandQC'nin resmî Zenodo kayıtları (td: 14507273 · qc: 14041538). Özetler, Zenodo'nun
+// yayımladığı MD5 değerleriyle bire bir eşleşen dosyalardan 2026-11-13'te hesaplandı.
+// NEDEN: models/qc dosyaları state_dict değil, pickle'lanmış TAM model nesnesidir; yüklemek
+// kod çalıştırabilir. Bu yüzden sihirbaz, özeti tutmayan bir dosyayla ÇALIŞTIRMAZ.
+def GRANDQC_SHA256 = [
+    'Tissue_Detection_MPP10.pth': '0e3577628a553774419a5b87a2947531988e07175b9e1a8048f53b6188f4d76e',
+    'GrandQC_MPP1.pth'          : 'cda7506dbb2e21be1410077d4f55632e7073fe068cf318df8fbc185a66806ecf',
+    'GrandQC_MPP15.pth'         : '6e90ec8548d4050734c30e30d5ca7fe67e84b59b1dd8ae338447dad90bae4ff1',
+    'GrandQC_MPP2.pth'          : '703d21cb3cac5b0797b145ca55428f21ab25bad18e3738ed8a3b6d42bbfcb61c'
+]
+def sha256Of = { File f ->
+    def md = java.security.MessageDigest.getInstance('SHA-256')
+    f.withInputStream { is ->
+        byte[] buf = new byte[1 << 16]; int n
+        while ((n = is.read(buf)) > 0) md.update(buf, 0, n)
+    }
+    return md.digest().collect { String.format(java.util.Locale.US, '%02x', it & 0xff) }.join('')
+}
+// Tek dosya: null = sorun yok; aksi hâlde sorunun açık metni.
+def weightProblem = { File f ->
+    if (!f.isFile() || f.length() == 0) return 'dosya yok: ' + f.getAbsolutePath()
+    def want = GRANDQC_SHA256[f.getName()]
+    if (want == null) return 'tanınmayan model dosyası (sabitlenmiş özet yok): ' + f.getAbsolutePath()
+    String got
+    try { got = sha256Of(f) } catch (Throwable t) { return 'okunamadı: ' + f.getAbsolutePath() + ' (' + (t.getMessage() ?: t.getClass().getSimpleName()) + ')' }
+    return (got == want) ? null : ('SHA-256 uyuşmuyor (bozuk/eksik indirme ya da değiştirilmiş dosya): ' + f.getAbsolutePath())
+}
+// Bir çalıştırmanın gerçekten yükleyeceği iki dosya (doku + seçili MPP'nin artefakt modeli).
+def runWeightFiles = { String scriptsDir, mpp ->
+    def root = new File(scriptsDir, 'models')
+    [new File(new File(root, 'td'), 'Tissue_Detection_MPP10.pth'),
+     new File(new File(root, 'qc'), 'GrandQC_MPP' + (mpp ?: '1.5').toString().replace('.', '') + '.pth')]
+}
+
 // GrandQC artefakt sınıfları (geojson properties.classification ile eşleşir)
 def CLEAN_CLASS    = 'Temiz doku'
 def TISSUE_CLASS   = 'Tissue'
@@ -284,6 +319,12 @@ def cmdText = { cfg, folder, slideName ->
     sb << "# NOT: GrandQC cihazı kaynakta sabitler. Bu iki .py dosyasında\n"
     sb << "#      DEVICE = '...' satırını cihazınıza göre ayarlayın (cuda / mps / cpu).\n"
     sb << "#      'Doğrudan çalıştır' bu yamayı sizin için otomatik yapar (seçili cihaz: " << effectiveDevice(cfg) << ").\n\n"
+    sb << "# 0) Önce betik dizinine geçin — betikler modelleri göreli yoldan ('./models/...') yükler\n"
+    sb << "cd " << q(cfg.scripts) << "\n\n"
+    sb << "# PyTorch 2.6+ ile 2. adım 'Weights only load failed' verir (modeller tam nesne olarak pickle'lı).\n"
+    sb << "# 'Doğrudan çalıştır' ağırlıkların SHA-256 özetini doğrular ve bu değişkeni kendisi ayarlar.\n"
+    sb << "# Elle çalıştırıyorsanız, YALNIZ dosyalar resmî Zenodo kayıtlarından geldiyse (PowerShell):\n"
+    sb << "#   \$env:TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD = '1'\n\n"
     sb << "# 1) Doku tespiti (MPP10)\n"
     sb << q(py) << ' ' << q(s1) << ' --slide_folder ' << q(folder) << ' --output_dir ' << q(folder) << "\n\n"
     sb << "# 2) Artefakt kalite kontrolü (MPP " << cfg.mpp << ")\n"
@@ -695,27 +736,65 @@ def runDiag = { ->
         def sb = new StringBuilder()
         sb << "GrandQC ORTAM DOĞRULAMA\n"
         sb << "═══════════════════════════════\n\n"
+        def missing = []   // sonda AÇIKÇA listelenir: ne eksik + nasıl giderilir
         def py = cfg.python
         if (!py?.trim() || !(new File(py)).isFile()) {
             sb << "✗ python.exe : ayarlı değil ya da bulunamadı\n"
+            missing << ('Python ortamı: ' + (py?.trim() ? ('dosya yok → ' + py) : 'yol ayarlı değil') +
+                        '\n     Çözüm: kurulum ekranında "① Python ortamı" ile GrandQC ortamını kurun.')
         } else {
             sb << "✓ python.exe : " << py << "\n"
             def v = runQuick([py, '--version'], 20L)
             sb << "  sürüm : " << ((v.out ?: '').trim() ?: '(okunamadı)') << "\n\n"
             sb << "Paketler / cihaz (import testi, ~torch soğuk başlatma nedeniyle biraz sürebilir):\n"
             def imp = runQuick([py, '-c', PY_DIAG], 120L)
-            (imp.out ?: '').readLines().each { sb << it << "\n" }
+            def lines = (imp.out ?: '').readLines()
+            lines.each { sb << it << "\n" }
+            ['numpy', 'cv2', 'torch', 'openslide'].each { m ->
+                def ln = lines.find { it.trim().startsWith(m + ':') }
+                if (ln == null)
+                    missing << ('Python paketi "' + m + '": denetlenemedi (import testi çıktı vermedi)' +
+                                '\n     Çözüm: "① Python ortamı" ile GrandQC ortamını yeniden kurun.')
+                else if (!ln.trim().endsWith('OK'))
+                    missing << ('Python paketi "' + m + '": içe aktarılamıyor — ' + ln.trim() +
+                                '\n     Çözüm: "① Python ortamı" ile GrandQC ortamını yeniden kurun.')
+            }
         }
-        def md = cfg.modelDir?.trim() ? new File(cfg.modelDir) : (cfg.scripts?.trim() ? new File(cfg.scripts, 'models') : null)
+        // Betikler + modeller: GrandQC ağırlıkları YALNIZ <betik dizini>/models altından,
+        // sabit dosya adlarıyla yükler → tam o dosyaları ara (yalnız ".pth var mı" değil).
         sb << "\n"
-        if (md == null) {
-            sb << "✗ model dizini belirsiz (betik/model dizini ayarlı değil)\n"
+        def sd = cfg.scripts?.trim() ? new File(cfg.scripts) : null
+        if (sd == null || !sd.isDirectory()) {
+            sb << "✗ betik dizini : " << (sd == null ? 'ayarlı değil' : ('klasör yok → ' + sd.getAbsolutePath())) << "\n"
+            missing << ('GrandQC betik dizini: ' + (sd == null ? 'ayarlı değil' : ('klasör yok → ' + sd.getAbsolutePath())) +
+                        '\n     Çözüm: kurulum ekranında "② GrandQC deposu indir".')
         } else {
-            def countPth = { File d -> (d.isDirectory() ? (((d.listFiles({ f, n -> n.toLowerCase(java.util.Locale.ROOT).endsWith('.pth') } as java.io.FilenameFilter))?.length) ?: 0) : 0) }
-            int td = countPth(new File(md, 'td')); int qc = countPth(new File(md, 'qc'))
-            sb << ((td > 0 && qc > 0) ? "✓ " : "✗ ") << String.format(java.util.Locale.US, "model dosyaları : models/td %d .pth · models/qc %d .pth%n", td, qc)
+            sb << "✓ betik dizini : " << sd.getAbsolutePath() << "\n"
+            ['wsi_tis_detect.py', 'main.py'].each { fn ->
+                boolean ok = new File(sd, fn).isFile()
+                sb << (ok ? "✓ " : "✗ ") << "betik : " << fn << "\n"
+                if (!ok) missing << ('Betik dosyası: ' + new File(sd, fn).getAbsolutePath() +
+                                     '\n     Çözüm: kurulum ekranında "② GrandQC deposu indir".')
+            }
+            runWeightFiles(sd.getAbsolutePath(), cfg.mpp).each { File mf ->
+                def prob = weightProblem(mf)
+                sb << (prob == null ? "✓ " : "✗ ") << "model : models/" << mf.getParentFile().getName() << "/" << mf.getName() <<
+                      (prob == null ? "  (SHA-256 doğrulandı)" : "") << "\n"
+                if (prob != null) missing << ('Model ağırlığı — ' + prob +
+                                     '\n     Çözüm: kurulum ekranında "③ Model indir" (dosyayı resmî Zenodo kaydından yeniden indirir).')
+            }
+            if (cfg.modelDir?.trim() && new File(cfg.modelDir).getAbsolutePath() != new File(sd, 'models').getAbsolutePath())
+                sb << "ℹ \"Model dizini\" alanı (" << cfg.modelDir << ") GrandQC betiklerince KULLANILMAZ;\n" <<
+                      "  ağırlıklar yalnız betik dizinindeki models/ klasöründen okunur.\n"
         }
-        sb << "\nBu kontrol yalnız bilgilendiricidir; çalıştırmayı engellemez.\n"
+        sb << "\n═══════════════════════════════\n"
+        if (missing.isEmpty()) {
+            sb << "SONUÇ: ✓ Eksik yok — ortam çalıştırmaya hazır görünüyor.\n"
+        } else {
+            sb << "SONUÇ: ✗ " << missing.size() << " EKSİK — bunlar giderilmeden çalıştırma hata verir:\n"
+            missing.eachWithIndex { m, i -> sb << "  " << (i + 1) << ") " << m << "\n" }
+        }
+        sb << "\nBu ekran yalnız rapor verir; hiçbir şeyi değiştirmez.\n"
         sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
         def txt = sb.toString()
         javafx.application.Platform.runLater { diagTextRef.set(txt); step.set('DIAG'); render() }
@@ -830,9 +909,23 @@ def applyCacheEnv = { pb ->
 }
 
 // ── Arka plan: Python hattı (ProcessBuilder) → import ───────────────────────
-def runPython = { List cmd, Closure onLine ->
+// verifiedWeights: YALNIZ çağıran, yüklenecek ağırlıkların SHA-256 özetini az önce doğruladıysa true.
+// PyTorch 2.6+ torch.load öntanımlısı weights_only=True oldu; GrandQC'nin models/qc dosyaları tam
+// model nesnesi olarak pickle'landığı ve main.py weights_only vermediği için UnpicklingError çıkar.
+// Aşağıdaki ortam değişkeni eski davranışı yalnız BU süreçte geri getirir (upstream betik yamalanmaz).
+def runPython = { List cmd, Closure onLine, boolean verifiedWeights = false ->
     def pb = new ProcessBuilder(cmd)
     pb.redirectErrorStream(true)
+    if (verifiedWeights) { try { pb.environment().put('TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD', '1') } catch (Throwable ignore) {} }
+    // GrandQC betikleri ağırlıkları GÖRELİ yoldan yükler ('./models/td/', './models/qc/').
+    // Çalışma dizini betik dizini olmazsa (öntanımlı: QuPath'in dizini) dosyalar yerinde
+    // olsa bile FileNotFoundError verir → çalışma dizinini betiğin klasörüne sabitle.
+    try {
+        if (cmd.size() > 1 && cmd[1].toString().toLowerCase(java.util.Locale.ROOT).endsWith('.py')) {
+            def wd = new File(cmd[1].toString()).getAbsoluteFile().getParentFile()
+            if (wd != null && wd.isDirectory()) pb.directory(wd)
+        }
+    } catch (Throwable ignore) {}
     applyCacheEnv(pb)
     def proc
     try { proc = pb.start() }
@@ -880,6 +973,20 @@ def startDirectRun = { slide ->
         if (pd.patched) appendLine('# Cihaz: ' + dev + '  (yamalandı: ' + pd.patched.join(', ') + ')')
         else appendLine('# Cihaz: ' + dev + '  (DEVICE satırı zaten uygun ya da bulunamadı)')
         if (pd.errors) appendLine('# ⚠ Cihaz yaması BAŞARISIZ — betik dosyaları yazılamadı; DEVICE hâlâ eski değerde olabilir:\n#   ' + pd.errors.join('\n#   '))
+        // Ağırlıkları yüklemeden ÖNCE sabitlenmiş SHA-256 ile doğrula; tutmuyorsa hiç çalıştırma.
+        appendLine('# Model ağırlıkları doğrulanıyor (SHA-256)…')
+        def wProblems = runWeightFiles(cfg.scripts, cfg.mpp).collect { weightProblem(it) }.findAll { it != null }
+        if (wProblems) {
+            javafx.application.Platform.runLater {
+                errorTextRef.set('Model ağırlıkları doğrulanamadı — çalıştırma başlatılmadı.\n\n  • ' + wProblems.join('\n  • ') +
+                    '\n\nGrandQC modelleri pickle biçimindedir; özeti tutmayan bir dosya güvenlik nedeniyle yüklenmez.\n' +
+                    'Çözüm: dosyayı silip kurulum ekranındaki "③ Model indir" ile yeniden indirin\n' +
+                    '(kurulum ekranı: yapılandırma eksikken açılır; ya da dosyaları resmî Zenodo kayıtlarından elle indirin).')
+                step.set('ERROR'); render()
+            }
+            return
+        }
+        appendLine('# ✓ Ağırlıklar doğrulandı.')
         def r1 = runPython(tissueCmd(cfg, folder), appendLine)
         if (!r1.ok) {
             javafx.application.Platform.runLater {
@@ -889,7 +996,7 @@ def startDirectRun = { slide ->
             return
         }
         javafx.application.Platform.runLater { runPhaseRef.set('Artefakt KK (2/2)'); render() }
-        def r2 = runPython(artifactCmd(cfg, folder), appendLine)
+        def r2 = runPython(artifactCmd(cfg, folder), appendLine, true)   // ağırlıklar yukarıda doğrulandı
         if (!r2.ok) {
             javafx.application.Platform.runLater {
                 errorTextRef.set('Artefakt KK başarısız (çıkış kodu: ' + r2.exitCode + ')\n\n' + (r2.error ?: '') + '\n' + (r2.lastLines ?: ''))
@@ -1082,6 +1189,12 @@ def installModels = {
                 def dest = new File(new File(modelsRoot, m.sub), m.name)
                 appendInstallLog('  ' + m.name + ' → models/' + m.sub + '/')
                 httpDownload(m.url, dest)
+                def prob = weightProblem(dest)
+                if (prob != null) {
+                    try { dest.delete() } catch (Throwable ignore) {}
+                    throw new IOException(m.name + ' doğrulanamadı — ' + prob + ' (dosya silindi; yeniden deneyin)')
+                }
+                appendInstallLog('    ✓ SHA-256 doğrulandı')
             }
             prefs.put(PREF_MODEL, modelsRoot.getAbsolutePath()); try { prefs.flush() } catch (Throwable t) {}
             appendInstallLog('✓ Modeller indirildi; model dizini: ' + modelsRoot.getAbsolutePath())
@@ -1176,6 +1289,12 @@ render = { ->
         def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE)
         lbl.setStyle('-fx-text-fill: #b8860b; -fx-font-weight: bold;')
         center.getChildren().add(lbl)
+    }
+
+    // Ara ekranlardan sihirbazın ana ekranına tek tıkla dönüş (yapılandırma eksikse kurulum ekranı).
+    def homeButton = { ->
+        navButton('⌂ Ana ekran', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() },
+            'Sihirbazın ana ekranına döner')
     }
 
     if (cur == 'CONFIG_INCOMPLETE') {
@@ -1329,6 +1448,7 @@ render = { ->
     } else if (cur == 'RESULT') {
         title.setText('Tamamlandı ✅')
         addMonoArea(resultTextRef.get())
+        actions.add(homeButton())
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
         // İstatistik raporu yalnız tek-slayt sonucunda (kapsam klasörü bilinir) gösterilir.
@@ -1349,6 +1469,7 @@ render = { ->
         addGuidance('main.py çıktısı: lam başına büyütme/MPP, karo sayıları, görüntü boyutu ve işlem süresi. Salt okunur — kalite notu/derece üretmez.')
         addMonoArea(reportTextRef.get())
         actions.add(navButton('◀ Geri', { step.set('RESULT'); render() }))
+        actions.add(homeButton())
         actions.add(navButton('Kopyala', { copyToClipboard(reportTextRef.get()) }))
         actions.add(navButton('Dışa aktar…', {
             def src = reportPathRef.get()
@@ -1364,11 +1485,14 @@ render = { ->
         title.setText('GrandQC ortam doğrulama')
         addMonoArea(diagTextRef.get())
         actions.add(navButton('◀ Geri', { step.set('CONFIG'); render() }))
+        actions.add(homeButton())
         actions.add(navButton('Kopyala', { copyToClipboard(diagTextRef.get()) }))
     } else { // ERROR
         title.setText('Hata')
         addMonoArea(errorTextRef.get())
         actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
+        actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
+        actions.add(navButton('Kopyala', { copyToClipboard(errorTextRef.get()) }))
         actions.add(navButton('Kapat', { stage.close() }))
     }
 
