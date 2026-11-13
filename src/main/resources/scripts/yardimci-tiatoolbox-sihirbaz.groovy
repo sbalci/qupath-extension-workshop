@@ -119,9 +119,43 @@ def detectStainPython = { ->
     return w.isFile() ? w.getAbsolutePath() : (n.isFile() ? n.getAbsolutePath() : '')
 }
 
+def extractBundledBridge = { String rel ->
+    try {
+        def cl = null
+        try { cl = this.getClass().getClassLoader() } catch (Throwable ignore) {}
+        def cls = null
+        try { cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, cl) } catch (Throwable ignore) {}
+        if (cls == null) {
+            try {
+                def extCl = qupath.lib.gui.QuPathGUI.getExtensionCatalogManager()?.getExtensionClassLoader()
+                if (extCl != null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, extCl)
+            } catch (Throwable ignore) {}
+        }
+        if (cls == null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
+        def p = cls.getMethod('extractBundledPythonBridge', String, java.nio.file.Path).invoke(null, rel, atolyeDataRoot().toPath())
+        if (p != null) {
+            def f = p.toFile()
+            if (f.isFile()) return f.getAbsolutePath()
+        }
+    } catch (Throwable ignore) {}
+    return ''
+}
+def detectBridge = { ->
+    try {
+        def project = QP.getProject()
+        if (project != null && project.getPath() != null) {
+            def handson = project.getPath().getParent().toFile()
+            def roots = [handson]
+            if (handson.getParentFile() != null) roots << new File(handson.getParentFile(), 'handson')
+            for (r in roots) { def f = new File(r, 'python/tiatoolbox/tiatoolbox_bridge.py'); if (f.isFile()) return f.getAbsolutePath() }
+        }
+    } catch (Throwable ignore) {}
+    return extractBundledBridge('python/tiatoolbox/tiatoolbox_bridge.py')
+}
+
 def loadConfig = { ->
     [ python         : ({ -> def __p = prefs.get(PREF_PYTHON, ''); return (__p?.trim()) ? __p : detectStainPython() }).call(),
-      bridge         : prefs.get(PREF_BRIDGE, ''),
+      bridge         : (prefs.get(PREF_BRIDGE, '')?.trim() ?: detectBridge()),
       reference      : prefs.get(PREF_REF,    ''),
       useBuiltin     : prefs.get(PREF_BUILT,  'true'),
       workDir        : prefs.get(PREF_WORK,   ''),
@@ -724,8 +758,8 @@ render = { ->
             '  1) Python ortamı → [Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller →\n' +
             '     Atölye Python ortam yöneticisi] penceresinde "TIA Toolbox — boyama normalizasyonu / doku maskesi"\n' +
             '     ortamını tek tıkla kurun (hafif; torch gerekmez). Model ağırlıklarını TIA Toolbox ilk kullanımda kendi indirir.\n' +
-            '  2) Köprü betiği → handson/python/tiatoolbox/tiatoolbox_bridge.py (repoda hazır gelir).\n' +
-            'Sonra bu pencerede "Yapılandır ▶" ile python.exe ve köprü yolunu seçin.')
+            '  2) Köprü betiği → tiatoolbox_bridge.py eklentiyle birlikte otomatik çıkarılır (veya depoda handson/python/tiatoolbox/).\n' +
+            'Özel python.exe ya da köprü yolu seçmek isterseniz "Yapılandır ▶" düğmesini kullanın.')
         actions.add(navButton('▶ Python ortamını kur', { launchEnvManager() },
             'Atölye Python ortam yöneticisini açar → "TIA Toolbox — boyama normalizasyonu / doku maskesi" ortamını tek tıkla kurun'))
         actions.add(navButton('📄 Belge', { openUrl('https://atolye.patoloji.dev/ekler/tiatoolbox.html') },

@@ -1,0 +1,32 @@
+# NuClick koprusu (tikla -> cekirdek siniri)
+# ------------------------------------------------------------------
+# Bu kopru WSI ACMAZ — yalniz QuPath'in disa aktardigi 128x128 PNG yamalarini
+# okur; bu yuzden openslide-python GEREKMEZ (SPIDER / Kaiko / HistoPLUS
+# koprusuyle ayni tasarim).
+#
+# Python 3.11 onerilir.
+# Kurulum (atolye ortam yoneticisi 'nuclick' ortamini bunlarla kurar):
+#   python -m venv .venv-nuclick
+#   .venv-nuclick\Scripts\activate          (Windows)
+#   pip install -r requirements.txt
+#
+# NOT: agirliklar burada DEGIL — sihirbazin ③ "Model agirliklarini indir"
+# dugmesi `fetch_pretrained_weights("nuclick_original-pannuke")` ile ~255 MB'lik
+# dosyayi TIATOOLBOX_HOME altina ceker.
+
+# NuClick mimarisi + agirlik kaydi + fetch_pretrained_weights buradan gelir.
+# >=2.1.2: tiatoolbox.models.NuClick bu surumlerde mevcuttur.
+tiatoolbox>=2.1.2
+
+# tiatoolbox 2.1.3 zaten torch>=2.5.0,<2.13.0 ister — taban acikca yazilir.
+torch>=2.5
+torchvision
+
+# NuClick.postproc `remove_small_objects(..., max_size=...)` cagirir; bu kwarg
+# scikit-image 0.26 ile geldi. tiatoolbox 2.1.3 bunu zaten >=0.26.0,<0.26.1
+# olarak sabitler — asagidaki satir yalnizca NIYETI belgeler ve catismaz.
+# (Kopru `selftest` bunu ayrica denetler ve anlasilir bir hata verir.)
+scikit-image>=0.26
+
+numpy
+Pillow

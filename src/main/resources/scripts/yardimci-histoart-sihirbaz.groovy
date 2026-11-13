@@ -130,7 +130,28 @@ def applyCacheEnv = { pb ->
         env.put('PYTHONIOENCODING', 'utf-8')   // boru çıktısı ANSI kod sayfasına düşmesin (ş/ğ/İ içeren yollar)
     } catch (Throwable ignore) {}
 }
-// Köprü betiğini proje klasörüne göre bul (tercih boşsa): <proje>/python/histoart/ ya da ../handson/python/histoart/
+def extractBundledBridge = { String rel ->
+    try {
+        def cl = null
+        try { cl = this.getClass().getClassLoader() } catch (Throwable ignore) {}
+        def cls = null
+        try { cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, cl) } catch (Throwable ignore) {}
+        if (cls == null) {
+            try {
+                def extCl = qupath.lib.gui.QuPathGUI.getExtensionCatalogManager()?.getExtensionClassLoader()
+                if (extCl != null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, extCl)
+            } catch (Throwable ignore) {}
+        }
+        if (cls == null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
+        def p = cls.getMethod('extractBundledPythonBridge', String, java.nio.file.Path).invoke(null, rel, atolyeDataRoot().toPath())
+        if (p != null) {
+            def f = p.toFile()
+            if (f.isFile()) return f.getAbsolutePath()
+        }
+    } catch (Throwable ignore) {}
+    return ''
+}
+// Köprü betiğini proje klasörüne göre bul (tercih boşsa): <proje>/python/histoart/ ya da JAR paketi
 def detectBridge = { ->
     try {
         def project = QP.getProject()
@@ -141,7 +162,7 @@ def detectBridge = { ->
             for (r in roots) { def f = new File(r, 'python/histoart/histoart_bridge.py'); if (f.isFile()) return f.getAbsolutePath() }
         }
     } catch (Throwable ignore) {}
-    return ''
+    return extractBundledBridge('python/histoart/histoart_bridge.py')
 }
 
 def loadConfig = { ->
@@ -752,7 +773,7 @@ render = { ->
         def miss = configMissing(cfg)
         addGuidance('HistoART köprüsü bir Python ortamı gerektirir. Aşağıdakiler eksik/geçersiz:\n  • ' +
             (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
-            '\n\n② ile "histoart" ortamını kurun, sonra köprü dosyasını (histoart_bridge.py) gösterin.')
+            '\n\n② ile "histoart" ortamını kurun (histoart_bridge.py eklentiyle birlikte gelir; özel yol için "Yapılandır ▶").')
         actions.add(navButton('Kapat', { stage.close() }))
         actions.add(navButton('② Ortamı kur', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar ve "histoart" kaydını vurgular'))
         actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))

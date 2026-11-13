@@ -1,0 +1,13 @@
+# MIDOG 2025 Track-1 FCOS mitoz dedektörü köprüsü (fcos_runner.py) bağımlılıkları.
+# Kurulum: Atölye Python ortam yöneticisi → "MIDOG25 FCOS — mitoz dedektörü" (env id: midog-fcos)
+# torch/torchvision, CUDA için uv --torch-backend=auto ile kurulur.
+torch>=2.1
+torchvision>=0.16
+numpy
+Pillow
+# Referans kodunun (MIDOG25_T1_reference_docker, çalışma anında indirilir) import ettikleri:
+SimpleITK
+pyyaml
+tqdm
+# İsteğe bağlı büyük-TIFF yedeği (PIL okuyamazsa):
+tifffile

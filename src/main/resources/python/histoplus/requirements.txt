@@ -1,0 +1,30 @@
+# HistoPLUS köprüsü (histoplus_runner.py) için ortam - Atölye Python ortam yöneticisindeki
+# "histoplus" girdisiyle AYNI paketler. Elle kurulum (uv, Windows):
+#   uv venv <veri-kökü>\runtimes\histoplus\.venv --python 3.12
+#   uv pip install --python <veri-kökü>\runtimes\histoplus\.venv\Scripts\python.exe --torch-backend=auto -r requirements.txt
+# NVIDIA GPU yoksa --torch-backend satırını ÇIKARIN (standart PyPI tekerleği): PyTorch CPU indeksinde
+# xformers yoktur, "--torch-backend=cpu" ile çözüm bulunamaz. CUDA 11.8 indeksinde de xformers 0.0.31 yoktur.
+#
+# HistoPLUS kodu ve ağırlıkları CC BY-NC-ND 4.0 (Owkin) - bu depoda PAKETLENMEZ; kod aşağıdaki sabit
+# commit'ten ortama kurulur, ağırlıklar (Owkin-Bioptimus/histoplus, KAPILI) sihirbazdan ayrıca alınır.
+# Sürümler upstream uv.lock'a sabittir (sabitlenmezse uv pandas 3 / OpenCV 5 / huggingface-hub 1.x çözer).
+histoplus @ https://github.com/owkin/histoplus/archive/576b94e528791c9f22c4d755bee01ec9a5743558.zip
+torch==2.7.1
+torchvision==0.22.1
+xformers==0.0.31.post1
+timm==1.0.8
+numpy==2.2.6
+pandas==2.3.1
+opencv-python-headless==4.12.0.88
+scikit-image==0.25.2
+shapely==2.1.1
+huggingface-hub==0.33.4
+joblib==1.5.1
+scipy==1.15.3
+pillow==11.3.0
+openslide-python==1.4.2
+openslide-bin==4.0.0.8
+typer==0.16.0
+pyyaml==6.0.2
+tqdm==4.67.1
+loguru==0.7.3

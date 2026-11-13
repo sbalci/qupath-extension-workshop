@@ -1,0 +1,28 @@
+# CytoFormer köprüsü (cytoformer_runner.py) için ortam - Atölye Python ortam yöneticisindeki
+# "cytoformer" girdisiyle AYNI paketler. Elle kurulum (uv):
+#   uv venv <veri-kökü>\runtimes\cytoformer\.venv --python 3.11
+#   uv pip install --python <veri-kökü>\runtimes\cytoformer\.venv\Scripts\python.exe --torch-backend=auto -r requirements.txt
+#
+# CytoFormer kodu Penn Academic Software License Agreement ile lisanslıdır (araştırma/eğitim
+# amaçlı, dağıtım yasak) - bu depoda/ortamda PAKETLENMEZ. `cytoformer_runner.py fetch-code
+# --accept-license` 8 sabit dosyayı GitHub'dan çalışma anında indirir ve sha256 ile doğrular;
+# upstream'in `scripts/infer.py` betiği ayrı bir süreç olarak çalıştırılır, hiçbir zaman import
+# edilmez.
+torch>=2.1
+
+# ⚠️ torchvision 0.2.0 tuzağı: upstream'in requirements.txt dosyası torchvision'ı listelemez.
+# timm 1.0.29, import anında `timm.layers.create_norm` içinden `torchvision.ops`u içe aktarır;
+# uv --torch-backend=auto bu isim çakışmasıyla torchvision'ı SABİTLENMEMİŞ bir bağımlılık olarak
+# görüp 2018 tarihli saf-Python torchvision 0.2.0'a düşürebilir (bu sürümde `ops` alt modülü
+# yoktur) -> `ModuleNotFoundError: torchvision.ops`. Alt sınır burada AÇIKÇA verilir.
+torchvision>=0.16
+
+# timm 1.1 mimari değişikliği riski taşır (henüz doğrulanmadı); üst sınır kilitlenmiştir.
+# timm>=1.0.9, UNI2-h mimarisinin gerektirdiği timm.layers.SwiGLUPacked'i sağlar.
+timm>=1.0.9,<1.1
+
+numpy>=1.24
+pandas>=2.0        # parquet -> TSV dönüşümü
+pyarrow>=12.0       # upstream infer.py çıktısı her zaman parquet'tir
+Pillow>=9.5
+huggingface_hub>=0.23   # yalnızca `fetch-weights` (checkpoint.pth + organ_celltype_map.json)

@@ -1,0 +1,7 @@
+# OME-Zarr / OME-NGFF depo inceleyici (inspect_omezarr.py) bagimliliklari.
+# Salt-okur: bir .ome.zarr deposunu acar, piramit/eksen/parca bilgisini yazar.
+# WSI dosyasi acmaz — openslide GEREKMEZ.
+ome-zarr>=0.9
+zarr>=2.16
+dask>=2023.5
+numpy>=1.24

@@ -97,9 +97,38 @@ def applyCacheEnv = { pb ->
 def hepatoBase = { -> new File(atolyeDataRoot(), 'hepatocyte') }
 def hepatoBridgeFile = { -> new File(new File(hepatoBase(), HEPATO_ZIP_TOP), HEPATO_BRIDGE_SUB) }
 
+def extractBundledBridge = { String rel ->
+    try {
+        def cl = null
+        try { cl = this.getClass().getClassLoader() } catch (Throwable ignore) {}
+        def cls = null
+        try { cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, cl) } catch (Throwable ignore) {}
+        if (cls == null) {
+            try {
+                def extCl = qupath.lib.gui.QuPathGUI.getExtensionCatalogManager()?.getExtensionClassLoader()
+                if (extCl != null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, extCl)
+            } catch (Throwable ignore) {}
+        }
+        if (cls == null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
+        def p = cls.getMethod('extractBundledPythonBridge', String, java.nio.file.Path).invoke(null, rel, atolyeDataRoot().toPath())
+        if (p != null) {
+            def f = p.toFile()
+            if (f.isFile()) return f.getAbsolutePath()
+        }
+    } catch (Throwable ignore) {}
+    return ''
+}
+def detectBridge = { ->
+    def p = prefs.get(PREF_BRIDGE, '')
+    if (p?.trim() && new File(p.trim()).isFile()) return p.trim()
+    def hb = hepatoBridgeFile()
+    if (hb.isFile()) return hb.getAbsolutePath()
+    return extractBundledBridge('hepatocyte/hepatocyte_qupath_inference.py')
+}
+
 def loadConfig = { ->
-    [ python : ({ -> def __p = prefs.get(PREF_PYTHON, ''); if (__p?.trim()) return __p; def __r = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('py.hepatocyte', ''); if (__r?.trim() && new File(__r.trim()).isFile()) return __r.trim(); def __v = new File(new File(atolyeDataRoot(), 'runtimes'), 'hepatocyte/.venv'); def __w = new File(__v, 'Scripts/python.exe'); def __n = new File(__v, 'bin/python'); __w.isFile() ? __w.getAbsolutePath() : (__n.isFile() ? __n.getAbsolutePath() : '') }).call(),
-      bridge    : prefs.get(PREF_BRIDGE,   ''),
+    [ python : ({ -> def __p = prefs.get(PREF_PYTHON, ''); if (__p?.trim() && new File(__p.trim()).isFile()) return __p.trim(); def __r = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/common').get('py.hepatocyte', ''); if (__r?.trim() && new File(__r.trim()).isFile()) return __r.trim(); def __v = new File(new File(atolyeDataRoot(), 'runtimes'), 'hepatocyte/.venv'); def __w = new File(__v, 'Scripts/python.exe'); def __n = new File(__v, 'bin/python'); __w.isFile() ? __w.getAbsolutePath() : (__n.isFile() ? __n.getAbsolutePath() : '') }).call(),
+      bridge    : detectBridge(),
       model     : prefs.get(PREF_MODEL,    ''),
       device    : prefs.get(PREF_DEVICE,   'auto'),
       patch     : prefs.get(PREF_PATCH,    '512'),

@@ -1,0 +1,28 @@
+# Hepatocyte koprusu — QuPath alt-kumesi (sbalci/hepatocyte-app: hepatocyte_qupath_inference.py)
+#
+# NOT: Kopru betigi (hepatocyte_qupath_inference.py) ve model (baseline-1-jit.pth, 🔒 talep uzerine)
+#      ATOLYE DEPOSUNDA DEGILDIR. Hepatosit sihirbazi bunlari sizin icin edinir:
+#        ② Depoyu indir  → sbalci/hepatocyte-app'i indirir/acar (kopru yolu otomatik)
+#        ③ Model sec     → bakimcidan edindiginiz .pth'yi gosterirsiniz
+#
+# Bu dosya yalniz venv BAGIMLILIKLARINI belgeler (QuPath is akisi icin gereken alt-kume).
+# En kolay kurulum (tek tik):  Atolye Python ortam yoneticisi → "Hepatocyte".
+# Elle kurulum (ornek, GPU/CUDA):
+#   py -3.11 -m venv .venv-hepatocyte
+#   .venv-hepatocyte\Scripts\python.exe -m pip install --upgrade pip
+#   .venv-hepatocyte\Scripts\python.exe -m pip install --index-url https://download.pytorch.org/whl/cu126 "torch==2.7.0"
+#   .venv-hepatocyte\Scripts\python.exe -m pip install -r requirements.txt
+# CPU icin torch satirini --index-url https://download.pytorch.org/whl/cpu ile kurun.
+#
+# Surumler sbalci/hepatocyte-app requirements.txt ile hizalidir (QuPath cikarimi icin gereken alt-kume;
+# flask/matplotlib/scikit-image/scipy/tqdm — batch/viewer icindir, QuPath kopru icin GEREKMEZ).
+torch==2.7.0
+numpy~=2.2.6
+pandas==2.2.3
+pillow==11.2.1
+openslide-python==1.4.3
+openslide-bin==4.0.0.13
+opencv-python-headless==4.13.0.92
+albumentations~=2.0.8
+shapely==2.1.2
+openpyxl==3.1.5

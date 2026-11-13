@@ -148,6 +148,27 @@ def detectPython = { ->
     if (an.isFile()) return an.getAbsolutePath()
     return ''
 }
+def extractBundledBridge = { String rel ->
+    try {
+        def cl = null
+        try { cl = this.getClass().getClassLoader() } catch (Throwable ignore) {}
+        def cls = null
+        try { cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, cl) } catch (Throwable ignore) {}
+        if (cls == null) {
+            try {
+                def extCl = qupath.lib.gui.QuPathGUI.getExtensionCatalogManager()?.getExtensionClassLoader()
+                if (extCl != null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, extCl)
+            } catch (Throwable ignore) {}
+        }
+        if (cls == null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
+        def p = cls.getMethod('extractBundledPythonBridge', String, java.nio.file.Path).invoke(null, rel, atolyeDataRoot().toPath())
+        if (p != null) {
+            def f = p.toFile()
+            if (f.isFile()) return f.getAbsolutePath()
+        }
+    } catch (Throwable ignore) {}
+    return ''
+}
 def detectBridge = { ->
     try {
         def project = QP.getProject()
@@ -158,7 +179,7 @@ def detectBridge = { ->
             for (r in roots) { def f = new File(r, 'python/nuclick/nuclick_bridge.py'); if (f.isFile()) return f.getAbsolutePath() }
         }
     } catch (Throwable ignore) {}
-    return ''
+    return extractBundledBridge('python/nuclick/nuclick_bridge.py')
 }
 
 def loadConfig = { ->

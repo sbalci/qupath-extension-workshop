@@ -412,6 +412,25 @@ downsamples.eachWithIndex { d, i ->
     levelLines << String.format(java.util.Locale.US, "  Düzey %d: downsample %.0f → %,d × %,d px", i, d, lw, lh)
 }
 
+def bundledInspectScript = { ->
+    try {
+        def cl = null
+        try { cl = this.getClass().getClassLoader() } catch (Throwable ignore) {}
+        def cls = null
+        try { cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, cl) } catch (Throwable ignore) {}
+        if (cls == null) {
+            try {
+                def extCl = qupath.lib.gui.QuPathGUI.getExtensionCatalogManager()?.getExtensionClassLoader()
+                if (extCl != null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, extCl)
+            } catch (Throwable ignore) {}
+        }
+        if (cls == null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
+        def p = cls.getMethod('extractBundledPythonBridge', String).invoke(null, 'omezarr/inspect_omezarr.py')
+        if (p != null) return p.toString()
+    } catch (Throwable ignore) {}
+    return 'handson/python/omezarr/inspect_omezarr.py'
+}.call()
+
 showResultWindow(
     "OME-Zarr dışa aktarma — Tamamlandı 🧊",
     String.format(java.util.Locale.US,
@@ -433,7 +452,7 @@ showResultWindow(
         "  Süre        : %.1f sn\n\n" +
         "📝 Sonraki adım:\n" +
         "  • Depoyu QuPath'e geri sürükleyerek açabilirsiniz (Bio-Formats / OME-Zarr okuyucu).\n" +
-        "  • Python'da inceleyin: handson/python/omezarr/inspect_omezarr.py inspect <depo>\n" +
+        "  • Python'da inceleyin: %s inspect <depo>\n" +
         "  • Yöntem ve ekosistem: Ekler → OME-Zarr / OME-NGFF.\n\n" +
         "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
         (selectedScope ? "Seçili anotasyon(lar) (${selectedAnns.size()})".toString() : "Tüm görüntü"),
@@ -444,7 +463,8 @@ showResultWindow(
         downsamples.length,
         levelLines.join("\n"),
         mb,
-        elapsed
+        elapsed,
+        bundledInspectScript
     )
 )
 

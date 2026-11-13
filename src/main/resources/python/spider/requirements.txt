@@ -1,0 +1,16 @@
+# SPIDER doku siniflandirici koprusu — Python bagimliliklari
+# Kurulum (ornek, GPU/CUDA 12.1):
+#   py -3.11 -m venv .venv-spider
+#   .venv-spider\Scripts\python.exe -m pip install --upgrade pip
+#   .venv-spider\Scripts\python.exe -m pip install --index-url https://download.pytorch.org/whl/cu121 "torch>=2.1"
+#   .venv-spider\Scripts\python.exe -m pip install -r requirements.txt
+# CPU icin torch satirini --index-url https://download.pytorch.org/whl/cpu ile kurun.
+#
+# NOT: transformers>=4.40 — SPIDER modelleri trust_remote_code=True + ozel model
+# kodu (predicted_class_names) kullanir; daha eski surumler uyumsuz olabilir.
+# huggingface_hub: KAPILI modeli indirmek icin 'huggingface-cli login' gerekir.
+torch>=2.1
+transformers>=4.40.0
+huggingface_hub>=0.23
+Pillow>=10.0
+numpy>=1.24

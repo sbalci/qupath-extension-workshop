@@ -1,0 +1,20 @@
+# TIA Toolbox temel-islev koprusu (boya normalizasyonu + doku maskesi)
+# ---------------------------------------------------------------------
+# Bu kopru WSI ACMAZ — yalniz QuPath'in disa aktardigi PNG'leri okur; bu yuzden
+# openslide-python GEREKMEZ. Asagidaki paketler boya normalizasyonu ve doku
+# maskesi icin yeterlidir. (tiatoolbox kurulumu torch/opencv gibi ek bagimliliklar
+# da getirir — sorun degil; boya normalizasyonu/doku maskesi torch KULLANMAZ.)
+#
+# Python 3.11-3.14 desteklenir.
+# Kurulum:
+#   python -m venv .venv-tiatoolbox
+#   .venv-tiatoolbox\Scripts\activate          (Windows)
+#   pip install -r requirements.txt
+#
+# Windows on-kosul (pip oncesi, OpenJPEG + SQLite ikilileri icin):
+#   conda install -c conda-forge openjpeg sqlite
+# ya da resmi yonergeler: https://tia-toolbox.readthedocs.io/en/stable/installation.html
+
+tiatoolbox>=2.0
+numpy
+pillow

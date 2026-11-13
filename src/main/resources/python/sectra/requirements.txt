@@ -1,0 +1,12 @@
+# Sectra PACS -> QuPath anotasyon köprüsü — bağımlılıklar
+# Tek gerçek bağımlılık pydicom'dur. numpy / geojson / openslide GEREKMEZ:
+# çember matematiği math ile, GeoJSON düz dict + json ile yazılır, görüntü
+# boyutları QuPath'ten (--width/--height) geçirilir.
+#
+# Kurulum (atölye kökünden):
+#   py -3.11 -m venv .venv-sectra
+#   .venv-sectra\Scripts\python.exe -m pip install --upgrade pip
+#   .venv-sectra\Scripts\python.exe -m pip install -r handson\python\sectra\requirements.txt
+#   .venv-sectra\Scripts\python.exe handson\python\sectra\sectra_dicom_to_qupath.py selftest
+
+pydicom>=2.4

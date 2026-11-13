@@ -150,6 +150,27 @@ def detectPython = { ->
     if (an.isFile()) return an.getAbsolutePath()
     return ''
 }
+def extractBundledBridge = { String rel ->
+    try {
+        def cl = null
+        try { cl = this.getClass().getClassLoader() } catch (Throwable ignore) {}
+        def cls = null
+        try { cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, cl) } catch (Throwable ignore) {}
+        if (cls == null) {
+            try {
+                def extCl = qupath.lib.gui.QuPathGUI.getExtensionCatalogManager()?.getExtensionClassLoader()
+                if (extCl != null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, extCl)
+            } catch (Throwable ignore) {}
+        }
+        if (cls == null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
+        def p = cls.getMethod('extractBundledPythonBridge', String, java.nio.file.Path).invoke(null, rel, atolyeDataRoot().toPath())
+        if (p != null) {
+            def f = p.toFile()
+            if (f.isFile()) return f.getAbsolutePath()
+        }
+    } catch (Throwable ignore) {}
+    return ''
+}
 def detectRunner = { ->
     def project = QP.getProject()
     def roots = []
@@ -162,7 +183,7 @@ def detectRunner = { ->
         def f = new File(r, RUNNER_REL)
         if (f.isFile()) return f.getAbsolutePath()
     }
-    return ''
+    return extractBundledBridge(RUNNER_REL)
 }
 
 // ── Model dosyası: yerel klasör ya da veri köküne indirme; SHA-256 sonucu önbellekte ──
@@ -985,7 +1006,7 @@ render = { ->
         statusLine(st.pythonOk, st.pythonOk ? ('Python: ' + cfg.python) :
             'Python ortamı (classpose) kurulu değil — ortam yöneticisinde "Classpose — H&E hücre fenotipleme" satırını kurun (~6 GB, GPU torch).')
         statusLine(st.runnerOk, st.runnerOk ? ('Köprü: ' + cfg.runner) :
-            'Köprü betiği bulunamadı (handson/python/classpose/classpose_runner.py) — atölye projesini açın ya da "Köprü seç…".')
+            'Köprü betiği bulunamadı (classpose_runner.py eklentiyle birlikte gelir — özel yol için "Köprü seç…").')
         statusLine(st.envOk, st.envOk ? 'Classpose kurulumu tamam (predict_wsi içe aktarıldı).' :
             (cfg.entrypoints == '0' ? 'Classpose kurulumu eksik — "Kurulumu tamamla" (tek sefer: cellpose 4.0.8 + Classpose alt modülleri, ~1 MB).' :
                 (cfg.entrypoints?.trim() ? 'Classpose ortamı son denetimden sonra değişmiş — "Denetle" ile yeniden denetleyin.' :

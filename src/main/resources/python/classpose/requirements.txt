@@ -1,0 +1,13 @@
+# Classpose koprusu (classpose_runner.py) icin ortam - Atolye Python ortam yoneticisindeki
+# "classpose" girdisiyle AYNI paketler. Elle kurulum (uv):
+#   uv venv <veri-koku>\runtimes\classpose\.venv --python 3.13
+#   uv pip install --python <veri-koku>\runtimes\classpose\.venv\Scripts\python.exe --torch-backend=auto -r requirements.txt
+#   <veri-koku>\runtimes\classpose\.venv\Scripts\python.exe classpose_runner.py prepare --uv <veri-koku>\uv\uv.exe
+# Son komut (prepare) sart: upstream paketlemesi (packages = ["classpose"]) entrypoints/grandqc alt paketlerini kurmaz;
+# 'prepare' ayni commit'in kaynagini indirip yalniz bu satiri duzelterek yeniden kurar (kod yine paketlenmez).
+# Classpose kodu CC BY-NC 4.0 - bu depoda paketlenmez; asagidaki satir onu kurulum aninda indirir.
+classpose @ https://github.com/sohmandal/classpose/archive/f6aeadd54729f6b9e50db620af68616f202d7a72.zip
+# Bu commit cellpose.models.cache_CPSAM_model_path ister; cellpose 4.2'de yok (upstream uv.lock: 4.0.8).
+cellpose==4.0.8
+torch
+torchvision

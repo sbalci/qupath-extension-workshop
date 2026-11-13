@@ -162,6 +162,27 @@ def detectPython = { ->
     if (an.isFile()) return an.getAbsolutePath()
     return ''
 }
+def extractBundledBridge = { String rel ->
+    try {
+        def cl = null
+        try { cl = this.getClass().getClassLoader() } catch (Throwable ignore) {}
+        def cls = null
+        try { cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, cl) } catch (Throwable ignore) {}
+        if (cls == null) {
+            try {
+                def extCl = qupath.lib.gui.QuPathGUI.getExtensionCatalogManager()?.getExtensionClassLoader()
+                if (extCl != null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, extCl)
+            } catch (Throwable ignore) {}
+        }
+        if (cls == null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
+        def p = cls.getMethod('extractBundledPythonBridge', String, java.nio.file.Path).invoke(null, rel, atolyeDataRoot().toPath())
+        if (p != null) {
+            def f = p.toFile()
+            if (f.isFile()) return f.getAbsolutePath()
+        }
+    } catch (Throwable ignore) {}
+    return ''
+}
 def detectRunner = { ->
     def project = QP.getProject()
     def roots = []
@@ -174,7 +195,7 @@ def detectRunner = { ->
         def f = new File(r, RUNNER_REL)
         if (f.isFile()) return f.getAbsolutePath()
     }
-    return ''
+    return extractBundledBridge(RUNNER_REL)
 }
 
 // ── Ağırlıklar: yerel klasör ya da veri köküne indirme; SHA-256 sonucu önbellekte ──
@@ -1054,7 +1075,7 @@ render = { ->
         statusLine(st.pythonOk, st.pythonOk ? ('Python: ' + cfg.python) :
             'Python ortamı (histoplus) kurulu değil — ortam yöneticisinde "HistoPLUS — H&E hücre segmentasyonu" satırını kurun (~6 GB, GPU torch).')
         statusLine(st.runnerOk, st.runnerOk ? ('Köprü: ' + cfg.runner) :
-            'Köprü betiği bulunamadı (handson/python/histoplus/histoplus_runner.py) — atölye projesini açın ya da "Köprü seç…".')
+            'Köprü betiği bulunamadı (histoplus_runner.py eklentiyle birlikte gelir — özel yol için "Köprü seç…").')
         statusLine(st.envOk, st.envOk ? 'Denetim tamam (upstream yapı taşları içe aktarıldı).' :
             (cfg.pipeline == '0' ? 'Denetim başarısız — ortamı ortam yöneticisinden yeniden kurun, sonra "Denetle".' :
                 (cfg.pipeline?.trim() ? 'Ortam son denetimden sonra değişmiş — "Denetle" ile yeniden denetleyin.' : 'Ortam henüz denetlenmedi — "Denetle".')))

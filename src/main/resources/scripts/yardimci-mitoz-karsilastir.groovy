@@ -215,6 +215,27 @@ def detectPythonFor = { String envId ->
     if (an.isFile()) return an.getAbsolutePath()
     return ''
 }
+def extractBundledBridge = { String rel ->
+    try {
+        def cl = null
+        try { cl = this.getClass().getClassLoader() } catch (Throwable ignore) {}
+        def cls = null
+        try { cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, cl) } catch (Throwable ignore) {}
+        if (cls == null) {
+            try {
+                def extCl = qupath.lib.gui.QuPathGUI.getExtensionCatalogManager()?.getExtensionClassLoader()
+                if (extCl != null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, extCl)
+            } catch (Throwable ignore) {}
+        }
+        if (cls == null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
+        def p = cls.getMethod('extractBundledPythonBridge', String, java.nio.file.Path).invoke(null, rel, atolyeDataRoot().toPath())
+        if (p != null) {
+            def f = p.toFile()
+            if (f.isFile()) return f.getAbsolutePath()
+        }
+    } catch (Throwable ignore) {}
+    return ''
+}
 def detectRunnerFor = { String runnerRel ->
     def project = QP.getProject()
     def roots = []
@@ -224,7 +245,7 @@ def detectRunnerFor = { String runnerRel ->
         if (handson.getParentFile() != null) roots << new File(handson.getParentFile(), 'handson')
     }
     for (r in roots) { def f = new File(r, runnerRel); if (f.isFile()) return f.getAbsolutePath() }
-    return ''
+    return extractBundledBridge(runnerRel)
 }
 // Bir dedektör kurulu mu? (python + köprü var)
 def detectorReady = { d -> def py = detectPythonFor(d.envId); def rn = detectRunnerFor(d.runnerRel); return (py && rn) }

@@ -1,0 +1,24 @@
+# HistoART koprusu — QuPath atolyesi
+#
+# Bu dosya BELGE amaclidir. Atolyede ortam, "Atolye Python ortam yoneticisi"
+# sihirbazindaki 'histoart' kaydiyla (uv) kurulur — CUDA surumu orada
+# torchBackend:'auto' ile cozulur.
+#
+# Upstream requirements.txt'teki nvidia-* tekerlekleri ve triton BILEREK
+# alinmamistir: onlar Linux'ta cozulmus bir kilit dosyasidir; torch'un kendi
+# CUDA bagimliliklari uv tarafindan getirilir.
+#
+# KBA varyanti (pyfeats + mahotas + SVM) KOPRULENMEZ — bkz. histoart_bridge.py
+# basligindaki not; bu yuzden pyfeats/mahotas burada YOKTUR.
+
+torch>=2.1
+torchvision>=0.16
+numpy>=1.24
+Pillow>=10.0
+
+# Yalniz FMA varyanti icin (ince ayarli UNI omurgasi).
+# UNI KAPILIDIR: CC-BY-NC-ND 4.0 + HuggingFace erisim onayi gerekir.
+timm>=1.0.16
+
+# Agirlik indirmesi (didsr/HistoArt — ungated).
+huggingface_hub>=0.23

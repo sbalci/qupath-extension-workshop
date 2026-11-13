@@ -211,6 +211,27 @@ def detectPython = { ->
     if (an.isFile()) return an.getAbsolutePath()
     return ''
 }
+def extractBundledBridge = { String rel ->
+    try {
+        def cl = null
+        try { cl = this.getClass().getClassLoader() } catch (Throwable ignore) {}
+        def cls = null
+        try { cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, cl) } catch (Throwable ignore) {}
+        if (cls == null) {
+            try {
+                def extCl = qupath.lib.gui.QuPathGUI.getExtensionCatalogManager()?.getExtensionClassLoader()
+                if (extCl != null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources', true, extCl)
+            } catch (Throwable ignore) {}
+        }
+        if (cls == null) cls = Class.forName('io.github.sbalci.qupath.workshop.WorkshopResources')
+        def p = cls.getMethod('extractBundledPythonBridge', String, java.nio.file.Path).invoke(null, rel, atolyeDataRoot().toPath())
+        if (p != null) {
+            def f = p.toFile()
+            if (f.isFile()) return f.getAbsolutePath()
+        }
+    } catch (Throwable ignore) {}
+    return ''
+}
 def detectRunner = { ->
     def project = QP.getProject()
     def roots = []
@@ -220,7 +241,7 @@ def detectRunner = { ->
         if (handson.getParentFile() != null) roots << new File(handson.getParentFile(), 'handson')
     }
     for (r in roots) { def f = new File(r, RUNNER_REL); if (f.isFile()) return f.getAbsolutePath() }
-    return ''
+    return extractBundledBridge(RUNNER_REL)
 }
 
 // ── SHA-256 doğrulama önbelleği (2.7 GB dosya bir kez hesaplanır; yol+boyut+mtime damgası) ──
@@ -1020,7 +1041,7 @@ render = { ->
 
         section('① Python ortamı')
         statusLine(st.pythonOk, st.pythonOk ? ('Python: ' + cfg.python) : 'Python ortamı (cytoformer) kurulu değil — ortam yöneticisinde "CytoFormer — H&E hücre tipi sınıflama" satırını kurun (~5 GB, GPU önerilir).')
-        statusLine(st.runnerOk, st.runnerOk ? ('Köprü: ' + cfg.runner) : 'Köprü betiği bulunamadı (handson/python/cytoformer/cytoformer_runner.py) — atölye projesini açın ya da "Köprü seç…".')
+        statusLine(st.runnerOk, st.runnerOk ? ('Köprü: ' + cfg.runner) : 'Köprü betiği bulunamadı (cytoformer_runner.py eklentiyle birlikte gelir — özel yol için "Köprü seç…").')
         rowOf([navButton('Python ortam yöneticisi…', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar; "Sihirbaza dön ▶" ile geri gelirsiniz'),
                navButton('Denetle', { startSelftest() }, 'cytoformer_runner.py selftest — paketler + CUDA + kod/model durumu'),
                navButton('Python seç…', { def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'python.exe seçin'); if (x != null) { putPref(PREF_PYTHON, x.getAbsolutePath()); later { render() } } }),

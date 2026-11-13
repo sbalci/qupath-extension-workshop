@@ -1,0 +1,12 @@
+# Sanofi EFTD atipik-mitoz sınıflandırıcı köprüsü (eftd_runner.py) bağımlılıkları.
+# Kurulum: Atölye Python ortam yöneticisi → "Sanofi EFTD — atipik sınıflandırıcı" (env id: sanofi-eftd)
+# ⚠️ DINOv3-H+ omurgası HuggingFace'te KAPILIDIR — Meta lisansı + `huggingface-cli login` gerekir (ayrı, otomatik değil).
+torch>=2.1
+torchvision>=0.16
+transformers>=4.56          # DINOv3 desteği
+peft>=0.11                  # LoRA
+safetensors>=0.4
+omegaconf                   # release config.yaml
+huggingface_hub>=0.23
+numpy
+Pillow

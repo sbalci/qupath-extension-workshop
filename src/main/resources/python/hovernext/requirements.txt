@@ -1,0 +1,28 @@
+# HoVer-NeXt köprüsü (hovernext_runner.py) bağımlılıkları.
+# Sürümler upstream hover_next_inference requirements.txt + README'sine (torch 2.1.1 /
+# torchvision 0.16.1) sabitlenmiştir; yalnızca çıkarım yolunda import edilen paketler alındı.
+# Kurulum: Atölye Python ortam yöneticisi → "HoVer-NeXt — çekirdek segmentasyon + 7 sınıf" (env id: hovernext)
+# torch/torchvision CUDA 12.1 tekerleğiyle kurulur (uv --torch-backend=cu121).
+# ⚠️ NVIDIA CUDA GPU ZORUNLU. Python 3.11 (pylibCZIrw 4.1.3 <3.12 ister).
+torch==2.1.1
+torchvision==0.16.1
+timm==0.9.6
+segmentation-models-pytorch==0.1.0
+# pretrainedmodels (smp 0.1.0 bağımlılığı) six'i bildirmeden kullanır:
+six
+# zarr 2.16 / numcodecs 0.12 / torch 2.1 → NumPy 1.x
+numpy<2
+zarr==2.16.1
+numcodecs==0.12.1
+scikit-image==0.22.0
+scipy==1.11.4
+opencv-python==4.8.1.78
+Pillow
+openslide-python==1.4.6
+openslide-bin==4.0.1.2
+geojson==3.1.0
+shapely==2.0.2
+toml==0.10.2
+requests
+tqdm
+pylibCZIrw==4.1.3
