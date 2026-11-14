@@ -422,6 +422,19 @@ javafx.application.Platform.runLater {
             int cytoCh = spCyto.getValue() as int
             int nucCh = spNuc.getValue() as int
 
+            def selNow = QP.getSelectedObjects().findAll { it.isAnnotation() }
+            int nPrev = selNow.collect { ann -> ann.getChildObjects().count { it.isDetection() } as int }.sum(0) as int
+            if (nPrev > 0) {
+                boolean ok = Dialogs.showConfirmDialog('Önceki hücre tespitleri değiştirilecek',
+                    String.format(java.util.Locale.US,
+                        'Seçili anotasyon(lar)da zaten %,d hücre tespiti bulunuyor.\n' +
+                        'Yeniden çalıştırma bu anotasyonlardaki mevcut tespitleri yeni Cellpose çıktısıyla değiştirecek.\n\nDevam edilsin mi?', nPrev))
+                if (!ok) {
+                    status.setStyle(''); status.setText('İptal edildi — mevcut hücre tespitleri korundu.')
+                    return
+                }
+            }
+
             runBtn.setDisable(true)
             status.setStyle(''); status.setText('… Cellpose çalışıyor (ilk çalıştırmada model indirilebilir)…')
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
@@ -433,7 +446,7 @@ javafx.application.Platform.runLater {
                         status.setStyle(''); status.setText('Tamamlandı ✅ — parametreleri değiştirip tekrar çalıştırabilirsiniz.')
                         resultArea.setText(res.text)
                     } else {
-                        status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + res.error)
+                        status.setStyle('-fx-text-fill: #c0392b;'); status.setText('⚠ ' + res.error)
                     }
                 }
             }, 'AtolyeCellpose-Run')

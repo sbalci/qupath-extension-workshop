@@ -280,14 +280,13 @@ public final class WorkshopSettingsDialog {
             // a mistyped value ("0.2 5", "yirmi") was accepted.
             String rejected = tf.getText();
             tf.setText(String.valueOf(p.getValue()));
-            badge.setText("geçersiz sayı — eski değer korundu");
+            badge.setText("Kaydedilmedi — eski değer korundu");
             badge.setStyle("-fx-text-fill: #b94a00; -fx-font-size: 10px; -fx-font-weight: bold;");
             badge.setTooltip(new Tooltip("\"" + rejected + "\" kabul edilmedi. "
-                    + "Örnek biçim: 0.25 (ondalık için nokta veya virgül kullanabilirsiniz).\n" + nfe.getMessage()));
-            badge.setText("Kaydedilmedi — eski değer korundu");
+                    + "Örnek biçim: 0,25 veya 0.25 (ondalık için virgül ya da nokta kullanabilirsiniz).\n" + nfe.getMessage()));
             tf.setAccessibleHelp(nfe.getMessage());
             warningLabel.setText(labelFor(key) + ": " + (nfe instanceof NumberFormatException
-                    ? "Sayı girin; örneğin 0,25. Eski değer korundu." : nfe.getMessage()));
+                    ? "Sayı girin (ör. 0,25 veya 0.25). Eski değer korundu." : nfe.getMessage()));
             warningLabel.setVisible(true);
             warningLabel.setManaged(true);
             return;

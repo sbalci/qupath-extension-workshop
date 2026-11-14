@@ -463,12 +463,6 @@ def importPredictions = { File workDir, imageData, exp ->
     int nClean = 0, nArt = 0, nSkipped = 0
     def allDets = []
 
-    // Idempotent yeniden çalıştırma: önceki çalıştırmanın sentinel anotasyonu ALT TESPİTLERİYLE
-    // birlikte silinir. Aksi halde her çalıştırma binlerce tespit biriktirir (Spotiflow'un
-    // "yeniden çalıştırma eski noktaları silmez" tuzağı). Kullanıcının kendi anotasyonlarına
-    // hiç dokunulmaz — tespitler daima bu sentinelin altına yazılır.
-    hierarchy.removeObjects(hierarchy.getAnnotationObjects().findAll { it.getName() == HISTOART_SENTINEL }, false)
-
     records.each { r ->
         def g = geom[r.id]
         if (g == null || r.artifact == null) { nSkipped++; return }
@@ -484,6 +478,10 @@ def importPredictions = { File workDir, imageData, exp ->
         dist[label] = (dist.getOrDefault(label, 0)) + 1
         if (r.artifact) nArt++ else nClean++
     }
+
+    // Yıkıcı olmayan sıra: önce tüm yeni karo tespitleri doğrulandı ve oluşturuldu;
+    // şimdi önceki çalıştırmanın sentinel anotasyonu (varsa) alt tespitleriyle değiştirilir.
+    hierarchy.removeObjects(hierarchy.getAnnotationObjects().findAll { it.getName() == HISTOART_SENTINEL }, false)
 
     // Tüm karo tespitleri tek bir kilitli "HistoART KK" anotasyonunun altına yazılır:
     // tek tıkla seçilir, tek adımda silinir, yeniden çalıştırmada temiz biçimde değişir.
@@ -572,6 +570,12 @@ def persistFields = {
     try { prefs.flush() } catch (Throwable ignore) {}
 }
 
+def killTree = { proc ->
+    if (proc == null) return
+    try { proc.descendants().forEach({ h -> try { h.destroyForcibly() } catch (Throwable ignore) {} } as java.util.function.Consumer) } catch (Throwable ignore) {}
+    try { proc.destroyForcibly() } catch (Throwable ignore) {}
+}
+
 // ── Python süreci (ProcessBuilder) → satır akışı ────────────────────────────
 def runPython = { List cmd, Closure onLine ->
     def pb = new ProcessBuilder(cmd)
@@ -594,9 +598,9 @@ def runPython = { List cmd, Closure onLine ->
     } catch (Throwable ignore) {}
     boolean finished
     try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
-    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    catch (InterruptedException ie) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    if (!finished) { killTree(proc); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
+    if (cancelledRef.get()) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
     int code = proc.exitValue()
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
@@ -688,6 +692,13 @@ def startDownload = {
 def startRun = {
     def imageData = QP.getCurrentImageData()
     if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    def existingSentinel = imageData.getHierarchy().getAnnotationObjects().findAll { it.getName() == HISTOART_SENTINEL }
+    if (!existingSentinel.isEmpty() && gui != null) {
+        boolean ok = Dialogs.showConfirmDialog('Önceki HistoART sonucu değiştirilecek',
+            'Bu lamda zaten bir "' + HISTOART_SENTINEL + '" anotasyonu ve karo tahminleri bulunuyor.\n' +
+            'Yeni çalıştırma tamamlandığında önceki HistoART sonucu değiştirilecek (kendi anotasyonlarınıza dokunulmaz).\n\nDevam edilsin mi?')
+        if (!ok) return
+    }
     def cfg = loadConfig()
     def workDir = resolveWorkDir(cfg, imageData)
     cancelledRef.set(false)
@@ -822,7 +833,7 @@ render = { ->
     } else if (cur == 'CHECK_RUNNING') {
         title.setText('Bağımlılık kontrolü çalışıyor…')
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton('İptal et', { cancelledRef.set(true); killTree(processRef.get()) }))
     } else if (cur == 'CHECK_DONE') {
         title.setText(selftestOkRef.get() ? 'Bağımlılık kontrolü tamam ✅'
             : '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın')
@@ -833,7 +844,7 @@ render = { ->
         title.setText('Model ağırlıkları indiriliyor…')
         addGuidance('DLA ~94 MB × 2; FMA ~1,2 GB × 2. İlk indirmede sabırlı olun.')
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton('İptal et', { cancelledRef.set(true); killTree(processRef.get()) }))
     } else if (cur == 'DL_DONE') {
         title.setText(downloadOkRef.get() ? 'Model ağırlıkları indirildi ✅' : '⚠ İndirme BAŞARISIZ — günlüğe bakın')
         addLiveLog()
@@ -842,7 +853,7 @@ render = { ->
     } else if (cur == 'READY') {
         if (imageData == null) {
             title.setText('Görüntü açık değil')
-            addGuidance('Önce bir lam açın, sonra "⟳ Yenile". İstersen bölge anotasyonu çizin; çizmezseniz tüm lam örneklenir.')
+            addGuidance('Önce bir lam açın, sonra "⟳ Yenile". İsterseniz bölge anotasyonu çizin; çizmezseniz tüm lam örneklenir.')
             actions.add(navButton('Kapat', { stage.close() }))
             actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
             actions.add(navButton('⟳ Yenile', { render() }))
@@ -884,7 +895,7 @@ render = { ->
         title.setText(runPhaseRef.get())
         addGuidance('Python köprüsü çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton('İptal et', { cancelledRef.set(true); killTree(processRef.get()) }))
     } else if (cur == 'BUSY') {
         title.setText(busyLabelRef.get()); addGuidance('Lütfen bekleyin…'); center.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {

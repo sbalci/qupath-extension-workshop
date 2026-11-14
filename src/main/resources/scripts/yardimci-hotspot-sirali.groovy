@@ -1,12 +1,12 @@
 /**
- * Yardımcı - Sıralı Hotspot Seçici
- * -----------------------------------
+ * Yardımcı - Sıralı Yoğun Odak (Hotspot) Seçici
+ * ---------------------------------------------
  * Hedef QuPath sürümü: 0.6.0+ (atölye eklentisi ile paketlenir).
  *
  * NE YAPAR:
  *   Mevcut KARO anotasyonlarını (bir piksel sınıflandırıcı ya da ızgara betiğiyle
  *   daha önce oluşturulmuş) seçilen bir ÖLÇÜME göre büyükten küçüğe sıralar ve
- *   ilk N (top-N) karoyu "hotspot" olarak işaretler.
+ *   ilk N (top-N) karoyu "yoğun odak (hotspot)" olarak işaretler.
  *
  *   Adımlar:
  *     1. Hangi sınıfa (PathClass) ait karolara bakılacağını soran iletişim.
@@ -162,7 +162,7 @@ if (isHeadless) {
     assignHotspotClass = false
 } else {
     def defClass = classNames.contains(prefs.get('chosenClass', '')) ? prefs.get('chosenClass', '') : classNames[0]
-    chosenClass = Dialogs.showChoiceDialog("Hotspot sınıfı",
+    chosenClass = Dialogs.showChoiceDialog("Yoğun odak (hotspot) sınıfı",
         "Hangi sınıftaki karolar sıralansın?", classNames, defClass)
     if (chosenClass == null) { println "İptal edildi."; return }
 
@@ -183,7 +183,7 @@ if (isHeadless) {
         "Karolar hangi ölçüme göre sıralansın? (büyükten küçüğe)", measurementKeys, defKey)
     if (chosenKey == null) { println "İptal edildi."; return }
 
-    def nStr = Dialogs.showInputDialog("Top-N", "Kaç hotspot karosu seçilsin? (ör. 3)", prefs.get('topN', '3'))
+    def nStr = Dialogs.showInputDialog("Top-N yoğun odak", "Kaç yoğun odak (hotspot) karosu seçilsin? (ör. 3)", prefs.get('topN', '3'))
     if (nStr == null) { println "İptal edildi."; return }
     topN = nStr.trim().isInteger() ? nStr.trim().toInteger() : 3   // (eski .coerceToType(int) Integer'da yok → MissingMethodException)
     if (topN < 1) topN = 1
@@ -272,7 +272,7 @@ QP.fireHierarchyUpdate()
 def fmt      = { double v, String pat -> Double.isFinite(v) ? String.format(java.util.Locale.US, pat, v) : 'NaN' }
 def areaUnit = hasCalibration ? 'µm²' : 'px²'
 def body     = new StringBuilder()
-body << "SIRALI HOTSPOT SEÇİCİ\n"
+body << "SIRALI YOĞUN ODAK (HOTSPOT) SEÇİCİ\n"
 body << "═══════════════════════════════════════════════════\n\n"
 body << String.format(java.util.Locale.US, "Sınıf       : %s (%d karo)%n", chosenClass, tiles.size())
 body << String.format(java.util.Locale.US, "Ölçüm       : %s%n", chosenKey)
@@ -297,7 +297,7 @@ body << "\nHer top-N karosuna '${rankMeasKey}' ölçümü yazıldı (Veri dışa
 body << "Bu bir betimsel sıralama ölçümüdür; klinik kategori veya eşik üretmez.\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
-showResultWindow("Sıralı Hotspot Seçici", body.toString())
+showResultWindow("Sıralı Yoğun Odak Seçici", body.toString())
 println String.format(java.util.Locale.US,
-    "✓ Hotspot sıralama: sınıf='%s', ölçüm='%s', top-%d, ortalama=%s",
+    "✓ Yoğun odak sıralama: sınıf='%s', ölçüm='%s', top-%d, ortalama=%s",
     chosenClass, chosenKey, actualN, fmt(topMean, "%.4f"))

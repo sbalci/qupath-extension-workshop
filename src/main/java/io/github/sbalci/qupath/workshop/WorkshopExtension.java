@@ -644,15 +644,43 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             } catch (Throwable t) {
                 logger.error("Script execution failed: {}", entry.label, t);
                 String guidance = WorkshopErrors.guidance(t);
-                Platform.runLater(() -> Dialogs.showErrorMessage(
-                    "Betik hatası — " + entry.label,
-                    "Araç çalışırken beklenmeyen bir sorun oluştu.\n\n" +
-                    guidance + "\n\nSorun sürerse View → Show log penceresindeki hata kaydını inceleyin. Yardım isterken hasta bilgisi içeren dosya adlarını paylaşmadan önce kaldırın."
-                ));
+                String report = WorkshopErrors.formatCopyableReport(entry.label, entry.resource, t);
+                Platform.runLater(() -> showCopyableErrorDialog(entry.label, guidance, report));
             }
         }, "WorkshopScript-" + entry.resource);
         runner.setDaemon(true);
         runner.start();
+    }
+
+    private static void showCopyableErrorDialog(String scriptLabel, String guidance, String redactedReport) {
+        String body = "Araç çalışırken beklenmeyen bir sorun oluştu.\n\n"
+                + guidance
+                + "\n\nSorun sürerse 'Tanı özetini kopyala' düğmesiyle anonimleştirilmiş özeti panoya kopyalayabilir veya View → Show log penceresini inceleyebilirsiniz. Yardım isterken hasta bilgisi içeren dosya adlarını paylaşmadan önce kaldırın.";
+        var alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+        alert.setTitle("Betik hatası — " + scriptLabel);
+        alert.setHeaderText(null);
+        alert.setResizable(true);
+        var msgLabel = new javafx.scene.control.Label(body);
+        msgLabel.setWrapText(true);
+        msgLabel.setMaxWidth(520);
+        var reportArea = new javafx.scene.control.TextArea(redactedReport);
+        reportArea.setEditable(false);
+        reportArea.setWrapText(false);
+        reportArea.setPrefRowCount(8);
+        reportArea.setStyle("-fx-font-family: 'Consolas','Menlo','Courier New',monospace; -fx-font-size: 11px;");
+        var box = new javafx.scene.layout.VBox(8, msgLabel, reportArea);
+        alert.getDialogPane().setContent(box);
+        var copyBtn = new javafx.scene.control.ButtonType(
+                "Tanı özetini kopyala", javafx.scene.control.ButtonBar.ButtonData.LEFT);
+        alert.getButtonTypes().setAll(copyBtn, javafx.scene.control.ButtonType.OK);
+        var choice = alert.showAndWait();
+        if (choice.isPresent() && choice.get() == copyBtn) {
+            var cb = javafx.scene.input.Clipboard.getSystemClipboard();
+            var cc = new javafx.scene.input.ClipboardContent();
+            cc.putString(redactedReport);
+            cb.setContent(cc);
+            Dialogs.showInfoNotification("Kopyalandı", "Anonimleştirilmiş tanı özeti panoya kopyalandı.");
+        }
     }
 
     private String readScriptResource(String filename) {

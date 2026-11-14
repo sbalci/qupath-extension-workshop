@@ -649,17 +649,32 @@ javafx.application.Platform.runLater {
                 status.setStyle(''); status.setText('Tamamlandı ✅ — eşikleri değiştirip "Eşikleri yeniden uygula (hızlı)" deneyin.')
                 resultArea.setText(res.text)
             } else if (res.imageTypeIssue) {
-                status.setStyle('-fx-text-fill: -qp-script-error-color;')
+                status.setStyle('-fx-text-fill: #c0392b;')
                 status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz.")
                 resultArea.setText(res.error)
                 fixTypeBtn.setVisible(true); fixTypeBtn.setManaged(true)
             } else {
-                status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + res.error)
+                status.setStyle('-fx-text-fill: #c0392b;'); status.setText('⚠ ' + res.error)
             }
         }
 
         runBtn.setOnAction({
             [spM1, spM2, spM3, spPD1, spPD2, spPD3, spPH].each { commitSpinner(it) }
+            def selNow = QP.getSelectedObject()
+            if (selNow instanceof PathAnnotationObject) {
+                int nPrev = selNow.getChildObjects().count { it.isDetection() } as int
+                if (nPrev > 0) {
+                    boolean ok = Dialogs.showConfirmDialog('Önceki hücre tespitleri değiştirilecek',
+                        String.format(java.util.Locale.US,
+                            'Seçili anotasyonda zaten %,d hücre tespiti bulunuyor.\n' +
+                            'Yalnız DAB eşiklerini değiştirmek istiyorsanız "İptal" deyip "Eşikleri yeniden uygula" düğmesini kullanın.\n\n' +
+                            'Hücre tespitini baştan çalıştırıp mevcut tespitleri değiştirmek istiyor musunuz?', nPrev))
+                    if (!ok) {
+                        status.setStyle(''); status.setText('İptal edildi — mevcut hücre tespitleri korundu.')
+                        return
+                    }
+                }
+            }
             runBtn.setDisable(true); recountBtn.setDisable(true)
             status.setStyle(''); status.setText('… hesaplanıyor (piksel + isteğe bağlı hücre)…')
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)

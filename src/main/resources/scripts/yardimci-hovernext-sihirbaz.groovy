@@ -68,6 +68,8 @@ def isHeadless = gui == null
 long PYTHON_TIMEOUT_SECONDS = 3600L
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
 def SUMMARY_NAME = 'HoVer-NeXt çekirdek sınıfları özeti'
+def MODE_ADD     = 'Önceki HoVer-NeXt sonucuna dokunma — yeni özet olarak ekle (varsayılan)'
+def MODE_REPLACE = 'Önceki HoVer-NeXt sonucunu değiştir (bu bölgedeki HoVer-NeXt nesneleri silinir)'
 def ENV_ID       = 'hovernext'
 def RUNNER_REL   = 'python/hovernext/hovernext_runner.py'
 def CLASS_SUFFIX = ' (HoVer-NeXt)'
@@ -323,9 +325,36 @@ def regionBounds = { List regionRois ->
 def insideAny = { List bounds, double x, double y ->
     bounds.any { b -> x >= (b.x0 as double) && x <= (b.x1 as double) && y >= (b.y0 as double) && y <= (b.y1 as double) && b.roi.contains(x, y) }
 }
+def isSummaryOf = { obj, String base ->
+    def n = obj?.getName()
+    if (n == null) return false
+    if (n == base) return true
+    return n.matches(java.util.regex.Pattern.quote(base) + ' \\(\\d+\\)')
+}
+def prevSummariesIn = { hier, List bounds ->
+    hier.getAnnotationObjects().findAll { a ->
+        isSummaryOf(a, SUMMARY_NAME) && a.hasROI() && insideAny(bounds, a.getROI().getCentroidX(), a.getROI().getCentroidY())
+    }
+}
+def prevDetectionsIn = { hier, List bounds ->
+    hier.getDetectionObjects().findAll { d ->
+        d.getPathClass() != null && ourClassNames.contains(d.getPathClass().getName()) && d.hasROI() &&
+        insideAny(bounds, d.getROI().getCentroidX(), d.getROI().getCentroidY())
+    }
+}
+def nextSummaryName = { hier, List bounds ->
+    def existing = prevSummariesIn(hier, bounds)
+    if (existing.isEmpty()) return SUMMARY_NAME
+    int maxIdx = 1
+    existing.each { o ->
+        def m = (o.getName() =~ /\((\d+)\)\s*$/)
+        if (m.find()) { try { maxIdx = Math.max(maxIdx, Integer.parseInt(m.group(1))) } catch (Throwable ignore) {} }
+    }
+    return SUMMARY_NAME + ' (' + (maxIdx + 1) + ')'
+}
 
 // ── GeoJSON içe al: bölge içi çekirdekleri sınıflı TESPİT olarak ekle ──
-def importNuclei = { File geojson, imageData, List regionRois, cal ->
+def importNuclei = { File geojson, imageData, List regionRois, cal, boolean replacePrev = true ->
     if (geojson == null || !geojson.isFile())
         return [ok: false, error: 'GeoJSON çıktısı bulunamadı:\n' + (geojson?.getAbsolutePath() ?: '(yol yok)')]
     def root
@@ -384,19 +413,23 @@ def importNuclei = { File geojson, imageData, List regionRois, cal ->
         nuclei << [cx, cy, key]
     }
     def hier = imageData.getHierarchy()
-    // YALNIZ bu bölgedeki önceki HoVer-NeXt tespitlerini sil (başka bölgelerdeki çalıştırmalar korunur).
-    def old = hier.getDetectionObjects().findAll { d ->
-        d.getPathClass() != null && ourClassNames.contains(d.getPathClass().getName()) && d.hasROI() &&
-        insideAny(bounds, d.getROI().getCentroidX(), d.getROI().getCentroidY())
+    def old = []
+    int removedSummaries = 0
+    if (replacePrev) {
+        def oldSummaries = prevSummariesIn(hier, bounds)
+        removedSummaries = oldSummaries.size()
+        if (!oldSummaries.isEmpty()) hier.removeObjects(oldSummaries, true)
+        // YALNIZ bu bölgedeki önceki HoVer-NeXt tespitlerini sil (başka bölgelerdeki çalıştırmalar korunur).
+        old = prevDetectionsIn(hier, bounds)
+        if (!old.isEmpty()) hier.removeObjects(old, false)
     }
-    if (!old.isEmpty()) hier.removeObjects(old, false)
     if (!dets.isEmpty()) hier.addObjects(dets)
     hier.fireHierarchyChangedEvent(hier)
-    return [ok: true, total: total, inside: nuclei.size(), nuclei: nuclei, unknown: unknown, removed: old.size()]
+    return [ok: true, total: total, inside: nuclei.size(), nuclei: nuclei, unknown: unknown, removed: old.size(), removedSummaries: removedSummaries]
 }
 
 // ── Sınıf başına sayım + % + (kalibreyse) yoğunluk: seçili anotasyonlara + kilitli özete ──
-def writeCounts = { imageData, List targets, List nuclei, cal ->
+def writeCounts = { imageData, List targets, List nuclei, cal, boolean writeTargets = true, String summaryName = null ->
     def hier = imageData.getHierarchy()
     def fill = { obj, roi, List pts ->
         def ml = obj.getMeasurements()
@@ -412,20 +445,22 @@ def writeCounts = { imageData, List targets, List nuclei, cal ->
         }
         return areaMm2
     }
-    targets.each { ann ->
-        def roi = ann.getROI()
-        fill(ann, roi, nuclei.findAll { p -> roi.contains(p[0] as double, p[1] as double) })
+    if (writeTargets) {
+        targets.each { ann ->
+            def roi = ann.getROI()
+            fill(ann, roi, nuclei.findAll { p -> roi.contains(p[0] as double, p[1] as double) })
+        }
     }
     def unionRoi = (targets.size() == 1) ? targets[0].getROI() : qupath.lib.roi.RoiTools.union(targets.collect { it.getROI() })
-    hier.removeObjects(hier.getAnnotationObjects().findAll { it.getName() != null && it.getName().startsWith(SUMMARY_NAME) }, false)
+    String finalSummaryName = summaryName ?: SUMMARY_NAME
     def summary = PathObjects.createAnnotationObject(unionRoi)
-    summary.setName(SUMMARY_NAME)
+    summary.setName(finalSummaryName)
     summary.getMeasurements().put('Seçili ROI sayısı', targets.size() as double)
     double areaMm2 = fill(summary, unionRoi, nuclei)
     summary.setLocked(true)
     hier.addObjects([summary])
     hier.fireHierarchyChangedEvent(hier)
-    return [areaMm2: areaMm2]
+    return [areaMm2: areaMm2, summaryName: finalSummaryName, wroteTargets: writeTargets]
 }
 
 // ── Sonuç metni ─────────────────────────────────────────────────────────────
@@ -669,6 +704,29 @@ def startRun = {
     if (!ci.scaleOk) { errorTextRef.set('Ölçek uygun değil — çalıştırılmadı:\n' + ci.block); step.set('ERROR'); render(); return }
     def cal = ci.cal
     def regionRois = targets.collect { it.getROI() }
+    def boundsNow = regionBounds(regionRois)
+    def hierNow = imageData.getHierarchy()
+    int nPrevSummaries = prevSummariesIn(hierNow, boundsNow).size()
+    int nPrevDets = prevDetectionsIn(hierNow, boundsNow).size()
+    boolean hadPrev = (nPrevSummaries > 0 || nPrevDets > 0)
+    boolean replacePrev = false
+    if (hadPrev && !isHeadless) {
+        def msg = String.format(java.util.Locale.US,
+            'Seçili bölgede zaten %,d HoVer-NeXt özeti ve HoVer-NeXt sınıflı %,d tespit var.\n\n' +
+            '"Ekle" seçilirse önceki tespitler korunur ve sonuç "%s (2)" gibi yeni bir özet olarak eklenir.\n' +
+            '"Değiştir" seçilirse yalnız bu bölgedeki HoVer-NeXt tespitleri ve özetleri yeni sonuçlarla değiştirilir (diğer bölgelere dokunulmaz).',
+            nPrevSummaries, nPrevDets, SUMMARY_NAME)
+        def pick = Dialogs.showChoiceDialog('Önceki HoVer-NeXt sonucu', msg, [MODE_ADD, MODE_REPLACE], MODE_ADD)
+        if (pick == null) return
+        replacePrev = (pick == MODE_REPLACE)
+        if (replacePrev) {
+            boolean ok = Dialogs.showConfirmDialog('Önceki HoVer-NeXt sonucu silinecek',
+                String.format(java.util.Locale.US, 'Bu bölgedeki %,d özet ve %,d HoVer-NeXt tespiti değiştirilecek.\n\nDevam edilsin mi?', nPrevSummaries, nPrevDets))
+            if (!ok) return
+        }
+    }
+    final boolean runReplacePrev = replacePrev
+    final boolean runWriteTargets = (!hadPrev) || replacePrev
     def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs()
     def base    = imageNameOf(imageData)
     def outGeo  = new File(workDir, base + '_hovernext.geojson')
@@ -712,10 +770,12 @@ def startRun = {
             // Uzun çıkarımdan SONRA QP.getCurrentImageData()'yı YENİDEN ALMA (TOCTOU);
             // çalıştırmayı başlatan captured `imageData`ya yaz.
             javafx.application.Platform.runLater { busyLabelRef.set('Çekirdekler içe aktarılıyor (3/3)…'); step.set('BUSY'); render() }
-            def imp = importNuclei(geo, imageData, regionRois, cal)
+            if (cancelledRef.get()) { javafx.application.Platform.runLater { step.set('READY'); render() }; return }
+            def summaryName = runReplacePrev ? SUMMARY_NAME : nextSummaryName(imageData.getHierarchy(), regionBounds(regionRois))
+            def imp = importNuclei(geo, imageData, regionRois, cal, runReplacePrev)
             if (!imp.ok) { javafx.application.Platform.runLater { errorTextRef.set(imp.error); step.set('ERROR'); render() }; return }
             if (imp.unknown > 0) appendLine('⚠ Tanınmayan sınıflı ' + imp.unknown + ' özellik atlandı.')
-            def dens = writeCounts(imageData, targets, imp.nuclei, cal)
+            def dens = writeCounts(imageData, targets, imp.nuclei, cal, runWriteTargets, summaryName)
             mitosisCoordsRef.set(new ArrayList(imp.nuclei.findAll { it[2] == 'mitosis' }.collect { [it[0], it[1]] }))
             navIdxRef.set(-1)
             javafx.application.Platform.runLater {

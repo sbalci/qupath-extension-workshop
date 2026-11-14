@@ -218,17 +218,52 @@ assert nextSentinelName(h, base) == base + ' (3)'
 
     // Source-order contract only: interactive dialog/cancellation acceptance remains manual.
     void testConfirmationAndLateCancellationContracts() {
-        [HISTO, CYTO, NUC].each { file ->
+        [HISTO, CYTO, NUC,
+         'yardimci-classpose-sihirbaz.groovy',
+         'yardimci-hovernext-sihirbaz.groovy',
+         'yardimci-mitoz-fcos.groovy',
+         'yardimci-mitoz-retinanet.groovy',
+         'yardimci-mitoz-tiatoolbox.groovy'].each { file ->
             def s = source(file)
             def start = s.indexOf('def startRun =')
-            assert start >= 0
+            assert start >= 0 : "Missing startRun in $file"
             def run = s.substring(start)
-            assert run.indexOf('showChoiceDialog') < run.indexOf('workDir.mkdirs()')
-            assert run.contains('if (pick == null) return')
-            assert run.contains('if (!ok) return')
+            assert run.indexOf('showChoiceDialog') >= 0 : "Missing showChoiceDialog in $file"
+            assert run.indexOf('showChoiceDialog') < run.indexOf('workDir.mkdirs()') : "Choice dialog must precede workDir.mkdirs() in $file"
+            assert run.contains('if (pick == null) return') : "Missing null-cancel check in $file"
+            assert run.contains('if (!ok) return') : "Missing replace-confirm cancel check in $file"
         }
         assert source(HISTO).contains("if (cancelledRef.get()) { javafx.application.Platform.runLater { step.set('READY'); render() }; return }\n            def imp = importCells")
         assert source(CYTO).contains("if (cancelledRef.get()) { step.set('READY'); render(); return }\n                    def applyStats = applyAssignments")
         assert source(NUC).contains("if (cancelledRef.get()) { step.set('READY'); render(); return }\n                def imp = importResults")
+    }
+
+    void testHistoPlusCanonicalCellTypeAliases() {
+        String s = source(HISTO)
+        int cStart = s.indexOf('def CLASSES = [')
+        int cEnd = s.indexOf('def UNDOCUMENTED_NOTE =', cStart)
+        assert cStart >= 0 && cEnd > cStart
+        def block = s.substring(cStart, cEnd)
+        shell().evaluate(block + '''
+assert canonicalKeyOf('Cancer cell') == 'Cancer cell'
+assert canonicalKeyOf('cancer cells') == 'Cancer cell'
+assert canonicalKeyOf('Tumor') == 'Cancer cell'
+assert canonicalKeyOf('lymphocyte') == 'Lymphocytes'
+assert canonicalKeyOf('Plasma Cell') == 'Plasmocytes'
+assert canonicalKeyOf('mitosis') == 'Mitotic Figures'
+assert trOf('lymphocyte') == 'Lenfosit'
+assert trOf('Unknown Custom') == 'Unknown Custom'
+''')
+    }
+
+    void testErrorReportRedactsHomeAndSlideFilenames() {
+        def ex = new java.io.FileNotFoundException('Cannot open C:\\Users\\dr_ayse\\Slides\\patient_12345_biopsy.svs or /Users/ali/cohort_case.ndpi')
+        String report = WorkshopErrors.formatCopyableReport('Hücre tespiti', 'hucre-tespiti.groovy', ex)
+        assert !report.contains('dr_ayse')
+        assert !report.contains('/Users/ali')
+        assert !report.contains('patient_12345_biopsy.svs')
+        assert !report.contains('cohort_case.ndpi')
+        assert report.contains('<HOME>')
+        assert report.contains('<SLIDE_FILE>')
     }
 }

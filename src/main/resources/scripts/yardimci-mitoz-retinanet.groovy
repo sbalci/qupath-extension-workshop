@@ -64,6 +64,8 @@ def isHeadless = gui == null
 long PYTHON_TIMEOUT_SECONDS = 3600L
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
 def SUMMARY_NAME    = 'RetinaNet MIDOG mitoz özeti'
+def MODE_ADD        = 'Önceki RetinaNet sonucuna dokunma — yeni özet olarak ekle (varsayılan)'
+def MODE_REPLACE    = 'Önceki RetinaNet sonucunu değiştir (bu bölgedeki RetinaNet mitozları silinir)'
 def MODEL          = 'DA-RetinaNet (MIDOG 2021/22)'
 def ENV_ID         = 'midog-retinanet-legacy'
 def MITOSIS_CLASS  = 'Mitosis'                 // paylaşılan sözleşme
@@ -277,7 +279,7 @@ def exportRegionImage = { imageData, File workDir, double targetMpp, List region
     if (cal != null && targetMpp > 0 && Double.isFinite(baseMpp) && baseMpp > 0) { downsample = targetMpp / baseMpp; if (downsample < 1.0) downsample = 1.0 }
     int outW = (int) Math.max(1, Math.round(w / downsample)); int outH = (int) Math.max(1, Math.round(h / downsample))
     if (outW > warnPx || outH > warnPx)
-        appendLine(String.format(java.util.Locale.US, '⚠ Büyük ROI (%d × %d px) — CPU\'da çok yavaş olabilir. Daha küçük bir sıcak-nokta seçin.', outW, outH))
+        appendLine(String.format(java.util.Locale.US, '⚠ Büyük ROI (%d × %d px) — CPU\'da çok yavaş olabilir. Daha küçük bir yoğun odak seçin.', outW, outH))
     def request = qupath.lib.regions.RegionRequest.createInstance(server.getPath(), downsample, x, y, w, h)
     def img = server.readRegion(request)
     if (img == null) return [ok: false, error: 'Bölge okunamadı (readRegion null döndü).']
@@ -291,7 +293,36 @@ def exportRegionImage = { imageData, File workDir, double targetMpp, List region
     return [ok: true, file: f, originX: x, originY: y, downsample: downsample]
 }
 
-def importMitoses = { File geojson, imageData, List regionRois ->
+def isSummaryOf = { obj, String base ->
+    def n = obj?.getName()
+    if (n == null) return false
+    if (n == base) return true
+    return n.matches(java.util.regex.Pattern.quote(base) + ' \\(\\d+\\)')
+}
+def prevSummariesIn = { hier, List regionRois ->
+    hier.getAnnotationObjects().findAll { a ->
+        isSummaryOf(a, SUMMARY_NAME) && a.hasROI() && regionRois.any { r -> r.contains(a.getROI().getCentroidX(), a.getROI().getCentroidY()) }
+    }
+}
+def prevMitosesIn = { hier, List regionRois ->
+    hier.getAnnotationObjects().findAll { a ->
+        a.hasROI() && (a.getMetadata().get(META_SOURCE) == MITOSIS_PREFIX ||
+                       (a.getName() != null && a.getName().startsWith(MITOSIS_PREFIX))) &&
+        regionRois.any { r -> r.contains(a.getROI().getCentroidX(), a.getROI().getCentroidY()) }
+    }
+}
+def nextSummaryName = { hier, List regionRois ->
+    def existing = prevSummariesIn(hier, regionRois)
+    if (existing.isEmpty()) return SUMMARY_NAME
+    int maxIdx = 1
+    existing.each { o ->
+        def m = (o.getName() =~ /\((\d+)\)\s*$/)
+        if (m.find()) { try { maxIdx = Math.max(maxIdx, Integer.parseInt(m.group(1))) } catch (Throwable ignore) {} }
+    }
+    return SUMMARY_NAME + ' (' + (maxIdx + 1) + ')'
+}
+
+def importMitoses = { File geojson, imageData, List regionRois, boolean replacePrev = true ->
     if (geojson == null || !geojson.isFile()) return [ok: false, error: 'GeoJSON çıktısı bulunamadı:\n' + (geojson?.getAbsolutePath() ?: '(yol yok)')]
     def root
     try { root = JsonParser.parseString(geojson.getText('UTF-8')).getAsJsonObject() } catch (Throwable t) { return [ok: false, error: 'GeoJSON ayrıştırılamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
@@ -315,13 +346,13 @@ def importMitoses = { File geojson, imageData, List regionRois ->
     def detClass = QP.getPathClass(MITOSIS_CLASS)
     int rgb = qupath.lib.common.ColorTools.packRGB(MITOSIS_RGB[0] as int, MITOSIS_RGB[1] as int, MITOSIS_RGB[2] as int)
     try { detClass.setColor(rgb) } catch (Throwable ignore) {}  // RetinaNet = mor
-    // Bölgedeki önceki RetinaNet mitozları: nokta = metadata ya da eski ad öneki; halka = etiket öneki.
-    hier.removeObjects(hier.getAnnotationObjects().findAll { a ->
-        a.hasROI() && (a.getMetadata().get(META_SOURCE) == MITOSIS_PREFIX ||
-                       (a.getName() != null && a.getName().startsWith(MITOSIS_PREFIX))) &&
-        regionRois.any { r -> r.contains(a.getROI().getCentroidX(), a.getROI().getCentroidY()) }
-    }, false)
-    removeOrphanRings(hier)
+    if (replacePrev) {
+        def oldSummaries = prevSummariesIn(hier, regionRois)
+        if (!oldSummaries.isEmpty()) hier.removeObjects(oldSummaries, true)
+        def oldPts = prevMitosesIn(hier, regionRois)
+        if (!oldPts.isEmpty()) hier.removeObjects(oldPts, false)
+        removeOrphanRings(hier)
+    }
     double ringPx = markerRadiusPx(imageData)
     def newAnns = []
     coords.eachWithIndex { pt, i ->
@@ -334,23 +365,25 @@ def importMitoses = { File geojson, imageData, List regionRois ->
     return [ok: true, total: total, inside: coords.size(), coords: coords]
 }
 
-def writeCounts = { imageData, List targets, List coords, cal ->
+def writeCounts = { imageData, List targets, List coords, cal, boolean writeTargets = true, String summaryName = null ->
     def hier = imageData.getHierarchy()
-    targets.each { ann ->
-        def roi = ann.getROI()
-        int cnt = coords.count { pt -> roi.contains(pt[0] as double, pt[1] as double) } as int
-        ann.measurements['Mitoz (RetinaNet)'] = cnt as double
-        if (cal != null) {
-            double a = roi.getArea() * cal.pw * cal.ph / 1_000_000.0
-            ann.measurements['ROI alanı (mm2)'] = a
-            ann.measurements['Mitoz yoğunluğu (mitoz/mm2)'] = a > 0 ? cnt / a : Double.NaN
+    if (writeTargets) {
+        targets.each { ann ->
+            def roi = ann.getROI()
+            int cnt = coords.count { pt -> roi.contains(pt[0] as double, pt[1] as double) } as int
+            ann.measurements['Mitoz (RetinaNet)'] = cnt as double
+            if (cal != null) {
+                double a = roi.getArea() * cal.pw * cal.ph / 1_000_000.0
+                ann.measurements['ROI alanı (mm2)'] = a
+                ann.measurements['Mitoz yoğunluğu (mitoz/mm2)'] = a > 0 ? cnt / a : Double.NaN
+            }
         }
     }
     def unionRoi = (targets.size() == 1) ? targets[0].getROI() : qupath.lib.roi.RoiTools.union(targets.collect { it.getROI() })
     int insideUnion = coords.size()
-    hier.removeObjects(hier.getAnnotationObjects().findAll { it.getName() != null && it.getName().startsWith(SUMMARY_NAME) }, false)
+    String finalSummaryName = summaryName ?: SUMMARY_NAME
     def summary = PathObjects.createAnnotationObject(unionRoi)
-    summary.setName(SUMMARY_NAME)
+    summary.setName(finalSummaryName)
     summary.measurements['Seçili ROI sayısı'] = targets.size() as double
     summary.measurements['Mitoz (RetinaNet, bölge içi)'] = insideUnion as double
     def out = [inside: insideUnion, unionAreaMm2: Double.NaN, density: Double.NaN]
@@ -483,6 +516,12 @@ def persistFields = {
     try { prefs.flush() } catch (Throwable ignore) {}
 }
 
+def killTree = { proc ->
+    if (proc == null) return
+    try { proc.descendants().forEach({ h -> try { h.destroyForcibly() } catch (Throwable ignore) {} } as java.util.function.Consumer) } catch (Throwable ignore) {}
+    try { proc.destroyForcibly() } catch (Throwable ignore) {}
+}
+
 def runPython = { List cmd, Closure onLine ->
     def pb = new ProcessBuilder(cmd); pb.redirectErrorStream(true); applyCacheEnv(pb)
     def proc
@@ -496,9 +535,9 @@ def runPython = { List cmd, Closure onLine ->
         reader.close()
     } catch (Throwable ignore) {}
     boolean finished
-    try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) } catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: 'Zaman aşımı'] }
-    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) } catch (InterruptedException ie) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    if (!finished) { killTree(proc); return [ok: false, exitCode: -2, error: 'Zaman aşımı'] }
+    if (cancelledRef.get()) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
     int code = proc.exitValue()
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
@@ -537,6 +576,28 @@ def startRun = {
     def targets = regionAnnotationsOf(imageData)
     if (targets.isEmpty()) { errorTextRef.set('Bölge yok.\nÖnce bir alan anotasyonu çizin/seçin.'); step.set('ERROR'); render(); return }
     def regionRois = targets.collect { it.getROI() }
+    def hierNow = imageData.getHierarchy()
+    int nPrevSummaries = prevSummariesIn(hierNow, regionRois).size()
+    int nPrevMitoses = prevMitosesIn(hierNow, regionRois).size()
+    boolean hadPrev = (nPrevSummaries > 0 || nPrevMitoses > 0)
+    boolean replacePrev = false
+    if (hadPrev && !isHeadless) {
+        def msg = String.format(java.util.Locale.US,
+            'Seçili bölgede zaten %,d RetinaNet özeti ve %,d RetinaNet mitoz işareti var.\n\n' +
+            '"Ekle" seçilirse önceki işaretler korunur ve sonuç "%s (2)" gibi yeni bir özet olarak eklenir.\n' +
+            '"Değiştir" seçilirse yalnız bu bölgedeki RetinaNet mitoz işaretleri ve özetleri yeni sonuçlarla değiştirilir (diğer bölgelere dokunulmaz).',
+            nPrevSummaries, nPrevMitoses, SUMMARY_NAME)
+        def pick = Dialogs.showChoiceDialog('Önceki RetinaNet sonucu', msg, [MODE_ADD, MODE_REPLACE], MODE_ADD)
+        if (pick == null) return
+        replacePrev = (pick == MODE_REPLACE)
+        if (replacePrev) {
+            boolean ok = Dialogs.showConfirmDialog('Önceki RetinaNet sonucu silinecek',
+                String.format(java.util.Locale.US, 'Bu bölgedeki %,d özet ve %,d RetinaNet mitoz işareti değiştirilecek.\n\nDevam edilsin mi?', nPrevSummaries, nPrevMitoses))
+            if (!ok) return
+        }
+    }
+    final boolean runReplacePrev = replacePrev
+    final boolean runWriteTargets = (!hadPrev) || replacePrev
     def cal = pixelMicrons(imageData)
     double targetMpp = cfg.targetMpp?.trim() ? parseDoubleOr(cfg.targetMpp, TARGET_MPP) : TARGET_MPP
     def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs()
@@ -573,9 +634,11 @@ def startRun = {
             def geo = outGeo
             try { def m = (r.lastLines ?: '') =~ /RESULT geojson=(.+)/; if (m.find()) { def gp = new File(m.group(1).trim()); if (gp.isFile()) geo = gp } } catch (Throwable ignore) {}
             javafx.application.Platform.runLater { busyLabelRef.set('Sonuçlar içe aktarılıyor…'); step.set('BUSY'); render() }
-            def imp = importMitoses(geo, imageData, regionRois)
+            if (cancelledRef.get()) { javafx.application.Platform.runLater { step.set('READY'); render() }; return }
+            def summaryName = runReplacePrev ? SUMMARY_NAME : nextSummaryName(imageData.getHierarchy(), regionRois)
+            def imp = importMitoses(geo, imageData, regionRois, runReplacePrev)
             if (!imp.ok) { javafx.application.Platform.runLater { errorTextRef.set(imp.error); step.set('ERROR'); render() }; return }
-            def dens = writeCounts(imageData, targets, imp.coords, cal)
+            def dens = writeCounts(imageData, targets, imp.coords, cal, runWriteTargets, summaryName)
             mitosisCoordsRef.set(new ArrayList(imp.coords)); navIdxRef.set(-1)
             javafx.application.Platform.runLater {
                 try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {}
@@ -715,7 +778,7 @@ render = { ->
         actions.add(navButton('Kaydet ▶', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
     } else if (cur == 'CHECK_RUNNING') {
         title.setText('Bağımlılık kontrolü çalışıyor…'); center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton('İptal et', { cancelledRef.set(true); killTree(processRef.get()) }))
     } else if (cur == 'CHECK_DONE') {
         title.setText(selftestOkRef.get() ? 'Bağımlılık kontrolü tamam ✅' : '⚠ Bağımlılık kontrolü BAŞARISIZ — eski fastai/torch ortamı kurulamadı (FCOS önerilir)'); addLiveLog()
         actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
@@ -724,7 +787,7 @@ render = { ->
     } else if (cur == 'DL_RUNNING') {
         title.setText('Model + kod indiriliyor…'); addGuidance('Referans depo (kod + RetinaNetDA.pth ~74 MB) veri kökü altına indiriliyor.')
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton('İptal et', { cancelledRef.set(true); killTree(processRef.get()) }))
     } else if (cur == 'DL_DONE') {
         title.setText(dlOkRef.get() ? 'Model + kod indirildi ✅' : '⚠ İndirilemedi — günlüğe bakın'); addLiveLog()
         actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
@@ -767,7 +830,7 @@ render = { ->
     } else if (cur == 'RUN_RUNNING') {
         title.setText(runPhaseRef.get()); addGuidance('RetinaNet köprüsü çalışıyor (eski stack; yavaş olabilir). Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton('İptal et', { cancelledRef.set(true); killTree(processRef.get()) }))
         actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
     } else if (cur == 'BUSY') {
         title.setText(busyLabelRef.get()); addGuidance('Lütfen bekleyin…'); center.getChildren().add(busyBar())

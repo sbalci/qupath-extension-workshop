@@ -59,6 +59,8 @@ def isHeadless = gui == null
 // ── Sabitler ───────────────────────────────────────────────────────────────
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
 def SUMMARY_NAME = 'Classpose hücre sınıfları özeti'
+def MODE_ADD     = 'Önceki Classpose sonucuna dokunma — yeni özet olarak ekle (varsayılan)'
+def MODE_REPLACE = 'Önceki Classpose sonucunu değiştir (bu alandaki Classpose sınıflı nesneler silinir)'
 def ENV_ID       = 'classpose'
 def RUNNER_REL   = 'python/classpose/classpose_runner.py'
 def CLASS_SUFFIX = ' (Classpose)'
@@ -521,6 +523,36 @@ def areaAnnotationsOf = { imageData ->
 def unionRoiOf = { List targets -> targets.size() == 1 ? targets[0].getROI() : qupath.lib.roi.RoiTools.union(targets.collect { it.getROI() }) }
 def areaMm2Of = { roi, double pw, double ph -> roi.getArea() * pw * ph / 1_000_000.0d }
 
+// ── Önceki sonuçlar: bu ALANDAKİ özetler ve Classpose sınıflı tespitler ──────
+def summaryBaseOf = { String modelId -> SUMMARY_NAME + ' — ' + (modelId ?: '?') }
+def isSummaryOf = { obj, String base ->
+    def n = obj?.getName()
+    if (n == null) return false
+    if (n == base) return true
+    return n.matches(java.util.regex.Pattern.quote(base) + ' \\(\\d+\\)')
+}
+def prevSummariesIn = { hier, unionRoi, String base ->
+    hier.getAnnotationObjects().findAll { a ->
+        isSummaryOf(a, base) && a.hasROI() && unionRoi.contains(a.getROI().getCentroidX(), a.getROI().getCentroidY())
+    }
+}
+def prevDetectionsIn = { hier, unionRoi ->
+    hier.getDetectionObjects().findAll { d ->
+        d.getPathClass() != null && (d.getPathClass().getName() ?: '').endsWith(CLASS_SUFFIX) && d.hasROI() &&
+        unionRoi.contains(d.getROI().getCentroidX(), d.getROI().getCentroidY())
+    }
+}
+def nextSummaryName = { hier, unionRoi, String base ->
+    def existing = prevSummariesIn(hier, unionRoi, base)
+    if (existing.isEmpty()) return base
+    int maxIdx = 1
+    existing.each { o ->
+        def m = (o.getName() =~ /\((\d+)\)\s*$/)
+        if (m.find()) { try { maxIdx = Math.max(maxIdx, Integer.parseInt(m.group(1))) } catch (Throwable ignore) {} }
+    }
+    return base + ' (' + (maxIdx + 1) + ')'
+}
+
 // ── ROI → GeoJSON (Classpose --roi_geojson biçimi) ───────────────────────────
 def ringJson = { coords ->
     def arr = new com.google.gson.JsonArray()
@@ -719,74 +751,78 @@ def elapsedText = { long ms ->
 }
 
 // ── İçe aktarma: Classpose hücre konturları → sınıflı TESPİT nesneleri ──
-// Önce YALNIZ bu çalıştırmanın alanına düşen (merkezi unionRoi içinde olan) eski özet anotasyonları
-// ÇOCUKLARI KORUNARAK (keepChildren=true) silinir — başka bir alandaki özet DOKUNULMADAN kalır —
-// sonra YALNIZ bu alandaki eski Classpose tespitleri silinir; böylece yeni tespitler asla silinecek
-// bir özetin altına düşmez.
-def importCells = { File geojson, imageData, unionRoi, calA ->
-    def hier = imageData.getHierarchy()
-    def oldSummaries = hier.getAnnotationObjects().findAll { a ->
-        a.getName() != null && a.getName().startsWith(SUMMARY_NAME) && a.hasROI() &&
-        unionRoi.contains(a.getROI().getCentroidX(), a.getROI().getCentroidY())
-    }
-    if (!oldSummaries.isEmpty()) hier.removeObjects(oldSummaries, true)
-    def old = hier.getDetectionObjects().findAll { d ->
-        d.getPathClass() != null && (d.getPathClass().getName() ?: '').endsWith(CLASS_SUFFIX) && d.hasROI() &&
-        unionRoi.contains(d.getROI().getCentroidX(), d.getROI().getCentroidY())
-    }
-    if (!old.isEmpty()) hier.removeObjects(old, false)
+// Yıkıcı olmayan sıra: önce GeoJSON doğrulanır, ayrıştırılır ve yeni tespit nesneleri tümüyle kurulur;
+// Python çıktısı eksik/bozuksa önceki sonuçlara HİÇ DOKUNULMADAN hata fırlatılır.
+// "Değiştir" kipinde bu alandaki eski özet anotasyonları ÇOCUKLARI KORUNARAK (keepChildren=true) silinir
+// ve yalnız bu alandaki eski Classpose tespitleri kaldırılır. "Ekle" kipinde hiçbir şey silinmez.
+def importCells = { File geojson, imageData, unionRoi, calA, boolean replacePrev = true, String base = null ->
+    if (geojson == null || !geojson.isFile())
+        throw new IllegalArgumentException('Classpose sonuç GeoJSON dosyası bulunamadı; önceki sonuçlar korundu.')
+    def root = JsonParser.parseString(geojson.getText('UTF-8')).getAsJsonObject()
+    if (!root.has('features') || !root.get('features').isJsonArray())
+        throw new IllegalArgumentException('Classpose GeoJSON çıktısında geçerli features dizisi yok; önceki sonuçlar korundu.')
+    def feats = root.getAsJsonArray('features')
+    def plane = ImagePlane.getDefaultPlane()
+    def pcs = [:]
+    def dets = new ArrayList()
     def cells = new ArrayList()   // [cx, cy, etiket]
     def unknown = new LinkedHashSet()
     int outside = 0
-    if (geojson != null) {
-        def root = JsonParser.parseString(geojson.getText('UTF-8')).getAsJsonObject()
-        def feats = root.has('features') ? root.getAsJsonArray('features') : new com.google.gson.JsonArray()
-        def plane = ImagePlane.getDefaultPlane()
-        def pcs = [:]
-        def dets = new ArrayList()
-        for (el in feats) {
-            def ft = el.getAsJsonObject()
-            def geom = (ft.has('geometry') && ft.get('geometry').isJsonObject()) ? ft.getAsJsonObject('geometry') : null
-            if (geom == null || !geom.has('type') || geom.get('type').getAsString() != 'Polygon') continue
-            String key = null
-            try { key = ft.getAsJsonObject('properties').getAsJsonObject('classification').get('name').getAsString() } catch (Throwable ignore) {}
-            if (key == null) continue
-            def ring = geom.getAsJsonArray('coordinates').get(0).getAsJsonArray()
-            int n = ring.size()
-            if (n >= 2) {
-                def p0 = ring.get(0).getAsJsonArray()
-                def pl = ring.get(n - 1).getAsJsonArray()
-                if (p0.get(0).getAsDouble() == pl.get(0).getAsDouble() && p0.get(1).getAsDouble() == pl.get(1).getAsDouble()) n--
-            }
-            if (n < 3) continue
-            double[] xs = new double[n]
-            double[] ys = new double[n]
-            for (int i = 0; i < n; i++) { def p = ring.get(i).getAsJsonArray(); xs[i] = p.get(0).getAsDouble(); ys[i] = p.get(1).getAsDouble() }
-            def roi = ROIs.createPolygonROI(xs, ys, plane)
-            double cx = roi.getCentroidX()
-            double cy = roi.getCentroidY()
-            if (!unionRoi.contains(cx, cy)) { outside++; continue }
-            def pc = pcs[key]
-            if (pc == null) {
-                def c = classByKey[key]
-                if (c == null) unknown << key
-                pc = QP.getPathClass(trOf(key) + CLASS_SUFFIX)
-                if (c != null) try { pc.setColor(qupath.lib.common.ColorTools.packRGB(c.rgb[0] as int, c.rgb[1] as int, c.rgb[2] as int)) } catch (Throwable ignore) {}
-                pcs[key] = pc
-            }
-            def det = PathObjects.createDetectionObject(roi, pc)
-            if (calA != null) det.getMeasurements().put('Alan µm²', roi.getArea() * calA.pw * calA.ph)
-            dets << det
-            cells << [cx, cy, key]
+    for (el in feats) {
+        def ft = el.getAsJsonObject()
+        def geom = (ft.has('geometry') && ft.get('geometry').isJsonObject()) ? ft.getAsJsonObject('geometry') : null
+        if (geom == null || !geom.has('type') || geom.get('type').getAsString() != 'Polygon') continue
+        String key = null
+        try { key = ft.getAsJsonObject('properties').getAsJsonObject('classification').get('name').getAsString() } catch (Throwable ignore) {}
+        if (key == null) continue
+        def ring = geom.getAsJsonArray('coordinates').get(0).getAsJsonArray()
+        int n = ring.size()
+        if (n >= 2) {
+            def p0 = ring.get(0).getAsJsonArray()
+            def pl = ring.get(n - 1).getAsJsonArray()
+            if (p0.get(0).getAsDouble() == pl.get(0).getAsDouble() && p0.get(1).getAsDouble() == pl.get(1).getAsDouble()) n--
         }
-        if (!dets.isEmpty()) hier.addObjects(dets)
+        if (n < 3) continue
+        double[] xs = new double[n]
+        double[] ys = new double[n]
+        for (int i = 0; i < n; i++) { def p = ring.get(i).getAsJsonArray(); xs[i] = p.get(0).getAsDouble(); ys[i] = p.get(1).getAsDouble() }
+        def roi = ROIs.createPolygonROI(xs, ys, plane)
+        double cx = roi.getCentroidX()
+        double cy = roi.getCentroidY()
+        if (!unionRoi.contains(cx, cy)) { outside++; continue }
+        def pc = pcs[key]
+        if (pc == null) {
+            def c = classByKey[key]
+            if (c == null) unknown << key
+            pc = QP.getPathClass(trOf(key) + CLASS_SUFFIX)
+            if (c != null) try { pc.setColor(qupath.lib.common.ColorTools.packRGB(c.rgb[0] as int, c.rgb[1] as int, c.rgb[2] as int)) } catch (Throwable ignore) {}
+            pcs[key] = pc
+        }
+        def det = PathObjects.createDetectionObject(roi, pc)
+        if (calA != null) det.getMeasurements().put('Alan µm²', roi.getArea() * calA.pw * calA.ph)
+        dets << det
+        cells << [cx, cy, key]
     }
+    def hier = imageData.getHierarchy()
+    int removedSummaries = 0
+    def old = []
+    if (replacePrev) {
+        def oldSummaries = (base != null) ? prevSummariesIn(hier, unionRoi, base) : hier.getAnnotationObjects().findAll { a ->
+            a.getName() != null && a.getName().startsWith(SUMMARY_NAME) && a.hasROI() &&
+            unionRoi.contains(a.getROI().getCentroidX(), a.getROI().getCentroidY())
+        }
+        removedSummaries = oldSummaries.size()
+        if (!oldSummaries.isEmpty()) hier.removeObjects(oldSummaries, true)
+        old = prevDetectionsIn(hier, unionRoi)
+        if (!old.isEmpty()) hier.removeObjects(old, false)
+    }
+    if (!dets.isEmpty()) hier.addObjects(dets)
     hier.fireHierarchyChangedEvent(hier)
-    return [cells: cells, removed: old.size(), unknown: unknown, outside: outside]
+    return [cells: cells, removed: old.size(), removedSummaries: removedSummaries, unknown: unknown, outside: outside]
 }
 
 // ── Sınıf başına sayım + % + yoğunluk: seçili anotasyonlara + kilitli özete ──
-def writeCounts = { imageData, List targets, unionRoi, List cells, calA, String modelId ->
+def writeCounts = { imageData, List targets, unionRoi, List cells, calA, String modelId, boolean writeTargets = true, String summaryName = null ->
     def hier = imageData.getHierarchy()
     def present = cells.collect { it[2] } as LinkedHashSet
     def keys = CLASSES.collect { it.key }.findAll { present.contains(it) } + present.findAll { !classByKey.containsKey(it) }
@@ -806,9 +842,11 @@ def writeCounts = { imageData, List targets, unionRoi, List cells, calA, String 
         }
         return areaMm2
     }
-    targets.each { ann -> def roi = ann.getROI(); fill(ann, roi, cells.findAll { p -> roi.contains(p[0] as double, p[1] as double) }) }
+    if (writeTargets)
+        targets.each { ann -> def roi = ann.getROI(); fill(ann, roi, cells.findAll { p -> roi.contains(p[0] as double, p[1] as double) }) }
+    String finalSummaryName = summaryName ?: summaryBaseOf(modelId)
     def summary = PathObjects.createAnnotationObject(unionRoi)
-    summary.setName(SUMMARY_NAME + ' — ' + modelId)
+    summary.setName(finalSummaryName)
     double areaMm2 = fill(summary, unionRoi, cells)
     // fill() MEAS_PREFIX ile başlayan tüm ölçümleri temizleyip yeniden yazar; bu yüzden bu ölçüm de aynı
     // önekle YALNIZ fill() ÇAĞRISINDAN SONRA yazılır — önce yazılsaydı fill() onu da silerdi.
@@ -816,7 +854,7 @@ def writeCounts = { imageData, List targets, unionRoi, List cells, calA, String 
     summary.setLocked(true)
     hier.addObjects([summary])
     hier.fireHierarchyChangedEvent(hier)
-    return [areaMm2: areaMm2, keys: keys]
+    return [areaMm2: areaMm2, keys: keys, summaryName: finalSummaryName, wroteTargets: writeTargets]
 }
 
 // ── Sonuç metni (yalnız sayım/yüzde/yoğunluk) ────────────────────────────────
@@ -862,9 +900,15 @@ def resultText = { imageData, cfg, Map rd, Map imp, Map dens, Map stats, long el
         }
     }
     if (!imp.unknown.isEmpty()) sb << "\nTabloda olmayan etiketler (özgün adıyla eklendi): " << imp.unknown.join(', ') << "\n"
-    if (imp.removed > 0) sb << "\nBu alandaki önceki " << imp.removed << " Classpose tespiti değiştirildi.\n"
-    sb << "\nHücreler '<Sınıf> (Classpose)' sınıflı poligon TESPİTLERİ olarak eklendi; seçili anotasyonlara\n"
-    sb << "'Classpose: <sınıf> (n) / (%) / (/mm²)' yazıldı; kilitli özet: '" << SUMMARY_NAME << " — " << cfg.model << "'.\n"
+    sb << "\nHücreler '<Sınıf> (Classpose)' sınıflı poligon TESPİTLERİ olarak eklendi; kilitli özet: '" << (dens.summaryName ?: (SUMMARY_NAME + ' — ' + cfg.model)) << "'.\n"
+    if (dens.wroteTargets) {
+        if (imp.removed > 0 || (imp.removedSummaries ?: 0) > 0)
+            sb << String.format(java.util.Locale.US, "Değiştir kipi: bu alandaki %,d önceki Classpose tespiti ve %,d özet silindi.\n", imp.removed as int, (imp.removedSummaries ?: 0) as int)
+        sb << "Seçili anotasyonlara 'Classpose: <sınıf> (n) / (%) / (/mm²)' yazıldı.\n"
+    } else {
+        sb << "Ekle kipi: HİÇBİR ŞEY silinmedi. Seçili anotasyonların 'Classpose: …' ölçümleri önceki çalıştırmadan korundu;\n"
+        sb << "bu çalıştırmanın sayımları yukarıdaki tabloda ve yeni özet anotasyonundadır.\n"
+    }
     sb << "Sınıflar modelin eğitim veri setinin kategorileridir; görsel olarak doğrulayın.\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
@@ -879,6 +923,36 @@ def startRun = {
     def cfg = loadConfig()
     def rd = readiness(imageData, cfg)
     if (!rd.ok) { errorTextRef.set('Çalıştırılamadı:\n  • ' + rd.blocks.join('\n  • ')); step.set('ERROR'); render(); return }
+    def summaryBase = summaryBaseOf(cfg.model)
+    def hierNow = imageData.getHierarchy()
+    int nPrevSummaries = prevSummariesIn(hierNow, rd.unionRoi, summaryBase).size()
+    int nPrevDets = prevDetectionsIn(hierNow, rd.unionRoi).size()
+    boolean hadPrev = (nPrevSummaries > 0 || nPrevDets > 0)
+    boolean replacePrev = false
+    if (hadPrev && !isHeadless) {
+        def sb = new StringBuilder()
+        sb << String.format(java.util.Locale.US,
+            'Seçili alanda zaten %,d Classpose özeti ve Classpose sınıflı %,d tespit var.',
+            nPrevSummaries, nPrevDets)
+        sb << '\n\n"Ekle" seçilirse hiçbir şey silinmez; sonuç "' + summaryBase + ' (2)" gibi yeni bir özet olur. '
+        sb << 'Seçili anotasyonların "Classpose: …" ölçümleri önceki çalıştırmadan korunur (yeni sayımlar yeni özete yazılır).'
+        sb << '\n\n"Değiştir" seçilirse bu alanda Classpose sınıfı taşıyan tespitler ve özetler yeni GeoJSON doğrulandıktan sonra silinir. '
+        sb << 'Kendi anotasyonlarınıza ve diğer sınıflara hiçbir kipte dokunulmaz.'
+        sb << '\n\nÖnceki Classpose sonucu ne olsun?'
+        def pick = Dialogs.showChoiceDialog('Önceki Classpose sonucu', sb.toString(), [MODE_ADD, MODE_REPLACE], MODE_ADD)
+        if (pick == null) return
+        replacePrev = (pick == MODE_REPLACE)
+        if (replacePrev) {
+            boolean ok = Dialogs.showConfirmDialog('Önceki Classpose sonucu silinecek',
+                String.format(java.util.Locale.US,
+                    'Bu alandaki %,d özet ve Classpose sınıflı %,d tespit değiştirilecek (elle yaptığınız sınıf düzeltmeleri varsa kaybolur).\n\nDevam edilsin mi?',
+                    nPrevSummaries, nPrevDets))
+            if (!ok) return
+        }
+    }
+    final boolean runReplacePrev = replacePrev
+    final boolean runWriteTargets = (!hadPrev) || replacePrev
+    final String runSummaryBase = summaryBase
     def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs(); workDirRef.set(workDir)
     def roiFile = new File(workDir, 'roi.geojson')
     if (!writeRoiGeoJson(rd.unionRoi, roiFile)) { errorTextRef.set('Seçili alan GeoJSON olarak yazılamadı (boş geometri).'); step.set('ERROR'); render(); return }
@@ -935,8 +1009,11 @@ def startRun = {
             if (geo != null && !geo.isFile()) geo = null
             javafx.application.Platform.runLater { busyLabelRef.set('Hücreler içe aktarılıyor…'); step.set('BUSY'); render() }
             // Uzun çalıştırmadan SONRA QP.getCurrentImageData()'yı YENİDEN ALMA: başlatan imageData'ya yaz.
-            def imp = importCells(geo, imageData, rd.unionRoi, rd.calA)
-            def dens = writeCounts(imageData, rd.targets, rd.unionRoi, imp.cells, rd.calA, cfg.model)
+            if (cancelledRef.get()) { javafx.application.Platform.runLater { step.set('READY'); render() }; return }
+            def imp = importCells(geo, imageData, rd.unionRoi, rd.calA, runReplacePrev, runSummaryBase)
+            def summaryName = runReplacePrev ? runSummaryBase
+                                             : nextSummaryName(imageData.getHierarchy(), rd.unionRoi, runSummaryBase)
+            def dens = writeCounts(imageData, rd.targets, rd.unionRoi, imp.cells, rd.calA, cfg.model, runWriteTargets, summaryName)
             if (imp.outside > 0) appendLine('Not: alan dışında kalan ' + imp.outside + ' kontur atlandı.')
             def txt = resultText(imageData, cfg, rd, imp, dens, stats, elapsed)
             javafx.application.Platform.runLater {

@@ -113,7 +113,30 @@ def CLASSES = [
 ]
 def classByKey = [:]
 CLASSES.each { classByKey[it.key] = it }
-def trOf = { String key -> (classByKey[key]?.tr) ?: key }
+def CANONICAL_ALIASES = [
+    'cancer cell': 'Cancer cell', 'cancer cells': 'Cancer cell', 'tumor': 'Cancer cell', 'tumour': 'Cancer cell', 'neoplastic': 'Cancer cell',
+    'lymphocyte': 'Lymphocytes', 'lymphocytes': 'Lymphocytes',
+    'fibroblast': 'Fibroblasts', 'fibroblasts': 'Fibroblasts',
+    'plasmocyte': 'Plasmocytes', 'plasmocytes': 'Plasmocytes', 'plasma cell': 'Plasmocytes', 'plasma cells': 'Plasmocytes',
+    'eosinophil': 'Eosinophils', 'eosinophils': 'Eosinophils',
+    'neutrophil': 'Neutrophils', 'neutrophils': 'Neutrophils',
+    'macrophage': 'Macrophages', 'macrophages': 'Macrophages',
+    'muscle cell': 'Muscle Cell', 'muscle cells': 'Muscle Cell', 'smooth muscle': 'Muscle Cell',
+    'endothelial': 'Endothelial Cell', 'endothelial cell': 'Endothelial Cell', 'endothelial cells': 'Endothelial Cell',
+    'red blood cell': 'Red blood cell', 'red blood cells': 'Red blood cell', 'erythrocyte': 'Red blood cell', 'erythrocytes': 'Red blood cell',
+    'epithelial': 'Epithelial', 'normal epithelial': 'Epithelial', 'benign epithelial': 'Epithelial',
+    'apoptotic body': 'Apoptotic Body', 'apoptotic bodies': 'Apoptotic Body',
+    'mitotic figure': 'Mitotic Figures', 'mitotic figures': 'Mitotic Figures', 'mitosis': 'Mitotic Figures',
+    'minor stromal cell': 'Minor Stromal Cell', 'minor stromal cells': 'Minor Stromal Cell'
+]
+def canonicalKeyOf = { String rawKey ->
+    if (rawKey == null) return null
+    String trimmed = rawKey.trim()
+    if (classByKey.containsKey(trimmed)) return trimmed
+    String norm = trimmed.toLowerCase(java.util.Locale.ROOT).replaceAll(/\s+/, ' ')
+    return CANONICAL_ALIASES[norm] ?: trimmed
+}
+def trOf = { String key -> (classByKey[canonicalKeyOf(key)]?.tr) ?: key }
 def UNDOCUMENTED_NOTE = '"Minor Stromal Cell" modelin 15. çıkışıdır; makalenin 13 sınıfında yer almaz ve tanımı yayımlanmamıştır — ayrı raporlayın, yorumlamayın.'
 
 // ── Kalıcı yapılandırma: java.util.prefs (eklenti JAR'ı olmadan da çalışır) ──
@@ -760,6 +783,7 @@ def importCells = { File geojson, imageData, unionRoi, calA, boolean replacePrev
             try { vote = ft.getAsJsonObject('properties').getAsJsonObject('measurements').get(RUNNER_VOTE).getAsDouble() } catch (Throwable ignore) {}
             if (key == null || key.trim().isEmpty())
                 throw new IllegalArgumentException('HistoPLUS feature classification is missing; previous results were preserved.')
+            if (binding.variables.containsKey('canonicalKeyOf')) key = canonicalKeyOf(key)
             def ring = geom.getAsJsonArray('coordinates').get(0).getAsJsonArray()
             int n = ring.size()
             if (n >= 2) {
