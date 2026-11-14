@@ -23,9 +23,16 @@
  *     kararlı genel API'sinden gelir; güvenilirdir.
  *   • "Kestirilen büyütme" bir SEZGİSEL'dir (0.25 µm/px ≈ 40×). Lam gömülü
  *     "objektif büyütme" varsa (getMagnification) ayrıca raporlanır.
- *   • Gömülü tarayıcı anahtarları (tarayıcı markası, tarama tarihi, MPP vb.)
- *     yalnız okuyucu/biçim bunları açığa çıkardığında doldurulur (örn. bazı
- *     Aperio SVS okuyucuları). Açığa çıkmazsa o alanlar boş kalır — hata değil.
+ *   • Gömülü tarayıcı anahtarları (tarayıcı modeli ve yazılım sürümü, tarama
+ *     tarihi, MPP, AppMag, sıkıştırma ve kalite, Rack/Slide vb.) TIFF tabanlı
+ *     dosyalarda (SVS, TIFF, BigTIFF) doğrudan dosya başlığından SALT OKUNUR
+ *     okunur: Bio-Formats ve OpenSlide sunucuları bu anahtarları açığa
+ *     çıkarmaz. Aperio dışı biçimlerde bu alanlar boş kalır — hata değil.
+ *   • Aynı okuma, kimlik / yarı kimlik taşıyabilen gömülü alanların envanterini
+ *     de verir (embedded_identity_filled / _blank): Filename, Date, Time, User,
+ *     ScanScope ID, ImageID, Barcode, Rack, Slide … Liste WSI anonimleştirme
+ *     sihirbazının temizlediği anahtarlarla aynıdır. CSV bu alanların
+ *     değerlerini içerir; paylaşmadan önce gözden geçirin.
  *   • Hiçbir klinik yorum, tanı veya skor üretmez.
  *
  * KULLANIM:
@@ -107,6 +114,261 @@ def applyEmbedded = { m, embedded ->
             if (!m.containsKey(rawKey)) m[rawKey] = vs
         } catch (Throwable ignore) {}
     }
+}
+
+// ── TIFF / Aperio başlığı (salt okunur, saf Java; klasik TIFF + BigTIFF) ───────
+// Bio-Formats ve OpenSlide sunucuları Aperio ImageDescription anahtarlarını Map
+// olarak açığa çıkarmaz (yukarıdaki yansıma boş döner). Tarayıcı bilgisi bu yüzden
+// doğrudan dosyadan okunur: her IFD'nin ASCII etiketleri (ImageDescription, Make,
+// Model, Software, DateTime …). Dosya 'r' kipinde açılır; hiçbir bayt yazılmaz.
+def TIFF_TYPE_SIZE  = [1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 6: 1, 7: 1, 8: 2, 9: 4, 10: 8, 11: 4, 12: 8, 13: 4, 16: 8, 17: 8, 18: 8]
+def TIFF_HEADER_EXT = ['svs', 'tif', 'tiff', 'btf', 'scn', 'bif', 'qptiff'] as Set
+def TIFF_INFO_TAGS  = [271: 'Make', 272: 'Model', 305: 'Software']
+// Kimlik / yarı kimlik taşıyabilen alanlar — WSI anonimleştirme sihirbazının temizlediği listeyle aynı.
+def TIFF_ID_TAGS    = [269: 'DocumentName', 285: 'PageName', 306: 'DateTime', 315: 'Artist', 316: 'HostComputer', 42016: 'ImageUniqueID']
+def ID_KEYS_EXACT   = ['filename', 'title', 'date', 'time', 'timezone', 'datetime', 'user', 'username', 'operator',
+                       'scanscopeid', 'scannerid', 'imageid', 'barcode', 'label', 'slideid', 'slidename',
+                       'name', 'dsrid', 'rack', 'slide'] as Set
+def ID_KEYS_PREFIX  = ['patient', 'case', 'accession', 'specimen', 'barcode']
+def normKey  = { String k -> (k ?: '').trim().toLowerCase(java.util.Locale.ROOT).replaceAll('[\\s_\\-]', '') }
+def isIdKey  = { String k -> def n = normKey(k); ID_KEYS_EXACT.contains(n) || ID_KEYS_PREFIX.any { n.startsWith(it) } }
+// Boş ya da anonimleştirme aracının X ile doldurduğu değer "boş" sayılır.
+def isBlankValue = { String v -> v == null || v.trim().isEmpty() || (v.trim() ==~ /[Xx ]+/) }
+
+def tiffBuf = { java.io.RandomAccessFile raf, long pos, int n, boolean littleEndian ->
+    byte[] b = new byte[n]
+    raf.seek(pos); raf.readFully(b)
+    def bb = java.nio.ByteBuffer.wrap(b)
+    bb.order(littleEndian ? java.nio.ByteOrder.LITTLE_ENDIAN : java.nio.ByteOrder.BIG_ENDIAN)
+    return bb
+}
+def tiffU16 = { java.nio.ByteBuffer bb -> ((int) bb.getShort()) & 0xFFFF }
+def tiffU32 = { java.nio.ByteBuffer bb -> ((long) bb.getInt()) & 0xFFFFFFFFL }
+
+def readTiffHeader = { File f ->    java.io.RandomAccessFile raf = null
+    try {
+        raf = new java.io.RandomAccessFile(f, 'r')
+        long len = raf.length()
+        if (len < 16L) return null
+        def hdr = tiffBuf(raf, 0L, 16, true)
+
+        byte b0 = hdr.get(0), b1 = hdr.get(1)
+        boolean isII = (b0 == (byte) 0x49 && b1 == (byte) 0x49)
+        boolean isMM = (b0 == (byte) 0x4D && b1 == (byte) 0x4D)
+        if (!isII && !isMM) return null
+        boolean le = isII
+
+        hdr = tiffBuf(raf, 0L, 16, le)
+        hdr.position(2)
+        int magic = tiffU16(hdr)
+        if (magic != 42 && magic != 43) return null
+        boolean big = (magic == 43)
+        long first = 0L
+        if (big) {
+            int osz = tiffU16(hdr); hdr.getShort()
+            if (osz != 8) return null
+            first = hdr.getLong()
+        } else {
+            first = tiffU32(hdr)
+        }
+        int cntSize = big ? 8 : 2, entSize = big ? 20 : 12, ptrSize = big ? 8 : 4
+        def ifds = []
+        def seen = new HashSet()
+        long off = first
+        while (off != 0L) {
+            if (off < 8L || off >= len || !seen.add(off) || ifds.size() > 4096) break
+            def cb = tiffBuf(raf, off, cntSize, le)
+            long n = big ? cb.getLong() : tiffU16(cb)
+            if (n <= 0L || n > 4096L) break
+            long entStart = off + cntSize
+            def eb = tiffBuf(raf, entStart, (int) (n * entSize), le)
+            def ascii = new LinkedHashMap()
+            boolean icc = false
+            byte[] iccBytes = null
+            for (int k = 0; k < n; k++) {
+                int base = k * entSize
+                eb.position(base)
+                int tag = tiffU16(eb)
+                int type = tiffU16(eb)
+                long count = big ? eb.getLong() : tiffU32(eb)
+                if (tag == 34675) {
+                    icc = true
+                    // ICC profili baytları yalnız ilk IFD'den (kimlik: md5 + başlık); 32 MB üstü okunmaz
+                    if (ifds.isEmpty() && count > 128L && count <= 33554432L) {
+                        long iccPos = 0L
+                        if (count <= ptrSize) iccPos = entStart + base + (big ? 12 : 8)
+                        else { eb.position(base + (big ? 12 : 8)); iccPos = big ? eb.getLong() : tiffU32(eb) }
+                        if (iccPos > 0L && iccPos + count <= len) {
+                            iccBytes = new byte[(int) count]
+                            raf.seek(iccPos); raf.readFully(iccBytes)
+                        }
+                    }
+                }
+                boolean wanted = (tag == 270) || TIFF_INFO_TAGS.containsKey(tag) || TIFF_ID_TAGS.containsKey(tag)
+                if (!wanted || type != 2 || count <= 0L || count > 4000000L) continue
+                long size = count * ((TIFF_TYPE_SIZE.get(type) ?: 1) as int)
+                long dataPos = 0L
+                if (size <= ptrSize) dataPos = entStart + base + (big ? 12 : 8)
+                else { eb.position(base + (big ? 12 : 8)); dataPos = big ? eb.getLong() : tiffU32(eb) }
+                if (dataPos < 0L || dataPos + count > len) continue
+                byte[] vb = new byte[(int) count]
+                raf.seek(dataPos); raf.readFully(vb)
+                ascii.put(tag, new String(vb, java.nio.charset.StandardCharsets.ISO_8859_1).replace('\u0000', '').trim())
+            }
+            ifds << [ascii: ascii, icc: icc, iccBytes: iccBytes]
+            def pb = tiffBuf(raf, entStart + n * entSize, ptrSize, le)
+            off = big ? pb.getLong() : tiffU32(pb)
+        }
+        return ifds.isEmpty() ? null : [big: big, ifds: ifds]
+    } catch (Throwable t) {
+        return null
+    } finally {
+        try { if (raf != null) raf.close() } catch (Throwable ignore) {}
+    }
+}
+
+// Aperio ImageDescription: "Aperio … vX \n GxY [..] (256x256) JPEG/YCC Q=91|Anahtar = Değer|…"
+// Etiket ve makro IFD'lerinde ikinci satır "label GxY" / "macro GxY" ile başlar.
+def parseAperio = { String desc ->
+    if (desc == null || !desc.startsWith('Aperio')) return null
+    def parts = desc.split('\\|')
+    def head = parts[0]
+    def lines = head.split('\\r?\\n')
+    def res = [scanner: lines[0].trim(), keys: new LinkedHashMap(), assoc: null]
+    if (lines.length > 1) {
+        def second = lines[1].trim().toLowerCase(java.util.Locale.ROOT)
+        if (second.startsWith('label')) res.assoc = 'label'
+        else if (second.startsWith('macro')) res.assoc = 'macro'
+    }
+    def mq = (head =~ /Q=(\d+)/);                    if (mq.find()) res.quality = mq.group(1)
+    def mt = (head =~ /\((\d+x\d+)\)/);              if (mt.find()) res.tile = mt.group(1)
+    def mc = (head =~ /\)\s+([A-Za-z0-9\/]+)\s+Q=/); if (mc.find()) res.compression = mc.group(1)
+    // Yazılım dizgesi: aile + sürüm ("Aperio Leica Biosystems GT450 DX" + "1.2.5"); sürüm, bakım/güncelleme izidir
+    def mv = (res.scanner =~ /\bv?(\d+(?:\.\d+)+)\s*$/)
+    if (mv.find()) {
+        res.softwareVersion = mv.group(1)
+        res.softwareFamily  = res.scanner.substring(0, mv.start()).trim()
+    } else {
+        res.softwareFamily = res.scanner
+    }
+    if (res.compression != null && res.compression.contains('/')) {
+        res.codec = res.compression.substring(0, res.compression.indexOf('/'))
+        res.jpegColorspace = res.compression.substring(res.compression.indexOf('/') + 1)
+    }
+    for (int i = 1; i < parts.length; i++) {
+        int eq = parts[i].indexOf('=')
+        if (eq > 0) res.keys.put(parts[i].substring(0, eq).trim(), parts[i].substring(eq + 1).trim())
+    }
+    return res
+}
+
+// Başlıktan tarayıcı alanlarını + gömülü kimlik alanı envanterini satıra işle.
+def APERIO_COLUMNS = ['ScannerType': 'scanner_type', 'ScanScope ID': 'scanscope_id', 'Date': 'scan_date', 'Time': 'scan_time',
+                      'Time Zone': 'time_zone', 'AppMag': 'apparent_magnification', 'MPP': 'mpp', 'Rack': 'rack',
+                      'Slide': 'slide_number', 'SessionMode': 'session_mode', 'Scan Warning': 'scan_warning',
+                      'Exposure Time': 'exposure_time', 'Exposure Scale': 'exposure_scale', 'Gamma': 'gamma',
+                      'Filtered': 'filtered', 'StripeWidth': 'stripe_width', 'Filename': 'embedded_filename',
+                      'ImageID': 'image_id', 'User': 'scan_user', 'Title': 'embedded_title', 'Barcode': 'barcode',
+                      'CalibrationAverageRed': 'calibration_average_red', 'CalibrationAverageGreen': 'calibration_average_green',
+                      'CalibrationAverageBlue': 'calibration_average_blue', 'Focus Offset': 'focus_offset',
+                      'Extended Focus': 'extended_focus', 'Parmset': 'parmset', 'Left': 'stage_left', 'Top': 'stage_top']
+
+// Gömülü ICC profilinin kimliği (ICC.1:2010 §7.2 başlık + 'desc' etiketi). İki profil aynı boyutta
+// olup yine de farklı olabilir; md5 + profilin kendi oluşturma tarihi ayırt eder. Yalnız okur.
+def iccSig = { byte[] blob, int pos -> new String(blob, pos, 4, java.nio.charset.StandardCharsets.ISO_8859_1).replace('\u0000', ' ').trim() }
+def parseIcc = { byte[] blob ->
+    def out = new LinkedHashMap()
+    try {
+        def md = java.security.MessageDigest.getInstance('MD5').digest(blob)
+        def hex = new StringBuilder()
+        for (byte b : md) hex.append(String.format(java.util.Locale.US, '%02x', b & 0xFF))
+        out.icc_md5   = hex.toString()
+        out.icc_bytes = blob.length
+        if (blob.length < 132) return out
+        def bb = java.nio.ByteBuffer.wrap(blob)   // ICC her zaman big-endian
+        out.icc_version      = '' + (blob[8] & 0xFF) + '.' + ((blob[9] & 0xFF) >> 4) + '.' + (blob[9] & 0x0F)
+        out.icc_device_class = iccSig(blob, 12)
+        out.icc_colorspace   = iccSig(blob, 16)
+        int y = bb.getShort(24) & 0xFFFF
+        int mo = bb.getShort(26) & 0xFFFF
+        int d = bb.getShort(28) & 0xFFFF
+        int hh = bb.getShort(30) & 0xFFFF
+        int mi = bb.getShort(32) & 0xFFFF
+        int ss = bb.getShort(34) & 0xFFFF
+        if (y > 1990 && y < 2100) out.icc_created = String.format(java.util.Locale.US, '%04d-%02d-%02dT%02d:%02d:%02d', y, mo, d, hh, mi, ss)
+        int nTags = bb.getInt(128)
+        if (nTags > 0 && nTags < 200 && 132 + nTags * 12 <= blob.length) {
+            for (int i = 0; i < nTags; i++) {
+                int p = 132 + i * 12
+                if (iccSig(blob, p) != 'desc') continue
+                int o = bb.getInt(p + 4)
+                int sz = bb.getInt(p + 8)
+                if (o < 0 || sz < 12 || o + sz > blob.length) break
+                String type = iccSig(blob, o)
+                String text = ''
+                if (type == 'desc') {                      // ICC v2: ASCII
+                    int n = bb.getInt(o + 8)
+                    if (n > 0 && o + 12 + n <= blob.length) text = new String(blob, o + 12, n, java.nio.charset.StandardCharsets.ISO_8859_1)
+                } else if (type == 'mluc') {               // ICC v4: UTF-16BE, ilk kayıt
+                    int recs = bb.getInt(o + 8)
+                    if (recs > 0) {
+                        int ln = bb.getInt(o + 20)
+                        int ro = bb.getInt(o + 24)
+                        if (ln > 0 && o + ro + ln <= blob.length) text = new String(blob, o + ro, ln, java.nio.charset.StandardCharsets.UTF_16BE)
+                    }
+                }
+                text = text.replace('\u0000', '').trim()
+                if (!text.isEmpty()) out.icc_description = (text.length() > 200 ? text.substring(0, 200) : text)
+                break
+            }
+        }
+    } catch (Throwable ignore) {}
+    return out
+}
+def applyTiffHeader = { m, File f ->
+    if (f == null || !f.isFile()) return
+    if (!TIFF_HEADER_EXT.contains((m.file_extension ?: '').toString())) return
+    def h = readTiffHeader(f)
+    if (h == null) return
+    m.is_bigtiff      = h.big
+    m.tiff_ifd_count  = h.ifds.size()
+    m.has_icc_profile = h.ifds[0].icc
+    if (h.ifds[0].iccBytes != null) parseIcc((byte[]) h.ifds[0].iccBytes).each { k, v -> m[k] = v }
+    TIFF_INFO_TAGS.each { tag, name ->
+        def v = h.ifds[0].ascii.get(tag)
+        if (v) m['tiff_' + name.toLowerCase(java.util.Locale.ROOT)] = v
+    }
+    def filled = new LinkedHashSet(), blank = new LinkedHashSet()
+    h.ifds.eachWithIndex { ifd, int idx ->
+        TIFF_ID_TAGS.each { tag, name ->
+            if (!ifd.ascii.containsKey(tag)) return
+            (isBlankValue(ifd.ascii.get(tag)) ? blank : filled).add(name)
+        }
+        def ap = parseAperio(ifd.ascii.get(270))
+        if (ap == null) return
+        if (ap.assoc == 'label') m.label_ifd_present = true
+        if (ap.assoc == 'macro') m.macro_ifd_present = true
+        ap.keys.each { k, v -> if (isIdKey(k)) (isBlankValue(v) ? blank : filled).add(k) }
+        if (idx != 0) return
+        m.scanner = ap.scanner            // "Aperio Leica Biosystems GT450 v1.3.3" (satıcı + model + yazılım sürümü)
+        if (ap.compression != null) m.compression = ap.compression
+        if (ap.quality != null)     m.compression_quality = ap.quality
+        if (ap.tile != null)        m.tile_size = ap.tile
+        if (ap.softwareFamily != null)  m.scanner_software_family  = ap.softwareFamily
+        if (ap.softwareVersion != null) m.scanner_software_version = ap.softwareVersion
+        if (ap.codec != null)           m.codec = ap.codec
+        if (ap.jpegColorspace != null)  m.jpeg_colorspace = ap.jpegColorspace
+        ap.keys.each { k, v ->
+            def col = APERIO_COLUMNS.get(k)
+            if (col != null) m[col] = v
+            def rawKey = 'raw_' + k.replaceAll('[\\r\\n",]', ' ').trim()
+            if (!m.containsKey(rawKey)) m[rawKey] = v
+        }
+    }
+    blank.removeAll(filled)
+    m.embedded_identity_filled_count = filled.size()
+    m.embedded_identity_filled       = filled.join('; ')
+    m.embedded_identity_blank        = blank.join('; ')
 }
 
 // ── Tek görüntüden çekirdek üst veriyi çıkar (LinkedHashMap → mantıksal sıra) ─
@@ -210,6 +472,8 @@ def extractMetadata = { imageData, entry, project ->
 
     // Gömülü tarayıcı anahtarları + ham döküm (en iyi çaba)
     try { applyEmbedded(m, probeEmbedded(server)) } catch (Throwable ignore) {}
+    // TIFF / Aperio başlığı doğrudan dosyadan (tarayıcı, sıkıştırma, gömülü kimlik alanları)
+    try { if (m.file_path != null) applyTiffHeader(m, new File(m.file_path.toString())) } catch (Throwable ignore) {}
     return m
 }
 
@@ -240,6 +504,16 @@ def reportText = { m ->
     if (m.scanner != null) line('Tarayıcı', m.scanner)
     if (m.scanner_type != null) line('Tarayıcı tipi', m.scanner_type)
     if (m.scan_date != null) line('Tarama tarihi', m.scan_date + (m.scan_time != null ? (' ' + m.scan_time) : ''))
+    if (m.compression != null) line('Sıkıştırma', m.compression + (m.compression_quality != null ? (' Q=' + m.compression_quality) : ''))
+    if (m.tiff_ifd_count != null) line('TIFF IFD sayısı', '' + m.tiff_ifd_count + (m.is_bigtiff ? '  (BigTIFF)' : ''))
+    if (m.has_icc_profile != null) line('ICC profili', m.has_icc_profile ? ('var' + (m.icc_md5 != null ? ('  md5 ' + m.icc_md5.toString().substring(0, 12) + (m.icc_created != null ? ('  oluşturma ' + m.icc_created) : '')) : '')) : 'yok')
+    if (m.icc_description != null) line('ICC açıklaması', m.icc_description)
+    if (m.has_label_image != null) line('Etiket / makro görüntü', (m.has_label_image ? 'var' : 'yok') + ' / ' + (m.has_macro_image ? 'var' : 'yok'))
+    if (m.embedded_identity_filled_count != null) {
+        sb << '\n'
+        line('Gömülü kimlik alanı (dolu)', m.embedded_identity_filled ?: 'yok')
+        line('Gömülü kimlik alanı (boş)', m.embedded_identity_blank ?: 'yok')
+    }
     int rawN = m.keySet().count { it.toString().startsWith('raw_') }
     if (rawN > 0) sb << String.format(java.util.Locale.US, '%n  (+ %d gömülü ham anahtar — CSV\'de raw_* sütunları)%n', rawN)
     sb << '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
@@ -335,12 +609,27 @@ def buildSummary = { List rows, List errors, File outDir, File csvFile, boolean 
     }
     int withPyr = rows.count { it.has_pyramid }
     sb << String.format(java.util.Locale.US, '  Piramitli       : %,d / %,d%n', withPyr, rows.size())
-    def scanners = rows.collect { it.scanner }.findAll { it }.unique()
-    if (!scanners.isEmpty()) sb << '  Tarayıcılar     : ' + scanners.join(', ') + '\n'
+    def scanners = rows.collect { it.scanner }.findAll { it }.countBy { it }
+    if (!scanners.isEmpty()) sb << '  Tarayıcılar     : ' + scanners.collect { k, v -> k + ' (' + v + ')' }.join(', ') + '\n'
+    def iccs = rows.collect { it.icc_md5 }.findAll { it }.countBy { it.toString().substring(0, 12) }
+    if (!iccs.isEmpty()) sb << '  ICC profilleri  : ' + iccs.size() + ' farklı: ' + iccs.collect { k, v -> k + ' (' + v + ')' }.join(', ') + '\n'
     def formats = rows.collect { it.file_extension }.findAll { it }.countBy { it }
     if (!formats.isEmpty()) sb << '  Biçimler        : ' + formats.collect { k, v -> k + '(' + v + ')' }.join(', ') + '\n'
     double totMB = 0.0d; rows.each { if (it.file_size_mb != null) totMB += (double) it.file_size_mb }
     if (totMB > 0) sb << String.format(java.util.Locale.US, '  Toplam boyut    : %,d MB%n', Math.round(totMB))
+    int withLabel = rows.count { it.has_label_image }, withMacro = rows.count { it.has_macro_image }
+    sb << String.format(java.util.Locale.US, '  Etiket görüntüsü: %,d / %,d%n', withLabel, rows.size())
+    sb << String.format(java.util.Locale.US, '  Makro görüntü   : %,d / %,d%n', withMacro, rows.size())
+    def headerRows = rows.findAll { it.embedded_identity_filled_count != null }
+    if (!headerRows.isEmpty()) {
+        int withId = headerRows.count { ((int) it.embedded_identity_filled_count) > 0 }
+        sb << String.format(java.util.Locale.US, '  Gömülü kimlik alanı dolu lam: %,d / %,d%n', withId, headerRows.size())
+        def idKeys = new java.util.TreeSet()
+        headerRows.each { r -> (r.embedded_identity_filled ?: '').toString().split(';').each { if (it.trim()) idKeys.add(it.trim()) } }
+        if (!idKeys.isEmpty()) sb << '  Dolu alanlar    : ' + idKeys.join(', ') + '\n'
+        sb << '\n  Dikkat: CSV bu alanların DEĞERLERİNİ de içerir (raw_* ve tarama sütunları).\n'
+        sb << '  CSV\'yi paylaşmadan önce bu sütunları ve file_path / file_uri sütunlarını gözden geçirin.\n'
+    }
     sb << '\n  CSV   : ' + csvFile.getAbsolutePath() + '\n'
     sb << '  Özet  : ' + new File(outDir, 'detailed_summary.txt').getAbsolutePath() + '\n'
     if (wroteCols) sb << '\n  ✓ Çekirdek alanlar Proje sekmesine sütun olarak da yazıldı (sıralanabilir).\n'
