@@ -28,6 +28,14 @@ import qupath.lib.scripting.QP
 import qupath.lib.objects.PathAnnotationObject
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
+// Preserve Turkish standalone use; the packaged extension supplies the active language.
+def atolyeText = { String key, String fallback ->
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        def translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) { return fallback }
+}
 // --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
 def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
 def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
@@ -45,8 +53,8 @@ def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class,
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     Dialogs.showErrorMessage(
-        "Görüntü açık değil",
-        "Önce bir lam açın (sol Proje panelinden çift tıklayın), sonra bu betiği tekrar çalıştırın."
+        atolyeText('cell.noImage.title', "Görüntü açık değil"),
+        atolyeText('cell.noImage.body', "Önce bir lam açın (sol Proje panelinden çift tıklayın), sonra bu betiği tekrar çalıştırın.")
     )
     return
 }
@@ -78,12 +86,12 @@ if (curImageType == qupath.lib.images.ImageData.ImageType.FLUORESCENCE) {
 def runDetection = { double thr, double sig, double exp ->
     def selected = QP.getSelectedObject()
     if (selected == null || !(selected instanceof PathAnnotationObject))
-        return [ok:false, error:'Önce ölçmek istediğiniz alan anotasyonunu seçin (üst araç çubuğundan Dikdörtgen [R], Çokgen [P] veya Fırça [B] ile çizip üzerine tıklayın; seçili anotasyonun kenarı SARI görünür).']
+        return [ok:false, error:atolyeText('cell.noRoi', 'Önce ölçmek istediğiniz alan anotasyonunu seçin (üst araç çubuğundan Dikdörtgen [R], Çokgen [P] veya Fırça [B] ile çizip üzerine tıklayın; seçili anotasyonun kenarı SARI görünür).')]
     def target = selected
     def cal = imageData.getServer().getPixelCalibration()
     double pw = cal.getPixelWidthMicrons(), ph = cal.getPixelHeightMicrons()
     if (!(pw > 0) || !(ph > 0))
-        return [ok:false, error:'Piksel kalibrasyonu yok; mm² hesaplanamaz (Yardımcılar → Kalibrasyon).']
+        return [ok:false, error:atolyeText('cell.noScale', 'Piksel kalibrasyonu yok; mm² hesaplanamaz (Yardımcılar → Kalibrasyon).')]
     double pixelSize       = atolyeD('atolye.pixelSize', 0.5)
     double backgroundRadius = atolyeD('atolye.backgroundRadius', 8.0)
     double medianRadius    = atolyeD('atolye.medianRadius', 0.0)
@@ -117,13 +125,13 @@ def runDetection = { double thr, double sig, double exp ->
     if (roi != null) areaMm2 = (roi.getArea() * pw * ph) / 1_000_000.0
     long density = areaMm2 > 0 ? Math.round(totalCells / areaMm2) : 0L
     def text = String.format(java.util.Locale.US,
-        "Parametreler : eşik=%.2f  sigma=%.2f  genişletme=%.1f µm\n" +
+        atolyeText('cell.results', "Parametreler : eşik=%.2f  sigma=%.2f  genişletme=%.1f µm\n" +
         "────────────────────────────\n" +
         "  Toplam hücre        : %,d\n" +
         "  Anotasyon alanı     : %.2f mm²\n" +
         "  Hücre yoğunluğu     : ~%,d hücre/mm²\n" +
         "  Süre                : %.1f sn\n\n" +
-        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
+        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."),
         thr, sig, exp, totalCells, areaMm2, density, elapsed)
     return [ok:true, text:text]
 }
@@ -142,17 +150,17 @@ javafx.application.Platform.runLater {
     try {
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Hızlı hücre tespiti')
+        stage.setTitle(atolyeText('cell.title', 'Hızlı hücre tespiti'))
         stage.setAlwaysOnTop(true)
 
-        def title = new javafx.scene.control.Label('Hızlı hücre tespiti')
+        def title = new javafx.scene.control.Label(atolyeText('cell.title', 'Hızlı hücre tespiti'))
         title.setStyle('-fx-font-size: 14px; -fx-font-weight: bold;')
         def info = new javafx.scene.control.Label(
-            'Bir dikdörtgen anotasyon (R) çizip SEÇİN (kenarı sarı), sonra "Çalıştır".\n' +
+            atolyeText('cell.instructions', 'Bir dikdörtgen anotasyon (R) çizip SEÇİN (kenarı sarı), sonra "Çalıştır".\n' +
             'Eşikleri değiştirip yeniden çalıştırabilirsiniz; sonuç aşağıda güncellenir.\n' +
             'Perde arkası: dekonvolüsyon → Gaussian (σ) yumuşatma → eşik (ikili maske) → ' +
             'mesafe dönüşümü + watershed (bitişik çekirdekleri ayır). Bu adımları kendi ' +
-            'lamınızda görmek için: Yardımcılar → Görüntü işleme kavramları.')
+            'lamınızda görmek için: Yardımcılar → Görüntü işleme kavramları.'))
         info.setWrapText(true)
 
         def commitSpinner = { javafx.scene.control.Spinner sp ->
@@ -178,38 +186,38 @@ javafx.application.Platform.runLater {
         // Her parametrenin "perde arkası" görüntü-işleme karşılığı (Bankhead, dijital
         // patoloji için görüntü-işleme sözlüğü) — kavramı kullanım anında açıklar.
         spThr.setTooltip(new javafx.scene.control.Tooltip(
-            'İkili maske eşiği: Hematoxylin OD bu değerin ÜSTÜNDEKİ pikseller çekirdek\n' +
+            atolyeText('cell.threshold.tip', 'İkili maske eşiği: Hematoxylin OD bu değerin ÜSTÜNDEKİ pikseller çekirdek\n' +
             'adayı olur. Eşik, bulunan nesnelerin sayısını ve şeklini doğrudan değiştirir\n' +
             '(Bankhead: binary image / eşikleme). Eşik tek başına yetmez — devamında\n' +
-            'mesafe dönüşümü + watershed bitişik çekirdekleri ayırır.'))
+            'mesafe dönüşümü + watershed bitişik çekirdekleri ayırır.')))
         spSig.setTooltip(new javafx.scene.control.Tooltip(
-            'Gaussian filtre: σ (sigma) büyüdükçe görüntü daha çok yumuşatılır.\n' +
+            atolyeText('cell.sigma.tip', 'Gaussian filtre: σ (sigma) büyüdükçe görüntü daha çok yumuşatılır.\n' +
             'Daha büyük σ aşırı bölünmeyi azaltır ama bitişik çekirdekleri birleştirebilir;\n' +
-            'çok küçük σ tek bir çekirdeği parçalara bölebilir.'))
+            'çok küçük σ tek bir çekirdeği parçalara bölebilir.')))
         spExp.setTooltip(new javafx.scene.control.Tooltip(
-            'ROI genişletme (µm): çekirdek maskesini dışa doğru büyüterek yaklaşık bir\n' +
-            'hücre/sitoplazma bölgesi tanımlar. 0 = yalnız çekirdek.'))
+            atolyeText('cell.expansion.tip', 'ROI genişletme (µm): çekirdek maskesini dışa doğru büyüterek yaklaşık bir\n' +
+            'hücre/sitoplazma bölgesi tanımlar. 0 = yalnız çekirdek.')))
         def grid = new javafx.scene.layout.GridPane()
         grid.setHgap(8); grid.setVgap(6); grid.setPadding(new javafx.geometry.Insets(6))
-        grid.addRow(0, new javafx.scene.control.Label('Eşik (Hematoxylin OD)'), spThr)
-        grid.addRow(1, new javafx.scene.control.Label('Sigma (µm)'), spSig)
-        grid.addRow(2, new javafx.scene.control.Label('Hücre genişletme (µm)'), spExp)
-        def adv = new javafx.scene.control.TitledPane('⚙ Gelişmiş ayarlar — eşikler', grid)
+        grid.addRow(0, new javafx.scene.control.Label(atolyeText('cell.threshold', 'Eşik (Hematoxylin OD)')), spThr)
+        grid.addRow(1, new javafx.scene.control.Label(atolyeText('cell.sigma', 'Sigma (µm)')), spSig)
+        grid.addRow(2, new javafx.scene.control.Label(atolyeText('cell.expansion', 'Hücre genişletme (µm)')), spExp)
+        def adv = new javafx.scene.control.TitledPane(atolyeText('cell.advanced', '⚙ Gelişmiş ayarlar — eşikler'), grid)
         adv.setExpanded(false); adv.setAnimated(false)
 
-        def status = new javafx.scene.control.Label('Hazır.')
+        def status = new javafx.scene.control.Label(atolyeText('cell.ready', 'Hazır.'))
         def progress = new javafx.scene.control.ProgressBar()
         progress.setMaxWidth(Double.MAX_VALUE); progress.setVisible(false); progress.setManaged(false)
         def resultArea = new javafx.scene.control.TextArea()
         resultArea.setEditable(false); resultArea.setWrapText(false); resultArea.setPrefRowCount(8)
-        resultArea.setPromptText('Sonuçlar burada görünecek…')
+        resultArea.setPromptText(atolyeText('cell.resultsPrompt', 'Sonuçlar burada görünecek…'))
         resultArea.setStyle("-fx-font-family: 'Consolas','Menlo','Courier New',monospace; -fx-font-size: 12px;")
 
-        def runBtn = new javafx.scene.control.Button('Çalıştır'); runBtn.setDefaultButton(true)
+        def runBtn = new javafx.scene.control.Button(atolyeText('cell.run', 'Çalıştır')); runBtn.setDefaultButton(true)
         runBtn.setOnAction({
             [spThr, spSig, spExp].each { commitSpinner(it) }
             runBtn.setDisable(true)
-            status.setStyle(''); status.setText('Hücreler tespit ediliyor…')
+            status.setStyle(''); status.setText(atolyeText('cell.running', 'Hücreler tespit ediliyor…'))
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             double thr = spThr.getValue() as double
             double sig = spSig.getValue() as double
@@ -219,7 +227,7 @@ javafx.application.Platform.runLater {
                 javafx.application.Platform.runLater {
                     progress.setVisible(false); progress.setManaged(false); runBtn.setDisable(false)
                     if (res.ok) {
-                        status.setStyle(''); status.setText('Tamamlandı ✅ — eşikleri değiştirip tekrar çalıştırabilirsiniz.')
+                        status.setStyle(''); status.setText(atolyeText('cell.done', 'Tamamlandı ✅ — eşikleri değiştirip tekrar çalıştırabilirsiniz.'))
                         resultArea.setText(res.text)
                     } else {
                         status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + res.error)
@@ -229,17 +237,17 @@ javafx.application.Platform.runLater {
             worker.setDaemon(true); worker.start()
         })
 
-        def alwaysTop = new javafx.scene.control.CheckBox('Üstte tut'); alwaysTop.setSelected(true)
+        def alwaysTop = new javafx.scene.control.CheckBox(atolyeText('cell.keepOnTop', 'Üstte tut')); alwaysTop.setSelected(true)
         alwaysTop.selectedProperty().addListener(
             { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
-        def copyBtn = new javafx.scene.control.Button('Kopyala')
+        def copyBtn = new javafx.scene.control.Button(atolyeText('cell.copy', 'Kopyala'))
         copyBtn.setOnAction({
             def cb = javafx.scene.input.Clipboard.getSystemClipboard()
             def c = new javafx.scene.input.ClipboardContent(); c.putString(resultArea.getText()); cb.setContent(c)
         })
-        def closeBtn = new javafx.scene.control.Button('Kapat'); closeBtn.setOnAction({ stage.close() })
+        def closeBtn = new javafx.scene.control.Button(atolyeText('cell.close', 'Kapat')); closeBtn.setOnAction({ stage.close() })
 
-        def footer = new javafx.scene.control.Label('QuPath Atölye Betikleri · araştırma/eğitim amaçlı')
+        def footer = new javafx.scene.control.Label(atolyeText('cell.footer', 'QuPath Atölye Betikleri · araştırma/eğitim amaçlı'))
         footer.setMaxWidth(Double.MAX_VALUE)
         footer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;')
 
@@ -258,6 +266,11 @@ javafx.application.Platform.runLater {
         stage.setScene(new javafx.scene.Scene(root, 560, 520))
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Hücre tespiti açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        def nextStep = atolyeText('cell.openFailure.help', 'Görüntü tipini ve seçili kapalı alanı kontrol edin. Sorun sürerse QuPath logunu inceleyin.')
+        try {
+            def errors = Class.forName('io.github.sbalci.qupath.workshop.WorkshopErrors')
+            nextStep = errors.getMethod('guidance', Throwable.class).invoke(null, t) as String
+        } catch (Throwable ignored) { }
+        Dialogs.showErrorMessage(atolyeText('cell.openFailure.title', 'Hücre tespiti açılamadı'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '') + '\n\n' + nextStep)
     }
 }
