@@ -1,3 +1,16 @@
+# 15 Kasım 2026 — dinamik pencere metinleri
+
+Yerel inceleme dalı: `feat/course-audit-followup-20261114`; push, sürüm veya dağıtım yapılmadı.
+
+- Dokuz betikte 188 ek görüntüleme ifadesi çevrildi: 151 sabit ifade ve 37 GString kullanımı. Katalog 12 betik/379 TR/EN metindir.
+- Dinamik sayılar, yollar ve sınıflandırıcı adları korunur; tüm lam/seçili bölge etiketleri iki dilde açıktır. Değer kodu, değerlendirme sırası ve koşullar Groovy AST ile karşılaştırılır. Kaynak koruma SHA değerleri değişmedi.
+- Temiz commit kaynağında 67 test geçti. QuPath 0.6/0.7 içinde her hostta 9.146 lookup, 36 benzersiz dinamik cümle için TR/EN ve eklentisiz sentetik kontroller, 103 betik parse ve 100 nesnelik ilk örnek geçti.
+- Diske yazılan özetler, loglar, CSV/JSON biçimleri, sayısal varsayılanlar ve analiz callback'leri değiştirilmedi. Diğer eş zamanlı düzenlemeler commit dışında tutuldu.
+
+Sınır: GUI köprüsü yine `os error 2` verdi; görsel GUI/kurulum/model yolları doğrulanmadı. Dosya özetleri, ortam kataloğu açıklamaları ve diğer yardımcılar bütünüyle çevrilmiş sayılmaz. Bekleyen terim kararı yoktur. Ayrıntı: [dinamik UI doğrulaması](docs/dynamic-ui-validation-2026-11-15.md).
+
+---
+
 # 14 Kasım 2026 — onaylı planın uygulama kaydı
 
 Dal: `feat/course-audit-followup-20261114`. Yerel inceleme; push, tag, sürüm veya paket yayımlama yapılmadı. Sürüm numarası bu yüzden artırılmadı.
