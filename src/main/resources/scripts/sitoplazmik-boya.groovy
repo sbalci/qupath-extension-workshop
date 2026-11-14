@@ -370,13 +370,13 @@ javafx.application.Platform.runLater {
             imageData.setImageType(qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_H_DAB)
             QP.setImageType('BRIGHTFIELD_H_DAB')
             fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
-            status.setStyle(''); status.setText("✓ Görüntü tipi 'Brightfield (H-DAB)' olarak ayarlandı. Şimdi bir alan anotasyonu seçip 'Çalıştır'a basın.")
+            status.setStyle(''); status.setText(workshopText('script.1a0b412fdbec', "✓ Görüntü tipi 'Brightfield (H-DAB)' olarak ayarlandı. Şimdi bir alan anotasyonu seçip 'Çalıştır'a basın."))
             resultArea.setText('')
         })
 
         if (!imageTypeOk()) {
             status.setStyle('-fx-text-fill: -qp-script-error-color;')
-            status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz.")
+            status.setText(workshopText('script.d6e9c7dd78f5', "⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz."))
             resultArea.setText(imageTypeGuidance())
             fixTypeBtn.setVisible(true); fixTypeBtn.setManaged(true)
         }
@@ -388,11 +388,11 @@ javafx.application.Platform.runLater {
             if (res.ok) {
                 fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
                 hasDetections.set(true); recountBtn.setDisable(false)
-                status.setStyle(''); status.setText('Tamamlandı ✅ — eşikleri değiştirip "Yeniden say (hızlı)" deneyin.')
+                status.setStyle(''); status.setText(workshopText('script.0d10b0792204', 'Tamamlandı ✅ — eşikleri değiştirip "Yeniden say (hızlı)" deneyin.'))
                 resultArea.setText(res.text)
             } else if (res.imageTypeIssue) {
                 status.setStyle('-fx-text-fill: -qp-script-error-color;')
-                status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz.")
+                status.setText(workshopText('script.d6e9c7dd78f5', "⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz."))
                 resultArea.setText(res.error)
                 fixTypeBtn.setVisible(true); fixTypeBtn.setManaged(true)
             } else {
@@ -403,7 +403,7 @@ javafx.application.Platform.runLater {
         runBtn.setOnAction({
             [spCyto1, spCyto2, spCyto3, spExp].each { commitSpinner(it) }
             runBtn.setDisable(true); recountBtn.setDisable(true)
-            status.setStyle(''); status.setText('Hücreler tespit ediliyor…')
+            status.setStyle(''); status.setText(workshopText('script.1133be217276', 'Hücreler tespit ediliyor…'))
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             double c1  = spCyto1.getValue() as double
             double c2  = spCyto2.getValue() as double
@@ -419,7 +419,7 @@ javafx.application.Platform.runLater {
         recountBtn.setOnAction({
             [spCyto1, spCyto2, spCyto3, spExp].each { commitSpinner(it) }
             runBtn.setDisable(true); recountBtn.setDisable(true)
-            status.setStyle(''); status.setText('Yeniden sayılıyor… (tespit yok, yalnızca sınıflandırma)')
+            status.setStyle(''); status.setText(workshopText('script.001dd7d79da4', 'Yeniden sayılıyor… (tespit yok, yalnızca sınıflandırma)'))
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             double c1  = spCyto1.getValue() as double
             double c2  = spCyto2.getValue() as double
@@ -435,7 +435,7 @@ javafx.application.Platform.runLater {
         def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut')); alwaysTop.setSelected(true)
         alwaysTop.selectedProperty().addListener(
             { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
-        def copyBtn = new javafx.scene.control.Button('Kopyala')
+        def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', 'Kopyala'))
         copyBtn.setOnAction({
             def cb = javafx.scene.input.Clipboard.getSystemClipboard()
             def c = new javafx.scene.input.ClipboardContent(); c.putString(resultArea.getText()); cb.setContent(c)

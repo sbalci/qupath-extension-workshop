@@ -88,7 +88,7 @@ def launchBundled = { String name ->
 }
 def menuHint = { String where ->
     Dialogs.showMessageDialog('Eklenti gerekli',
-        "Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\n${where}")
+        "${workshopText('script.2da9535b4302', 'Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\n')}${where}")
 }
 
 // ── Örnek modeli yerinde kur: paketli JSON (yansıma), yoksa GitHub'dan indir ──
@@ -519,7 +519,7 @@ def startInstall = {
             } else {
                 if (stage != null) stage.setAlwaysOnTop(false)
                 Dialogs.showErrorMessage(workshopText('script.44f6035a8c0f', 'Örnek model kurulamadı'),
-                    r.reason == 'NO_PROJECT' ? 'Önce bir QuPath projesi açın.' : (r.error ?: 'Bilinmeyen hata.'))
+                    r.reason == 'NO_PROJECT' ? workshopText('script.1868bcfd9140', 'Önce bir QuPath projesi açın.') : (r.error ?: workshopText('script.334b848286b9', 'Bilinmeyen hata.')))
                 step.set('CHOICE'); render()
             }
         }
@@ -554,11 +554,11 @@ render = { ->
 
     def cur = step.get()
     if (cur == 'CHOICE') {
-        title.setText('Tümör/Stroma sihirbazı')
+        title.setText(workshopText('script.d1f4f351fb54', 'Tümör/Stroma sihirbazı'))
         bodyLbl.setText(
-            'Nasıl devam etmek istersiniz?\n\n' +
+            workshopText('script.45ac9eed9911', 'Nasıl devam etmek istersiniz?\n\n' +
             '• Örnek sınıflandırıcı: hazır paketli modeli projeye kurar.\n' +
-            '• Yeni sınıflandırıcı eğit: kendi Tumor/Stroma bölgelerinizden eğitir.')
+            '• Yeni sınıflandırıcı eğit: kendi Tumor/Stroma bölgelerinizden eğitir.'))
         buttons.getChildren().addAll(
             navButton(workshopText('script.72278748133a', 'İptal'), { stage.close() }),
             navButton(workshopText('script.3625440d0051', 'Örnek sınıflandırıcıyı kullan'), { startInstall() },
@@ -567,36 +567,36 @@ render = { ->
                 step.set((s.he && s.calib) ? 'CLASSES' : 'PREREQ'); render()
             }, workshopText('script.f7331342a746', 'Kendi Tumor/Stroma bölgelerinizden yeni bir model eğitir'), 'FLASK'))
     } else if (cur == 'INSTALLING') {
-        title.setText('Örnek model kuruluyor…')
-        bodyLbl.setText('Paketli model projeye kaydediliyor (gerekirse indiriliyor). Lütfen bekleyin…')
+        title.setText(workshopText('script.67df0b99ba1e', 'Örnek model kuruluyor…'))
+        bodyLbl.setText(workshopText('script.f29fa7e76e5a', 'Paketli model projeye kaydediliyor (gerekirse indiriliyor). Lütfen bekleyin…'))
         content.getChildren().add(busyBar())
     } else if (cur == 'EXAMPLE_DONE') {
         String nm = exampleName.get()
-        title.setText('Örnek model hazır — şimdi bölgeyi seçin')
+        title.setText(workshopText('script.ac3384fe903e', 'Örnek model hazır — şimdi bölgeyi seçin'))
         bodyLbl.setText(
             (exampleExisted.get()
-                ? "'${nm}' zaten projenizde mevcut — kullanıma hazır.\n\n"
-                : "Örnek sınıflandırıcı '${nm}' projenize kuruldu.\n\n") +
-            'Çalıştırmak için:\n' +
-            '  1. Lamda ölçmek istediğiniz dokuyu bir anotasyonla çizin (Brush/Polygon).\n' +
-            '  2. Bu anotasyonu SEÇİN (üzerine tıklayın).\n' +
-            '  3. Aşağıdan "Seçili bölgede ölç".\n\n' +
-            'Seçim yapmazsanız sınıfı "Region" olan anotasyonlar kullanılır.\n' +
-            'İsteğe bağlı: boş cam/artefakt alanlarını çizip sınıfını "Ignore*" yapın — ölçümden çıkarılır.')
+                ? "'${nm}${workshopText('script.964b8b849025', '\' zaten projenizde mevcut — kullanıma hazır.\n\n')}"
+                : "${workshopText('script.09633f283982', 'Örnek sınıflandırıcı \'')}${nm}${workshopText('script.dbb9a7873c77', '\' projenize kuruldu.\n\n')}") +
+            workshopText('script.bcb91bdf1bb0', 'Çalıştırmak için:\n') +
+            workshopText('script.2ca748f15e3e', '  1. Lamda ölçmek istediğiniz dokuyu bir anotasyonla çizin (Brush/Polygon).\n') +
+            workshopText('script.75d94fc464e5', '  2. Bu anotasyonu SEÇİN (üzerine tıklayın).\n') +
+            workshopText('script.8fff31a5081f', '  3. Aşağıdan "Seçili bölgede ölç".\n\n') +
+            workshopText('script.8a7a26626fd2', 'Seçim yapmazsanız sınıfı "Region" olan anotasyonlar kullanılır.\n') +
+            workshopText('script.ea06252ba37d', 'İsteğe bağlı: boş cam/artefakt alanlarını çizip sınıfını "Ignore*" yapın — ölçümden çıkarılır.'))
         content.getChildren().addAll(detectionCheckBox(), summaryCheckBox())
         buttons.getChildren().addAll(
-            navButton('◀ Geri', { step.set('CHOICE'); render() }),
+            navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('CHOICE'); render() }),
             navButton(workshopText('script.5f46f7a6e58f', 'Tüm lamda ölç'), { startMeasure(nm, true) },
                 workshopText('script.d36539aaf9a8', 'Tüm lamda çalıştırır (seçim gerekmez; boş cam da sayılabilir — kaba tahmin)')),
             navButton(workshopText('script.2da07d33947d', 'Seçili bölgede ölç ▶'), { startMeasure(nm, false) },
-                "Seçili anotasyon(lar)da '${nm}' modelini çalıştırır; seçim yoksa sınıfı 'Region' olanlar"))
+                "${workshopText('script.dd2a8e61c518', 'Seçili anotasyon(lar)da \'')}${nm}${workshopText('script.043c398543ed', '\' modelini çalıştırır; seçim yoksa sınıfı \'Region\' olanlar')}"))
     } else if (cur == 'PREREQ') {
-        title.setText('Önce: görüntü tipi ve kalibrasyon')
+        title.setText(workshopText('script.fdde113b8e5d', 'Önce: görüntü tipi ve kalibrasyon'))
         bodyLbl.setText(
-            "Eğitim için iki ön koşul gerekir:\n\n" +
-            "  ${s.he ? '✓' : '✗'} Görüntü tipi Brightfield (H&E) + boya vektörleri\n" +
-            "  ${s.calib ? '✓' : '✗'} Piksel kalibrasyonu (µm/px)\n\n" +
-            "Eksik olanı aşağıdaki düğmelerle düzeltin, sonra 'Yenile'.")
+            workshopText('script.88a465797c00', "Eğitim için iki ön koşul gerekir:\n\n") +
+            "  ${s.he ? '✓' : '✗'}${workshopText('script.31df379d337e', ' Görüntü tipi Brightfield (H&E) + boya vektörleri\n')}" +
+            "  ${s.calib ? '✓' : '✗'}${workshopText('script.3422216beab9', ' Piksel kalibrasyonu (µm/px)\n\n')}" +
+            workshopText('script.ee6240d9a4a1', "Eksik olanı aşağıdaki düğmelerle düzeltin, sonra 'Yenile'."))
         def fixType = navButton(workshopText('script.bbf6fba1e891', 'Görüntü tipini ayarla'), {
             if (stage != null) stage.setAlwaysOnTop(false)
             if (!launchBundled('yardimci-image-type.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla')
@@ -606,11 +606,11 @@ render = { ->
             if (!launchBundled('yardimci-kalibrasyon.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)')
         })
         content.getChildren().add(new javafx.scene.layout.HBox(8, fixType, fixCal))
-        def cont = navButton('Devam ▶', { step.set('CLASSES'); render() })
+        def cont = navButton(workshopText('script.09839547cef8', 'Devam ▶'), { step.set('CLASSES'); render() })
         cont.setDisable(!(s.he && s.calib))
         buttons.getChildren().addAll(
-            navButton('◀ Geri', { step.set('CHOICE'); render() }),
-            navButton('⟳ Yenile', { render() }), cont)
+            navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('CHOICE'); render() }),
+            navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }), cont)
     } else if (cur == 'CLASSES') {
         ensureClassesRegistered()
         // İlk girişte zaten çizilmiş isteğe bağlı sınıfları otomatik işaretle.
@@ -620,15 +620,15 @@ render = { ->
             tickedOptional.set(init)
         }
         def ticked = tickedOptional.get()
-        title.setText('1/2 — Eğitim sınıflarını çizin')
+        title.setText(workshopText('script.e0f62859b1fb', '1/2 — Eğitim sınıflarını çizin'))
         bodyLbl.setText(
-            'Annotations paneli → sınıfı seçin → Brush (B) ile birkaç temsilî bölge çizin.\n' +
+            workshopText('script.1c91713d87b9', 'Annotations paneli → sınıfı seçin → Brush (B) ile birkaç temsilî bölge çizin.\n' +
             'Zorunlu sınıflar: Tumor, Stroma, Ignore* (boş cam/arka plan — modelin dokuyu\n' +
             'Tümör/Stroma\'ya zorlamasını engeller). İsteğe bağlı sınıfları işaretlerseniz\n' +
             'modele ayrı sınıf olarak katılır; işaretsizler eğitime girmez.\n' +
             'Küçük ve çeşitli örnekler çizin; geniş dolu alan örnek bütçesini boşa harcar.\n' +
             'Not: Model yalnız BU lamdan öğrenir; başka lamlara genellemesi sınırlıdır —\n' +
-            'çoklu-slayt eğitim için Anotasyon Stratejisi eki §4b.')
+            'çoklu-slayt eğitim için Anotasyon Stratejisi eki §4b.'))
         def grid = new javafx.scene.layout.VBox(4)
         MANDATORY_CLASSES.each { nm ->
             int c = s.counts[nm] ?: 0
@@ -638,7 +638,7 @@ render = { ->
         }
         OPTIONAL_CLASSES.each { nm ->
             int c = s.counts[nm] ?: 0
-            def cb = new javafx.scene.control.CheckBox("${nm} — ${c} anotasyon (isteğe bağlı)")
+            def cb = new javafx.scene.control.CheckBox("${nm} — ${c}${workshopText('script.41958301d078', ' anotasyon (isteğe bağlı)')}")
             cb.setSelected(ticked.contains(nm))
             cb.selectedProperty().addListener({ obs, o, n ->
                 def set = tickedOptional.get(); if (n) set.add(nm) else set.remove(nm); tickedOptional.set(set)
@@ -655,29 +655,29 @@ render = { ->
         }, workshopText('script.6a9421399bf3', 'Tumor + Stroma + Ignore* hazırsa adlandırma adımına geçer'))
         cont.setDisable(!ready)
         buttons.getChildren().addAll(
-            navButton('◀ Geri', { step.set('CHOICE'); render() }),
-            navButton('⟳ Yenile', { render() }),
+            navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('CHOICE'); render() }),
+            navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }),
             cont)
     } else if (cur == 'NAME') {
         def ticked = tickedOptional.get() ?: (new java.util.LinkedHashSet())
         def chosen = MANDATORY_CLASSES + OPTIONAL_CLASSES.findAll { ticked.contains(it) }
         def dataLine = chosen.collect { "${it}=${s.counts[it] ?: 0}" }.join(', ')
-        title.setText('2/2 — Sınıflandırıcıya ad verin')
+        title.setText(workshopText('script.f6991b3a8bf2', '2/2 — Sınıflandırıcıya ad verin'))
         bodyLbl.setText(
-            "Eğitim verisi (bu lam): ${dataLine}.\n" +
-            'Modeli kaydetmek için bir ad girin, sonra "Eğit & kaydet".')
+            "${workshopText('script.c05fa9fca72d', 'Eğitim verisi (bu lam): ')}${dataLine}.\n" +
+            workshopText('script.3234ecb0ac50', 'Modeli kaydetmek için bir ad girin, sonra "Eğit & kaydet".'))
         def nameField = new javafx.scene.control.TextField(atolyeS('atolye.classifierName', 'tumor-stroma-RF'))
         nameField.setPrefColumnCount(28)
         content.getChildren().add(new javafx.scene.layout.HBox(8,
             new javafx.scene.control.Label('Ad:'), nameField))
         buttons.getChildren().addAll(
-            navButton('◀ Geri', { step.set('CLASSES'); render() }),
+            navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('CLASSES'); render() }),
             navButton(workshopText('script.ece53f594d06', 'Eğit & kaydet'), {
                 String nm = nameField.getText()?.trim()
                 if (!nm) { Dialogs.showWarningNotification('Ad gerekli', workshopText('script.2b79d4526eed', 'Bir sınıflandırıcı adı girin.')); return }
                 if (s.classifiers.contains(nm)) {
                     if (stage != null) stage.setAlwaysOnTop(false)
-                    boolean ow = Dialogs.showConfirmDialog(workshopText('script.d9f96ac310ff', 'Üzerine yaz?'), "'${nm}' zaten var. Üzerine yazılsın mı?")
+                    boolean ow = Dialogs.showConfirmDialog(workshopText('script.d9f96ac310ff', 'Üzerine yaz?'), "'${nm}${workshopText('script.c6423379998e', '\' zaten var. Üzerine yazılsın mı?')}")
                     if (stage != null) stage.setAlwaysOnTop(true)
                     if (!ow) return
                 }
@@ -694,7 +694,7 @@ render = { ->
                             step.set('TRAIN_DONE'); render()
                         } else {
                             if (stage != null) stage.setAlwaysOnTop(false)
-                            Dialogs.showErrorMessage(workshopText('script.4768938ec5c2', 'Eğitim başarısız'), res.error ?: '(bilinmeyen hata)')
+                            Dialogs.showErrorMessage(workshopText('script.4768938ec5c2', 'Eğitim başarısız'), res.error ?: workshopText('script.8d328b5b7c2a', '(bilinmeyen hata)'))
                             step.set('NAME'); render()
                         }
                     }
@@ -702,45 +702,45 @@ render = { ->
                 worker.setDaemon(true); worker.start()
             }, workshopText('script.bfe1589730c2', 'Random Forest eğitir ve modeli projeye bu adla kaydeder')))
     } else if (cur == 'TRAINING') {
-        title.setText('Eğitiliyor…')
-        bodyLbl.setText("'${trainedName.get()}' eğitiliyor ve kaydediliyor. Lütfen bekleyin…")
+        title.setText(workshopText('script.426e9ee833e4', 'Eğitiliyor…'))
+        bodyLbl.setText("'${trainedName.get()}${workshopText('script.e3c5d18add87', '\' eğitiliyor ve kaydediliyor. Lütfen bekleyin…')}")
         content.getChildren().add(busyBar())
     } else if (cur == 'TRAIN_DONE') {
         String nm = trainedName.get()
-        title.setText('Model kaydedildi ✅ — şimdi bölgeyi seçin')
+        title.setText(workshopText('script.ff56a682c4e1', 'Model kaydedildi ✅ — şimdi bölgeyi seçin'))
         bodyLbl.setText(
             "'${nm}' projeye kaydedildi.\n\n" +
-            'Çalıştırmak için:\n' +
-            '  1. Ölçmek istediğiniz dokuyu bir anotasyonla çizin.\n' +
-            '  2. Bu anotasyonu SEÇİN.\n' +
-            '  3. Aşağıdan "Seçili bölgede ölç".\n\n' +
-            'Seçim yapmazsanız sınıfı "Region" olan anotasyonlar kullanılır.\n' +
-            'İsteğe bağlı: boş cam/artefakt alanlarını çizip sınıfını "Ignore*" yapın — ölçümden çıkarılır.')
+            workshopText('script.bcb91bdf1bb0', 'Çalıştırmak için:\n') +
+            workshopText('script.179c881b6fad', '  1. Ölçmek istediğiniz dokuyu bir anotasyonla çizin.\n') +
+            workshopText('script.efcb82f4a317', '  2. Bu anotasyonu SEÇİN.\n') +
+            workshopText('script.8fff31a5081f', '  3. Aşağıdan "Seçili bölgede ölç".\n\n') +
+            workshopText('script.8a7a26626fd2', 'Seçim yapmazsanız sınıfı "Region" olan anotasyonlar kullanılır.\n') +
+            workshopText('script.ea06252ba37d', 'İsteğe bağlı: boş cam/artefakt alanlarını çizip sınıfını "Ignore*" yapın — ölçümden çıkarılır.'))
         content.getChildren().addAll(detectionCheckBox(), summaryCheckBox())
         buttons.getChildren().addAll(
             navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }),
             navButton(workshopText('script.5f46f7a6e58f', 'Tüm lamda ölç'), { startMeasure(nm, true) },
                 workshopText('script.d36539aaf9a8', 'Tüm lamda çalıştırır (seçim gerekmez; boş cam da sayılabilir — kaba tahmin)')),
             navButton(workshopText('script.2da07d33947d', 'Seçili bölgede ölç ▶'), { startMeasure(nm, false) },
-                "Seçili anotasyon(lar)da '${nm}' modelini çalıştırır; seçim yoksa sınıfı 'Region' olanlar"))
+                "${workshopText('script.dd2a8e61c518', 'Seçili anotasyon(lar)da \'')}${nm}${workshopText('script.043c398543ed', '\' modelini çalıştırır; seçim yoksa sınıfı \'Region\' olanlar')}"))
     } else if (cur == 'MEASURING') {
-        title.setText('Ölçülüyor…')
-        bodyLbl.setText("'${activeModel.get()}' ${activeWholeSlide.get() ? 'tüm lamda' : 'seçili bölgede'} çalıştırılıyor (alanlar + poligonlar). Lütfen bekleyin…")
+        title.setText(workshopText('script.486f28996d55', 'Ölçülüyor…'))
+        bodyLbl.setText("'${activeModel.get()}${workshopText('script.26bf6298ad70', '\' ')}${activeWholeSlide.get() ? workshopText('script.6bab1dcdcff2', 'tüm lamda') : workshopText('script.32543e3db96a', 'seçili bölgede')}${workshopText('script.2ca967d68e8d', ' çalıştırılıyor (alanlar + poligonlar). Lütfen bekleyin…')}")
         content.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
         def r = measureResult.get()
         if (r != null && r.ok) {
-            title.setText('Ölçüm sonucu ✅')
-            bodyLbl.setText(r.text + '\n\nİpucu: özet bölgeleri kapatıyorsa "TSR Özet" sınıfını Anotasyonlar\n' +
-                'sekmesindeki göz simgesiyle gizleyin; sınıf bölgelerini görmek için anotasyon dolgusunu\n' +
-                'Shift+F ile, tespitleri ise araç çubuğundaki "Show/hide detection objects" düğmesiyle açıp kapatın.')
+            title.setText(workshopText('script.138eddc3bf22', 'Ölçüm sonucu ✅'))
+            bodyLbl.setText(r.text + workshopText('script.57675d2d057f', '\n\nİpucu: özet bölgeleri kapatıyorsa "TSR Özet" sınıfını Anotasyonlar\n') +
+                workshopText('script.ad536fa4c26a', 'sekmesindeki göz simgesiyle gizleyin; sınıf bölgelerini görmek için anotasyon dolgusunu\n') +
+                workshopText('script.b3579b55cfb3', 'Shift+F ile, tespitleri ise araç çubuğundaki "Show/hide detection objects" düğmesiyle açıp kapatın.'))
             content.getChildren().addAll(detectionCheckBox(), summaryCheckBox())
         } else if (r != null && r.error == 'NO_REGION') {
-            title.setText('Önce bir bölge seçin')
-            bodyLbl.setText('Ölçmek için bir anotasyon çizip SEÇİN (ya da sınıfını "Region" yapın), sonra "↻ Tekrar ölç".')
+            title.setText(workshopText('script.20ce3b7f68dd', 'Önce bir bölge seçin'))
+            bodyLbl.setText(workshopText('script.3e7519090ba9', 'Ölçmek için bir anotasyon çizip SEÇİN (ya da sınıfını "Region" yapın), sonra "↻ Tekrar ölç".'))
         } else {
-            title.setText('Ölçüm yapılamadı')
-            bodyLbl.setText((r?.error ?: 'Bilinmeyen hata.').toString())
+            title.setText(workshopText('script.19182065eeb6', 'Ölçüm yapılamadı'))
+            bodyLbl.setText((r?.error ?: workshopText('script.334b848286b9', 'Bilinmeyen hata.')).toString())
         }
         buttons.getChildren().addAll(
             navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }),

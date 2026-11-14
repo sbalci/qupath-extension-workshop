@@ -605,10 +605,10 @@ javafx.application.Platform.runLater {
         grid.addRow(0, new javafx.scene.control.Label('Membran 1+ (DAB OD mean)'), spM1)
         grid.addRow(1, new javafx.scene.control.Label('Membran 2+ (DAB OD mean)'), spM2)
         grid.addRow(2, new javafx.scene.control.Label('Membran 3+ (DAB OD mean)'), spM3)
-        grid.addRow(3, new javafx.scene.control.Label('Piksel 1+ (DAB OD)'),        spPD1)
-        grid.addRow(4, new javafx.scene.control.Label('Piksel 2+ (DAB OD)'),        spPD2)
-        grid.addRow(5, new javafx.scene.control.Label('Piksel 3+ (DAB OD)'),        spPD3)
-        grid.addRow(6, new javafx.scene.control.Label('Piksel H maskesi (OD)'),     spPH)
+        grid.addRow(3, new javafx.scene.control.Label(workshopText('script.64320414ea09', 'Piksel 1+ (DAB OD)')),        spPD1)
+        grid.addRow(4, new javafx.scene.control.Label(workshopText('script.db7110521ee3', 'Piksel 2+ (DAB OD)')),        spPD2)
+        grid.addRow(5, new javafx.scene.control.Label(workshopText('script.0e2a812ea5da', 'Piksel 3+ (DAB OD)')),        spPD3)
+        grid.addRow(6, new javafx.scene.control.Label(workshopText('script.0ef97383e4bf', 'Piksel H maskesi (OD)')),     spPH)
         def adv = new javafx.scene.control.TitledPane(workshopText('script.782a54764f62', '⚙ Gelişmiş ayarlar — eşikler'), grid)
         adv.setExpanded(false); adv.setAnimated(false)
 
@@ -628,13 +628,13 @@ javafx.application.Platform.runLater {
             imageData.setImageType(qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_H_DAB)
             QP.setImageType('BRIGHTFIELD_H_DAB')
             fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
-            status.setStyle(''); status.setText("✓ Görüntü tipi 'Brightfield (H-DAB)' olarak ayarlandı. Şimdi bir alan anotasyonu seçip 'Çalıştır'a basın.")
+            status.setStyle(''); status.setText(workshopText('script.1a0b412fdbec', "✓ Görüntü tipi 'Brightfield (H-DAB)' olarak ayarlandı. Şimdi bir alan anotasyonu seçip 'Çalıştır'a basın."))
             resultArea.setText('')
         })
 
         if (!imageTypeOk()) {
             status.setStyle('-fx-text-fill: -qp-script-error-color;')
-            status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz.")
+            status.setText(workshopText('script.d6e9c7dd78f5', "⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz."))
             resultArea.setText(imageTypeGuidance())
             fixTypeBtn.setVisible(true); fixTypeBtn.setManaged(true)
         }
@@ -646,11 +646,11 @@ javafx.application.Platform.runLater {
             if (res.ok) {
                 fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
                 hasDetections.set(true); recountBtn.setDisable(false)
-                status.setStyle(''); status.setText('Tamamlandı ✅ — eşikleri değiştirip "Eşikleri yeniden uygula (hızlı)" deneyin.')
+                status.setStyle(''); status.setText(workshopText('script.a1345695564d', 'Tamamlandı ✅ — eşikleri değiştirip "Eşikleri yeniden uygula (hızlı)" deneyin.'))
                 resultArea.setText(res.text)
             } else if (res.imageTypeIssue) {
                 status.setStyle('-fx-text-fill: #c0392b;')
-                status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz.")
+                status.setText(workshopText('script.d6e9c7dd78f5', "⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz."))
                 resultArea.setText(res.error)
                 fixTypeBtn.setVisible(true); fixTypeBtn.setManaged(true)
             } else {
@@ -666,17 +666,17 @@ javafx.application.Platform.runLater {
                 if (nPrev > 0) {
                     boolean ok = Dialogs.showConfirmDialog(workshopText('script.c8cded1ce05d', 'Önceki hücre tespitleri değiştirilecek'),
                         String.format(java.util.Locale.US,
-                            'Seçili anotasyonda zaten %,d hücre tespiti bulunuyor.\n' +
+                            workshopText('script.6bdf43ba0bd6', 'Seçili anotasyonda zaten %,d hücre tespiti bulunuyor.\n' +
                             'Yalnız DAB eşiklerini değiştirmek istiyorsanız "İptal" deyip "Eşikleri yeniden uygula" düğmesini kullanın.\n\n' +
-                            'Hücre tespitini baştan çalıştırıp mevcut tespitleri değiştirmek istiyor musunuz?', nPrev))
+                            'Hücre tespitini baştan çalıştırıp mevcut tespitleri değiştirmek istiyor musunuz?'), nPrev))
                     if (!ok) {
-                        status.setStyle(''); status.setText('İptal edildi — mevcut hücre tespitleri korundu.')
+                        status.setStyle(''); status.setText(workshopText('script.5c7534a1c682', 'İptal edildi — mevcut hücre tespitleri korundu.'))
                         return
                     }
                 }
             }
             runBtn.setDisable(true); recountBtn.setDisable(true)
-            status.setStyle(''); status.setText('… hesaplanıyor (piksel + isteğe bağlı hücre)…')
+            status.setStyle(''); status.setText(workshopText('script.37ba402113f1', '… hesaplanıyor (piksel + isteğe bağlı hücre)…'))
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             double m1  = spM1.getValue()  as double
             double m2  = spM2.getValue()  as double
@@ -695,7 +695,7 @@ javafx.application.Platform.runLater {
         recountBtn.setOnAction({
             [spM1, spM2, spM3, spPD1, spPD2, spPD3, spPH].each { commitSpinner(it) }
             runBtn.setDisable(true); recountBtn.setDisable(true)
-            status.setStyle(''); status.setText('Eşikler yeniden uygulanıyor… (hücre tespiti tekrarlanmaz)')
+            status.setStyle(''); status.setText(workshopText('script.c6392ec5569a', 'Eşikler yeniden uygulanıyor… (hücre tespiti tekrarlanmaz)'))
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             double m1  = spM1.getValue()  as double
             double m2  = spM2.getValue()  as double
@@ -714,7 +714,7 @@ javafx.application.Platform.runLater {
         def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut')); alwaysTop.setSelected(true)
         alwaysTop.selectedProperty().addListener(
             { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
-        def copyBtn = new javafx.scene.control.Button('Kopyala')
+        def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', 'Kopyala'))
         copyBtn.setOnAction({
             def cb = javafx.scene.input.Clipboard.getSystemClipboard()
             def c = new javafx.scene.input.ClipboardContent(); c.putString(resultArea.getText()); cb.setContent(c)

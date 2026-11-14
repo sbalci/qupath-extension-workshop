@@ -1289,6 +1289,626 @@
       "key": "script.b8fa2004f496",
       "tr": "Yönetici açılamadı",
       "en": "Could not open manager"
+    },
+    {
+      "key": "script.f6af14d1ddfb",
+      "tr": "⚠ Bu alıştırma için önce bir lam açın (",
+      "en": "⚠ Open a slide first for this exercise ("
+    },
+    {
+      "key": "script.a6b4326ca6c8",
+      "tr": "). \"İleri ▶\" ile atlayabilirsiniz.",
+      "en": "). You can skip it with \"Next ▶\"."
+    },
+    {
+      "key": "script.991b1256f0fb",
+      "tr": "Bir anotasyon çizin…",
+      "en": "Draw an annotation…"
+    },
+    {
+      "key": "script.866bcc34b4cf",
+      "tr": "✓ Nokta eklendi! Alıştırmalar tamam — \"İleri ▶\" ile tura devam edin.",
+      "en": "✓ Point added! Exercises complete — continue the tour with \"Next ▶\"."
+    },
+    {
+      "key": "script.0c70be7a66c9",
+      "tr": "Şekil",
+      "en": "Shape"
+    },
+    {
+      "key": "script.0ff1d928387d",
+      "tr": " algılandı — sonraki adıma geçiliyor…",
+      "en": " detected — moving to the next step…"
+    },
+    {
+      "key": "script.f715000e5393",
+      "tr": "Bu bölgeyi vurgula",
+      "en": "Highlight this region"
+    },
+    {
+      "key": "script.bb36d2f0b46a",
+      "tr": "Bu adım ilgili komutu örnek olarak açar. Açılan pencere/menü bu sihirbazın önüne gelebilir; inceledikten sonra kapatın ve \"İleri ▶\" ile tura devam edin.",
+      "en": "This step opens the relevant command as an example. Its window or menu may appear in front of this wizard; inspect it, close it and continue with \"Next ▶\"."
+    },
+    {
+      "key": "script.2deb7941c80a",
+      "tr": "Bu adım ilgili aracı örnek olarak etkinleştirir; araç çubuğunda seçili duruma geçtiğini görürsünüz. Tur kapanınca başlangıçtaki araç geri yüklenir. \"İleri ▶\" ile devam edin.",
+      "en": "This step activates the relevant tool as an example; you will see it selected in the toolbar. The original tool is restored when the tour closes. Continue with \"Next ▶\"."
+    },
+    {
+      "key": "script.2da9535b4302",
+      "tr": "Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\n",
+      "en": "This step requires the workshop extension. Run it from the menu:\n"
+    },
+    {
+      "key": "script.1868bcfd9140",
+      "tr": "Önce bir QuPath projesi açın.",
+      "en": "Open a QuPath project first."
+    },
+    {
+      "key": "script.d1f4f351fb54",
+      "tr": "Tümör/Stroma sihirbazı",
+      "en": "Tumour/Stroma wizard"
+    },
+    {
+      "key": "script.45ac9eed9911",
+      "tr": "Nasıl devam etmek istersiniz?\n\n• Örnek sınıflandırıcı: hazır paketli modeli projeye kurar.\n• Yeni sınıflandırıcı eğit: kendi Tumor/Stroma bölgelerinizden eğitir.",
+      "en": "How would you like to continue?\n\n• Sample classifier: install the bundled model in the project.\n• Train a new classifier: train from your own Tumor/Stroma regions."
+    },
+    {
+      "key": "script.67df0b99ba1e",
+      "tr": "Örnek model kuruluyor…",
+      "en": "Installing sample model…"
+    },
+    {
+      "key": "script.f29fa7e76e5a",
+      "tr": "Paketli model projeye kaydediliyor (gerekirse indiriliyor). Lütfen bekleyin…",
+      "en": "Saving the bundled model to the project (downloading it if needed). Please wait…"
+    },
+    {
+      "key": "script.ac3384fe903e",
+      "tr": "Örnek model hazır — şimdi bölgeyi seçin",
+      "en": "Sample model ready — select the region"
+    },
+    {
+      "key": "script.964b8b849025",
+      "tr": "' zaten projenizde mevcut — kullanıma hazır.\n\n",
+      "en": "' is already in your project — ready to use.\n\n"
+    },
+    {
+      "key": "script.09633f283982",
+      "tr": "Örnek sınıflandırıcı '",
+      "en": "Sample classifier '"
+    },
+    {
+      "key": "script.dbb9a7873c77",
+      "tr": "' projenize kuruldu.\n\n",
+      "en": "' was installed in your project.\n\n"
+    },
+    {
+      "key": "script.bcb91bdf1bb0",
+      "tr": "Çalıştırmak için:\n",
+      "en": "To run:\n"
+    },
+    {
+      "key": "script.2ca748f15e3e",
+      "tr": "  1. Lamda ölçmek istediğiniz dokuyu bir anotasyonla çizin (Brush/Polygon).\n",
+      "en": "  1. Draw an annotation around the tissue to measure (Brush/Polygon).\n"
+    },
+    {
+      "key": "script.75d94fc464e5",
+      "tr": "  2. Bu anotasyonu SEÇİN (üzerine tıklayın).\n",
+      "en": "  2. SELECT this annotation (click it).\n"
+    },
+    {
+      "key": "script.8fff31a5081f",
+      "tr": "  3. Aşağıdan \"Seçili bölgede ölç\".\n\n",
+      "en": "  3. Click \"Measure selected region\" below.\n\n"
+    },
+    {
+      "key": "script.8a7a26626fd2",
+      "tr": "Seçim yapmazsanız sınıfı \"Region\" olan anotasyonlar kullanılır.\n",
+      "en": "If nothing is selected, annotations with class \"Region\" are used.\n"
+    },
+    {
+      "key": "script.ea06252ba37d",
+      "tr": "İsteğe bağlı: boş cam/artefakt alanlarını çizip sınıfını \"Ignore*\" yapın — ölçümden çıkarılır.",
+      "en": "Optionally annotate empty glass or artefacts as \"Ignore*\" — they are excluded from measurement."
+    },
+    {
+      "key": "script.dd2a8e61c518",
+      "tr": "Seçili anotasyon(lar)da '",
+      "en": "Runs '"
+    },
+    {
+      "key": "script.043c398543ed",
+      "tr": "' modelini çalıştırır; seçim yoksa sınıfı 'Region' olanlar",
+      "en": "' on selected annotations; if nothing is selected, uses annotations with class 'Region'"
+    },
+    {
+      "key": "script.fdde113b8e5d",
+      "tr": "Önce: görüntü tipi ve kalibrasyon",
+      "en": "First: image type and calibration"
+    },
+    {
+      "key": "script.88a465797c00",
+      "tr": "Eğitim için iki ön koşul gerekir:\n\n",
+      "en": "Training requires two prerequisites:\n\n"
+    },
+    {
+      "key": "script.31df379d337e",
+      "tr": " Görüntü tipi Brightfield (H&E) + boya vektörleri\n",
+      "en": " Image type Brightfield (H&E) + stain vectors\n"
+    },
+    {
+      "key": "script.3422216beab9",
+      "tr": " Piksel kalibrasyonu (µm/px)\n\n",
+      "en": " Pixel calibration (µm/px)\n\n"
+    },
+    {
+      "key": "script.ee6240d9a4a1",
+      "tr": "Eksik olanı aşağıdaki düğmelerle düzeltin, sonra 'Yenile'.",
+      "en": "Correct missing items with the buttons below, then click 'Refresh'."
+    },
+    {
+      "key": "script.09839547cef8",
+      "tr": "Devam ▶",
+      "en": "Continue ▶"
+    },
+    {
+      "key": "script.e0f62859b1fb",
+      "tr": "1/2 — Eğitim sınıflarını çizin",
+      "en": "1/2 — Draw the training classes"
+    },
+    {
+      "key": "script.1c91713d87b9",
+      "tr": "Annotations paneli → sınıfı seçin → Brush (B) ile birkaç temsilî bölge çizin.\nZorunlu sınıflar: Tumor, Stroma, Ignore* (boş cam/arka plan — modelin dokuyu\nTümör/Stroma'ya zorlamasını engeller). İsteğe bağlı sınıfları işaretlerseniz\nmodele ayrı sınıf olarak katılır; işaretsizler eğitime girmez.\nKüçük ve çeşitli örnekler çizin; geniş dolu alan örnek bütçesini boşa harcar.\nNot: Model yalnız BU lamdan öğrenir; başka lamlara genellemesi sınırlıdır —\nçoklu-slayt eğitim için Anotasyon Stratejisi eki §4b.",
+      "en": "Annotations panel → select the class → draw several representative regions with Brush (B).\nRequired classes: Tumor, Stroma, Ignore* (empty glass/background — prevents the model\nfrom forcing those pixels into Tumor/Stroma). Selected optional classes\nare included as separate model classes; unselected ones are excluded from training.\nDraw small, varied examples; large filled regions waste the example budget.\nNote: the model learns only from THIS slide and has limited generalisation to other slides —\nsee Annotation Strategy §4b for training with multiple slides."
+    },
+    {
+      "key": "script.41958301d078",
+      "tr": " anotasyon (isteğe bağlı)",
+      "en": " annotations (optional)"
+    },
+    {
+      "key": "script.f6991b3a8bf2",
+      "tr": "2/2 — Sınıflandırıcıya ad verin",
+      "en": "2/2 — Name the classifier"
+    },
+    {
+      "key": "script.c05fa9fca72d",
+      "tr": "Eğitim verisi (bu lam): ",
+      "en": "Training data (this slide): "
+    },
+    {
+      "key": "script.3234ecb0ac50",
+      "tr": "Modeli kaydetmek için bir ad girin, sonra \"Eğit & kaydet\".",
+      "en": "Enter a name for the saved model, then click \"Train & save\"."
+    },
+    {
+      "key": "script.c6423379998e",
+      "tr": "' zaten var. Üzerine yazılsın mı?",
+      "en": "' already exists. Overwrite it?"
+    },
+    {
+      "key": "script.8d328b5b7c2a",
+      "tr": "(bilinmeyen hata)",
+      "en": "(unknown error)"
+    },
+    {
+      "key": "script.426e9ee833e4",
+      "tr": "Eğitiliyor…",
+      "en": "Training…"
+    },
+    {
+      "key": "script.e3c5d18add87",
+      "tr": "' eğitiliyor ve kaydediliyor. Lütfen bekleyin…",
+      "en": "' is being trained and saved. Please wait…"
+    },
+    {
+      "key": "script.ff56a682c4e1",
+      "tr": "Model kaydedildi ✅ — şimdi bölgeyi seçin",
+      "en": "Model saved ✅ — select the region"
+    },
+    {
+      "key": "script.179c881b6fad",
+      "tr": "  1. Ölçmek istediğiniz dokuyu bir anotasyonla çizin.\n",
+      "en": "  1. Draw an annotation around the tissue to measure.\n"
+    },
+    {
+      "key": "script.efcb82f4a317",
+      "tr": "  2. Bu anotasyonu SEÇİN.\n",
+      "en": "  2. SELECT this annotation.\n"
+    },
+    {
+      "key": "script.486f28996d55",
+      "tr": "Ölçülüyor…",
+      "en": "Measuring…"
+    },
+    {
+      "key": "script.2ca967d68e8d",
+      "tr": " çalıştırılıyor (alanlar + poligonlar). Lütfen bekleyin…",
+      "en": " (areas + polygons). Please wait…"
+    },
+    {
+      "key": "script.138eddc3bf22",
+      "tr": "Ölçüm sonucu ✅",
+      "en": "Measurement result ✅"
+    },
+    {
+      "key": "script.57675d2d057f",
+      "tr": "\n\nİpucu: özet bölgeleri kapatıyorsa \"TSR Özet\" sınıfını Anotasyonlar\n",
+      "en": "\n\nTip: if the summary covers the regions, hide class \"TSR Özet\" in the Annotations\n"
+    },
+    {
+      "key": "script.ad536fa4c26a",
+      "tr": "sekmesindeki göz simgesiyle gizleyin; sınıf bölgelerini görmek için anotasyon dolgusunu\n",
+      "en": "tab with the eye icon; to inspect class regions, toggle annotation filling with\n"
+    },
+    {
+      "key": "script.b3579b55cfb3",
+      "tr": "Shift+F ile, tespitleri ise araç çubuğundaki \"Show/hide detection objects\" düğmesiyle açıp kapatın.",
+      "en": "Shift+F, and toggle detection objects with the toolbar's \"Show/hide detection objects\" button."
+    },
+    {
+      "key": "script.3e7519090ba9",
+      "tr": "Ölçmek için bir anotasyon çizip SEÇİN (ya da sınıfını \"Region\" yapın), sonra \"↻ Tekrar ölç\".",
+      "en": "Draw and SELECT an annotation (or give it class \"Region\"), then click \"↻ Measure again\"."
+    },
+    {
+      "key": "script.29f409509207",
+      "tr": "Çalışıyor…",
+      "en": "Running…"
+    },
+    {
+      "key": "script.404ceb1c773d",
+      "tr": "Tamamlandı ✅ — eşikleri değiştirip tekrar çalıştırabilirsiniz.",
+      "en": "Completed ✅ — you can change the thresholds and run again."
+    },
+    {
+      "key": "script.b69c46f7853e",
+      "tr": "Tümör içi Ki-67 — iki yol",
+      "en": "Intratumoural Ki-67 — two routes"
+    },
+    {
+      "key": "script.f3c7070c9a0c",
+      "tr": "Nasıl ilerlemek istersiniz?\n\n• Hızlı Ki-67: sınıfı \"Tumor\" olan bölgeleri kendiniz çizip seçer, eşikle ölçersiniz (bugünkü yöntem).\n• Hücre sınıflandırıcı eğit: bir nesne (hücre) sınıflandırıcısı eğitip tümör hücrelerini otomatik bulur, Ki-67'yi yalnız tümör hücrelerinde ölçer (Ki-67+ lenfositler dışlanır).",
+      "en": "How would you like to continue?\n\n• Quick Ki-67: draw and select regions with class \"Tumor\" yourself, then measure with thresholds (today's method).\n• Train a cell classifier: train an object (cell) classifier to find tumour cells automatically and measure Ki-67 only in tumour cells (excluding Ki-67+ lymphocytes)."
+    },
+    {
+      "key": "script.8cf61a083dbc",
+      "tr": " + proje",
+      "en": " + project"
+    },
+    {
+      "key": "script.89737cbbb052",
+      "tr": "Gerekli ön koşullar:\n\n",
+      "en": "Required prerequisites:\n\n"
+    },
+    {
+      "key": "script.c00010ebce02",
+      "tr": " Açık görüntü\n",
+      "en": " Image open\n"
+    },
+    {
+      "key": "script.1cab1439b568",
+      "tr": " Görüntü tipi Brightfield (H-DAB)\n",
+      "en": " Image type Brightfield (H-DAB)\n"
+    },
+    {
+      "key": "script.d93396f804f2",
+      "tr": " Piksel kalibrasyonu (µm/px)\n",
+      "en": " Pixel calibration (µm/px)\n"
+    },
+    {
+      "key": "script.023b402ca7ac",
+      "tr": " Açık proje (sınıflandırıcı kaydı için)\n",
+      "en": " Project open (to save the classifier)\n"
+    },
+    {
+      "key": "script.ff94ab283b7b",
+      "tr": "\nEksikleri düzeltip 'Yenile'.",
+      "en": "\nCorrect missing items, then click 'Refresh'."
+    },
+    {
+      "key": "script.5f7e4a504cc0",
+      "tr": "Hızlı Ki-67 — tümör bölgesini seçin",
+      "en": "Quick Ki-67 — select the tumour region"
+    },
+    {
+      "key": "script.4924d86d6dd7",
+      "tr": "1/5 — Tespit bölgesini seçin",
+      "en": "1/5 — Select the detection region"
+    },
+    {
+      "key": "script.cdce1e2f7c64",
+      "tr": "Ki-67 lamında ölçmek istediğiniz tümör alanını kapsayan GENİŞ bir anotasyon çizin\n(Brush/Polygon) ve SEÇİN. Sınıf atamanıza gerek yok — bu yalnız hücre tespitinin sınırıdır.\n\n",
+      "en": "Draw a BROAD annotation enclosing the tumour area to measure on the Ki-67 slide\n(Brush/Polygon) and SELECT it. No class is required — this only sets the cell detection boundary.\n\n"
+    },
+    {
+      "key": "script.fdefe60273a1",
+      "tr": "Şu an seçili alan anotasyonu: ",
+      "en": "Currently selected area annotations: "
+    },
+    {
+      "key": "script.a6ba34fc5c67",
+      "tr": "Tespit et ▶",
+      "en": "Detect ▶"
+    },
+    {
+      "key": "script.9429f7ad6229",
+      "tr": "Hücre tespiti + özellik hesaplama…",
+      "en": "Cell detection + feature calculation…"
+    },
+    {
+      "key": "script.dd305f2429fb",
+      "tr": "Seçili bölgede çekirdekler tespit ediliyor ve pürüzsüzleştirilmiş özellikler ekleniyor. Lütfen bekleyin…",
+      "en": "Detecting nuclei in the selected region and adding smoothed features. Please wait…"
+    },
+    {
+      "key": "script.c7d32438535f",
+      "tr": "2/5 — Tümör hücresi örnekleri",
+      "en": "2/5 — Tumour cell examples"
+    },
+    {
+      "key": "script.f089332eb95f",
+      "tr": "Tespit edilen çekirdek: ",
+      "en": "Detected nuclei: "
+    },
+    {
+      "key": "script.6f4d56956c30",
+      "tr": "Birkaç TİPİK TÜMÖR HÜCRESİ bölgesini küçük anotasyonlarla çizin ve sınıfını \"Tumor\" yapın\n",
+      "en": "Draw small annotations over several TYPICAL TUMOUR CELL regions and set their class to \"Tumor\"\n"
+    },
+    {
+      "key": "script.5ceebee7b2f5",
+      "tr": "(Annotations sekmesinde sınıfı seçip \"Set selected\" ya da sağ tık → Set classification).\n",
+      "en": "(select the class in the Annotations tab and choose \"Set selected\", or right-click → Set classification).\n"
+    },
+    {
+      "key": "script.7bec4bc81f61",
+      "tr": "Tümör epiteline ait çekirdekleri hedefleyin; lenfosit ve stromadan uzak durun. Bitince İleri.\n\n",
+      "en": "Target nuclei belonging to tumour epithelium; avoid lymphocytes and stroma. Click Next when finished.\n\n"
+    },
+    {
+      "key": "script.8dbd07801613",
+      "tr": "Şu an Tumor anotasyonu: ",
+      "en": "Current Tumor annotations: "
+    },
+    {
+      "key": "script.30fb200b111e",
+      "tr": "3/5 — Tümör DIŞI hücre örnekleri",
+      "en": "3/5 — NON-TUMOUR cell examples"
+    },
+    {
+      "key": "script.6a2b80a33f47",
+      "tr": "Şimdi tümör DIŞI hücrelerin (lenfosit, fibroblast, endotel) bulunduğu bölgelerden birkaç örnek\nçizin ve sınıfını \"Other\" yapın. Bu sınıf, Ki-67+ bağışıklık hücrelerini tümör paydasından\ndışlamak için kritiktir. Bitince İleri.\n\n",
+      "en": "Now draw several examples from regions containing NON-TUMOUR cells (lymphocytes, fibroblasts, endothelium)\nand set their class to \"Other\". This class excludes Ki-67+ immune cells from the tumour\ndenominator. Click Next when finished.\n\n"
+    },
+    {
+      "key": "script.901836d4443e",
+      "tr": "Şu an Other anotasyonu: ",
+      "en": "Current Other annotations: "
+    },
+    {
+      "key": "script.292c4d20e93e",
+      "tr": "4/5 — Sınıflandırıcıyı QuPath'te eğitin",
+      "en": "4/5 — Train the classifier in QuPath"
+    },
+    {
+      "key": "script.6c177effcc99",
+      "tr": "\" adlı nesne sınıflandırıcısı projede yok.\nMevcut: ",
+      "en": "\" object classifier is not in the project.\nAvailable: "
+    },
+    {
+      "key": "script.c7f9b0ba20c4",
+      "tr": "Sınıflandırıcı uygulanıyor…",
+      "en": "Applying classifier…"
+    },
+    {
+      "key": "script.05ee8a3b0c49",
+      "tr": "' tüm tespit edilen hücrelere uygulanıyor. Lütfen bekleyin…",
+      "en": "' is being applied to all detected cells. Please wait…"
+    },
+    {
+      "key": "script.0d5823625cb1",
+      "tr": "5/5 — Tümör hücrelerinde Ki-67 yoğunluğu",
+      "en": "5/5 — Ki-67 intensity in tumour cells"
+    },
+    {
+      "key": "script.b89ccd4c78ba",
+      "tr": "Tümör/stroma sınıflandırıcısı Brightfield (H&E) görüntü bekler. Şu anki: ",
+      "en": "The tumour/stroma classifier requires a Brightfield (H&E) image. Current type: "
+    },
+    {
+      "key": "script.a5a01874aff2",
+      "tr": "Kalibrasyon yok",
+      "en": "No calibration"
+    },
+    {
+      "key": "script.8bfbd036c199",
+      "tr": "Önce: görüntü ve eklenti hazırlığı",
+      "en": "First: image and extension setup"
+    },
+    {
+      "key": "script.b6e5799b14e1",
+      "tr": "QuANTUM cTCF iş akışının ön koşulları:\n\n",
+      "en": "Prerequisites for the QuANTUM cTCF workflow:\n\n"
+    },
+    {
+      "key": "script.5b9dcb71c2a7",
+      "tr": " Görüntü tipi Brightfield (H&E)\n",
+      "en": " Image type Brightfield (H&E)\n"
+    },
+    {
+      "key": "script.5543213e9c58",
+      "tr": "(hazır)",
+      "en": "(ready)"
+    },
+    {
+      "key": "script.bc86f45f1ab0",
+      "tr": "(kurulu değil — klasik Watershed yedeği kullanılacak)",
+      "en": "(not installed — using the classic Watershed fallback)"
+    },
+    {
+      "key": "script.dd5de281527b",
+      "tr": "1/5 — TCR anotasyonunu seçin",
+      "en": "1/5 — Select the TCR annotation"
+    },
+    {
+      "key": "script.7c5d577ae1ea",
+      "tr": "TCR (Tumor-Containing Region), patoloğun çizdiği araştırma alanıdır — saf tümör konturu\nDEĞİL, içinde tümör bulunan geniş bir bölge. [P] (Polygon) ya da Brush ile çizip SEÇİN.\nSınıf atamanıza gerek yok; bu yalnız çekirdek tespitinin sınırıdır.\n\n",
+      "en": "The TCR (Tumor-Containing Region) is the research region drawn by the pathologist — NOT a pure tumour contour,\nbut a broad region containing tumour. Draw it with [P] (Polygon) or Brush and SELECT it.\nNo class is required; this only sets the cell detection boundary.\n\n"
+    },
+    {
+      "key": "script.0d1fe9b7ba82",
+      "tr": "StarDist tespiti çalışıyor…",
+      "en": "Running StarDist detection…"
+    },
+    {
+      "key": "script.bce358ad25ae",
+      "tr": "TCR içindeki çekirdekler tespit ediliyor ve pürüzsüzleştirilmiş özellikler ekleniyor.\nModel ilk kez indiriliyorsa biraz sürebilir. Lütfen bekleyin…",
+      "en": "Detecting nuclei in the TCR and adding smoothed features.\nThe first model download may take some time. Please wait…"
+    },
+    {
+      "key": "script.9b12e56cc20f",
+      "tr": "Birkaç TİPİK TÜMÖR HÜCRESİ bölgesini küçük anotasyonlarla çizin ve sınıfını tam olarak\n",
+      "en": "Draw small annotations over several TYPICAL TUMOUR CELL regions and set their class exactly to\n"
+    },
+    {
+      "key": "script.58c36a1e98d7",
+      "tr": "\"Tumor\" yapın (Annotations sekmesinde sınıfı seçip \"Set selected\" ya da sağ tık → Set classification).\n",
+      "en": "\"Tumor\" (select the class in the Annotations tab and choose \"Set selected\", or right-click → Set classification).\n"
+    },
+    {
+      "key": "script.5530fd449f6b",
+      "tr": "3/5 — Non-neoplastic hücre örnekleri",
+      "en": "3/5 — Non-neoplastic cell examples"
+    },
+    {
+      "key": "script.bff07ecb51f0",
+      "tr": "Şimdi tümör DIŞI hücrelerin (lenfosit, fibroblast, endotel, sıkışmış benign parankimal epitel) bulunduğu\nbölgelerden birkaç örnek çizin ve sınıfını TAM OLARAK \"Non-neoplastic\" yapın\n(büyük N, tireli, küçük n — yanlış yazım sessizce Ignore sayılır).\nİsteğe bağlı: artefakt/belirsiz hücreleri \"Ignore\" sınıfıyla işaretleyebilirsiniz.\nBu ayrım, Non-neoplastic hücreleri cTCF paydasına dahil etmek için kritiktir. Bitince İleri.\n\n",
+      "en": "Now draw several examples from regions containing NON-TUMOUR cells (lymphocytes, fibroblasts, endothelium, entrapped benign parenchymal epithelium)\nand set their class EXACTLY to \"Non-neoplastic\"\n(capital N, hyphen, lower-case n — misspellings are silently counted as Ignore).\nOptionally mark artefacts or uncertain cells as \"Ignore\".\nThis distinction includes Non-neoplastic cells in the cTCF denominator. Click Next when finished.\n\n"
+    },
+    {
+      "key": "script.4ec640f9054e",
+      "tr": "Şu an Non-neoplastic: ",
+      "en": "Current Non-neoplastic: "
+    },
+    {
+      "key": "script.c664953a8916",
+      "tr": "' tüm tespit edilen hücrelere uygulanıyor ve cTCF hesaplanıyor. Lütfen bekleyin…",
+      "en": "' is being applied to all detected cells and cTCF is being calculated. Please wait…"
+    },
+    {
+      "key": "script.c525977d89b0",
+      "tr": "Sınıflandırma: Tumor=%,d, Non-neoplastic=%,d, Ignore=%,d",
+      "en": "Classification: Tumor=%,d, Non-neoplastic=%,d, Ignore=%,d"
+    },
+    {
+      "key": "script.b40481006ffe",
+      "tr": "Sınıflandırma tamamlanamadı. Geri dönüp tekrar deneyin.",
+      "en": "Classification could not be completed. Go back and try again."
+    },
+    {
+      "key": "script.64320414ea09",
+      "tr": "Piksel 1+ (DAB OD)",
+      "en": "Pixel 1+ (DAB OD)"
+    },
+    {
+      "key": "script.db7110521ee3",
+      "tr": "Piksel 2+ (DAB OD)",
+      "en": "Pixel 2+ (DAB OD)"
+    },
+    {
+      "key": "script.0e2a812ea5da",
+      "tr": "Piksel 3+ (DAB OD)",
+      "en": "Pixel 3+ (DAB OD)"
+    },
+    {
+      "key": "script.0ef97383e4bf",
+      "tr": "Piksel H maskesi (OD)",
+      "en": "Pixel H mask (OD)"
+    },
+    {
+      "key": "script.1a0b412fdbec",
+      "tr": "✓ Görüntü tipi 'Brightfield (H-DAB)' olarak ayarlandı. Şimdi bir alan anotasyonu seçip 'Çalıştır'a basın.",
+      "en": "✓ Image type set to 'Brightfield (H-DAB)'. Select an area annotation and click 'Run'."
+    },
+    {
+      "key": "script.d6e9c7dd78f5",
+      "tr": "⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz.",
+      "en": "⚠ Image type is not 'Brightfield (H-DAB)' — you can correct it with one click."
+    },
+    {
+      "key": "script.a1345695564d",
+      "tr": "Tamamlandı ✅ — eşikleri değiştirip \"Eşikleri yeniden uygula (hızlı)\" deneyin.",
+      "en": "Completed ✅ — change the thresholds and try \"Reapply thresholds (fast)\"."
+    },
+    {
+      "key": "script.6bdf43ba0bd6",
+      "tr": "Seçili anotasyonda zaten %,d hücre tespiti bulunuyor.\nYalnız DAB eşiklerini değiştirmek istiyorsanız \"İptal\" deyip \"Eşikleri yeniden uygula\" düğmesini kullanın.\n\nHücre tespitini baştan çalıştırıp mevcut tespitleri değiştirmek istiyor musunuz?",
+      "en": "The selected annotation already contains %,d cell detections.\nIf you only want to change the DAB thresholds, click \"Cancel\" and use \"Reapply thresholds\".\n\nDo you want to rerun cell detection and replace the existing detections?"
+    },
+    {
+      "key": "script.5c7534a1c682",
+      "tr": "İptal edildi — mevcut hücre tespitleri korundu.",
+      "en": "Cancelled — existing cell detections were preserved."
+    },
+    {
+      "key": "script.37ba402113f1",
+      "tr": "… hesaplanıyor (piksel + isteğe bağlı hücre)…",
+      "en": "… calculating (pixels + optional cells)…"
+    },
+    {
+      "key": "script.c6392ec5569a",
+      "tr": "Eşikler yeniden uygulanıyor… (hücre tespiti tekrarlanmaz)",
+      "en": "Reapplying thresholds… (cell detection is not repeated)"
+    },
+    {
+      "key": "script.0d10b0792204",
+      "tr": "Tamamlandı ✅ — eşikleri değiştirip \"Yeniden say (hızlı)\" deneyin.",
+      "en": "Completed ✅ — change the thresholds and try \"Recount (fast)\"."
+    },
+    {
+      "key": "script.1133be217276",
+      "tr": "Hücreler tespit ediliyor…",
+      "en": "Detecting cells…"
+    },
+    {
+      "key": "script.001dd7d79da4",
+      "tr": "Yeniden sayılıyor… (tespit yok, yalnızca sınıflandırma)",
+      "en": "Recounting… (classification only, no detection)"
+    },
+    {
+      "key": "script.6e1140671c95",
+      "tr": "ℹ Bu görüntü ZATEN kalibre: ",
+      "en": "ℹ This image is ALREADY calibrated: "
+    },
+    {
+      "key": "script.515d63239a65",
+      "tr": "Şu anki piksel boyutu: ",
+      "en": "Current pixel size: "
+    },
+    {
+      "key": "script.6bab1dcdcff2",
+      "tr": "tüm lamda",
+      "en": "across the whole slide"
+    },
+    {
+      "key": "script.32543e3db96a",
+      "tr": "seçili bölgede",
+      "en": "in the selected region"
+    },
+    {
+      "key": "script.715392eca0f8",
+      "tr": "(yok)",
+      "en": "(none)"
+    },
+    {
+      "key": "script.26bf6298ad70",
+      "tr": "' ",
+      "en": "' is running "
     }
   ],
   "source_contracts": {
@@ -1298,15 +1918,159 @@
     },
     "sihirbaz.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "3e03bf399f76c86db9bea2ee8cf8e2de23171818183e1dba8cb43ff50c968659"
+      "sha256": "3e03bf399f76c86db9bea2ee8cf8e2de23171818183e1dba8cb43ff50c968659",
+      "expressions": [
+        {
+          "original": "\"Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\\n${where}\"",
+          "replacement": "\"${workshopText('script.2da9535b4302', 'Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\\n')}${where}\"",
+          "count": 1,
+          "context": "showMessageDialog"
+        },
+        {
+          "original": "\"'${nm}' zaten projenizde mevcut — kullanıma hazır.\\n\\n\"",
+          "replacement": "\"'${nm}${workshopText('script.964b8b849025', '\\' zaten projenizde mevcut — kullanıma hazır.\\n\\n')}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"Örnek sınıflandırıcı '${nm}' projenize kuruldu.\\n\\n\"",
+          "replacement": "\"${workshopText('script.09633f283982', 'Örnek sınıflandırıcı \\'')}${nm}${workshopText('script.dbb9a7873c77', '\\' projenize kuruldu.\\n\\n')}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"Seçili anotasyon(lar)da '${nm}' modelini çalıştırır; seçim yoksa sınıfı 'Region' olanlar\"",
+          "replacement": "\"${workshopText('script.dd2a8e61c518', 'Seçili anotasyon(lar)da \\'')}${nm}${workshopText('script.043c398543ed', '\\' modelini çalıştırır; seçim yoksa sınıfı \\'Region\\' olanlar')}\"",
+          "count": 2,
+          "context": "navButton:tooltip"
+        },
+        {
+          "original": "\"  ${s.he ? '✓' : '✗'} Görüntü tipi Brightfield (H&E) + boya vektörleri\\n\"",
+          "replacement": "\"  ${s.he ? '✓' : '✗'}${workshopText('script.31df379d337e', ' Görüntü tipi Brightfield (H&E) + boya vektörleri\\n')}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"  ${s.calib ? '✓' : '✗'} Piksel kalibrasyonu (µm/px)\\n\\n\"",
+          "replacement": "\"  ${s.calib ? '✓' : '✗'}${workshopText('script.3422216beab9', ' Piksel kalibrasyonu (µm/px)\\n\\n')}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"${nm} — ${c} anotasyon (isteğe bağlı)\"",
+          "replacement": "\"${nm} — ${c}${workshopText('script.41958301d078', ' anotasyon (isteğe bağlı)')}\"",
+          "count": 1,
+          "context": "new CheckBox"
+        },
+        {
+          "original": "\"Eğitim verisi (bu lam): ${dataLine}.\\n\"",
+          "replacement": "\"${workshopText('script.c05fa9fca72d', 'Eğitim verisi (bu lam): ')}${dataLine}.\\n\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"'${nm}' zaten var. Üzerine yazılsın mı?\"",
+          "replacement": "\"'${nm}${workshopText('script.c6423379998e', '\\' zaten var. Üzerine yazılsın mı?')}\"",
+          "count": 1,
+          "context": "showConfirmDialog"
+        },
+        {
+          "original": "\"'${trainedName.get()}' eğitiliyor ve kaydediliyor. Lütfen bekleyin…\"",
+          "replacement": "\"'${trainedName.get()}${workshopText('script.e3c5d18add87', '\\' eğitiliyor ve kaydediliyor. Lütfen bekleyin…')}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"'${activeModel.get()}' ${activeWholeSlide.get() ? 'tüm lamda' : 'seçili bölgede'} çalıştırılıyor (alanlar + poligonlar). Lütfen bekleyin…\"",
+          "replacement": "\"'${activeModel.get()}${workshopText('script.26bf6298ad70', '\\' ')}${activeWholeSlide.get() ? workshopText('script.6bab1dcdcff2', 'tüm lamda') : workshopText('script.32543e3db96a', 'seçili bölgede')}${workshopText('script.2ca967d68e8d', ' çalıştırılıyor (alanlar + poligonlar). Lütfen bekleyin…')}\"",
+          "count": 1,
+          "context": "setText"
+        }
+      ]
     },
     "tumor-ici-ki67.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "e23f28dba6870ad369320e7e3fd1d50ccabfe2c6ddfb5fe0bd00f0a54d9bfaad"
+      "sha256": "e23f28dba6870ad369320e7e3fd1d50ccabfe2c6ddfb5fe0bd00f0a54d9bfaad",
+      "expressions": [
+        {
+          "original": "\"Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\\n${where}\"",
+          "replacement": "\"${workshopText('script.2da9535b4302', 'Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\\n')}${where}\"",
+          "count": 1,
+          "context": "showMessageDialog"
+        },
+        {
+          "original": "\"  ${s.image ? '✓' : '✗'} Açık görüntü\\n\"",
+          "replacement": "\"  ${s.image ? '✓' : '✗'}${workshopText('script.c00010ebce02', ' Açık görüntü\\n')}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"  ${s.hDab ? '✓' : '✗'} Görüntü tipi Brightfield (H-DAB)\\n\"",
+          "replacement": "\"  ${s.hDab ? '✓' : '✗'}${workshopText('script.1cab1439b568', ' Görüntü tipi Brightfield (H-DAB)\\n')}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"  ${s.calib ? '✓' : '✗'} Piksel kalibrasyonu (µm/px)\\n\"",
+          "replacement": "\"  ${s.calib ? '✓' : '✗'}${workshopText('script.d93396f804f2', ' Piksel kalibrasyonu (µm/px)\\n')}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"  ${s.project ? '✓' : '✗'} Açık proje (sınıflandırıcı kaydı için)\\n\"",
+          "replacement": "\"  ${s.project ? '✓' : '✗'}${workshopText('script.023b402ca7ac', ' Açık proje (sınıflandırıcı kaydı için)\\n')}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"Şu an seçili alan anotasyonu: ${s.selectedArea}\"",
+          "replacement": "\"${workshopText('script.fdefe60273a1', 'Şu an seçili alan anotasyonu: ')}${s.selectedArea}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"Tespit edilen çekirdek: ${d.count}\\n\\n\"",
+          "replacement": "\"${workshopText('script.f089332eb95f', 'Tespit edilen çekirdek: ')}${d.count}\\n\\n\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"Şu an Tumor anotasyonu: ${s.tumor}\"",
+          "replacement": "\"${workshopText('script.8dbd07801613', 'Şu an Tumor anotasyonu: ')}${s.tumor}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"Şu an Other anotasyonu: ${s.other}\"",
+          "replacement": "\"${workshopText('script.901836d4443e', 'Şu an Other anotasyonu: ')}${s.other}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"\\\"${nm}\\\" adlı nesne sınıflandırıcısı projede yok.\\nMevcut: ${known.join(', ') ?: '(yok)'}\\n\"",
+          "replacement": "\"\\\"${nm}${workshopText('script.6c177effcc99', '\" adlı nesne sınıflandırıcısı projede yok.\\nMevcut: ')}${known.join(', ') ?: workshopText('script.715392eca0f8', '(yok)')}\\n\"",
+          "count": 1,
+          "context": "showWarningNotification"
+        },
+        {
+          "original": "\"'${savedClassifierName.get()}' tüm tespit edilen hücrelere uygulanıyor. Lütfen bekleyin…\"",
+          "replacement": "\"'${savedClassifierName.get()}${workshopText('script.05ee8a3b0c49', '\\' tüm tespit edilen hücrelere uygulanıyor. Lütfen bekleyin…')}\"",
+          "count": 1,
+          "context": "setText"
+        }
+      ]
     },
     "tumor-stroma.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "5f6a6e76a122e0752f795d48de454640fe5d6b2ba13e200b7001d52bb74c6907"
+      "sha256": "5f6a6e76a122e0752f795d48de454640fe5d6b2ba13e200b7001d52bb74c6907",
+      "expressions": [
+        {
+          "original": "\"Tümör/stroma sınıflandırıcısı Brightfield (H&E) görüntü bekler. Şu anki: ${imageTypeName}\"",
+          "replacement": "\"${workshopText('script.b89ccd4c78ba', 'Tümör/stroma sınıflandırıcısı Brightfield (H&E) görüntü bekler. Şu anki: ')}${imageTypeName}\"",
+          "count": 1,
+          "context": "showErrorMessage"
+        }
+      ]
     },
     "veri-aktarma.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
@@ -1314,7 +2078,75 @@
     },
     "quantum-ctcf.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "f5859abcdf08b45d872b7913217dfee5aa854952c24d8553bef40ec714beada8"
+      "sha256": "f5859abcdf08b45d872b7913217dfee5aa854952c24d8553bef40ec714beada8",
+      "expressions": [
+        {
+          "original": "\"Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\\n${where}\"",
+          "replacement": "\"${workshopText('script.2da9535b4302', 'Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\\n')}${where}\"",
+          "count": 1,
+          "context": "showMessageDialog"
+        },
+        {
+          "original": "\"  ${s.image ? '✓' : '✗'} Açık görüntü\\n\"",
+          "replacement": "\"  ${s.image ? '✓' : '✗'}${workshopText('script.c00010ebce02', ' Açık görüntü\\n')}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"  ${s.heType ? '✓' : '✗'} Görüntü tipi Brightfield (H&E)\\n\"",
+          "replacement": "\"  ${s.heType ? '✓' : '✗'}${workshopText('script.5b9dcb71c2a7', ' Görüntü tipi Brightfield (H&E)\\n')}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"  ${s.calib ? '✓' : '✗'} Piksel kalibrasyonu (µm/px)\\n\"",
+          "replacement": "\"  ${s.calib ? '✓' : '✗'}${workshopText('script.d93396f804f2', ' Piksel kalibrasyonu (µm/px)\\n')}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"  ${s.project ? '✓' : '✗'} Açık proje (sınıflandırıcı kaydı için)\\n\"",
+          "replacement": "\"  ${s.project ? '✓' : '✗'}${workshopText('script.023b402ca7ac', ' Açık proje (sınıflandırıcı kaydı için)\\n')}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"Şu an seçili alan anotasyonu: ${s.selectedArea}\"",
+          "replacement": "\"${workshopText('script.fdefe60273a1', 'Şu an seçili alan anotasyonu: ')}${s.selectedArea}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"Tespit edilen çekirdek: ${d.count}\\n\\n\"",
+          "replacement": "\"${workshopText('script.f089332eb95f', 'Tespit edilen çekirdek: ')}${d.count}\\n\\n\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"Şu an Tumor anotasyonu: ${s.tumor}\"",
+          "replacement": "\"${workshopText('script.8dbd07801613', 'Şu an Tumor anotasyonu: ')}${s.tumor}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"Şu an Non-neoplastic: ${s.nonNeo}   |   Ignore: ${s.ignore}\"",
+          "replacement": "\"${workshopText('script.4ec640f9054e', 'Şu an Non-neoplastic: ')}${s.nonNeo}   |   Ignore: ${s.ignore}\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"\\\"${nm}\\\" adlı nesne sınıflandırıcısı projede yok.\\nMevcut: ${known.join(', ') ?: '(yok)'}\\n\"",
+          "replacement": "\"\\\"${nm}${workshopText('script.6c177effcc99', '\" adlı nesne sınıflandırıcısı projede yok.\\nMevcut: ')}${known.join(', ') ?: workshopText('script.715392eca0f8', '(yok)')}\\n\"",
+          "count": 1,
+          "context": "showWarningNotification"
+        },
+        {
+          "original": "\"'${savedClassifierName.get()}' tüm tespit edilen hücrelere uygulanıyor ve cTCF hesaplanıyor. Lütfen bekleyin…\"",
+          "replacement": "\"'${savedClassifierName.get()}${workshopText('script.c664953a8916', '\\' tüm tespit edilen hücrelere uygulanıyor ve cTCF hesaplanıyor. Lütfen bekleyin…')}\"",
+          "count": 1,
+          "context": "setText"
+        }
+      ]
     },
     "membran-boya.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
@@ -1326,7 +2158,21 @@
     },
     "yardimci-kalibrasyon.groovy": {
       "revision": "6c648c9c95b7d3cefe35588d2420554dcf87ddc3",
-      "sha256": "5cf681acb55f6690ab28377e17d595c68c6add6cb215a0ed031d6accac1d3dce"
+      "sha256": "5cf681acb55f6690ab28377e17d595c68c6add6cb215a0ed031d6accac1d3dce",
+      "expressions": [
+        {
+          "original": "\"ℹ Bu görüntü ZATEN kalibre: ${s.curStr}.\\n\\n\"",
+          "replacement": "\"${workshopText('script.6e1140671c95', 'ℹ Bu görüntü ZATEN kalibre: ')}${s.curStr}.\\n\\n\"",
+          "count": 1,
+          "context": "setText"
+        },
+        {
+          "original": "\"Şu anki piksel boyutu: ${s.curStr}\\n\\n\"",
+          "replacement": "\"${workshopText('script.515d63239a65', 'Şu anki piksel boyutu: ')}${s.curStr}\\n\\n\"",
+          "count": 1,
+          "context": "setText"
+        }
+      ]
     },
     "yardimci-boya-vektor-sihirbaz.groovy": {
       "revision": "6c648c9c95b7d3cefe35588d2420554dcf87ddc3",

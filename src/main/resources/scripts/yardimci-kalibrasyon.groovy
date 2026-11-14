@@ -226,7 +226,7 @@ render = { ->
             title.setText(workshopText('script.188fc7ddbdb3', 'Kalibrasyon — yöntem seçin'))
             bodyLbl.setText(
                 (s.calibrated
-                    ? "ℹ Bu görüntü ZATEN kalibre: ${s.curStr}.\n\n"
+                    ? "${workshopText('script.6e1140671c95', 'ℹ Bu görüntü ZATEN kalibre: ')}${s.curStr}.\n\n"
                     : workshopText('script.1450ce95668b', "⚠ Bu görüntüde kalibrasyon YOK (µm/px tanımsız).\n\n")) +
                 workshopText('script.147d0fd7af74', "Piksel boyutunu (µm/px) nasıl ayarlamak istersiniz?\n\n") +
                 workshopText('script.07108762f72e', "• Doğrudan değer: tarayıcı değerini elle girin\n") +
@@ -254,7 +254,7 @@ render = { ->
     } else if (cur == 'DIRECT') {
         title.setText(workshopText('script.e0887aca6277', 'Doğrudan değer gir'))
         bodyLbl.setText(
-            "Şu anki piksel boyutu: ${s.curStr}\n\n" +
+            "${workshopText('script.515d63239a65', 'Şu anki piksel boyutu: ')}${s.curStr}\n\n" +
             workshopText('script.c518340d0e14', "Yeni piksel boyutu (µm/px):\n") +
             "  • Leica Aperio GT450 (40×) ≈ 0.26\n" +
             "  • Leica Aperio AT2 (40×) ≈ 0.25  (20× ≈ 0.50)\n\n" +

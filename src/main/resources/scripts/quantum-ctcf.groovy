@@ -60,7 +60,7 @@ def launchBundled = { String name ->
 }
 def menuHint = { String where ->
     Dialogs.showMessageDialog('Eklenti gerekli',
-        "Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\n${where}")
+        "${workshopText('script.2da9535b4302', 'Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\n')}${where}")
 }
 
 // --- StarDist modeli: kamuya açık qupath/models'ten sabitlenmiş indirme ---
@@ -488,7 +488,7 @@ def applyMenuHighlight = { String menuName ->
     }
 }
 def menuHighlightToggle = { String menuName ->
-    def tb = new javafx.scene.control.ToggleButton(menuName + ' menüsünü göster')
+    def tb = new javafx.scene.control.ToggleButton(menuName + workshopText('script.ef07407189c3', ' menüsünü göster'))
     tb.setTooltip(new javafx.scene.control.Tooltip(
         workshopText('script.242839f75398', 'Üst menü çubuğunda "') + menuName + workshopText('script.f4d336f42a58', '" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).')))
     tb.setOnAction({ if (tb.isSelected()) applyMenuHighlight(menuName) else clearMenuHighlight() })
@@ -512,16 +512,16 @@ render = { ->
 
     def cur = step.get()
     if (cur == 'PREREQ') {
-        title.setText('Önce: görüntü ve eklenti hazırlığı')
+        title.setText(workshopText('script.8bfbd036c199', 'Önce: görüntü ve eklenti hazırlığı'))
         bodyLbl.setText(
-            'QuANTUM cTCF iş akışının ön koşulları:\n\n' +
-            "  ${s.image ? '✓' : '✗'} Açık görüntü\n" +
-            "  ${s.heType ? '✓' : '✗'} Görüntü tipi Brightfield (H&E)\n" +
-            "  ${s.calib ? '✓' : '✗'} Piksel kalibrasyonu (µm/px)\n" +
-            "  ${s.project ? '✓' : '✗'} Açık proje (sınıflandırıcı kaydı için)\n" +
-            "  ${s.stardist ? '✓' : '⚠'} StarDist eklentisi " + (s.stardist ? '(hazır)' : '(kurulu değil — klasik Watershed yedeği kullanılacak)') + '\n' +
-            "  ${s.model ? '✓' : '⏳'} StarDist modeli " + (s.model ? '(hazır)' : '(StarDist varsa ilk tespitte indirilecek, ~5.7 MB)') + '\n' +
-            "\nEksikleri düzeltip 'Yenile'.")
+            workshopText('script.b6e5799b14e1', 'QuANTUM cTCF iş akışının ön koşulları:\n\n') +
+            "  ${s.image ? '✓' : '✗'}${workshopText('script.c00010ebce02', ' Açık görüntü\n')}" +
+            "  ${s.heType ? '✓' : '✗'}${workshopText('script.5b9dcb71c2a7', ' Görüntü tipi Brightfield (H&E)\n')}" +
+            "  ${s.calib ? '✓' : '✗'}${workshopText('script.d93396f804f2', ' Piksel kalibrasyonu (µm/px)\n')}" +
+            "  ${s.project ? '✓' : '✗'}${workshopText('script.023b402ca7ac', ' Açık proje (sınıflandırıcı kaydı için)\n')}" +
+            "  ${s.stardist ? '✓' : '⚠'} StarDist eklentisi " + (s.stardist ? workshopText('script.5543213e9c58', '(hazır)') : workshopText('script.bc86f45f1ab0', '(kurulu değil — klasik Watershed yedeği kullanılacak)')) + '\n' +
+            "  ${s.model ? '✓' : '⏳'} StarDist modeli " + (s.model ? workshopText('script.5543213e9c58', '(hazır)') : '(StarDist varsa ilk tespitte indirilecek, ~5.7 MB)') + '\n' +
+            workshopText('script.ff94ab283b7b', "\nEksikleri düzeltip 'Yenile'."))
         def fixType = navButton(workshopText('script.bbf6fba1e891', 'Görüntü tipini ayarla'), {
             if (stage != null) stage.setAlwaysOnTop(false)
             if (!launchBundled('yardimci-image-type.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla')
@@ -532,63 +532,63 @@ render = { ->
         })
         content.getChildren().add(new javafx.scene.layout.HBox(8, fixType, fixCal))
         boolean ready = s.image && s.heType && s.calib && s.project
-        def cont = navButton('Devam ▶', { step.set('DETECT_REGION'); render() })
+        def cont = navButton(workshopText('script.09839547cef8', 'Devam ▶'), { step.set('DETECT_REGION'); render() })
         cont.setDisable(!ready)
-        buttons.getChildren().addAll(navButton(workshopText('script.72278748133a', 'İptal'), { stage.close() }), navButton('⟳ Yenile', { render() }), cont)
+        buttons.getChildren().addAll(navButton(workshopText('script.72278748133a', 'İptal'), { stage.close() }), navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }), cont)
     } else if (cur == 'DETECT_REGION') {
-        title.setText('1/5 — TCR anotasyonunu seçin')
+        title.setText(workshopText('script.dd5de281527b', '1/5 — TCR anotasyonunu seçin'))
         bodyLbl.setText(
-            'TCR (Tumor-Containing Region), patoloğun çizdiği araştırma alanıdır — saf tümör konturu\n' +
+            workshopText('script.7c5d577ae1ea', 'TCR (Tumor-Containing Region), patoloğun çizdiği araştırma alanıdır — saf tümör konturu\n' +
             'DEĞİL, içinde tümör bulunan geniş bir bölge. [P] (Polygon) ya da Brush ile çizip SEÇİN.\n' +
-            'Sınıf atamanıza gerek yok; bu yalnız çekirdek tespitinin sınırıdır.\n\n' +
-            "Şu an seçili alan anotasyonu: ${s.selectedArea}")
+            'Sınıf atamanıza gerek yok; bu yalnız çekirdek tespitinin sınırıdır.\n\n') +
+            "${workshopText('script.fdefe60273a1', 'Şu an seçili alan anotasyonu: ')}${s.selectedArea}")
         buttons.getChildren().addAll(
-            navButton('◀ Geri', { step.set('PREREQ'); render() }),
-            navButton('⟳ Yenile', { render() }),
-            navButton('Tespit et ▶', {
+            navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('PREREQ'); render() }),
+            navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }),
+            navButton(workshopText('script.a6ba34fc5c67', 'Tespit et ▶'), {
                 def sel = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getROI()?.isArea() }
                 if (sel.isEmpty()) { Dialogs.showWarningNotification(workshopText('script.e894b6d0ac6e', 'Bölge seçili değil'), workshopText('script.bacd63d7fb6d', 'Önce bir alan (TCR) anotasyonu çizip SEÇİN.')); return }
                 startStarDist(sel[0])
             }, workshopText('script.c08db097c1e1', 'Seçili TCR içinde StarDist çekirdek tespiti')))
     } else if (cur == 'DETECTING') {
-        title.setText('StarDist tespiti çalışıyor…')
-        bodyLbl.setText('TCR içindeki çekirdekler tespit ediliyor ve pürüzsüzleştirilmiş özellikler ekleniyor.\n' +
-            'Model ilk kez indiriliyorsa biraz sürebilir. Lütfen bekleyin…')
+        title.setText(workshopText('script.0d1fe9b7ba82', 'StarDist tespiti çalışıyor…'))
+        bodyLbl.setText(workshopText('script.bce358ad25ae', 'TCR içindeki çekirdekler tespit ediliyor ve pürüzsüzleştirilmiş özellikler ekleniyor.\n' +
+            'Model ilk kez indiriliyorsa biraz sürebilir. Lütfen bekleyin…'))
         content.getChildren().add(busyBar())
     } else if (cur == 'TUMOR_EXAMPLES') {
         def d = detectResult.get()
-        title.setText('2/5 — Tümör hücresi örnekleri')
+        title.setText(workshopText('script.c7d32438535f', '2/5 — Tümör hücresi örnekleri'))
         bodyLbl.setText(
-            ((d?.ok) ? "Tespit edilen çekirdek: ${d.count}\n\n" : '') +
-            'Birkaç TİPİK TÜMÖR HÜCRESİ bölgesini küçük anotasyonlarla çizin ve sınıfını tam olarak\n' +
-            '"Tumor" yapın (Annotations sekmesinde sınıfı seçip "Set selected" ya da sağ tık → Set classification).\n' +
-            'Tümör epiteline ait çekirdekleri hedefleyin; lenfosit ve stromadan uzak durun. Bitince İleri.\n\n' +
-            "Şu an Tumor anotasyonu: ${s.tumor}")
+            ((d?.ok) ? "${workshopText('script.f089332eb95f', 'Tespit edilen çekirdek: ')}${d.count}\n\n" : '') +
+            workshopText('script.9b12e56cc20f', 'Birkaç TİPİK TÜMÖR HÜCRESİ bölgesini küçük anotasyonlarla çizin ve sınıfını tam olarak\n') +
+            workshopText('script.58c36a1e98d7', '"Tumor" yapın (Annotations sekmesinde sınıfı seçip "Set selected" ya da sağ tık → Set classification).\n') +
+            workshopText('script.7bec4bc81f61', 'Tümör epiteline ait çekirdekleri hedefleyin; lenfosit ve stromadan uzak durun. Bitince İleri.\n\n') +
+            "${workshopText('script.8dbd07801613', 'Şu an Tumor anotasyonu: ')}${s.tumor}")
         buttons.getChildren().addAll(
-            navButton('◀ Geri', { step.set('DETECT_REGION'); render() }),
-            navButton('⟳ Yenile', { render() }),
+            navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('DETECT_REGION'); render() }),
+            navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }),
             navButton(workshopText('script.3f0144008e16', 'İleri ▶'), {
                 if (s.tumor > 0) { step.set('NONNEO_EXAMPLES'); render() }
                 else Dialogs.showWarningNotification(workshopText('script.1bc051e5f818', 'Tumor örneği yok'), workshopText('script.1cd820930a4a', 'Sınıfı "Tumor" olan en az bir alan anotasyonu çizin, sonra İleri.'))
             }))
     } else if (cur == 'NONNEO_EXAMPLES') {
-        title.setText('3/5 — Non-neoplastic hücre örnekleri')
+        title.setText(workshopText('script.5530fd449f6b', '3/5 — Non-neoplastic hücre örnekleri'))
         bodyLbl.setText(
-            'Şimdi tümör DIŞI hücrelerin (lenfosit, fibroblast, endotel, sıkışmış benign parankimal epitel) bulunduğu\n' +
+            workshopText('script.bff07ecb51f0', 'Şimdi tümör DIŞI hücrelerin (lenfosit, fibroblast, endotel, sıkışmış benign parankimal epitel) bulunduğu\n' +
             'bölgelerden birkaç örnek çizin ve sınıfını TAM OLARAK "Non-neoplastic" yapın\n' +
             '(büyük N, tireli, küçük n — yanlış yazım sessizce Ignore sayılır).\n' +
             'İsteğe bağlı: artefakt/belirsiz hücreleri "Ignore" sınıfıyla işaretleyebilirsiniz.\n' +
-            'Bu ayrım, Non-neoplastic hücreleri cTCF paydasına dahil etmek için kritiktir. Bitince İleri.\n\n' +
-            "Şu an Non-neoplastic: ${s.nonNeo}   |   Ignore: ${s.ignore}")
+            'Bu ayrım, Non-neoplastic hücreleri cTCF paydasına dahil etmek için kritiktir. Bitince İleri.\n\n') +
+            "${workshopText('script.4ec640f9054e', 'Şu an Non-neoplastic: ')}${s.nonNeo}   |   Ignore: ${s.ignore}")
         buttons.getChildren().addAll(
-            navButton('◀ Geri', { step.set('TUMOR_EXAMPLES'); render() }),
-            navButton('⟳ Yenile', { render() }),
+            navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('TUMOR_EXAMPLES'); render() }),
+            navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }),
             navButton(workshopText('script.3f0144008e16', 'İleri ▶'), {
                 if (s.nonNeo > 0) { step.set('TRAIN_GUIDE'); render() }
                 else Dialogs.showWarningNotification(workshopText('script.79a8750a224d', 'Non-neoplastic örneği yok'), workshopText('script.58d3f62597cb', 'Sınıfı "Non-neoplastic" olan en az bir alan anotasyonu çizin, sonra İleri.'))
             }))
     } else if (cur == 'TRAIN_GUIDE') {
-        title.setText("4/5 — Sınıflandırıcıyı QuPath'te eğitin")
+        title.setText(workshopText('script.292c4d20e93e', "4/5 — Sınıflandırıcıyı QuPath'te eğitin"))
         def instr = new javafx.scene.control.TextArea(
             '1. Üst menü:  Classify → Object classification → Train object classifier\n' +
             '2. Sınıflandırıcı türü: Random Trees (varsayılan)\n' +
@@ -603,8 +603,8 @@ render = { ->
         content.getChildren().addAll(instr, new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Kaydedilen ad:'), nameField))
         content.getChildren().add(menuHighlightToggle('Classify'))   // #3: Classify menüsünü göster
         buttons.getChildren().addAll(
-            navButton('◀ Geri', { step.set('NONNEO_EXAMPLES'); render() }),
-            navButton('⟳ Yenile', { render() }),
+            navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('NONNEO_EXAMPLES'); render() }),
+            navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }),
             navButton('Kaydedildi ▶', {
                 String nm = nameField.getText()?.trim()
                 if (!nm) { Dialogs.showWarningNotification('Ad gerekli', workshopText('script.6c7b6f3bc12d', 'Kaydettiğiniz sınıflandırıcının adını girin.')); return }
@@ -612,7 +612,7 @@ render = { ->
                 if (!known.contains(nm)) {
                     if (stage != null) stage.setAlwaysOnTop(false)
                     Dialogs.showWarningNotification(workshopText('script.57b501859ef7', 'Sınıflandırıcı bulunamadı'),
-                        "\"${nm}\" adlı nesne sınıflandırıcısı projede yok.\nMevcut: ${known.join(', ') ?: '(yok)'}\n" +
+                        "\"${nm}${workshopText('script.6c177effcc99', '" adlı nesne sınıflandırıcısı projede yok.\nMevcut: ')}${known.join(', ') ?: workshopText('script.715392eca0f8', '(yok)')}\n" +
                         workshopText('script.d52c4dfa8ba7', "Train Object Classifier penceresinde 'Save' yaptınız mı?"))
                     if (stage != null) stage.setAlwaysOnTop(true)
                     return
@@ -620,8 +620,8 @@ render = { ->
                 startApply(nm)
             }, workshopText('script.a67848fb85ec', 'Kaydedilen nesne sınıflandırıcısını tüm hücrelere uygular')))
     } else if (cur == 'APPLYING') {
-        title.setText('Sınıflandırıcı uygulanıyor…')
-        bodyLbl.setText("'${savedClassifierName.get()}' tüm tespit edilen hücrelere uygulanıyor ve cTCF hesaplanıyor. Lütfen bekleyin…")
+        title.setText(workshopText('script.c7f9b0ba20c4', 'Sınıflandırıcı uygulanıyor…'))
+        bodyLbl.setText("'${savedClassifierName.get()}${workshopText('script.c664953a8916', '\' tüm tespit edilen hücrelere uygulanıyor ve cTCF hesaplanıyor. Lütfen bekleyin…')}")
         content.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
         def ar = applyResultRef.get()
@@ -630,7 +630,7 @@ render = { ->
         title.setText('5/5 — cTCF Sonucu')
         if (a?.ok) {
             def summaryLbl = new javafx.scene.control.Label(
-                String.format(java.util.Locale.US, 'Sınıflandırma: Tumor=%,d, Non-neoplastic=%,d, Ignore=%,d',
+                String.format(java.util.Locale.US, workshopText('script.c525977d89b0', 'Sınıflandırma: Tumor=%,d, Non-neoplastic=%,d, Ignore=%,d'),
                     a.tumorCount, a.nonNeoCount, a.ignoreCount))
             summaryLbl.setWrapText(true)
             def resultArea = new javafx.scene.control.TextArea(res?.text ?: '')
@@ -638,15 +638,15 @@ render = { ->
             resultArea.setStyle("-fx-font-family: 'Consolas','Menlo','Courier New',monospace; -fx-font-size: 12px;")
             content.getChildren().addAll(summaryLbl, resultArea)
             javafx.scene.layout.VBox.setVgrow(resultArea, javafx.scene.layout.Priority.ALWAYS)
-            def copyBtn = new javafx.scene.control.Button('Kopyala')
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', 'Kopyala'))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def cc = new javafx.scene.input.ClipboardContent(); cc.putString(res?.text ?: ''); cb.setContent(cc)
             })
-            buttons.getChildren().addAll(navButton('◀ Geri', { step.set('TRAIN_GUIDE'); render() }), copyBtn, navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            buttons.getChildren().addAll(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('TRAIN_GUIDE'); render() }), copyBtn, navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
         } else {
-            bodyLbl.setText('Sınıflandırma tamamlanamadı. Geri dönüp tekrar deneyin.')
-            buttons.getChildren().addAll(navButton('◀ Geri', { step.set('TRAIN_GUIDE'); render() }), navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            bodyLbl.setText(workshopText('script.b40481006ffe', 'Sınıflandırma tamamlanamadı. Geri dönüp tekrar deneyin.'))
+            buttons.getChildren().addAll(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('TRAIN_GUIDE'); render() }), navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
         }
     }
 

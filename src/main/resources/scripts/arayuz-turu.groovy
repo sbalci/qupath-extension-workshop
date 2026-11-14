@@ -577,7 +577,7 @@ def setupPractice = { page, javafx.scene.control.Label statusLabel, int pageIdx 
     def imageData = null
     try { imageData = gui.getImageData() } catch (Throwable t) {}
     if (imageData == null) {
-        statusLabel.setText('⚠ Bu alıştırma için önce bir lam açın (' + openSlideHint + '). "İleri ▶" ile atlayabilirsiniz.')
+        statusLabel.setText(workshopText('script.f6af14d1ddfb', '⚠ Bu alıştırma için önce bir lam açın (') + openSlideHint + workshopText('script.a6b4326ca6c8', '). "İleri ▶" ile atlayabilirsiniz.'))
         statusLabel.setStyle('-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: -fx-text-base-color; -fx-opacity: 0.8;')
         return
     }
@@ -587,7 +587,7 @@ def setupPractice = { page, javafx.scene.control.Label statusLabel, int pageIdx 
     int basePoints = isPoints ? countPoints(hierarchy) : 0
     def baseline = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap())
     if (!isPoints) baseline.addAll(hierarchy.getAnnotationObjects())
-    statusLabel.setText('⏳ ' + (PRACTICE_HINT[expected] ?: 'Bir anotasyon çizin…'))
+    statusLabel.setText('⏳ ' + (PRACTICE_HINT[expected] ?: workshopText('script.991b1256f0fb', 'Bir anotasyon çizin…')))
     def done = new java.util.concurrent.atomic.AtomicBoolean(false)
     def listener = ({ evt ->
         try {
@@ -600,9 +600,9 @@ def setupPractice = { page, javafx.scene.control.Label statusLabel, int pageIdx 
                     detachPractice()   // dinleyici tetikleme döngüsü DIŞINDA kaldır (güvenli)
                     statusLabel.setStyle('-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #1a8a5a;')
                     if (isPoints) {
-                        statusLabel.setText('✓ Nokta eklendi! Alıştırmalar tamam — "İleri ▶" ile tura devam edin.')
+                        statusLabel.setText(workshopText('script.866bcc34b4cf', '✓ Nokta eklendi! Alıştırmalar tamam — "İleri ▶" ile tura devam edin.'))
                     } else {
-                        statusLabel.setText('✓ ' + (PRACTICE_DONE[expected] ?: 'Şekil') + ' algılandı — sonraki adıma geçiliyor…')
+                        statusLabel.setText('✓ ' + (PRACTICE_DONE[expected] ?: workshopText('script.0c70be7a66c9', 'Şekil')) + workshopText('script.0ff1d928387d', ' algılandı — sonraki adıma geçiliyor…'))
                         if (idx.get() == pageIdx && pageIdx + 1 < pages.size()) {
                             def pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(900))
                             pause.setOnFinished({ if (idx.get() == pageIdx) { clearHighlight(); idx.set(pageIdx + 1); render() } })
@@ -691,7 +691,7 @@ render = { ->
             applyHighlight(nodesF, spotF); activateTarget(page); hiBtn.setSelected(true)
         }
     } else if (page.bolge != null) {
-        def hi = new javafx.scene.control.ToggleButton('Bu bölgeyi vurgula')
+        def hi = new javafx.scene.control.ToggleButton(workshopText('script.f715000e5393', 'Bu bölgeyi vurgula'))
         hi.setDisable(true)
         hi.setTooltip(new javafx.scene.control.Tooltip(
             workshopText('script.07a85a0dcf1c', 'Bu öğe şu an erişilemiyor (lam açık değil ya da QuPath sürümü farklı). Sayfa metni yine de geçerli.')))
@@ -707,10 +707,10 @@ render = { ->
         // Pencere/menü açan adımlarda kullanıcıya "kapatıp devam et" bilgisini ver.
         boolean opensWindow = (page.demo == 'FIRE' || page.demo == 'MENU' || page.demo == 'COMMAND_LIST')
         def demoHint = new javafx.scene.control.Label(opensWindow
-            ? 'Bu adım ilgili komutu örnek olarak açar. Açılan pencere/menü bu sihirbazın önüne gelebilir; ' +
-              'inceledikten sonra kapatın ve "İleri ▶" ile tura devam edin.'
-            : 'Bu adım ilgili aracı örnek olarak etkinleştirir; araç çubuğunda seçili duruma geçtiğini görürsünüz. ' +
-              'Tur kapanınca başlangıçtaki araç geri yüklenir. "İleri ▶" ile devam edin.')
+            ? workshopText('script.bb36d2f0b46a', 'Bu adım ilgili komutu örnek olarak açar. Açılan pencere/menü bu sihirbazın önüne gelebilir; ' +
+              'inceledikten sonra kapatın ve "İleri ▶" ile tura devam edin.')
+            : workshopText('script.2deb7941c80a', 'Bu adım ilgili aracı örnek olarak etkinleştirir; araç çubuğunda seçili duruma geçtiğini görürsünüz. ' +
+              'Tur kapanınca başlangıçtaki araç geri yüklenir. "İleri ▶" ile devam edin.'))
         demoHint.setWrapText(true); demoHint.setMaxWidth(Double.MAX_VALUE)
         demoHint.setStyle('-fx-opacity: 0.75; -fx-font-size: 11px; -fx-font-style: italic;')
         center.getChildren().add(demoHint)
@@ -751,12 +751,12 @@ render = { ->
     def spacer = new javafx.scene.layout.Region()
     javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
 
-    def backBtn = new javafx.scene.control.Button('◀ Geri')
+    def backBtn = new javafx.scene.control.Button(workshopText('script.7dfd804d8334', '◀ Geri'))
     backBtn.setDisable(i == 0)
     backBtn.setOnAction({ clearHighlight(); idx.set(Math.max(0, i - 1)); render() })
 
     boolean last = (i == pages.size() - 1)
-    def nextBtn = new javafx.scene.control.Button(last ? 'Bitir' : 'İleri ▶')
+    def nextBtn = new javafx.scene.control.Button(last ? 'Bitir' : workshopText('script.3f0144008e16', 'İleri ▶'))
     nextBtn.setOnAction({
         clearHighlight()
         if (last) stage.close()

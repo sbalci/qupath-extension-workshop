@@ -51,7 +51,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 { obs, oldValue, newValue -> stage.setAlwaysOnTop(newValue) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def clipboard = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -256,7 +256,7 @@ String normalizedImageType = imageTypeName.toUpperCase(Locale.ROOT).replaceAll('
 if (!normalizedImageType.contains('BRIGHTFIELD_H_E')) {
     Dialogs.showErrorMessage(
         workshopText('script.be9dc7d830d5', 'Yanlış görüntü tipi'),
-        "Tümör/stroma sınıflandırıcısı Brightfield (H&E) görüntü bekler. Şu anki: ${imageTypeName}"
+        "${workshopText('script.b89ccd4c78ba', 'Tümör/stroma sınıflandırıcısı Brightfield (H&E) görüntü bekler. Şu anki: ')}${imageTypeName}"
     )
     return
 }
@@ -266,7 +266,7 @@ double pixelWidth = calibration.getPixelWidthMicrons()
 double pixelHeight = calibration.getPixelHeightMicrons()
 if (!(pixelWidth > 0) || !(pixelHeight > 0)) {
     Dialogs.showErrorMessage(
-        'Kalibrasyon yok',
+        workshopText('script.a5a01874aff2', 'Kalibrasyon yok'),
         workshopText('script.a756936a8b3d', 'Piksel boyutu tanımlı değil; mm² alan ölçümleri hesaplanamaz.\n' +
         'Önce kalibrasyonu metadata veya bir kalibrasyon lamıyla doğrulayın.')
     )

@@ -43,11 +43,20 @@ def quoted_end(source, start):
     raise ValueError('Unclosed Groovy string in UI fallback')
 
 
-def restored_source(source, known_keys):
+def restored_source(source, known_keys, expressions=()):
     source = canonical(source)
     if not source.endswith(HELPER_SUFFIX):
         raise ValueError('UI helper differs from its reviewed implementation')
     source = source[:-len(HELPER_SUFFIX)].rstrip() + '\n'
+    # Exact whole-expression rewrites are independently checked with the Groovy
+    # AST in tests: literal text may change, original value expressions may not.
+    for expression in expressions:
+        old, new, count = expression['original'], expression['replacement'], expression['count']
+        if old == new or not isinstance(count, int) or count < 1:
+            raise ValueError('Invalid UI expression contract')
+        if source.count(new) != count:
+            raise ValueError('UI expression differs from its reviewed rewrite')
+        source = source.replace(new, old)
     edits = []
     for call in CALL.finditer(source):
         if call.group(1) not in known_keys:
@@ -88,7 +97,7 @@ def check():
         raise ValueError('Every translated script needs a reviewed source contract')
     for filename, contract in contracts.items():
         source = (ROOT / 'src/main/resources/scripts' / filename).read_text(encoding='utf-8')
-        restored = restored_source(source, keys)
+        restored = restored_source(source, keys, contract.get('expressions', []))
         if source_digest(restored) != contract['sha256']:
             raise ValueError(filename + ': non-UI source changed; review the source contract before updating it')
     print('UI-only source contracts passed for ' + str(len(contracts)) + ' scripts.')

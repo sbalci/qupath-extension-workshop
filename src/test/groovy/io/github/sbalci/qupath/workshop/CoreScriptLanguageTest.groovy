@@ -14,7 +14,7 @@ class CoreScriptLanguageTest {
     void coreDisplayCatalogMatchesBothBundlesAndScriptFallbacks() {
         def keys = WorkshopI18n.trKeys().findAll { it ==~ /script\.[0-9a-f]{12}/ }
         def catalog = new Gson().fromJson(getClass().getResource('/i18n/script-core.json').getText('UTF-8'), Map)
-        assertEquals(255, keys.size())
+        assertEquals(379, keys.size())
         assertEquals(catalog.strings.collect { it.key } as Set, keys as Set)
         catalog.strings.each { row ->
             assertEquals(row.key, row.tr, WorkshopI18n.t(row.key as String, false))
