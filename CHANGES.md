@@ -1,3 +1,22 @@
+# 14 Kasım 2026 — onaylı planın uygulama kaydı
+
+Dal: `feat/course-audit-followup-20261114`. Yerel inceleme; push, tag, sürüm veya paket yayımlama yapılmadı. Sürüm numarası bu yüzden artırılmadı.
+
+- README kurulum ve ilk örnek yolu iki dilde tamamlandı. 512×512, 100 nesneli CC0 sentetik PNG, oluşturucu, SHA manifesti ve ilk çalıştırma belgesi eklendi.
+- Hücre tespiti penceresi 25 ortak TR/EN anahtarını kullanır; son hata ortak sonraki-adım rehberini gösterir. Sekiz ek ana betikte 143 başlık/düğme/yardım/ilk hata iletisi tek katalogdan üretilir. Bağımsız Groovy çalıştırmada Türkçe fallback korunur.
+- Python ve requirements aynalarının LF politikası düzeltildi. Ortak 97 terimlik sözlük SHA kontrolü, onaylanan *epoch* ve VUS tanımları eklendi. Dil tercihi dokümanı gerçek düğüm/anahtarla eşlendi.
+- Tespit algoritmaları, parametre varsayılanları, CSV/GeoJSON alan adları ve public API bu dil çalışmasında değiştirilmedi.
+
+Doğrulama: Java 21/Gradle build; 63 test, sıfır hata/başarısız. Gerçek QuPath 0.6.0 ve 0.7.0 içinde paketli 103 betik parse edildi; sentetik ilk örnekte 100 kontur ve dolu ölçüm satırları doğrulandı. Her hostta 2.338 gerçek TR/EN lookup ve eklentisiz Türkçe fallback geçti; GUI açılmadı, tercih kaydedilmedi. Ana deponun script-sync ve lint kontrolleri geçti.
+
+Karar bekleyenler: ortak sözlükte beş terim grubu (workshop deposundaki somut taslak). Yeni public API veya analiz davranışı önerilmedi.
+
+Doğrulanamayanlar: Windows GUI denetim bağlantısı yok (`os error 2`); kurulum/GUI iptal/üzerine-yazma/dil değiştirme elle görülmedi. Bazı yardımcı pencereler ve dinamik sonuçlar hâlâ Türkçe. Harici model/ortam indirmeleri ve tüm köprülerin gerçek model çalışması test edilmedi. Yerel ağaçtaki eş zamanlı diğer düzenlemeler korunup commit dışında bırakıldı; build sonucu o andaki ağaca aittir.
+
+---
+
+## Önceki çalışma kaydı
+
 # CHANGES — `qupath-extension-workshop`
 
 Branch: `feat/bilingual-pedagogy-audit` (`main` untouched; not pushed or released).
