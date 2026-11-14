@@ -1,6 +1,7 @@
 """Build the core scripts' TR/EN display strings without changing their data keys."""
 import argparse
 import json
+import re
 import runpy
 from pathlib import Path
 
@@ -12,9 +13,9 @@ END = '# END GENERATED CORE SCRIPT UI'
 
 def escape(value):
     value = value.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
-    if value.startswith(' '):
-        value = '\\ ' + value[1:]
-    return value
+    # Keep meaningful prefix/suffix spaces without literal trailing whitespace
+    # in the generated properties. Properties.load decodes these back to spaces.
+    return re.sub(r'^ +| +$', lambda match: '\\u0020' * len(match.group()), value)
 
 
 def build(check):
