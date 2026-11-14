@@ -10,7 +10,7 @@
 
 **English Overview:** Bilingual (**Turkish default / English**) QuPath extension that bundles all hands-on Groovy workflows, 15 self-extracting Python model bridges, interactive wizards, and persistent parameters of the **QuPath Digital Pathology & AI Workshop** into one-click menus.
 
-**Dil kapsamı / Language coverage:** Menü ve ortak ayarlar iki dillidir. Hücre tespiti penceresinin kontrolleri, açıklamaları ve sonuç özeti de dil seçimini izler. Diğer Groovy pencerelerinin bir bölümü hâlâ Türkçedir. / Menus and shared settings are bilingual. Cell-detection controls, help and results also follow the language selection; some other Groovy windows still use Turkish.
+**Dil kapsamı / Language coverage:** Menü ve ortak ayarlar iki dillidir. Hücre tespiti penceresinin kontrolleri, açıklamaları ve sonuç özeti de dil seçimini izler. Sekiz ana betikteki 143 başlık, düğme, açıklama ve ilk hata iletisi de ortak TR/EN kaynağını kullanır. Dinamik sonuç metinleri ve diğer yardımcı pencerelerin bir bölümü hâlâ Türkçedir. / Menus and shared settings are bilingual. Cell-detection controls, help and results also follow the language selection; 143 headings, controls, help strings and initial errors across eight more core scripts use a shared TR/EN catalog. Dynamic results and some helper windows still use Turkish.
 
 > Modeled after the official [QuPath extension template](https://github.com/qupath/qupath-extension-template).
 

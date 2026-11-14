@@ -443,11 +443,11 @@ def suggestStainVectors = { ->
         '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n' +
         '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et'
     if (isHeadless) { println svMsg; return }
-    if (!qupath.fx.dialogs.Dialogs.showConfirmDialog('Boya vektörleri — öneri', svMsg)) return
+    if (!qupath.fx.dialogs.Dialogs.showConfirmDialog(workshopText('script.cb5b26abe800', 'Boya vektörleri — öneri'), svMsg)) return
     def svSel = QP.getSelectedObjects().findAll { it.hasROI() && it.getROI().isArea() }
     if (svSel.isEmpty()) {
-        qupath.fx.dialogs.Dialogs.showWarningNotification('Boya vektörleri',
-            'Önce iki boya + biraz arka plan içeren temsilî bir alan anotasyonu çizip SEÇİN, sonra tekrar deneyin.')
+        qupath.fx.dialogs.Dialogs.showWarningNotification(workshopText('script.c1cc09de3ac8', 'Boya vektörleri'),
+            workshopText('script.525b4898d046', 'Önce iki boya + biraz arka plan içeren temsilî bir alan anotasyonu çizip SEÇİN, sonra tekrar deneyin.'))
         return
     }
     try {
@@ -464,11 +464,11 @@ def suggestStainVectors = { ->
         javafx.application.Platform.runLater {
             try { qupath.lib.gui.QuPathGUI.getInstance()?.getViewer()?.repaintEntireImage() } catch (Throwable svR) { }
         }
-        qupath.fx.dialogs.Dialogs.showMessageDialog('Boya vektörleri',
-            'Vektörler seçili bölgeden tahmin edilip uygulandı. Modülü şimdi çalıştırabilirsiniz.')
+        qupath.fx.dialogs.Dialogs.showMessageDialog(workshopText('script.c1cc09de3ac8', 'Boya vektörleri'),
+            workshopText('script.4e0fe0741a03', 'Vektörler seçili bölgeden tahmin edilip uygulandı. Modülü şimdi çalıştırabilirsiniz.'))
     } catch (Throwable svErr) {
-        qupath.fx.dialogs.Dialogs.showMessageDialog('Boya vektörleri',
-            'Tahmin yapılamadı: ' + (svErr.getMessage() ?: svErr.getClass().getSimpleName()))
+        qupath.fx.dialogs.Dialogs.showMessageDialog(workshopText('script.c1cc09de3ac8', 'Boya vektörleri'),
+            workshopText('script.c0b06389df5e', 'Tahmin yapılamadı: ') + (svErr.getMessage() ?: svErr.getClass().getSimpleName()))
     }
 }
 if (QP.getSelectedObject() instanceof PathAnnotationObject && QP.getSelectedObject().getROI()?.isArea()) {
@@ -546,17 +546,17 @@ def buildScorePanel = { content, buttons, String infoText, boolean advExpanded, 
         sp.focusedProperty().addListener({ obs, was, now -> if (!now) commitSpinner(sp) } as javafx.beans.value.ChangeListener)
     }
     def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(6); grid.setPadding(new javafx.geometry.Insets(6))
-    grid.addRow(0, new javafx.scene.control.Label('DAB eşiği 1+ (Nucleus: DAB OD mean)'), spN1)
-    grid.addRow(1, new javafx.scene.control.Label('DAB eşiği 2+ (Nucleus: DAB OD mean)'), spN2)
-    grid.addRow(2, new javafx.scene.control.Label('DAB eşiği 3+ (Nucleus: DAB OD mean)'), spN3)
-    def adv = new javafx.scene.control.TitledPane('⚙ DAB eşikleri', grid); adv.setExpanded(advExpanded); adv.setAnimated(false)
-    def status = new javafx.scene.control.Label('Hazır.')
+    grid.addRow(0, new javafx.scene.control.Label(workshopText('script.f67c6942d322', 'DAB eşiği 1+ (Nucleus: DAB OD mean)')), spN1)
+    grid.addRow(1, new javafx.scene.control.Label(workshopText('script.369a3f9e70f8', 'DAB eşiği 2+ (Nucleus: DAB OD mean)')), spN2)
+    grid.addRow(2, new javafx.scene.control.Label(workshopText('script.5e51761150fd', 'DAB eşiği 3+ (Nucleus: DAB OD mean)')), spN3)
+    def adv = new javafx.scene.control.TitledPane(workshopText('script.8eca38f1b522', '⚙ DAB eşikleri'), grid); adv.setExpanded(advExpanded); adv.setAnimated(false)
+    def status = new javafx.scene.control.Label(workshopText('script.86bb45e59294', 'Hazır.'))
     def progress = new javafx.scene.control.ProgressBar(); progress.setMaxWidth(Double.MAX_VALUE); progress.setVisible(false); progress.setManaged(false)
     def resultArea = new javafx.scene.control.TextArea(); resultArea.setEditable(false); resultArea.setWrapText(false); resultArea.setPrefRowCount(11)
-    resultArea.setPromptText('Sonuçlar burada görünecek…')
+    resultArea.setPromptText(workshopText('script.4adde9b85aed', 'Sonuçlar burada görünecek…'))
     resultArea.setStyle("-fx-font-family: 'Consolas','Menlo','Courier New',monospace; -fx-font-size: 12px;")
     if (resultRef.get() != null) resultArea.setText((String) resultRef.get())
-    def runBtn = new javafx.scene.control.Button('Çalıştır'); runBtn.setDefaultButton(true)
+    def runBtn = new javafx.scene.control.Button(workshopText('script.79ef801ff99f', 'Çalıştır')); runBtn.setDefaultButton(true)
     runBtn.setOnAction({
         [spN1, spN2, spN3].each { commitSpinner(it) }
         runBtn.setDisable(true); status.setStyle(''); status.setText('Çalışıyor…')
@@ -599,7 +599,7 @@ def startDetect = { regionAnno ->
             else {
                 step.set('DETECT_REGION'); render()
                 if (stage != null) stage.setAlwaysOnTop(false)
-                Dialogs.showErrorMessage('Tespit başarısız', d.error ?: '')
+                Dialogs.showErrorMessage(workshopText('script.eea6902a2c8c', 'Tespit başarısız'), d.error ?: '')
                 if (stage != null) stage.setAlwaysOnTop(true)
             }
         }
@@ -618,7 +618,7 @@ def startApply = { String name ->
             else {
                 step.set('TRAIN_GUIDE'); render()
                 if (stage != null) stage.setAlwaysOnTop(false)
-                Dialogs.showErrorMessage('Sınıflandırıcı uygulanamadı', r.error ?: '')
+                Dialogs.showErrorMessage(workshopText('script.face316a825e', 'Sınıflandırıcı uygulanamadı'), r.error ?: '')
                 if (stage != null) stage.setAlwaysOnTop(true)
             }
         }
@@ -673,7 +673,7 @@ def applyMenuHighlight = { String menuName ->
 def menuHighlightToggle = { String menuName ->
     def tb = new javafx.scene.control.ToggleButton(menuName + ' menüsünü göster')
     tb.setTooltip(new javafx.scene.control.Tooltip(
-        'Üst menü çubuğunda "' + menuName + '" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).'))
+        workshopText('script.242839f75398', 'Üst menü çubuğunda "') + menuName + workshopText('script.f4d336f42a58', '" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).')))
     tb.setOnAction({ if (tb.isSelected()) applyMenuHighlight(menuName) else clearMenuHighlight() })
     return tb
 }
@@ -702,13 +702,13 @@ render = { ->
             '• Hücre sınıflandırıcı eğit: bir nesne (hücre) sınıflandırıcısı eğitip tümör hücrelerini otomatik bulur, ' +
             'Ki-67\'yi yalnız tümör hücrelerinde ölçer (Ki-67+ lenfositler dışlanır).')
         buttons.getChildren().addAll(
-            navButton('İptal', { stage.close() }),
-            navButton('Hızlı Ki-67 ▶', {
+            navButton(workshopText('script.72278748133a', 'İptal'), { stage.close() }),
+            navButton(workshopText('script.1d44e8657a84', 'Hızlı Ki-67 ▶'), {
                 pathChoice.set('A'); step.set((s.image && s.hDab && s.calib) ? 'RUN_A' : 'PREREQ'); render()
-            }, 'Tümör bölgesini kendiniz seçip eşikle ölçersiniz', 'BOLT'),
-            navButton('Hücre sınıflandırıcı eğit ▶', {
+            }, workshopText('script.ce293bbcd0f1', 'Tümör bölgesini kendiniz seçip eşikle ölçersiniz'), 'BOLT'),
+            navButton(workshopText('script.8c929ab4477b', 'Hücre sınıflandırıcı eğit ▶'), {
                 pathChoice.set('B'); step.set((s.image && s.hDab && s.calib && s.project) ? 'DETECT_REGION' : 'PREREQ'); render()
-            }, 'Tümör hücrelerini otomatik bulan bir nesne sınıflandırıcısı eğitir', 'FLASK'))
+            }, workshopText('script.ad5819839ccb', 'Tümör hücrelerini otomatik bulan bir nesne sınıflandırıcısı eğitir'), 'FLASK'))
     } else if (cur == 'PREREQ') {
         boolean needProject = pathChoice.get() == 'B'
         title.setText('Önce: görüntü tipi ve kalibrasyon' + (needProject ? ' + proje' : ''))
@@ -719,7 +719,7 @@ render = { ->
             "  ${s.calib ? '✓' : '✗'} Piksel kalibrasyonu (µm/px)\n" +
             (needProject ? "  ${s.project ? '✓' : '✗'} Açık proje (sınıflandırıcı kaydı için)\n" : '') +
             "\nEksikleri düzeltip 'Yenile'.")
-        def fixType = navButton('Görüntü tipini ayarla', {
+        def fixType = navButton(workshopText('script.bbf6fba1e891', 'Görüntü tipini ayarla'), {
             if (stage != null) stage.setAlwaysOnTop(false)
             if (!launchBundled('yardimci-image-type.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Görüntü tipi ayarla')
         })
@@ -752,9 +752,9 @@ render = { ->
             navButton('⟳ Yenile', { render() }),
             navButton('Tespit et ▶', {
                 def sel = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getROI()?.isArea() }
-                if (sel.isEmpty()) { Dialogs.showWarningNotification('Bölge seçili değil', 'Önce bir alan anotasyonu çizip SEÇİN.'); return }
+                if (sel.isEmpty()) { Dialogs.showWarningNotification(workshopText('script.e894b6d0ac6e', 'Bölge seçili değil'), workshopText('script.a97b5d9fae33', 'Önce bir alan anotasyonu çizip SEÇİN.')); return }
                 startDetect(sel[0])
-            }, 'Seçili bölgede hücre tespiti + pürüzsüzleştirilmiş özellikler'))
+            }, workshopText('script.c87420ed98c7', 'Seçili bölgede hücre tespiti + pürüzsüzleştirilmiş özellikler')))
     } else if (cur == 'DETECTING') {
         title.setText('Hücre tespiti + özellik hesaplama…')
         bodyLbl.setText('Seçili bölgede çekirdekler tespit ediliyor ve pürüzsüzleştirilmiş özellikler ekleniyor. Lütfen bekleyin…')
@@ -771,9 +771,9 @@ render = { ->
         buttons.getChildren().addAll(
             navButton('◀ Geri', { step.set('DETECT_REGION'); render() }),
             navButton('⟳ Yenile', { render() }),
-            navButton('İleri ▶', {
+            navButton(workshopText('script.3f0144008e16', 'İleri ▶'), {
                 if (s.tumor > 0) { step.set('OTHER_EXAMPLES'); render() }
-                else Dialogs.showWarningNotification('Tumor örneği yok', 'Sınıfı "Tumor" olan en az bir alan anotasyonu çizin, sonra İleri.')
+                else Dialogs.showWarningNotification(workshopText('script.1bc051e5f818', 'Tumor örneği yok'), workshopText('script.1cd820930a4a', 'Sınıfı "Tumor" olan en az bir alan anotasyonu çizin, sonra İleri.'))
             }))
     } else if (cur == 'OTHER_EXAMPLES') {
         title.setText('3/5 — Tümör DIŞI hücre örnekleri')
@@ -785,9 +785,9 @@ render = { ->
         buttons.getChildren().addAll(
             navButton('◀ Geri', { step.set('TUMOR_EXAMPLES'); render() }),
             navButton('⟳ Yenile', { render() }),
-            navButton('İleri ▶', {
+            navButton(workshopText('script.3f0144008e16', 'İleri ▶'), {
                 if (s.other > 0) { step.set('TRAIN_GUIDE'); render() }
-                else Dialogs.showWarningNotification('Other örneği yok', 'Sınıfı "Other" olan en az bir alan anotasyonu çizin, sonra İleri.')
+                else Dialogs.showWarningNotification(workshopText('script.f2aedb9eea76', 'Other örneği yok'), workshopText('script.bbeb69446e36', 'Sınıfı "Other" olan en az bir alan anotasyonu çizin, sonra İleri.'))
             }))
     } else if (cur == 'TRAIN_GUIDE') {
         title.setText("4/5 — Sınıflandırıcıyı QuPath'te eğitin")
@@ -807,18 +807,18 @@ render = { ->
             navButton('⟳ Yenile', { render() }),
             navButton('Kaydedildi ▶', {
                 String nm = nameField.getText()?.trim()
-                if (!nm) { Dialogs.showWarningNotification('Ad gerekli', 'Kaydettiğiniz sınıflandırıcının adını girin.'); return }
+                if (!nm) { Dialogs.showWarningNotification('Ad gerekli', workshopText('script.6c7b6f3bc12d', 'Kaydettiğiniz sınıflandırıcının adını girin.')); return }
                 def known = QP.getProject()?.getObjectClassifiers()?.getNames() ?: []
                 if (!known.contains(nm)) {
                     if (stage != null) stage.setAlwaysOnTop(false)
-                    Dialogs.showWarningNotification('Sınıflandırıcı bulunamadı',
+                    Dialogs.showWarningNotification(workshopText('script.57b501859ef7', 'Sınıflandırıcı bulunamadı'),
                         "\"${nm}\" adlı nesne sınıflandırıcısı projede yok.\nMevcut: ${known.join(', ') ?: '(yok)'}\n" +
-                        "Train Object Classifier penceresinde 'Save' yaptınız mı?")
+                        workshopText('script.d52c4dfa8ba7', "Train Object Classifier penceresinde 'Save' yaptınız mı?"))
                     if (stage != null) stage.setAlwaysOnTop(true)
                     return
                 }
                 startApply(nm)
-            }, 'Kaydedilen nesne sınıflandırıcısını tüm hücrelere uygular'))
+            }, workshopText('script.a67848fb85ec', 'Kaydedilen nesne sınıflandırıcısını tüm hücrelere uygular')))
     } else if (cur == 'APPLYING') {
         title.setText('Sınıflandırıcı uygulanıyor…')
         bodyLbl.setText("'${savedClassifierName.get()}' tüm tespit edilen hücrelere uygulanıyor. Lütfen bekleyin…")
@@ -839,7 +839,7 @@ render = { ->
 
     def root = new javafx.scene.layout.BorderPane()
     root.setCenter(content)
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -853,12 +853,23 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Tümör İçi Ki-67')
+        stage.setTitle(workshopText('script.7989d346c1b4', 'Tümör İçi Ki-67'))
         stage.setAlwaysOnTop(true)
         stage.setOnHidden({ clearMenuHighlight() })   // #3: pencere kapanınca menü vurgusunu kaldır
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Tümör içi Ki-67 modülü açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage(workshopText('script.24843995974c', 'Tümör içi Ki-67 modülü açılamadı'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+    }
+}
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
     }
 }

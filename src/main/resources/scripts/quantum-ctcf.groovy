@@ -414,7 +414,7 @@ def startStarDist = { regionAnno ->
             else {
                 step.set('DETECT_REGION'); render()
                 if (stage != null) stage.setAlwaysOnTop(false)
-                Dialogs.showErrorMessage('StarDist başarısız', d.error ?: '')
+                Dialogs.showErrorMessage(workshopText('script.8ed52a76322b', 'StarDist başarısız'), d.error ?: '')
                 if (stage != null) stage.setAlwaysOnTop(true)
             }
         }
@@ -435,7 +435,7 @@ def startApply = { String name ->
             else {
                 step.set('TRAIN_GUIDE'); render()
                 if (stage != null) stage.setAlwaysOnTop(false)
-                Dialogs.showErrorMessage('Sınıflandırıcı uygulanamadı', a.error ?: '')
+                Dialogs.showErrorMessage(workshopText('script.face316a825e', 'Sınıflandırıcı uygulanamadı'), a.error ?: '')
                 if (stage != null) stage.setAlwaysOnTop(true)
             }
         }
@@ -490,7 +490,7 @@ def applyMenuHighlight = { String menuName ->
 def menuHighlightToggle = { String menuName ->
     def tb = new javafx.scene.control.ToggleButton(menuName + ' menüsünü göster')
     tb.setTooltip(new javafx.scene.control.Tooltip(
-        'Üst menü çubuğunda "' + menuName + '" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).'))
+        workshopText('script.242839f75398', 'Üst menü çubuğunda "') + menuName + workshopText('script.f4d336f42a58', '" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).')))
     tb.setOnAction({ if (tb.isSelected()) applyMenuHighlight(menuName) else clearMenuHighlight() })
     return tb
 }
@@ -522,7 +522,7 @@ render = { ->
             "  ${s.stardist ? '✓' : '⚠'} StarDist eklentisi " + (s.stardist ? '(hazır)' : '(kurulu değil — klasik Watershed yedeği kullanılacak)') + '\n' +
             "  ${s.model ? '✓' : '⏳'} StarDist modeli " + (s.model ? '(hazır)' : '(StarDist varsa ilk tespitte indirilecek, ~5.7 MB)') + '\n' +
             "\nEksikleri düzeltip 'Yenile'.")
-        def fixType = navButton('Görüntü tipini ayarla', {
+        def fixType = navButton(workshopText('script.bbf6fba1e891', 'Görüntü tipini ayarla'), {
             if (stage != null) stage.setAlwaysOnTop(false)
             if (!launchBundled('yardimci-image-type.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla')
         })
@@ -534,7 +534,7 @@ render = { ->
         boolean ready = s.image && s.heType && s.calib && s.project
         def cont = navButton('Devam ▶', { step.set('DETECT_REGION'); render() })
         cont.setDisable(!ready)
-        buttons.getChildren().addAll(navButton('İptal', { stage.close() }), navButton('⟳ Yenile', { render() }), cont)
+        buttons.getChildren().addAll(navButton(workshopText('script.72278748133a', 'İptal'), { stage.close() }), navButton('⟳ Yenile', { render() }), cont)
     } else if (cur == 'DETECT_REGION') {
         title.setText('1/5 — TCR anotasyonunu seçin')
         bodyLbl.setText(
@@ -547,9 +547,9 @@ render = { ->
             navButton('⟳ Yenile', { render() }),
             navButton('Tespit et ▶', {
                 def sel = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getROI()?.isArea() }
-                if (sel.isEmpty()) { Dialogs.showWarningNotification('Bölge seçili değil', 'Önce bir alan (TCR) anotasyonu çizip SEÇİN.'); return }
+                if (sel.isEmpty()) { Dialogs.showWarningNotification(workshopText('script.e894b6d0ac6e', 'Bölge seçili değil'), workshopText('script.bacd63d7fb6d', 'Önce bir alan (TCR) anotasyonu çizip SEÇİN.')); return }
                 startStarDist(sel[0])
-            }, 'Seçili TCR içinde StarDist çekirdek tespiti'))
+            }, workshopText('script.c08db097c1e1', 'Seçili TCR içinde StarDist çekirdek tespiti')))
     } else if (cur == 'DETECTING') {
         title.setText('StarDist tespiti çalışıyor…')
         bodyLbl.setText('TCR içindeki çekirdekler tespit ediliyor ve pürüzsüzleştirilmiş özellikler ekleniyor.\n' +
@@ -567,9 +567,9 @@ render = { ->
         buttons.getChildren().addAll(
             navButton('◀ Geri', { step.set('DETECT_REGION'); render() }),
             navButton('⟳ Yenile', { render() }),
-            navButton('İleri ▶', {
+            navButton(workshopText('script.3f0144008e16', 'İleri ▶'), {
                 if (s.tumor > 0) { step.set('NONNEO_EXAMPLES'); render() }
-                else Dialogs.showWarningNotification('Tumor örneği yok', 'Sınıfı "Tumor" olan en az bir alan anotasyonu çizin, sonra İleri.')
+                else Dialogs.showWarningNotification(workshopText('script.1bc051e5f818', 'Tumor örneği yok'), workshopText('script.1cd820930a4a', 'Sınıfı "Tumor" olan en az bir alan anotasyonu çizin, sonra İleri.'))
             }))
     } else if (cur == 'NONNEO_EXAMPLES') {
         title.setText('3/5 — Non-neoplastic hücre örnekleri')
@@ -583,9 +583,9 @@ render = { ->
         buttons.getChildren().addAll(
             navButton('◀ Geri', { step.set('TUMOR_EXAMPLES'); render() }),
             navButton('⟳ Yenile', { render() }),
-            navButton('İleri ▶', {
+            navButton(workshopText('script.3f0144008e16', 'İleri ▶'), {
                 if (s.nonNeo > 0) { step.set('TRAIN_GUIDE'); render() }
-                else Dialogs.showWarningNotification('Non-neoplastic örneği yok', 'Sınıfı "Non-neoplastic" olan en az bir alan anotasyonu çizin, sonra İleri.')
+                else Dialogs.showWarningNotification(workshopText('script.79a8750a224d', 'Non-neoplastic örneği yok'), workshopText('script.58d3f62597cb', 'Sınıfı "Non-neoplastic" olan en az bir alan anotasyonu çizin, sonra İleri.'))
             }))
     } else if (cur == 'TRAIN_GUIDE') {
         title.setText("4/5 — Sınıflandırıcıyı QuPath'te eğitin")
@@ -607,18 +607,18 @@ render = { ->
             navButton('⟳ Yenile', { render() }),
             navButton('Kaydedildi ▶', {
                 String nm = nameField.getText()?.trim()
-                if (!nm) { Dialogs.showWarningNotification('Ad gerekli', 'Kaydettiğiniz sınıflandırıcının adını girin.'); return }
+                if (!nm) { Dialogs.showWarningNotification('Ad gerekli', workshopText('script.6c7b6f3bc12d', 'Kaydettiğiniz sınıflandırıcının adını girin.')); return }
                 def known = QP.getProject()?.getObjectClassifiers()?.getNames() ?: []
                 if (!known.contains(nm)) {
                     if (stage != null) stage.setAlwaysOnTop(false)
-                    Dialogs.showWarningNotification('Sınıflandırıcı bulunamadı',
+                    Dialogs.showWarningNotification(workshopText('script.57b501859ef7', 'Sınıflandırıcı bulunamadı'),
                         "\"${nm}\" adlı nesne sınıflandırıcısı projede yok.\nMevcut: ${known.join(', ') ?: '(yok)'}\n" +
-                        "Train Object Classifier penceresinde 'Save' yaptınız mı?")
+                        workshopText('script.d52c4dfa8ba7', "Train Object Classifier penceresinde 'Save' yaptınız mı?"))
                     if (stage != null) stage.setAlwaysOnTop(true)
                     return
                 }
                 startApply(nm)
-            }, 'Kaydedilen nesne sınıflandırıcısını tüm hücrelere uygular'))
+            }, workshopText('script.a67848fb85ec', 'Kaydedilen nesne sınıflandırıcısını tüm hücrelere uygular')))
     } else if (cur == 'APPLYING') {
         title.setText('Sınıflandırıcı uygulanıyor…')
         bodyLbl.setText("'${savedClassifierName.get()}' tüm tespit edilen hücrelere uygulanıyor ve cTCF hesaplanıyor. Lütfen bekleyin…")
@@ -643,16 +643,16 @@ render = { ->
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def cc = new javafx.scene.input.ClipboardContent(); cc.putString(res?.text ?: ''); cb.setContent(cc)
             })
-            buttons.getChildren().addAll(navButton('◀ Geri', { step.set('TRAIN_GUIDE'); render() }), copyBtn, navButton('Kapat', { stage.close() }))
+            buttons.getChildren().addAll(navButton('◀ Geri', { step.set('TRAIN_GUIDE'); render() }), copyBtn, navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
         } else {
             bodyLbl.setText('Sınıflandırma tamamlanamadı. Geri dönüp tekrar deneyin.')
-            buttons.getChildren().addAll(navButton('◀ Geri', { step.set('TRAIN_GUIDE'); render() }), navButton('Kapat', { stage.close() }))
+            buttons.getChildren().addAll(navButton('◀ Geri', { step.set('TRAIN_GUIDE'); render() }), navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
         }
     }
 
     def root = new javafx.scene.layout.BorderPane()
     root.setCenter(content)
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -672,6 +672,17 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('QuANTUM modülü açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage(workshopText('script.7305ffe40a4c', 'QuANTUM modülü açılamadı'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+    }
+}
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
     }
 }

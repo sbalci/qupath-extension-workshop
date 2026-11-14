@@ -1,0 +1,730 @@
+{
+  "schema": 1,
+  "scripts": [
+    "arayuz-turu.groovy",
+    "sihirbaz.groovy",
+    "tumor-ici-ki67.groovy",
+    "tumor-stroma.groovy",
+    "veri-aktarma.groovy",
+    "quantum-ctcf.groovy",
+    "membran-boya.groovy",
+    "sitoplazmik-boya.groovy"
+  ],
+  "strings": [
+    {
+      "key": "script.86f8ffe76595",
+      "tr": "Adım ",
+      "en": "Step "
+    },
+    {
+      "key": "script.8063f0c00cdf",
+      "tr": "İpucu: vurgu görüntüleyiciye uygulanır; bu pencere önünü kapatıyorsa kenara çekin.",
+      "en": "Tip: the highlight is applied to the viewer. Move this window aside if it covers the target."
+    },
+    {
+      "key": "script.07a85a0dcf1c",
+      "tr": "Bu öğe şu an erişilemiyor (lam açık değil ya da QuPath sürümü farklı). Sayfa metni yine de geçerli.",
+      "en": "This item is currently unavailable (no slide open or a different QuPath version). The page text still applies."
+    },
+    {
+      "key": "script.bdef4f02ac16",
+      "tr": "▶ Bu adımı çalıştır",
+      "en": "▶ Run this step"
+    },
+    {
+      "key": "script.70ca64c0c43a",
+      "tr": "Üstte tut",
+      "en": "Keep on top"
+    },
+    {
+      "key": "script.1a0be3581b67",
+      "tr": "Otomatik göster",
+      "en": "Show automatically"
+    },
+    {
+      "key": "script.7b31a9fc4816",
+      "tr": "Kapat",
+      "en": "Close"
+    },
+    {
+      "key": "script.759ba9cdbc22",
+      "tr": "Yalnızca eğitim amaçlıdır; ölçüm veya klinik karar üretmez.",
+      "en": "For teaching only; produces no measurement or clinical decision."
+    },
+    {
+      "key": "script.3725abf4d1e4",
+      "tr": "QuPath arayüz turu",
+      "en": "QuPath interface tour"
+    },
+    {
+      "key": "script.7fd583bc0c88",
+      "tr": "Sihirbaz açılamadı",
+      "en": "Could not open the wizard"
+    },
+    {
+      "key": "script.9aac4912cb86",
+      "tr": "Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ",
+      "en": "This tool could not start.\n\nNext steps:\n  1. Open a slide first if the tool requires one.\n  2. Quit QuPath completely, restart it and try again.\n  3. If the problem continues, share a screenshot of View → Show log with the workshop organiser.\n\nTechnical detail: "
+    },
+    {
+      "key": "script.b4c901dc184b",
+      "tr": "Görüntü açık değil",
+      "en": "No image open"
+    },
+    {
+      "key": "script.435f3efdc52c",
+      "tr": "Önce bir HER2 İHK lamı açın, sonra bu betiği tekrar çalıştırın.",
+      "en": "Open a HER2 IHC slide first, then run this script again."
+    },
+    {
+      "key": "script.cb5b26abe800",
+      "tr": "Boya vektörleri — öneri",
+      "en": "Stain vectors — suggestion"
+    },
+    {
+      "key": "script.c1cc09de3ac8",
+      "tr": "Boya vektörleri",
+      "en": "Stain vectors"
+    },
+    {
+      "key": "script.525b4898d046",
+      "tr": "Önce iki boya + biraz arka plan içeren temsilî bir alan anotasyonu çizip SEÇİN, sonra tekrar deneyin.",
+      "en": "Draw and SELECT a representative region containing both stains and some background, then try again."
+    },
+    {
+      "key": "script.4e0fe0741a03",
+      "tr": "Vektörler seçili bölgeden tahmin edilip uygulandı. Modülü şimdi çalıştırabilirsiniz.",
+      "en": "Vectors were estimated from the selected region and applied. You can now run the module."
+    },
+    {
+      "key": "script.c0b06389df5e",
+      "tr": "Tahmin yapılamadı: ",
+      "en": "Could not estimate: "
+    },
+    {
+      "key": "script.150742c315b3",
+      "tr": "Membran Boya (HER2) - HER2 / Membran İHK skorlaması",
+      "en": "Membrane staining (HER2) - HER2 / membrane IHC scoring"
+    },
+    {
+      "key": "script.864559a60196",
+      "tr": "HER2 / Membran İHK skorlaması",
+      "en": "HER2 / membrane IHC scoring"
+    },
+    {
+      "key": "script.cc9c09df8737",
+      "tr": "Bir TÜMÖR (epitel) anotasyonu çizip SEÇİN (kenarı sarı), sonra \"Çalıştır\".\nBirincil metrik piksel bazlı H-score (her zaman çalışır); hücre bazlı ring\nH-score isteğe bağlıdır (Cellpose varsa kullanılır, yoksa Watershed ile çalışır).\nEşikleri değiştirince \"Eşikleri yeniden uygula (hızlı)\" ile hücre tespitini tekrarlamadan güncelleyebilirsiniz.",
+      "en": "Draw and SELECT a TUMOUR (epithelium) annotation (yellow outline), then choose \"Run\".\nThe primary metric is pixel-based H-score; the optional cell-based ring\nH-score uses Cellpose when available, otherwise Watershed.\nAfter changing thresholds, use \"Reapply thresholds (fast)\" without repeating cell detection."
+    },
+    {
+      "key": "script.782a54764f62",
+      "tr": "⚙ Gelişmiş ayarlar — eşikler",
+      "en": "⚙ Advanced settings — thresholds"
+    },
+    {
+      "key": "script.86bb45e59294",
+      "tr": "Hazır.",
+      "en": "Ready."
+    },
+    {
+      "key": "script.4adde9b85aed",
+      "tr": "Sonuçlar burada görünecek…",
+      "en": "Results will appear here…"
+    },
+    {
+      "key": "script.79ef801ff99f",
+      "tr": "Çalıştır",
+      "en": "Run"
+    },
+    {
+      "key": "script.07f679e445be",
+      "tr": "Eşikleri yeniden uygula (hızlı)",
+      "en": "Reapply thresholds (fast)"
+    },
+    {
+      "key": "script.8a62116b4df8",
+      "tr": "Görüntü tipini 'Brightfield (H-DAB)' olarak ayarla",
+      "en": "Set image type to 'Brightfield (H-DAB)'"
+    },
+    {
+      "key": "script.c8cded1ce05d",
+      "tr": "Önceki hücre tespitleri değiştirilecek",
+      "en": "Existing cell detections will be replaced"
+    },
+    {
+      "key": "script.be46103cef99",
+      "tr": "QuPath Atölye Betikleri · araştırma/eğitim amaçlı",
+      "en": "QuPath Workshop Scripts · research/teaching use"
+    },
+    {
+      "key": "script.705adb978f49",
+      "tr": "Membran Boya (HER2) açılamadı",
+      "en": "Could not open membrane staining (HER2)"
+    },
+    {
+      "key": "script.8ed52a76322b",
+      "tr": "StarDist başarısız",
+      "en": "StarDist failed"
+    },
+    {
+      "key": "script.face316a825e",
+      "tr": "Sınıflandırıcı uygulanamadı",
+      "en": "Could not apply the classifier"
+    },
+    {
+      "key": "script.242839f75398",
+      "tr": "Üst menü çubuğunda \"",
+      "en": "Highlights the \""
+    },
+    {
+      "key": "script.f4d336f42a58",
+      "tr": "\" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).",
+      "en": "\" menu in the top menu bar with an orange frame (does not open it or change anything)."
+    },
+    {
+      "key": "script.bbf6fba1e891",
+      "tr": "Görüntü tipini ayarla",
+      "en": "Set image type"
+    },
+    {
+      "key": "script.72278748133a",
+      "tr": "İptal",
+      "en": "Cancel"
+    },
+    {
+      "key": "script.c08db097c1e1",
+      "tr": "Seçili TCR içinde StarDist çekirdek tespiti",
+      "en": "StarDist nucleus detection inside the selected ROI"
+    },
+    {
+      "key": "script.e894b6d0ac6e",
+      "tr": "Bölge seçili değil",
+      "en": "No region selected"
+    },
+    {
+      "key": "script.bacd63d7fb6d",
+      "tr": "Önce bir alan (TCR) anotasyonu çizip SEÇİN.",
+      "en": "Draw and SELECT a region of interest (ROI) first."
+    },
+    {
+      "key": "script.3f0144008e16",
+      "tr": "İleri ▶",
+      "en": "Next ▶"
+    },
+    {
+      "key": "script.1bc051e5f818",
+      "tr": "Tumor örneği yok",
+      "en": "No Tumor example"
+    },
+    {
+      "key": "script.1cd820930a4a",
+      "tr": "Sınıfı \"Tumor\" olan en az bir alan anotasyonu çizin, sonra İleri.",
+      "en": "Draw at least one area annotation with class \"Tumor\", then choose Next."
+    },
+    {
+      "key": "script.79a8750a224d",
+      "tr": "Non-neoplastic örneği yok",
+      "en": "No Non-neoplastic example"
+    },
+    {
+      "key": "script.58d3f62597cb",
+      "tr": "Sınıfı \"Non-neoplastic\" olan en az bir alan anotasyonu çizin, sonra İleri.",
+      "en": "Draw at least one area annotation with class \"Non-neoplastic\", then choose Next."
+    },
+    {
+      "key": "script.a67848fb85ec",
+      "tr": "Kaydedilen nesne sınıflandırıcısını tüm hücrelere uygular",
+      "en": "Apply the saved object classifier to all cells"
+    },
+    {
+      "key": "script.6c7b6f3bc12d",
+      "tr": "Kaydettiğiniz sınıflandırıcının adını girin.",
+      "en": "Enter the name of your saved classifier."
+    },
+    {
+      "key": "script.57b501859ef7",
+      "tr": "Sınıflandırıcı bulunamadı",
+      "en": "Classifier not found"
+    },
+    {
+      "key": "script.d52c4dfa8ba7",
+      "tr": "Train Object Classifier penceresinde 'Save' yaptınız mı?",
+      "en": "Did you choose 'Save' in the Train Object Classifier window?"
+    },
+    {
+      "key": "script.04e70fc651a3",
+      "tr": "Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.",
+      "en": "Produces measurements for research/teaching only; no clinical decisions."
+    },
+    {
+      "key": "script.7305ffe40a4c",
+      "tr": "QuANTUM modülü açılamadı",
+      "en": "Could not open the QuANTUM module"
+    },
+    {
+      "key": "script.feadc3dfad73",
+      "tr": "Bölgeleri tespit (detection) olarak oluştur",
+      "en": "Create class regions as detections"
+    },
+    {
+      "key": "script.480abd8be340",
+      "tr": "İşaretliyse sınıf bölgeleri Detections panelinde (içi boş) oluşturulur;\nişaretsizse sınıf adıyla etiketli anotasyon olarak (varsayılan).",
+      "en": "When checked, creates class regions in the Detections panel (outline only);\nwhen unchecked, creates annotations labelled with their class (default)."
+    },
+    {
+      "key": "script.2adf98e8faaf",
+      "tr": "Özet anotasyonu oluştur (Veri dışa aktarma modülü için)",
+      "en": "Create a summary annotation (for the Data export module)"
+    },
+    {
+      "key": "script.cf9c4392ce6a",
+      "tr": "İşaretliyse kilitli \"Tümör-Stroma Özet\" anotasyonu (\"TSR Özet\" sınıfı) yazılır —\ngöz simgesiyle gizlenebilir, Veri dışa aktarma modülüyle dışa aktarılır.\nİşaretsizse özet oluşturulmaz; sınıf bölgeleri yine görünür, sonuçlar yalnız bu pencerede.",
+      "en": "When checked, writes a locked \"Tümör-Stroma Özet\" annotation (class \"TSR Özet\") —\nhide it with the eye icon or export it with the Data export module.\nWhen unchecked, no summary is created; class regions remain visible and results appear only here."
+    },
+    {
+      "key": "script.44f6035a8c0f",
+      "tr": "Örnek model kurulamadı",
+      "en": "Could not install the example model"
+    },
+    {
+      "key": "script.3625440d0051",
+      "tr": "Örnek sınıflandırıcıyı kullan",
+      "en": "Use the example classifier"
+    },
+    {
+      "key": "script.2561fa236d45",
+      "tr": "Hazır paketli modeli projeye kurar (gerekirse internetten indirir)",
+      "en": "Install the bundled model in the project (downloads it if needed)"
+    },
+    {
+      "key": "script.b9a82b67be11",
+      "tr": "Yeni sınıflandırıcı eğit ▶",
+      "en": "Train a new classifier ▶"
+    },
+    {
+      "key": "script.f7331342a746",
+      "tr": "Kendi Tumor/Stroma bölgelerinizden yeni bir model eğitir",
+      "en": "Train a new model from your Tumor/Stroma regions"
+    },
+    {
+      "key": "script.5f46f7a6e58f",
+      "tr": "Tüm lamda ölç",
+      "en": "Measure the whole slide"
+    },
+    {
+      "key": "script.d36539aaf9a8",
+      "tr": "Tüm lamda çalıştırır (seçim gerekmez; boş cam da sayılabilir — kaba tahmin)",
+      "en": "Run on the whole slide (no selection needed; may include blank glass — a rough estimate)"
+    },
+    {
+      "key": "script.2da07d33947d",
+      "tr": "Seçili bölgede ölç ▶",
+      "en": "Measure the selected region ▶"
+    },
+    {
+      "key": "script.6a9421399bf3",
+      "tr": "Tumor + Stroma + Ignore* hazırsa adlandırma adımına geçer",
+      "en": "Proceed to naming when Tumor + Stroma + Ignore* are ready"
+    },
+    {
+      "key": "script.cf3c722ebe39",
+      "tr": "Eksik zorunlu sınıf",
+      "en": "Required class missing"
+    },
+    {
+      "key": "script.9d8dd7ea3422",
+      "tr": "Eğitim için Tumor, Stroma ve Ignore* sınıflarının her birinden en az bir alan\nanotasyonu gerekir. Eksik olanı çizip \"⟳ Yenile\".",
+      "en": "Training requires at least one area annotation for each of Tumor, Stroma and Ignore*.\nDraw the missing class and choose \"⟳ Refresh\"."
+    },
+    {
+      "key": "script.ece53f594d06",
+      "tr": "Eğit & kaydet",
+      "en": "Train & save"
+    },
+    {
+      "key": "script.bfe1589730c2",
+      "tr": "Random Forest eğitir ve modeli projeye bu adla kaydeder",
+      "en": "Train a Random Forest and save it under this name in the project"
+    },
+    {
+      "key": "script.2b79d4526eed",
+      "tr": "Bir sınıflandırıcı adı girin.",
+      "en": "Enter a classifier name."
+    },
+    {
+      "key": "script.d9f96ac310ff",
+      "tr": "Üzerine yaz?",
+      "en": "Overwrite?"
+    },
+    {
+      "key": "script.4768938ec5c2",
+      "tr": "Eğitim başarısız",
+      "en": "Training failed"
+    },
+    {
+      "key": "script.c1001d1cc7fd",
+      "tr": "↻ Tekrar ölç",
+      "en": "↻ Measure again"
+    },
+    {
+      "key": "script.7e02830a99f6",
+      "tr": "Aynı kapsamda ölçümü tekrarlar (önce yeni bölge seçebilirsiniz)",
+      "en": "Repeat the measurement with the same scope (you may select a new region first)"
+    },
+    {
+      "key": "script.717932eb089e",
+      "tr": "Tümör/Stroma Sihirbazı",
+      "en": "Tumour/Stroma wizard"
+    },
+    {
+      "key": "script.e4f684169f3a",
+      "tr": "Önce bir CD68 (veya başka sitoplazmik İHK) lamı açın.",
+      "en": "Open a CD68 (or other cytoplasmic IHC) slide first."
+    },
+    {
+      "key": "script.228ccf860ca4",
+      "tr": "Sitoplazmik Boya - CD68 / Sitoplazmik İHK kantifikasyonu",
+      "en": "Cytoplasmic staining - CD68 / cytoplasmic IHC quantification"
+    },
+    {
+      "key": "script.77f6678df1c3",
+      "tr": "CD68 / Sitoplazmik İHK kantifikasyonu",
+      "en": "CD68 / cytoplasmic IHC quantification"
+    },
+    {
+      "key": "script.9fd4af8ce38e",
+      "tr": "Bir dikdörtgen anotasyon (R) çizip SEÇİN (kenarı sarı), sonra \"Çalıştır\".\nEşik değiştirince \"Yeniden say (hızlı)\" tespiti tekrarlamadan saniyeler içinde günceller.",
+      "en": "Draw and SELECT a rectangular annotation (R, yellow outline), then choose \"Run\".\nAfter changing thresholds, \"Recount (fast)\" updates the count without repeating detection."
+    },
+    {
+      "key": "script.24c882487fa5",
+      "tr": "1+ eşiği (zayıf, DAB OD)",
+      "en": "1+ threshold (weak, DAB OD)"
+    },
+    {
+      "key": "script.27657aeeb615",
+      "tr": "2+ eşiği (orta, DAB OD)",
+      "en": "2+ threshold (moderate, DAB OD)"
+    },
+    {
+      "key": "script.f442dcf8feff",
+      "tr": "3+ eşiği (güçlü, DAB OD)",
+      "en": "3+ threshold (strong, DAB OD)"
+    },
+    {
+      "key": "script.54ce968f12fc",
+      "tr": "Hücre genişletme (µm)",
+      "en": "Cell expansion (µm)"
+    },
+    {
+      "key": "script.12c291ed7b57",
+      "tr": "Yeniden say (hızlı)",
+      "en": "Recount (fast)"
+    },
+    {
+      "key": "script.055f90a90b2f",
+      "tr": "Sitoplazmik boya modülü açılamadı",
+      "en": "Could not open the cytoplasmic staining module"
+    },
+    {
+      "key": "script.f67c6942d322",
+      "tr": "DAB eşiği 1+ (Nucleus: DAB OD mean)",
+      "en": "DAB threshold 1+ (Nucleus: DAB OD mean)"
+    },
+    {
+      "key": "script.369a3f9e70f8",
+      "tr": "DAB eşiği 2+ (Nucleus: DAB OD mean)",
+      "en": "DAB threshold 2+ (Nucleus: DAB OD mean)"
+    },
+    {
+      "key": "script.5e51761150fd",
+      "tr": "DAB eşiği 3+ (Nucleus: DAB OD mean)",
+      "en": "DAB threshold 3+ (Nucleus: DAB OD mean)"
+    },
+    {
+      "key": "script.8eca38f1b522",
+      "tr": "⚙ DAB eşikleri",
+      "en": "⚙ DAB thresholds"
+    },
+    {
+      "key": "script.eea6902a2c8c",
+      "tr": "Tespit başarısız",
+      "en": "Detection failed"
+    },
+    {
+      "key": "script.1d44e8657a84",
+      "tr": "Hızlı Ki-67 ▶",
+      "en": "Quick Ki-67 ▶"
+    },
+    {
+      "key": "script.ce293bbcd0f1",
+      "tr": "Tümör bölgesini kendiniz seçip eşikle ölçersiniz",
+      "en": "Select the tumour region yourself and measure using a threshold"
+    },
+    {
+      "key": "script.8c929ab4477b",
+      "tr": "Hücre sınıflandırıcı eğit ▶",
+      "en": "Train a cell classifier ▶"
+    },
+    {
+      "key": "script.ad5819839ccb",
+      "tr": "Tümör hücrelerini otomatik bulan bir nesne sınıflandırıcısı eğitir",
+      "en": "Train an object classifier to identify tumour cells automatically"
+    },
+    {
+      "key": "script.c87420ed98c7",
+      "tr": "Seçili bölgede hücre tespiti + pürüzsüzleştirilmiş özellikler",
+      "en": "Cell detection and smoothed features in the selected region"
+    },
+    {
+      "key": "script.a97b5d9fae33",
+      "tr": "Önce bir alan anotasyonu çizip SEÇİN.",
+      "en": "Draw and SELECT an area annotation first."
+    },
+    {
+      "key": "script.f2aedb9eea76",
+      "tr": "Other örneği yok",
+      "en": "No Other example"
+    },
+    {
+      "key": "script.bbeb69446e36",
+      "tr": "Sınıfı \"Other\" olan en az bir alan anotasyonu çizin, sonra İleri.",
+      "en": "Draw at least one area annotation with class \"Other\", then choose Next."
+    },
+    {
+      "key": "script.7989d346c1b4",
+      "tr": "Tümör İçi Ki-67",
+      "en": "Intratumour Ki-67"
+    },
+    {
+      "key": "script.24843995974c",
+      "tr": "Tümör içi Ki-67 modülü açılamadı",
+      "en": "Could not open the intratumour Ki-67 module"
+    },
+    {
+      "key": "script.14e2aeb481be",
+      "tr": "Tümör/Stroma — model seçimi",
+      "en": "Tumour/Stroma — model selection"
+    },
+    {
+      "key": "script.867b0d1a3351",
+      "tr": "Hangi sınıflandırıcı(lar) ile ölçüm yapılsın? Birden fazla seçerseniz\nsonuçlar karşılaştırmalı gösterilir.",
+      "en": "Which classifier(s) should measure the tissue? Select more than one\nto compare their results."
+    },
+    {
+      "key": "script.b13fefb3614b",
+      "tr": "(Projede sınıflandırıcı yok. Aşağıdan örnek modeli kurun ya da sihirbazı açın.)",
+      "en": "(No classifier in the project. Install the example model below or open the wizard.)"
+    },
+    {
+      "key": "script.888debc99627",
+      "tr": "Seçili anotasyon(lar)",
+      "en": "Selected annotation(s)"
+    },
+    {
+      "key": "script.5354112c42be",
+      "tr": "Tüm lam (seçim gerekmez — kaba tahmin)",
+      "en": "Whole slide (no selection needed — rough estimate)"
+    },
+    {
+      "key": "script.ba4a31a6e293",
+      "tr": "Örnek modeli kur",
+      "en": "Install the example model"
+    },
+    {
+      "key": "script.c6967ae055af",
+      "tr": "Örnek modeli kurmak için: Extensions → Atölye → Yardımcılar →\n\"Örnek tümör/stroma sınıflandırıcısını projeye kaydet\".",
+      "en": "To install the example model: Extensions → Workshop → Utilities →\n\"Save example tumour/stroma classifier to project\"."
+    },
+    {
+      "key": "script.0adf2615b6d3",
+      "tr": "Sihirbazı aç (yeni model)",
+      "en": "Open the wizard (new model)"
+    },
+    {
+      "key": "script.3389ec6facef",
+      "tr": "Sihirbaz için: Extensions → Atölye → Modüller →\n\"Tümör/Stroma sihirbazı (model kur/eğit)\".",
+      "en": "For the wizard: Extensions → Workshop → Modules →\n\"Tumour/Stroma wizard (build/train model)\"."
+    },
+    {
+      "key": "script.bd61986c8097",
+      "tr": "Seçilenlerle ölç",
+      "en": "Measure with selected models"
+    },
+    {
+      "key": "script.3587b2e65fb9",
+      "tr": "Önce bir H&E lamı açın.",
+      "en": "Open an H&E slide first."
+    },
+    {
+      "key": "script.a38d0e6adac0",
+      "tr": "Proje açık değil",
+      "en": "No project open"
+    },
+    {
+      "key": "script.941800bc9075",
+      "tr": "Bu betik bir QuPath projesi içinde çalışır.",
+      "en": "This script runs inside a QuPath project."
+    },
+    {
+      "key": "script.be9dc7d830d5",
+      "tr": "Yanlış görüntü tipi",
+      "en": "Incorrect image type"
+    },
+    {
+      "key": "script.a756936a8b3d",
+      "tr": "Piksel boyutu tanımlı değil; mm² alan ölçümleri hesaplanamaz.\nÖnce kalibrasyonu metadata veya bir kalibrasyon lamıyla doğrulayın.",
+      "en": "Pixel size is not defined; areas in mm² cannot be calculated.\nVerify calibration using metadata or a calibration slide first."
+    },
+    {
+      "key": "script.18ad4fb71877",
+      "tr": "Model seçilmedi",
+      "en": "No model selected"
+    },
+    {
+      "key": "script.169f7925b1b7",
+      "tr": "En az bir sınıflandırıcı seçin.",
+      "en": "Select at least one classifier."
+    },
+    {
+      "key": "script.da079a56fe7d",
+      "tr": "Anotasyon seçili değil",
+      "en": "No annotation selected"
+    },
+    {
+      "key": "script.2dd760dd3e3d",
+      "tr": "Seçili bölge modunda ölçülecek dokuyu bir anotasyonla çevreleyip o\nanotasyon(lar)ı SEÇİN (sınıf fark etmez) — ya da anotasyon sınıfını\n\"Region\" yapın, ya da kapsam olarak \"Tüm lam\" seçin.",
+      "en": "For selected-region mode, outline the tissue with an annotation and SELECT it\n(any class), set the annotation class to \"Region\",\nor choose \"Whole slide\" scope."
+    },
+    {
+      "key": "script.153b901a6cd4",
+      "tr": "Geçersiz sınır",
+      "en": "Invalid boundary"
+    },
+    {
+      "key": "script.6e0f821497c0",
+      "tr": "Seçili anotasyonlar geçerli bir alan oluşturmuyor.",
+      "en": "The selected annotations do not form a valid area."
+    },
+    {
+      "key": "script.19182065eeb6",
+      "tr": "Ölçüm yapılamadı",
+      "en": "Could not measure"
+    },
+    {
+      "key": "script.c84bbaa3e48c",
+      "tr": "Seçilen modellerin hiçbiri Tumor/Stroma çıktısı üretmedi.",
+      "en": "None of the selected models produced Tumor/Stroma output."
+    },
+    {
+      "key": "script.b12a7a3f6e20",
+      "tr": "Dışa aktarma seçenekleri",
+      "en": "Export options"
+    },
+    {
+      "key": "script.70fdd47a1816",
+      "tr": "Sadece bu görüntü",
+      "en": "This image only"
+    },
+    {
+      "key": "script.3080d2dc7199",
+      "tr": "Tüm proje",
+      "en": "Whole project"
+    },
+    {
+      "key": "script.00a8fd0a1c4a",
+      "tr": "Virgül (.csv)",
+      "en": "Comma (.csv)"
+    },
+    {
+      "key": "script.17bdb25b5ce2",
+      "tr": "Tespit ölçümleri (TSV/CSV)",
+      "en": "Detection measurements (TSV/CSV)"
+    },
+    {
+      "key": "script.7a31191cc20c",
+      "tr": "Anotasyon ölçümleri (TSV/CSV)",
+      "en": "Annotation measurements (TSV/CSV)"
+    },
+    {
+      "key": "script.06fea0fdf4c2",
+      "tr": "Tüm sütunlar",
+      "en": "All columns"
+    },
+    {
+      "key": "script.a73883a123b2",
+      "tr": "Seçili alt küme",
+      "en": "Selected subset"
+    },
+    {
+      "key": "script.39f383d7f2fd",
+      "tr": "(isteğe bağlı önek)",
+      "en": "(optional prefix)"
+    },
+    {
+      "key": "script.923cd2118e8f",
+      "tr": "Tarihli alt klasör (YYYY-MM-DD_HHmmss)",
+      "en": "Dated subfolder (YYYY-MM-DD_HHmmss)"
+    },
+    {
+      "key": "script.dfd12ee38484",
+      "tr": "Seç…",
+      "en": "Choose…"
+    },
+    {
+      "key": "script.cd81fe71c798",
+      "tr": "Boş bırakırsanız proje klasörünün yanındaki '",
+      "en": "If left blank, uses '"
+    },
+    {
+      "key": "script.a1b96019947f",
+      "tr": "' kullanılır.",
+      "en": "' beside the project folder."
+    },
+    {
+      "key": "script.d4f745cb3bf5",
+      "tr": "Dışa aktar",
+      "en": "Export"
+    },
+    {
+      "key": "script.331d9795a7eb",
+      "tr": "Veri dışa aktarma",
+      "en": "Data export"
+    },
+    {
+      "key": "script.eae1b670af1c",
+      "tr": "Gelişmiş seçenek penceresi açılamadı.\n\nHatırlanan/varsayılan ayarlarla devam edeyim mi?\n(kapsam, ayraç, içerik, sütunlar, isimlendirme, kayıt yeri)",
+      "en": "Could not open advanced options.\n\nContinue with remembered/default settings?\n(scope, delimiter, content, columns, naming, output location)"
+    },
+    {
+      "key": "script.8f09552c4053",
+      "tr": "Bu betik bir QuPath projesinin açık olmasını gerektirir.\nÖnce bir proje açın, sonra tekrar deneyin.",
+      "en": "This script needs an open QuPath project.\nOpen a project first, then try again."
+    },
+    {
+      "key": "script.30a0fc6d7165",
+      "tr": "Çıktı türü seçilmedi",
+      "en": "No output type selected"
+    },
+    {
+      "key": "script.a9e9f6957668",
+      "tr": "En az bir çıktı türü seçin:\n  • Tespit ölçümleri (TSV/CSV)\n  • Anotasyon ölçümleri (TSV/CSV)\n  • Anotasyon geometrisi (GeoJSON)",
+      "en": "Select at least one output type:\n  • Detection measurements (TSV/CSV)\n  • Annotation measurements (TSV/CSV)\n  • Annotation geometry (GeoJSON)"
+    },
+    {
+      "key": "script.00ed49d99b56",
+      "tr": "'Sadece bu görüntü' modu için bir lamın açık olması gerekir.",
+      "en": "'This image only' mode requires an open slide."
+    },
+    {
+      "key": "script.28bed412765d",
+      "tr": "Lam projeye eklenmemiş",
+      "en": "Slide is not in the project"
+    },
+    {
+      "key": "script.ec7042f2fcfe",
+      "tr": "Açık olan lam projenin parçası değil; dışa aktarılamaz.\n\nÇözüm: Project panelinden bu lamı projeye ekleyin\n(sol üstte + ikonu) ve betiği tekrar çalıştırın.",
+      "en": "The open slide is not part of the project and cannot be exported.\n\nNext step: add this slide from the Project panel\n(the + icon at top left), then run the script again."
+    }
+  ]
+}

@@ -630,7 +630,7 @@ render = { ->
     title.setStyle('-fx-font-size: 16px; -fx-font-weight: bold;')
     title.setWrapText(true)
 
-    def prog = new javafx.scene.control.Label('Adım ' + (i + 1) + ' / ' + pages.size())
+    def prog = new javafx.scene.control.Label(workshopText('script.86f8ffe76595', 'Adım ') + (i + 1) + ' / ' + pages.size())
     prog.setStyle('-fx-opacity: 0.7; -fx-font-size: 12px;')
 
     def body = new javafx.scene.control.Label(page.govde)
@@ -682,7 +682,7 @@ render = { ->
         center.getChildren().add(hiBtn)
         if (page.bolge == 'VIEWER' && page.hedef == null) {
             def vhint = new javafx.scene.control.Label(
-                'İpucu: vurgu görüntüleyiciye uygulanır; bu pencere önünü kapatıyorsa kenara çekin.')
+                workshopText('script.8063f0c00cdf', 'İpucu: vurgu görüntüleyiciye uygulanır; bu pencere önünü kapatıyorsa kenara çekin.'))
             vhint.setWrapText(true)
             vhint.setStyle('-fx-opacity: 0.7; -fx-font-size: 11px; -fx-font-style: italic;')
             center.getChildren().add(vhint)
@@ -694,14 +694,14 @@ render = { ->
         def hi = new javafx.scene.control.ToggleButton('Bu bölgeyi vurgula')
         hi.setDisable(true)
         hi.setTooltip(new javafx.scene.control.Tooltip(
-            'Bu öğe şu an erişilemiyor (lam açık değil ya da QuPath sürümü farklı). Sayfa metni yine de geçerli.'))
+            workshopText('script.07a85a0dcf1c', 'Bu öğe şu an erişilemiyor (lam açık değil ya da QuPath sürümü farklı). Sayfa metni yine de geçerli.')))
         center.getChildren().add(hi)
     }
 
     // Örnek komut düğmesi — demo tanımlı (alıştırma OLMAYAN) sayfalarda komutu elle çalıştırılabilir kılar.
     if (page.demo != null && page.practice == null) {
         List demoNodes = nodesF
-        def demoBtn = new javafx.scene.control.Button('▶ Bu adımı çalıştır')
+        def demoBtn = new javafx.scene.control.Button(workshopText('script.bdef4f02ac16', '▶ Bu adımı çalıştır'))
         demoBtn.setOnAction({ demoRun(page, demoNodes) })
         center.getChildren().add(demoBtn)
         // Pencere/menü açan adımlarda kullanıcıya "kapatıp devam et" bilgisini ver.
@@ -728,14 +728,14 @@ render = { ->
     }
 
     // Alt çubuk: "Üstte tut" + "Otomatik göster" (sol) + disclaimer + gezinme düğmeleri (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
     } as javafx.beans.value.ChangeListener)
 
     // "Otomatik göster" — açık (varsayılan) iken her sayfa hedefini vurgular ve örnek komutu çalıştırır.
-    def autoChk = new javafx.scene.control.CheckBox('Otomatik göster')
+    def autoChk = new javafx.scene.control.CheckBox(workshopText('script.1a0be3581b67', 'Otomatik göster'))
     autoChk.setSelected(autoShow.get())
     autoChk.setDisable(page.bolge == null && page.hedef == null && page.demo == null)  // intro/kapanış: hiçbir hedef yok
     autoChk.selectedProperty().addListener({ obs, o, n ->
@@ -763,7 +763,7 @@ render = { ->
         else { idx.set(i + 1); render() }
     })
 
-    def closeBtn = new javafx.scene.control.Button('Kapat')
+    def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', 'Kapat'))
     closeBtn.setOnAction({ clearHighlight(); stage.close() })
 
     def bar = new javafx.scene.layout.HBox(8)
@@ -772,7 +772,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(closeBtn, backBtn, nextBtn)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca eğitim amaçlıdır; ölçüm veya klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.759ba9cdbc22', 'Yalnızca eğitim amaçlıdır; ölçüm veya klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -800,13 +800,24 @@ javafx.application.Platform.runLater {
 
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('QuPath arayüz turu')
+        stage.setTitle(workshopText('script.3725abf4d1e4', 'QuPath arayüz turu'))
         stage.setAlwaysOnTop(alwaysTop.get())
         stage.setOnHidden({ clearHighlight(); restoreState(); detachPractice() })
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println '✓ QuPath arayüz turu açıldı.'
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

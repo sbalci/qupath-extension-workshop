@@ -108,7 +108,7 @@ def showExportOptions = { Map d ->
         try {
             def stage = new javafx.stage.Stage()
             stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle("Dışa aktarma seçenekleri")
+            stage.setTitle(workshopText('script.b12a7a3f6e20', "Dışa aktarma seçenekleri"))
             stage.setAlwaysOnTop(true)
 
             def mk = { String t ->
@@ -119,9 +119,9 @@ def showExportOptions = { Map d ->
 
             // --- Kapsam ---
             def scopeGroup = new javafx.scene.control.ToggleGroup()
-            def rbImage = new javafx.scene.control.RadioButton("Sadece bu görüntü")
+            def rbImage = new javafx.scene.control.RadioButton(workshopText('script.70fdd47a1816', "Sadece bu görüntü"))
             rbImage.setToggleGroup(scopeGroup); rbImage.setUserData("image")
-            def rbProject = new javafx.scene.control.RadioButton("Tüm proje")
+            def rbProject = new javafx.scene.control.RadioButton(workshopText('script.3080d2dc7199', "Tüm proje"))
             rbProject.setToggleGroup(scopeGroup); rbProject.setUserData("project")
             (d.scope == "image" ? rbImage : rbProject).setSelected(true)
             def scopeBox = new javafx.scene.layout.HBox(12, rbImage, rbProject)
@@ -130,15 +130,15 @@ def showExportOptions = { Map d ->
             def sepGroup = new javafx.scene.control.ToggleGroup()
             def rbTab = new javafx.scene.control.RadioButton("TAB (.tsv)")
             rbTab.setToggleGroup(sepGroup); rbTab.setUserData("\t")
-            def rbComma = new javafx.scene.control.RadioButton("Virgül (.csv)")
+            def rbComma = new javafx.scene.control.RadioButton(workshopText('script.00a8fd0a1c4a', "Virgül (.csv)"))
             rbComma.setToggleGroup(sepGroup); rbComma.setUserData(",")
             (d.separator == "," ? rbComma : rbTab).setSelected(true)
             def sepBox = new javafx.scene.layout.HBox(12, rbTab, rbComma)
 
             // --- Çıktı stili: içerik (nesne tipleri) ---
-            def cbDet = new javafx.scene.control.CheckBox("Tespit ölçümleri (TSV/CSV)")
+            def cbDet = new javafx.scene.control.CheckBox(workshopText('script.17bdb25b5ce2', "Tespit ölçümleri (TSV/CSV)"))
             cbDet.setSelected(d.det as boolean)
-            def cbAnn = new javafx.scene.control.CheckBox("Anotasyon ölçümleri (TSV/CSV)")
+            def cbAnn = new javafx.scene.control.CheckBox(workshopText('script.7a31191cc20c', "Anotasyon ölçümleri (TSV/CSV)"))
             cbAnn.setSelected(d.ann as boolean)
             def cbGeo = new javafx.scene.control.CheckBox("Anotasyon geometrisi (GeoJSON)")
             cbGeo.setSelected(d.geo as boolean)
@@ -146,9 +146,9 @@ def showExportOptions = { Map d ->
 
             // --- Çıktı stili: sütunlar ---
             def colGroup = new javafx.scene.control.ToggleGroup()
-            def rbAllCols = new javafx.scene.control.RadioButton("Tüm sütunlar")
+            def rbAllCols = new javafx.scene.control.RadioButton(workshopText('script.06fea0fdf4c2', "Tüm sütunlar"))
             rbAllCols.setToggleGroup(colGroup); rbAllCols.setUserData("all")
-            def rbSubset = new javafx.scene.control.RadioButton("Seçili alt küme")
+            def rbSubset = new javafx.scene.control.RadioButton(workshopText('script.a73883a123b2', "Seçili alt küme"))
             rbSubset.setToggleGroup(colGroup); rbSubset.setUserData("subset")
             (d.columnsMode == "subset" ? rbSubset : rbAllCols).setSelected(true)
             def preChecked = (d.columns ?: []) as List
@@ -176,15 +176,15 @@ def showExportOptions = { Map d ->
 
             // --- İsimlendirme ---
             def prefixField = new javafx.scene.control.TextField((d.prefix ?: "") as String)
-            prefixField.setPromptText("(isteğe bağlı önek)")
-            def cbDate = new javafx.scene.control.CheckBox("Tarihli alt klasör (YYYY-MM-DD_HHmmss)")
+            prefixField.setPromptText(workshopText('script.39f383d7f2fd', "(isteğe bağlı önek)"))
+            def cbDate = new javafx.scene.control.CheckBox(workshopText('script.923cd2118e8f', "Tarihli alt klasör (YYYY-MM-DD_HHmmss)"))
             cbDate.setSelected(d.dateSubfolder as boolean)
 
             // --- Kayıt yeri ---
             def locField = new javafx.scene.control.TextField((d.location ?: "") as String)
             locField.setPromptText((d.defaultBaseHint ?: "") as String)
             javafx.scene.layout.HBox.setHgrow(locField, javafx.scene.layout.Priority.ALWAYS)
-            def browseBtn = new javafx.scene.control.Button("Seç…")
+            def browseBtn = new javafx.scene.control.Button(workshopText('script.dfd12ee38484', "Seç…"))
             browseBtn.setOnAction({
                 try {
                     def cur = (locField.getText() ?: "").trim()
@@ -195,7 +195,7 @@ def showExportOptions = { Map d ->
                 } catch (Throwable ignored) { }
             })
             def locBox = new javafx.scene.layout.HBox(8, locField, browseBtn)
-            def locHint = new javafx.scene.control.Label("Boş bırakırsanız proje klasörünün yanındaki '" + exportFolder + "' kullanılır.")
+            def locHint = new javafx.scene.control.Label(workshopText('script.cd81fe71c798', "Boş bırakırsanız proje klasörünün yanındaki '") + exportFolder + workshopText('script.a1b96019947f', "' kullanılır."))
             locHint.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-size: 11px;")
 
             // --- Form ---
@@ -216,15 +216,15 @@ def showExportOptions = { Map d ->
             scrollPane.setFitToWidth(true)
 
             // --- Düğmeler ---
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
-            def cancelBtn = new javafx.scene.control.Button("İptal")
+            def cancelBtn = new javafx.scene.control.Button(workshopText('script.72278748133a', "İptal"))
             cancelBtn.setCancelButton(true)
             cancelBtn.setOnAction({ result.set(null); stage.close() })
-            def exportBtn = new javafx.scene.control.Button("Dışa aktar")
+            def exportBtn = new javafx.scene.control.Button(workshopText('script.d4f745cb3bf5', "Dışa aktar"))
             exportBtn.setDefaultButton(true)
             exportBtn.setOnAction({
                 def scope = (scopeGroup.getSelectedToggle()?.getUserData() ?: "project") as String
@@ -277,10 +277,10 @@ def showExportOptions = { Map d ->
             // Gelişmiş diyalog açılamadı — modal yedek: varsayılanlarla devam?
             try {
                 def yn = qupath.fx.dialogs.Dialogs.showConfirmDialog(
-                    "Veri dışa aktarma",
-                    "Gelişmiş seçenek penceresi açılamadı.\n\n" +
+                    workshopText('script.331d9795a7eb', "Veri dışa aktarma"),
+                    workshopText('script.eae1b670af1c', "Gelişmiş seçenek penceresi açılamadı.\n\n" +
                     "Hatırlanan/varsayılan ayarlarla devam edeyim mi?\n" +
-                    "(kapsam, ayraç, içerik, sütunlar, isimlendirme, kayıt yeri)"
+                    "(kapsam, ayraç, içerik, sütunlar, isimlendirme, kayıt yeri)")
                 )
                 result.set(yn ? d : null)
             } catch (Throwable t2) {
@@ -311,7 +311,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
@@ -325,7 +325,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -338,7 +338,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -374,9 +374,9 @@ def toSlug = { String s ->
 def project = QP.getProject()
 if (project == null) {
     Dialogs.showErrorMessage(
-        "Proje açık değil",
-        "Bu betik bir QuPath projesinin açık olmasını gerektirir.\n" +
-        "Önce bir proje açın, sonra tekrar deneyin."
+        workshopText('script.a38d0e6adac0', "Proje açık değil"),
+        workshopText('script.8f09552c4053', "Bu betik bir QuPath projesinin açık olmasını gerektirir.\n" +
+        "Önce bir proje açın, sonra tekrar deneyin.")
     )
     return
 }
@@ -414,11 +414,11 @@ if (opt == null) { println "İptal."; return }
 
 if (!(opt.det as boolean) && !(opt.ann as boolean) && !(opt.geo as boolean)) {
     Dialogs.showErrorMessage(
-        "Çıktı türü seçilmedi",
-        "En az bir çıktı türü seçin:\n" +
+        workshopText('script.30a0fc6d7165', "Çıktı türü seçilmedi"),
+        workshopText('script.a9e9f6957668', "En az bir çıktı türü seçin:\n" +
         "  • Tespit ölçümleri (TSV/CSV)\n" +
         "  • Anotasyon ölçümleri (TSV/CSV)\n" +
-        "  • Anotasyon geometrisi (GeoJSON)"
+        "  • Anotasyon geometrisi (GeoJSON)")
     )
     return
 }
@@ -427,8 +427,8 @@ def projectMode = (opt.scope == "project")
 
 if (!projectMode && currentImageData == null) {
     Dialogs.showErrorMessage(
-        "Görüntü açık değil",
-        "'Sadece bu görüntü' modu için bir lamın açık olması gerekir."
+        workshopText('script.b4c901dc184b', "Görüntü açık değil"),
+        workshopText('script.00ed49d99b56', "'Sadece bu görüntü' modu için bir lamın açık olması gerekir.")
     )
     return
 }
@@ -437,10 +437,10 @@ if (!projectMode && currentEntry == null) {
     // Açık görüntü var ama projeye dahil değil — MeasurementExporter ve
     // entry.saveImageData çağrılarımız bir ProjectImageEntry gerektirir.
     Dialogs.showErrorMessage(
-        "Lam projeye eklenmemiş",
-        "Açık olan lam projenin parçası değil; dışa aktarılamaz.\n\n" +
+        workshopText('script.28bed412765d', "Lam projeye eklenmemiş"),
+        workshopText('script.ec7042f2fcfe', "Açık olan lam projenin parçası değil; dışa aktarılamaz.\n\n" +
         "Çözüm: Project panelinden bu lamı projeye ekleyin\n" +
-        "(sol üstte + ikonu) ve betiği tekrar çalıştırın."
+        "(sol üstte + ikonu) ve betiği tekrar çalıştırın.")
     )
     return
 }
@@ -710,3 +710,14 @@ if (!errors.isEmpty()) {
     println "⚠️  ${errors.size()} hata (detay sonuç penceresinde)"
 }
 println "─────────────────────────────────────"
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

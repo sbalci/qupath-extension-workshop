@@ -19,6 +19,9 @@ jobs:
       - name: Check shared glossary snapshot
         run: python3 tools/check-glossary-sync.py
 
+      - name: Check generated script UI strings
+        run: python3 tools/build-script-strings.py --check
+
       - name: Set up JDK 21 (Temurin)
         uses: actions/setup-java@v4
         with:

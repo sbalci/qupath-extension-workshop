@@ -488,23 +488,23 @@ def busyBar = { ->
 // Sınıf bölgelerini anotasyon yerine tespit (detection) olarak üretme seçeneği.
 // render() sahneyi her seferinde yeniden kurduğundan, durum asDetections'ta tutulur.
 def detectionCheckBox = { ->
-    def cb = new javafx.scene.control.CheckBox('Bölgeleri tespit (detection) olarak oluştur')
+    def cb = new javafx.scene.control.CheckBox(workshopText('script.feadc3dfad73', 'Bölgeleri tespit (detection) olarak oluştur'))
     cb.setSelected(asDetections.get())
     cb.selectedProperty().addListener({ obs, o, n -> asDetections.set(n) } as javafx.beans.value.ChangeListener)
     cb.setTooltip(new javafx.scene.control.Tooltip(
-        'İşaretliyse sınıf bölgeleri Detections panelinde (içi boş) oluşturulur;\n' +
-        'işaretsizse sınıf adıyla etiketli anotasyon olarak (varsayılan).'))
+        workshopText('script.480abd8be340', 'İşaretliyse sınıf bölgeleri Detections panelinde (içi boş) oluşturulur;\n' +
+        'işaretsizse sınıf adıyla etiketli anotasyon olarak (varsayılan).')))
     return cb
 }
 // Özet anotasyonu oluşturma seçeneği — kapalıyken kalıcı özet yazılmaz (yalnız sonuç penceresi).
 def summaryCheckBox = { ->
-    def cb = new javafx.scene.control.CheckBox('Özet anotasyonu oluştur (Veri dışa aktarma modülü için)')
+    def cb = new javafx.scene.control.CheckBox(workshopText('script.2adf98e8faaf', 'Özet anotasyonu oluştur (Veri dışa aktarma modülü için)'))
     cb.setSelected(createSummary.get())
     cb.selectedProperty().addListener({ obs, o, n -> createSummary.set(n) } as javafx.beans.value.ChangeListener)
     cb.setTooltip(new javafx.scene.control.Tooltip(
-        'İşaretliyse kilitli "Tümör-Stroma Özet" anotasyonu ("TSR Özet" sınıfı) yazılır —\n' +
+        workshopText('script.cf9c4392ce6a', 'İşaretliyse kilitli "Tümör-Stroma Özet" anotasyonu ("TSR Özet" sınıfı) yazılır —\n' +
         'göz simgesiyle gizlenebilir, Veri dışa aktarma modülüyle dışa aktarılır.\n' +
-        'İşaretsizse özet oluşturulmaz; sınıf bölgeleri yine görünür, sonuçlar yalnız bu pencerede.'))
+        'İşaretsizse özet oluşturulmaz; sınıf bölgeleri yine görünür, sonuçlar yalnız bu pencerede.')))
     return cb
 }
 
@@ -518,7 +518,7 @@ def startInstall = {
                 exampleName.set(r.name); exampleExisted.set(r.existed); step.set('EXAMPLE_DONE'); render()
             } else {
                 if (stage != null) stage.setAlwaysOnTop(false)
-                Dialogs.showErrorMessage('Örnek model kurulamadı',
+                Dialogs.showErrorMessage(workshopText('script.44f6035a8c0f', 'Örnek model kurulamadı'),
                     r.reason == 'NO_PROJECT' ? 'Önce bir QuPath projesi açın.' : (r.error ?: 'Bilinmeyen hata.'))
                 step.set('CHOICE'); render()
             }
@@ -560,12 +560,12 @@ render = { ->
             '• Örnek sınıflandırıcı: hazır paketli modeli projeye kurar.\n' +
             '• Yeni sınıflandırıcı eğit: kendi Tumor/Stroma bölgelerinizden eğitir.')
         buttons.getChildren().addAll(
-            navButton('İptal', { stage.close() }),
-            navButton('Örnek sınıflandırıcıyı kullan', { startInstall() },
-                'Hazır paketli modeli projeye kurar (gerekirse internetten indirir)', 'CLOUD_DOWNLOAD'),
-            navButton('Yeni sınıflandırıcı eğit ▶', {
+            navButton(workshopText('script.72278748133a', 'İptal'), { stage.close() }),
+            navButton(workshopText('script.3625440d0051', 'Örnek sınıflandırıcıyı kullan'), { startInstall() },
+                workshopText('script.2561fa236d45', 'Hazır paketli modeli projeye kurar (gerekirse internetten indirir)'), 'CLOUD_DOWNLOAD'),
+            navButton(workshopText('script.b9a82b67be11', 'Yeni sınıflandırıcı eğit ▶'), {
                 step.set((s.he && s.calib) ? 'CLASSES' : 'PREREQ'); render()
-            }, 'Kendi Tumor/Stroma bölgelerinizden yeni bir model eğitir', 'FLASK'))
+            }, workshopText('script.f7331342a746', 'Kendi Tumor/Stroma bölgelerinizden yeni bir model eğitir'), 'FLASK'))
     } else if (cur == 'INSTALLING') {
         title.setText('Örnek model kuruluyor…')
         bodyLbl.setText('Paketli model projeye kaydediliyor (gerekirse indiriliyor). Lütfen bekleyin…')
@@ -586,9 +586,9 @@ render = { ->
         content.getChildren().addAll(detectionCheckBox(), summaryCheckBox())
         buttons.getChildren().addAll(
             navButton('◀ Geri', { step.set('CHOICE'); render() }),
-            navButton('Tüm lamda ölç', { startMeasure(nm, true) },
-                'Tüm lamda çalıştırır (seçim gerekmez; boş cam da sayılabilir — kaba tahmin)'),
-            navButton('Seçili bölgede ölç ▶', { startMeasure(nm, false) },
+            navButton(workshopText('script.5f46f7a6e58f', 'Tüm lamda ölç'), { startMeasure(nm, true) },
+                workshopText('script.d36539aaf9a8', 'Tüm lamda çalıştırır (seçim gerekmez; boş cam da sayılabilir — kaba tahmin)')),
+            navButton(workshopText('script.2da07d33947d', 'Seçili bölgede ölç ▶'), { startMeasure(nm, false) },
                 "Seçili anotasyon(lar)da '${nm}' modelini çalıştırır; seçim yoksa sınıfı 'Region' olanlar"))
     } else if (cur == 'PREREQ') {
         title.setText('Önce: görüntü tipi ve kalibrasyon')
@@ -597,7 +597,7 @@ render = { ->
             "  ${s.he ? '✓' : '✗'} Görüntü tipi Brightfield (H&E) + boya vektörleri\n" +
             "  ${s.calib ? '✓' : '✗'} Piksel kalibrasyonu (µm/px)\n\n" +
             "Eksik olanı aşağıdaki düğmelerle düzeltin, sonra 'Yenile'.")
-        def fixType = navButton('Görüntü tipini ayarla', {
+        def fixType = navButton(workshopText('script.bbf6fba1e891', 'Görüntü tipini ayarla'), {
             if (stage != null) stage.setAlwaysOnTop(false)
             if (!launchBundled('yardimci-image-type.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla')
         })
@@ -647,12 +647,12 @@ render = { ->
         }
         content.getChildren().add(grid)
         boolean ready = (s.counts['Tumor'] ?: 0) > 0 && (s.counts['Stroma'] ?: 0) > 0 && (s.counts['Ignore*'] ?: 0) > 0
-        def cont = navButton('İleri ▶', {
+        def cont = navButton(workshopText('script.3f0144008e16', 'İleri ▶'), {
             if (ready) { step.set('NAME'); render() }
-            else Dialogs.showWarningNotification('Eksik zorunlu sınıf',
-                'Eğitim için Tumor, Stroma ve Ignore* sınıflarının her birinden en az bir alan\n' +
-                'anotasyonu gerekir. Eksik olanı çizip "⟳ Yenile".')
-        }, 'Tumor + Stroma + Ignore* hazırsa adlandırma adımına geçer')
+            else Dialogs.showWarningNotification(workshopText('script.cf3c722ebe39', 'Eksik zorunlu sınıf'),
+                workshopText('script.9d8dd7ea3422', 'Eğitim için Tumor, Stroma ve Ignore* sınıflarının her birinden en az bir alan\n' +
+                'anotasyonu gerekir. Eksik olanı çizip "⟳ Yenile".'))
+        }, workshopText('script.6a9421399bf3', 'Tumor + Stroma + Ignore* hazırsa adlandırma adımına geçer'))
         cont.setDisable(!ready)
         buttons.getChildren().addAll(
             navButton('◀ Geri', { step.set('CHOICE'); render() }),
@@ -672,12 +672,12 @@ render = { ->
             new javafx.scene.control.Label('Ad:'), nameField))
         buttons.getChildren().addAll(
             navButton('◀ Geri', { step.set('CLASSES'); render() }),
-            navButton('Eğit & kaydet', {
+            navButton(workshopText('script.ece53f594d06', 'Eğit & kaydet'), {
                 String nm = nameField.getText()?.trim()
-                if (!nm) { Dialogs.showWarningNotification('Ad gerekli', 'Bir sınıflandırıcı adı girin.'); return }
+                if (!nm) { Dialogs.showWarningNotification('Ad gerekli', workshopText('script.2b79d4526eed', 'Bir sınıflandırıcı adı girin.')); return }
                 if (s.classifiers.contains(nm)) {
                     if (stage != null) stage.setAlwaysOnTop(false)
-                    boolean ow = Dialogs.showConfirmDialog('Üzerine yaz?', "'${nm}' zaten var. Üzerine yazılsın mı?")
+                    boolean ow = Dialogs.showConfirmDialog(workshopText('script.d9f96ac310ff', 'Üzerine yaz?'), "'${nm}' zaten var. Üzerine yazılsın mı?")
                     if (stage != null) stage.setAlwaysOnTop(true)
                     if (!ow) return
                 }
@@ -694,13 +694,13 @@ render = { ->
                             step.set('TRAIN_DONE'); render()
                         } else {
                             if (stage != null) stage.setAlwaysOnTop(false)
-                            Dialogs.showErrorMessage('Eğitim başarısız', res.error ?: '(bilinmeyen hata)')
+                            Dialogs.showErrorMessage(workshopText('script.4768938ec5c2', 'Eğitim başarısız'), res.error ?: '(bilinmeyen hata)')
                             step.set('NAME'); render()
                         }
                     }
                 }, 'AtolyeWizardTrain')
                 worker.setDaemon(true); worker.start()
-            }, 'Random Forest eğitir ve modeli projeye bu adla kaydeder'))
+            }, workshopText('script.bfe1589730c2', 'Random Forest eğitir ve modeli projeye bu adla kaydeder')))
     } else if (cur == 'TRAINING') {
         title.setText('Eğitiliyor…')
         bodyLbl.setText("'${trainedName.get()}' eğitiliyor ve kaydediliyor. Lütfen bekleyin…")
@@ -718,10 +718,10 @@ render = { ->
             'İsteğe bağlı: boş cam/artefakt alanlarını çizip sınıfını "Ignore*" yapın — ölçümden çıkarılır.')
         content.getChildren().addAll(detectionCheckBox(), summaryCheckBox())
         buttons.getChildren().addAll(
-            navButton('Kapat', { stage.close() }),
-            navButton('Tüm lamda ölç', { startMeasure(nm, true) },
-                'Tüm lamda çalıştırır (seçim gerekmez; boş cam da sayılabilir — kaba tahmin)'),
-            navButton('Seçili bölgede ölç ▶', { startMeasure(nm, false) },
+            navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }),
+            navButton(workshopText('script.5f46f7a6e58f', 'Tüm lamda ölç'), { startMeasure(nm, true) },
+                workshopText('script.d36539aaf9a8', 'Tüm lamda çalıştırır (seçim gerekmez; boş cam da sayılabilir — kaba tahmin)')),
+            navButton(workshopText('script.2da07d33947d', 'Seçili bölgede ölç ▶'), { startMeasure(nm, false) },
                 "Seçili anotasyon(lar)da '${nm}' modelini çalıştırır; seçim yoksa sınıfı 'Region' olanlar"))
     } else if (cur == 'MEASURING') {
         title.setText('Ölçülüyor…')
@@ -743,16 +743,16 @@ render = { ->
             bodyLbl.setText((r?.error ?: 'Bilinmeyen hata.').toString())
         }
         buttons.getChildren().addAll(
-            navButton('Kapat', { stage.close() }),
-            navButton('↻ Tekrar ölç', { startMeasure(activeModel.get(), activeWholeSlide.get()) },
-                'Aynı kapsamda ölçümü tekrarlar (önce yeni bölge seçebilirsiniz)'))
+            navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }),
+            navButton(workshopText('script.c1001d1cc7fd', '↻ Tekrar ölç'), { startMeasure(activeModel.get(), activeWholeSlide.get()) },
+                workshopText('script.7e02830a99f6', 'Aynı kapsamda ölçümü tekrarlar (önce yeni bölge seçebilirsiniz)')))
     }
 
     def root = new javafx.scene.layout.BorderPane()
     root.setCenter(content)
     // Kalıcı sorumluluk reddi notu — tema-duyarlı (açık/koyu tema): sabit renk yok,
     // QuPath tema değişkeni + opaklık/italik ile sönük gösterilir.
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -766,11 +766,22 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Tümör/Stroma Sihirbazı')
+        stage.setTitle(workshopText('script.717932eb089e', 'Tümör/Stroma Sihirbazı'))
         stage.setAlwaysOnTop(true)
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+    }
+}
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
     }
 }

@@ -45,7 +45,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, oldValue, newValue -> stage.setAlwaysOnTop(newValue) } as javafx.beans.value.ChangeListener
@@ -59,7 +59,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 clipboard.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -71,7 +71,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -139,12 +139,12 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
         try {
             def stage = new javafx.stage.Stage()
             stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle('Tümör/Stroma — model seçimi')
+            stage.setTitle(workshopText('script.14e2aeb481be', 'Tümör/Stroma — model seçimi'))
             stage.setAlwaysOnTop(true)
 
             def header = new javafx.scene.control.Label(
-                'Hangi sınıflandırıcı(lar) ile ölçüm yapılsın? Birden fazla seçerseniz\n' +
-                'sonuçlar karşılaştırmalı gösterilir.')
+                workshopText('script.867b0d1a3351', 'Hangi sınıflandırıcı(lar) ile ölçüm yapılsın? Birden fazla seçerseniz\n' +
+                'sonuçlar karşılaştırmalı gösterilir.'))
             header.setWrapText(true)
             header.setStyle('-fx-font-size: 12px; -fx-padding: 4px 0;')
 
@@ -152,7 +152,7 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
             def listBox = new javafx.scene.layout.VBox(4)
             if (entries.isEmpty()) {
                 listBox.getChildren().add(new javafx.scene.control.Label(
-                    '(Projede sınıflandırıcı yok. Aşağıdan örnek modeli kurun ya da sihirbazı açın.)'))
+                    workshopText('script.b13fefb3614b', '(Projede sınıflandırıcı yok. Aşağıdan örnek modeli kurun ya da sihirbazı açın.)')))
             } else {
                 entries.each { e ->
                     def label = e.source == 'BUNDLED' ? "${e.name}  (örnek, paketli)" : e.name
@@ -168,38 +168,38 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
             listScroll.setPrefHeight(180)
 
             def scopeGroup = new javafx.scene.control.ToggleGroup()
-            def rRegion = new javafx.scene.control.RadioButton('Seçili anotasyon(lar)')
+            def rRegion = new javafx.scene.control.RadioButton(workshopText('script.888debc99627', 'Seçili anotasyon(lar)'))
             rRegion.setToggleGroup(scopeGroup); rRegion.setSelected(true)
-            def rSlide = new javafx.scene.control.RadioButton('Tüm lam (seçim gerekmez — kaba tahmin)')
+            def rSlide = new javafx.scene.control.RadioButton(workshopText('script.5354112c42be', 'Tüm lam (seçim gerekmez — kaba tahmin)'))
             rSlide.setToggleGroup(scopeGroup)
             def scopeBox = new javafx.scene.layout.VBox(4,
                 new javafx.scene.control.Label('Kapsam:'), rRegion, rSlide)
             scopeBox.setStyle('-fx-padding: 8px 0;')
 
-            def detCb = new javafx.scene.control.CheckBox('Bölgeleri tespit (detection) olarak oluştur')
+            def detCb = new javafx.scene.control.CheckBox(workshopText('script.feadc3dfad73', 'Bölgeleri tespit (detection) olarak oluştur'))
             detCb.setTooltip(new javafx.scene.control.Tooltip(
-                'İşaretliyse sınıf bölgeleri Detections panelinde (içi boş) oluşturulur;\n' +
-                'işaretsizse sınıf adıyla etiketli anotasyon olarak (varsayılan).'))
+                workshopText('script.480abd8be340', 'İşaretliyse sınıf bölgeleri Detections panelinde (içi boş) oluşturulur;\n' +
+                'işaretsizse sınıf adıyla etiketli anotasyon olarak (varsayılan).')))
 
-            def installBtn = new javafx.scene.control.Button('Örnek modeli kur')
+            def installBtn = new javafx.scene.control.Button(workshopText('script.ba4a31a6e293', 'Örnek modeli kur'))
             installBtn.setOnAction({
                 if (!launch('yardimci-ornek-siniflandirici.groovy')) {
                     qupath.fx.dialogs.Dialogs.showMessageDialog('Eklenti gerekli',
-                        'Örnek modeli kurmak için: Extensions → Atölye → Yardımcılar →\n' +
-                        '"Örnek tümör/stroma sınıflandırıcısını projeye kaydet".')
+                        workshopText('script.c6967ae055af', 'Örnek modeli kurmak için: Extensions → Atölye → Yardımcılar →\n' +
+                        '"Örnek tümör/stroma sınıflandırıcısını projeye kaydet".'))
                 }
                 result.set([action: 'CANCEL']); stage.close()
             })
-            def wizardBtn = new javafx.scene.control.Button('Sihirbazı aç (yeni model)')
+            def wizardBtn = new javafx.scene.control.Button(workshopText('script.0adf2615b6d3', 'Sihirbazı aç (yeni model)'))
             wizardBtn.setOnAction({
                 if (!launch('sihirbaz.groovy')) {
                     qupath.fx.dialogs.Dialogs.showMessageDialog('Eklenti gerekli',
-                        'Sihirbaz için: Extensions → Atölye → Modüller →\n' +
-                        '"Tümör/Stroma sihirbazı (model kur/eğit)".')
+                        workshopText('script.3389ec6facef', 'Sihirbaz için: Extensions → Atölye → Modüller →\n' +
+                        '"Tümör/Stroma sihirbazı (model kur/eğit)".'))
                 }
                 result.set([action: 'CANCEL']); stage.close()
             })
-            def measureBtn = new javafx.scene.control.Button('Seçilenlerle ölç')
+            def measureBtn = new javafx.scene.control.Button(workshopText('script.bd61986c8097', 'Seçilenlerle ölç'))
             measureBtn.setDefaultButton(true)
             measureBtn.setDisable(entries.isEmpty())
             measureBtn.setOnAction({
@@ -208,7 +208,7 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
                             asDetections: detCb.isSelected()])
                 stage.close()
             })
-            def cancelBtn = new javafx.scene.control.Button('İptal')
+            def cancelBtn = new javafx.scene.control.Button(workshopText('script.72278748133a', 'İptal'))
             cancelBtn.setCancelButton(true)
             cancelBtn.setOnAction({ result.set([action: 'CANCEL']); stage.close() })
 
@@ -242,12 +242,12 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
 // ── Ön kontroller ──────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage('Görüntü açık değil', 'Önce bir H&E lamı açın.')
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', 'Görüntü açık değil'), workshopText('script.3587b2e65fb9', 'Önce bir H&E lamı açın.'))
     return
 }
 def project = QP.getProject()
 if (project == null) {
-    Dialogs.showErrorMessage('Proje açık değil', 'Bu betik bir QuPath projesi içinde çalışır.')
+    Dialogs.showErrorMessage(workshopText('script.a38d0e6adac0', 'Proje açık değil'), workshopText('script.941800bc9075', 'Bu betik bir QuPath projesi içinde çalışır.'))
     return
 }
 
@@ -255,7 +255,7 @@ String imageTypeName = imageData.getImageType()?.toString() ?: ''
 String normalizedImageType = imageTypeName.toUpperCase(Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
 if (!normalizedImageType.contains('BRIGHTFIELD_H_E')) {
     Dialogs.showErrorMessage(
-        'Yanlış görüntü tipi',
+        workshopText('script.be9dc7d830d5', 'Yanlış görüntü tipi'),
         "Tümör/stroma sınıflandırıcısı Brightfield (H&E) görüntü bekler. Şu anki: ${imageTypeName}"
     )
     return
@@ -267,8 +267,8 @@ double pixelHeight = calibration.getPixelHeightMicrons()
 if (!(pixelWidth > 0) || !(pixelHeight > 0)) {
     Dialogs.showErrorMessage(
         'Kalibrasyon yok',
-        'Piksel boyutu tanımlı değil; mm² alan ölçümleri hesaplanamaz.\n' +
-        'Önce kalibrasyonu metadata veya bir kalibrasyon lamıyla doğrulayın.'
+        workshopText('script.a756936a8b3d', 'Piksel boyutu tanımlı değil; mm² alan ölçümleri hesaplanamaz.\n' +
+        'Önce kalibrasyonu metadata veya bir kalibrasyon lamıyla doğrulayın.')
     )
     return
 }
@@ -304,7 +304,7 @@ if (choice.action != 'MEASURE') { println 'İptal / alt-betik başlatıldı.'; r
 
 def selectedModelNames = choice.models
 if (selectedModelNames.isEmpty()) {
-    Dialogs.showErrorMessage('Model seçilmedi', 'En az bir sınıflandırıcı seçin.')
+    Dialogs.showErrorMessage(workshopText('script.18ad4fb71877', 'Model seçilmedi'), workshopText('script.169f7925b1b7', 'En az bir sınıflandırıcı seçin.'))
     return
 }
 boolean wholeSlide = choice.wholeSlide
@@ -346,15 +346,15 @@ if (wholeSlide) {
     }
     if (scopeRegions.isEmpty()) {
         Dialogs.showErrorMessage(
-            'Anotasyon seçili değil',
-            'Seçili bölge modunda ölçülecek dokuyu bir anotasyonla çevreleyip o\n' +
+            workshopText('script.da079a56fe7d', 'Anotasyon seçili değil'),
+            workshopText('script.2dd760dd3e3d', 'Seçili bölge modunda ölçülecek dokuyu bir anotasyonla çevreleyip o\n' +
             'anotasyon(lar)ı SEÇİN (sınıf fark etmez) — ya da anotasyon sınıfını\n' +
-            '"Region" yapın, ya da kapsam olarak "Tüm lam" seçin.')
+            '"Region" yapın, ya da kapsam olarak "Tüm lam" seçin.'))
         return
     }
     scopeRoi = RoiTools.union(scopeRegions.collect { it.getROI() })
     if (scopeRoi == null || scopeRoi.isEmpty() || !scopeRoi.isArea()) {
-        Dialogs.showErrorMessage('Geçersiz sınır', 'Seçili anotasyonlar geçerli bir alan oluşturmuyor.')
+        Dialogs.showErrorMessage(workshopText('script.153b901a6cd4', 'Geçersiz sınır'), workshopText('script.6e0f821497c0', 'Seçili anotasyonlar geçerli bir alan oluşturmuyor.'))
         return
     }
     analysisObjects = annotations.findAll {
@@ -477,7 +477,7 @@ selectedModelNames.each { modelName ->
 }
 
 if (perModel.isEmpty()) {
-    Dialogs.showErrorMessage('Ölçüm yapılamadı', 'Seçilen modellerin hiçbiri Tumor/Stroma çıktısı üretmedi.')
+    Dialogs.showErrorMessage(workshopText('script.19182065eeb6', 'Ölçüm yapılamadı'), workshopText('script.c84bbaa3e48c', 'Seçilen modellerin hiçbiri Tumor/Stroma çıktısı üretmedi.'))
     return
 }
 
@@ -591,3 +591,14 @@ body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
 showResultWindow('Tümör/Stroma ölçümü', body.toString())
 println String.format(java.util.Locale.US, 'Tümör/Stroma modülü tamamlandı: %d model, kapsam=%s',
     perModel.size(), (wholeSlide ? 'slide' : 'region'))
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}
