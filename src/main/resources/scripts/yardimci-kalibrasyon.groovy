@@ -217,24 +217,24 @@ render = { ->
     def cur = step.get()
     if (cur == 'CHOICE') {
         if (!s.image) {
-            title.setText('Görüntü açık değil')
-            bodyLbl.setText('Önce bir lam açın, sonra "⟳ Yenile"ye basın.')
+            title.setText(workshopText('script.b4c901dc184b', 'Görüntü açık değil'))
+            bodyLbl.setText(workshopText('script.5bcdb273e5dc', 'Önce bir lam açın, sonra "⟳ Yenile"ye basın.'))
             buttons.getChildren().addAll(
-                navButton('Kapat', { stage.close() }),
-                navButton('⟳ Yenile', { render() }))
+                navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }),
+                navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
         } else {
-            title.setText('Kalibrasyon — yöntem seçin')
+            title.setText(workshopText('script.188fc7ddbdb3', 'Kalibrasyon — yöntem seçin'))
             bodyLbl.setText(
                 (s.calibrated
                     ? "ℹ Bu görüntü ZATEN kalibre: ${s.curStr}.\n\n"
-                    : "⚠ Bu görüntüde kalibrasyon YOK (µm/px tanımsız).\n\n") +
-                "Piksel boyutunu (µm/px) nasıl ayarlamak istersiniz?\n\n" +
-                "• Doğrudan değer: tarayıcı değerini elle girin\n" +
+                    : workshopText('script.1450ce95668b', "⚠ Bu görüntüde kalibrasyon YOK (µm/px tanımsız).\n\n")) +
+                workshopText('script.147d0fd7af74', "Piksel boyutunu (µm/px) nasıl ayarlamak istersiniz?\n\n") +
+                workshopText('script.07108762f72e', "• Doğrudan değer: tarayıcı değerini elle girin\n") +
                 "    (GT450 40× ≈ 0.26 · AT2 40× ≈ 0.25 / 20× ≈ 0.50)\n" +
-                "• Cetvelden ölç: bilinen uzunlukta bir çizgi çizip ölçün")
+                workshopText('script.02d8abdd21b7', "• Cetvelden ölç: bilinen uzunlukta bir çizgi çizip ölçün"))
             buttons.getChildren().addAll(
-                navButton('Kapat', { stage.close() }),
-                navButton('Cetvelden ölç', {
+                navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }),
+                navButton(workshopText('script.dae97decd57b', 'Cetvelden ölç'), {
                     modeRef.set('ruler')
                     // En-iyi-çaba: Çizgi (Line) aracına geç (FX thread; sürüm farklarına karşı iki deneme).
                     try { qupath.lib.gui.QuPathGUI.getInstance()?.getToolManager()?.setSelectedTool(qupath.lib.gui.viewer.tools.PathTools.LINE) }
@@ -246,20 +246,20 @@ render = { ->
                         lineRef.set(existing); lenPxRef.set((Double) existing.getROI().getLength()); step.set('RULER_LEN')
                     } else { step.set('RULER_DRAW') }
                     render()
-                }, 'Bilinen uzunlukta bir çizgi çizip ölçerek µm/px hesaplar', 'PENCIL'),
-                navButton('Doğrudan değer ▶', {
+                }, workshopText('script.6dd5c9b203f8', 'Bilinen uzunlukta bir çizgi çizip ölçerek µm/px hesaplar'), 'PENCIL'),
+                navButton(workshopText('script.d11fb0ed94ac', 'Doğrudan değer ▶'), {
                     modeRef.set('direct'); directWarnedRef.set(false); step.set('DIRECT'); render()
-                }, 'Tarayıcı µm/px değerini elle girin', 'KEYBOARD_ALT'))
+                }, workshopText('script.2be7ccff4052', 'Tarayıcı µm/px değerini elle girin'), 'KEYBOARD_ALT'))
         }
     } else if (cur == 'DIRECT') {
-        title.setText('Doğrudan değer gir')
+        title.setText(workshopText('script.e0887aca6277', 'Doğrudan değer gir'))
         bodyLbl.setText(
             "Şu anki piksel boyutu: ${s.curStr}\n\n" +
-            "Yeni piksel boyutu (µm/px):\n" +
+            workshopText('script.c518340d0e14', "Yeni piksel boyutu (µm/px):\n") +
             "  • Leica Aperio GT450 (40×) ≈ 0.26\n" +
             "  • Leica Aperio AT2 (40×) ≈ 0.25  (20× ≈ 0.50)\n\n" +
-            "Not: Yerel .svs dosyaları bu değeri zaten içerir; bu araç meta verisi\n" +
-            "eksik (ör. dışa aktarılmış TIFF) dosyalar içindir.")
+            workshopText('script.b7891dcf685c', "Not: Yerel .svs dosyaları bu değeri zaten içerir; bu araç meta verisi\n") +
+            workshopText('script.9cb9a37957ac', "eksik (ör. dışa aktarılmış TIFF) dosyalar içindir."))
         def field = new javafx.scene.control.TextField('0.26'); field.setPrefColumnCount(10)
         field.textProperty().addListener({ obs, o, n -> directWarnedRef.set(false) } as javafx.beans.value.ChangeListener)
         def errLbl = new javafx.scene.control.Label(); errLbl.setWrapText(true)
@@ -270,17 +270,17 @@ render = { ->
             try { px = Double.parseDouble(field.getText().toString().trim().replace(',' as char, '.' as char)) }
             catch (Exception e) {
                 errLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
-                errLbl.setText('⚠ Sayısal bir µm/px değeri girin (ör. 0.26).'); return
+                errLbl.setText(workshopText('script.2c9572cb5c23', '⚠ Sayısal bir µm/px değeri girin (ör. 0.26).')); return
             }
             if (!(px > 0)) {
                 errLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
-                errLbl.setText('⚠ Piksel boyutu pozitif olmalı.'); return
+                errLbl.setText(workshopText('script.f14cafe989d7', '⚠ Piksel boyutu pozitif olmalı.')); return
             }
             if ((px < 0.05 || px > 2.0) && !directWarnedRef.get()) {
                 directWarnedRef.set(true)
                 errLbl.setStyle('-fx-text-fill: #cc7a00;')   // amber: sıra-dışı değer onayı
                 errLbl.setText(String.format(java.util.Locale.US,
-                    '⚠ %.4f µm/px tipik patoloji aralığının (0.05–2.0) dışında. Yine de uygulamak için "Uygula"ya tekrar basın.', px))
+                    workshopText('script.b21d18036299', '⚠ %.4f µm/px tipik patoloji aralığının (0.05–2.0) dışında. Yine de uygulamak için "Uygula"ya tekrar basın.'), px))
                 return
             }
             newPxRef.set((Double) px); methodNoteRef.set('Doğrudan giriş'); prevStrRef.set(s.curStr)
@@ -288,38 +288,38 @@ render = { ->
         }
         field.setOnAction({ applyDirect() })
         buttons.getChildren().addAll(
-            navButton('◀ Geri', { step.set('CHOICE'); render() }),
-            navButton('Uygula ▶', { applyDirect() }, 'Bu değeri açık görüntüye uygular'))
+            navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('CHOICE'); render() }),
+            navButton(workshopText('script.e952a28ff5bc', 'Uygula ▶'), { applyDirect() }, workshopText('script.c4cafe8aa6a5', 'Bu değeri açık görüntüye uygular')))
     } else if (cur == 'RULER_DRAW') {
-        title.setText('Cetvel — çizgi çizin')
+        title.setText(workshopText('script.cd700d7a6086', 'Cetvel — çizgi çizin'))
         bodyLbl.setText(
-            "Çizgi (Line) aracı seçili olmalı — değilse araç çubuğundan seçin.\n\n" +
+            workshopText('script.5310d6be54dc', "Çizgi (Line) aracı seçili olmalı — değilse araç çubuğundan seçin.\n\n" +
             "1. Bilinen uzunlukta bir yapının üzerine bir çizgi çizin\n" +
             "   (ör. gömülü ölçek çubuğu ya da bilinen çaplı bir yapı)\n" +
             "2. Aşağıdan 'Ölç ▶'e basın\n\n" +
-            "Çizgiyi yeniden çizebilirsiniz; en son/seçili çizgi kullanılır.")
+            "Çizgiyi yeniden çizebilirsiniz; en son/seçili çizgi kullanılır."))
         def statusLbl = new javafx.scene.control.Label(); statusLbl.setWrapText(true)
         content.getChildren().add(statusLbl)
         buttons.getChildren().addAll(
-            navButton('◀ Geri', { step.set('CHOICE'); render() }),
-            navButton('Ölç ▶', {
+            navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('CHOICE'); render() }),
+            navButton(workshopText('script.f513f120ec21', 'Ölç ▶'), {
                 def line = findLine()
                 if (line == null) {
                     int n = QP.getAnnotationObjects().findAll { it.getROI()?.isLine() }.size()
                     statusLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
                     statusLbl.setText(n > 1
-                        ? '⚠ Birden fazla çizgi var — ölçmek istediğinizi SEÇİN, sonra tekrar "Ölç".'
-                        : '⚠ Henüz çizgi yok — bir çizgi çizip tekrar "Ölç"e basın.')
+                        ? workshopText('script.dd85f50e67f6', '⚠ Birden fazla çizgi var — ölçmek istediğinizi SEÇİN, sonra tekrar "Ölç".')
+                        : workshopText('script.c9728617b026', '⚠ Henüz çizgi yok — bir çizgi çizip tekrar "Ölç"e basın.'))
                     return
                 }
                 double lenPx = line.getROI().getLength()
                 if (!(lenPx > 0)) {
                     statusLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
-                    statusLbl.setText('⚠ Çizginin uzunluğu sıfır görünüyor; daha uzun bir çizgi çizin.')
+                    statusLbl.setText(workshopText('script.746d02e261f4', '⚠ Çizginin uzunluğu sıfır görünüyor; daha uzun bir çizgi çizin.'))
                     return
                 }
                 lineRef.set(line); lenPxRef.set((Double) lenPx); step.set('RULER_LEN'); render()
-            }, 'Çizdiğiniz/seçtiğiniz çizgiyi ölçer'))
+            }, workshopText('script.51d6f6e979fd', 'Çizdiğiniz/seçtiğiniz çizgiyi ölçer')))
     } else if (cur == 'RULER_LEN') {
         double lenPx = (double) lenPxRef.get()
         String defaultLen = '100'
@@ -338,22 +338,22 @@ render = { ->
                 "Çizgi uzunluğu: %.1f piksel.\n\nBu çizginin gerçek uzunluğu kaç µm?\n" +
                 "(ör. 100 µm'lik bir ölçek çubuğu için 100)", lenPx)
         }
-        title.setText('Cetvel — gerçek uzunluk')
+        title.setText(workshopText('script.df12f33c5acf', 'Cetvel — gerçek uzunluk'))
         bodyLbl.setText(bodyTxt)
         def field = new javafx.scene.control.TextField(defaultLen); field.setPrefColumnCount(10)
         def errLbl = new javafx.scene.control.Label(); errLbl.setWrapText(true)
         content.getChildren().addAll(
-            new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Gerçek uzunluk (µm):'), field), errLbl)
+            new javafx.scene.layout.HBox(8, new javafx.scene.control.Label(workshopText('script.331e5618c329', 'Gerçek uzunluk (µm):')), field), errLbl)
         def applyRuler = {
             double realUm
             try { realUm = Double.parseDouble(field.getText().toString().trim().replace(',' as char, '.' as char)) }
             catch (Exception e) {
                 errLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
-                errLbl.setText('⚠ Sayısal bir uzunluk (µm) girin.'); return
+                errLbl.setText(workshopText('script.5d59e28e32fd', '⚠ Sayısal bir uzunluk (µm) girin.')); return
             }
             if (!(realUm > 0)) {
                 errLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
-                errLbl.setText('⚠ Uzunluk pozitif olmalı.'); return
+                errLbl.setText(workshopText('script.1a8b3e6dff9f', '⚠ Uzunluk pozitif olmalı.')); return
             }
             double newPx = realUm / lenPx
             newPxRef.set((Double) newPx)
@@ -363,36 +363,36 @@ render = { ->
         }
         field.setOnAction({ applyRuler() })
         buttons.getChildren().addAll(
-            navButton('◀ Geri', { step.set('RULER_DRAW'); render() }),
-            navButton('Uygula ▶', { applyRuler() }, 'Bu uzunluktan µm/px hesaplayıp uygular'))
+            navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('RULER_DRAW'); render() }),
+            navButton(workshopText('script.e952a28ff5bc', 'Uygula ▶'), { applyRuler() }, workshopText('script.fce072b8dc88', 'Bu uzunluktan µm/px hesaplayıp uygular')))
     } else if (cur == 'APPLYING') {
-        title.setText('Kalibrasyon uygulanıyor…')
-        bodyLbl.setText('Piksel boyutu açık görüntüye uygulanıyor ve (projede ise) diske yazılıyor. Lütfen bekleyin…')
+        title.setText(workshopText('script.f0c0b29a21bb', 'Kalibrasyon uygulanıyor…'))
+        bodyLbl.setText(workshopText('script.e6e7fe8a4d9e', 'Piksel boyutu açık görüntüye uygulanıyor ve (projede ise) diske yazılıyor. Lütfen bekleyin…'))
         content.getChildren().add(busyBar())
     } else if (cur == 'BATCH_ASK') {
-        title.setText('Proje geneli uygula?')
+        title.setText(workshopText('script.006cab19f832', 'Proje geneli uygula?'))
         bodyLbl.setText(String.format(java.util.Locale.US,
-            "Açık görüntü %.4f µm/px olarak ayarlandı.\n\n" +
+            workshopText('script.2973df0b6a24', "Açık görüntü %.4f µm/px olarak ayarlandı.\n\n" +
             "Projedeki TÜM kalibre edilmemiş görüntülere de aynı değeri uygulamak ister misiniz?\n" +
-            "(Zaten kalibre olan görüntülere dokunulmaz.)", (double) newPxRef.get()))
+            "(Zaten kalibre olan görüntülere dokunulmaz.)"), (double) newPxRef.get()))
         buttons.getChildren().addAll(
-            navButton('Hayır, atla', { batchResultRef.set(null); step.set('RESULT'); render() }),
-            navButton('Evet, uygula ▶', { startBatch() },
-                'Projedeki kalibre edilmemiş görüntülere de uygular'))
+            navButton(workshopText('script.5799358a5c55', 'Hayır, atla'), { batchResultRef.set(null); step.set('RESULT'); render() }),
+            navButton(workshopText('script.4d0de283f4c9', 'Evet, uygula ▶'), { startBatch() },
+                workshopText('script.15030c4294bb', 'Projedeki kalibre edilmemiş görüntülere de uygular')))
     } else if (cur == 'BATCHING') {
-        title.setText('Proje geneli uygulanıyor…')
-        bodyLbl.setText('Kalibre edilmemiş görüntüler güncelleniyor ve diske yazılıyor. Lütfen bekleyin…')
+        title.setText(workshopText('script.d13fe5e22cd3', 'Proje geneli uygulanıyor…'))
+        bodyLbl.setText(workshopText('script.ce74b10a32f2', 'Kalibre edilmemiş görüntüler güncelleniyor ve diske yazılıyor. Lütfen bekleyin…'))
         content.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
         def ar = applyResultRef.get()
         if (ar != null && ar.ok) {
-            title.setText('Kalibrasyon tamam ✅')
+            title.setText(workshopText('script.4f87454ce1fb', 'Kalibrasyon tamam ✅'))
             def resultArea = new javafx.scene.control.TextArea(buildSummary())
             resultArea.setEditable(false); resultArea.setWrapText(false); resultArea.setPrefRowCount(10)
             resultArea.setStyle("-fx-font-family: 'Consolas','Menlo','Courier New',monospace; -fx-font-size: 12px;")
             content.getChildren().add(resultArea)
             javafx.scene.layout.VBox.setVgrow(resultArea, javafx.scene.layout.Priority.ALWAYS)
-            def copyBtn = new javafx.scene.control.Button('Kopyala')
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', 'Kopyala'))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def cc = new javafx.scene.input.ClipboardContent(); cc.putString(resultArea.getText()); cb.setContent(cc)
@@ -401,22 +401,22 @@ render = { ->
             println String.format(java.util.Locale.US, "Kalibrasyon: %s → %.4f µm/px (%s)",
                 prevStrRef.get(), (double) newPxRef.get(), methodNoteRef.get())
             buttons.getChildren().addAll(
-                navButton('Kapat', { stage.close() }),
+                navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }),
                 copyBtn,
-                navButton('↻ Yeniden kalibre et', { step.set('CHOICE'); render() }, 'Baştan kalibrasyon yapar'))
+                navButton(workshopText('script.210e312cc5f8', '↻ Yeniden kalibre et'), { step.set('CHOICE'); render() }, workshopText('script.6fe3456ed397', 'Baştan kalibrasyon yapar')))
         } else {
-            title.setText('Kalibrasyon yapılamadı')
-            bodyLbl.setText((ar?.error ?: 'Bilinmeyen hata.').toString())
+            title.setText(workshopText('script.76d5c0fa2635', 'Kalibrasyon yapılamadı'))
+            bodyLbl.setText((ar?.error ?: workshopText('script.334b848286b9', 'Bilinmeyen hata.')).toString())
             buttons.getChildren().addAll(
-                navButton('Kapat', { stage.close() }),
-                navButton('↻ Tekrar dene', { step.set('CHOICE'); render() }))
+                navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }),
+                navButton(workshopText('script.11e805a92450', '↻ Tekrar dene'), { step.set('CHOICE'); render() }))
         }
     }
 
     def root = new javafx.scene.layout.BorderPane()
     root.setCenter(content)
     // Kalıcı sorumluluk reddi notu — tema-duyarlı (açık/koyu tema).
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -430,11 +430,22 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Kalibrasyon (piksel boyutu)')
+        stage.setTitle(workshopText('script.45bb7d226338', 'Kalibrasyon (piksel boyutu)'))
         stage.setAlwaysOnTop(true)
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Kalibrasyon penceresi açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage(workshopText('script.1ae8b103217c', 'Kalibrasyon penceresi açılamadı'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+    }
+}
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
     }
 }

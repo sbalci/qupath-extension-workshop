@@ -1,6 +1,7 @@
 """Build the core scripts' TR/EN display strings without changing their data keys."""
 import argparse
 import json
+import runpy
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -18,6 +19,7 @@ def escape(value):
 
 def build(check):
     catalog = json.loads((BUNDLE / 'script-core.json').read_text(encoding='utf-8'))
+    runpy.run_path(str(ROOT / 'tools/check-script-ui-contract.py'))['check']()
     rows = catalog['strings']
     if len({row['key'] for row in rows}) != len(rows):
         raise SystemExit('Duplicate core UI key')

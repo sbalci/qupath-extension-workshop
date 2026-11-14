@@ -8,7 +8,11 @@
     "veri-aktarma.groovy",
     "quantum-ctcf.groovy",
     "membran-boya.groovy",
-    "sitoplazmik-boya.groovy"
+    "sitoplazmik-boya.groovy",
+    "yardimci-kalibrasyon.groovy",
+    "yardimci-boya-vektor-sihirbaz.groovy",
+    "yardimci-metadata-sihirbaz.groovy",
+    "yardimci-python-ortam-yoneticisi.groovy"
   ],
   "strings": [
     {
@@ -725,6 +729,616 @@
       "key": "script.ec7042f2fcfe",
       "tr": "Açık olan lam projenin parçası değil; dışa aktarılamaz.\n\nÇözüm: Project panelinden bu lamı projeye ekleyin\n(sol üstte + ikonu) ve betiği tekrar çalıştırın.",
       "en": "The open slide is not part of the project and cannot be exported.\n\nNext step: add this slide from the Project panel\n(the + icon at top left), then run the script again."
+    },
+    {
+      "key": "script.5bcdb273e5dc",
+      "tr": "Önce bir lam açın, sonra \"⟳ Yenile\"ye basın.",
+      "en": "Open a slide first, then click \"⟳ Refresh\"."
+    },
+    {
+      "key": "script.e8e5dcb69dea",
+      "tr": "⟳ Yenile",
+      "en": "⟳ Refresh"
+    },
+    {
+      "key": "script.188fc7ddbdb3",
+      "tr": "Kalibrasyon — yöntem seçin",
+      "en": "Calibration — choose a method"
+    },
+    {
+      "key": "script.1450ce95668b",
+      "tr": "⚠ Bu görüntüde kalibrasyon YOK (µm/px tanımsız).\n\n",
+      "en": "⚠ This image is NOT calibrated (µm/px is undefined).\n\n"
+    },
+    {
+      "key": "script.147d0fd7af74",
+      "tr": "Piksel boyutunu (µm/px) nasıl ayarlamak istersiniz?\n\n",
+      "en": "How would you like to set the pixel size (µm/px)?\n\n"
+    },
+    {
+      "key": "script.07108762f72e",
+      "tr": "• Doğrudan değer: tarayıcı değerini elle girin\n",
+      "en": "• Direct value: enter the scanner value manually\n"
+    },
+    {
+      "key": "script.02d8abdd21b7",
+      "tr": "• Cetvelden ölç: bilinen uzunlukta bir çizgi çizip ölçün",
+      "en": "• Measure with a ruler: draw a line of known length and measure it"
+    },
+    {
+      "key": "script.dae97decd57b",
+      "tr": "Cetvelden ölç",
+      "en": "Measure with a ruler"
+    },
+    {
+      "key": "script.6dd5c9b203f8",
+      "tr": "Bilinen uzunlukta bir çizgi çizip ölçerek µm/px hesaplar",
+      "en": "Calculate µm/px by drawing and measuring a line of known length"
+    },
+    {
+      "key": "script.d11fb0ed94ac",
+      "tr": "Doğrudan değer ▶",
+      "en": "Direct value ▶"
+    },
+    {
+      "key": "script.2be7ccff4052",
+      "tr": "Tarayıcı µm/px değerini elle girin",
+      "en": "Enter the scanner's µm/px value manually"
+    },
+    {
+      "key": "script.e0887aca6277",
+      "tr": "Doğrudan değer gir",
+      "en": "Enter direct value"
+    },
+    {
+      "key": "script.c518340d0e14",
+      "tr": "Yeni piksel boyutu (µm/px):\n",
+      "en": "New pixel size (µm/px):\n"
+    },
+    {
+      "key": "script.b7891dcf685c",
+      "tr": "Not: Yerel .svs dosyaları bu değeri zaten içerir; bu araç meta verisi\n",
+      "en": "Note: native .svs files already contain this value; this tool is for files with\n"
+    },
+    {
+      "key": "script.9cb9a37957ac",
+      "tr": "eksik (ör. dışa aktarılmış TIFF) dosyalar içindir.",
+      "en": "missing metadata (for example, exported TIFF files)."
+    },
+    {
+      "key": "script.2c9572cb5c23",
+      "tr": "⚠ Sayısal bir µm/px değeri girin (ör. 0.26).",
+      "en": "⚠ Enter a numerical value in µm/px (for example, 0.26)."
+    },
+    {
+      "key": "script.f14cafe989d7",
+      "tr": "⚠ Piksel boyutu pozitif olmalı.",
+      "en": "⚠ Pixel size must be positive."
+    },
+    {
+      "key": "script.b21d18036299",
+      "tr": "⚠ %.4f µm/px tipik patoloji aralığının (0.05–2.0) dışında. Yine de uygulamak için \"Uygula\"ya tekrar basın.",
+      "en": "⚠ %.4f µm/px is outside the typical pathology range (0.05–2.0). Click \"Apply\" again to apply it anyway."
+    },
+    {
+      "key": "script.7dfd804d8334",
+      "tr": "◀ Geri",
+      "en": "◀ Back"
+    },
+    {
+      "key": "script.e952a28ff5bc",
+      "tr": "Uygula ▶",
+      "en": "Apply ▶"
+    },
+    {
+      "key": "script.c4cafe8aa6a5",
+      "tr": "Bu değeri açık görüntüye uygular",
+      "en": "Apply this value to the open image"
+    },
+    {
+      "key": "script.cd700d7a6086",
+      "tr": "Cetvel — çizgi çizin",
+      "en": "Ruler — draw a line"
+    },
+    {
+      "key": "script.5310d6be54dc",
+      "tr": "Çizgi (Line) aracı seçili olmalı — değilse araç çubuğundan seçin.\n\n1. Bilinen uzunlukta bir yapının üzerine bir çizgi çizin\n   (ör. gömülü ölçek çubuğu ya da bilinen çaplı bir yapı)\n2. Aşağıdan 'Ölç ▶'e basın\n\nÇizgiyi yeniden çizebilirsiniz; en son/seçili çizgi kullanılır.",
+      "en": "Select the Line tool in the toolbar if it is not already selected.\n\n1. Draw a line over a structure of known length\n   (for example, an embedded scale bar or a structure of known diameter)\n2. Click 'Measure ▶' below\n\nYou can redraw the line; the latest or selected line is used."
+    },
+    {
+      "key": "script.f513f120ec21",
+      "tr": "Ölç ▶",
+      "en": "Measure ▶"
+    },
+    {
+      "key": "script.dd85f50e67f6",
+      "tr": "⚠ Birden fazla çizgi var — ölçmek istediğinizi SEÇİN, sonra tekrar \"Ölç\".",
+      "en": "⚠ There is more than one line — SELECT the one to measure, then click \"Measure\" again."
+    },
+    {
+      "key": "script.c9728617b026",
+      "tr": "⚠ Henüz çizgi yok — bir çizgi çizip tekrar \"Ölç\"e basın.",
+      "en": "⚠ There is no line yet — draw a line, then click \"Measure\" again."
+    },
+    {
+      "key": "script.746d02e261f4",
+      "tr": "⚠ Çizginin uzunluğu sıfır görünüyor; daha uzun bir çizgi çizin.",
+      "en": "⚠ The line appears to have zero length; draw a longer line."
+    },
+    {
+      "key": "script.51d6f6e979fd",
+      "tr": "Çizdiğiniz/seçtiğiniz çizgiyi ölçer",
+      "en": "Measure the line you drew or selected"
+    },
+    {
+      "key": "script.df12f33c5acf",
+      "tr": "Cetvel — gerçek uzunluk",
+      "en": "Ruler — actual length"
+    },
+    {
+      "key": "script.331e5618c329",
+      "tr": "Gerçek uzunluk (µm):",
+      "en": "Actual length (µm):"
+    },
+    {
+      "key": "script.5d59e28e32fd",
+      "tr": "⚠ Sayısal bir uzunluk (µm) girin.",
+      "en": "⚠ Enter a numerical length (µm)."
+    },
+    {
+      "key": "script.1a8b3e6dff9f",
+      "tr": "⚠ Uzunluk pozitif olmalı.",
+      "en": "⚠ Length must be positive."
+    },
+    {
+      "key": "script.fce072b8dc88",
+      "tr": "Bu uzunluktan µm/px hesaplayıp uygular",
+      "en": "Calculate and apply µm/px from this length"
+    },
+    {
+      "key": "script.f0c0b29a21bb",
+      "tr": "Kalibrasyon uygulanıyor…",
+      "en": "Applying calibration…"
+    },
+    {
+      "key": "script.e6e7fe8a4d9e",
+      "tr": "Piksel boyutu açık görüntüye uygulanıyor ve (projede ise) diske yazılıyor. Lütfen bekleyin…",
+      "en": "Applying the pixel size to the open image and saving it to disk if it belongs to a project. Please wait…"
+    },
+    {
+      "key": "script.006cab19f832",
+      "tr": "Proje geneli uygula?",
+      "en": "Apply across the project?"
+    },
+    {
+      "key": "script.2973df0b6a24",
+      "tr": "Açık görüntü %.4f µm/px olarak ayarlandı.\n\nProjedeki TÜM kalibre edilmemiş görüntülere de aynı değeri uygulamak ister misiniz?\n(Zaten kalibre olan görüntülere dokunulmaz.)",
+      "en": "The open image is now set to %.4f µm/px.\n\nWould you like to apply the same value to ALL uncalibrated images in the project?\n(Images that are already calibrated are left unchanged.)"
+    },
+    {
+      "key": "script.5799358a5c55",
+      "tr": "Hayır, atla",
+      "en": "No, skip"
+    },
+    {
+      "key": "script.4d0de283f4c9",
+      "tr": "Evet, uygula ▶",
+      "en": "Yes, apply ▶"
+    },
+    {
+      "key": "script.15030c4294bb",
+      "tr": "Projedeki kalibre edilmemiş görüntülere de uygular",
+      "en": "Also apply to uncalibrated images in the project"
+    },
+    {
+      "key": "script.d13fe5e22cd3",
+      "tr": "Proje geneli uygulanıyor…",
+      "en": "Applying across the project…"
+    },
+    {
+      "key": "script.ce74b10a32f2",
+      "tr": "Kalibre edilmemiş görüntüler güncelleniyor ve diske yazılıyor. Lütfen bekleyin…",
+      "en": "Updating uncalibrated images and saving them to disk. Please wait…"
+    },
+    {
+      "key": "script.4f87454ce1fb",
+      "tr": "Kalibrasyon tamam ✅",
+      "en": "Calibration complete ✅"
+    },
+    {
+      "key": "script.a8bcca42d9ce",
+      "tr": "Kopyala",
+      "en": "Copy"
+    },
+    {
+      "key": "script.210e312cc5f8",
+      "tr": "↻ Yeniden kalibre et",
+      "en": "↻ Calibrate again"
+    },
+    {
+      "key": "script.6fe3456ed397",
+      "tr": "Baştan kalibrasyon yapar",
+      "en": "Calibrate again from the beginning"
+    },
+    {
+      "key": "script.76d5c0fa2635",
+      "tr": "Kalibrasyon yapılamadı",
+      "en": "Could not calibrate"
+    },
+    {
+      "key": "script.334b848286b9",
+      "tr": "Bilinmeyen hata.",
+      "en": "Unknown error."
+    },
+    {
+      "key": "script.11e805a92450",
+      "tr": "↻ Tekrar dene",
+      "en": "↻ Try again"
+    },
+    {
+      "key": "script.45bb7d226338",
+      "tr": "Kalibrasyon (piksel boyutu)",
+      "en": "Calibration (pixel size)"
+    },
+    {
+      "key": "script.1ae8b103217c",
+      "tr": "Kalibrasyon penceresi açılamadı",
+      "en": "Could not open calibration window"
+    },
+    {
+      "key": "script.ef07407189c3",
+      "tr": " menüsünü göster",
+      "en": " — show menu"
+    },
+    {
+      "key": "script.cfec911aa7bc",
+      "tr": "Boya vektörü tanımlı değil",
+      "en": "No stain vectors defined"
+    },
+    {
+      "key": "script.4e7d6ba06e33",
+      "tr": "Boya vektörleri — kontrol",
+      "en": "Stain vectors — check"
+    },
+    {
+      "key": "script.b47e753eeb62",
+      "tr": "Seçili bölgeden tahmin et ▶",
+      "en": "Estimate from selected region ▶"
+    },
+    {
+      "key": "script.51030dcd8066",
+      "tr": "Küçük, temsilî bir seçili bölgeden (iki boya + biraz arka plan) vektörleri yeniden tahmin eder",
+      "en": "Re-estimate vectors from a small representative selected region (both stains and some background)"
+    },
+    {
+      "key": "script.7c3f74b33362",
+      "tr": "Tahmin hesaplanıyor…",
+      "en": "Calculating estimate…"
+    },
+    {
+      "key": "script.9ac77a5f8e04",
+      "tr": "Boya vektörleri — tahmin (eski → yeni)",
+      "en": "Stain vectors — estimate (old → new)"
+    },
+    {
+      "key": "script.6df60940343f",
+      "tr": "◀ Rapora dön",
+      "en": "◀ Back to report"
+    },
+    {
+      "key": "script.7ee3af0bcff6",
+      "tr": "↻ Yeniden tahmin",
+      "en": "↻ Estimate again"
+    },
+    {
+      "key": "script.dddebc9070cc",
+      "tr": "Seçimi yeniden okuyup tekrar tahmin eder",
+      "en": "Read the selection again and repeat the estimate"
+    },
+    {
+      "key": "script.87d67a339e3f",
+      "tr": "Yeni boya vektörlerini görüntüye uygular (geri alınabilir)",
+      "en": "Apply the new stain vectors to the image (can be undone)"
+    },
+    {
+      "key": "script.f7761d03f551",
+      "tr": "Uygulandı ✅",
+      "en": "Applied ✅"
+    },
+    {
+      "key": "script.9b187b921fbf",
+      "tr": "↩ Geri al",
+      "en": "↩ Undo"
+    },
+    {
+      "key": "script.7bd85c73eb59",
+      "tr": "Önceki boya vektörlerini geri yükler",
+      "en": "Restore the previous stain vectors"
+    },
+    {
+      "key": "script.20ce3b7f68dd",
+      "tr": "Önce bir bölge seçin",
+      "en": "Select a region first"
+    },
+    {
+      "key": "script.c009d4670c6a",
+      "tr": "Tahmin yapılamadı",
+      "en": "Could not estimate"
+    },
+    {
+      "key": "script.7c0944a9c8e6",
+      "tr": "Boya vektörleri sihirbazı",
+      "en": "Stain vector wizard"
+    },
+    {
+      "key": "script.f96ffe3410c3",
+      "tr": "Kohort üst veri sihirbazı",
+      "en": "Cohort metadata wizard"
+    },
+    {
+      "key": "script.4a70604a5fba",
+      "tr": "Proje sütunlarına da yaz (sıralanabilir)",
+      "en": "Also write to project columns (sortable)"
+    },
+    {
+      "key": "script.0eae8e676a20",
+      "tr": "İşaretliyse çekirdek alanlar (mpp, büyütme, tarayıcı, boyut, piramit, alan) QuPath Proje sekmesine sütun olarak yazılır.",
+      "en": "When selected, core fields (mpp, magnification, scanner, dimensions, pyramid and area) are written as columns in QuPath's Project tab."
+    },
+    {
+      "key": "script.1df93d0a3b69",
+      "tr": "Bu lam raporunu panoya kopyala",
+      "en": "Copy this slide report to the clipboard"
+    },
+    {
+      "key": "script.450eaada98e2",
+      "tr": "Tüm projeyi tara → CSV ▶",
+      "en": "Scan entire project → CSV ▶"
+    },
+    {
+      "key": "script.534918cc247c",
+      "tr": "Projedeki her görüntünün üst verisini CSV'ye yazar",
+      "en": "Write metadata for every image in the project to CSV"
+    },
+    {
+      "key": "script.ca10a4616efe",
+      "tr": "Proje taranıyor…",
+      "en": "Scanning project…"
+    },
+    {
+      "key": "script.3f6920a9ead3",
+      "tr": "İptal et",
+      "en": "Cancel"
+    },
+    {
+      "key": "script.92c17020894f",
+      "tr": "Tamamlandı ✅",
+      "en": "Completed ✅"
+    },
+    {
+      "key": "script.d6f2f6cad078",
+      "tr": "Klasörü aç",
+      "en": "Open folder"
+    },
+    {
+      "key": "script.4b2ba1214a96",
+      "tr": "Klasör açılamadı",
+      "en": "Could not open folder"
+    },
+    {
+      "key": "script.171029fff08d",
+      "tr": "↻ Yeniden",
+      "en": "↻ Start again"
+    },
+    {
+      "key": "script.307b9dc7912d",
+      "tr": "Hata",
+      "en": "Error"
+    },
+    {
+      "key": "script.4b9fa7c7f11c",
+      "tr": "Disk alanı — ",
+      "en": "Disk space — "
+    },
+    {
+      "key": "script.60371b636d3f",
+      "tr": "Atölye Python ortam yöneticisi",
+      "en": "Workshop Python environment manager"
+    },
+    {
+      "key": "script.5559b201977a",
+      "tr": "Veri kökü: %s%s   (boş alan: %.1f GB)",
+      "en": "Data root: %s%s   (free space: %.1f GB)"
+    },
+    {
+      "key": "script.18b5fd32f00e",
+      "tr": "Değiştir…",
+      "en": "Change…"
+    },
+    {
+      "key": "script.40d2b21bb73f",
+      "tr": "Veri kökü",
+      "en": "Data root"
+    },
+    {
+      "key": "script.a0681813792e",
+      "tr": "Seçilen klasöre yazılamıyor:\n",
+      "en": "Cannot write to the selected folder:\n"
+    },
+    {
+      "key": "script.a770f27be3ab",
+      "tr": "\n\nYazma izni olan bir klasör seçin (salt-okunur ağ paylaşımı / korumalı sürücü olmasın).",
+      "en": "\n\nChoose a folder you can write to (not a read-only network share or protected drive)."
+    },
+    {
+      "key": "script.7d15e596a957",
+      "tr": "Yeni kurulumların yazılacağı klasörü seç — içine \".atolye\" oluşturulur (ör. D:\\ → D:\\.atolye)",
+      "en": "Choose the folder for new installations — creates \".atolye\" inside it (for example, D:\\ → D:\\.atolye)"
+    },
+    {
+      "key": "script.7ba9c1127860",
+      "tr": "↺ Varsayılan",
+      "en": "↺ Default"
+    },
+    {
+      "key": "script.f93627b70ee6",
+      "tr": "Veri kökünü ~/.atolye yap",
+      "en": "Set the data root to ~/.atolye"
+    },
+    {
+      "key": "script.9310c554582d",
+      "tr": "Tüm atölye Python ortamları, uv/pip önbelleği ve indirilen model ağırlıkları bu köke yazılır (Kaiko/SPIDER/GrandQC/TIA/Sectra ortak). Seçtiğiniz klasörün İÇİNE bir \".atolye\" klasörü oluşturulur (ör. D:\\ seçerseniz kök D:\\.atolye olur). Değiştirmek YALNIZ yeni kurulumları etkiler — mevcut ortamlar eski yerinde kalır (taşınmaz); gerekirse ilgili ortamı yeniden kurun. (cellpose/resmî TIAToolbox kendi klasörlerini kullanır; bunları bu ayar taşımaz.)",
+      "en": "All workshop Python environments, uv/pip caches and downloaded model weights are stored under this root (shared by Kaiko/SPIDER/GrandQC/TIA/Sectra). A \".atolye\" folder is created INSIDE your selected folder (for example, selecting D:\\ makes D:\\.atolye the root). Changing it affects ONLY new installations — existing environments stay in their current locations and are not moved; reinstall the relevant environment if needed. (Cellpose and official TIAToolbox environments use their own folders; this setting does not move them.)"
+    },
+    {
+      "key": "script.9184719c5f61",
+      "tr": "Cihaz (torch):",
+      "en": "Device (torch):"
+    },
+    {
+      "key": "script.83d2e0caaddf",
+      "tr": "torch içeren ortamlar bu cihaza göre kurulur: CUDA→GPU wheel, MPS→Apple wheel, CPU→cpu wheel. nvidia-smi bulunursa CUDA otomatik algılanır. (Modeli çalıştırma cihazı ilgili sihirbazda seçilir.)",
+      "en": "Environments containing torch are installed for this device: CUDA→GPU wheel, MPS→Apple wheel, CPU→cpu wheel. CUDA is detected automatically when nvidia-smi is available. (Select the device for running a model in that model's wizard.)"
+    },
+    {
+      "key": "script.63605651e451",
+      "tr": "sihirbaz",
+      "en": "wizard"
+    },
+    {
+      "key": "script.a4964849d915",
+      "tr": "✓ resmî ortam kullanılıyor",
+      "en": "✓ using official environment"
+    },
+    {
+      "key": "script.c6ee85e7ce6a",
+      "tr": "✓ kurulu",
+      "en": "✓ installed"
+    },
+    {
+      "key": "script.2a8bd24ca869",
+      "tr": "○ kurulu değil",
+      "en": "○ not installed"
+    },
+    {
+      "key": "script.b62b9c32e78f",
+      "tr": "Yine de kur",
+      "en": "Install anyway"
+    },
+    {
+      "key": "script.f468243797ff",
+      "tr": "Resmî ortam yerine ayrı bir atölye ortamı kur",
+      "en": "Install a separate workshop environment instead of the official environment"
+    },
+    {
+      "key": "script.525b1ef16eb5",
+      "tr": "Onar / güncelle",
+      "en": "Repair / update"
+    },
+    {
+      "key": "script.80421ba7de79",
+      "tr": "Kur ▶",
+      "en": "Install ▶"
+    },
+    {
+      "key": "script.f2e58a613b8e",
+      "tr": "Sihirbaza dön ▶",
+      "en": "Return to wizard ▶"
+    },
+    {
+      "key": "script.df35cd306255",
+      "tr": "Sihirbaz",
+      "en": "Wizard"
+    },
+    {
+      "key": "script.d6f707e9e2c8",
+      "tr": " penceresine döner; kurulu ortam otomatik bulunur",
+      "en": " — return to this window; the installed environment is detected automatically"
+    },
+    {
+      "key": "script.77ec5412872e",
+      "tr": "uv Python + paketleri indiriyor (torch ortamları birkaç dakika sürer). İlk kurulum büyük olabilir.",
+      "en": "uv is downloading Python and packages (torch environments take several minutes). The first installation may be large."
+    },
+    {
+      "key": "script.0c8363f7e03c",
+      "tr": "◀ Ortam listesi",
+      "en": "◀ Environment list"
+    },
+    {
+      "key": "script.fc8852a80983",
+      "tr": " penceresine döner; kurulan ortam otomatik bulunur",
+      "en": " — return to this window; the newly installed environment is detected automatically"
+    },
+    {
+      "key": "script.295a63405c69",
+      "tr": "Sihirbaza dön",
+      "en": "Return to wizard"
+    },
+    {
+      "key": "script.9ad61540b4dc",
+      "tr": " penceresine döner",
+      "en": " — return to this window"
+    },
+    {
+      "key": "script.b8679b53726e",
+      "tr": "Yalnızca Python bağımlılıkları kurar; model ağırlıklarını/lisanslarını sağlamaz. Araştırma/eğitim amaçlıdır.",
+      "en": "Installs Python dependencies only; does not provide model weights or licences. For research and education."
+    },
+    {
+      "key": "script.b8fa2004f496",
+      "tr": "Yönetici açılamadı",
+      "en": "Could not open manager"
     }
-  ]
+  ],
+  "source_contracts": {
+    "arayuz-turu.groovy": {
+      "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
+      "sha256": "9cc5ebb3aeace74e0914c17bee156121e43f7d6371f02501a11dc4c3a3ae6f0f"
+    },
+    "sihirbaz.groovy": {
+      "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
+      "sha256": "3e03bf399f76c86db9bea2ee8cf8e2de23171818183e1dba8cb43ff50c968659"
+    },
+    "tumor-ici-ki67.groovy": {
+      "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
+      "sha256": "e23f28dba6870ad369320e7e3fd1d50ccabfe2c6ddfb5fe0bd00f0a54d9bfaad"
+    },
+    "tumor-stroma.groovy": {
+      "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
+      "sha256": "5f6a6e76a122e0752f795d48de454640fe5d6b2ba13e200b7001d52bb74c6907"
+    },
+    "veri-aktarma.groovy": {
+      "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
+      "sha256": "3a3cc3a6ad10b1f762806f1bed48f36d68a3c30462fb929f3857fb7c75d6621f"
+    },
+    "quantum-ctcf.groovy": {
+      "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
+      "sha256": "f5859abcdf08b45d872b7913217dfee5aa854952c24d8553bef40ec714beada8"
+    },
+    "membran-boya.groovy": {
+      "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
+      "sha256": "fa23765c702a7e2f73058b698978f733b6056f9a7abef90c28d463354ea0f116"
+    },
+    "sitoplazmik-boya.groovy": {
+      "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
+      "sha256": "ece4b7a4861d9b1a990d6282a27a67c5980848c053f489c2fc0c87b5ae6cfa39"
+    },
+    "yardimci-kalibrasyon.groovy": {
+      "revision": "6c648c9c95b7d3cefe35588d2420554dcf87ddc3",
+      "sha256": "5cf681acb55f6690ab28377e17d595c68c6add6cb215a0ed031d6accac1d3dce"
+    },
+    "yardimci-boya-vektor-sihirbaz.groovy": {
+      "revision": "6c648c9c95b7d3cefe35588d2420554dcf87ddc3",
+      "sha256": "6cedac3e6297373bce25005fe691bd9897afadb0908ddb8272a4e7dfcffd1c81"
+    },
+    "yardimci-metadata-sihirbaz.groovy": {
+      "revision": "6c648c9c95b7d3cefe35588d2420554dcf87ddc3",
+      "sha256": "d8d465de7d0105aed88a04d448f35e68901f054bdea6e34221dc434ffb129d63"
+    },
+    "yardimci-python-ortam-yoneticisi.groovy": {
+      "revision": "6c648c9c95b7d3cefe35588d2420554dcf87ddc3",
+      "sha256": "c1654ab1b7798c0558dd827978b58b514516910ebafe654a774834c78cb6038e"
+    }
+  }
 }

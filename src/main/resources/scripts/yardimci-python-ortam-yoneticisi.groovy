@@ -447,7 +447,7 @@ def startInstall = { spec ->
         def msg = spec.label + ' ortamı torch + CUDA içerir → yaklaşık 3–5 GB indirilir ve kurulur.\n\n' +
             String.format(java.util.Locale.US, 'Hedef    : %s%nBoş alan : %.1f GB%s%n%nDevam edilsin mi?',
                 rtDir.getAbsolutePath(), freeGB, (freeGB > 0 && freeGB < 6.0d ? '  ⚠ düşük (≥6 GB önerilir)' : ''))
-        if (!Dialogs.showConfirmDialog('Disk alanı — ' + spec.id, msg)) return
+        if (!Dialogs.showConfirmDialog(workshopText('script.4b9fa7c7f11c', 'Disk alanı — ') + spec.id, msg)) return
     }
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
@@ -516,7 +516,7 @@ render = { ->
     def addLiveLog = { -> def la = logAreaRef.get(); if (la != null) { javafx.scene.layout.VBox.setVgrow(la, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(la) } }
 
     if (cur == 'LIST') {
-        title.setText('Atölye Python ortam yöneticisi')
+        title.setText(workshopText('script.60371b636d3f', 'Atölye Python ortam yöneticisi'))
         def uvFound = findUv()
         def uvLbl = new javafx.scene.control.Label('uv: ' + (uvFound ?: '(yok — ilk kurulumda otomatik indirilecek)'))
         uvLbl.setStyle('-fx-opacity: 0.8;'); center.getChildren().add(uvLbl)
@@ -528,9 +528,9 @@ render = { ->
         long drFree = 0L; try { drFree = dataRoot.exists() ? dataRoot.getUsableSpace() : (dataRoot.getParentFile()?.getUsableSpace() ?: 0L) } catch (Throwable ignore) {}
         double drFreeGB = drFree / (1024.0d * 1024.0d * 1024.0d)
         def rootLbl = new javafx.scene.control.Label(String.format(java.util.Locale.US,
-            'Veri kökü: %s%s   (boş alan: %.1f GB)', dataRoot.getAbsolutePath(), (isCustom ? '' : '  [varsayılan]'), drFreeGB))
+            workshopText('script.5559b201977a', 'Veri kökü: %s%s   (boş alan: %.1f GB)'), dataRoot.getAbsolutePath(), (isCustom ? '' : '  [varsayılan]'), drFreeGB))
         rootLbl.setStyle('-fx-opacity: 0.85; -fx-font-weight: bold;'); rootLbl.setWrapText(true)
-        def chooseRoot = navButton('Değiştir…', {
+        def chooseRoot = navButton(workshopText('script.18b5fd32f00e', 'Değiştir…'), {
             def start = dataRoot.exists() ? dataRoot : dataRoot.getParentFile()
             def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Atölye veri klasörü — içine bir ".atolye" klasörü oluşturulur', start)
             if (x != null) {
@@ -547,27 +547,27 @@ render = { ->
                     t.text = 'ok'; writable = t.isFile(); try { t.delete() } catch (Throwable ig2) {}
                 } catch (Throwable pe) { writable = false }
                 if (!writable) {
-                    Dialogs.showErrorMessage('Veri kökü', 'Seçilen klasöre yazılamıyor:\n' + target.getAbsolutePath() +
-                        '\n\nYazma izni olan bir klasör seçin (salt-okunur ağ paylaşımı / korumalı sürücü olmasın).')
+                    Dialogs.showErrorMessage(workshopText('script.40d2b21bb73f', 'Veri kökü'), workshopText('script.a0681813792e', 'Seçilen klasöre yazılamıyor:\n') + target.getAbsolutePath() +
+                        workshopText('script.a770f27be3ab', '\n\nYazma izni olan bir klasör seçin (salt-okunur ağ paylaşımı / korumalı sürücü olmasın).'))
                     return
                 }
                 commonPrefs.put(PREF_DATA_ROOT, target.getAbsolutePath()); try { commonPrefs.flush() } catch (Throwable ig) {}
                 render()
             }
-        }, 'Yeni kurulumların yazılacağı klasörü seç — içine ".atolye" oluşturulur (ör. D:\\ → D:\\.atolye)')
-        def resetRoot = navButton('↺ Varsayılan', {
+        }, workshopText('script.7d15e596a957', 'Yeni kurulumların yazılacağı klasörü seç — içine ".atolye" oluşturulur (ör. D:\\ → D:\\.atolye)'))
+        def resetRoot = navButton(workshopText('script.7ba9c1127860', '↺ Varsayılan'), {
             commonPrefs.remove(PREF_DATA_ROOT); try { commonPrefs.flush() } catch (Throwable ig) {}
             render()
-        }, 'Veri kökünü ~/.atolye yap')
+        }, workshopText('script.f93627b70ee6', 'Veri kökünü ~/.atolye yap'))
         rootLbl.setMaxWidth(Double.MAX_VALUE); javafx.scene.layout.HBox.setHgrow(rootLbl, javafx.scene.layout.Priority.ALWAYS)
         def rootRow = new javafx.scene.layout.HBox(8, rootLbl, chooseRoot); rootRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
         if (isCustom) rootRow.getChildren().add(resetRoot)
         center.getChildren().add(rootRow)
         def rootHint = new javafx.scene.control.Label(
-            'Tüm atölye Python ortamları, uv/pip önbelleği ve indirilen model ağırlıkları bu köke yazılır (Kaiko/SPIDER/GrandQC/TIA/Sectra ortak). ' +
+            workshopText('script.9310c554582d', 'Tüm atölye Python ortamları, uv/pip önbelleği ve indirilen model ağırlıkları bu köke yazılır (Kaiko/SPIDER/GrandQC/TIA/Sectra ortak). ' +
             'Seçtiğiniz klasörün İÇİNE bir ".atolye" klasörü oluşturulur (ör. D:\\ seçerseniz kök D:\\.atolye olur). ' +
             'Değiştirmek YALNIZ yeni kurulumları etkiler — mevcut ortamlar eski yerinde kalır (taşınmaz); gerekirse ilgili ortamı yeniden kurun. ' +
-            '(cellpose/resmî TIAToolbox kendi klasörlerini kullanır; bunları bu ayar taşımaz.)')
+            '(cellpose/resmî TIAToolbox kendi klasörlerini kullanır; bunları bu ayar taşımaz.)'))
         wrapBind(rootHint); rootHint.setStyle('-fx-opacity: 0.7; -fx-font-size: 11px;')
         center.getChildren().add(rootHint)
 
@@ -583,12 +583,12 @@ render = { ->
         int curIdx = devOpts.findIndexOf { it[0] == (selectedDeviceRef.get() ?: 'auto') }; if (curIdx < 0) curIdx = 0
         devBox.getSelectionModel().select(curIdx)
         devBox.setOnAction({ int i = devBox.getSelectionModel().getSelectedIndex(); if (i >= 0) selectedDeviceRef.set(devOpts[i][0]) })
-        def devRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Cihaz (torch):'), devBox)
+        def devRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label(workshopText('script.9184719c5f61', 'Cihaz (torch):')), devBox)
         devRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
         center.getChildren().add(devRow)
         def devHint = new javafx.scene.control.Label(
-            'torch içeren ortamlar bu cihaza göre kurulur: CUDA→GPU wheel, MPS→Apple wheel, CPU→cpu wheel. ' +
-            'nvidia-smi bulunursa CUDA otomatik algılanır. (Modeli çalıştırma cihazı ilgili sihirbazda seçilir.)')
+            workshopText('script.83d2e0caaddf', 'torch içeren ortamlar bu cihaza göre kurulur: CUDA→GPU wheel, MPS→Apple wheel, CPU→cpu wheel. ' +
+            'nvidia-smi bulunursa CUDA otomatik algılanır. (Modeli çalıştırma cihazı ilgili sihirbazda seçilir.)'))
         wrapBind(devHint); devHint.setStyle('-fx-opacity: 0.7; -fx-font-size: 11px;')
         center.getChildren().add(devHint)
 
@@ -600,22 +600,22 @@ render = { ->
             def head = new javafx.scene.layout.HBox(8); head.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
             def name = new javafx.scene.control.Label(spec.label); name.setStyle('-fx-font-weight: bold;')
             // Çağıran sihirbazın ihtiyaç duyduğu ortam(lar)ı vurgula (sihirbazdan açıldıysa).
-            if (returnWantedIds.contains(spec.id)) { name.setText(spec.label + '   ← ' + (returnHook.wizard ?: 'sihirbaz')); row.setStyle(row.getStyle() + ' -fx-background-color: rgba(46,139,87,0.12);') }
+            if (returnWantedIds.contains(spec.id)) { name.setText(spec.label + '   ← ' + (returnHook.wizard ?: workshopText('script.63605651e451', 'sihirbaz'))); row.setStyle(row.getStyle() + ' -fx-background-color: rgba(46,139,87,0.12);') }
             def chip = new javafx.scene.control.Label(
-                st.state == 'official'  ? '✓ resmî ortam kullanılıyor' :
-                st.state == 'installed' ? '✓ kurulu' : '○ kurulu değil')
+                st.state == 'official'  ? workshopText('script.a4964849d915', '✓ resmî ortam kullanılıyor') :
+                st.state == 'installed' ? workshopText('script.c6ee85e7ce6a', '✓ kurulu') : workshopText('script.2a8bd24ca869', '○ kurulu değil'))
             chip.setStyle(st.state == 'missing' ? '-fx-text-fill: #b8860b;' : '-fx-text-fill: #2e8b57;')
             def spacer = new javafx.scene.layout.Region(); javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
             head.getChildren().addAll(name, spacer, chip)
             def note = new javafx.scene.control.Label(spec.note ?: ''); note.setWrapText(true); note.setMaxWidth(Double.MAX_VALUE); note.setStyle('-fx-opacity: 0.75; -fx-font-size: 11px;')
             def btnRow = new javafx.scene.layout.HBox(6); btnRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
             if (st.state == 'official') {
-                btnRow.getChildren().add(navButton('Yine de kur', { startInstall(spec) }, 'Resmî ortam yerine ayrı bir atölye ortamı kur'))
+                btnRow.getChildren().add(navButton(workshopText('script.b62b9c32e78f', 'Yine de kur'), { startInstall(spec) }, workshopText('script.f468243797ff', 'Resmî ortam yerine ayrı bir atölye ortamı kur')))
             } else if (st.state == 'installed') {
-                btnRow.getChildren().add(navButton('Onar / güncelle', { startInstall(spec) }))
-                btnRow.getChildren().add(navButton('Klasörü aç', { openFolder(venvDirOf(spec.id).getParentFile()) }))
+                btnRow.getChildren().add(navButton(workshopText('script.525b1ef16eb5', 'Onar / güncelle'), { startInstall(spec) }))
+                btnRow.getChildren().add(navButton(workshopText('script.d6f2f6cad078', 'Klasörü aç'), { openFolder(venvDirOf(spec.id).getParentFile()) }))
             } else {
-                btnRow.getChildren().add(navButton('Kur ▶', { startInstall(spec) }))
+                btnRow.getChildren().add(navButton(workshopText('script.80421ba7de79', 'Kur ▶'), { startInstall(spec) }))
             }
             row.getChildren().addAll(head, note, btnRow)
             listBox.getChildren().add(row)
@@ -623,33 +623,33 @@ render = { ->
         def scroll = new javafx.scene.control.ScrollPane(listBox); scroll.setFitToWidth(true)
         javafx.scene.layout.VBox.setVgrow(scroll, javafx.scene.layout.Priority.ALWAYS)
         center.getChildren().add(scroll)
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('⟳ Yenile', { render() }))
-        if (returnHook != null) actions.add(navButton('Sihirbaza dön ▶', { returnToWizard() }, (returnHook.wizard ?: 'Sihirbaz') + ' penceresine döner; kurulu ortam otomatik bulunur'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
+        if (returnHook != null) actions.add(navButton(workshopText('script.f2e58a613b8e', 'Sihirbaza dön ▶'), { returnToWizard() }, (returnHook.wizard ?: workshopText('script.df35cd306255', 'Sihirbaz')) + workshopText('script.d6f707e9e2c8', ' penceresine döner; kurulu ortam otomatik bulunur')))
     } else if (cur == 'RUNNING') {
         title.setText(runPhaseRef.get())
-        def g = new javafx.scene.control.Label('uv Python + paketleri indiriyor (torch ortamları birkaç dakika sürer). İlk kurulum büyük olabilir.'); wrapBind(g)
+        def g = new javafx.scene.control.Label(workshopText('script.77ec5412872e', 'uv Python + paketleri indiriyor (torch ortamları birkaç dakika sürer). İlk kurulum büyük olabilir.')); wrapBind(g)
         center.getChildren().add(g); center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'RESULT') {
-        title.setText('Tamamlandı ✅'); addMonoArea(resultTextRef.get())
-        actions.add(navButton('◀ Ortam listesi', { step.set('LIST'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-        if (returnHook != null) actions.add(navButton('Sihirbaza dön ▶', { returnToWizard() }, (returnHook.wizard ?: 'Sihirbaz') + ' penceresine döner; kurulan ortam otomatik bulunur'))
+        title.setText(workshopText('script.92c17020894f', 'Tamamlandı ✅')); addMonoArea(resultTextRef.get())
+        actions.add(navButton(workshopText('script.0c8363f7e03c', '◀ Ortam listesi'), { step.set('LIST'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
+        if (returnHook != null) actions.add(navButton(workshopText('script.f2e58a613b8e', 'Sihirbaza dön ▶'), { returnToWizard() }, (returnHook.wizard ?: workshopText('script.df35cd306255', 'Sihirbaz')) + workshopText('script.fc8852a80983', ' penceresine döner; kurulan ortam otomatik bulunur')))
     } else { // ERROR
-        title.setText('Hata'); addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Ortam listesi', { step.set('LIST'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
-        if (returnHook != null) actions.add(navButton('Sihirbaza dön', { returnToWizard() }, (returnHook.wizard ?: 'Sihirbaz') + ' penceresine döner'))
+        title.setText(workshopText('script.307b9dc7912d', 'Hata')); addMonoArea(errorTextRef.get())
+        actions.add(navButton(workshopText('script.0c8363f7e03c', '◀ Ortam listesi'), { step.set('LIST'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        if (returnHook != null) actions.add(navButton(workshopText('script.295a63405c69', 'Sihirbaza dön'), { returnToWizard() }, (returnHook.wizard ?: workshopText('script.df35cd306255', 'Sihirbaz')) + workshopText('script.9ad61540b4dc', ' penceresine döner')))
     }
 
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut'); topChk.setSelected(alwaysTop.get())
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut')); topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n -> alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
     def spacer2 = new javafx.scene.layout.Region(); javafx.scene.layout.HBox.setHgrow(spacer2, javafx.scene.layout.Priority.ALWAYS)
     def bar = new javafx.scene.layout.HBox(8); bar.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
     bar.getChildren().add(topChk); bar.getChildren().add(spacer2); bar.getChildren().addAll(actions)
-    def disclaimer = new javafx.scene.control.Label('Yalnızca Python bağımlılıkları kurar; model ağırlıklarını/lisanslarını sağlamaz. Araştırma/eğitim amaçlıdır.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.b8679b53726e', 'Yalnızca Python bağımlılıkları kurar; model ağırlıklarını/lisanslarını sağlamaz. Araştırma/eğitim amaçlıdır.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
     def bottom = new javafx.scene.layout.VBox(8, disclaimer, bar); bottom.setPadding(new javafx.geometry.Insets(10))
@@ -665,13 +665,24 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Atölye Python ortam yöneticisi')
+        stage.setTitle(workshopText('script.60371b636d3f', 'Atölye Python ortam yöneticisi'))
         stage.setAlwaysOnTop(alwaysTop.get())
         // Sihirbazdan açıldıysa: pencere nasıl kapanırsa kapansın sihirbaza haber ver (öne gelip yenilensin).
         stage.setOnHidden({ e -> notifyWizard(false) } as javafx.event.EventHandler)
         render(); stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Yönetici açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage(workshopText('script.b8fa2004f496', 'Yönetici açılamadı'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
     }
 }
 println "✓ Atölye Python ortam yöneticisi açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

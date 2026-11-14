@@ -385,9 +385,9 @@ def applyMenuHighlight = { String menuName ->
     }
 }
 def menuHighlightToggle = { String menuName ->
-    def tb = new javafx.scene.control.ToggleButton(menuName + ' menüsünü göster')
+    def tb = new javafx.scene.control.ToggleButton(menuName + workshopText('script.ef07407189c3', ' menüsünü göster'))
     tb.setTooltip(new javafx.scene.control.Tooltip(
-        'Üst menü çubuğunda "' + menuName + '" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).'))
+        workshopText('script.242839f75398', 'Üst menü çubuğunda "') + menuName + workshopText('script.f4d336f42a58', '" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).')))
     tb.setOnAction({ if (tb.isSelected()) applyMenuHighlight(menuName) else clearMenuHighlight() })
     return tb
 }
@@ -421,12 +421,12 @@ render = { ->
     if (cur == 'REPORT') {
         def r = buildReport()
         if (r.state == 'NO_IMAGE') {
-            title.setText('Görüntü açık değil')
+            title.setText(workshopText('script.b4c901dc184b', 'Görüntü açık değil'))
             addGuidance('Önce bir lam açın, sonra "⟳ Yenile".')
-            actions.add(navButton('⟳ Yenile', { render() }))
-            actions.add(navButton('Kapat', { stage.close() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
         } else if (r.state == 'NO_STAINS') {
-            title.setText('Boya vektörü tanımlı değil')
+            title.setText(workshopText('script.cfec911aa7bc', 'Boya vektörü tanımlı değil'))
             addGuidance(
                 'Bu görüntüde renk-dekonvolüsyon (boya) vektörleri yok.\n\n' +
                 'Olası neden: görüntü tipi brightfield değil (örn. floresan/diğer).\n\n' +
@@ -436,30 +436,30 @@ render = { ->
                 '  • QuPath\'in kendi komutu: Analyze → Preprocessing → Estimate stain vectors\n' +
                 '  • Ayrıntı: ' + DOCS_URL + '\n\n' +
                 'Sonra "⟳ Yenile".')
-            actions.add(navButton('⟳ Yenile', { render() }))
-            actions.add(navButton('Kapat', { stage.close() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
         } else {
-            title.setText('Boya vektörleri — kontrol')
+            title.setText(workshopText('script.4e7d6ba06e33', 'Boya vektörleri — kontrol'))
             addReportArea(r.text)
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Kopyala', { copyToClipboard(r.text) }))
-            actions.add(navButton('Seçili bölgeden tahmin et ▶', { startEstimate() },
-                'Küçük, temsilî bir seçili bölgeden (iki boya + biraz arka plan) vektörleri yeniden tahmin eder'))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(r.text) }))
+            actions.add(navButton(workshopText('script.b47e753eeb62', 'Seçili bölgeden tahmin et ▶'), { startEstimate() },
+                workshopText('script.51030dcd8066', 'Küçük, temsilî bir seçili bölgeden (iki boya + biraz arka plan) vektörleri yeniden tahmin eder')))
         }
     } else if (cur == 'ESTIMATING') {
-        title.setText('Tahmin hesaplanıyor…')
+        title.setText(workshopText('script.7c3f74b33362', 'Tahmin hesaplanıyor…'))
         addGuidance('Seçili bölgenin pikselleri üzerinden boya vektörleri tahmin ediliyor. Lütfen bekleyin…')
         center.getChildren().add(busyBar())
     } else if (cur == 'PREVIEW') {
         def est = estRef.get()
-        title.setText('Boya vektörleri — tahmin (eski → yeni)')
+        title.setText(workshopText('script.9ac77a5f8e04', 'Boya vektörleri — tahmin (eski → yeni)'))
         addReportArea(est?.text)
         addGuidance('Yeni vektörleri inceleyin. Uygunsa [Uygula] (geri alınabilir); ' +
             'değilse [◀ Rapora dön] — görüntü değişmez.')
-        actions.add(navButton('◀ Rapora dön', { step.set('REPORT'); render() }))
-        actions.add(navButton('↻ Yeniden tahmin', { startEstimate() }, 'Seçimi yeniden okuyup tekrar tahmin eder'))
-        actions.add(navButton('Kopyala', { copyToClipboard(est?.text) }))
-        actions.add(navButton('Uygula ▶', { applyVectors() }, 'Yeni boya vektörlerini görüntüye uygular (geri alınabilir)'))
+        actions.add(navButton(workshopText('script.6df60940343f', '◀ Rapora dön'), { step.set('REPORT'); render() }))
+        actions.add(navButton(workshopText('script.7ee3af0bcff6', '↻ Yeniden tahmin'), { startEstimate() }, workshopText('script.dddebc9070cc', 'Seçimi yeniden okuyup tekrar tahmin eder')))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(est?.text) }))
+        actions.add(navButton(workshopText('script.e952a28ff5bc', 'Uygula ▶'), { applyVectors() }, workshopText('script.87d67a339e3f', 'Yeni boya vektörlerini görüntüye uygular (geri alınabilir)')))
     } else if (cur == 'APPLIED') {
         def ap = appliedRef.get()
         def sb = new StringBuilder()
@@ -471,13 +471,13 @@ render = { ->
         }
         sb << "\nGörüntü bu vektörlerle yeniden çizildi. Beğenmediyseniz [↩ Geri al].\n"
         sb << "İnce ayar için: Image sekmesinde ilgili boyaya çift tıklayın."
-        title.setText('Uygulandı ✅')
+        title.setText(workshopText('script.f7761d03f551', 'Uygulandı ✅'))
         addReportArea(sb.toString())
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(sb.toString()) }))
-        actions.add(navButton('↩ Geri al', { revertVectors() }, 'Önceki boya vektörlerini geri yükler'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(sb.toString()) }))
+        actions.add(navButton(workshopText('script.9b187b921fbf', '↩ Geri al'), { revertVectors() }, workshopText('script.7bd85c73eb59', 'Önceki boya vektörlerini geri yükler')))
     } else if (cur == 'NO_REGION') {
-        title.setText('Önce bir bölge seçin')
+        title.setText(workshopText('script.20ce3b7f68dd', 'Önce bir bölge seçin'))
         addGuidance(
             'Tahmin için temsilî bir BÖLGE seçili olmalı.\n\n' +
             'Yapın:\n' +
@@ -487,23 +487,23 @@ render = { ->
             '  3. Aşağıdan "↻ Tekrar dene"\n\n' +
             'QuPath tahmini bu bölgenin pikselleri üzerinden yapar.\n' +
             '(Resmî komut: Analyze → Preprocessing → Estimate stain vectors · ' + DOCS_URL + ')')
-        actions.add(navButton('◀ Rapora dön', { step.set('REPORT'); render() }))
-        actions.add(navButton('↻ Tekrar dene', { startEstimate() }))
+        actions.add(navButton(workshopText('script.6df60940343f', '◀ Rapora dön'), { step.set('REPORT'); render() }))
+        actions.add(navButton(workshopText('script.11e805a92450', '↻ Tekrar dene'), { startEstimate() }))
     } else { // ERROR
         def est = estRef.get()
-        title.setText('Tahmin yapılamadı')
+        title.setText(workshopText('script.c009d4670c6a', 'Tahmin yapılamadı'))
         addGuidance(
             (est?.error ?: 'Bilinmeyen hata.').toString() + '\n\n' +
             'Olası neden: seçili bölge iki boyayı + biraz arka planı birlikte içermiyor\n' +
             'olabilir (QuPath renk denetimini geçemedi). Daha temsilî, küçük bir alan seçip\n' +
             'tekrar deneyin.\n\n' +
             '(Resmî komut: Analyze → Preprocessing → Estimate stain vectors · ' + DOCS_URL + ')')
-        actions.add(navButton('◀ Rapora dön', { step.set('REPORT'); render() }))
-        actions.add(navButton('↻ Tekrar dene', { startEstimate() }))
+        actions.add(navButton(workshopText('script.6df60940343f', '◀ Rapora dön'), { step.set('REPORT'); render() }))
+        actions.add(navButton(workshopText('script.11e805a92450', '↻ Tekrar dene'), { startEstimate() }))
     }
 
     // Alt çubuk: "Üstte tut" (sol) + eylem düğmeleri (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
@@ -517,7 +517,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -534,13 +534,24 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Boya vektörleri sihirbazı')
+        stage.setTitle(workshopText('script.7c0944a9c8e6', 'Boya vektörleri sihirbazı'))
         stage.setAlwaysOnTop(alwaysTop.get())
         stage.setOnHidden({ clearMenuHighlight() })   // #3: pencere kapanınca menü vurgusunu kaldır
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println "✓ Boya vektörleri sihirbazı açıldı (kontrol + tahmin tek pencerede)."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

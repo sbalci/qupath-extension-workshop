@@ -734,7 +734,7 @@ render = { ->
     if (cur == 'READY') {
         def imageData = QP.getCurrentImageData()
         def project = QP.getProject()
-        title.setText('Kohort üst veri sihirbazı')
+        title.setText(workshopText('script.f96ffe3410c3', 'Kohort üst veri sihirbazı'))
         if (imageData != null) {
             def rep
             try { rep = reportText(extractMetadata(imageData, QP.getProjectEntry(), project)) }
@@ -745,45 +745,45 @@ render = { ->
             reportRef.set('')
             addGuidance('Tek lam raporu için bir lam açın. Tüm projeyi taramak için bir proje açıp aşağıdaki düğmeyi kullanın.')
         }
-        def chk = new javafx.scene.control.CheckBox('Proje sütunlarına da yaz (sıralanabilir)')
+        def chk = new javafx.scene.control.CheckBox(workshopText('script.4a70604a5fba', 'Proje sütunlarına da yaz (sıralanabilir)'))
         chk.setSelected(writeColsRef.get())
         chk.selectedProperty().addListener({ obs, o, n -> writeColsRef.set(n) } as javafx.beans.value.ChangeListener)
-        chk.setTooltip(new javafx.scene.control.Tooltip('İşaretliyse çekirdek alanlar (mpp, büyütme, tarayıcı, boyut, piramit, alan) QuPath Proje sekmesine sütun olarak yazılır.'))
+        chk.setTooltip(new javafx.scene.control.Tooltip(workshopText('script.0eae8e676a20', 'İşaretliyse çekirdek alanlar (mpp, büyütme, tarayıcı, boyut, piramit, alan) QuPath Proje sekmesine sütun olarak yazılır.')))
         center.getChildren().add(chk)
 
-        actions.add(navButton('Kapat', { stage.close() }))
-        if (imageData != null) actions.add(navButton('Kopyala', { copyToClipboard(reportRef.get()) }, 'Bu lam raporunu panoya kopyala'))
-        actions.add(navButton('⟳ Yenile', { render() }))
-        def scanBtn = navButton('Tüm projeyi tara → CSV ▶', { startScan() }, 'Projedeki her görüntünün üst verisini CSV\'ye yazar')
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        if (imageData != null) actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(reportRef.get()) }, workshopText('script.1df93d0a3b69', 'Bu lam raporunu panoya kopyala')))
+        actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
+        def scanBtn = navButton(workshopText('script.450eaada98e2', 'Tüm projeyi tara → CSV ▶'), { startScan() }, workshopText('script.534918cc247c', 'Projedeki her görüntünün üst verisini CSV\'ye yazar'))
         scanBtn.setDisable(project == null)
         actions.add(scanBtn)
     } else if (cur == 'SCANNING') {
-        title.setText('Proje taranıyor…')
+        title.setText(workshopText('script.ca10a4616efe', 'Proje taranıyor…'))
         addGuidance('Her görüntü diskten okunuyor; büyük kohortlarda zaman alabilir. Çıktı aşağıda akıyor.')
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true) }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true) }))
     } else if (cur == 'RESULT') {
-        title.setText('Tamamlandı ✅')
+        title.setText(workshopText('script.92c17020894f', 'Tamamlandı ✅'))
         addMonoArea(resultTextRef.get())
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
         def dir = outDirRef.get()
-        def openBtn = navButton('Klasörü aç', {
+        def openBtn = navButton(workshopText('script.d6f2f6cad078', 'Klasörü aç'), {
             try { if (java.awt.Desktop.isDesktopSupported() && dir != null && dir.isDirectory()) java.awt.Desktop.getDesktop().open(dir) }
-            catch (Throwable t) { Dialogs.showErrorMessage('Klasör açılamadı', t.getMessage() ?: '') }
+            catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.4b2ba1214a96', 'Klasör açılamadı'), t.getMessage() ?: '') }
         })
         openBtn.setDisable(dir == null)
         actions.add(openBtn)
-        actions.add(navButton('↻ Yeniden', { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.171029fff08d', '↻ Yeniden'), { step.set('READY'); render() }))
     } else { // ERROR
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
     // Alt çubuk: "Üstte tut" (sol) + disclaimer + eylem düğmeleri (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
@@ -796,7 +796,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -814,12 +814,23 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Kohort üst veri sihirbazı')
+        stage.setTitle(workshopText('script.f96ffe3410c3', 'Kohort üst veri sihirbazı'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
     }
 }
 println '✓ Kohort üst veri sihirbazı açıldı.'
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}
