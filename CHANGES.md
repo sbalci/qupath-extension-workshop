@@ -3,15 +3,17 @@
 Dal: `feat/course-audit-followup-20261114`. Yerel inceleme; push, tag, sürüm veya paket yayımlama yapılmadı. Sürüm numarası bu yüzden artırılmadı.
 
 - README kurulum ve ilk örnek yolu iki dilde tamamlandı. 512×512, 100 nesneli CC0 sentetik PNG, oluşturucu, SHA manifesti ve ilk çalıştırma belgesi eklendi.
-- Hücre tespiti penceresi 25 ortak TR/EN anahtarını kullanır; son hata ortak sonraki-adım rehberini gösterir. Sekiz ek ana betikte 143 başlık/düğme/yardım/ilk hata iletisi tek katalogdan üretilir. Bağımsız Groovy çalıştırmada Türkçe fallback korunur.
+- Hücre tespiti penceresi 25 ortak TR/EN anahtarını kullanır; son hata ortak sonraki-adım rehberini gösterir. Sekiz ana betiğe ek dört yardımcının sabit metinleri de çevrildi: kalibrasyon, boya vektörü, üst veri ve Python ortam yöneticisi. Toplam 12 betikte 255 başlık/düğme/yardım/ilk hata metni tek katalogdan üretilir. Bağımsız Groovy çalıştırmada Türkçe fallback korunur.
 - Python ve requirements aynalarının LF politikası düzeltildi. Ortak 102 terimlik sözlük SHA kontrolü, onaylanan *epoch* ve VUS tanımları eklendi. Dil tercihi dokümanı gerçek düğüm/anahtarla eşlendi.
 - Tespit algoritmaları, parametre varsayılanları, CSV/GeoJSON alan adları ve public API bu dil çalışmasında değiştirilmedi.
 
-Doğrulama: Java 21/Gradle build; 63 test, sıfır hata/başarısız. Gerçek QuPath 0.6.0 ve 0.7.0 içinde paketli 103 betik parse edildi; sentetik ilk örnekte 100 kontur ve dolu ölçüm satırları doğrulandı. Her hostta 2.338 gerçek TR/EN lookup ve eklentisiz Türkçe fallback geçti; GUI açılmadı, tercih kaydedilmedi. Ana deponun script-sync ve lint kontrolleri geçti.
+- 12 betik için çeviri çağrıları çıkarıldığında önceki kaynağın SHA-256 eşliği doğrulanır. Sayısal biçim/yer tutucu ve gerçek AST anahtar–Türkçe fallback eşliği test edilir. Dil testleri artık kalıcı kullanıcı tercihini yazmadan çalışır. Ayrıntı: `docs/script-ui-localization.md` (eklenti deposu).
+
+Doğrulama: Java 21/Gradle build; 64 test, sıfır hata/başarısız. Gerçek QuPath 0.6.0 ve 0.7.0 içinde paketli 103 betik parse edildi; sentetik ilk örnekte 100 kontur ve dolu ölçüm satırları doğrulandı. Her hostta 6.170 gerçek TR/EN lookup ve eklentisiz Türkçe fallback geçti; GUI açılmadı, tercih kaydedilmedi. Ana deponun script-sync ve lint kontrolleri geçti.
 
 Terim kararı: Beş kalan ilk kullanım grubu da 14 Kasım 2026'da kaynak kontrolü koşuluyla onaylandı ve uygulandı. Terminal/Komut İstemi/konsol, klasör/çalışma klasörü, sanal ortam, tensör ve örnek–hasta ayrımı ortak sözlüğe taşındı; bekleyen terim yoktur. Kaynaklar ve uygulama kaydı workshop deposunun `docs/terminology-decisions-2026-11-14.md` dosyasındadır. Önceki klinik onay kapsamı genişletilmedi.
 
-Doğrulanamayanlar: Windows GUI denetim bağlantısı yok (`os error 2`); kurulum/GUI iptal/üzerine-yazma/dil değiştirme elle görülmedi. Bazı yardımcı pencereler ve dinamik sonuçlar hâlâ Türkçe. Harici model/ortam indirmeleri ve tüm köprülerin gerçek model çalışması test edilmedi. Yerel ağaçtaki eş zamanlı diğer düzenlemeler korunup commit dışında bırakıldı; build sonucu o andaki ağaca aittir.
+Doğrulanamayanlar: Windows GUI denetim bağlantısı yok (`os error 2`); kurulum/GUI iptal/üzerine-yazma/dil değiştirme elle görülmedi. Bazı yardımcı pencereler ve dinamik sonuçlar hâlâ Türkçe. Harici model/ortam indirmeleri ve tüm köprülerin gerçek model çalışması test edilmedi. Yerel ağaçtaki eş zamanlı diğer düzenlemeler korunup commit dışında bırakıldı; kod doğrulaması ayrı çalışma kopyasındaki commit kaynağına aittir.
 
 ---
 
