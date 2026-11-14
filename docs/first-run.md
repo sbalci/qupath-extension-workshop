@@ -2,7 +2,7 @@
 
 ## Türkçe — 5–10 dakika
 
-**Hedef:** sentetik görüntüde kapalı bir alan seçip hücre tespitinin konturlarını ve sayısını görün. Patologlar için bu, bir ölçümün hangi alanı kapsadığını denetleme alıştırmasıdır. Bilgisayar bilimciler için görüntü → alan anotasyonu → nesne → ölçüm zinciridir. Ön koşul: QuPath 0.6.0+ ve atölye eklentisi. Terminal veya Python gerekmez.
+**Hedef:** sentetik görüntüde kapalı bir alan seçip hücre tespitinin konturlarını ve sayısını görün. Patologlar için bu, bir ölçümün hangi alanı kapsadığını denetleme alıştırmasıdır. Bilgisayar bilimciler için görüntü → alan anotasyonu → nesne → ölçüm zinciridir. Ön koşul: QuPath 0.6.0+ ve atölye eklentisi. **Terminal (komut penceresi)**, komut yazıp Enter ile çalıştırdığınız penceredir; bu örnekte terminal veya Python gerekmez ([Microsoft](https://learn.microsoft.com/en-us/windows/terminal/)).
 
 1. [Sentetik örneği açın](../assets/examples/synthetic-nuclei.png). GitHub'da görüntünün sağ üstündeki **Download raw file** düğmesiyle dosyayı indirin. Dosya adının `.png` ile bittiğini kontrol edin; web sayfasını `.html` olarak kaydetmeyin.
 2. PNG dosyasını QuPath penceresine sürükleyin. Görüntü tipi sorulursa **Brightfield (H&E)** seçin. Beyaz zemin üzerinde 10 × 10 mavi daire görmelisiniz. Bunlar gerçek doku veya hasta hücresi değildir.
@@ -17,7 +17,7 @@
 
 ## English — 5–10 minutes
 
-**Goal:** select a closed region on a synthetic image and inspect detection contours and the object count. For pathologists, this exercises checking which region a measurement covers. For computer scientists, it follows image → annotation → object → measurement. Prerequisites: QuPath 0.6.0+ and the workshop extension. No terminal or Python is needed.
+**Goal:** select a closed region on a synthetic image and inspect detection contours and the object count. For pathologists, this exercises checking which region a measurement covers. For computer scientists, it follows image → annotation → object → measurement. Prerequisites: QuPath 0.6.0+ and the workshop extension. A **terminal** is the window where you enter commands; no terminal or Python is needed for this example ([Microsoft](https://learn.microsoft.com/en-us/windows/terminal/)).
 
 1. [Open the synthetic image](../assets/examples/synthetic-nuclei.png). On GitHub, click **Download raw file** at the upper right of the image. Check that the saved filename ends in `.png`; do not save the web page as `.html`.
 2. Drag the PNG into QuPath. Choose **Brightfield (H&E)** if asked for an image type. You should see 10 × 10 blue circles on white. They are synthetic drawings, with no tissue or patient data.

@@ -21,7 +21,7 @@
 ### Yöntem A — QuPath Eklenti Yöneticisi (Önerilen / Recommended)
 
 **Türkçe:**
-1. **QuPath 0.6.0+** programını açın (ayrıca Java veya terminal kurmanız **gerekmez**).
+1. **QuPath 0.6.0+** programını açın (ayrıca Java kurmanız veya **terminal (komut penceresi)** kullanmanız **gerekmez**; terminal komut yazıp Enter ile çalıştırdığınız penceredir).
 2. Üst menüden **Extensions → Manage extensions** penceresini açın.
 3. **Add catalog** (Katalog ekle) düğmesine tıklayın ve şu adresi yapıştırın:
    `https://raw.githubusercontent.com/sbalci/qupath-extension-workshop/main/catalog.json`
@@ -29,7 +29,7 @@
 5. QuPath'i kapatıp yeniden açın. Üst menüde **Extensions → Atölye** ve **Extensions → Senkron Izgara** görünür.
 
 **English:**
-1. Open **QuPath 0.6.0+** (no separate Java or terminal installation is required).
+1. Open **QuPath 0.6.0+** (no separate Java installation or **terminal**, the window where you enter commands, is required).
 2. Open **Extensions → Manage extensions**.
 3. Click **Add catalog** and paste:
    `https://raw.githubusercontent.com/sbalci/qupath-extension-workshop/main/catalog.json`
