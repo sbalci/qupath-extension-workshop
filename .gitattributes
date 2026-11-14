@@ -1,3 +1,9 @@
 # Bundled workshop scripts stay LF so they remain byte-identical with the
 # handson/scripts/ copies (checked by tools/check-script-sync.ps1 in the main repo).
 *.groovy text eol=lf
+*.py text eol=lf
+**/requirements*.txt text eol=lf
+
+# Stable glossary snapshots on every platform.
+GLOSSARY.md text eol=lf
+glossary-source.sha256 text eol=lf
