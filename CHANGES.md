@@ -1,3 +1,14 @@
+# 15 Kasım 2026 — üç model sihirbazının rehber metinleri
+
+- Classpose, CytoFormer ve GrandQC'de 312 görüntüleme çağrısı çevrildi; ortak katalog 15 betik/565 TR/EN metindir. Özel rehber/durum yardımcıları ve dosya seçici başlıkları envantere eklendi.
+- Komutlar, sınıf/model kimlikleri, kalıcı çıktılar, varsayılanlar ve onay/üzerine yazma kararları kaynak SHA eşliğiyle korundu. İngilizce yönergeler gerçek menü ve ortam girdisi adlarıyla eşlendi.
+- `0c0cd92` temiz kaynak derlemesinde 67 test geçti. QuPath 0.6.0/0.7.0 içinde her hostta 103 betik parse ve 17.000 TR/EN lookup geçti. Önceki dinamik metin testleri de bu derlemede çalıştı.
+- CytoFormer ağırlık lisansı başlığı ile “otomatik onay” paragrafı kaynak incelemesi bekliyor: güncel model kartı Penn lisansını gösteriyor, sabitlenmiş eski README okunamadı. Bu iki ifade yeni çeviriye alınmadı. Bekleyen terim kararı yoktur.
+
+Yerel inceleme dalında çalışıldı; push, sürüm veya dağıtım yapılmadı. GUI/model kurulumu ve gerçek model başarımı doğrulanmadı. Ayrıntı: [model sihirbazları doğrulaması](docs/model-wizard-ui-validation-2026-11-15.md).
+
+---
+
 # 15 Kasım 2026 — dinamik pencere metinleri
 
 Yerel inceleme dalı: `feat/course-audit-followup-20261114`; push, sürüm veya dağıtım yapılmadı.
