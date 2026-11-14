@@ -14,10 +14,26 @@ import java.util.function.ToDoubleFunction
  */
 class WorkshopI18nAndCatalogTest extends GroovyTestCase {
 
+    private java.lang.reflect.Field languageField
+    private Object originalLanguage
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp()
+        languageField = WorkshopI18n.class.getDeclaredField('activeLanguage')
+        languageField.setAccessible(true)
+        originalLanguage = languageField.get(null)
+        // Tests exercise process memory, without changing the user's saved UI language.
+        languageField.set(null, 'tr')
+    }
+
     @Override
     protected void tearDown() throws Exception {
-        WorkshopI18n.setLanguage('tr')
-        super.tearDown()
+        try {
+            languageField.set(null, originalLanguage)
+        } finally {
+            super.tearDown()
+        }
     }
 
     void testTrAndEnBundlesHaveExactKeyParity() {
@@ -76,7 +92,7 @@ class WorkshopI18nAndCatalogTest extends GroovyTestCase {
             assertTrue("Missing Computation bridge in EN tooltip for ${key}", enTip.contains('Computation:'))
         }
 
-        WorkshopI18n.setLanguage('en')
+        languageField.set(null, 'en')
         assertTrue(WorkshopErrors.guidance(new OutOfMemoryError()).toLowerCase().contains('memory'))
         assertTrue(WorkshopErrors.guidance(new FileNotFoundException('missing.svs')).toLowerCase().contains('file not found'))
         assertTrue(WorkshopErrors.guidance(null).contains('Show log'))
