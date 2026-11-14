@@ -662,7 +662,7 @@ javafx.application.Platform.runLater {
             [spM1, spM2, spM3, spPD1, spPD2, spPD3, spPH].each { commitSpinner(it) }
             def selNow = QP.getSelectedObject()
             if (selNow instanceof PathAnnotationObject) {
-                int nPrev = selNow.getChildObjects().count { it.isDetection() } as int
+                int nPrev = selNow.getChildObjects().findAll { it.isDetection() }.size()
                 if (nPrev > 0) {
                     boolean ok = Dialogs.showConfirmDialog('Önceki hücre tespitleri değiştirilecek',
                         String.format(java.util.Locale.US,

@@ -423,7 +423,7 @@ javafx.application.Platform.runLater {
             int nucCh = spNuc.getValue() as int
 
             def selNow = QP.getSelectedObjects().findAll { it.isAnnotation() }
-            int nPrev = selNow.collect { ann -> ann.getChildObjects().count { it.isDetection() } as int }.sum(0) as int
+            int nPrev = selNow.collect { ann -> ann.getChildObjects().findAll { it.isDetection() }.size() }.sum(0) as int
             if (nPrev > 0) {
                 boolean ok = Dialogs.showConfirmDialog('Önceki hücre tespitleri değiştirilecek',
                     String.format(java.util.Locale.US,

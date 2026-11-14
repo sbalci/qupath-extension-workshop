@@ -1,6 +1,6 @@
 # Arayüz turu — görseller (ekran görüntüsü / GIF)
 
-`modul-01-arayuz-turu.groovy` (Modül 1 — Arayüz turu) her sayfada, ilgili sayfaya
+`arayuz-turu.groovy` (Modül 1 — Arayüz turu) her sayfada, ilgili sayfaya
 ait bir görsel varsa onu başlık ile gövde metni arasında gösterir.
 
 ## Nasıl eklenir
@@ -37,7 +37,7 @@ JAR ~2.8 MB → ~9–12 MB olur (drag-drop kurulum için kabul edilebilir).
 
 ## Sayfa id'leri (dosya adları)
 
-Aşağıdaki id'ler `modul-01-arayuz-turu.groovy` içindeki `pages` listesinden gelir.
+Aşağıdaki id'ler `arayuz-turu.groovy` içindeki `pages` listesinden gelir.
 `intro` ve `close` genelde görselsiz bırakılır.
 
 | id | Sayfa |

@@ -7,7 +7,7 @@ public final class WorkshopErrors {
     private WorkshopErrors() {}
 
     public static String guidance(Throwable error) {
-        return guidance(error, false);
+        return guidance(error, WorkshopI18n.isEnglish());
     }
 
     public static String guidance(Throwable error, boolean english) {

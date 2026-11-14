@@ -13,19 +13,24 @@ public final class WorkshopParameterValidation {
         {"atolye.pixDab1", "atolye.pixDab2", "atolye.pixDab3"}
     };
 
-    /** Geçerli değerde null; geçersiz değerde kullanıcıya gösterilecek çözüm döndürür. */
+    /** Geçerli değerde null; geçersiz değerde aktif dilde çözüm metni döndürür. */
     public static String problem(String key, double value, ToDoubleFunction<String> current) {
+        return problem(key, value, current, WorkshopI18n.isEnglish());
+    }
+
+    /** Geçerli değerde null; geçersiz değerde seçilen dilde (TR/EN) çözüm metni döndürür. */
+    public static String problem(String key, double value, ToDoubleFunction<String> current, boolean english) {
         if (!Double.isFinite(value))
-            return "Sonlu bir sayı girin; NaN ve sonsuzluk ölçüm parametresi olamaz.";
+            return WorkshopI18n.t("val.nonFinite", english);
         if (key.equals("atolye.cellposeCellprob")) return null; // Model puanı negatif de olabilir.
         if (key.equals("atolye.stardistThreshold") && (value < 0 || value > 1))
-            return "Olasılık eşiğini 0 ile 1 arasında girin.";
+            return WorkshopI18n.t("val.probBounds", english);
         if (key.equals("atolye.pixelSize") || key.equals("atolye.stardistPixelSize")) {
-            if (value <= 0) return "İşleme piksel boyutu sıfırdan büyük olmalı. Lamın µm/piksel bilgisini Image sekmesinden denetleyin.";
+            if (value <= 0) return WorkshopI18n.t("val.pixelSizePos", english);
         } else if (key.equals("atolye.pixScale")) {
-            if (value < 1) return "Alt örnekleme çarpanı en az 1 olmalı; 1 tam çözünürlüktür.";
+            if (value < 1) return WorkshopI18n.t("val.pixScaleMin", english);
         } else if (value < 0) {
-            return "Bu değer negatif olamaz. Sıfırın bu ayarda ne anlama geldiğini alanın açıklamasından öğrenin.";
+            return WorkshopI18n.t("val.nonNegative", english);
         }
         for (String[] group : THRESHOLDS) {
             boolean belongs = false;
@@ -35,12 +40,12 @@ public final class WorkshopParameterValidation {
             double second = group[1].equals(key) ? value : current.applyAsDouble(group[1]);
             double third = group[2].equals(key) ? value : current.applyAsDouble(group[2]);
             if (!(first < second && second < third))
-                return "Eşikler 1+ < 2+ < 3+ sırasında olmalı. Artırırken önce üst eşiği, azaltırken önce alt eşiği düzenleyin; gerekirse bölüm varsayılanlarını geri yükleyin.";
+                return WorkshopI18n.t("val.thresholdOrder", english);
         }
         if (key.equals("atolye.minArea") && value > current.applyAsDouble("atolye.maxArea"))
-            return "En küçük çekirdek alanı en büyük alandan büyük olamaz. Önce üst alan sınırını artırın.";
+            return WorkshopI18n.t("val.minGtMax", english);
         if (key.equals("atolye.maxArea") && value < current.applyAsDouble("atolye.minArea"))
-            return "En büyük çekirdek alanı en küçük alandan küçük olamaz. Önce alt alan sınırını azaltın.";
+            return WorkshopI18n.t("val.maxLtMin", english);
         return null;
     }
 }
