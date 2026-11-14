@@ -10,6 +10,8 @@
 
 **English Overview:** Bilingual (**Turkish default / English**) QuPath extension that bundles all hands-on Groovy workflows, 15 self-extracting Python model bridges, interactive wizards, and persistent parameters of the **QuPath Digital Pathology & AI Workshop** into one-click menus.
 
+**Dil kapsamı / Language coverage:** Menü ve ortak ayarlar iki dillidir. Hücre tespiti penceresinin kontrolleri, açıklamaları ve sonuç özeti de dil seçimini izler. Diğer Groovy pencerelerinin bir bölümü hâlâ Türkçedir. / Menus and shared settings are bilingual. Cell-detection controls, help and results also follow the language selection; some other Groovy windows still use Turkish.
+
 > Modeled after the official [QuPath extension template](https://github.com/qupath/qupath-extension-template).
 
 ---
@@ -41,9 +43,15 @@
 3. QuPath ilk kez eklenti kuruyorsanız kullanıcı eklenti klasörü seçmenizi ister → varsayılan klasörü onaylayın.
 4. QuPath'i tamamen kapatıp yeniden açın.
 
+**English:** Download the `.jar` file from [Releases](https://github.com/sbalci/qupath-extension-workshop/releases) while connected. Copy the JAR and the [synthetic example](assets/examples/synthetic-nuclei.png) to your offline workshop folder. Drag the JAR onto the centre of QuPath's main window; accept the extension-folder prompt if shown, then fully quit and restart QuPath. Look for **Extensions → Atölye** and use its language switch for English. You do not need to extract the JAR, install Java separately or run a terminal command. If the menu is absent, check that you downloaded a `.jar` rather than a web page, and restart after installing it. External model bridges need their environments and weights downloaded separately before going offline.
+
 ---
 
 ## 5 Dakikada İlk Çalıştırma Örneği / 5-Minute Worked Example
+
+**Başlangıç / Start here:** [100 daireli sentetik örnek: TR/EN adımlar, beklenen çıktı ve sorun giderme](docs/first-run.md). Bu küçük PNG örneği internet, model veya hasta görüntüsü gerektirmez. / This small PNG example needs no internet, model or patient image after download.
+
+**İsteğe bağlı gerçek İHK örneği / Optional IHC sample:** aşağıdaki OSF yolu, sentetik örnekten sonra kullanılabilir. / Use the OSF route below after the synthetic first run.
 
 1. **Arayüz turu (lam açmadan):** **Extensions → Atölye → Modüller → Arayüz turu** (*Interface tour*) öğesine tıklayarak QuPath panellerini etkileşimli olarak gezin.
 2. **Örnek sanal lamı açın:** [OSF örnek veri paketinden](https://osf.io/8749g/) indirdiğiniz örnek Ki-67 İHK kesitini QuPath penceresine sürükleyin ve görüntü tipini **`Brightfield (H-DAB)`** olarak onaylayın.

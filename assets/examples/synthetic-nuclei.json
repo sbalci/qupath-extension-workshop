@@ -1,0 +1,11 @@
+{
+  "image": "synthetic-nuclei.png",
+  "width": 512,
+  "height": 512,
+  "objects": 100,
+  "pixelSizeMicrons": 0.5,
+  "licence": "CC0-1.0",
+  "description": "Synthetic blue circles on white; no tissue or patient data.",
+  "generator": "tools/build-synthetic-example.py",
+  "sha256": "286002ec72aa06f025970a1762167a1934d6255b74b30b5be3338adb2372b6e1"
+}
