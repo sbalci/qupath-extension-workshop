@@ -353,13 +353,13 @@ def appendLog   = { String ln -> synchronized (runLog) { runLog.append(ln == nul
 def logSnapshot = { -> synchronized (runLog) { return runLog.toString() } }
 def saveLogInteractive = {
     def txt = logSnapshot()
-    if (!txt?.trim()) { Dialogs.showInfoNotification('Günlük', 'Kaydedilecek günlük yok.'); return }
+    if (!txt?.trim()) { Dialogs.showInfoNotification(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.6d25a44e68f7', 'Kaydedilecek günlük yok.')); return }
     try {
         def suggested = new File(workDirRef.get() ?: new File(System.getProperty('user.home')), 'classpose_wizard.log')
-        def f = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, 'Günlüğü kaydet', suggested,
+        def f = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, workshopText('script.c47d1c4e0b3a', 'Günlüğü kaydet'), suggested,
             new javafx.stage.FileChooser.ExtensionFilter('Günlük (*.log, *.txt)', '*.log', '*.txt'))
-        if (f != null) { f.setText(txt, 'UTF-8'); Dialogs.showInfoNotification('Günlük', 'Kaydedildi: ' + f.getAbsolutePath()) }
-    } catch (Throwable t) { Dialogs.showErrorMessage('Günlük', 'Kaydedilemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName())) }
+        if (f != null) { f.setText(txt, 'UTF-8'); Dialogs.showInfoNotification(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.cbe9b591564d', 'Kaydedildi: ') + f.getAbsolutePath()) }
+    } catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.a0f73789f289', 'Kaydedilemedi: ') + (t.getMessage() ?: t.getClass().getSimpleName())) }
 }
 
 // Süreç AĞACINI sonlandır: köprü Classpose'u alt süreç olarak başlatır, Classpose da işçi süreçleri
@@ -485,7 +485,7 @@ def envReturnHook = [
                 if (!stage.isShowing()) stage.show()
                 stage.toFront(); stage.requestFocus()
             } catch (Throwable t) {
-                Dialogs.showErrorMessage('Sihirbaza dönüş', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+                Dialogs.showErrorMessage(workshopText('script.95854db5b310', 'Sihirbaza dönüş'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
             }
         }
     }
@@ -498,8 +498,8 @@ def launchEnvManager = { ->
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + res) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + res)
             if (url == null) {
-                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
-                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.612821b4f218', 'Betik bulunamadı'),
+                    workshopText('script.9641266ba42d', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi')) }
                 return
             }
             def cl = this.getClass().getClassLoader()
@@ -508,7 +508,7 @@ def launchEnvManager = { ->
             shellBinding.setVariable('atolyeReturnHook', envReturnHook)
             new GroovyShell(cl, shellBinding).evaluate(url.getText('UTF-8'), res)
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage(workshopText('script.e83c5641f38e', 'Açılamadı'), (t.getMessage() ?: t.getClass().getSimpleName())) }
         }
     } as Runnable).start()
 }
@@ -939,13 +939,13 @@ def startRun = {
         sb << '\n\n"Değiştir" seçilirse bu alanda Classpose sınıfı taşıyan tespitler ve özetler yeni GeoJSON doğrulandıktan sonra silinir. '
         sb << 'Kendi anotasyonlarınıza ve diğer sınıflara hiçbir kipte dokunulmaz.'
         sb << '\n\nÖnceki Classpose sonucu ne olsun?'
-        def pick = Dialogs.showChoiceDialog('Önceki Classpose sonucu', sb.toString(), [MODE_ADD, MODE_REPLACE], MODE_ADD)
+        def pick = Dialogs.showChoiceDialog(workshopText('script.e7a40a9c9872', 'Önceki Classpose sonucu'), sb.toString(), [MODE_ADD, MODE_REPLACE], MODE_ADD)
         if (pick == null) return
         replacePrev = (pick == MODE_REPLACE)
         if (replacePrev) {
-            boolean ok = Dialogs.showConfirmDialog('Önceki Classpose sonucu silinecek',
+            boolean ok = Dialogs.showConfirmDialog(workshopText('script.19faeea41265', 'Önceki Classpose sonucu silinecek'),
                 String.format(java.util.Locale.US,
-                    'Bu alandaki %,d özet ve Classpose sınıflı %,d tespit değiştirilecek (elle yaptığınız sınıf düzeltmeleri varsa kaybolur).\n\nDevam edilsin mi?',
+                    workshopText('script.4f4ada8ff5fa', 'Bu alandaki %,d özet ve Classpose sınıflı %,d tespit değiştirilecek (elle yaptığınız sınıf düzeltmeleri varsa kaybolur).\n\nDevam edilsin mi?'),
                     nPrevSummaries, nPrevDets))
             if (!ok) return
         }
@@ -985,7 +985,7 @@ def startRun = {
                     // İptal, hata DEĞİLDİR: kırmızı hata ekranı yerine Çalıştırma ekranına (READY) dönülür;
                     // hiçbir şey içe aktarılmadı.
                     javafx.application.Platform.runLater {
-                        Dialogs.showInfoNotification('Classpose', 'Çalıştırma iptal edildi.')
+                        Dialogs.showInfoNotification('Classpose', workshopText('script.90579d82ba75', 'Çalıştırma iptal edildi.'))
                         precheckRef.set(null); step.set('READY'); render()
                     }
                     return
@@ -1075,32 +1075,32 @@ render = { ->
     def later = { Closure c -> javafx.application.Platform.runLater { c() } }
 
     if (cur == 'CONFIG_INCOMPLETE') {
-        title.setText('Classpose — kurulum')
+        title.setText(workshopText('script.5a4ccd2ce383', 'Classpose — kurulum'))
         def st = setupStatus(cfg)
-        addGuidance('Classpose\'u çalıştırmak için üç adım vardır. Her satırın durumu ve düğmesi aşağıdadır; ① ve ② tamamlanınca "Çalıştırma ekranına geç" etkinleşir.')
+        addGuidance(workshopText('script.8163cc7cb846', 'Classpose\'u çalıştırmak için üç adım vardır. Her satırın durumu ve düğmesi aşağıdadır; ① ve ② tamamlanınca "Çalıştırma ekranına geç" etkinleşir.'))
 
-        section('① Python ortamı')
+        section(workshopText('script.d6bef5796014', '① Python ortamı'))
         statusLine(st.pythonOk, st.pythonOk ? ('Python: ' + cfg.python) :
-            'Python ortamı (classpose) kurulu değil — ortam yöneticisinde "Classpose — H&E hücre fenotipleme" satırını kurun (~6 GB, GPU torch).')
-        statusLine(st.runnerOk, st.runnerOk ? ('Köprü: ' + cfg.runner) :
-            'Köprü betiği bulunamadı (classpose_runner.py eklentiyle birlikte gelir — özel yol için "Köprü seç…").')
-        statusLine(st.envOk, st.envOk ? 'Classpose kurulumu tamam (predict_wsi içe aktarıldı).' :
-            (cfg.entrypoints == '0' ? 'Classpose kurulumu eksik — "Kurulumu tamamla" (tek sefer: cellpose 4.0.8 + Classpose alt modülleri, ~1 MB).' :
-                (cfg.entrypoints?.trim() ? 'Classpose ortamı son denetimden sonra değişmiş — "Denetle" ile yeniden denetleyin.' :
-                                           'Classpose kurulumu henüz denetlenmedi — "Denetle".')))
-        addGuidance(cfg.cuda == '1' ? 'Denetim: CUDA GPU var.' :
-            (cfg.cuda == '0' ? 'Denetim: CUDA yok — Classpose CPU\'da çalışır (çok yavaş; küçük alan seçin).' : 'GPU henüz denetlenmedi — "Denetle".'))
-        def prepBtn = navButton('Kurulumu tamamla', { startPrepare() }, 'cellpose 4.0.8\'e sabitler ve Classpose\'u alt modülleriyle yeniden kurar (tek sefer)')
+            workshopText('script.b80b52e02bb5', 'Python ortamı (classpose) kurulu değil — ortam yöneticisinde "Classpose — H&E hücre fenotipleme" satırını kurun (~6 GB, GPU torch).'))
+        statusLine(st.runnerOk, st.runnerOk ? (workshopText('script.95fb1b4d5633', 'Köprü: ') + cfg.runner) :
+            workshopText('script.afcafe415df5', 'Köprü betiği bulunamadı (classpose_runner.py eklentiyle birlikte gelir — özel yol için "Köprü seç…").'))
+        statusLine(st.envOk, st.envOk ? workshopText('script.53710f5847bd', 'Classpose kurulumu tamam (predict_wsi içe aktarıldı).') :
+            (cfg.entrypoints == '0' ? workshopText('script.e5ccaaa040de', 'Classpose kurulumu eksik — "Kurulumu tamamla" (tek sefer: cellpose 4.0.8 + Classpose alt modülleri, ~1 MB).') :
+                (cfg.entrypoints?.trim() ? workshopText('script.62a94517cc9c', 'Classpose ortamı son denetimden sonra değişmiş — "Denetle" ile yeniden denetleyin.') :
+                                           workshopText('script.601823d504da', 'Classpose kurulumu henüz denetlenmedi — "Denetle".'))))
+        addGuidance(cfg.cuda == '1' ? workshopText('script.3ee6fc77c08c', 'Denetim: CUDA GPU var.') :
+            (cfg.cuda == '0' ? workshopText('script.32eba6c114ef', 'Denetim: CUDA yok — Classpose CPU\'da çalışır (çok yavaş; küçük alan seçin).') : workshopText('script.1833b772b279', 'GPU henüz denetlenmedi — "Denetle".')))
+        def prepBtn = navButton(workshopText('script.361fa8c5b863', 'Kurulumu tamamla'), { startPrepare() }, workshopText('script.20834723b905', 'cellpose 4.0.8\'e sabitler ve Classpose\'u alt modülleriyle yeniden kurar (tek sefer)'))
         prepBtn.setDisable(!st.pythonOk || !st.runnerOk || st.envOk)
-        rowOf([navButton('Python ortam yöneticisi…', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar; "Sihirbaza dön ▶" ile geri gelirsiniz'),
-               navButton('Denetle', { startSelftest() }, 'classpose_runner.py selftest — paketler, predict_wsi içe aktarımı + CUDA'),
+        rowOf([navButton(workshopText('script.82bedbe63b36', 'Python ortam yöneticisi…'), { launchEnvManager() }, workshopText('script.9c5672594ffe', 'Atölye Python ortam yöneticisini açar; "Sihirbaza dön ▶" ile geri gelirsiniz')),
+               navButton(workshopText('script.3bef56b42b8a', 'Denetle'), { startSelftest() }, workshopText('script.dddfcf6438ca', 'classpose_runner.py selftest — paketler, predict_wsi içe aktarımı + CUDA')),
                prepBtn,
-               navButton('Köprü seç…', {
-                   def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'classpose_runner.py seçin')
+               navButton(workshopText('script.4b73cf2c4ab9', 'Köprü seç…'), {
+                   def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.a8389c133c70', 'classpose_runner.py seçin'))
                    if (x != null) { putPref(PREF_RUNNER, x.getAbsolutePath()); later { render() } }
                })])
 
-        section('② Model dosyası')
+        section(workshopText('script.4cbe45b8bea4', '② Model dosyası'))
         def modelChoice = new javafx.scene.control.ChoiceBox()
         MODELS.each { modelChoice.getItems().add(it.label) }
         int mIdx = MODELS.findIndexOf { it.id == cfg.model }
@@ -1112,57 +1112,57 @@ render = { ->
         rowOf([new javafx.scene.control.Label('Model:'), modelChoice])
         if (cfg.model == 'nucls') addWarnLabel('⚠ ' + NUCLS_WARNING)
         def tg = new javafx.scene.control.ToggleGroup()
-        def rbFolder = new javafx.scene.control.RadioButton('Klasördeki modeli kullan'); rbFolder.setToggleGroup(tg)
-        def rbDl = new javafx.scene.control.RadioButton('İndir (veri köküne)'); rbDl.setToggleGroup(tg)
+        def rbFolder = new javafx.scene.control.RadioButton(workshopText('script.bea611f0f64c', 'Klasördeki modeli kullan')); rbFolder.setToggleGroup(tg)
+        def rbDl = new javafx.scene.control.RadioButton(workshopText('script.63786502a216', 'İndir (veri köküne)')); rbDl.setToggleGroup(tg)
         (cfg.source == 'folder' ? rbFolder : rbDl).setSelected(true)
         tg.selectedToggleProperty().addListener({ obs, o, n ->
             if (n != null) { putPref(PREF_SOURCE, n == rbFolder ? 'folder' : 'download'); later { render() } }
         } as javafx.beans.value.ChangeListener)
         rowOf([rbFolder, rbDl])
         if (cfg.source == 'folder') {
-            rowOf([navButton('Klasör seç…', {
-                       def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Model klasörü (conic.pt, puma.pt …)', null)
+            rowOf([navButton(workshopText('script.6b16a609ae4a', 'Klasör seç…'), {
+                       def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.d79ade13e0b2', 'Model klasörü (conic.pt, puma.pt …)'), null)
                        if (x != null) { putPref(PREF_FOLDER, x.getAbsolutePath()); later { render() } }
-                   }), new javafx.scene.control.Label(cfg.folder?.trim() ? cfg.folder : '(klasör seçilmedi)')])
+                   }), new javafx.scene.control.Label(cfg.folder?.trim() ? cfg.folder : workshopText('script.fd22c2ea6aea', '(klasör seçilmedi)'))])
         }
         def mf = modelFileOf(cfg)
-        if (mf == null) statusLine(false, 'Model klasörü seçilmedi.')
-        else if (!st.modelPresent) statusLine(false, 'Dosya yok: ' + mf.getAbsolutePath())
-        else if (!st.modelOk) statusLine(false, 'Dosya var ama doğrulanmadı: ' + mf.getAbsolutePath() + ' — "Doğrula" (SHA-256, bir kez)')
-        else statusLine(true, 'Doğrulandı: ' + mf.getAbsolutePath())
+        if (mf == null) statusLine(false, workshopText('script.4fd368d0f37d', 'Model klasörü seçilmedi.'))
+        else if (!st.modelPresent) statusLine(false, workshopText('script.1fb27e104d35', 'Dosya yok: ') + mf.getAbsolutePath())
+        else if (!st.modelOk) statusLine(false, workshopText('script.210d3f060514', 'Dosya var ama doğrulanmadı: ') + mf.getAbsolutePath() + workshopText('script.c889f73403aa', ' — "Doğrula" (SHA-256, bir kez)'))
+        else statusLine(true, workshopText('script.541dd9fc5158', 'Doğrulandı: ') + mf.getAbsolutePath())
         def modelBtns = []
-        if (st.modelPresent && !st.modelOk) modelBtns << navButton('Doğrula', { startVerify() }, 'SHA-256 sabitlenmiş sürümle karşılaştırılır (1.2 GB — biraz sürer)')
-        if (cfg.source == 'download' && !st.modelOk) modelBtns << navButton('İndir (~1.2 GB)', { startModelDownload() }, 'Yalnız seçili model, Hugging Face (sabit revizyon) → veri kökü')
+        if (st.modelPresent && !st.modelOk) modelBtns << navButton(workshopText('script.4e8b339e360e', 'Doğrula'), { startVerify() }, workshopText('script.61305234dddc', 'SHA-256 sabitlenmiş sürümle karşılaştırılır (1.2 GB — biraz sürer)'))
+        if (cfg.source == 'download' && !st.modelOk) modelBtns << navButton(workshopText('script.76ac54b3b991', 'İndir (~1.2 GB)'), { startModelDownload() }, workshopText('script.822dc75ccc52', 'Yalnız seçili model, Hugging Face (sabit revizyon) → veri kökü'))
         if (!modelBtns.isEmpty()) rowOf(modelBtns)
 
-        section('③ GrandQC (isteğe bağlı: doku/artefakt filtresi)')
-        statusLine(st.grandqcOk, (st.grandqcOk ? 'Ağırlıklar hazır: ' : 'Ağırlıklar yok: ') + grandqcModelsDir().getAbsolutePath())
-        addGuidance('GrandQC sihirbazıyla AYNI dosyalar ve klasör kullanılır; ikinci kopya indirilmez. "İndir" eksik dosyaları (4 dosya, ~100 MB) Zenodo MD5 ile doğrulayarak indirir. Not: artefakt tespiti yalnız seçili alanı değil tüm lamı 1 µm/px\'te tarar.')
-        if (!st.grandqcOk) rowOf([navButton('GrandQC ağırlıklarını indir (~100 MB)', { startGrandqcDownload() })])
+        section(workshopText('script.26afccb53145', '③ GrandQC (isteğe bağlı: doku/artefakt filtresi)'))
+        statusLine(st.grandqcOk, (st.grandqcOk ? workshopText('script.0af617e17033', 'Ağırlıklar hazır: ') : workshopText('script.51355b7999c4', 'Ağırlıklar yok: ')) + grandqcModelsDir().getAbsolutePath())
+        addGuidance(workshopText('script.16693b2639cd', 'GrandQC sihirbazıyla AYNI dosyalar ve klasör kullanılır; ikinci kopya indirilmez. "İndir" eksik dosyaları (4 dosya, ~100 MB) Zenodo MD5 ile doğrulayarak indirir. Not: artefakt tespiti yalnız seçili alanı değil tüm lamı 1 µm/px\'te tarar.'))
+        if (!st.grandqcOk) rowOf([navButton(workshopText('script.94161ebf11c3', 'GrandQC ağırlıklarını indir (~100 MB)'), { startGrandqcDownload() })])
 
-        actions.add(navButton('Kapat', { closeWizard() }))
-        def goBtn = navButton('Çalıştırma ekranına geç ▶', { precheckRef.set(null); step.set('READY'); render() })
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { closeWizard() }))
+        def goBtn = navButton(workshopText('script.7c289f6fe3f1', 'Çalıştırma ekranına geç ▶'), { precheckRef.set(null); step.set('READY'); render() })
         goBtn.setDisable(!setupComplete(cfg))
         actions.add(goBtn)
     } else if (cur == 'CHECK_RUNNING' || cur == 'DL_RUNNING') {
         title.setText(jobTitleRef.get() + '…')
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { killRunning() }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { killRunning() }))
     } else if (cur == 'CHECK_DONE' || cur == 'DL_DONE') {
-        title.setText(jobTitleRef.get() + (jobOkRef.get() ? ' — tamam ✅' : (cancelledRef.get() ? ' — iptal edildi' : ' — BAŞARISIZ (günlüğe bakın)')))
+        title.setText(jobTitleRef.get() + (jobOkRef.get() ? workshopText('script.98cb471bb8ad', ' — tamam ✅') : (cancelledRef.get() ? workshopText('script.b7ea4cee1008', ' — iptal edildi') : workshopText('script.9f30a211defc', ' — BAŞARISIZ (günlüğe bakın)'))))
         addLiveLog()
-        actions.add(navButton('◀ Kuruluma dön', { step.set('CONFIG_INCOMPLETE'); render() }))
-        if (logSnapshot()?.trim()) actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
-        if (jobOkRef.get() && setupComplete(loadConfig())) actions.add(navButton('Çalıştırma ekranına dön ▶', { precheckRef.set(null); step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.0f890b2dbd3f', '◀ Kuruluma dön'), { step.set('CONFIG_INCOMPLETE'); render() }))
+        if (logSnapshot()?.trim()) actions.add(navButton(workshopText('script.bba9c203d381', 'Günlüğü kaydet…'), { saveLogInteractive() }))
+        if (jobOkRef.get() && setupComplete(loadConfig())) actions.add(navButton(workshopText('script.2065029c612d', 'Çalıştırma ekranına dön ▶'), { precheckRef.set(null); step.set('READY'); render() }))
     } else if (cur == 'READY') {
         if (imageData == null) {
-            title.setText('Görüntü açık değil')
-            addGuidance('Önce bir H&E lamı açın, ilgi alanını çizip seçin, sonra "⟳ Yenile".')
-            actions.add(navButton('◀ Kurulum', { step.set('CONFIG_INCOMPLETE'); render() }))
-            actions.add(navButton('⟳ Yenile', { refreshPrecheck() }))
+            title.setText(workshopText('script.b4c901dc184b', 'Görüntü açık değil'))
+            addGuidance(workshopText('script.a45ef11abb75', 'Önce bir H&E lamı açın, ilgi alanını çizip seçin, sonra "⟳ Yenile".'))
+            actions.add(navButton(workshopText('script.79fdaba65b05', '◀ Kurulum'), { step.set('CONFIG_INCOMPLETE'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { refreshPrecheck() }))
         } else {
             def rd = readiness(imageData, cfg)
-            title.setText('Classpose — seçili alanda hücre sınıfları')
+            title.setText(workshopText('script.4f3417573af9', 'Classpose — seçili alanda hücre sınıfları'))
             def sb = new StringBuilder()
             sb << "Lam        : " << imageNameOf(imageData) << "\n"
             sb << "Dosya        : " << (rd.slide.ok ? rd.slide.file.getAbsolutePath() : '—') << "\n"
@@ -1186,18 +1186,18 @@ render = { ->
                 int i = n as int
                 if (i >= 0) { putPref(PREF_DEVICE, devIds[i]); later { render() } }
             } as javafx.beans.value.ChangeListener)
-            def ttaChk = new javafx.scene.control.CheckBox('TTA (test zamanı artırma — daha yavaş)'); ttaChk.setSelected(cfg.tta)
+            def ttaChk = new javafx.scene.control.CheckBox(workshopText('script.1ab56fea6c3e', 'TTA (test zamanı artırma — daha yavaş)')); ttaChk.setSelected(cfg.tta)
             ttaChk.selectedProperty().addListener({ obs, o, n -> putBool(PREF_TTA, n as boolean) } as javafx.beans.value.ChangeListener)
             boolean gqOk = setupStatus(cfg).grandqcOk
-            def tisChk = new javafx.scene.control.CheckBox('Doku tespiti (GrandQC)')
+            def tisChk = new javafx.scene.control.CheckBox(workshopText('script.6921108d13ee', 'Doku tespiti (GrandQC)'))
             // Kayıtlı durum HER ZAMAN gösterilir (açıkken devre dışı bırakılıp çıkmaz sokağa düşmesin);
             // yalnız KAPALIYKEN VE ön koşul yokken devre dışıdır — zaten açık bir ayar her zaman kapatılabilir.
             tisChk.setSelected(cfg.tissue); tisChk.setDisable(!gqOk && !cfg.tissue)
             tisChk.selectedProperty().addListener({ obs, o, n -> putBool(PREF_TISSUE, n as boolean); later { render() } } as javafx.beans.value.ChangeListener)
-            def artChk = new javafx.scene.control.CheckBox('Artefakt filtreleme (GrandQC; tüm lamı tarar)')
+            def artChk = new javafx.scene.control.CheckBox(workshopText('script.26ce791d394c', 'Artefakt filtreleme (GrandQC; tüm lamı tarar)'))
             artChk.setSelected(cfg.artefact); artChk.setDisable(!cfg.artefact && !(gqOk && cfg.tissue))
             artChk.selectedProperty().addListener({ obs, o, n -> putBool(PREF_ARTEFACT, n as boolean); later { render() } } as javafx.beans.value.ChangeListener)
-            rowOf([new javafx.scene.control.Label('Cihaz:'), devChoice, ttaChk])
+            rowOf([new javafx.scene.control.Label(workshopText('script.d4336c3867bc', 'Cihaz:')), devChoice, ttaChk])
             rowOf([tisChk, artChk])
             def batchField = new javafx.scene.control.TextField(cfg.batchSize); batchField.setPrefColumnCount(5)
             def tileField = new javafx.scene.control.TextField(cfg.tileSize); tileField.setPrefColumnCount(6)
@@ -1208,19 +1208,19 @@ render = { ->
             batchField.focusedProperty().addListener({ obs, o, n -> if (!n) later { render() } } as javafx.beans.value.ChangeListener)
             tileField.focusedProperty().addListener({ obs, o, n -> if (!n) later { render() } } as javafx.beans.value.ChangeListener)
             def adv = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Batch size:'), batchField,
-                new javafx.scene.control.Label('Karo boyutu (256–2048):'), tileField)
+                new javafx.scene.control.Label(workshopText('script.67e6822a42cd', 'Karo boyutu (256–2048):')), tileField)
             adv.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
-            def advPane = new javafx.scene.control.TitledPane('Gelişmiş', adv); advPane.setExpanded(false)
+            def advPane = new javafx.scene.control.TitledPane(workshopText('script.7f46475b1055', 'Gelişmiş'), adv); advPane.setExpanded(false)
             center.getChildren().add(advPane)
 
             rd.blocks.each { addWarnLabel('⛔ ' + it) }
             rd.warns.each { addWarnLabel('⚠ ' + it) }
-            addGuidance('Classpose YALNIZ seçili alan(lar)da çalışır. Sonuç: her hücre için "<Sınıf> (Classpose)" sınıflı poligon tespiti + seçili anotasyonlara sınıf başına sayım, % ve yoğunluk (hücre/mm²).')
+            addGuidance(workshopText('script.94d2629ed058', 'Classpose YALNIZ seçili alan(lar)da çalışır. Sonuç: her hücre için "<Sınıf> (Classpose)" sınıflı poligon tespiti + seçili anotasyonlara sınıf başına sayım, % ve yoğunluk (hücre/mm²).'))
 
-            actions.add(navButton('Kapat', { closeWizard() }))
-            actions.add(navButton('◀ Kurulum', { step.set('CONFIG_INCOMPLETE'); render() }))
-            actions.add(navButton('⟳ Yenile', { refreshPrecheck() }, 'Seçimi ve lam ön denetimini yeniden okur'))
-            def runBtn = navButton('Seçili alanda çalıştır ▶', { startRun() }, 'Classpose\'u seçili alanda çalıştırır')
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { closeWizard() }))
+            actions.add(navButton(workshopText('script.79fdaba65b05', '◀ Kurulum'), { step.set('CONFIG_INCOMPLETE'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { refreshPrecheck() }, workshopText('script.179082a34166', 'Seçimi ve lam ön denetimini yeniden okur')))
+            def runBtn = navButton(workshopText('script.0e054133c4a1', 'Seçili alanda çalıştır ▶'), { startRun() }, workshopText('script.001af2bbc880', 'Classpose\'u seçili alanda çalıştırır'))
             runBtn.setDisable(!rd.ok)
             actions.add(runBtn)
         }
@@ -1228,38 +1228,38 @@ render = { ->
         if (cur == 'RUN_RUNNING') {
             title.setText(runPhaseRef.get())
             def clock = new javafx.scene.control.Label(); clock.setStyle('-fx-opacity: 0.8;')
-            def tick = { clock.setText('Geçen süre: ' + elapsedText(System.currentTimeMillis() - runStartRef.get())) }
+            def tick = { clock.setText(workshopText('script.b8848d073c4a', 'Geçen süre: ') + elapsedText(System.currentTimeMillis() - runStartRef.get())) }
             tick()
             def tl = new javafx.animation.Timeline(new javafx.animation.KeyFrame(javafx.util.Duration.seconds(1), { e -> tick() } as javafx.event.EventHandler))
             tl.setCycleCount(javafx.animation.Animation.INDEFINITE); tl.play(); timelineRef.set(tl)
-            addGuidance('Classpose ayrı bir süreç olarak çalışıyor (model yükleme + karo çıkarımı). "İptal et" tüm süreç ağacını durdurur; hiçbir şey içe aktarılmaz.')
+            addGuidance(workshopText('script.fa2c6eca3058', 'Classpose ayrı bir süreç olarak çalışıyor (model yükleme + karo çıkarımı). "İptal et" tüm süreç ağacını durdurur; hiçbir şey içe aktarılmaz.'))
             center.getChildren().add(clock)
             center.getChildren().add(busyBar()); addLiveLog()
-            actions.add(navButton('İptal et', { killRunning() }))
-            actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
+            actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { killRunning() }))
+            actions.add(navButton(workshopText('script.bba9c203d381', 'Günlüğü kaydet…'), { saveLogInteractive() }))
         } else if (cur == 'BUSY') {
-            title.setText(busyLabelRef.get()); addGuidance('Lütfen bekleyin…'); center.getChildren().add(busyBar())
+            title.setText(busyLabelRef.get()); addGuidance(workshopText('script.245c572ec2ea', 'Lütfen bekleyin…')); center.getChildren().add(busyBar())
         } else {
-            title.setText('Tamamlandı ✅'); addMonoArea(resultTextRef.get())
-            addGuidance('Hücre sınıflarını Annotations/Hierarchy panelinden ya da View → Show detections ile inceleyin; sınıf renklerini "Classes" listesinden açıp kapatın.')
-            actions.add(navButton('Kapat', { closeWizard() }))
-            actions.add(navButton('Klasörü aç', { openFolder(workDirRef.get()) }, 'roi.geojson, Classpose çıktıları ve classpose_run.log'))
-            actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-            actions.add(navButton('↻ Yeniden çalıştır', { precheckRef.set(null); step.set('READY'); render() }))
+            title.setText(workshopText('script.92c17020894f', 'Tamamlandı ✅')); addMonoArea(resultTextRef.get())
+            addGuidance(workshopText('script.381033c8a558', 'Hücre sınıflarını Annotations/Hierarchy panelinden ya da View → Show detections ile inceleyin; sınıf renklerini "Classes" listesinden açıp kapatın.'))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { closeWizard() }))
+            actions.add(navButton(workshopText('script.d6f2f6cad078', 'Klasörü aç'), { openFolder(workDirRef.get()) }, workshopText('script.64ca18050049', 'roi.geojson, Classpose çıktıları ve classpose_run.log')))
+            actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
+            actions.add(navButton(workshopText('script.c94499b243e4', '↻ Yeniden çalıştır'), { precheckRef.set(null); step.set('READY'); render() }))
         }
     } else { // ERROR
-        title.setText('Hata'); addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set(setupComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        if (logSnapshot()?.trim()) actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
-        actions.add(navButton('Kapat', { closeWizard() }))
+        title.setText(workshopText('script.307b9dc7912d', 'Hata')); addMonoArea(errorTextRef.get())
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set(setupComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        if (logSnapshot()?.trim()) actions.add(navButton(workshopText('script.bba9c203d381', 'Günlüğü kaydet…'), { saveLogInteractive() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { closeWizard() }))
     }
 
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut'); topChk.setSelected(alwaysTop.get())
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut')); topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n -> alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
     def spacer = new javafx.scene.layout.Region(); javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
     def bar = new javafx.scene.layout.HBox(8); bar.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
     bar.getChildren().add(topChk); bar.getChildren().add(spacer); bar.getChildren().addAll(actions)
-    def disclaimer = new javafx.scene.control.Label('⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.808d79f60179', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
     def scroll = new javafx.scene.control.ScrollPane(center); scroll.setFitToWidth(true); scroll.setFitToHeight(true)
@@ -1275,7 +1275,7 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Classpose — H&E hücre fenotipleme (seçili alanda)')
+        stage.setTitle(workshopText('script.67dcd021afd0', 'Classpose — H&E hücre fenotipleme (seçili alanda)'))
         stage.setAlwaysOnTop(alwaysTop.get())
         stage.setOnCloseRequest({ e ->
             if ((step.get() ?: '').endsWith('_RUNNING')) { cancelledRef.set(true); killTree(processRef.get()) }
@@ -1284,7 +1284,18 @@ javafx.application.Platform.runLater {
         } as javafx.event.EventHandler)
         render(); stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ Classpose hücre fenotipleme sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

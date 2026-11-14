@@ -14,7 +14,7 @@ class CoreScriptLanguageTest {
     void coreDisplayCatalogMatchesBothBundlesAndScriptFallbacks() {
         def keys = WorkshopI18n.trKeys().findAll { it ==~ /script\.[0-9a-f]{12}/ }
         def catalog = new Gson().fromJson(getClass().getResource('/i18n/script-core.json').getText('UTF-8'), Map)
-        assertEquals(379, keys.size())
+        assertEquals(565, keys.size())
         assertEquals(catalog.strings.collect { it.key } as Set, keys as Set)
         catalog.strings.each { row ->
             assertEquals(row.key, row.tr, WorkshopI18n.t(row.key as String, false))
@@ -24,7 +24,7 @@ class CoreScriptLanguageTest {
             assertNotEquals(key, WorkshopI18n.t(key, false))
             assertNotEquals(key, WorkshopI18n.t(key, true))
         }
-        assertEquals(12, catalog.scripts.size())
+        assertEquals(15, catalog.scripts.size())
         catalog.scripts.each { filename ->
             def script = getClass().getResource('/scripts/' + filename).getText('UTF-8')
             assertTrue(filename, script.contains('private String workshopText(String key, String fallback)'))
@@ -67,7 +67,8 @@ class CoreScriptLanguageTest {
     void translatedNumericAndPathTemplatesRetainTheirFormatArguments() {
         def catalog = new Gson().fromJson(getClass().getResource('/i18n/script-core.json').getText('UTF-8'), Map)
         def signature = { String text ->
-            (text =~ /((?<!%)%(?!%)(?:\d+\$)?[-#+0, (<]*\d*(?:\.\d+)?[a-zA-Z])/).collect { it[0] }
+            // Java Formatter conversions only: prose such as "% ve" is not a format token.
+            (text =~ /((?<!%)%(?!%)(?:\d+\$)?[-#+0, (<]*\d*(?:\.\d+)?(?:[tT][a-zA-Z]|[bBhHsScCdoxXeEfgGaAn]))/).collect { it[0] }
         }
         catalog.strings.each { row ->
             assertEquals(row.key, signature(row.tr as String), signature(row.en as String))
@@ -85,6 +86,12 @@ class CoreScriptLanguageTest {
                     'D:/synthetic workshop', '', 12.5d)
             assertTrue(rendered, rendered.contains('D:/synthetic workshop'))
             assertTrue(rendered, rendered.contains('12.5 GB'))
+            def classpose = catalog.strings.find { it.tr.startsWith('Bu alandaki %,d özet') }
+            def cytoformer = catalog.strings.find { it.tr.startsWith('%,d hücrenin mevcut sınıfı') }
+            assertNotNull(classpose); assertNotNull(cytoformer)
+            def replace = String.format(Locale.US, WorkshopI18n.t(classpose.key as String, english), 17, 31)
+            assertTrue(replace, replace.indexOf('17') >= 0 && replace.indexOf('31') > replace.indexOf('17'))
+            assertTrue(String.format(Locale.US, WorkshopI18n.t(cytoformer.key as String, english), 126).contains('126'))
         }
     }
 }

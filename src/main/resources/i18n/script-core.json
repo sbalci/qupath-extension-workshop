@@ -12,7 +12,10 @@
     "yardimci-kalibrasyon.groovy",
     "yardimci-boya-vektor-sihirbaz.groovy",
     "yardimci-metadata-sihirbaz.groovy",
-    "yardimci-python-ortam-yoneticisi.groovy"
+    "yardimci-python-ortam-yoneticisi.groovy",
+    "yardimci-classpose-sihirbaz.groovy",
+    "yardimci-cytoformer-sihirbaz.groovy",
+    "yardimci-grandqc-sihirbaz.groovy"
   ],
   "strings": [
     {
@@ -1909,6 +1912,936 @@
       "key": "script.26bf6298ad70",
       "tr": "' ",
       "en": "' is running "
+    },
+    {
+      "key": "script.301ef766a15b",
+      "tr": "Günlük",
+      "en": "Log"
+    },
+    {
+      "key": "script.6d25a44e68f7",
+      "tr": "Kaydedilecek günlük yok.",
+      "en": "There is no log to save."
+    },
+    {
+      "key": "script.c47d1c4e0b3a",
+      "tr": "Günlüğü kaydet",
+      "en": "Save log"
+    },
+    {
+      "key": "script.cbe9b591564d",
+      "tr": "Kaydedildi: ",
+      "en": "Saved: "
+    },
+    {
+      "key": "script.a0f73789f289",
+      "tr": "Kaydedilemedi: ",
+      "en": "Could not save: "
+    },
+    {
+      "key": "script.95854db5b310",
+      "tr": "Sihirbaza dönüş",
+      "en": "Return to wizard"
+    },
+    {
+      "key": "script.612821b4f218",
+      "tr": "Betik bulunamadı",
+      "en": "Script not found"
+    },
+    {
+      "key": "script.9641266ba42d",
+      "tr": "Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi",
+      "en": "Open from the menu: Extensions → Atölye → Utilities → Python bridges & foundation models → Workshop Python environment manager"
+    },
+    {
+      "key": "script.e83c5641f38e",
+      "tr": "Açılamadı",
+      "en": "Could not open"
+    },
+    {
+      "key": "script.e7a40a9c9872",
+      "tr": "Önceki Classpose sonucu",
+      "en": "Previous Classpose result"
+    },
+    {
+      "key": "script.19faeea41265",
+      "tr": "Önceki Classpose sonucu silinecek",
+      "en": "The previous Classpose result will be deleted"
+    },
+    {
+      "key": "script.4f4ada8ff5fa",
+      "tr": "Bu alandaki %,d özet ve Classpose sınıflı %,d tespit değiştirilecek (elle yaptığınız sınıf düzeltmeleri varsa kaybolur).\n\nDevam edilsin mi?",
+      "en": "%,d summaries and %,d Classpose detections in this region will be replaced (any manual class corrections will be lost).\n\nContinue?"
+    },
+    {
+      "key": "script.90579d82ba75",
+      "tr": "Çalıştırma iptal edildi.",
+      "en": "Run cancelled."
+    },
+    {
+      "key": "script.5a4ccd2ce383",
+      "tr": "Classpose — kurulum",
+      "en": "Classpose — setup"
+    },
+    {
+      "key": "script.8163cc7cb846",
+      "tr": "Classpose'u çalıştırmak için üç adım vardır. Her satırın durumu ve düğmesi aşağıdadır; ① ve ② tamamlanınca \"Çalıştırma ekranına geç\" etkinleşir.",
+      "en": "There are three steps to run Classpose. Each step's status and button appear below; completing ① and ② enables \"Go to run screen\"."
+    },
+    {
+      "key": "script.d6bef5796014",
+      "tr": "① Python ortamı",
+      "en": "① Python environment"
+    },
+    {
+      "key": "script.b80b52e02bb5",
+      "tr": "Python ortamı (classpose) kurulu değil — ortam yöneticisinde \"Classpose — H&E hücre fenotipleme\" satırını kurun (~6 GB, GPU torch).",
+      "en": "The Python environment (classpose) is not installed — install the \"Classpose — H&E hücre fenotipleme\" entry in the environment manager (~6 GB, GPU torch)."
+    },
+    {
+      "key": "script.95fb1b4d5633",
+      "tr": "Köprü: ",
+      "en": "Bridge: "
+    },
+    {
+      "key": "script.afcafe415df5",
+      "tr": "Köprü betiği bulunamadı (classpose_runner.py eklentiyle birlikte gelir — özel yol için \"Köprü seç…\").",
+      "en": "Bridge script not found (classpose_runner.py is bundled with the extension — use \"Choose bridge…\" for a custom path)."
+    },
+    {
+      "key": "script.53710f5847bd",
+      "tr": "Classpose kurulumu tamam (predict_wsi içe aktarıldı).",
+      "en": "Classpose setup is complete (predict_wsi imported)."
+    },
+    {
+      "key": "script.e5ccaaa040de",
+      "tr": "Classpose kurulumu eksik — \"Kurulumu tamamla\" (tek sefer: cellpose 4.0.8 + Classpose alt modülleri, ~1 MB).",
+      "en": "Classpose setup is incomplete — use \"Complete setup\" (once: cellpose 4.0.8 + Classpose submodules, ~1 MB)."
+    },
+    {
+      "key": "script.62a94517cc9c",
+      "tr": "Classpose ortamı son denetimden sonra değişmiş — \"Denetle\" ile yeniden denetleyin.",
+      "en": "The Classpose environment has changed since the last check — use \"Check\" again."
+    },
+    {
+      "key": "script.601823d504da",
+      "tr": "Classpose kurulumu henüz denetlenmedi — \"Denetle\".",
+      "en": "Classpose setup has not been checked yet — use \"Check\"."
+    },
+    {
+      "key": "script.3ee6fc77c08c",
+      "tr": "Denetim: CUDA GPU var.",
+      "en": "Check: CUDA GPU available."
+    },
+    {
+      "key": "script.32eba6c114ef",
+      "tr": "Denetim: CUDA yok — Classpose CPU'da çalışır (çok yavaş; küçük alan seçin).",
+      "en": "Check: no CUDA — Classpose runs on the CPU (very slow; select a small region)."
+    },
+    {
+      "key": "script.1833b772b279",
+      "tr": "GPU henüz denetlenmedi — \"Denetle\".",
+      "en": "The GPU has not been checked yet — use \"Check\"."
+    },
+    {
+      "key": "script.361fa8c5b863",
+      "tr": "Kurulumu tamamla",
+      "en": "Complete setup"
+    },
+    {
+      "key": "script.20834723b905",
+      "tr": "cellpose 4.0.8'e sabitler ve Classpose'u alt modülleriyle yeniden kurar (tek sefer)",
+      "en": "Pins cellpose to 4.0.8 and reinstalls Classpose with its submodules (once)"
+    },
+    {
+      "key": "script.82bedbe63b36",
+      "tr": "Python ortam yöneticisi…",
+      "en": "Python environment manager…"
+    },
+    {
+      "key": "script.9c5672594ffe",
+      "tr": "Atölye Python ortam yöneticisini açar; \"Sihirbaza dön ▶\" ile geri gelirsiniz",
+      "en": "Opens the workshop Python environment manager; return with \"Return to wizard ▶\""
+    },
+    {
+      "key": "script.3bef56b42b8a",
+      "tr": "Denetle",
+      "en": "Check"
+    },
+    {
+      "key": "script.dddfcf6438ca",
+      "tr": "classpose_runner.py selftest — paketler, predict_wsi içe aktarımı + CUDA",
+      "en": "classpose_runner.py selftest — packages, predict_wsi import + CUDA"
+    },
+    {
+      "key": "script.4b73cf2c4ab9",
+      "tr": "Köprü seç…",
+      "en": "Choose bridge…"
+    },
+    {
+      "key": "script.a8389c133c70",
+      "tr": "classpose_runner.py seçin",
+      "en": "Choose classpose_runner.py"
+    },
+    {
+      "key": "script.4cbe45b8bea4",
+      "tr": "② Model dosyası",
+      "en": "② Model file"
+    },
+    {
+      "key": "script.bea611f0f64c",
+      "tr": "Klasördeki modeli kullan",
+      "en": "Use the model in a folder"
+    },
+    {
+      "key": "script.63786502a216",
+      "tr": "İndir (veri köküne)",
+      "en": "Download (to data root)"
+    },
+    {
+      "key": "script.6b16a609ae4a",
+      "tr": "Klasör seç…",
+      "en": "Choose folder…"
+    },
+    {
+      "key": "script.d79ade13e0b2",
+      "tr": "Model klasörü (conic.pt, puma.pt …)",
+      "en": "Model folder (conic.pt, puma.pt …)"
+    },
+    {
+      "key": "script.fd22c2ea6aea",
+      "tr": "(klasör seçilmedi)",
+      "en": "(no folder selected)"
+    },
+    {
+      "key": "script.4fd368d0f37d",
+      "tr": "Model klasörü seçilmedi.",
+      "en": "No model folder selected."
+    },
+    {
+      "key": "script.1fb27e104d35",
+      "tr": "Dosya yok: ",
+      "en": "File missing: "
+    },
+    {
+      "key": "script.210d3f060514",
+      "tr": "Dosya var ama doğrulanmadı: ",
+      "en": "File exists but is not verified: "
+    },
+    {
+      "key": "script.c889f73403aa",
+      "tr": " — \"Doğrula\" (SHA-256, bir kez)",
+      "en": " — \"Verify\" (SHA-256, once)"
+    },
+    {
+      "key": "script.541dd9fc5158",
+      "tr": "Doğrulandı: ",
+      "en": "Verified: "
+    },
+    {
+      "key": "script.4e8b339e360e",
+      "tr": "Doğrula",
+      "en": "Verify"
+    },
+    {
+      "key": "script.61305234dddc",
+      "tr": "SHA-256 sabitlenmiş sürümle karşılaştırılır (1.2 GB — biraz sürer)",
+      "en": "Compares SHA-256 with the pinned version (1.2 GB — takes some time)"
+    },
+    {
+      "key": "script.76ac54b3b991",
+      "tr": "İndir (~1.2 GB)",
+      "en": "Download (~1.2 GB)"
+    },
+    {
+      "key": "script.822dc75ccc52",
+      "tr": "Yalnız seçili model, Hugging Face (sabit revizyon) → veri kökü",
+      "en": "Only the selected model, Hugging Face (pinned revision) → data root"
+    },
+    {
+      "key": "script.26afccb53145",
+      "tr": "③ GrandQC (isteğe bağlı: doku/artefakt filtresi)",
+      "en": "③ GrandQC (optional: tissue/artefact filter)"
+    },
+    {
+      "key": "script.0af617e17033",
+      "tr": "Ağırlıklar hazır: ",
+      "en": "Weights ready: "
+    },
+    {
+      "key": "script.51355b7999c4",
+      "tr": "Ağırlıklar yok: ",
+      "en": "Weights missing: "
+    },
+    {
+      "key": "script.16693b2639cd",
+      "tr": "GrandQC sihirbazıyla AYNI dosyalar ve klasör kullanılır; ikinci kopya indirilmez. \"İndir\" eksik dosyaları (4 dosya, ~100 MB) Zenodo MD5 ile doğrulayarak indirir. Not: artefakt tespiti yalnız seçili alanı değil tüm lamı 1 µm/px'te tarar.",
+      "en": "Uses the SAME files and folder as the GrandQC wizard; no second copy is downloaded. \"Download\" fetches missing files (4 files, ~100 MB) and verifies them with Zenodo MD5. Note: artefact detection scans the whole slide at 1 µm/px, including areas outside the selection."
+    },
+    {
+      "key": "script.94161ebf11c3",
+      "tr": "GrandQC ağırlıklarını indir (~100 MB)",
+      "en": "Download GrandQC weights (~100 MB)"
+    },
+    {
+      "key": "script.7c289f6fe3f1",
+      "tr": "Çalıştırma ekranına geç ▶",
+      "en": "Go to run screen ▶"
+    },
+    {
+      "key": "script.98cb471bb8ad",
+      "tr": " — tamam ✅",
+      "en": " — complete ✅"
+    },
+    {
+      "key": "script.b7ea4cee1008",
+      "tr": " — iptal edildi",
+      "en": " — cancelled"
+    },
+    {
+      "key": "script.9f30a211defc",
+      "tr": " — BAŞARISIZ (günlüğe bakın)",
+      "en": " — FAILED (see log)"
+    },
+    {
+      "key": "script.0f890b2dbd3f",
+      "tr": "◀ Kuruluma dön",
+      "en": "◀ Back to setup"
+    },
+    {
+      "key": "script.bba9c203d381",
+      "tr": "Günlüğü kaydet…",
+      "en": "Save log…"
+    },
+    {
+      "key": "script.2065029c612d",
+      "tr": "Çalıştırma ekranına dön ▶",
+      "en": "Back to run screen ▶"
+    },
+    {
+      "key": "script.a45ef11abb75",
+      "tr": "Önce bir H&E lamı açın, ilgi alanını çizip seçin, sonra \"⟳ Yenile\".",
+      "en": "Open an H&E slide, draw and select a region of interest, then choose \"⟳ Refresh\"."
+    },
+    {
+      "key": "script.79fdaba65b05",
+      "tr": "◀ Kurulum",
+      "en": "◀ Setup"
+    },
+    {
+      "key": "script.4f3417573af9",
+      "tr": "Classpose — seçili alanda hücre sınıfları",
+      "en": "Classpose — cell classes in the selected region"
+    },
+    {
+      "key": "script.1ab56fea6c3e",
+      "tr": "TTA (test zamanı artırma — daha yavaş)",
+      "en": "TTA (test-time augmentation — slower)"
+    },
+    {
+      "key": "script.6921108d13ee",
+      "tr": "Doku tespiti (GrandQC)",
+      "en": "Tissue detection (GrandQC)"
+    },
+    {
+      "key": "script.26ce791d394c",
+      "tr": "Artefakt filtreleme (GrandQC; tüm lamı tarar)",
+      "en": "Artefact filtering (GrandQC; scans the whole slide)"
+    },
+    {
+      "key": "script.d4336c3867bc",
+      "tr": "Cihaz:",
+      "en": "Device:"
+    },
+    {
+      "key": "script.67e6822a42cd",
+      "tr": "Karo boyutu (256–2048):",
+      "en": "Tile size (256–2048):"
+    },
+    {
+      "key": "script.7f46475b1055",
+      "tr": "Gelişmiş",
+      "en": "Advanced"
+    },
+    {
+      "key": "script.94d2629ed058",
+      "tr": "Classpose YALNIZ seçili alan(lar)da çalışır. Sonuç: her hücre için \"<Sınıf> (Classpose)\" sınıflı poligon tespiti + seçili anotasyonlara sınıf başına sayım, % ve yoğunluk (hücre/mm²).",
+      "en": "Classpose runs ONLY in the selected region(s). Result: a polygon detection for each cell with a \"<Sınıf> (Classpose)\" class, plus per-class counts, percentages and density (cells/mm²) on the selected annotations."
+    },
+    {
+      "key": "script.179082a34166",
+      "tr": "Seçimi ve lam ön denetimini yeniden okur",
+      "en": "Reads the selection and slide precheck again"
+    },
+    {
+      "key": "script.0e054133c4a1",
+      "tr": "Seçili alanda çalıştır ▶",
+      "en": "Run in selected region ▶"
+    },
+    {
+      "key": "script.001af2bbc880",
+      "tr": "Classpose'u seçili alanda çalıştırır",
+      "en": "Runs Classpose in the selected region"
+    },
+    {
+      "key": "script.b8848d073c4a",
+      "tr": "Geçen süre: ",
+      "en": "Elapsed time: "
+    },
+    {
+      "key": "script.fa2c6eca3058",
+      "tr": "Classpose ayrı bir süreç olarak çalışıyor (model yükleme + karo çıkarımı). \"İptal et\" tüm süreç ağacını durdurur; hiçbir şey içe aktarılmaz.",
+      "en": "Classpose is running in a separate process (model loading + tile inference). \"Cancel\" stops the entire process tree; nothing is imported."
+    },
+    {
+      "key": "script.245c572ec2ea",
+      "tr": "Lütfen bekleyin…",
+      "en": "Please wait…"
+    },
+    {
+      "key": "script.381033c8a558",
+      "tr": "Hücre sınıflarını Annotations/Hierarchy panelinden ya da View → Show detections ile inceleyin; sınıf renklerini \"Classes\" listesinden açıp kapatın.",
+      "en": "Inspect cell classes in the Annotations/Hierarchy panel or with View → Show detections; toggle class colours in the \"Classes\" list."
+    },
+    {
+      "key": "script.64ca18050049",
+      "tr": "roi.geojson, Classpose çıktıları ve classpose_run.log",
+      "en": "roi.geojson, Classpose outputs and classpose_run.log"
+    },
+    {
+      "key": "script.c94499b243e4",
+      "tr": "↻ Yeniden çalıştır",
+      "en": "↻ Run again"
+    },
+    {
+      "key": "script.808d79f60179",
+      "tr": "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.",
+      "en": "⚠️ Produces measurements for research/teaching only; makes no clinical decisions."
+    },
+    {
+      "key": "script.67dcd021afd0",
+      "tr": "Classpose — H&E hücre fenotipleme (seçili alanda)",
+      "en": "Classpose — H&E cell phenotyping (selected region)"
+    },
+    {
+      "key": "script.e136f4a3bb45",
+      "tr": "(ileti yok)",
+      "en": "(no message)"
+    },
+    {
+      "key": "script.69ba4d3b4ea1",
+      "tr": "Mevcut sınıflar",
+      "en": "Existing classes"
+    },
+    {
+      "key": "script.7c7fbef45028",
+      "tr": "Mevcut sınıfların üzerine yazılacak",
+      "en": "Existing classes will be overwritten"
+    },
+    {
+      "key": "script.0a50c949b15b",
+      "tr": "%,d hücrenin mevcut sınıfı CytoFormer sınıfıyla DEĞİŞTİRİLECEK ve geri alınamaz.\n\nDevam edilsin mi?",
+      "en": "The existing classes of %,d cells will be REPLACED with CytoFormer classes. This cannot be undone.\n\nContinue?"
+    },
+    {
+      "key": "script.138d9423353a",
+      "tr": "Seçili alandaki tüm hücrelerin zaten başka bir sınıfı var — sınıflanacak hücre kalmadı. Hiçbir şey değiştirilmedi.",
+      "en": "All cells in the selected region already have another class — no cells remain to classify. Nothing was changed."
+    },
+    {
+      "key": "script.ec76b73c7f4a",
+      "tr": "Büyük çalıştırma",
+      "en": "Large run"
+    },
+    {
+      "key": "script.84b1aa5e1202",
+      "tr": "CytoFormer — kurulum",
+      "en": "CytoFormer — setup"
+    },
+    {
+      "key": "script.8d5338aada6b",
+      "tr": "Üç kurulum adımı vardır; hepsi tamamlanınca \"Çalıştırma ekranına geç\" etkinleşir.",
+      "en": "There are three setup steps; completing all of them enables \"Go to run screen\"."
+    },
+    {
+      "key": "script.c8871d4f3e08",
+      "tr": "Python ortamı (cytoformer) kurulu değil — ortam yöneticisinde \"CytoFormer — H&E hücre tipi sınıflama\" satırını kurun (~5 GB, GPU önerilir).",
+      "en": "The Python environment (cytoformer) is not installed — install the \"CytoFormer — H&E hücre tipi sınıflama\" entry in the environment manager (~5 GB, GPU recommended)."
+    },
+    {
+      "key": "script.98e8579dbbdc",
+      "tr": "Köprü betiği bulunamadı (cytoformer_runner.py eklentiyle birlikte gelir — özel yol için \"Köprü seç…\").",
+      "en": "Bridge script not found (cytoformer_runner.py is bundled with the extension — use \"Choose bridge…\" for a custom path)."
+    },
+    {
+      "key": "script.2101da68837c",
+      "tr": "cytoformer_runner.py selftest — paketler + CUDA + kod/model durumu",
+      "en": "cytoformer_runner.py selftest — packages + CUDA + code/model status"
+    },
+    {
+      "key": "script.519b4a48a617",
+      "tr": "Python seç…",
+      "en": "Choose Python…"
+    },
+    {
+      "key": "script.174717d20e0d",
+      "tr": "python.exe seçin",
+      "en": "Choose python.exe"
+    },
+    {
+      "key": "script.259fcfc9741a",
+      "tr": "cytoformer_runner.py seçin",
+      "en": "Choose cytoformer_runner.py"
+    },
+    {
+      "key": "script.d9dc50d5303e",
+      "tr": "② Kod (Penn Academic Software License)",
+      "en": "② Code (Penn Academic Software License)"
+    },
+    {
+      "key": "script.da7f892f9007",
+      "tr": "Kod indirilmiş: ",
+      "en": "Code downloaded: "
+    },
+    {
+      "key": "script.7ec2837c2232",
+      "tr": "Kod yok: ",
+      "en": "Code missing: "
+    },
+    {
+      "key": "script.e50049a96f25",
+      "tr": "Okudum; bu koşulları (yalnız dahili araştırma / ticari olmayan kullanım, yeniden dağıtım yok) kendi adıma kabul ediyorum.",
+      "en": "I have read these terms (internal research / non-commercial use only, no redistribution) and accept them on my own behalf."
+    },
+    {
+      "key": "script.f72bc5e3ab8b",
+      "tr": "Kodu indir",
+      "en": "Download code"
+    },
+    {
+      "key": "script.194fcae27027",
+      "tr": "'den 8 dosya",
+      "en": " — 8 files"
+    },
+    {
+      "key": "script.32b0b3013b2d",
+      "tr": "Hugging Face'ten indir",
+      "en": "Download from Hugging Face"
+    },
+    {
+      "key": "script.737a83f7a6aa",
+      "tr": "Model klasörü (checkpoint.pth + organ_celltype_map.json)",
+      "en": "Model folder (checkpoint.pth + organ_celltype_map.json)"
+    },
+    {
+      "key": "script.04c03d49215c",
+      "tr": "(klasör seçilmedi — ör. J:\\zhihuanglab\\CytoFormer)",
+      "en": "(no folder selected — e.g. J:\\zhihuanglab\\CytoFormer)"
+    },
+    {
+      "key": "script.f1b75239bd07",
+      "tr": "Hugging Face jetonu (isteğe bağlı — hf auth login yapıldıysa boş bırakın)",
+      "en": "Hugging Face token (optional — leave blank if you have run hf auth login)"
+    },
+    {
+      "key": "script.96ad2d65e41c",
+      "tr": "HF jetonu:",
+      "en": "HF token:"
+    },
+    {
+      "key": "script.e8bde66c406d",
+      "tr": " — \"Doğrula\" (SHA-256, ~2,7 GB — bir kez)",
+      "en": " — \"Verify\" (SHA-256, ~2.7 GB — once)"
+    },
+    {
+      "key": "script.fd814a0b272d",
+      "tr": "SHA-256 sabitlenmiş sürümle karşılaştırılır",
+      "en": "Compares SHA-256 with the pinned version"
+    },
+    {
+      "key": "script.8231b9eff11a",
+      "tr": "İndir (~2,7 GB)",
+      "en": "Download (~2.7 GB)"
+    },
+    {
+      "key": "script.a9c0a510c148",
+      "tr": "Hugging Face (sabit revizyon 3e9691e) → veri kökü",
+      "en": "Hugging Face (pinned revision 3e9691e) → data root"
+    },
+    {
+      "key": "script.2d2afea9c9fc",
+      "tr": "Önce bir H&E lamı açın, hücre tespiti çalıştırın, ilgi alanınızı çizip seçin, sonra \"⟳ Yenile\".",
+      "en": "Open an H&E slide, run cell detection, draw and select your region of interest, then choose \"⟳ Refresh\"."
+    },
+    {
+      "key": "script.a73661fcb0dc",
+      "tr": "CytoFormer — H&E hücre tipi sınıflama",
+      "en": "CytoFormer — H&E cell type classification"
+    },
+    {
+      "key": "script.3d93a39930cf",
+      "tr": "Kurulum: ① Python %s · ② Kod %s · ③ Ağırlık %s",
+      "en": "Setup: ① Python %s · ② Code %s · ③ Weights %s"
+    },
+    {
+      "key": "script.967c79ea0429",
+      "tr": "⚠ Bilinmeyen organ anahtarı.",
+      "en": "⚠ Unknown organ key."
+    },
+    {
+      "key": "script.5880cbaf8b5a",
+      "tr": "16 organın dışındaki bir doku için genel bir vekil seçilebilir — ",
+      "en": "For tissue outside the 16 organs, a general proxy can be selected — "
+    },
+    {
+      "key": "script.f0497b6bca30",
+      "tr": " aynı 7 sınıfı (Tümör hücresi·Stromal hücre·Epitel hücresi·Lenfosit·Endotel hücresi·Makrofaj·Plazma hücresi) paylaşır; sonuç o organ için doğrulanmamıştır.",
+      "en": " share the same 7 classes (Tumour cell·Stromal cell·Epithelial cell·Lymphocyte·Endothelial cell·Macrophage·Plasma cell); the result is not validated for that organ."
+    },
+    {
+      "key": "script.28548637b194",
+      "tr": "0 = kapalı",
+      "en": "0 = off"
+    },
+    {
+      "key": "script.081e16f6b80f",
+      "tr": "Parça (chunk):",
+      "en": "Chunk:"
+    },
+    {
+      "key": "script.c3056e75713b",
+      "tr": "Min. olasılık (0–1):",
+      "en": "Min. probability (0–1):"
+    },
+    {
+      "key": "script.772d6b395d53",
+      "tr": "⑥ \"Seçili alanda çalıştır ▶\": her hücre için \"<tip> (CytoFormer)\" sınıfı + olasılık ölçümü; seçili anotasyonlara sayım/%/yoğunluk. Hücrelerde BAŞKA bir kaynaktan gelen sınıf varsa (nesne sınıflandırıcınız, başka bir model) çalıştırmadan önce sorulur — varsayılan, o sınıfların üzerine YAZMAMAKTIR.",
+      "en": "⑥ \"Run in selected region ▶\": a \"<tip> (CytoFormer)\" class and probability measurement for each cell, plus counts/percentages/density on selected annotations. If cells have classes from ANOTHER source (your object classifier or another model), you will be asked before the run — the default is to KEEP those classes."
+    },
+    {
+      "key": "script.8507531a29af",
+      "tr": "CytoFormer'ı seçili alanda çalıştırır",
+      "en": "Runs CytoFormer in the selected region"
+    },
+    {
+      "key": "script.a1627e3e0150",
+      "tr": "CytoFormer ayrı bir süreç olarak çalışıyor (yama dışa aktarımı + model çıkarımı, parça parça). \"İptal et\" mevcut parçayı durdurur; o ana kadar HİÇBİR ŞEY QuPath nesnelerine yazılmaz.",
+      "en": "CytoFormer is running in a separate process (patch export + model inference, in chunks). \"Cancel\" stops the current chunk; NOTHING has been written to QuPath objects at that point."
+    },
+    {
+      "key": "script.c00e74c04c57",
+      "tr": "Sınıflama tamam ✅",
+      "en": "Classification complete ✅"
+    },
+    {
+      "key": "script.d8e2d89dc4cf",
+      "tr": "Yamalar ve classify_out.tsv",
+      "en": "Patches and classify_out.tsv"
+    },
+    {
+      "key": "script.f9eba8efd0ba",
+      "tr": "Yamalar (varsa) ve classify_out.tsv — hata ayıklama için tutulur",
+      "en": "Patches (if any) and classify_out.tsv — kept for debugging"
+    },
+    {
+      "key": "script.b2e8e49c6084",
+      "tr": "⌂ Ana ekran",
+      "en": "⌂ Home"
+    },
+    {
+      "key": "script.7e81819fbc94",
+      "tr": "Sihirbazın ana ekranına döner",
+      "en": "Returns to the wizard's main screen"
+    },
+    {
+      "key": "script.70fa1483ed69",
+      "tr": "GrandQC yapılandırması gerekli",
+      "en": "GrandQC configuration required"
+    },
+    {
+      "key": "script.d051bd0e2ad2",
+      "tr": "GrandQC ÜÇ ayrı kurulum adımı gerektirir; aşağıdaki ①②③ butonları bu adımları ÇALIŞTIRIR (indirir/kurar). Eksik/geçersiz:\n  • ",
+      "en": "GrandQC requires THREE separate setup steps; the ①②③ buttons below RUN these steps (download/install). Missing/invalid:\n  • "
+    },
+    {
+      "key": "script.c9e40237f6ef",
+      "tr": "Atölye Python ortam yöneticisini açar → \"GrandQC\"yi kurun; python otomatik algılanır",
+      "en": "Opens the workshop Python environment manager → install \"GrandQC\"; Python is detected automatically"
+    },
+    {
+      "key": "script.f92aa4bd6dbf",
+      "tr": "② GrandQC deposu indir",
+      "en": "② Download GrandQC repository"
+    },
+    {
+      "key": "script.b5cc642fa853",
+      "tr": "GitHub ZIP indirir + açar, betik dizinini otomatik ayarlar",
+      "en": "Downloads and extracts the GitHub ZIP, then sets the script folder automatically"
+    },
+    {
+      "key": "script.a9725b8aa2e6",
+      "tr": "③ Model indir",
+      "en": "③ Download model"
+    },
+    {
+      "key": "script.a4e0014972aa",
+      "tr": "Zenodo model ağırlıklarını models/td & models/qc içine indirir (önce ②)",
+      "en": "Downloads Zenodo model weights to models/td & models/qc (complete ② first)"
+    },
+    {
+      "key": "script.3efe57ecbec5",
+      "tr": "Yapılandır ▶",
+      "en": "Configure ▶"
+    },
+    {
+      "key": "script.63834400914f",
+      "tr": "GrandQC yapılandırması",
+      "en": "GrandQC configuration"
+    },
+    {
+      "key": "script.8622b674942a",
+      "tr": "Dosya seç",
+      "en": "Choose file"
+    },
+    {
+      "key": "script.15f8cfe83dc9",
+      "tr": "Dizin seç",
+      "en": "Choose folder"
+    },
+    {
+      "key": "script.608b0986e143",
+      "tr": "GrandQC betik dizini:",
+      "en": "GrandQC script folder:"
+    },
+    {
+      "key": "script.98113e28d8ef",
+      "tr": "Model dizini (ops.):",
+      "en": "Model folder (optional):"
+    },
+    {
+      "key": "script.44c53179d5ed",
+      "tr": "Artefakt MPP modeli:",
+      "en": "Artefact MPP model:"
+    },
+    {
+      "key": "script.6203f6b549f1",
+      "tr": "Cihaz (hızlandırıcı):",
+      "en": "Device (accelerator):"
+    },
+    {
+      "key": "script.f35a5df81a3f",
+      "tr": "Betik dizini wsi_tis_detect.py + main.py içermeli. Model dizini doku/artefakt .pth dosyalarını içerir.\nCihaz: GrandQC betikleri cihazı kaynakta sabitler; seçiminiz çalıştırmadan önce .py dosyalarına yamalanır. CUDA yoksa cpu seçin (yavaş ama çalışır).",
+      "en": "The script folder must contain wsi_tis_detect.py + main.py. The model folder contains tissue/artefact .pth files.\nDevice: GrandQC scripts set the device in their source; your selection is patched into the .py files before running. Select cpu if CUDA is unavailable (slow but works)."
+    },
+    {
+      "key": "script.4103ffc826a7",
+      "tr": "Ortamı doğrula",
+      "en": "Verify environment"
+    },
+    {
+      "key": "script.3e587f5dcbba",
+      "tr": "python + paketler (torch/cv2/openslide) + model dosyalarını kontrol eder (yalnız bilgi)",
+      "en": "Checks Python + packages (torch/cv2/openslide) + model files (information only)"
+    },
+    {
+      "key": "script.96f6bd4b06cc",
+      "tr": "Kaydet ▶",
+      "en": "Save ▶"
+    },
+    {
+      "key": "script.5e2f140588c9",
+      "tr": "Önce bir H&E lamını açın, sonra \"⟳ Yenile\".",
+      "en": "Open an H&E slide, then choose \"⟳ Refresh\"."
+    },
+    {
+      "key": "script.b528a2cc114e",
+      "tr": "Yapılandır",
+      "en": "Configure"
+    },
+    {
+      "key": "script.590fd7fa9d85",
+      "tr": "GrandQC — hazır",
+      "en": "GrandQC — ready"
+    },
+    {
+      "key": "script.3af75b519540",
+      "tr": "Kapsam: GrandQC seçili KLASÖRDEKİ tüm lamları işler (tek lam / anotasyon modu yoktur). Öntanımlı olarak açık lamın klasörü kullanılır; tüm projeyi/başka bir klasörü işlemek için \"Klasör seç…\".",
+      "en": "Scope: GrandQC processes all slides in the selected FOLDER (there is no single-slide / annotation mode). The open slide's folder is used by default; choose \"Choose folder…\" to process the whole project/another folder."
+    },
+    {
+      "key": "script.60b9e2285984",
+      "tr": "⚠ Görüntü tipi H&E değil (",
+      "en": "⚠ Image type is not H&E ("
+    },
+    {
+      "key": "script.7d608bfa5aca",
+      "tr": "). GrandQC H&E için tasarlanmıştır; yine de deneyebilirsiniz.",
+      "en": "). GrandQC was designed for H&E; you can still try it."
+    },
+    {
+      "key": "script.3481659fd463",
+      "tr": "İşlenecek lam klasörü (kapsam)",
+      "en": "Slide folder to process (scope)"
+    },
+    {
+      "key": "script.4cb5078d40ed",
+      "tr": "İşlenecek klasörü değiştir — o klasördeki tüm lamlar işlenir",
+      "en": "Changes the folder to process — all slides in that folder are processed"
+    },
+    {
+      "key": "script.f31e3e783230",
+      "tr": "↺ Lamın klasörü",
+      "en": "↺ Slide folder"
+    },
+    {
+      "key": "script.edb567f95eed",
+      "tr": "Kapsamı açık lamın klasörüne döndür",
+      "en": "Resets the scope to the open slide's folder"
+    },
+    {
+      "key": "script.a9907c8f2f7d",
+      "tr": "Komut üret ▶",
+      "en": "Generate commands ▶"
+    },
+    {
+      "key": "script.eca38b5d1b2a",
+      "tr": "GeoJSON içe aktar",
+      "en": "Import GeoJSON"
+    },
+    {
+      "key": "script.a5d05195ff26",
+      "tr": "Mevcut GrandQC GeoJSON çıktısını içe aktarır",
+      "en": "Imports existing GrandQC GeoJSON output"
+    },
+    {
+      "key": "script.3ecd99c46bb6",
+      "tr": "Doğrudan çalıştır ▶",
+      "en": "Run directly ▶"
+    },
+    {
+      "key": "script.5a37a3a27f8d",
+      "tr": "Python hattını QuPath içinden çalıştırır (venv gerekli)",
+      "en": "Runs the Python pipeline from QuPath (venv required)"
+    },
+    {
+      "key": "script.59e9d0c5f7d7",
+      "tr": "Proje geneli içe aktar",
+      "en": "Import across project"
+    },
+    {
+      "key": "script.8689cc3c786a",
+      "tr": "Proje geneli içe aktarım",
+      "en": "Project-wide import"
+    },
+    {
+      "key": "script.6b5fa14a4e5c",
+      "tr": "Projedeki ",
+      "en": "Existing GrandQC GeoJSON will be imported for each of the "
+    },
+    {
+      "key": "script.ddfaa134e1b2",
+      "tr": " görüntünün her biri için var olan GrandQC GeoJSON'u içe aktarılacak:\n\n",
+      "en": " images in the project:\n\n"
+    },
+    {
+      "key": "script.0d2499a90b4e",
+      "tr": "• Her görüntüdeki önceki \"GrandQC KK\" anotasyonları (varsa elle düzeltmeler dahil) silinip yeniden üretilir.\n",
+      "en": "• Previous \"GrandQC KK\" annotations in each image (including any manual corrections) are deleted and regenerated.\n"
+    },
+    {
+      "key": "script.480154216d1e",
+      "tr": "• Sonuç HER görüntü için diske KAYDEDİLİR (geri alınamaz); açık lamın tüm güncel hâli de kaydedilir.\n\n",
+      "en": "• The result is SAVED to disk for EVERY image (cannot be undone); the open slide's entire current state is also saved.\n\n"
+    },
+    {
+      "key": "script.a7735569f91d",
+      "tr": "Devam edilsin mi?",
+      "en": "Continue?"
+    },
+    {
+      "key": "script.184b262d94f1",
+      "tr": "Projedeki TÜM görüntüler için her birinin KENDİ klasöründeki GeoJSON çıktısını içe aktarır ve diske kaydeder (tam ad eşleşmesi)",
+      "en": "Imports GeoJSON output for ALL project images from each image's OWN folder and saves to disk (exact name match)"
+    },
+    {
+      "key": "script.a965b245238f",
+      "tr": "GrandQC komut satırları",
+      "en": "GrandQC command lines"
+    },
+    {
+      "key": "script.44d26eeb0121",
+      "tr": "Aşağıdaki iki komutu bir terminalde (venv etkin) sırayla çalıştırın; sonra \"GeoJSON içe aktar\".",
+      "en": "Run the following two commands in order in a terminal (with the venv active), then choose \"Import GeoJSON\"."
+    },
+    {
+      "key": "script.8533e42fc110",
+      "tr": " çalışıyor…",
+      "en": " running…"
+    },
+    {
+      "key": "script.dc569b8873a6",
+      "tr": "Python hattı çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ",
+      "en": "The Python pipeline is running. Output appears below. Timeout: "
+    },
+    {
+      "key": "script.9d84a2f3efc0",
+      "tr": " sn.",
+      "en": " s."
+    },
+    {
+      "key": "script.7cbbedd82be0",
+      "tr": "Proje geneli içe aktarımı durdur — o ana dek işlenen görüntüler kaydedilmiştir",
+      "en": "Stops the project-wide import — images processed so far have been saved"
+    },
+    {
+      "key": "script.b1ae91710f02",
+      "tr": "Rapor görüntüle",
+      "en": "View report"
+    },
+    {
+      "key": "script.b56375a2f81d",
+      "tr": "GrandQC lam başına istatistik raporu (büyütme/MPP, karo sayısı, boyut, süre)",
+      "en": "GrandQC per-slide statistics report (magnification/MPP, tile count, dimensions, time)"
+    },
+    {
+      "key": "script.ec2142a4e0c9",
+      "tr": "GrandQC istatistik raporu",
+      "en": "GrandQC statistics report"
+    },
+    {
+      "key": "script.31e7af60f3c0",
+      "tr": "main.py çıktısı: lam başına büyütme/MPP, karo sayıları, görüntü boyutu ve işlem süresi. Salt okunur — kalite notu/derece üretmez.",
+      "en": "main.py output: magnification/MPP, tile counts, image dimensions and processing time per slide. Read-only — produces no quality score/grade."
+    },
+    {
+      "key": "script.1a7f328c334d",
+      "tr": "Dışa aktar…",
+      "en": "Export…"
+    },
+    {
+      "key": "script.5568a23417d1",
+      "tr": "Raporu kaydet",
+      "en": "Save report"
+    },
+    {
+      "key": "script.50ae0510ab38",
+      "tr": "Rapor kaydedildi",
+      "en": "Report saved"
+    },
+    {
+      "key": "script.4066bc1f732a",
+      "tr": "Kaydedilemedi",
+      "en": "Could not save"
+    },
+    {
+      "key": "script.525c71e59317",
+      "tr": "GrandQC ortam doğrulama",
+      "en": "GrandQC environment verification"
+    },
+    {
+      "key": "script.11fb0895f2b9",
+      "tr": "GrandQC kalite kontrol sihirbazı",
+      "en": "GrandQC quality control wizard"
     }
   ],
   "source_contracts": {
@@ -2185,6 +3118,18 @@
     "yardimci-python-ortam-yoneticisi.groovy": {
       "revision": "6c648c9c95b7d3cefe35588d2420554dcf87ddc3",
       "sha256": "c1654ab1b7798c0558dd827978b58b514516910ebafe654a774834c78cb6038e"
+    },
+    "yardimci-classpose-sihirbaz.groovy": {
+      "revision": "a93a2117daf270c8a867eeb39575850c771c9fd2",
+      "sha256": "8367cf2cd264417e2215263bd1a381b5ee8ae026688fd96aaf73626d3f674611"
+    },
+    "yardimci-cytoformer-sihirbaz.groovy": {
+      "revision": "a93a2117daf270c8a867eeb39575850c771c9fd2",
+      "sha256": "a2c6e4ca3a2d427b92c22f18684e50d57634ee6543aa4c2f0c8027dc99114e98"
+    },
+    "yardimci-grandqc-sihirbaz.groovy": {
+      "revision": "a93a2117daf270c8a867eeb39575850c771c9fd2",
+      "sha256": "c66a490440658650695f8a8499c5d7d07aee3fc43fd6b03159b4600b7174be2a"
     }
   }
 }

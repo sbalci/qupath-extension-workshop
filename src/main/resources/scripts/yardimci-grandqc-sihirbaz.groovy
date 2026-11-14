@@ -1030,15 +1030,15 @@ def launchBundledScript = { String resourceName ->
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + resourceName) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + resourceName)
             if (url == null) {
-                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
-                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.612821b4f218', 'Betik bulunamadı'),
+                    workshopText('script.9641266ba42d', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi')) }
                 return
             }
             def cl = this.getClass().getClassLoader()
             try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
             new GroovyShell(cl).evaluate(url.getText('UTF-8'), resourceName)
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage(workshopText('script.e83c5641f38e', 'Açılamadı'), (t.getMessage() ?: t.getClass().getSimpleName())) }
         }
     } as Runnable).start()
 }
@@ -1228,7 +1228,7 @@ def envReturnHook = [
                 if (!stage.isShowing()) stage.show()
                 stage.toFront(); stage.requestFocus()
             } catch (Throwable t) {
-                Dialogs.showErrorMessage('Sihirbaza dönüş', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+                Dialogs.showErrorMessage(workshopText('script.95854db5b310', 'Sihirbaza dönüş'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
             }
         }
     }
@@ -1241,8 +1241,8 @@ def launchEnvManager = { ->
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + res) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + res)
             if (url == null) {
-                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
-                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.612821b4f218', 'Betik bulunamadı'),
+                    workshopText('script.9641266ba42d', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi')) }
                 return
             }
             def cl = this.getClass().getClassLoader()
@@ -1251,7 +1251,7 @@ def launchEnvManager = { ->
             shellBinding.setVariable('atolyeReturnHook', envReturnHook)
             new GroovyShell(cl, shellBinding).evaluate(url.getText('UTF-8'), res)
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage(workshopText('script.e83c5641f38e', 'Açılamadı'), (t.getMessage() ?: t.getClass().getSimpleName())) }
         }
     } as Runnable).start()
 }
@@ -1293,15 +1293,15 @@ render = { ->
 
     // Ara ekranlardan sihirbazın ana ekranına tek tıkla dönüş (yapılandırma eksikse kurulum ekranı).
     def homeButton = { ->
-        navButton('⌂ Ana ekran', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() },
-            'Sihirbazın ana ekranına döner')
+        navButton(workshopText('script.b2e8e49c6084', '⌂ Ana ekran'), { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() },
+            workshopText('script.7e81819fbc94', 'Sihirbazın ana ekranına döner'))
     }
 
     if (cur == 'CONFIG_INCOMPLETE') {
-        title.setText('GrandQC yapılandırması gerekli')
+        title.setText(workshopText('script.70fa1483ed69', 'GrandQC yapılandırması gerekli'))
         def miss = configMissing(cfg)
-        addGuidance('GrandQC ÜÇ ayrı kurulum adımı gerektirir; aşağıdaki ①②③ butonları bu adımları ÇALIŞTIRIR ' +
-            '(indirir/kurar). Eksik/geçersiz:\n  • ' + (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')))
+        addGuidance(workshopText('script.d051bd0e2ad2', 'GrandQC ÜÇ ayrı kurulum adımı gerektirir; aşağıdaki ①②③ butonları bu adımları ÇALIŞTIRIR ' +
+            '(indirir/kurar). Eksik/geçersiz:\n  • ') + (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')))
         def gqPy = grandqcVenvPython()   // kayıtlı KESİN yol varsa onu göster, yoksa tahmin
         def resArea = new javafx.scene.control.TextArea(
             'KAYNAKLAR — ne · nereden · nereye:\n' +
@@ -1316,20 +1316,20 @@ render = { ->
             '   • GrandQC_MPP1 / 15 / 2.pth   (3×~25 MB) → models/qc/  [zenodo 14041538]')
         resArea.setEditable(false); resArea.setWrapText(false); resArea.setStyle(MONO); resArea.setPrefRowCount(9); resArea.setMaxHeight(190)
         center.getChildren().add(resArea)
-        actions.add(navButton('① Python ortamı', { launchEnvManager() },
-            'Atölye Python ortam yöneticisini açar → "GrandQC"yi kurun; python otomatik algılanır'))
-        actions.add(navButton('② GrandQC deposu indir', { installRepo() },
-            'GitHub ZIP indirir + açar, betik dizinini otomatik ayarlar'))
-        actions.add(navButton('③ Model indir', { installModels() },
-            'Zenodo model ağırlıklarını models/td & models/qc içine indirir (önce ②)'))
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.d6bef5796014', '① Python ortamı'), { launchEnvManager() },
+            workshopText('script.c9e40237f6ef', 'Atölye Python ortam yöneticisini açar → "GrandQC"yi kurun; python otomatik algılanır')))
+        actions.add(navButton(workshopText('script.f92aa4bd6dbf', '② GrandQC deposu indir'), { installRepo() },
+            workshopText('script.b5cc642fa853', 'GitHub ZIP indirir + açar, betik dizinini otomatik ayarlar')))
+        actions.add(navButton(workshopText('script.a9725b8aa2e6', '③ Model indir'), { installModels() },
+            workshopText('script.a4e0014972aa', 'Zenodo model ağırlıklarını models/td & models/qc içine indirir (önce ②)')))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
         def ilog = new javafx.scene.control.TextArea(installLogSnapshot())
         ilog.setEditable(false); ilog.setWrapText(false); ilog.setStyle(MONO); ilog.setPrefRowCount(7)
         javafx.scene.layout.VBox.setVgrow(ilog, javafx.scene.layout.Priority.ALWAYS)
         installLogAreaRef.set(ilog); center.getChildren().add(ilog)
     } else if (cur == 'CONFIG') {
-        title.setText('GrandQC yapılandırması')
+        title.setText(workshopText('script.63834400914f', 'GrandQC yapılandırması'))
         def grid = new javafx.scene.layout.GridPane()
         grid.setHgap(8); grid.setVgap(8)
         def pyField = new javafx.scene.control.TextField(cfg.python ?: '')
@@ -1344,33 +1344,33 @@ render = { ->
         ['Otomatik (' + detDev + ')', 'cuda', 'mps', 'cpu'].each { deviceChoice.getItems().add(it) }
         deviceChoice.setValue(['cuda', 'mps', 'cpu'].contains(cfg.device) ? cfg.device : ('Otomatik (' + detDev + ')'))
         pyFieldRef.set(pyField); scriptsFieldRef.set(scField); modelFieldRef.set(mdField); mppChoiceRef.set(mppChoice); deviceChoiceRef.set(deviceChoice)
-        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Dosya seç'); if (x != null) f.setText(x.getAbsolutePath()) }
-        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Dizin seç', null); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.8622b674942a', 'Dosya seç')); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.15f8cfe83dc9', 'Dizin seç'), null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (python.exe):'), pyField, navButton('…', { browseFile(pyField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('GrandQC betik dizini:'), scField, navButton('…', { browseDir(scField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model dizini (ops.):'), mdField, navButton('…', { browseDir(mdField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Artefakt MPP modeli:'), mppChoice)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Cihaz (hızlandırıcı):'), deviceChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.608b0986e143', 'GrandQC betik dizini:')), scField, navButton('…', { browseDir(scField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.98113e28d8ef', 'Model dizini (ops.):')), mdField, navButton('…', { browseDir(mdField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.44c53179d5ed', 'Artefakt MPP modeli:')), mppChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.6203f6b549f1', 'Cihaz (hızlandırıcı):')), deviceChoice)
         center.getChildren().add(grid)
-        addGuidance('Betik dizini wsi_tis_detect.py + main.py içermeli. Model dizini doku/artefakt .pth dosyalarını içerir.\nCihaz: GrandQC betikleri cihazı kaynakta sabitler; seçiminiz çalıştırmadan önce .py dosyalarına yamalanır. CUDA yoksa cpu seçin (yavaş ama çalışır).')
-        actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('Ortamı doğrula', { runDiag() }, 'python + paketler (torch/cv2/openslide) + model dosyalarını kontrol eder (yalnız bilgi)'))
-        actions.add(navButton('Kaydet ▶', { saveConfig() }))
+        addGuidance(workshopText('script.f35a5df81a3f', 'Betik dizini wsi_tis_detect.py + main.py içermeli. Model dizini doku/artefakt .pth dosyalarını içerir.\nCihaz: GrandQC betikleri cihazı kaynakta sabitler; seçiminiz çalıştırmadan önce .py dosyalarına yamalanır. CUDA yoksa cpu seçin (yavaş ama çalışır).'))
+        actions.add(navButton(workshopText('script.72278748133a', 'İptal'), { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.4103ffc826a7', 'Ortamı doğrula'), { runDiag() }, workshopText('script.3e587f5dcbba', 'python + paketler (torch/cv2/openslide) + model dosyalarını kontrol eder (yalnız bilgi)')))
+        actions.add(navButton(workshopText('script.96f6bd4b06cc', 'Kaydet ▶'), { saveConfig() }))
     } else if (cur == 'READY') {
         if (imageData == null) {
-            title.setText('Görüntü açık değil')
-            addGuidance('Önce bir H&E lamını açın, sonra "⟳ Yenile".')
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
+            title.setText(workshopText('script.b4c901dc184b', 'Görüntü açık değil'))
+            addGuidance(workshopText('script.5e2f140588c9', 'Önce bir H&E lamını açın, sonra "⟳ Yenile".'))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
         } else {
             def slide = resolveSlide(imageData)
             def scopeFolder = effectiveFolder(slide)
             boolean overridden = (manualFolderRef.get() != null && manualFolderRef.get().toString().trim())
             def typeName = (imageData.getImageType()?.name() ?: '').toUpperCase(java.util.Locale.ROOT)
             boolean isHE = typeName.contains('BRIGHTFIELD_H_E')
-            title.setText('GrandQC — hazır')
+            title.setText(workshopText('script.590fd7fa9d85', 'GrandQC — hazır'))
             def sb = new StringBuilder()
             sb << "Lam        : " << slide.name << "\n"
             sb << "Kapsam       : " << (scopeFolder ?: '(yerel disk değil — klasör seçin)')
@@ -1381,123 +1381,123 @@ render = { ->
             def gj = findGeoJSON(slide, scopeFolder)
             sb << "GeoJSON      : " << ((gj != null && gj.isFile()) ? ('mevcut — ' + gj.getName()) : 'yok (henüz çalıştırılmadı)') << "\n"
             addMonoArea(sb.toString())
-            addGuidance('Kapsam: GrandQC seçili KLASÖRDEKİ tüm lamları işler (tek lam / anotasyon modu yoktur). ' +
-                        'Öntanımlı olarak açık lamın klasörü kullanılır; tüm projeyi/başka bir klasörü işlemek için "Klasör seç…".')
-            if (!isHE) addWarnLabel('⚠ Görüntü tipi H&E değil (' + typeName + '). GrandQC H&E için tasarlanmıştır; yine de deneyebilirsiniz.')
+            addGuidance(workshopText('script.3af75b519540', 'Kapsam: GrandQC seçili KLASÖRDEKİ tüm lamları işler (tek lam / anotasyon modu yoktur). ' +
+                        'Öntanımlı olarak açık lamın klasörü kullanılır; tüm projeyi/başka bir klasörü işlemek için "Klasör seç…".'))
+            if (!isHE) addWarnLabel(workshopText('script.60b9e2285984', '⚠ Görüntü tipi H&E değil (') + typeName + workshopText('script.7d608bfa5aca', '). GrandQC H&E için tasarlanmıştır; yine de deneyebilirsiniz.'))
             boolean canRun = configComplete(cfg) && (scopeFolder != null)
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Klasör seç…', {
-                def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'İşlenecek lam klasörü (kapsam)', scopeFolder != null ? new File(scopeFolder) : null)
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.6b16a609ae4a', 'Klasör seç…'), {
+                def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.3481659fd463', 'İşlenecek lam klasörü (kapsam)'), scopeFolder != null ? new File(scopeFolder) : null)
                 if (x != null) { manualFolderRef.set(x.getAbsolutePath()); render() }
-            }, 'İşlenecek klasörü değiştir — o klasördeki tüm lamlar işlenir'))
+            }, workshopText('script.4cb5078d40ed', 'İşlenecek klasörü değiştir — o klasördeki tüm lamlar işlenir')))
             if (overridden)
-                actions.add(navButton('↺ Lamın klasörü', { manualFolderRef.set(null); render() }, 'Kapsamı açık lamın klasörüne döndür'))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('Komut üret ▶', { cmdTextRef.set(cmdText(cfg, (effectiveFolder(slide) ?: '<lam-klasörü>'), slide.name)); step.set('CMD_READY'); render() }))
+                actions.add(navButton(workshopText('script.f31e3e783230', '↺ Lamın klasörü'), { manualFolderRef.set(null); render() }, workshopText('script.edb567f95eed', 'Kapsamı açık lamın klasörüne döndür')))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.a9907c8f2f7d', 'Komut üret ▶'), { cmdTextRef.set(cmdText(cfg, (effectiveFolder(slide) ?: '<lam-klasörü>'), slide.name)); step.set('CMD_READY'); render() }))
             if (gj != null && gj.isFile())
-                actions.add(navButton('GeoJSON içe aktar', { runImportClean(slide, effectiveFolder(slide)) }, 'Mevcut GrandQC GeoJSON çıktısını içe aktarır'))
-            def runBtn = navButton('Doğrudan çalıştır ▶', { startDirectRun(slide) }, 'Python hattını QuPath içinden çalıştırır (venv gerekli)')
+                actions.add(navButton(workshopText('script.eca38b5d1b2a', 'GeoJSON içe aktar'), { runImportClean(slide, effectiveFolder(slide)) }, workshopText('script.a5d05195ff26', 'Mevcut GrandQC GeoJSON çıktısını içe aktarır')))
+            def runBtn = navButton(workshopText('script.3ecd99c46bb6', 'Doğrudan çalıştır ▶'), { startDirectRun(slide) }, workshopText('script.5a37a3a27f8d', 'Python hattını QuPath içinden çalıştırır (venv gerekli)'))
             runBtn.setDisable(!canRun)
             actions.add(runBtn)
             // Proje geneli içe aktarım — Python/model gerektirmez (yalnız var olan GeoJSON'u okur).
             // Yüksek etki alanı (tüm proje + diske kayıt) → onay iste.
             if (QP.getProject() != null)
-                actions.add(navButton('Proje geneli içe aktar', {
+                actions.add(navButton(workshopText('script.59e9d0c5f7d7', 'Proje geneli içe aktar'), {
                     int nImg = 0
                     try { nImg = QP.getProject().getImageList().size() } catch (Throwable ignore) {}
-                    boolean go = Dialogs.showConfirmDialog('Proje geneli içe aktarım',
-                        'Projedeki ' + nImg + ' görüntünün her biri için var olan GrandQC GeoJSON\'u içe aktarılacak:\n\n' +
-                        '• Her görüntüdeki önceki "GrandQC KK" anotasyonları (varsa elle düzeltmeler dahil) silinip yeniden üretilir.\n' +
-                        '• Sonuç HER görüntü için diske KAYDEDİLİR (geri alınamaz); açık lamın tüm güncel hâli de kaydedilir.\n\n' +
-                        'Devam edilsin mi?')
+                    boolean go = Dialogs.showConfirmDialog(workshopText('script.8689cc3c786a', 'Proje geneli içe aktarım'),
+                        workshopText('script.6b5fa14a4e5c', 'Projedeki ') + nImg + workshopText('script.ddfaa134e1b2', ' görüntünün her biri için var olan GrandQC GeoJSON\'u içe aktarılacak:\n\n') +
+                        workshopText('script.0d2499a90b4e', '• Her görüntüdeki önceki "GrandQC KK" anotasyonları (varsa elle düzeltmeler dahil) silinip yeniden üretilir.\n') +
+                        workshopText('script.480154216d1e', '• Sonuç HER görüntü için diske KAYDEDİLİR (geri alınamaz); açık lamın tüm güncel hâli de kaydedilir.\n\n') +
+                        workshopText('script.a7735569f91d', 'Devam edilsin mi?'))
                     if (go) runBatchImport(manualFolderRef.get())
-                }, 'Projedeki TÜM görüntüler için her birinin KENDİ klasöründeki GeoJSON çıktısını içe aktarır ve diske kaydeder (tam ad eşleşmesi)'))
+                }, workshopText('script.184b262d94f1', 'Projedeki TÜM görüntüler için her birinin KENDİ klasöründeki GeoJSON çıktısını içe aktarır ve diske kaydeder (tam ad eşleşmesi)')))
         }
     } else if (cur == 'CMD_READY') {
-        title.setText('GrandQC komut satırları')
-        addGuidance('Aşağıdaki iki komutu bir terminalde (venv etkin) sırayla çalıştırın; sonra "GeoJSON içe aktar".')
+        title.setText(workshopText('script.a965b245238f', 'GrandQC komut satırları'))
+        addGuidance(workshopText('script.44d26eeb0121', 'Aşağıdaki iki komutu bir terminalde (venv etkin) sırayla çalıştırın; sonra "GeoJSON içe aktar".'))
         addMonoArea(cmdTextRef.get())
         def slide = (imageData != null) ? resolveSlide(imageData) : null
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(cmdTextRef.get()) }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(cmdTextRef.get()) }))
         if (slide != null) {
-            actions.add(navButton('GeoJSON içe aktar', { runImportClean(slide, effectiveFolder(slide)) }))
+            actions.add(navButton(workshopText('script.eca38b5d1b2a', 'GeoJSON içe aktar'), { runImportClean(slide, effectiveFolder(slide)) }))
             if (configComplete(cfg) && effectiveFolder(slide) != null)
-                actions.add(navButton('Doğrudan çalıştır ▶', { startDirectRun(slide) }))
+                actions.add(navButton(workshopText('script.3ecd99c46bb6', 'Doğrudan çalıştır ▶'), { startDirectRun(slide) }))
         }
     } else if (cur == 'RUNNING') {
-        title.setText(runPhaseRef.get() + ' çalışıyor…')
-        addGuidance('Python hattı çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        title.setText(runPhaseRef.get() + workshopText('script.8533e42fc110', ' çalışıyor…'))
+        addGuidance(workshopText('script.dc569b8873a6', 'Python hattı çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ') + PYTHON_TIMEOUT_SECONDS + workshopText('script.9d84a2f3efc0', ' sn.'))
         center.getChildren().add(busyBar())
         def la = logAreaRef.get()
         if (la != null) {
             javafx.scene.layout.VBox.setVgrow(la, javafx.scene.layout.Priority.ALWAYS)
             center.getChildren().add(la)
         }
-        actions.add(navButton('İptal et', {
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), {
             cancelledRef.set(true)
             try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {}
         }))
     } else if (cur == 'BUSY') {
         title.setText(busyLabelRef.get())
-        addGuidance('Lütfen bekleyin…')
+        addGuidance(workshopText('script.245c572ec2ea', 'Lütfen bekleyin…'))
         center.getChildren().add(busyBar())
         // Proje geneli içe aktarım uzun sürebilir → durdurma imkânı (işlenmiş görüntüler kaydedilmiş kalır).
         if (batchBusyRef.get())
-            actions.add(navButton('İptal et', { cancelledRef.set(true) }, 'Proje geneli içe aktarımı durdur — o ana dek işlenen görüntüler kaydedilmiştir'))
+            actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true) }, workshopText('script.7cbbedd82be0', 'Proje geneli içe aktarımı durdur — o ana dek işlenen görüntüler kaydedilmiştir')))
     } else if (cur == 'RESULT') {
-        title.setText('Tamamlandı ✅')
+        title.setText(workshopText('script.92c17020894f', 'Tamamlandı ✅'))
         addMonoArea(resultTextRef.get())
         actions.add(homeButton())
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
         // İstatistik raporu yalnız tek-slayt sonucunda (kapsam klasörü bilinir) gösterilir.
         def rf = resultFolderRef.get()
         def reportFile = (rf != null) ? findReportFile(rf.toString()) : null
         if (reportFile != null)
-            actions.add(navButton('Rapor görüntüle', {
+            actions.add(navButton(workshopText('script.b1ae91710f02', 'Rapor görüntüle'), {
                 String rtxt
                 try { rtxt = reportFile.getText('UTF-8') }
                 catch (Throwable t) { rtxt = 'Rapor okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName()) }
                 reportPathRef.set(reportFile)
                 reportTextRef.set('Dosya: ' + reportFile.getAbsolutePath() + '\n\n' + rtxt)
                 step.set('REPORT'); render()
-            }, 'GrandQC lam başına istatistik raporu (büyütme/MPP, karo sayısı, boyut, süre)'))
-        actions.add(navButton('↻ Yeniden çalıştır', { step.set('READY'); render() }))
+            }, workshopText('script.b56375a2f81d', 'GrandQC lam başına istatistik raporu (büyütme/MPP, karo sayısı, boyut, süre)')))
+        actions.add(navButton(workshopText('script.c94499b243e4', '↻ Yeniden çalıştır'), { step.set('READY'); render() }))
     } else if (cur == 'REPORT') {
-        title.setText('GrandQC istatistik raporu')
-        addGuidance('main.py çıktısı: lam başına büyütme/MPP, karo sayıları, görüntü boyutu ve işlem süresi. Salt okunur — kalite notu/derece üretmez.')
+        title.setText(workshopText('script.ec2142a4e0c9', 'GrandQC istatistik raporu'))
+        addGuidance(workshopText('script.31e7af60f3c0', 'main.py çıktısı: lam başına büyütme/MPP, karo sayıları, görüntü boyutu ve işlem süresi. Salt okunur — kalite notu/derece üretmez.'))
         addMonoArea(reportTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set('RESULT'); render() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('RESULT'); render() }))
         actions.add(homeButton())
-        actions.add(navButton('Kopyala', { copyToClipboard(reportTextRef.get()) }))
-        actions.add(navButton('Dışa aktar…', {
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(reportTextRef.get()) }))
+        actions.add(navButton(workshopText('script.1a7f328c334d', 'Dışa aktar…'), {
             def src = reportPathRef.get()
             def suggested = new File(src != null ? src.getName() : 'grandqc_rapor.txt')
-            def dest = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, 'Raporu kaydet', suggested,
+            def dest = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, workshopText('script.5568a23417d1', 'Raporu kaydet'), suggested,
                 new javafx.stage.FileChooser.ExtensionFilter('Metin (*.txt)', '*.txt'))
             if (dest != null) {
-                try { dest.setText(reportTextRef.get(), 'UTF-8'); Dialogs.showInfoNotification('Rapor kaydedildi', dest.getName()) }
-                catch (Throwable t) { Dialogs.showErrorMessage('Kaydedilemedi', (t.getMessage() ?: t.getClass().getSimpleName())) }
+                try { dest.setText(reportTextRef.get(), 'UTF-8'); Dialogs.showInfoNotification(workshopText('script.50ae0510ab38', 'Rapor kaydedildi'), dest.getName()) }
+                catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.4066bc1f732a', 'Kaydedilemedi'), (t.getMessage() ?: t.getClass().getSimpleName())) }
             }
         }))
     } else if (cur == 'DIAG') {
-        title.setText('GrandQC ortam doğrulama')
+        title.setText(workshopText('script.525c71e59317', 'GrandQC ortam doğrulama'))
         addMonoArea(diagTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('CONFIG'); render() }))
         actions.add(homeButton())
-        actions.add(navButton('Kopyala', { copyToClipboard(diagTextRef.get()) }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(diagTextRef.get()) }))
     } else { // ERROR
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
-        actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(errorTextRef.get()) }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(errorTextRef.get()) }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
     // Alt çubuk: "Üstte tut" (sol) + disclaimer + eylem düğmeleri (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
@@ -1510,7 +1510,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -1533,12 +1533,23 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('GrandQC kalite kontrol sihirbazı')
+        stage.setTitle(workshopText('script.11fb0895f2b9', 'GrandQC kalite kontrol sihirbazı'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ GrandQC kalite kontrol sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}
