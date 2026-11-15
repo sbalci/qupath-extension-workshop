@@ -1,5 +1,10 @@
 # v0.2.2-rc8 unpublished candidate
 
+> **Status, 15 November 2026:** this note describes the candidate before release. The tag `v0.2.2-rc8` was
+> published on 13 November 2026 (GitHub, Zenodo, OSF). The `main` branch has moved on since then under the
+> same version string; the next test build is `v0.2.2-rc9`. The text below is kept as the record of the
+> candidate review and is not updated.
+
 This candidate distinguishes the anonymization implementation merged in PR #4
 (`e2806e06ab6e256ff2089fb9d29041449908df58`) from the October 25 published rc7
 JAR. It is for acceptance testing on disposable copies, not approved for

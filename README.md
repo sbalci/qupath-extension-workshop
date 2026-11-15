@@ -10,7 +10,7 @@
 
 **English Overview:** Bilingual (**Turkish default / English**) QuPath extension that bundles all hands-on Groovy workflows, 15 self-extracting Python model bridges, interactive wizards, and persistent parameters of the **QuPath Digital Pathology & AI Workshop** into one-click menus.
 
-**Dil kapsamı / Language coverage:** Menü ve ortak ayarlar iki dillidir. Hücre tespiti penceresinin kontrolleri, açıklamaları ve sonuç özeti de dil seçimini izler. Sekiz ana betikteki 143 başlık, düğme, açıklama ve ilk hata iletisi de ortak TR/EN kaynağını kullanır. Dinamik sonuç metinleri ve diğer yardımcı pencerelerin bir bölümü hâlâ Türkçedir. / Menus and shared settings are bilingual. Cell-detection controls, help and results also follow the language selection; 143 headings, controls, help strings and initial errors across eight more core scripts use a shared TR/EN catalog. Dynamic results and some helper windows still use Turkish.
+**Dil kapsamı / Language coverage:** Menü, ortak ayarlar ve paketteki 103 betiğin başlık, düğme, açıklama ve soru pencereleri TR/EN ortak kaynağını kullanır. Sonuç pencerelerindeki raporların, günlük satırlarının ve veriden türeyen bazı iletilerin bir bölümü hâlâ yalnız Türkçedir. Kök menü adı her iki dilde **Atölye**dir. / Menus, shared settings and the titles, buttons, guidance and question dialogs of all 103 bundled scripts use the shared TR/EN source. Part of the result reports, log lines and data-derived messages is still Turkish only. The root menu is named **Atölye** in both languages.
 
 > Modeled after the official [QuPath extension template](https://github.com/qupath/qupath-extension-template).
 
@@ -18,32 +18,47 @@
 
 ## Sıfır Kodla Kurulum (Patologlar İçin) / Zero-Code Installation (For Pathologists)
 
-### Yöntem A — QuPath Eklenti Yöneticisi (Önerilen / Recommended)
+### Yöntem A — Sürükle-bırak (önerilen; atölye salonu ve çevrimdışı kurulum) / Drag-and-drop (recommended)
+
+Bu sıra ve düğme adları atölye sitesindeki kurulum sayfasıyla aynıdır. / The order and button names match the workshop site's installation page.
 
 **Türkçe:**
 1. **QuPath 0.6.0+** programını açın (ayrıca Java kurmanız veya **terminal (komut penceresi)** kullanmanız **gerekmez**; terminal komut yazıp Enter ile çalıştırdığınız penceredir).
-2. Üst menüden **Extensions → Manage extensions** penceresini açın.
-3. **Add catalog** (Katalog ekle) düğmesine tıklayın ve şu adresi yapıştırın:
-   `https://raw.githubusercontent.com/sbalci/qupath-extension-workshop/main/catalog.json`
-4. Listede **`QuPath Workshop extension (Atölye)`** satırını bulun ve sağındaki **`+`** (Kur) düğmesine tıklayın. *(Sürüm kutusunda en üstteki `v0.2.2-rc8` veya güncel sürüm seçili gelir.)*
-5. QuPath'i kapatıp yeniden açın. Üst menüde **Extensions → Atölye** ve **Extensions → Senkron Izgara** görünür.
+2. [GitHub Releases](https://github.com/sbalci/qupath-extension-workshop/releases) sayfasından listenin **en üstündeki** `qupath-extension-workshop-<sürüm>.jar` dosyasını indirin. `-rcN` ile biten ön sürümler listenin en üstünde yer alır; sayfadaki "Latest" etiketi daha eski bir sürümü gösterebilir.
+3. İndirdiğiniz `.jar` dosyasını fareyle tutup açık **QuPath ana penceresinin ortasına sürükleyip bırakın**.
+4. QuPath ilk kez eklenti kuruyorsanız eklenti klasörünü sorar; önerilen klasörü onaylayın.
+5. QuPath'i **tamamen kapatıp yeniden açın**. Üst menüde **Extensions → Atölye** ve **Extensions → Senkron Izgara** görünür.
 
 **English:**
 1. Open **QuPath 0.6.0+** (no separate Java installation or **terminal**, the window where you enter commands, is required).
-2. Open **Extensions → Manage extensions**.
-3. Click **Add catalog** and paste:
+2. From [GitHub Releases](https://github.com/sbalci/qupath-extension-workshop/releases) download the `qupath-extension-workshop-<version>.jar` at the **top** of the list. Pre-releases ending in `-rcN` are listed first; the page's "Latest" badge may point to an older version.
+3. Drag the `.jar` onto the centre of QuPath's main window.
+4. If QuPath asks for an extension folder, accept the suggested one.
+5. **Quit QuPath completely and reopen it.** Look for **Extensions → Atölye** (the menu keeps this name in English too) and **Extensions → Senkron Izgara**. Switch the menu language at any time with **Extensions → Atölye → 🌐 Dil: Türkçe (English'e geç)**; no restart is needed.
+
+For an offline room, copy the JAR and the [synthetic example](assets/examples/synthetic-nuclei.png) to the workshop folder beforehand.
+
+### Yöntem B — Eklenti yöneticisi (yalnız Yöntem A çalışmazsa) / Extension manager (only if A fails)
+
+Düğme adları QuPath 0.6.0'ın kendi arayüz metinlerinden alınmıştır. / Button names are taken from QuPath 0.6.0's own interface strings.
+
+**Türkçe:**
+1. **Extensions → Manage extensions** penceresini açın ve **Manage extension catalogs** düğmesine tıklayın.
+2. **Catalog URL** kutusuna şu adresi olduğu gibi yapıştırın ve **Add** düğmesine tıklayın:
    `https://raw.githubusercontent.com/sbalci/qupath-extension-workshop/main/catalog.json`
-4. Locate **`QuPath Workshop extension (Atölye)`** in the catalog list and click **`+`** (Install).
-5. Restart QuPath, then switch the menu language anytime via **Extensions → Atölye → 🌐 Dil: Türkçe (English'e geç)** (no restart needed).
+3. **Manage extensions** penceresine dönün. **`QuPath Workshop extension (Atölye)`** satırındaki kurma düğmesine (**+**; üzerine gelince "Install extension" yazar) tıklayın.
+4. Açılan pencerede **Version to install** listesinden en üstteki sürümü seçin ve **Install** düğmesine tıklayın.
+5. QuPath'i **tamamen kapatıp yeniden açın**.
 
-### Yöntem B — Sürükle-Bırak (Atölye Salonu / Çevrimdışı Kurulum — Drag-and-Drop)
+**English:**
+1. Open **Extensions → Manage extensions** and click **Manage extension catalogs**.
+2. Paste this address into **Catalog URL** exactly as written and click **Add**:
+   `https://raw.githubusercontent.com/sbalci/qupath-extension-workshop/main/catalog.json`
+3. Go back to **Manage extensions**. On the **`QuPath Workshop extension (Atölye)`** row click the install button (**+**; its tooltip reads "Install extension").
+4. In the window that opens, choose the top entry under **Version to install** and click **Install**.
+5. **Quit QuPath completely and reopen it.**
 
-1. [GitHub Releases](https://github.com/sbalci/qupath-extension-workshop/releases) sayfasından en güncel `qupath-extension-workshop-0.2.2-rc8.jar` dosyasını indirin *(not: `-rcN` ön-yayın sürümleri "Releases" listesinin en üstünde yer alır)*.
-2. İndirdiğiniz `.jar` dosyasını fareyle tutup açık **QuPath ana penceresinin ortasına sürükleyip bırakın**.
-3. QuPath ilk kez eklenti kuruyorsanız kullanıcı eklenti klasörü seçmenizi ister → varsayılan klasörü onaylayın.
-4. QuPath'i tamamen kapatıp yeniden açın.
-
-**English:** Download the `.jar` file from [Releases](https://github.com/sbalci/qupath-extension-workshop/releases) while connected. Copy the JAR and the [synthetic example](assets/examples/synthetic-nuclei.png) to your offline workshop folder. Drag the JAR onto the centre of QuPath's main window; accept the extension-folder prompt if shown, then fully quit and restart QuPath. Look for **Extensions → Atölye** and use its language switch for English. You do not need to extract the JAR, install Java separately or run a terminal command. If the menu is absent, check that you downloaded a `.jar` rather than a web page, and restart after installing it. External model bridges need their environments and weights downloaded separately before going offline.
+**Kurulumu doğrulayın / Check the installation:** **Extensions → Manage extensions** penceresinde Atölye eklentisinin sürümü, indirdiğiniz dosya adındaki sürümle aynı olmalıdır. / The version shown for the Atölye extension must match the version in the file name you downloaded.
 
 ---
 
@@ -77,10 +92,10 @@ Extensions
 │   │   ├── ER / PR H-score
 │   │   ├── Membran boya (HER2)
 │   │   ├── Sitoplazmik boya (CD68)
-│   │   ├── Tümör/Stroma sihirbazı
+│   │   ├── Tümör/Stroma ▸ (Tümör/Stroma sihirbazı · Adım 1 — Model eğit · Adım 2 — Alan ölçümü)
 │   │   ├── Tümör içi Ki-67
 │   │   ├── QuANTUM cTCF
-│   │   ├── Mitoz tespiti ▸ (Merkez · KongNet · MIDOG25 FCOS · DA-RetinaNet · EffNetV2 · Sanofi EFTD · Karşılaştır)
+│   │   ├── Mitoz tespiti ▸ (Merkez · KongNet · MIDOG25 FCOS · DA-RetinaNet · EffNetV2 · Sanofi EFTD (kapılı model: erişim izni gerekir) · Karşılaştır)
 │   │   ├── Görüntü Hizalama ▸ (VALIS · Warpy · Afin)
 │   │   └── Veri dışa aktarma (TSV / CSV / GeoJSON)
 │   ├── Yardımcılar / Utilities  (9 konu grubu / 9 topic groups)
@@ -100,6 +115,10 @@ Extensions
 │   └── Atölye hakkında… / About Workshop…
 └── Senkron Izgara / Synchronized Grid
 ```
+
+**Yeniden çalıştırma / Re-running a tool:** Bir araç aynı lamda daha önce sonuç üretmişse önce sorar. **Ekle** (varsayılan) hiçbir şeyi silmez ve yeni sonucu `… (2)` adıyla ekler; **Değiştir** ikinci bir onay ister; **İptal** hiçbir şey çalıştırmaz. Penceresiz (headless) çalıştırmada önceki sonuç varsa betik durur ve `mevcut=ekle` ya da `mevcut=degistir` bağımsız değişkenini ister. / If a tool already produced a result on the slide it asks first. **Add** (default) deletes nothing and names the new result `… (2)`; **Replace** needs a second confirmation; **Cancel** runs nothing. In a headless run with an earlier result the script stops and asks for `mevcut=ekle` or `mevcut=degistir`.
+
+**Sanofi EFTD:** Model omurgası Hugging Face'te kapılıdır; erişim otomatik verilmez. Sihirbaz erişim yoksa durur ve adımları gösterir. / The model backbone is gated on Hugging Face and access is not automatic; the wizard stops and shows the steps when access is missing.
 
 ---
 
@@ -123,7 +142,7 @@ Extensions
 | Menü öğeleri gri (tıklanamıyor) / Menu items greyed out | Önce bir sanal lam açın (`File → Open`). Lam açık olduğu hâlde tüm öğeler griyse `Edit → Preferences → Atölye` altındaki eğitmen kilidini (`Atölye menüsü etkin`) işaretleyin. |
 | "Geçerli bir kapalı alan (ROI) seçili değil" / No closed ROI selected | Nokta veya çizgi yerine **Rectangle / Polygon / Brush** aracıyla kapalı bir alan çizin ve kenarı **sarı** olana kadar içine tıklayın. |
 | Güncelleme sonrası "Eklenti yeniden yüklenmeli" hatası | `.jar` dosyası QuPath açıkken değiştirilmiştir; QuPath'i tamamen kapatıp yeniden başlatın. |
-| Beklenmeyen betik hatası / Script exception | Hata penceresindeki **Tanı özetini kopyala** (*Copy diagnostic summary*) düğmesi ev dizini ve lam dosya adını (`<HOME>`, `<SLIDE_FILE>`) otomatik maskeler; bu özeti paylaşabilirsiniz. |
+| Beklenmeyen betik hatası / Script exception | Hata penceresindeki **Tanı özetini kopyala** (*Copy diagnostic summary*) düğmesi ev dizini yolunu ve lam dosya adını (`<HOME>`, `<SLIDE_FILE>`) maskeler, ancak başka dosya, klasör veya proje adları özette kalabilir. Paylaşmadan önce özeti okuyun ve hasta bilgisi içeren her şeyi çıkarın. / The button masks the home-folder path and the slide file name, but other file, folder or project names may remain. Read the summary and remove anything that identifies a patient before sharing it. |
 
 ---
 
