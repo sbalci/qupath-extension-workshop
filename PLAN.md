@@ -19,6 +19,14 @@ Branch for Phase 3: `fix/ask-first-and-rc9` (one logical change per commit; no p
 | Sanofi entry, `model-egit`, `tumor-stroma` | Implement all three in the extension, the scripts and the website. |
 | "slayt" in UI text | Kept (the QuPath site keeps clinical loanwords). |
 
+Decisions added 15 November during item 1 (duplicate results after "Add"):
+
+| Topic | Decision |
+|---|---|
+| Headless run when an earlier result of the same script exists | Stop and write nothing; the message says to re-run with `mevcut=ekle` (add a copy) or `mevcut=degistir` (replace). Slides with no earlier result run normally. This replaces "headless adds by default" in item 1. |
+| Export and cohort tools when a slide holds copies (`… (2)`) | Ask at export time: all copies, or only the newest of each kind. Headless needs a named argument. Added as item 4b. |
+| Result window after "Add" | Always states that the older result is still on the slide, names it, and says how to remove it. |
+
 ## Work items, in order
 
 Effort: S = under an hour, M = half a day, L = a day or more. Every script edit is mirrored to `D:\qupath-workshop\handson\scripts\` and checked with `check-script-sync.ps1`.
@@ -29,6 +37,7 @@ Effort: S = under an hour, M = half a day, L = a day or more. Every script edit 
 | 2 | Apply item 1 to the wizards that still replace silently: GrandQC import, VALIS (two paths), Warpy, affine transfer, KongNet import, mitosis compare, TIA Toolbox region wizard, TIA Toolbox tissue mask, native tissue-detection wizard, tumour budding bands. | Y3 | L | `yardimci-grandqc-sihirbaz`, `-valis-sihirbaz`, `-warpy-sihirbaz`, `-hizalama-aktarim`, `-mitoz-kongnet`, `-mitoz-karsilastir`, `-tiatoolbox-bolge-sihirbaz`, `-tiatoolbox-sihirbaz`, `-doku-tespiti-sihirbaz`, `-tumor-tomurcuklanma` |
 | 3 | HistoART: the GUI already asks; make the headless path delete nothing by default. | Y3, section 7 | S | `yardimci-histoart-sihirbaz.groovy` |
 | 4 | Apply item 1 to the ~21 measurement helpers that silently replace their own summary, grid or ring annotation on a re-run (hotspot, nearest-neighbour, class count, Delaunay, F1, immune density, stromal TIL, WSInfer summary, pHH3, structure distance, intersection area, peritumoural band, convex hull, centre/periphery, Ki-67 heterogeneity, density map, eyeball calibration, tumour-internal Ki-67, tumour/stroma wizard and script). Matching is by exact name or `(N)` suffix, never by prefix, so a user-renamed annotation is never swept. | Owner: "ask for everything" | L | the scripts listed in `AUDIT.md` section 7 |
+| 4b | Export and cohort tools ask when a slide holds copies of the same result (`… (2)`): all copies, or only the newest of each kind; headless needs a named argument. Includes `yardimci-grandqc-kohort-ozet`, which today reads only the exact name. | Owner, 15 Nov | M | `veri-aktarma`, `yardimci-kohort-ozet-topla`, `yardimci-grandqc-kohort-ozet`, other exporters found in the audit |
 | 5 | Stop changing the image type silently: `hucre-tespiti` (H&E) and the four stain modules (H-DAB default vectors) show what they are about to set and ask, instead of only printing to the log. | Section 7, "do not misguide" | M | `hucre-tespiti`, `nukleer-boya`, `er-pr-hscore`, `membran-boya`, `sitoplazmik-boya` |
 | 6 | Tests for items 1–5: extend `SafetyRegressionTest` with the naming/matching closures of each changed script (add → add → add numbering, replace → add, user-renamed annotation survives, cancel writes nothing). Add automated coverage for the ask paths that have none today: Classpose, HoVer-NeXt, FCOS, RetinaNet, Cellpose, Membran. | Y10, E5 | L | `src/test/…`, CI test-count floor |
 | 7 | Error guidance fixes: `NumberFormatException` (a typed "0,25") says "enter the number with a point or comma, e.g. 0.25" instead of "image unreadable"; NaN rule matches the word, not the substring; `NullPointerException` / `MissingMethodException` no longer say "open a slide". Unit tests for each. | Y5 | M | `WorkshopErrors.java`, tests |

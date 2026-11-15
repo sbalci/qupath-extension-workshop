@@ -55,7 +55,32 @@ def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
 
 // ── Sabitler ───────────────────────────────────────────────────────────────
-def GRANDQC_SENTINEL = 'GrandQC KK'           // yeniden-içe-aktarımda idempotent temizlik adı
+def GRANDQC_SENTINEL = 'GrandQC KK'           // bu sihirbazın içe aktardığı anotasyonların adı (ilk set)
+// "Önceki sonuç ne olsun?" kipleri — varsayılan HİÇBİR ŞEY SİLMEZ (ev kuralı:
+// sonuç yazan her sihirbaz önce sorar). Ekle: yeni set "GrandQC KK (2)", "(3)" … adını alır.
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+// Bu sihirbazın seti mi? Yalnız TAM ad ya da "ad (N)" — önek eşleşmesi YOK:
+// kullanıcının "GrandQC KK düzeltmelerim" diye adlandırdığı anotasyon süpürülmez.
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
 long PYTHON_TIMEOUT_SECONDS = 600L            // büyük WSI için cömert üst sınır
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
 def MPP_OPTIONS = ['1.0', '1.5', '2.0']
@@ -372,7 +397,7 @@ def ensureClass = { String name ->
 // ── GeoJSON içe aktarma (yardimci-tahmin-iceaktar kalıbından) ───────────────
 // hierarchy: hedef hiyerarşi (canlı görüntü ya da proje girdisi) — QP.* yerine bunu
 // kullanır; böylece hem tek lam hem proje geneli (batch) yol aynı kodu paylaşır.
-def importGeoJSON = { File geojsonFile, hierarchy ->
+def importGeoJSON = { File geojsonFile, hierarchy, String mode = 'add' ->
     if (geojsonFile == null || !geojsonFile.isFile())
         return [ok: false, error: 'GeoJSON bulunamadı:\n' + (geojsonFile?.getAbsolutePath() ?: '(yol yok)') +
                 '\n\nÖnce GrandQC hattını çalıştırın (Komut üret / Doğrudan çalıştır).']
@@ -477,11 +502,26 @@ def importGeoJSON = { File geojsonFile, hierarchy ->
     }
     if (newAnns.isEmpty())
         return [ok: false, error: 'GeoJSON dosyasında geçerli Polygon/MultiPolygon özelliği bulunamadı (atlanan: ' + skipped + ').']
-    // Önceki içe aktarımı temizle → idempotent (verilen hiyerarşi üzerinde)
-    hierarchy.removeObjects(hierarchy.getAnnotationObjects().findAll { it.getName() == GRANDQC_SENTINEL }, false)
+    // Önceki içe aktarım: SORULMADAN SİLİNMEZ. Kip çağırandan gelir (varsayılan: ekle).
+    //   ekle     → hiçbir şey silinmez; yeni set sıradaki adı alır ("GrandQC KK (2)" …).
+    //   değiştir → yalnız bu sihirbazın setleri (tam ad ya da "(N)") silinir; içlerindeki
+    //              alt nesneler (ör. hücre tespitleri) KORUNUR (keepChildren = true).
+    def prev = prevOwnObjects(hierarchy, GRANDQC_SENTINEL)
+    def prevNames = prev.collect { it.getName() }.unique().sort()
+    int removed = 0
+    String setName
+    if (mode == 'replace') {
+        removed = prev.size()
+        if (removed > 0) hierarchy.removeObjects(prev, true)
+        setName = GRANDQC_SENTINEL
+    } else {
+        setName = nextOwnSetName(hierarchy, GRANDQC_SENTINEL)
+    }
+    newAnns.each { it.setName(setName) }
     hierarchy.addObjects(newAnns)
     QP.fireHierarchyUpdate(hierarchy)   // PathObjectHierarchy'de fireHierarchyUpdate() YOK (0.6/0.7) → MissingMethodException
-    return [ok: true, annotations: newAnns, counts: counts, skipped: skipped, file: geojsonFile]
+    return [ok: true, annotations: newAnns, counts: counts, skipped: skipped, file: geojsonFile,
+            setName: setName, prevNames: (mode == 'replace' ? [] : prevNames), removed: removed]
 }
 
 // ── Parça (bağlı bileşen) istatistiği — JTS geometrisinden; salt sayı/alan ──
@@ -535,7 +575,8 @@ def computeCleanTissue = { imageData, importedAnns, hierarchy ->
         return [ok: false, error: 'Temiz doku alanı boş kaldı (artefaktlar dokunun tamamını kaplıyor olabilir).']
 
     def cleanAnn = PathObjects.createAnnotationObject(cleanRoi, ensureClass(CLEAN_CLASS))
-    cleanAnn.setName(GRANDQC_SENTINEL)
+    // Temiz doku, türediği setin adını taşır (ekle kipinde "GrandQC KK (2)" …).
+    cleanAnn.setName(importedAnns ? (importedAnns[0].getName() ?: GRANDQC_SENTINEL) : GRANDQC_SENTINEL)
     cleanAnn.setLocked(true)
     hierarchy.addObjects([cleanAnn])
     QP.fireHierarchyUpdate(hierarchy)   // PathObjectHierarchy'de fireHierarchyUpdate() YOK (0.6/0.7) → MissingMethodException
@@ -558,7 +599,15 @@ def buildResultText = { slide, imp, clean ->
     sb << "GrandQC KALİTE KONTROL — ÖZET\n"
     sb << "═══════════════════════════════\n\n"
     sb << "Lam   : " << slide.name << "\n"
-    sb << "GeoJSON : " << (imp.file?.getAbsolutePath() ?: '-') << "\n\n"
+    sb << "GeoJSON : " << (imp.file?.getAbsolutePath() ?: '-') << "\n"
+    sb << workshopText('script.1634a63e0849', 'Set adı : ') << (imp.setName ?: '-') << "\n"
+    if (imp.prevNames) {
+        sb << "\n" << workshopText('script.bcd5d39410d7', 'DİKKAT — bu lamda önceki GrandQC sonucu da duruyor: ') << imp.prevNames.join(', ') << "\n"
+        sb << workshopText('script.2146e922260b', 'Hiçbir şey silinmedi. Eski seti kaldırmak için o addaki anotasyonları seçip silin ya da yeniden içe aktarırken "Öncekini değiştir"i seçin. Dışa aktarım ve kohort özetleri iki seti de görür.') << "\n"
+    } else if ((imp.removed ?: 0) > 0) {
+        sb << String.format(java.util.Locale.US, workshopText('script.df0a1e595b27', 'Önceki GrandQC sonucu değiştirildi: %,d anotasyon silindi (içlerindeki alt nesneler korundu).'), imp.removed) << "\n"
+    }
+    sb << "\n"
     sb << "Anotasyon dökümü (sınıf → adet):\n"
     int total = 0
     imp.counts.each { cn, n ->
@@ -666,7 +715,27 @@ def effectiveFolder = { slide ->
 }
 
 // ── Arka plan: import + temiz doku ──────────────────────────────────────────
-def runImportClean = { slide, manualFolder ->
+// Önceki GrandQC sonucu için kullanıcıya SOR (FX iş parçacığında, işlemden ÖNCE çağrılır).
+//   Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz).
+//   Önceki sonuç yoksa sormadan 'add' döner.
+def askExisting = { hierarchy ->
+    def prev = prevOwnObjects(hierarchy, GRANDQC_SENTINEL)
+    if (prev.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.5fcbb9588b11', 'Öncekine dokunma — yeni bir set olarak ekle (varsayılan)')
+    String optRep = workshopText('script.bab9e5b8c512', 'Öncekini değiştir (bu sihirbazın içe aktardıkları silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.23adbb9a0953', 'Önceki GrandQC sonucu'),
+        String.format(java.util.Locale.US, workshopText('script.d1adfba763b4', 'Bu lamda zaten %,d GrandQC anotasyonu var.\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir set olur ("GrandQC KK (2)" gibi). Lamda iki set birlikte durur.\n\n"Değiştir" seçilirse önceki GrandQC anotasyonları silinir — onlarda ELLE yaptığınız düzeltmeler de gider. Kendi anotasyonlarınıza ve içlerindeki hücre tespitlerine dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki GrandQC sonucu ne olsun?'), prev.size()),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.a53918c296c7', 'Önceki GrandQC sonucu silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.5b7703c8a323', '%,d GrandQC anotasyonu silinip yeniden içe aktarılacak. Bu anotasyonlarda elle yaptığınız düzeltmeler KAYBOLUR.\n\nDevam edilsin mi?'), prev.size()))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
+def runImportClean = { slide, manualFolder, String mode = 'add' ->
     busyLabelRef.set('GeoJSON içe aktarılıyor…'); step.set('BUSY'); render()
     def worker = new Thread({
         def curData0 = QP.getCurrentImageData()
@@ -689,7 +758,7 @@ def runImportClean = { slide, manualFolder ->
             return
         }
         def geojson = findGeoJSON(slide, manualFolder)
-        def imp = importGeoJSON(geojson, curData0.getHierarchy())
+        def imp = importGeoJSON(geojson, curData0.getHierarchy(), mode)
         if (!imp.ok) {
             javafx.application.Platform.runLater { errorTextRef.set(imp.error); step.set('ERROR'); render() }
             return
@@ -806,7 +875,7 @@ def runDiag = { ->
 // tiatoolbox-bolge kalıbı: canlı veriyi yalnız gerçekten o girdiyse kullan (getEntry/getID),
 // diğerlerini readImageData → import → temiz doku → saveImageData → server.close().
 // GeoJSON çözümü YALNIZ tam ad (exactGeoJSON) — yanlış lama yazmayı önler.
-def runBatchImport = { manualFolder ->
+def runBatchImport = { manualFolder, String mode = 'add' ->
     def project = QP.getProject()
     if (project == null) { errorTextRef.set('Proje açık değil — proje geneli içe aktarım için bir QuPath projesi açın.'); step.set('ERROR'); render(); return }
     def entries = project.getImageList()
@@ -846,7 +915,7 @@ def runBatchImport = { manualFolder ->
                     gj = exactGeoJSON(slide, manualFolder.toString().trim())
                 if (gj == null) { skipN++; lines << ('  • ' + nm + ' — atlandı (GeoJSON yok)'); continue }
                 def hier = data.getHierarchy()
-                def imp = importGeoJSON(gj, hier)
+                def imp = importGeoJSON(gj, hier, mode)
                 if (!imp.ok) { failN++; lines << ('  ✗ ' + nm + ' — ' + (imp.error ?: '').readLines().take(1).join(' ')); continue }
                 // Temiz doku başarısız olsa bile doku/artefakt anotasyonları KAYDEDİLİR (tek-slayt yolu da böyle).
                 def clean = null
@@ -858,7 +927,9 @@ def runBatchImport = { manualFolder ->
                 if (saved) {
                     okN++
                     def cleanNote = (clean != null && !clean.ok) ? (' [Temiz doku üretilemedi: ' + (clean.error ?: '-') + ']') : ''
-                    lines << ('  ✓ ' + nm + ' — ' + imp.annotations.size() + ' nesne' + cleanNote)
+                    def prevNote = imp.prevNames ? (' [' + workshopText('script.d082ce69005f', 'önceki duruyor: ') + imp.prevNames.join(', ') + ' → ' + imp.setName + ']') :
+                        ((imp.removed ?: 0) > 0 ? (' [' + String.format(java.util.Locale.US, workshopText('script.be8d521b4f49', 'önceki %,d anotasyon silindi'), imp.removed) + ']') : '')
+                    lines << ('  ✓ ' + nm + ' — ' + imp.annotations.size() + ' nesne' + cleanNote + prevNote)
                     if (liveData != null) currentTouched = true
                 }
             } catch (Throwable t) {
@@ -952,6 +1023,9 @@ def runPython = { List cmd, Closure onLine, boolean verifiedWeights = false ->
 }
 
 def startDirectRun = { slide ->
+    // Python hattından ÖNCE sor: İptal'de hiçbir şey çalışmaz, hiçbir şey yazılmaz.
+    final String importMode = askExisting(QP.getCurrentImageData()?.getHierarchy())
+    if (importMode == null) return
     def cfg = loadConfig()
     def folder = effectiveFolder(slide)
     if (folder == null) {
@@ -1004,7 +1078,7 @@ def startDirectRun = { slide ->
             }
             return
         }
-        javafx.application.Platform.runLater { runImportClean(slide, folder) }
+        javafx.application.Platform.runLater { runImportClean(slide, folder, importMode) }
     }, 'AtolyeGrandQC-Run')
     worker.setDaemon(true); worker.start()
 }
@@ -1395,7 +1469,7 @@ render = { ->
             actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
             actions.add(navButton(workshopText('script.a9907c8f2f7d', 'Komut üret ▶'), { cmdTextRef.set(cmdText(cfg, (effectiveFolder(slide) ?: '<lam-klasörü>'), slide.name)); step.set('CMD_READY'); render() }))
             if (gj != null && gj.isFile())
-                actions.add(navButton(workshopText('script.eca38b5d1b2a', 'GeoJSON içe aktar'), { runImportClean(slide, effectiveFolder(slide)) }, workshopText('script.a5d05195ff26', 'Mevcut GrandQC GeoJSON çıktısını içe aktarır')))
+                actions.add(navButton(workshopText('script.eca38b5d1b2a', 'GeoJSON içe aktar'), { def m = askExisting(QP.getCurrentImageData()?.getHierarchy()); if (m != null) runImportClean(slide, effectiveFolder(slide), m) }, workshopText('script.a5d05195ff26', 'Mevcut GrandQC GeoJSON çıktısını içe aktarır')))
             def runBtn = navButton(workshopText('script.3ecd99c46bb6', 'Doğrudan çalıştır ▶'), { startDirectRun(slide) }, workshopText('script.5a37a3a27f8d', 'Python hattını QuPath içinden çalıştırır (venv gerekli)'))
             runBtn.setDisable(!canRun)
             actions.add(runBtn)
@@ -1405,12 +1479,23 @@ render = { ->
                 actions.add(navButton(workshopText('script.59e9d0c5f7d7', 'Proje geneli içe aktar'), {
                     int nImg = 0
                     try { nImg = QP.getProject().getImageList().size() } catch (Throwable ignore) {}
-                    boolean go = Dialogs.showConfirmDialog(workshopText('script.8689cc3c786a', 'Proje geneli içe aktarım'),
+                    // Önceki sonuçlar SORULMADAN silinmez: kip burada seçilir, İptal hiçbir şey yazmaz.
+                    String bAdd = workshopText('script.7cbf0c8d2999', 'Önceki sonuçlara dokunma — her görüntüde yeni bir set olarak ekle (varsayılan)')
+                    String bRep = workshopText('script.c8cf58a3b774', 'Önceki sonuçları değiştir (her görüntüde bu sihirbazın içe aktardıkları silinir)')
+                    def bPick = Dialogs.showChoiceDialog(workshopText('script.8689cc3c786a', 'Proje geneli içe aktarım'),
                         workshopText('script.6b5fa14a4e5c', 'Projedeki ') + nImg + workshopText('script.ddfaa134e1b2', ' görüntünün her biri için var olan GrandQC GeoJSON\'u içe aktarılacak:\n\n') +
-                        workshopText('script.0d2499a90b4e', '• Her görüntüdeki önceki "GrandQC KK" anotasyonları (varsa elle düzeltmeler dahil) silinip yeniden üretilir.\n') +
+                        workshopText('script.8ec265013a6e', '• Önceki GrandQC sonucu olan görüntülerde ne yapılacağını aşağıdan seçin. "Ekle" hiçbir şey silmez; yeni sonuç "GrandQC KK (2)" gibi ayrı bir set olur.\n') +
                         workshopText('script.480154216d1e', '• Sonuç HER görüntü için diske KAYDEDİLİR (geri alınamaz); açık lamın tüm güncel hâli de kaydedilir.\n\n') +
-                        workshopText('script.a7735569f91d', 'Devam edilsin mi?'))
-                    if (go) runBatchImport(manualFolderRef.get())
+                        workshopText('script.928c95424bdf', 'Önceki GrandQC sonuçları ne olsun? (İptal: hiçbir şey yazılmaz.)'),
+                        [bAdd, bRep], bAdd)
+                    if (bPick == null) return
+                    String bMode = MODE_ADD
+                    if (bPick == bRep) {
+                        boolean sure = Dialogs.showConfirmDialog(workshopText('script.01504fde2aab', 'Önceki GrandQC sonuçları silinecek'), workshopText('script.94f3333599cf', 'Projedeki HER görüntüde önceki GrandQC anotasyonları (elle yaptığınız düzeltmeler dahil) silinip yeniden içe aktarılacak ve sonuç diske kaydedilecek. Bu işlem geri alınamaz.\n\nDevam edilsin mi?'))
+                        if (!sure) return
+                        bMode = MODE_REPLACE
+                    }
+                    runBatchImport(manualFolderRef.get(), bMode)
                 }, workshopText('script.184b262d94f1', 'Projedeki TÜM görüntüler için her birinin KENDİ klasöründeki GeoJSON çıktısını içe aktarır ve diske kaydeder (tam ad eşleşmesi)')))
         }
     } else if (cur == 'CMD_READY') {
@@ -1421,7 +1506,7 @@ render = { ->
         actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
         actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(cmdTextRef.get()) }))
         if (slide != null) {
-            actions.add(navButton(workshopText('script.eca38b5d1b2a', 'GeoJSON içe aktar'), { runImportClean(slide, effectiveFolder(slide)) }))
+            actions.add(navButton(workshopText('script.eca38b5d1b2a', 'GeoJSON içe aktar'), { def m = askExisting(QP.getCurrentImageData()?.getHierarchy()); if (m != null) runImportClean(slide, effectiveFolder(slide), m) }))
             if (configComplete(cfg) && effectiveFolder(slide) != null)
                 actions.add(navButton(workshopText('script.3ecd99c46bb6', 'Doğrudan çalıştır ▶'), { startDirectRun(slide) }))
         }

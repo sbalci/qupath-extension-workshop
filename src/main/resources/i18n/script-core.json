@@ -10584,6 +10584,96 @@
       "key": "script.e9cfd7d981ba",
       "tr": "Atölye veri klasörü — içine bir \".atolye\" klasörü oluşturulur",
       "en": "Workshop data folder — an \".atolye\" folder will be created inside"
+    },
+    {
+      "key": "script.1634a63e0849",
+      "tr": "Set adı : ",
+      "en": "Set name: "
+    },
+    {
+      "key": "script.bcd5d39410d7",
+      "tr": "DİKKAT — bu lamda önceki GrandQC sonucu da duruyor: ",
+      "en": "NOTE — an earlier GrandQC result is still on this slide: "
+    },
+    {
+      "key": "script.2146e922260b",
+      "tr": "Hiçbir şey silinmedi. Eski seti kaldırmak için o addaki anotasyonları seçip silin ya da yeniden içe aktarırken \"Öncekini değiştir\"i seçin. Dışa aktarım ve kohort özetleri iki seti de görür.",
+      "en": "Nothing was deleted. To remove the old set, select the annotations with that name and delete them, or choose \"Replace the earlier result\" when you import again. Exports and cohort summaries see both sets."
+    },
+    {
+      "key": "script.df0a1e595b27",
+      "tr": "Önceki GrandQC sonucu değiştirildi: %,d anotasyon silindi (içlerindeki alt nesneler korundu).",
+      "en": "The earlier GrandQC result was replaced: %,d annotations were deleted (objects inside them were kept)."
+    },
+    {
+      "key": "script.5fcbb9588b11",
+      "tr": "Öncekine dokunma — yeni bir set olarak ekle (varsayılan)",
+      "en": "Keep the earlier result — add as a new set (default)"
+    },
+    {
+      "key": "script.bab9e5b8c512",
+      "tr": "Öncekini değiştir (bu sihirbazın içe aktardıkları silinir)",
+      "en": "Replace the earlier result (what this wizard imported is deleted)"
+    },
+    {
+      "key": "script.23adbb9a0953",
+      "tr": "Önceki GrandQC sonucu",
+      "en": "Earlier GrandQC result"
+    },
+    {
+      "key": "script.d1adfba763b4",
+      "tr": "Bu lamda zaten %,d GrandQC anotasyonu var.\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir set olur (\"GrandQC KK (2)\" gibi). Lamda iki set birlikte durur.\n\n\"Değiştir\" seçilirse önceki GrandQC anotasyonları silinir — onlarda ELLE yaptığınız düzeltmeler de gider. Kendi anotasyonlarınıza ve içlerindeki hücre tespitlerine dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki GrandQC sonucu ne olsun?",
+      "en": "This slide already has %,d GrandQC annotations.\n\nWith \"Add\" nothing is deleted; the new result becomes a separate set (such as \"GrandQC KK (2)\"). Both sets stay on the slide.\n\nWith \"Replace\" the earlier GrandQC annotations are deleted — including any corrections you made to them by hand. Your own annotations and the cell detections inside them are not touched.\n\nCancel: nothing is run and nothing is written.\n\nWhat should happen to the earlier GrandQC result?"
+    },
+    {
+      "key": "script.a53918c296c7",
+      "tr": "Önceki GrandQC sonucu silinecek",
+      "en": "The earlier GrandQC result will be deleted"
+    },
+    {
+      "key": "script.5b7703c8a323",
+      "tr": "%,d GrandQC anotasyonu silinip yeniden içe aktarılacak. Bu anotasyonlarda elle yaptığınız düzeltmeler KAYBOLUR.\n\nDevam edilsin mi?",
+      "en": "%,d GrandQC annotations will be deleted and imported again. Corrections you made to them by hand will be LOST.\n\nContinue?"
+    },
+    {
+      "key": "script.d082ce69005f",
+      "tr": "önceki duruyor: ",
+      "en": "earlier result kept: "
+    },
+    {
+      "key": "script.be8d521b4f49",
+      "tr": "önceki %,d anotasyon silindi",
+      "en": "%,d earlier annotations deleted"
+    },
+    {
+      "key": "script.7cbf0c8d2999",
+      "tr": "Önceki sonuçlara dokunma — her görüntüde yeni bir set olarak ekle (varsayılan)",
+      "en": "Keep earlier results — add as a new set on each image (default)"
+    },
+    {
+      "key": "script.c8cf58a3b774",
+      "tr": "Önceki sonuçları değiştir (her görüntüde bu sihirbazın içe aktardıkları silinir)",
+      "en": "Replace earlier results (what this wizard imported is deleted on each image)"
+    },
+    {
+      "key": "script.8ec265013a6e",
+      "tr": "• Önceki GrandQC sonucu olan görüntülerde ne yapılacağını aşağıdan seçin. \"Ekle\" hiçbir şey silmez; yeni sonuç \"GrandQC KK (2)\" gibi ayrı bir set olur.\n",
+      "en": "• Choose below what to do on images that already have a GrandQC result. \"Add\" deletes nothing; the new result becomes a separate set such as \"GrandQC KK (2)\".\n"
+    },
+    {
+      "key": "script.928c95424bdf",
+      "tr": "Önceki GrandQC sonuçları ne olsun? (İptal: hiçbir şey yazılmaz.)",
+      "en": "What should happen to earlier GrandQC results? (Cancel: nothing is written.)"
+    },
+    {
+      "key": "script.01504fde2aab",
+      "tr": "Önceki GrandQC sonuçları silinecek",
+      "en": "Earlier GrandQC results will be deleted"
+    },
+    {
+      "key": "script.94f3333599cf",
+      "tr": "Projedeki HER görüntüde önceki GrandQC anotasyonları (elle yaptığınız düzeltmeler dahil) silinip yeniden içe aktarılacak ve sonuç diske kaydedilecek. Bu işlem geri alınamaz.\n\nDevam edilsin mi?",
+      "en": "On EVERY image in the project the earlier GrandQC annotations (including corrections made by hand) will be deleted and imported again, and the result saved to disk. This cannot be undone.\n\nContinue?"
     }
   ],
   "source_contracts": {
@@ -10895,7 +10985,15 @@
     },
     "yardimci-grandqc-sihirbaz.groovy": {
       "revision": "a93a2117daf270c8a867eeb39575850c771c9fd2",
-      "sha256": "c66a490440658650695f8a8499c5d7d07aee3fc43fd6b03159b4600b7174be2a"
+      "sha256": "eb3e667a3f3f4b94e171e3f4203786a6fdd551cd5c6b5071fb54b95d23212474",
+      "baseline_reviews": [
+        {
+          "revision": "95ea34af49aa4ab2f08b6884be22bad2e13fbfd9",
+          "previous_sha256": "c66a490440658650695f8a8499c5d7d07aee3fc43fd6b03159b4600b7174be2a",
+          "sha256": "eb3e667a3f3f4b94e171e3f4203786a6fdd551cd5c6b5071fb54b95d23212474",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-ajan-kopru-denetimi.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",

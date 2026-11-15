@@ -216,6 +216,59 @@ assert nextSentinelName(h, base) == base + ' (3)'
 ''')
     }
 
+    static final String GRANDQC = 'yardimci-grandqc-sihirbaz.groovy'
+
+    static String ownSetCode(String file) {
+        ['isOwnSetName', 'ownSetIndex', 'prevOwnObjects', 'nextOwnSetName'].collect { closure(file, it) }.join('\n')
+    }
+
+    // Add -> add -> add numbering; a user-renamed annotation is never part of "our" sets.
+    void testGrandQcOwnSetNamingNeverMatchesByPrefix() {
+        def h = new PathObjectHierarchy()
+        def base = 'GrandQC KK'
+        shell([h: h, base: base]).evaluate(ownSetCode(GRANDQC) + '''
+assert nextOwnSetName(h, base) == base
+assert prevOwnObjects(null, base).isEmpty()
+''')
+        def mine = ann(base + ' düzeltmelerim')
+        h.addObjects([ann(base), ann(base, 200), mine, ann(base + ' (1)'), ann(base + ' (x)'), ann('Başka')])
+        shell([h: h, base: base]).evaluate(ownSetCode(GRANDQC) + '''
+assert prevOwnObjects(h, base).size() == 2
+assert nextOwnSetName(h, base) == base + ' (2)'
+assert !isOwnSetName(base + ' düzeltmelerim', base)
+assert !isOwnSetName(base + ' (1)', base)
+assert !isOwnSetName(base + ' (x)', base)
+assert !isOwnSetName(null, base)
+''')
+        h.addObjects([ann(base + ' (2)'), ann(base + ' (5)')])
+        shell([h: h, base: base]).evaluate(ownSetCode(GRANDQC) + '''
+assert prevOwnObjects(h, base).size() == 4
+assert nextOwnSetName(h, base) == base + ' (6)'
+''')
+        assert h.getAnnotationObjects().contains(mine)
+    }
+
+    // Source contract: nothing is removed outside the explicit replace branch, the
+    // question precedes the Python run, and Cancel returns before any work.
+    void testGrandQcAsksBeforeRemoving() {
+        String s = source(GRANDQC)
+        assert s.count('removeObjects(') == 1
+        int rep = s.indexOf("if (mode == 'replace') {")
+        int rem = s.indexOf('hierarchy.removeObjects(prev, true)')
+        assert rep >= 0 && rem > rep && rem - rep < 200
+        assert s.contains("def importGeoJSON = { File geojsonFile, hierarchy, String mode = 'add' ->")
+        int direct = s.indexOf('def startDirectRun = {')
+        int ask = s.indexOf('askExisting(', direct)
+        assert ask > direct && ask < s.indexOf('def cfg = loadConfig()', direct)
+        assert s.contains('if (importMode == null) return')
+        String askSrc = closure(GRANDQC, 'askExisting')
+        assert askSrc.contains('if (prev.isEmpty()) return MODE_ADD')
+        assert askSrc.contains('if (pick == null) return null')
+        assert askSrc.contains('return ok ? MODE_REPLACE : null')
+        assert !s.contains('runImportClean(slide, effectiveFolder(slide)) }')
+        assert !s.contains('runBatchImport(manualFolderRef.get())')
+    }
+
     // Source-order contract only: interactive dialog/cancellation acceptance remains manual.
     void testConfirmationAndLateCancellationContracts() {
         [HISTO, CYTO, NUC,
