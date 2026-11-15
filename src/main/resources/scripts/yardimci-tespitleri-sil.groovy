@@ -58,18 +58,18 @@ def chooseAction = { String windowTitle, String windowBody ->
             def scrollPane = new javafx.scene.control.ScrollPane(label)
             scrollPane.setFitToWidth(true)
 
-            def orphanBtn = new javafx.scene.control.Button("Yalnızca sahipsiz tespitleri sil")
+            def orphanBtn = new javafx.scene.control.Button(workshopText('script.8f3603c4331c', "Yalnızca sahipsiz tespitleri sil"))
             orphanBtn.setDefaultButton(true)
             orphanBtn.setOnAction({ choice.set("orphan"); stage.close() })
 
-            def allBtn = new javafx.scene.control.Button("Tümünü sil")
+            def allBtn = new javafx.scene.control.Button(workshopText('script.69f6bbc48d61', "Tümünü sil"))
             allBtn.setOnAction({ choice.set("all"); stage.close() })
 
-            def cancelBtn = new javafx.scene.control.Button("İptal")
+            def cancelBtn = new javafx.scene.control.Button(workshopText('script.72278748133a', "İptal"))
             cancelBtn.setCancelButton(true)
             cancelBtn.setOnAction({ choice.set("cancel"); stage.close() })
 
-            def smallBtn = new javafx.scene.control.Button("Küçük çekirdekleri sil…")
+            def smallBtn = new javafx.scene.control.Button(workshopText('script.757c1c356953', "Küçük çekirdekleri sil…"))
             smallBtn.setOnAction({ choice.set("small"); stage.close() })
 
             stage.setOnHidden({ latch.countDown() })
@@ -114,13 +114,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -128,7 +128,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -141,7 +141,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -161,7 +161,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ──────────────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir lam açın.")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.12204d6dbab7', "Önce bir lam açın."))
     return
 }
 
@@ -188,7 +188,7 @@ def nucleusArea = { d ->
 int smallPreview = allDetections.count { double a = nucleusArea(it); !Double.isNaN(a) && a > 0 && a <= DEFAULT_MIN_AREA } as int
 
 if (allDetections.isEmpty()) {
-    Dialogs.showMessageDialog("Silinecek tespit yok", "Bu lamda hiç detection nesnesi bulunmuyor.")
+    Dialogs.showMessageDialog(workshopText('script.69bd386127f2', "Silinecek tespit yok"), workshopText('script.9b1359419b67', "Bu lamda hiç detection nesnesi bulunmuyor."))
     return
 }
 
@@ -226,8 +226,8 @@ def silinen = 0
 def mod = ""
 
 if (secim == "all") {
-    if (!isHeadless && !Dialogs.showConfirmDialog("Tüm tespitler silinsin mi?",
-            String.format(java.util.Locale.US, "Bu lamdaki %,d tespitin TAMAMI silinecek (anotasyonlar korunur).\n\nDevam edilsin mi?", allDetections.size()))) {
+    if (!isHeadless && !Dialogs.showConfirmDialog(workshopText('script.f20532d46f48', "Tüm tespitler silinsin mi?"),
+            String.format(java.util.Locale.US, workshopText('script.dbd45ead7564', "Bu lamdaki %,d tespitin TAMAMI silinecek (anotasyonlar korunur).\n\nDevam edilsin mi?"), allDetections.size()))) {
         println "Kullanıcı iptal etti."
         return
     }
@@ -237,13 +237,13 @@ if (secim == "all") {
 } else if (secim == "small") {
     double thr = DEFAULT_MIN_AREA
     if (!isHeadless) {
-        def txt = Dialogs.showInputDialog("Olanaksız küçük çekirdekler",
-            "Bu alandan (µm²) KÜÇÜK çekirdekler silinsin:", String.format(java.util.Locale.US, "%.2f", DEFAULT_MIN_AREA))
+        def txt = Dialogs.showInputDialog(workshopText('script.2f648e73e944', "Olanaksız küçük çekirdekler"),
+            workshopText('script.7d37036dacf8', "Bu alandan (µm²) KÜÇÜK çekirdekler silinsin:"), String.format(java.util.Locale.US, "%.2f", DEFAULT_MIN_AREA))
         if (txt == null) { println "İptal edildi."; return }
         try { thr = Double.parseDouble(txt.trim().replace(',', '.')) }
-        catch (Throwable t) { Dialogs.showErrorMessage("Geçersiz sayı", "Eşik bir sayı olmalı (µm²)."); return }
+        catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.54cde46c5e98', "Geçersiz sayı"), workshopText('script.b6c82c9b997b', "Eşik bir sayı olmalı (µm²).")); return }
     }
-    if (!(thr > 0)) { Dialogs.showErrorMessage("Geçersiz eşik", "Eşik pozitif olmalı (µm²)."); return }
+    if (!(thr > 0)) { Dialogs.showErrorMessage(workshopText('script.46fe7852ffec', "Geçersiz eşik"), workshopText('script.831141421ea3', "Eşik pozitif olmalı (µm²).")); return }
     def toDelete = allDetections.findAll { double a = nucleusArea(it); !Double.isNaN(a) && a > 0 && a <= thr }
     silinen = toDelete.size()
     if (silinen > 0) QP.removeObjects(toDelete, true)
@@ -279,3 +279,14 @@ println "───────────────────────�
 println "Temizlik: ${mod}"
 println "  Silinen: ${silinen}  |  Kalan: ${kalan}  |  Süre: ${String.format(java.util.Locale.US, '%.2f', elapsed)} sn"
 println "─────────────────────────────────────"
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

@@ -54,13 +54,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -68,7 +68,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -81,7 +81,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -107,7 +107,7 @@ String detectionChannel    = "Hematoxylin OD"
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir H&E lamı açın.")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.3587b2e65fb9', "Önce bir H&E lamı açın."))
     return
 }
 
@@ -116,7 +116,7 @@ if (stromaAnnotations.isEmpty()) {
     def msg = "Bu lamda 'Stroma' anotasyonu yok.\n\n" +
               "Önce Tümör/Stroma modülünü (Tümör vs stroma sınıflandırıcı) çalıştırın; o betik\n" +
               "tümör/stroma alanlarını ayırır. Sonra bu betiği tekrar çalıştırın."
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Stroma bulunamadı", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.8094a507868c', "Stroma bulunamadı"), msg)
     return
 }
 
@@ -124,8 +124,8 @@ def cal = imageData.getServer().getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0) || !(ph > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok", "Lamda piksel boyutu (µm) tanımlı değil; yoğunluk hesaplanamaz." +
-        "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).")
+    Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), workshopText('script.66586705b08c', "Lamda piksel boyutu (µm) tanımlı değil; yoğunluk hesaplanamaz." +
+        "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)."))
     return
 }
 
@@ -200,7 +200,7 @@ if (totalCells == 0) {
         "Olası nedenler: yanlış boya vektörü / Image type (ör. H&E yerine DAB ya da tersi), " +
         "çok yüksek tespit eşiği, ya da 'Stroma' anotasyonunun hücresiz boş alana denk gelmesi.\n" +
         "Boya vektörlerini ve eşiği kontrol edip yeniden çalıştırın."
-    if (isHeadless) println "UYARI: ${zmsg}" else Dialogs.showWarningNotification("Hücre bulunamadı", zmsg)
+    if (isHeadless) println "UYARI: ${zmsg}" else Dialogs.showWarningNotification(workshopText('script.b2d0e9e97b0d', "Hücre bulunamadı"), zmsg)
 }
 
 // ── 4) Kilitli özet anotasyonu (Veri dışa aktarma modülü için) ─────────
@@ -239,3 +239,14 @@ body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
 showResultWindow("Stromal TIL yoğunluğu", body.toString())
 println "✓ Stromal TIL yoğunluğu yazıldı (her Stroma anotasyonu + 'Stromal TIL Özet')."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

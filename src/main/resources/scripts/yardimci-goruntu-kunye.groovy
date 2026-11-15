@@ -267,8 +267,8 @@ def showResultWindow = { String text ->
         try {
             def stage = new javafx.stage.Stage()
             stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle('Görüntü künyesi ve histogram')
-            def alwaysTop = new javafx.scene.control.CheckBox('Üstte tut')
+            stage.setTitle(workshopText('script.bde2c50086d3', 'Görüntü künyesi ve histogram'))
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
             alwaysTop.setSelected(true)
             stage.setAlwaysOnTop(true)
             alwaysTop.selectedProperty().addListener({ obs, o, n ->
@@ -280,14 +280,14 @@ def showResultWindow = { String text ->
             ta.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
             javafx.scene.layout.VBox.setVgrow(ta, javafx.scene.layout.Priority.ALWAYS)
 
-            def copyBtn = new javafx.scene.control.Button('Kopyala')
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', 'Kopyala'))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
                 content.putString(text ?: '')
                 cb.setContent(content)
             })
-            def closeBtn = new javafx.scene.control.Button('Kapat')
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', 'Kapat'))
             closeBtn.setOnAction({ stage.close() })
 
             def spacer = new javafx.scene.layout.Region()
@@ -302,7 +302,7 @@ def showResultWindow = { String text ->
             stage.setScene(new javafx.scene.Scene(root, 760, 680))
             stage.show()
         } catch (Throwable t) {
-            Dialogs.showMessageDialog('Görüntü künyesi ve histogram', text ?: '')
+            Dialogs.showMessageDialog(workshopText('script.bde2c50086d3', 'Görüntü künyesi ve histogram'), text ?: '')
         }
     }
 }
@@ -312,8 +312,19 @@ def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     def msg = 'Önce bir lam açın. (İsterseniz tek bir bölge anotasyonu seçin; yoksa tüm görüntü örneklenir.)'
     if (isHeadless) println msg
-    else Dialogs.showMessageDialog('Görüntü künyesi ve histogram', msg)
+    else Dialogs.showMessageDialog(workshopText('script.bde2c50086d3', 'Görüntü künyesi ve histogram'), msg)
     return
 }
 showResultWindow(buildReport(imageData))
 println '✓ Görüntü künyesi ve histogram hazırlandı.'
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

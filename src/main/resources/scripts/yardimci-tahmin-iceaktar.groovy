@@ -78,13 +78,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -92,7 +92,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -105,7 +105,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -129,7 +129,7 @@ int minVertexCount        = 4                    // dejenere poligonları ele
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce tahminlerin ait olduğu WSI'yi açın.")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.e5eb54ec8b86', "Önce tahminlerin ait olduğu WSI'yi açın."))
     return
 }
 if (isHeadless) {
@@ -197,7 +197,7 @@ try {
     try {
         def root = JsonParser.parseReader(reader).getAsJsonObject()
         if (!root.has("features")) {
-            Dialogs.showErrorMessage("Geçersiz GeoJSON", "Dosyada 'features' dizisi yok (FeatureCollection bekleniyor).")
+            Dialogs.showErrorMessage(workshopText('script.21192fd373aa', "Geçersiz GeoJSON"), workshopText('script.5e3831af61ed', "Dosyada 'features' dizisi yok (FeatureCollection bekleniyor)."))
             return
         }
         root.getAsJsonArray("features").each { featureElement ->
@@ -245,13 +245,13 @@ try {
         reader.close()
     }
 } catch (Throwable t) {
-    Dialogs.showErrorMessage("GeoJSON okunamadı", "Dosya ayrıştırılamadı:\n\n" + (t.getMessage() ?: t.getClass().getSimpleName()))
+    Dialogs.showErrorMessage(workshopText('script.b147d1274e17', "GeoJSON okunamadı"), workshopText('script.5430313684bd', "Dosya ayrıştırılamadı:\n\n") + (t.getMessage() ?: t.getClass().getSimpleName()))
     return
 }
 
 if (newAnnotations.isEmpty()) {
-    Dialogs.showWarningNotification("Poligon yok",
-        "GeoJSON dosyasında geçerli Polygon/MultiPolygon özelliği bulunamadı (atlanan: ${skipped}).")
+    Dialogs.showWarningNotification(workshopText('script.59836cc28f23', "Poligon yok"),
+        "${workshopText('script.1149564c8762', 'GeoJSON dosyasında geçerli Polygon/MultiPolygon özelliği bulunamadı (atlanan: ')}${skipped}).")
     return
 }
 
@@ -263,12 +263,12 @@ def oldImports = QP.getAnnotationObjects().findAll { it.getName() == importSenti
 if (!oldImports.isEmpty()) {
     def optAdd = "Ekle — hiçbir şeyi silme"
     def optRep = "Önceki içe aktarımı değiştir"
-    def ch = Dialogs.showChoiceDialog("Önceki içe aktarım bulundu",
-        "Bu görüntüde önceki bir içe aktarımdan " + oldImports.size() + " anotasyon var (\"" + importSentinelName + "\").\n\n" +
-        "• Ekle: hiçbir şey silinmez; yeni poligonlar öncekilerin yanına eklenir (aynı dosyayı\n" +
-        "  yeniden içe aktarıyorsanız çift kopya oluşur).\n" +
-        "• Değiştir: yalnız bu önceki anotasyonlar kaldırılır (elle düzelttiğiniz sınırlar dahil);\n" +
-        "  altlarındaki tespitler ve diğer anotasyonlar korunur.",
+    def ch = Dialogs.showChoiceDialog(workshopText('script.dd2c102cce23', "Önceki içe aktarım bulundu"),
+        workshopText('script.cb9ed0395ead', "Bu görüntüde önceki bir içe aktarımdan ") + oldImports.size() + workshopText('script.465be7ff125b', " anotasyon var (\"") + importSentinelName + "\").\n\n" +
+        workshopText('script.732bf5e9932d', "• Ekle: hiçbir şey silinmez; yeni poligonlar öncekilerin yanına eklenir (aynı dosyayı\n") +
+        workshopText('script.186ea928ba70', "  yeniden içe aktarıyorsanız çift kopya oluşur).\n") +
+        workshopText('script.51a408148751', "• Değiştir: yalnız bu önceki anotasyonlar kaldırılır (elle düzelttiğiniz sınırlar dahil);\n") +
+        workshopText('script.4d12c7800032', "  altlarındaki tespitler ve diğer anotasyonlar korunur."),
         [optAdd, optRep], optAdd)
     if (ch == null) { println "İptal edildi — hiçbir şey değiştirilmedi."; return }
     if (ch == optRep) QP.removeObjects(oldImports, true)
@@ -297,3 +297,14 @@ body << "⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar."
 
 showResultWindow("AI tahmin maskesi içe aktarma", body.toString())
 println "✓ AI tahmin içe aktarımı tamamlandı (${newAnnotations.size()} anotasyon, ${skipped} atlandı)."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

@@ -647,8 +647,8 @@ def startExport = {
     }
     boolean withDet = prefs.getBoolean('detections', false)
     if (withDet && targets.size() > 1) {
-        boolean ok = Dialogs.showConfirmDialog('Tespitler de dışa aktarılsın mı?',
-            'Tespit/hücre nesneleri çok sayıda olabilir; GeoJSON ve XML dosyaları büyür ve işlem uzar.\n\nDevam edilsin mi?')
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.3f13b2828e23', 'Tespitler de dışa aktarılsın mı?'),
+            workshopText('script.8561e6573698', 'Tespit/hücre nesneleri çok sayıda olabilir; GeoJSON ve XML dosyaları büyür ve işlem uzar.\n\nDevam edilsin mi?'))
         if (!ok) return
     }
     File base = baseDirRef.get() ?: defaultBaseDir(QP.getProject())
@@ -712,9 +712,9 @@ render = { ->
     def onChange = { Closure c -> ({ obs, o, n -> c(n) } as javafx.beans.value.ChangeListener) }
 
     if (cur == 'CONFIG') {
-        title.setText('Toplu anotasyon dışa aktarma')
+        title.setText(workshopText('script.0deb52e599fd', 'Toplu anotasyon dışa aktarma'))
 
-        section('1 · Kapsam')
+        section(workshopText('script.4cd608790238', '1 · Kapsam'))
         String sc = scopeRef.get()
         if ((sc == 'current' && imageData == null) || (sc != 'current' && project == null)) sc = (project != null) ? 'project' : 'current'
         scopeRef.set(sc)
@@ -744,16 +744,16 @@ render = { ->
             center.getChildren().add(sp)
         }
 
-        section('2 · Nesneler')
-        addGuidance('Anotasyonlar her zaman dahildir.')
-        def det = new javafx.scene.control.CheckBox('Tespit/hücre nesnelerini de ekle (dosyalar büyür)')
+        section(workshopText('script.84ee150d3455', '2 · Nesneler'))
+        addGuidance(workshopText('script.2bbdfa18bfc5', 'Anotasyonlar her zaman dahildir.'))
+        def det = new javafx.scene.control.CheckBox(workshopText('script.b436731bfd69', 'Tespit/hücre nesnelerini de ekle (dosyalar büyür)'))
         det.setSelected(prefs.getBoolean('detections', false))
         det.selectedProperty().addListener(onChange { n -> prefs.putBoolean('detections', n) })
-        def meas = new javafx.scene.control.CheckBox('GeoJSON\'a ölçümleri ekle')
+        def meas = new javafx.scene.control.CheckBox(workshopText('script.00a5e82ff001', 'GeoJSON\'a ölçümleri ekle'))
         meas.setSelected(prefs.getBoolean('measurements', true))
         meas.selectedProperty().addListener(onChange { n -> prefs.putBoolean('measurements', n) })
         center.getChildren().addAll(det, meas)
-        def cf = new javafx.scene.control.CheckBox('Yalnız şu sınıflar (alt sınıflar dahil):')
+        def cf = new javafx.scene.control.CheckBox(workshopText('script.0abe5b118bab', 'Yalnız şu sınıflar (alt sınıflar dahil):'))
         cf.setSelected(prefs.getBoolean('classFilter', false))
         def chosen = new LinkedHashSet(((String) prefs.get('classes', '')).split(';').findAll { it })
         def flow = new javafx.scene.layout.FlowPane(10, 6)
@@ -790,7 +790,7 @@ render = { ->
         cf.selectedProperty().addListener(onChange { n -> prefs.putBoolean('classFilter', n); flow.setDisable(!n) })
         center.getChildren().addAll(cf, flow)
 
-        section('3 · Biçimler')
+        section(workshopText('script.30c19d20294c', '3 · Biçimler'))
         def chosenFmts = new LinkedHashSet(((String) prefs.get('formats', 'geojson')).split(',').findAll { FORMAT_KEYS.contains(it) })
         def fmtFlow = new javafx.scene.layout.FlowPane(14, 6)
         FORMAT_KEYS.each { String k ->
@@ -806,49 +806,49 @@ render = { ->
         sepBox.getItems().addAll('Sekme (.tsv)', 'Virgül (.csv)')
         sepBox.setValue(prefs.get('sep', 'tab') == 'comma' ? 'Virgül (.csv)' : 'Sekme (.tsv)')
         sepBox.valueProperty().addListener(onChange { n -> prefs.put('sep', n == 'Virgül (.csv)' ? 'comma' : 'tab') })
-        def sepRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Merkez tablosu ayracı:'), sepBox)
+        def sepRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label(workshopText('script.5e8ef66a79e0', 'Merkez tablosu ayracı:')), sepBox)
         sepRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
         center.getChildren().addAll(fmtFlow, sepRow)
 
-        section('4 · Kayıt yeri')
+        section(workshopText('script.06d159949933', '4 · Kayıt yeri'))
         File base = baseDirRef.get() ?: defaultBaseDir(project)
         def outLbl = new javafx.scene.control.Label(new File(base, 'anotasyon_<tarih>').getAbsolutePath())
         outLbl.setWrapText(true); outLbl.setMaxWidth(Double.MAX_VALUE)
-        def browse = navButton('Seç…', {
-            def d = FileChoosers.promptForDirectory(stage, 'Kayıt klasörünü seçin', base)
+        def browse = navButton(workshopText('script.dfd12ee38484', 'Seç…'), {
+            def d = FileChoosers.promptForDirectory(stage, workshopText('script.f7ca75bd4d2d', 'Kayıt klasörünü seçin'), base)
             if (d != null) { baseDirRef.set(d); render() }
         })
         def outRow = new javafx.scene.layout.HBox(8, outLbl, browse)
         outRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
         center.getChildren().add(outRow)
-        addGuidance('Açık görüntünün kaydedilmemiş değişiklikleri de dışa aktarılır. Koordinatlar taban (level-0) piksel ' +
+        addGuidance(workshopText('script.af84738e8159', 'Açık görüntünün kaydedilmemiş değişiklikleri de dışa aktarılır. Koordinatlar taban (level-0) piksel ' +
             'uzayındadır. ImageScope nokta taşımaz; ImageScope ve ASAP çoklu çizgi taşımaz; COCO delik taşımaz — ' +
-            'atlananlar _manifest.tsv\'de görüntü başına sayılır.')
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Dışa aktar ▶', { startExport() }, 'Seçili kapsamı seçili biçimlere yazar'))
+            'atlananlar _manifest.tsv\'de görüntü başına sayılır.'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.e0880cf185dc', 'Dışa aktar ▶'), { startExport() }, workshopText('script.5667489a77dd', 'Seçili kapsamı seçili biçimlere yazar')))
     } else if (cur == 'RUNNING') {
-        title.setText('Dışa aktarılıyor…')
-        def pl = new javafx.scene.control.Label('Başlıyor…'); pl.setWrapText(true); pl.setMaxWidth(Double.MAX_VALUE)
+        title.setText(workshopText('script.2e0d5a81bac0', 'Dışa aktarılıyor…'))
+        def pl = new javafx.scene.control.Label(workshopText('script.8478d83dc156', 'Başlıyor…')); pl.setWrapText(true); pl.setMaxWidth(Double.MAX_VALUE)
         def pb = new javafx.scene.control.ProgressBar(0.0d); pb.setMaxWidth(Double.MAX_VALUE)
         progressLabelRef.set(pl); progressBarRef.set(pb)
         center.getChildren().addAll(pl, pb)
-        addGuidance('İptal, sıradaki görüntüden önce durur; yazılmakta olan görüntü tamamlanır.')
-        actions.add(navButton('İptal et', { cancelledRef.set(true) }))
+        addGuidance(workshopText('script.22996080f261', 'İptal, sıradaki görüntüden önce durur; yazılmakta olan görüntü tamamlanır.'))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true) }))
     } else if (cur == 'RESULT') {
         title.setText((String) resultTitleRef.get())
         addMonoArea(resultTextRef.get())
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-        actions.add(navButton('↻ Yeniden', { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.171029fff08d', '↻ Yeniden'), { step.set('CONFIG'); render() }))
     } else { // ERROR
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set('CONFIG'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
     // Alt çubuk: "Üstte tut" (sol) + disclaimer + eylem düğmeleri (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n -> alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
     def spacer = new javafx.scene.layout.Region()
@@ -858,7 +858,7 @@ render = { ->
     bar.getChildren().add(topChk)
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.2a26394a7133', 'Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
     def bottom = new javafx.scene.layout.VBox(8, disclaimer, bar)
@@ -878,13 +878,24 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Toplu anotasyon dışa aktarma')
+        stage.setTitle(workshopText('script.0deb52e599fd', 'Toplu anotasyon dışa aktarma'))
         stage.setAlwaysOnTop(alwaysTop.get())
         stage.setOnCloseRequest({ cancelledRef.set(true) } as javafx.event.EventHandler)   // çalışırken kapatma = iptal
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println '✓ Toplu anotasyon dışa aktarma sihirbazı açıldı.'
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

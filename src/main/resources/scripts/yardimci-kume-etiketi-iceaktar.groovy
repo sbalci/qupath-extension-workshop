@@ -70,13 +70,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -84,7 +84,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -97,7 +97,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -120,13 +120,13 @@ def NON_MEASUREMENT  = ["object_id", "centroid_x_um", "centroid_y_um", "image", 
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce etiketlerin ait olduğu WSI'yi açın.")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.f3757a3b3b1f', "Önce etiketlerin ait olduğu WSI'yi açın."))
     return
 }
 def dets = QP.getDetectionObjects()
 if (dets == null || dets.isEmpty()) {
-    Dialogs.showErrorMessage("Tespit yok",
-        "Bu görüntüde hiç tespit yok. Önce hücre tespiti çalıştırın (ilgili modüllerde).")
+    Dialogs.showErrorMessage(workshopText('script.4277b763a640', "Tespit yok"),
+        workshopText('script.0dbf494fd200', "Bu görüntüde hiç tespit yok. Önce hücre tespiti çalıştırın (ilgili modüllerde)."))
     return
 }
 if (isHeadless) {
@@ -149,7 +149,7 @@ def lines = tsvFile.readLines("UTF-8")
 // UTF-8 BOM (pandas `utf-8-sig`, Excel) ilk başlığı "﻿object_id" yapar → sütun bulunamaz.
 if (lines != null && !lines.isEmpty() && lines[0].startsWith('﻿')) lines[0] = lines[0].substring(1)
 if (lines == null || lines.size() < 2) {
-    Dialogs.showErrorMessage("Boş dosya", "Tabloda başlık + en az bir veri satırı bekleniyor.")
+    Dialogs.showErrorMessage(workshopText('script.fe7de7b41be9', "Boş dosya"), workshopText('script.1894765fb2c5', "Tabloda başlık + en az bir veri satırı bekleniyor."))
     return
 }
 def headerLine = lines[0]
@@ -164,10 +164,10 @@ int xIdx  = idxOf("centroid_x_um")
 int yIdx  = idxOf("centroid_y_um")
 boolean byId = (idIdx >= 0)
 if (!byId && (xIdx < 0 || yIdx < 0)) {
-    Dialogs.showErrorMessage("Eşleştirme sütunu yok",
-        "Tablo, tespitleri eşleştirmek için 'object_id' (önerilen) ya da\n" +
+    Dialogs.showErrorMessage(workshopText('script.8294bd16a925', "Eşleştirme sütunu yok"),
+        workshopText('script.a5d6bd4eb946', "Tablo, tespitleri eşleştirmek için 'object_id' (önerilen) ya da\n" +
         "'centroid_x_um' + 'centroid_y_um' sütunlarını içermelidir.\n\n" +
-        "İpucu: özellik matrisi yardımcısı object_id sütununu otomatik yazar.")
+        "İpucu: özellik matrisi yardımcısı object_id sütununu otomatik yazar."))
     return
 }
 
@@ -293,9 +293,9 @@ for (int r = 1; r < lines.size(); r++) {
 QP.fireHierarchyUpdate()
 
 if (matched == 0) {
-    Dialogs.showWarningNotification("Eşleşme yok",
-        "Tablodaki hiçbir satır mevcut tespitlerle eşleşmedi. " +
-        (byId ? "object_id'ler aynı projeden mi?" : "centroid'ler aynı kalibrasyonda mı?"))
+    Dialogs.showWarningNotification(workshopText('script.dd4f8b850724', "Eşleşme yok"),
+        workshopText('script.07bffa7add1b', "Tablodaki hiçbir satır mevcut tespitlerle eşleşmedi. ") +
+        (byId ? workshopText('script.95f37f2f01b2', "object_id'ler aynı projeden mi?") : workshopText('script.69ab3de67cfa', "centroid'ler aynı kalibrasyonda mı?")))
 }
 
 // ── 6) Özet ─────────────────────────────────────────────────────────
@@ -331,3 +331,14 @@ showResultWindow("Küme / fenotip etiketi içe aktarma", body.toString())
 println String.format(java.util.Locale.US,
     "✓ İçe aktarma tamamlandı: %d eşleşti, %d eşleşmedi, %d sınıf, %d ölçüm.",
     matched, unmatched, classApplied, measApplied)
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

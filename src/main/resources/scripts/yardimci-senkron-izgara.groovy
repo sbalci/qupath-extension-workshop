@@ -44,12 +44,12 @@ if (gui == null) { println 'Bu yardımcı QuPath arayüzü gerektirir (arayüzs�
 
 def project = gui.getProject()
 if (project == null) {
-    Platform.runLater { Dialogs.showMessageDialog('Senkron ızgara', 'Önce bir PROJE açın — ızgara projedeki lamlardan doldurulur.') }
+    Platform.runLater { Dialogs.showMessageDialog(workshopText('script.b0052b4a9349', 'Senkron ızgara'), workshopText('script.31b37e71a786', 'Önce bir PROJE açın — ızgara projedeki lamlardan doldurulur.')) }
     return
 }
 def entries = new ArrayList(project.getImageList())
 if (entries.size() < 2) {
-    Platform.runLater { Dialogs.showMessageDialog('Senkron ızgara', 'Projede en az 2 slayt olmalı (senkron ızgara birden çok slayt gösterir).') }
+    Platform.runLater { Dialogs.showMessageDialog(workshopText('script.b0052b4a9349', 'Senkron ızgara'), workshopText('script.11cb50e48ef8', 'Projede en az 2 slayt olmalı (senkron ızgara birden çok slayt gösterir).')) }
     return
 }
 
@@ -82,18 +82,18 @@ def gridFor = { int c ->
 
 Platform.runLater {
     def stage = new Stage()
-    stage.setTitle('Senkron ızgara — seri lamları birlikte aç')
+    stage.setTitle(workshopText('script.307d6e930184', 'Senkron ızgara — seri lamları birlikte aç'))
 
     def info = new Label(
-        'Açılacak lamları işaretleyin (aynı vakanın seri kesitleri). QuPath çoklu görünüm ' +
+        workshopText('script.d17e306c9728', 'Açılacak lamları işaretleyin (aynı vakanın seri kesitleri). QuPath çoklu görünüm ' +
         'ızgarası kurar ve panelleri SENKRONLAR — birinde kaydır/yakınlaştır, hepsi birlikte hareket eder. ' +
-        'En fazla ' + MAX_PANELS + ' panel (2×3).')
+        'En fazla ') + MAX_PANELS + workshopText('script.7c3513ac40e2', ' panel (2×3).'))
     info.setWrapText(true); info.setMaxWidth(560)
 
     def caveat = new Label(
-        '⚠ Senkron = "birlikte hareket", otomatik hizalama DEĞİL. Ham seri kesitler derine ' +
+        workshopText('script.814c2d28ea9a', '⚠ Senkron = "birlikte hareket", otomatik hizalama DEĞİL. Ham seri kesitler derine ' +
         'yakınlaştıkça örtüşmeyebilir. Gerçek örtüşme için ÖNCEDEN hizalanmış görüntüler açın ' +
-        '(VALIS çıktısı / dönüşümü gömülü OME-TIFF). Ayrıntı: Ekler → Görüntü Hizalama §9.')
+        '(VALIS çıktısı / dönüşümü gömülü OME-TIFF). Ayrıntı: Ekler → Görüntü Hizalama §9.'))
     caveat.setWrapText(true); caveat.setMaxWidth(560); caveat.setStyle('-fx-font-style: italic;')
 
     def boxes = []
@@ -112,23 +112,23 @@ Platform.runLater {
     def scroll = new ScrollPane(listBox)
     scroll.setFitToWidth(true); scroll.setPrefViewportHeight(220)
 
-    def selectAll = new Button('Tümünü seç')
+    def selectAll = new Button(workshopText('script.ef0b6d89aaa3', 'Tümünü seç'))
     selectAll.setOnAction { boxes.each { it.setSelected(true) } }
-    def clearAll = new Button('Tümünü kaldır')
+    def clearAll = new Button(workshopText('script.77d4b2feec04', 'Tümünü kaldır'))
     clearAll.setOnAction { boxes.each { it.setSelected(false) } }
     def selRow = new HBox(8, selectAll, clearAll)
 
     def status = new Label('')
     status.setWrapText(true); status.setMaxWidth(560)
 
-    def openBtn = new Button('Aç (senkron ızgara)')
-    def backBtn = new Button('Tek görünüme dön')
-    def closeBtn = new Button('Kapat')
+    def openBtn = new Button(workshopText('script.0125f10f5179', 'Aç (senkron ızgara)'))
+    def backBtn = new Button(workshopText('script.a0d2eaac284a', 'Tek görünüme dön'))
+    def closeBtn = new Button(workshopText('script.7b31a9fc4816', 'Kapat'))
     closeBtn.setOnAction { stage.close() }
 
     openBtn.setOnAction {
         def selected = boxes.findAll { it.isSelected() }.collect { it.getUserData() }
-        if (selected.size() < 2) { status.setText('En az 2 lam seçin.'); return }
+        if (selected.size() < 2) { status.setText(workshopText('script.39dc8cd96806', 'En az 2 lam seçin.')); return }
         int n = selected.size()
         String note = ''
         if (n > MAX_PANELS) {
@@ -145,16 +145,16 @@ Platform.runLater {
             def d = v.getImageData()
             try { d != null && d.isChanged() } catch (Throwable t) { false }
         }
-        if (anyUnsaved && !Dialogs.showConfirmDialog('Senkron ızgara',
-                'Görüntüleyicilerdeki bazı görüntülerde kaydedilmemiş değişiklik var; ızgara bunların ' +
-                'yerini alır ve değişiklikler kaybolabilir. Devam edilsin mi?')) {
+        if (anyUnsaved && !Dialogs.showConfirmDialog(workshopText('script.b0052b4a9349', 'Senkron ızgara'),
+                workshopText('script.21c6a7550dbe', 'Görüntüleyicilerdeki bazı görüntülerde kaydedilmemiş değişiklik var; ızgara bunların ' +
+                'yerini alır ve değişiklikler kaybolabilir. Devam edilsin mi?'))) {
             return
         }
         def g = gridFor(n)
         boolean resized = gm.setGridSize((int) g[0], (int) g[1])
         if (!resized) {
-            status.setText('Izgara ayarlanamadı (çok fazla açık görüntüleyici olabilir). ' +
-                'Fazla görüntüleyicileri kapatıp yeniden deneyin.')
+            status.setText(workshopText('script.1b0bd09732bd', 'Izgara ayarlanamadı (çok fazla açık görüntüleyici olabilir). ' +
+                'Fazla görüntüleyicileri kapatıp yeniden deneyin.'))
             return
         }
         def viewers = gm.getAllViewers()
@@ -177,8 +177,8 @@ Platform.runLater {
         }
         gm.setSynchronizeViewers(true)
         if (!viewers.isEmpty()) gm.setActiveViewer(viewers[0])
-        status.setText(m + ' lam senkron ızgarada açılıyor' + note + '. Kaydırma/yakınlaştırma artık ' +
-            'birlikte. (Yakınlaştırmayı tam eşitlemek için: View → Multi-view → Match viewer resolutions.)')
+        status.setText(m + workshopText('script.068420139469', ' lam senkron ızgarada açılıyor') + note + workshopText('script.017e56b7ed83', '. Kaydırma/yakınlaştırma artık ') +
+            workshopText('script.a082fcbea59e', 'birlikte. (Yakınlaştırmayı tam eşitlemek için: View → Multi-view → Match viewer resolutions.)'))
     }
 
     backBtn.setOnAction {
@@ -188,12 +188,12 @@ Platform.runLater {
         for (v in new ArrayList(all)) {
             if (v == keep) continue
             if (!gui.closeViewer(v)) {
-                status.setText('Kapatma iptal edildi; ızgara olduğu gibi bırakıldı (senkron kapalı).')
+                status.setText(workshopText('script.6fb77d9ff96a', 'Kapatma iptal edildi; ızgara olduğu gibi bırakıldı (senkron kapalı).'))
                 return
             }
         }
         gm.setGridSize(1, 1)
-        status.setText('Tek görünüme dönüldü (senkron kapalı).')
+        status.setText(workshopText('script.4071339d04e9', 'Tek görünüme dönüldü (senkron kapalı).'))
     }
 
     def btnRow = new HBox(8, openBtn, backBtn, closeBtn)
@@ -202,4 +202,15 @@ Platform.runLater {
     VBox.setVgrow(scroll, Priority.ALWAYS)
     stage.setScene(new Scene(root, 600, 540))
     stage.show()
+}
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
 }

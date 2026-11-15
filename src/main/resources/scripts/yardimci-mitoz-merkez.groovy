@@ -184,12 +184,12 @@ render = { ->
     def addGuidance = { String txt -> def lbl = new javafx.scene.control.Label(txt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE); center.getChildren().add(lbl) }
 
     if (cur == 'LIST') {
-        title.setText('Mitoz tespiti — model listesi')
-        addGuidance('Bir model seçip "Aç ▶" ile başlatın (bu liste kapanır). O modelle işiniz bitince sihirbaz penceresindeki "◀ Mitoz listesi" düğmesi sizi bu listeye geri getirir; buradan başka bir model başlatabilirsiniz.\n' +
-            'Önerilen sıra: ① bir dedektörle mitozları bulun → ② isteğe bağlı: atipik sınıflandırıcıyla tipik/atipik ayırın → ③ isteğe bağlı: dedektörleri aynı bölgede karşılaştırın.')
+        title.setText(workshopText('script.a94f01ac5545', 'Mitoz tespiti — model listesi'))
+        addGuidance(workshopText('script.b1e880c53ba9', 'Bir model seçip "Aç ▶" ile başlatın (bu liste kapanır). O modelle işiniz bitince sihirbaz penceresindeki "◀ Mitoz listesi" düğmesi sizi bu listeye geri getirir; buradan başka bir model başlatabilirsiniz.\n' +
+            'Önerilen sıra: ① bir dedektörle mitozları bulun → ② isteğe bağlı: atipik sınıflandırıcıyla tipik/atipik ayırın → ③ isteğe bağlı: dedektörleri aynı bölgede karşılaştırın.'))
         def slideLbl = new javafx.scene.control.Label(imageData == null
-            ? 'Açık lam: yok — sihirbazlar bir H&E lamı ve seçili bir alan anotasyonu bekler.'
-            : ('Açık lam: ' + slideNameOf(imageData)))
+            ? workshopText('script.5d8d564ea73b', 'Açık lam: yok — sihirbazlar bir H&E lamı ve seçili bir alan anotasyonu bekler.')
+            : (workshopText('script.7dfd8f241999', 'Açık lam: ') + slideNameOf(imageData)))
         slideLbl.setWrapText(true); slideLbl.setMaxWidth(Double.MAX_VALUE); slideLbl.setStyle('-fx-opacity: 0.85;')
         center.getChildren().add(slideLbl)
 
@@ -204,10 +204,10 @@ render = { ->
                 row.setStyle('-fx-border-color: -fx-box-border; -fx-border-width: 0 0 1 0; -fx-padding: 6 2 6 12;')
                 def head = new javafx.scene.layout.HBox(8); head.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
                 def name = new javafx.scene.control.Label(m.label); name.setStyle('-fx-font-weight: bold;')
-                def chip = new javafx.scene.control.Label(m.disabled ? '⊘ devre dışı' : st.text)
+                def chip = new javafx.scene.control.Label(m.disabled ? workshopText('script.d5d1d0d0f7a6', '⊘ devre dışı') : st.text)
                 chip.setStyle(m.disabled ? '-fx-opacity: 0.7;' : (st.ok ? '-fx-text-fill: #2e8b57;' : '-fx-text-fill: #b8860b;'))
                 def spacer = new javafx.scene.layout.Region(); javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-                def openBtn = navButton('Aç ▶', { openModel(m) }, m.label + ' sihirbazını açar (bu liste kapanır)')
+                def openBtn = navButton(workshopText('script.b36edf646bfa', 'Aç ▶'), { openModel(m) }, m.label + workshopText('script.7c6320b488f5', ' sihirbazını açar (bu liste kapanır)'))
                 openBtn.setDisable(m.disabled == true)
                 head.getChildren().addAll(name, spacer, chip, openBtn)
                 def note = new javafx.scene.control.Label(m.note ?: ''); note.setWrapText(true); note.setMaxWidth(Double.MAX_VALUE)
@@ -219,29 +219,29 @@ render = { ->
         def scroll = new javafx.scene.control.ScrollPane(listBox); scroll.setFitToWidth(true)
         javafx.scene.layout.VBox.setVgrow(scroll, javafx.scene.layout.Priority.ALWAYS)
         center.getChildren().add(scroll)
-        addGuidance('Ortam durumu yalnız bilgi amaçlıdır: "○ kurulu değil" görünen bir modeli yine de açabilirsiniz; sihirbaz eksik adımı (Python ortamı, model indirme) kendi penceresinde gösterir.')
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('⚙ Python ortamı', { openEnvManager() }, 'Atölye Python ortam yöneticisini açar; kurulum bitince "Sihirbaza dön ▶" bu listeye döner'))
-        actions.add(navButton('⟳ Yenile', { render() }))
+        addGuidance(workshopText('script.b50c08f4bdb7', 'Ortam durumu yalnız bilgi amaçlıdır: "○ kurulu değil" görünen bir modeli yine de açabilirsiniz; sihirbaz eksik adımı (Python ortamı, model indirme) kendi penceresinde gösterir.'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.edfc11aab1a1', '⚙ Python ortamı'), { openEnvManager() }, workshopText('script.bb63e418786d', 'Atölye Python ortam yöneticisini açar; kurulum bitince "Sihirbaza dön ▶" bu listeye döner')))
+        actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
     } else if (cur == 'OPENING') {
         title.setText(openingRef.get())
-        addGuidance('Sihirbaz açılıyor; açıldığında bu liste kapanır. Listeye dönmek için sihirbazdaki "◀ Mitoz listesi" düğmesini kullanın.')
+        addGuidance(workshopText('script.0a98be1e643b', 'Sihirbaz açılıyor; açıldığında bu liste kapanır. Listeye dönmek için sihirbazdaki "◀ Mitoz listesi" düğmesini kullanın.'))
         def pb = new javafx.scene.control.ProgressBar(); pb.setProgress(-1.0); pb.setMaxWidth(Double.MAX_VALUE)
         center.getChildren().add(pb)
     } else { // ERROR
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         def ta = new javafx.scene.control.TextArea(errorTextRef.get() ?: ''); ta.setEditable(false); ta.setWrapText(true)
         javafx.scene.layout.VBox.setVgrow(ta, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(ta)
-        actions.add(navButton('◀ Listeye dön', { step.set('LIST'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.b8a6d810dfb2', '◀ Listeye dön'), { step.set('LIST'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut'); topChk.setSelected(alwaysTop.get())
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut')); topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n -> alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
     def spacer = new javafx.scene.layout.Region(); javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
     def bar = new javafx.scene.layout.HBox(8); bar.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
     bar.getChildren().add(topChk); bar.getChildren().add(spacer); bar.getChildren().addAll(actions)
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
     def bottom = new javafx.scene.layout.VBox(8, disclaimer, bar); bottom.setPadding(new javafx.geometry.Insets(10))
@@ -254,11 +254,22 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Mitoz tespiti — model listesi')
+        stage.setTitle(workshopText('script.a94f01ac5545', 'Mitoz tespiti — model listesi'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render(); stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Liste açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage(workshopText('script.5329cd419ddd', 'Liste açılamadı'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
     }
 }
 println "✓ Mitoz modelleri listesi açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

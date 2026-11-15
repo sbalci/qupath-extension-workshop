@@ -53,7 +53,7 @@ final String GRID_NAME = "__GozKarariKalibrasyonIzgarasi__"
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     def msg = "Açık sanal lam bulunamadı.\n\nÖnce sınıflandırılmış hücre tespitleri içeren bir lam açın."
-    if (isHeadless) println msg else Dialogs.showErrorMessage("Görüntü açık değil", msg)
+    if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), msg)
     return
 }
 
@@ -64,7 +64,7 @@ if (selectedAreas.isEmpty()) {
     def msg = "Geçerli bir kapalı alan (ROI) seçili değil.\n\n" +
               "Nokta veya çizgi yerine dikdörtgen/poligon/fırça aracıyla kapalı bir bölge çizin\n" +
               "ve kenarı sarı olana kadar içine tıklayın."
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Bölge seçilmedi", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.9cd15cfae93e', "Bölge seçilmedi"), msg)
     return
 }
 
@@ -80,7 +80,7 @@ if (insideDetections.isEmpty()) {
     def msg = "Seçili bölge içinde hücre tespiti bulunamadı.\n\n" +
               "Önce Nükleer boya (Ki-67), ER/PR H-score, Membran boya (HER2),\n" +
               "Sitoplazmik boya (CD68) veya Tümör içi Ki-67 modüllerinden birini çalıştırın."
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Tespit yok", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.4277b763a640', "Tespit yok"), msg)
     return
 }
 
@@ -112,7 +112,7 @@ int tumorClassified = insideDetections.count { d ->
 if (ihcClassified == 0 && tumorClassified == 0) {
     def msg = "Seçili bölgedeki tespitler henüz sınıflandırılmamış (yalnız sınıfsız çekirdekler var).\n\n" +
               "Önce pozitif/negatif veya hücre tipi sınıflandırması üreten bir modül çalıştırın."
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Sınıflandırma yok", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.db4f107ceebc', "Sınıflandırma yok"), msg)
     return
 }
 
@@ -266,30 +266,30 @@ javafx.application.Platform.runLater {
 
     def stage = new javafx.stage.Stage()
     stage.initModality(javafx.stage.Modality.NONE)
-    stage.setTitle("Göz Kararı Kalibrasyon Alıştırması")
+    stage.setTitle(workshopText('script.311aaf538df2', "Göz Kararı Kalibrasyon Alıştırması"))
     stage.setAlwaysOnTop(true)
 
-    def titleLbl = new javafx.scene.control.Label("🔬 Göz Kararı Değerlendirme vs. QuPath Sayısal Ölçümü")
+    def titleLbl = new javafx.scene.control.Label(workshopText('script.e30dfdd8ab55', "🔬 Göz Kararı Değerlendirme vs. QuPath Sayısal Ölçümü"))
     titleLbl.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;")
     titleLbl.setWrapText(true)
     titleLbl.setMaxWidth(Double.MAX_VALUE)
 
     String areaInfo = hasMicrons ? String.format(Locale.US, "%.3f mm²", roiAreaMm2) : "kalibrasyonsuz (piksel)"
     def infoLbl = new javafx.scene.control.Label(
-        "Seçili bölgedeki renkli tespit halkaları KÖR TAHMİN için geçici olarak gizlendi.\n" +
-        "Bölge: " + roiName + " (" + areaInfo + ") · Hedef oran: " + metricLabel
+        workshopText('script.339ded07b50a', "Seçili bölgedeki renkli tespit halkaları KÖR TAHMİN için geçici olarak gizlendi.\n" +
+        "Bölge: ") + roiName + " (" + areaInfo + workshopText('script.18213d127497', ") · Hedef oran: ") + metricLabel
     )
     infoLbl.setWrapText(true)
     infoLbl.setMaxWidth(Double.MAX_VALUE)
     infoLbl.setStyle("-fx-background-color: #eef6fb; -fx-border-color: #9ac4e2; -fx-border-radius: 4px; -fx-background-radius: 4px; -fx-padding: 8px;")
 
-    def gridCheck = new javafx.scene.control.CheckBox("📐 Seçili bölge üzerine geçici 4×4 kalibrasyon ızgarası (16 alt kare) yerleştir")
+    def gridCheck = new javafx.scene.control.CheckBox(workshopText('script.a46d75af53c2', "📐 Seçili bölge üzerine geçici 4×4 kalibrasyon ızgarası (16 alt kare) yerleştir"))
     gridCheck.selectedProperty().addListener({ obs, oldV, newV ->
         if (newV) addGrid() else removeGrid()
         javafx.application.Platform.runLater { viewer?.repaint() }
     } as javafx.beans.value.ChangeListener)
 
-    def blindToggle = new javafx.scene.control.CheckBox("🙈 Kör görünüm: hücre tespit halkalarını gizli tut")
+    def blindToggle = new javafx.scene.control.CheckBox(workshopText('script.cf804cf47cb7', "🙈 Kör görünüm: hücre tespit halkalarını gizli tut"))
     blindToggle.setSelected(true)
     blindToggle.selectedProperty().addListener({ obs, oldV, newV ->
         if (overlayOpts != null) {
@@ -302,14 +302,14 @@ javafx.application.Platform.runLater {
     form.setHgap(10)
     form.setVgap(8)
 
-    def cellGuessLbl = new javafx.scene.control.Label("1. Göz kararı HÜCRE oranı tahmininiz (%):")
+    def cellGuessLbl = new javafx.scene.control.Label(workshopText('script.415eeaea8e93', "1. Göz kararı HÜCRE oranı tahmininiz (%):"))
     def cellGuessTf = new javafx.scene.control.TextField()
-    cellGuessTf.setPromptText("Örn. 25 veya 27,5 (0–100)")
+    cellGuessTf.setPromptText(workshopText('script.663bfab6f10b', "Örn. 25 veya 27,5 (0–100)"))
     cellGuessTf.setPrefColumnCount(14)
 
-    def areaGuessLbl = new javafx.scene.control.Label("2. İsteğe bağlı — pozitif ALAN oranı tahmininiz (%):")
+    def areaGuessLbl = new javafx.scene.control.Label(workshopText('script.e58ecf5ed6c9', "2. İsteğe bağlı — pozitif ALAN oranı tahmininiz (%):"))
     def areaGuessTf = new javafx.scene.control.TextField()
-    areaGuessTf.setPromptText("Boş bırakılabilir (boyut yanılgısı testi)")
+    areaGuessTf.setPromptText(workshopText('script.37475f31ee4f', "Boş bırakılabilir (boyut yanılgısı testi)"))
     areaGuessTf.setPrefColumnCount(14)
 
     form.add(cellGuessLbl, 0, 0)
@@ -330,7 +330,7 @@ javafx.application.Platform.runLater {
     resultArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
     javafx.scene.layout.VBox.setVgrow(resultArea, javafx.scene.layout.Priority.ALWAYS)
 
-    def revealBtn = new javafx.scene.control.Button("🔍 QuPath Ölçümünü Açıkla ve Karşılaştır")
+    def revealBtn = new javafx.scene.control.Button(workshopText('script.66a9bc148c96', "🔍 QuPath Ölçümünü Açıkla ve Karşılaştır"))
     revealBtn.setStyle("-fx-font-weight: bold;")
 
     revealBtn.setOnAction({
@@ -342,7 +342,7 @@ javafx.application.Platform.runLater {
                 throw new IllegalArgumentException("out of bounds")
             }
         } catch (Exception ignored) {
-            Dialogs.showWarningNotification("Geçersiz yüzde", "Hücre oranı tahmini için 0 ile 100 arasında bir sayı girin (ör. 25 veya 27,5).")
+            Dialogs.showWarningNotification(workshopText('script.3267374dc212', "Geçersiz yüzde"), workshopText('script.f833fa0b9f02', "Hücre oranı tahmini için 0 ile 100 arasında bir sayı girin (ör. 25 veya 27,5)."))
             return
         }
 
@@ -354,7 +354,7 @@ javafx.application.Platform.runLater {
                 if (!Double.isFinite(ga) || ga < 0.0 || ga > 100.0) throw new IllegalArgumentException("bounds")
                 guessArea = ga
             } catch (Exception ignored) {
-                Dialogs.showWarningNotification("Geçersiz alan yüzdesi", "İsteğe bağlı alan tahmini 0 ile 100 arasında olmalıdır.")
+                Dialogs.showWarningNotification(workshopText('script.d333fd710145', "Geçersiz alan yüzdesi"), workshopText('script.13a74b78269e', "İsteğe bağlı alan tahmini 0 ile 100 arasında olmalıdır."))
                 return
             }
         }
@@ -412,7 +412,7 @@ javafx.application.Platform.runLater {
         resultArea.setText(sb.toString())
     })
 
-    def copyBtn = new javafx.scene.control.Button("📋 Kopyala")
+    def copyBtn = new javafx.scene.control.Button(workshopText('script.895571ec8a3b', "📋 Kopyala"))
     copyBtn.setOnAction({
         def cb = javafx.scene.input.Clipboard.getSystemClipboard()
         def content = new javafx.scene.input.ClipboardContent()
@@ -420,13 +420,13 @@ javafx.application.Platform.runLater {
         cb.setContent(content)
     })
 
-    def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+    def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
     alwaysTop.setSelected(true)
     alwaysTop.selectedProperty().addListener(
         { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
     )
 
-    def closeBtn = new javafx.scene.control.Button("Kapat")
+    def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
     closeBtn.setOnAction({ stage.close() })
 
     def spacer = new javafx.scene.layout.Region()
@@ -447,4 +447,15 @@ javafx.application.Platform.runLater {
 
     stage.setScene(new javafx.scene.Scene(root, 680, 560))
     stage.show()
+}
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
 }

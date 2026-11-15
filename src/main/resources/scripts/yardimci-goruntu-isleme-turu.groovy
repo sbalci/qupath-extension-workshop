@@ -353,7 +353,7 @@ def thumb = { java.awt.image.BufferedImage bimg, String caption, double fitW ->
         iv.setStyle('-fx-border-color: #888;')
         box.getChildren().add(iv)
     } catch (Throwable t) {
-        box.getChildren().add(new javafx.scene.control.Label('(önizleme çizilemedi)'))
+        box.getChildren().add(new javafx.scene.control.Label(workshopText('script.16c51e5c1696', '(önizleme çizilemedi)')))
     }
     if (caption != null) {
         def cap = new javafx.scene.control.Label(caption)
@@ -387,9 +387,9 @@ def buildPreview = { String kind, cache ->
                 thumb((java.awt.image.BufferedImage) cache.stain2, (cache.name2 ?: 'Boya 2') + ' (yoğunluk)', 170.0d))
         } else {
             def lbl = new javafx.scene.control.Label(
-                'Bu görüntüde renk dekonvolüsyonu (boya vektörü) tanımlı değil — büyük olasılıkla brightfield ' +
+                workshopText('script.9bcabe556ddc', 'Bu görüntüde renk dekonvolüsyonu (boya vektörü) tanımlı değil — büyük olasılıkla brightfield ' +
                 'değil. Görüntü tipini ayarlayın (Yardımcılar → Görüntü tipi ayarla). Aşağıdaki Gaussian/eşik ' +
-                'sayfaları gri (yoğunluk) kanalı üzerinden çalışır.')
+                'sayfaları gri (yoğunluk) kanalı üzerinden çalışır.'))
             lbl.setWrapText(true)
             row.getChildren().add(lbl)
         }
@@ -454,7 +454,7 @@ render = { ->
 
     def title = new javafx.scene.control.Label(page.baslik)
     title.setStyle('-fx-font-size: 16px; -fx-font-weight: bold;'); title.setWrapText(true)
-    def prog = new javafx.scene.control.Label('Adım ' + (i + 1) + ' / ' + pages.size())
+    def prog = new javafx.scene.control.Label(workshopText('script.86f8ffe76595', 'Adım ') + (i + 1) + ' / ' + pages.size())
     prog.setStyle('-fx-opacity: 0.7; -fx-font-size: 12px;')
     def body = new javafx.scene.control.Label(page.govde)
     body.setWrapText(true); body.setStyle('-fx-font-size: 13px; -fx-line-spacing: 2px;')
@@ -468,16 +468,16 @@ render = { ->
         def cache = cacheRef.get()
         if (computing.get()) {
             def pb = new javafx.scene.control.ProgressBar(); pb.setProgress(-1.0); pb.setMaxWidth(260.0d)
-            def lbl = new javafx.scene.control.Label('Önizleme hesaplanıyor…')
+            def lbl = new javafx.scene.control.Label(workshopText('script.ba8662516434', 'Önizleme hesaplanıyor…'))
             center.getChildren().addAll(lbl, pb)
         } else if (cache == null) {
-            center.getChildren().add(new javafx.scene.control.Label('Önizleme için "↻ Bölgeyi oku/yenile".'))
+            center.getChildren().add(new javafx.scene.control.Label(workshopText('script.c28e2c55a501', 'Önizleme için "↻ Bölgeyi oku/yenile".')))
         } else if (cache.error != null) {
             def lbl = new javafx.scene.control.Label('⚠ ' + cache.error); lbl.setWrapText(true)
             center.getChildren().add(lbl)
         } else {
-            def info = new javafx.scene.control.Label('Örneklenen bölge: ' + cache.desc +
-                String.format(java.util.Locale.US, '  ·  ~1/%.0f altörnekleme', (double) cache.downsample))
+            def info = new javafx.scene.control.Label(workshopText('script.0dc0a7fb01e8', 'Örneklenen bölge: ') + cache.desc +
+                String.format(java.util.Locale.US, workshopText('script.fa019c766fff', '  ·  ~1/%.0f altörnekleme'), (double) cache.downsample))
             info.setStyle('-fx-opacity: 0.7; -fx-font-size: 11px;')
             center.getChildren().add(info)
             def pv = buildPreview((String) page.onizleme, cache)
@@ -489,23 +489,23 @@ render = { ->
     }
 
     // Alt çubuk: Üstte tut (sol) + disclaimer + gezinme (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
     } as javafx.beans.value.ChangeListener)
-    def reloadBtn = new javafx.scene.control.Button('↻ Bölgeyi oku/yenile')
+    def reloadBtn = new javafx.scene.control.Button(workshopText('script.6f49b5604e90', '↻ Bölgeyi oku/yenile'))
     reloadBtn.setOnAction({ startCompute() })
     reloadBtn.setDisable(computing.get())
     def spacer = new javafx.scene.layout.Region()
     javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-    def backBtn = new javafx.scene.control.Button('◀ Geri')
+    def backBtn = new javafx.scene.control.Button(workshopText('script.7dfd804d8334', '◀ Geri'))
     backBtn.setDisable(i == 0)
     backBtn.setOnAction({ idx.set(Math.max(0, i - 1)); render() })
     boolean last = (i == pages.size() - 1)
-    def nextBtn = new javafx.scene.control.Button(last ? 'Bitir' : 'İleri ▶')
+    def nextBtn = new javafx.scene.control.Button(last ? workshopText('script.9ff3cfd0230d', 'Bitir') : workshopText('script.3f0144008e16', 'İleri ▶'))
     nextBtn.setOnAction({ if (last) stage.close() else { idx.set(i + 1); render() } })
-    def closeBtn = new javafx.scene.control.Button('Kapat')
+    def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', 'Kapat'))
     closeBtn.setOnAction({ stage.close() })
 
     def bar = new javafx.scene.layout.HBox(8)
@@ -515,7 +515,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(closeBtn, backBtn, nextBtn)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı; ölçüm veya klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.5c0f1b020f97', 'Yalnızca araştırma/eğitim amaçlı; ölçüm veya klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -532,13 +532,24 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Görüntü işleme kavramları')
+        stage.setTitle(workshopText('script.fee9dbbce7a4', 'Görüntü işleme kavramları'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render()
         stage.show()
         if (QP.getCurrentImageData() != null) startCompute()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println '✓ Görüntü işleme kavramları turu açıldı.'
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

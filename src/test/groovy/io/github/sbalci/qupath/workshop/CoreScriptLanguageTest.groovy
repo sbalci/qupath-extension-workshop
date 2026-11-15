@@ -14,7 +14,7 @@ class CoreScriptLanguageTest {
     void coreDisplayCatalogMatchesBothBundlesAndScriptFallbacks() {
         def keys = WorkshopI18n.trKeys().findAll { it ==~ /script\.[0-9a-f]{12}/ }
         def catalog = new Gson().fromJson(getClass().getResource('/i18n/script-core.json').getText('UTF-8'), Map)
-        assertEquals(565, keys.size())
+        assertEquals(1004, keys.size())
         assertEquals(catalog.strings.collect { it.key } as Set, keys as Set)
         catalog.strings.each { row ->
             assertEquals(row.key, row.tr, WorkshopI18n.t(row.key as String, false))
@@ -24,7 +24,7 @@ class CoreScriptLanguageTest {
             assertNotEquals(key, WorkshopI18n.t(key, false))
             assertNotEquals(key, WorkshopI18n.t(key, true))
         }
-        assertEquals(15, catalog.scripts.size())
+        assertEquals(63, catalog.scripts.size())
         catalog.scripts.each { filename ->
             def script = getClass().getResource('/scripts/' + filename).getText('UTF-8')
             assertTrue(filename, script.contains('private String workshopText(String key, String fallback)'))
@@ -92,6 +92,21 @@ class CoreScriptLanguageTest {
             def replace = String.format(Locale.US, WorkshopI18n.t(classpose.key as String, english), 17, 31)
             assertTrue(replace, replace.indexOf('17') >= 0 && replace.indexOf('31') > replace.indexOf('17'))
             assertTrue(String.format(Locale.US, WorkshopI18n.t(cytoformer.key as String, english), 126).contains('126'))
+            def preview = catalog.strings.find { it.tr.startsWith('%,d görüntü · eşleşti') }
+            def annotations = catalog.strings.find { it.tr.startsWith('%,d görüntüde mevcut TÜM') }
+            def detections = catalog.strings.find { it.tr.startsWith('Bu lamdaki %,d tespitin TAMAMI') }
+            assertNotNull(preview); assertNotNull(annotations); assertNotNull(detections)
+            def table = String.format(Locale.US, WorkshopI18n.t(preview.key as String, english),
+                    83, 67, 5, 7, 4, 'D:/synthetic/ç $sample (1)')
+            int previous = -1
+            ['83','67','5','7','4','D:/synthetic/ç $sample (1)'].each { value ->
+                int index = table.indexOf(value,previous + 1)
+                assertTrue(table,index > previous)
+                previous = index
+            }
+            [annotations,detections].each { row ->
+                assertTrue(String.format(Locale.US, WorkshopI18n.t(row.key as String, english), 23).contains('23'))
+            }
         }
     }
 }

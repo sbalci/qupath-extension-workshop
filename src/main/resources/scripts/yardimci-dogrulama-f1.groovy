@@ -516,30 +516,30 @@ render = { ->
     }
 
     if (cur == 'FORM') {
-        title.setText('Tespit doğrulama — altın standarda karşı')
+        title.setText(workshopText('script.191e6daea415', 'Tespit doğrulama — altın standarda karşı'))
         def ctx = gatherContext()
         if (!ctx.ok) {
             if (ctx.reason == 'NO_IMAGE') {
-                addGuidance('Önce bir lam açın, sonra "⟳ Yenile".')
+                addGuidance(workshopText('script.e2638bc5557c', 'Önce bir lam açın, sonra "⟳ Yenile".'))
             } else {
                 addGuidance(
-                    'Önce bir DOĞRULAMA BÖLGESİ seçin.\n\n' +
+                    workshopText('script.f97f8432ffe4', 'Önce bir DOĞRULAMA BÖLGESİ seçin.\n\n' +
                     'Yapın:\n' +
                     '  1. Tespit içeren bir lamda küçük bir bölge anotasyonu çizin\n' +
                     '  2. O bölge içindeki gerçek çekirdekleri ELLE işaretleyin; ayrı bir\n' +
                     '     sınıf verin (ör. "Altın standart"). Nokta aracı ya da küçük poligon.\n' +
                     '  3. Doğrulama bölgesi anotasyonunu SEÇİN\n' +
-                    '  4. "⟳ Yenile"')
+                    '  4. "⟳ Yenile"'))
             }
-            actions.add(navButton('⟳ Yenile', { render() }))
-            actions.add(navButton('Kapat', { stage.close() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
         } else {
             def opt = buildOptions(ctx.inPatch)
             if (opt.gtDefault == null) {
-                addGuidance('Seçili bölge içinde hiç nesne yok. Önce tespit çalıştırın ve\n' +
-                            'referans (altın standart) nesnelerini işaretleyin, sonra "⟳ Yenile".')
-                actions.add(navButton('⟳ Yenile', { render() }))
-                actions.add(navButton('Kapat', { stage.close() }))
+                addGuidance(workshopText('script.58c700ec9b7b', 'Seçili bölge içinde hiç nesne yok. Önce tespit çalıştırın ve\n' +
+                            'referans (altın standart) nesnelerini işaretleyin, sonra "⟳ Yenile".'))
+                actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
+                actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
             } else {
                 if (gtChoice.get() == null) gtChoice.set(opt.gtDefault)
                 if (modeChoice.get() == null) modeChoice.set(opt.modeDefault)
@@ -549,31 +549,31 @@ render = { ->
                     modeChoice.set('CENTROID')
                 }
 
-                addGuidance('Seçili bölge içinde ' + ctx.inPatch.size() + ' nesne bulundu.' +
-                    (ctx.multi > 1 ? (' (' + ctx.multi + ' bölge seçiliydi; ilki kullanıldı.)') : ''))
+                addGuidance(workshopText('script.45684f47e979', 'Seçili bölge içinde ') + ctx.inPatch.size() + workshopText('script.49727753675f', ' nesne bulundu.') +
+                    (ctx.multi > 1 ? (' (' + ctx.multi + workshopText('script.572748f5247e', ' bölge seçiliydi; ilki kullanıldı.)')) : ''))
 
                 def grid = new javafx.scene.layout.GridPane()
                 grid.setHgap(10); grid.setVgap(10)
                 int row = 0
 
-                grid.add(new javafx.scene.control.Label('Altın standart sınıfı:'), 0, row)
+                grid.add(new javafx.scene.control.Label(workshopText('script.0eefbc6de381', 'Altın standart sınıfı:')), 0, row)
                 def gtBox = new javafx.scene.control.ComboBox()
                 gtBox.getItems().addAll(opt.gtOptions)
                 gtBox.setValue(gtChoice.get())
                 gtBox.valueProperty().addListener({ obs, o, n -> gtChoice.set(n) } as javafx.beans.value.ChangeListener)
                 grid.add(gtBox, 1, row); row++
 
-                grid.add(new javafx.scene.control.Label('Tahmin kümesi:'), 0, row)
+                grid.add(new javafx.scene.control.Label(workshopText('script.a0648495d807', 'Tahmin kümesi:')), 0, row)
                 def predBox = new javafx.scene.control.ComboBox()
                 predBox.getItems().addAll(opt.predOptions)
                 predBox.setValue(opt.predOptions.contains(predChoice.get()) ? predChoice.get() : ALL_DET)
                 predBox.valueProperty().addListener({ obs, o, n -> predChoice.set(n) } as javafx.beans.value.ChangeListener)
                 grid.add(predBox, 1, row); row++
 
-                grid.add(new javafx.scene.control.Label('Eşleştirme modu:'), 0, row)
+                grid.add(new javafx.scene.control.Label(workshopText('script.61a93ad431dc', 'Eşleştirme modu:')), 0, row)
                 def tg = new javafx.scene.control.ToggleGroup()
-                def rIou = new javafx.scene.control.RadioButton('IoU (alan örtüşmesi)')
-                def rCen = new javafx.scene.control.RadioButton('Merkez (nokta GT)')
+                def rIou = new javafx.scene.control.RadioButton(workshopText('script.4d82dc0166c4', 'IoU (alan örtüşmesi)'))
+                def rCen = new javafx.scene.control.RadioButton(workshopText('script.74ec1d769eb0', 'Merkez (nokta GT)'))
                 rIou.setToggleGroup(tg); rCen.setToggleGroup(tg)
                 rIou.setSelected(modeChoice.get() == 'IOU')
                 rCen.setSelected(modeChoice.get() == 'CENTROID')
@@ -584,8 +584,8 @@ render = { ->
                 grid.add(modeBox, 1, row); row++
 
                 grid.add(new javafx.scene.control.Label(
-                    modeChoice.get() == 'IOU' ? 'IoU eşiği:' :
-                    (ctx.hasMicrons ? 'Merkez eşiği (µm):' : 'Merkez eşiği (px):')), 0, row)
+                    modeChoice.get() == 'IOU' ? workshopText('script.3e1183058df9', 'IoU eşiği:') :
+                    (ctx.hasMicrons ? workshopText('script.633c7e18577b', 'Merkez eşiği (µm):') : workshopText('script.e532840dc87c', 'Merkez eşiği (px):'))), 0, row)
                 def sp = new javafx.scene.control.Spinner()
                 if (modeChoice.get() == 'IOU') {
                     sp.setValueFactory(new javafx.scene.control.SpinnerValueFactory.DoubleSpinnerValueFactory(
@@ -598,79 +598,79 @@ render = { ->
                 }
                 grid.add(sp, 1, row); row++
 
-                def rcChk = new javafx.scene.control.CheckBox('Tahminleri renklendir (TP yeşil / FP kırmızı) — sınıflarını değiştirir')
+                def rcChk = new javafx.scene.control.CheckBox(workshopText('script.518276ddb001', 'Tahminleri renklendir (TP yeşil / FP kırmızı) — sınıflarını değiştirir'))
                 rcChk.setSelected(recolor.get())
                 rcChk.selectedProperty().addListener({ obs, o, n -> recolor.set(n) } as javafx.beans.value.ChangeListener)
                 grid.add(rcChk, 0, row, 2, 1); row++
 
-                def rcFnChk = new javafx.scene.control.CheckBox('FN referanslarını da işaretle (mor) — altın standart sınıfını değiştirir (yalnız poligon referans)')
+                def rcFnChk = new javafx.scene.control.CheckBox(workshopText('script.9fafc67d1fb0', 'FN referanslarını da işaretle (mor) — altın standart sınıfını değiştirir (yalnız poligon referans)'))
                 rcFnChk.setSelected(recolorFN.get())
                 rcFnChk.selectedProperty().addListener({ obs, o, n -> recolorFN.set(n) } as javafx.beans.value.ChangeListener)
                 grid.add(rcFnChk, 0, row, 2, 1); row++
 
                 center.getChildren().add(grid)
-                addGuidance('Nokta (dot) ile işaretlenmiş referans için "Merkez" modunu kullanın;\n' +
-                            'küçük poligonlarla işaretlediyseniz "IoU" modu daha katıdır.')
+                addGuidance(workshopText('script.af3c7013879a', 'Nokta (dot) ile işaretlenmiş referans için "Merkez" modunu kullanın;\n' +
+                            'küçük poligonlarla işaretlediyseniz "IoU" modu daha katıdır.'))
 
-                actions.add(navButton('Kapat', { stage.close() }))
-                actions.add(navButton('Hesapla ▶', { startCompute() },
-                    'Seçili bölgede altın standart ile tahminleri eşleştirir; F1 hesaplar'))
+                actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+                actions.add(navButton(workshopText('script.bf7efd123522', 'Hesapla ▶'), { startCompute() },
+                    workshopText('script.2997459108e0', 'Seçili bölgede altın standart ile tahminleri eşleştirir; F1 hesaplar')))
             }
         }
     } else if (cur == 'COMPUTING') {
-        title.setText('Hesaplanıyor…')
-        addGuidance('Altın standart ile tahminler eşleştiriliyor. Lütfen bekleyin…')
+        title.setText(workshopText('script.14b1aea7b716', 'Hesaplanıyor…'))
+        addGuidance(workshopText('script.fa7e9d619bd3', 'Altın standart ile tahminler eşleştiriliyor. Lütfen bekleyin…'))
         center.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
         def res = resultRef.get()
-        title.setText('Doğrulama sonucu')
+        title.setText(workshopText('script.dc3068782f2c', 'Doğrulama sonucu'))
         addReportArea(res?.text)
         if (res?.recolored != null && res.recolored > 0) {
-            addGuidance('Renklendirildi: ' + res.recolored + ' nesne TP/FP/FN sınıfına ayrıldı. ' +
-                        'Geri almak için tespiti yeniden çalıştırın ya da sınıfları temizleyin ' +
-                        '(FN için altın standart sınıfını yeniden atayın).')
+            addGuidance(workshopText('script.8b1247ab9bd1', 'Renklendirildi: ') + res.recolored + workshopText('script.ed302c97c82d', ' nesne TP/FP/FN sınıfına ayrıldı. ') +
+                        workshopText('script.681c82ce183c', 'Geri almak için tespiti yeniden çalıştırın ya da sınıfları temizleyin ') +
+                        workshopText('script.9bc5b46a2904', '(FN için altın standart sınıfını yeniden atayın).'))
         }
-        actions.add(navButton('◀ Forma dön', { step.set('FORM'); render() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(res?.text) }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.ee3ccf080294', '◀ Forma dön'), { step.set('FORM'); render() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(res?.text) }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     } else if (cur == 'NO_IMAGE') {
-        title.setText('Görüntü açık değil')
-        addGuidance('Önce bir lam açın, sonra "◀ Forma dön".')
-        actions.add(navButton('◀ Forma dön', { step.set('FORM'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        title.setText(workshopText('script.b4c901dc184b', 'Görüntü açık değil'))
+        addGuidance(workshopText('script.7216c337aea8', 'Önce bir lam açın, sonra "◀ Forma dön".'))
+        actions.add(navButton(workshopText('script.ee3ccf080294', '◀ Forma dön'), { step.set('FORM'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     } else if (cur == 'NO_SELECTION') {
-        title.setText('Doğrulama bölgesi seçili değil')
-        addGuidance('Bir bölge anotasyonu çizip SEÇİN, sonra "◀ Forma dön".')
-        actions.add(navButton('◀ Forma dön', { step.set('FORM'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        title.setText(workshopText('script.94e84d2df73a', 'Doğrulama bölgesi seçili değil'))
+        addGuidance(workshopText('script.2598788505f6', 'Bir bölge anotasyonu çizip SEÇİN, sonra "◀ Forma dön".'))
+        actions.add(navButton(workshopText('script.ee3ccf080294', '◀ Forma dön'), { step.set('FORM'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     } else { // ERROR
         def reason = errorRef.get()
-        title.setText('Doğrulama yapılamadı')
+        title.setText(workshopText('script.069928839c77', 'Doğrulama yapılamadı'))
         if (reason == 'IOU_NEEDS_AREA') {
-            addGuidance('IoU modu alan (poligon) referans gerektirir, ama altın standart nokta\n' +
-                        'olarak işaretlenmiş görünüyor.\n\n"Merkez moduna geç" ile tekrar deneyin.')
-            actions.add(navButton('Merkez moduna geç ▶', { modeChoice.set('CENTROID'); step.set('FORM'); render() }))
+            addGuidance(workshopText('script.a2637d322f7e', 'IoU modu alan (poligon) referans gerektirir, ama altın standart nokta\n' +
+                        'olarak işaretlenmiş görünüyor.\n\n"Merkez moduna geç" ile tekrar deneyin.'))
+            actions.add(navButton(workshopText('script.e9e5cf6b895c', 'Merkez moduna geç ▶'), { modeChoice.set('CENTROID'); step.set('FORM'); render() }))
         } else if (reason == 'SAME') {
-            addGuidance('Altın standart ve tahmin aynı topluluk olamaz. Farklı sınıflar seçin\n' +
-                        '(ör. GT = "Altın standart", Tahmin = "▸ Tüm tespitler").')
-            actions.add(navButton('◀ Forma dön', { step.set('FORM'); render() }))
+            addGuidance(workshopText('script.078fb323fdd3', 'Altın standart ve tahmin aynı topluluk olamaz. Farklı sınıflar seçin\n' +
+                        '(ör. GT = "Altın standart", Tahmin = "▸ Tüm tespitler").'))
+            actions.add(navButton(workshopText('script.ee3ccf080294', '◀ Forma dön'), { step.set('FORM'); render() }))
         } else if (reason == 'NO_GT') {
-            addGuidance('Seçilen altın standart sınıfında bölge içinde nesne yok.\n' +
-                        'Referansı işaretleyip o sınıfı verdiğinizden emin olun.')
-            actions.add(navButton('◀ Forma dön', { step.set('FORM'); render() }))
+            addGuidance(workshopText('script.18504df9c08a', 'Seçilen altın standart sınıfında bölge içinde nesne yok.\n' +
+                        'Referansı işaretleyip o sınıfı verdiğinizden emin olun.'))
+            actions.add(navButton(workshopText('script.ee3ccf080294', '◀ Forma dön'), { step.set('FORM'); render() }))
         } else if (reason == 'NO_PRED') {
-            addGuidance('Tahmin (tespit) bulunamadı. Önce bir tespit adımı çalıştırın\n' +
-                        '(Hücre tespiti / Nükleer boya modülleri / StarDist sihirbazı).')
-            actions.add(navButton('◀ Forma dön', { step.set('FORM'); render() }))
+            addGuidance(workshopText('script.c96d3a0ca11c', 'Tahmin (tespit) bulunamadı. Önce bir tespit adımı çalıştırın\n' +
+                        '(Hücre tespiti / Nükleer boya modülleri / StarDist sihirbazı).'))
+            actions.add(navButton(workshopText('script.ee3ccf080294', '◀ Forma dön'), { step.set('FORM'); render() }))
         } else {
-            addGuidance('Beklenmeyen durum: ' + (reason ?: '(bilinmiyor)'))
-            actions.add(navButton('◀ Forma dön', { step.set('FORM'); render() }))
+            addGuidance(workshopText('script.6143a32d1504', 'Beklenmeyen durum: ') + (reason ?: workshopText('script.bd6a70a72c9b', '(bilinmiyor)')))
+            actions.add(navButton(workshopText('script.ee3ccf080294', '◀ Forma dön'), { step.set('FORM'); render() }))
         }
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
     // Alt çubuk: "Üstte tut" + eylemler + sorumluluk notu
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
@@ -683,7 +683,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -700,12 +700,23 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Tespit doğrulama (F1 / IoU)')
+        stage.setTitle(workshopText('script.694a288260ce', 'Tespit doğrulama (F1 / IoU)'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ Tespit doğrulama sihirbazı açıldı (altın standart ↔ tespit; F1 / IoU)."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

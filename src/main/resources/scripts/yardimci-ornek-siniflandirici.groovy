@@ -32,9 +32,9 @@ def atolyeS = { String k, String d -> (String) __wpCall('str', [String.class, St
 def project = QP.getProject()
 if (project == null) {
     Dialogs.showErrorMessage(
-        "Proje açık değil",
-        "Bu yardımcı proje seviyesinde çalışır.\n" +
-        "Önce [File → Project] ile bir proje açın, sonra tekrar çalıştırın."
+        workshopText('script.a38d0e6adac0', "Proje açık değil"),
+        workshopText('script.18c1683b74b6', "Bu yardımcı proje seviyesinde çalışır.\n" +
+        "Önce [File → Project] ile bir proje açın, sonra tekrar çalıştırın.")
     )
     return
 }
@@ -43,11 +43,11 @@ def classifierName = atolyeS('atolye.classifierName', 'tumor-stroma-RF')
 
 if (project.getPixelClassifiers().getNames().contains(classifierName)) {
     Dialogs.showMessageDialog(
-        "Zaten mevcut",
-        "Projenizde zaten '${classifierName}' adlı bir sınıflandırıcı var.\n" +
-        "Mevcut modeliniz korunuyor; örnek model kurulmadı.\n\n" +
-        "Kendi modelinizi kullanmak istemiyorsanız önce onu silin, sonra bu\n" +
-        "yardımcıyı tekrar çalıştırın."
+        workshopText('script.415060817466', "Zaten mevcut"),
+        "${workshopText('script.7d662e93e1b3', 'Projenizde zaten \'')}${classifierName}${workshopText('script.4e1f76131b98', '\' adlı bir sınıflandırıcı var.\n')}" +
+        workshopText('script.2d1f017333d4', "Mevcut modeliniz korunuyor; örnek model kurulmadı.\n\n") +
+        workshopText('script.3ca7b49b31ff', "Kendi modelinizi kullanmak istemiyorsanız önce onu silin, sonra bu\n") +
+        workshopText('script.685887a1887c', "yardımcıyı tekrar çalıştırın.")
     )
     return
 }
@@ -98,14 +98,14 @@ if (json == null) {
 
 if (json == null) {
     Dialogs.showErrorMessage(
-        "Örnek model alınamadı",
-        "Örnek sınıflandırıcı ne eklenti JAR'ında bulundu ne de internetten indirilebildi.\n\n" +
+        workshopText('script.c01c8afe6d7a', "Örnek model alınamadı"),
+        workshopText('script.d5b355bfb752', "Örnek sınıflandırıcı ne eklenti JAR'ında bulundu ne de internetten indirilebildi.\n\n" +
         "Çözüm:\n" +
         "  • İnternet bağlantınızı kontrol edip tekrar deneyin, veya\n" +
         "  • Modeli elle indirin: OSF veri paketi osf.io/v7mjq → atolye-eklenti/, veya\n" +
         "    GitHub: github.com/sbalci/qupath-extension-workshop (classifiers/), ve\n" +
         "    projenizin classifiers/ klasörüne koyun.\n\n" +
-        "Alternatif: kendi modelinizi Tümör/Stroma modülünün sihirbazından 'Yeni sınıflandırıcı eğit' ile eğitin."
+        "Alternatif: kendi modelinizi Tümör/Stroma modülünün sihirbazından 'Yeni sınıflandırıcı eğit' ile eğitin.")
     )
     return
 }
@@ -113,17 +113,28 @@ if (json == null) {
 def classifier = GsonTools.getInstance().fromJson(json, PixelClassifier.class)
 if (classifier == null) {
     Dialogs.showErrorMessage(
-        "Sınıflandırıcı yüklenemedi",
-        "Eklentiyle gelen örnek model okunamadı (JSON ayrıştırılamadı)."
+        workshopText('script.5c4e48b0a222', "Sınıflandırıcı yüklenemedi"),
+        workshopText('script.9ebfd1b74183', "Eklentiyle gelen örnek model okunamadı (JSON ayrıştırılamadı).")
     )
     return
 }
 project.getPixelClassifiers().put(classifierName, classifier)
 
 Dialogs.showMessageDialog(
-    "Kuruldu",
-    "Örnek sınıflandırıcı '${classifierName}' projenize kaydedildi.\n\n" +
-    "[Classify → Pixel classification] listesinde görünür; Tümör/Stroma modülünü\n" +
-    "artık bu modelle çalıştırabilirsiniz.\n\n" +
-    "⚠️ Yalnızca araştırma/eğitim amaçlıdır."
+    workshopText('script.ff82ad1ace23', "Kuruldu"),
+    "${workshopText('script.09633f283982', 'Örnek sınıflandırıcı \'')}${classifierName}${workshopText('script.4285532a4453', '\' projenize kaydedildi.\n\n')}" +
+    workshopText('script.671f865057f8', "[Classify → Pixel classification] listesinde görünür; Tümör/Stroma modülünü\n") +
+    workshopText('script.2b350407f462', "artık bu modelle çalıştırabilirsiniz.\n\n") +
+    workshopText('script.47bd28634423', "⚠️ Yalnızca araştırma/eğitim amaçlıdır.")
 )
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

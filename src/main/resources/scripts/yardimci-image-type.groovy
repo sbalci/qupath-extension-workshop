@@ -65,14 +65,14 @@ def showSelectionDialog = { ->
         try {
             def stage = new javafx.stage.Stage()
             stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle("Görüntü Tipi Ayarla")
+            stage.setTitle(workshopText('script.7a75e43c3a3c', "Görüntü Tipi Ayarla"))
             stage.setAlwaysOnTop(true)
 
             // Görüntü tipi grubu
             def typeGroup = new javafx.scene.control.ToggleGroup()
             def typeBox = new javafx.scene.layout.VBox(6)
             typeBox.setPadding(new javafx.geometry.Insets(4, 0, 4, 0))
-            def typeLabel = new javafx.scene.control.Label("Hedef görüntü tipi:")
+            def typeLabel = new javafx.scene.control.Label(workshopText('script.5f9cc931fc98', "Hedef görüntü tipi:"))
             typeLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;")
             typeBox.getChildren().add(typeLabel)
             TYPE_OPTIONS.eachWithIndex { opt, idx ->
@@ -87,7 +87,7 @@ def showSelectionDialog = { ->
             def scopeGroup = new javafx.scene.control.ToggleGroup()
             def scopeBox = new javafx.scene.layout.VBox(6)
             scopeBox.setPadding(new javafx.geometry.Insets(10, 0, 4, 0))
-            def scopeLabel = new javafx.scene.control.Label("Kapsam:")
+            def scopeLabel = new javafx.scene.control.Label(workshopText('script.832662034af3', "Kapsam:"))
             scopeLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;")
             scopeBox.getChildren().add(scopeLabel)
             SCOPE_OPTIONS.eachWithIndex { opt, idx ->
@@ -99,8 +99,8 @@ def showSelectionDialog = { ->
             }
 
             def info = new javafx.scene.control.Label(
-                "Not: Renk dekonvolüsyon vektörleri varsayılan değerlere sıfırlanır.\n" +
-                "Özel kalibre vektörler kullanıyorsanız, sonra yeniden uygulayın."
+                workshopText('script.76266db51fee', "Not: Renk dekonvolüsyon vektörleri varsayılan değerlere sıfırlanır.\n" +
+                "Özel kalibre vektörler kullanıyorsanız, sonra yeniden uygulayın.")
             )
             info.setWrapText(true)
             info.setStyle("-fx-font-size: 11px; -fx-text-fill: #555; -fx-padding: 8 0 0 0;")
@@ -109,7 +109,7 @@ def showSelectionDialog = { ->
             container.setPadding(new javafx.geometry.Insets(12))
 
             // Düğmeler
-            def okBtn = new javafx.scene.control.Button("Uygula")
+            def okBtn = new javafx.scene.control.Button(workshopText('script.08a24723d591', "Uygula"))
             okBtn.setDefaultButton(true)
             okBtn.setOnAction({
                 def selectedType = typeGroup.getSelectedToggle()?.getUserData() as String
@@ -119,7 +119,7 @@ def showSelectionDialog = { ->
                 }
                 stage.close()
             })
-            def cancelBtn = new javafx.scene.control.Button("İptal")
+            def cancelBtn = new javafx.scene.control.Button(workshopText('script.72278748133a', "İptal"))
             cancelBtn.setCancelButton(true)
             cancelBtn.setOnAction({ stage.close() })
 
@@ -164,20 +164,20 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
                 content.putString(windowBody)
                 cb.setContent(content)
             })
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -189,7 +189,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -227,7 +227,7 @@ def targetTypeName = selection.type
 def scope = selection.scope
 def targetType = resolveImageType(targetTypeName)
 if (targetType == null) {
-    Dialogs.showErrorMessage("Geçersiz tip", "Görüntü tipi tanınmadı: ${targetTypeName}")
+    Dialogs.showErrorMessage(workshopText('script.a1340d7f708e', "Geçersiz tip"), "${workshopText('script.8d13b11c3ecf', 'Görüntü tipi tanınmadı: ')}${targetTypeName}")
     return
 }
 
@@ -241,7 +241,7 @@ def skipped = []
 if (scope == "current") {
     def imageData = QP.getCurrentImageData()
     if (imageData == null) {
-        Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir lam açın.")
+        Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.12204d6dbab7', "Önce bir lam açın."))
         return
     }
     def previous = imageData.getImageType()?.toString() ?: "—"
@@ -263,9 +263,9 @@ if (scope == "current") {
 } else { // "project"
     def project = QP.getProject()
     if (project == null) {
-        Dialogs.showErrorMessage("Proje açık değil",
-            "Toplu güncelleme için bir QuPath projesi gerekir.\n" +
-            "[File → Project → Create / Open project] ile bir proje açın.")
+        Dialogs.showErrorMessage(workshopText('script.a38d0e6adac0', "Proje açık değil"),
+            workshopText('script.a621e2e6af14', "Toplu güncelleme için bir QuPath projesi gerekir.\n" +
+            "[File → Project → Create / Open project] ile bir proje açın."))
         return
     }
     def entries = project.getImageList()
@@ -334,3 +334,14 @@ println "───────────────────────�
 println "Görüntü tipi: ${targetTypeName}  |  Kapsam: ${scopeLabel}"
 println "  Güncellenen: ${updated.size()}  |  Atlanan: ${skipped.size()}  |  Süre: ${String.format(java.util.Locale.US, '%.2f', elapsed)} sn"
 println "─────────────────────────────────────"
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

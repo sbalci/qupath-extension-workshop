@@ -78,13 +78,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -92,7 +92,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -105,7 +105,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -131,7 +131,7 @@ double defWidth = 50.0
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce kaynak yapıyı (tümör vb.) anotasyon olarak çizip seçin.")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.b0233b7e0986', "Önce kaynak yapıyı (tümör vb.) anotasyon olarak çizip seçin."))
     return
 }
 def cal = imageData.getServer().getPixelCalibration()
@@ -139,8 +139,8 @@ double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 double avgUm = cal.getAveragedPixelSizeMicrons()
 if (!(pw > 0) || !(ph > 0) || !(avgUm > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok", "Lamda piksel boyutu (µm) tanımlı değil; bant µm cinsinden üretilemez." +
-        "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).")
+    Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), workshopText('script.42db62f0c526', "Lamda piksel boyutu (µm) tanımlı değil; bant µm cinsinden üretilemez." +
+        "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu)."))
     return
 }
 
@@ -151,7 +151,7 @@ if (targets.isEmpty()) {
     def msg = "Kaynak yapı seçili değil.\n\n" +
               "Etrafında bant oluşturulacak yapıyı (tümör, bez, lezyon vb.)\n" +
               "ALAN anotasyonu olarak çizin ve SEÇİN, sonra betiği tekrar çalıştırın."
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Yapı seçili değil", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.584f0675ba8a', "Yapı seçili değil"), msg)
     return
 }
 
@@ -163,17 +163,17 @@ if (isHeadless) {
     direction = prefs.get('direction', DIR_OUT)
     if (!dirOpts.contains(direction)) direction = DIR_OUT
 } else {
-    def wTxt = Dialogs.showInputDialog("Peritümöral bant",
-        "Bant genişliği (µm):", String.format(java.util.Locale.US, "%.0f", defWidth))
+    def wTxt = Dialogs.showInputDialog(workshopText('script.28c908cb2604', "Peritümöral bant"),
+        workshopText('script.24a50c4af048', "Bant genişliği (µm):"), String.format(java.util.Locale.US, "%.0f", defWidth))
     if (wTxt == null) { println "İptal edildi."; return }
     try { widthUm = Double.parseDouble(wTxt.trim().replace(',', '.')) }
-    catch (Throwable t) { Dialogs.showErrorMessage("Geçersiz sayı", "Bant genişliği bir sayı olmalı (µm)."); return }
+    catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.54cde46c5e98', "Geçersiz sayı"), workshopText('script.6342080b5aeb', "Bant genişliği bir sayı olmalı (µm).")); return }
     def defDir = dirOpts.contains(prefs.get('direction', DIR_OUT)) ? prefs.get('direction', DIR_OUT) : DIR_OUT
-    direction = Dialogs.showChoiceDialog("Peritümöral bant", "Bant yönü:", dirOpts, defDir)
+    direction = Dialogs.showChoiceDialog(workshopText('script.28c908cb2604', "Peritümöral bant"), workshopText('script.842cac15d901', "Bant yönü:"), dirOpts, defDir)
     if (direction == null) { println "İptal edildi."; return }
 }
 if (!(widthUm > 0)) {
-    Dialogs.showErrorMessage("Geçersiz genişlik", "Bant genişliği pozitif olmalı (µm).")
+    Dialogs.showErrorMessage(workshopText('script.e6fd00663be3', "Geçersiz genişlik"), workshopText('script.139137752d51', "Bant genişliği pozitif olmalı (µm)."))
     return
 }
 prefs.put('widthUm', String.valueOf(widthUm)); prefs.put('direction', direction)
@@ -235,7 +235,7 @@ targets.eachWithIndex { t, i ->
 if (created.isEmpty()) {
     def msg = "Bant üretilemedi (seçili yapıların geometrisi bant için uygun değil).\n" +
               "Genişliği küçültmeyi ya da 'Dışa' yönünü deneyin."
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Bant yok", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.cc7d90585cd5', "Bant yok"), msg)
     return
 }
 
@@ -270,3 +270,14 @@ showResultWindow("Peritümöral bant", body.toString())
 println String.format(java.util.Locale.US,
     "✓ %,d peritümöral bant üretildi (%s, %.0f µm; toplam %,.0f µm²).",
     created.size(), dirShort, widthUm, totalBandUm2)
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

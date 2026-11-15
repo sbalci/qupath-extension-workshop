@@ -15,7 +15,55 @@
     "yardimci-python-ortam-yoneticisi.groovy",
     "yardimci-classpose-sihirbaz.groovy",
     "yardimci-cytoformer-sihirbaz.groovy",
-    "yardimci-grandqc-sihirbaz.groovy"
+    "yardimci-grandqc-sihirbaz.groovy",
+    "yardimci-ajan-kopru-denetimi.groovy",
+    "yardimci-alan-pozitiflik.groovy",
+    "yardimci-anotasyon-disa-aktar.groovy",
+    "yardimci-anotasyon-ice-aktar.groovy",
+    "yardimci-anotasyon-qc.groovy",
+    "yardimci-boya-kalite-qc.groovy",
+    "yardimci-capraz-nn-mesafe.groovy",
+    "yardimci-dagilim-grafigi.groovy",
+    "yardimci-delaunay-komsuluk.groovy",
+    "yardimci-dogrulama-f1.groovy",
+    "yardimci-esik-alan.groovy",
+    "yardimci-esik-ayarla.groovy",
+    "yardimci-esik-siniflandirici.groovy",
+    "yardimci-goruntu-isleme-turu.groovy",
+    "yardimci-goruntu-kunye.groovy",
+    "yardimci-goruntu-yakala.groovy",
+    "yardimci-goruntuden-alan-cikart.groovy",
+    "yardimci-goz-karari-kalibrasyon.groovy",
+    "yardimci-grandqc-kohort-ozet.groovy",
+    "yardimci-image-type.groovy",
+    "yardimci-imagej-otsu-anotasyon.groovy",
+    "yardimci-imagej-spline-duzeltme.groovy",
+    "yardimci-immun-yogunluk.groovy",
+    "yardimci-kesisim-alani.groovy",
+    "yardimci-kohort-ozet-topla.groovy",
+    "yardimci-konveks-zarf.groovy",
+    "yardimci-kosu-manifesti.groovy",
+    "yardimci-kume-etiketi-iceaktar.groovy",
+    "yardimci-merkez-cevre.groovy",
+    "yardimci-mitoz-karsilastir.groovy",
+    "yardimci-mitoz-merkez.groovy",
+    "yardimci-nn-mesafe.groovy",
+    "yardimci-omezarr-disa-aktarma.groovy",
+    "yardimci-ornek-siniflandirici.groovy",
+    "yardimci-ozellik-matrisi.groovy",
+    "yardimci-peritumoral-bant.groovy",
+    "yardimci-senkron-izgara.groovy",
+    "yardimci-sinif-sayim.groovy",
+    "yardimci-stromal-til.groovy",
+    "yardimci-tahmin-iceaktar.groovy",
+    "yardimci-tespitleri-sil.groovy",
+    "yardimci-tiatoolbox-maske.groovy",
+    "yardimci-tma-cekirdek-aktarim.groovy",
+    "yardimci-tus-fare-gostergesi.groovy",
+    "yardimci-wsinfer-denetim.groovy",
+    "yardimci-wsinfer-ozet.groovy",
+    "yardimci-yapi-uzaklik.groovy",
+    "yardimci-yogunluk-haritasi.groovy"
   ],
   "strings": [
     {
@@ -2842,6 +2890,2201 @@
       "key": "script.11fb0895f2b9",
       "tr": "GrandQC kalite kontrol sihirbazı",
       "en": "GrandQC quality control wizard"
+    },
+    {
+      "key": "script.284651a2e0c4",
+      "tr": "Önce bir DAB-İHK lamı açın.",
+      "en": "Open a DAB IHC slide first."
+    },
+    {
+      "key": "script.469472ee53f3",
+      "tr": "Anotasyon yok",
+      "en": "No annotations"
+    },
+    {
+      "key": "script.9b963a692abd",
+      "tr": "Sınıflandırıcı yok",
+      "en": "No classifier"
+    },
+    {
+      "key": "script.e3dc9a444a25",
+      "tr": "Ölçüm yok",
+      "en": "No measurements"
+    },
+    {
+      "key": "script.3f13b2828e23",
+      "tr": "Tespitler de dışa aktarılsın mı?",
+      "en": "Include detections in the export?"
+    },
+    {
+      "key": "script.8561e6573698",
+      "tr": "Tespit/hücre nesneleri çok sayıda olabilir; GeoJSON ve XML dosyaları büyür ve işlem uzar.\n\nDevam edilsin mi?",
+      "en": "There may be many detection/cell objects; GeoJSON and XML files will be larger and processing will take longer.\n\nContinue?"
+    },
+    {
+      "key": "script.0deb52e599fd",
+      "tr": "Toplu anotasyon dışa aktarma",
+      "en": "Batch annotation export"
+    },
+    {
+      "key": "script.4cd608790238",
+      "tr": "1 · Kapsam",
+      "en": "1 · Scope"
+    },
+    {
+      "key": "script.84ee150d3455",
+      "tr": "2 · Nesneler",
+      "en": "2 · Objects"
+    },
+    {
+      "key": "script.2bbdfa18bfc5",
+      "tr": "Anotasyonlar her zaman dahildir.",
+      "en": "Annotations are always included."
+    },
+    {
+      "key": "script.b436731bfd69",
+      "tr": "Tespit/hücre nesnelerini de ekle (dosyalar büyür)",
+      "en": "Also include detection/cell objects (larger files)"
+    },
+    {
+      "key": "script.00a5e82ff001",
+      "tr": "GeoJSON'a ölçümleri ekle",
+      "en": "Include measurements in GeoJSON"
+    },
+    {
+      "key": "script.0abe5b118bab",
+      "tr": "Yalnız şu sınıflar (alt sınıflar dahil):",
+      "en": "Only these classes (including subclasses):"
+    },
+    {
+      "key": "script.30c19d20294c",
+      "tr": "3 · Biçimler",
+      "en": "3 · Formats"
+    },
+    {
+      "key": "script.5e8ef66a79e0",
+      "tr": "Merkez tablosu ayracı:",
+      "en": "Centroid table delimiter:"
+    },
+    {
+      "key": "script.06d159949933",
+      "tr": "4 · Kayıt yeri",
+      "en": "4 · Save location"
+    },
+    {
+      "key": "script.f7ca75bd4d2d",
+      "tr": "Kayıt klasörünü seçin",
+      "en": "Choose the output folder"
+    },
+    {
+      "key": "script.af84738e8159",
+      "tr": "Açık görüntünün kaydedilmemiş değişiklikleri de dışa aktarılır. Koordinatlar taban (level-0) piksel uzayındadır. ImageScope nokta taşımaz; ImageScope ve ASAP çoklu çizgi taşımaz; COCO delik taşımaz — atlananlar _manifest.tsv'de görüntü başına sayılır.",
+      "en": "Unsaved changes in the open image are also exported. Coordinates use base (level-0) pixels. ImageScope does not support points; ImageScope and ASAP do not support polylines; COCO does not support holes — skipped objects are counted per image in _manifest.tsv."
+    },
+    {
+      "key": "script.e0880cf185dc",
+      "tr": "Dışa aktar ▶",
+      "en": "Export ▶"
+    },
+    {
+      "key": "script.5667489a77dd",
+      "tr": "Seçili kapsamı seçili biçimlere yazar",
+      "en": "Writes the selected scope in the selected formats"
+    },
+    {
+      "key": "script.2e0d5a81bac0",
+      "tr": "Dışa aktarılıyor…",
+      "en": "Exporting…"
+    },
+    {
+      "key": "script.8478d83dc156",
+      "tr": "Başlıyor…",
+      "en": "Starting…"
+    },
+    {
+      "key": "script.22996080f261",
+      "tr": "İptal, sıradaki görüntüden önce durur; yazılmakta olan görüntü tamamlanır.",
+      "en": "Cancel stops before the next image; the image currently being written is completed."
+    },
+    {
+      "key": "script.2a26394a7133",
+      "tr": "Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar; klinik karar üretmez.",
+      "en": "Transfers data for research/teaching only; makes no clinical decisions."
+    },
+    {
+      "key": "script.4374a936df93",
+      "tr": "Önceki anotasyonlar",
+      "en": "Previous annotations"
+    },
+    {
+      "key": "script.4d0101ad8fd9",
+      "tr": "Tüm anotasyonlar silinecek",
+      "en": "All annotations will be deleted"
+    },
+    {
+      "key": "script.0985094339fe",
+      "tr": "%,d görüntüde mevcut TÜM anotasyonlar silinip dosyadakilerle değiştirilecek (tespitler korunur). Bu işlem geri alınamaz.\n\nDevam edilsin mi?",
+      "en": "ALL existing annotations in %,d images will be deleted and replaced with those in the files (detections are kept). This cannot be undone.\n\nContinue?"
+    },
+    {
+      "key": "script.68e9b5842a97",
+      "tr": "Toplu anotasyon içe aktarma",
+      "en": "Batch annotation import"
+    },
+    {
+      "key": "script.b7a58f2059c2",
+      "tr": "2 · Kaynak",
+      "en": "2 · Source"
+    },
+    {
+      "key": "script.3074b4b63671",
+      "tr": "(seçilmedi)",
+      "en": "(not selected)"
+    },
+    {
+      "key": "script.1abc098df647",
+      "tr": "Anotasyon klasörünü seçin",
+      "en": "Choose the annotation folder"
+    },
+    {
+      "key": "script.afe1718557ae",
+      "tr": "Dışa aktarma kökü (geojson/ imagescope/ asap/ alt klasörlü) ya da dosyaların durduğu klasör",
+      "en": "Export root (with geojson/ imagescope/ asap/ subfolders) or the folder containing the files"
+    },
+    {
+      "key": "script.48ffcfdc093e",
+      "tr": "Dosya seç…",
+      "en": "Choose file…"
+    },
+    {
+      "key": "script.fb352f8ff06c",
+      "tr": "Anotasyon dosyasını seçin",
+      "en": "Choose the annotation file"
+    },
+    {
+      "key": "script.83757e5671ea",
+      "tr": "Yalnız \"Bu görüntü\" kapsamında: tek dosyayı açık görüntüye aktarır",
+      "en": "Only for \"This image\" scope: imports a single file into the open image"
+    },
+    {
+      "key": "script.071c30132baf",
+      "tr": "Biçim:",
+      "en": "Format:"
+    },
+    {
+      "key": "script.659d645ebc2b",
+      "tr": "3 · Seçenekler",
+      "en": "3 · Options"
+    },
+    {
+      "key": "script.f18f23abb3e4",
+      "tr": "İçe aktarılan nesneleri kilitle",
+      "en": "Lock imported objects"
+    },
+    {
+      "key": "script.9a8d5c6d4c93",
+      "tr": "\"Önizle\" hiçbir şey yazmaz. \"İçe aktar\"a bastığınızda, hedef görüntülerde anotasyon varsa ne yapılacağı sorulur; varsayılan seçenek önceki anotasyonlara DOKUNMAZ. İçe aktarılan her nesne \"atolye_iceaktarim\" üst verisiyle (biçim · dosya yolu · zaman) işaretlenir; hedefte aynı UUID'li bir nesne zaten varsa yenisi eklenmez.",
+      "en": "\"Preview\" writes nothing. When you choose \"Import\", you are asked what to do if target images have annotations; the default KEEPS previous annotations. Every imported object is marked with \"atolye_iceaktarim\" metadata (format · file path · time); if the target already has an object with the same UUID, no new one is added."
+    },
+    {
+      "key": "script.0ec7bb5905ce",
+      "tr": "Önizle ▶",
+      "en": "Preview ▶"
+    },
+    {
+      "key": "script.7f1dc83543a6",
+      "tr": "Dosyaları görüntülerle eşler ve içeriğini özetler; henüz hiçbir şey yazmaz",
+      "en": "Matches files to images and summarises their contents; writes nothing yet"
+    },
+    {
+      "key": "script.7a692507f114",
+      "tr": "Önizleme hazırlanıyor…",
+      "en": "Preparing preview…"
+    },
+    {
+      "key": "script.8b0573d6d8f7",
+      "tr": "Her eşleşen dosya okunur ve görüntü boyutuyla karşılaştırılır; henüz hiçbir şey yazılmaz.",
+      "en": "Each matching file is read and compared with the image dimensions; nothing is written yet."
+    },
+    {
+      "key": "script.7d4bdfedcb15",
+      "tr": "Eşleştirme önizlemesi — henüz hiçbir şey yazılmadı",
+      "en": "Matching preview — nothing has been written yet"
+    },
+    {
+      "key": "script.b11f600de354",
+      "tr": "%,d görüntü · eşleşti %,d · belirsiz %,d · dosya yok %,d · sorunlu %,d   — kaynak: %s",
+      "en": "%,d images · matched %,d · ambiguous %,d · file missing %,d · problematic %,d   — source: %s"
+    },
+    {
+      "key": "script.0dc8a2b65269",
+      "tr": "Koordinatı görüntü sınırını aşan ya da okunamayan satırlar işaretsiz başlar; yine de aktarmak için işaretleyin. Açılır listeden elle seçilen dosyalar çalıştırmada yine sınır denetiminden geçer. \"İçe aktar\" önce mevcut anotasyonlar için ne yapılacağını sorar (varsayılan: dokunma).",
+      "en": "Rows with unreadable data or coordinates outside the image bounds start unchecked; check them to import anyway. Files selected manually from the dropdown are still checked against the bounds during the run. \"Import\" first asks what to do with existing annotations (default: keep)."
+    },
+    {
+      "key": "script.9dd3f104ec93",
+      "tr": " Nesneler kilitli eklenecek.",
+      "en": " Objects will be added locked."
+    },
+    {
+      "key": "script.39a1579f1e7c",
+      "tr": "İçe aktar ▶",
+      "en": "Import ▶"
+    },
+    {
+      "key": "script.7015c243f918",
+      "tr": "İşaretli satırları içe aktarır ve kaydeder",
+      "en": "Imports and saves checked rows"
+    },
+    {
+      "key": "script.fe8595ca681b",
+      "tr": "İçe aktarılıyor…",
+      "en": "Importing…"
+    },
+    {
+      "key": "script.e8948916692a",
+      "tr": "İptal, sıradaki görüntüden önce durur; işlenmekte olan görüntü tamamlanır ve kaydedilir. Çalışma sürerken hedef lamları açıp kapatmayın; açık bir lam işlem sırasında değişirse o görüntü atlanır ya da hata olarak raporlanır.",
+      "en": "Cancel stops before the next image; the image currently being processed is completed and saved. Keep target slides open or closed as they are while processing; if an open slide changes during the operation, that image is skipped or reported as an error."
+    },
+    {
+      "key": "script.1d4742b56dd5",
+      "tr": "Önce anotasyon içeren bir lam açın.",
+      "en": "Open a slide containing annotations first."
+    },
+    {
+      "key": "script.79f41bc67a0a",
+      "tr": "Anotasyon QC",
+      "en": "Annotation QC"
+    },
+    {
+      "key": "script.3fa03a8fb823",
+      "tr": "Görüntü yok",
+      "en": "No image"
+    },
+    {
+      "key": "script.12204d6dbab7",
+      "tr": "Önce bir lam açın.",
+      "en": "Open a slide first."
+    },
+    {
+      "key": "script.a7c7cbba6d84",
+      "tr": "Boya vektörü yok",
+      "en": "No stain vectors"
+    },
+    {
+      "key": "script.37d5cbd6aa45",
+      "tr": "Geçersiz bölge",
+      "en": "Invalid region"
+    },
+    {
+      "key": "script.efa1e38da33a",
+      "tr": "Bölge boyutu okunamadı.",
+      "en": "Could not read the region dimensions."
+    },
+    {
+      "key": "script.1a92c50caa82",
+      "tr": "Okuma hatası",
+      "en": "Read error"
+    },
+    {
+      "key": "script.83970d478d15",
+      "tr": "Bölge boş okundu.",
+      "en": "The region was read as empty."
+    },
+    {
+      "key": "script.2155874eeb11",
+      "tr": "Doku yok",
+      "en": "No tissue"
+    },
+    {
+      "key": "script.8cb0e3843afa",
+      "tr": "Önce sınıflı hücre tespitleri olan bir lam açın.",
+      "en": "Open a slide with classified cell detections first."
+    },
+    {
+      "key": "script.5dad5b2ba71a",
+      "tr": "Lamda piksel boyutu (µm) tanımlı değil.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).",
+      "en": "No pixel size (µm) is defined for this slide.\n\nSet it with: Extensions → Atölye → Utilities → Calibration (pixel size)."
+    },
+    {
+      "key": "script.f34b330b89e2",
+      "tr": "Yetersiz sınıf",
+      "en": "Not enough classes"
+    },
+    {
+      "key": "script.5917c2b9fdbb",
+      "tr": "Çapraz NN — A sınıfı",
+      "en": "Cross-class nearest neighbour — class A"
+    },
+    {
+      "key": "script.7740736a303e",
+      "tr": "Hangi sınıfın hücreleri için mesafe ölçülsün? (A — en yakın B aranır)",
+      "en": "For which class's cells should distances be measured? (A — the nearest B is sought)"
+    },
+    {
+      "key": "script.b6a89849ae0d",
+      "tr": "Çapraz NN — B sınıfı",
+      "en": "Cross-class nearest neighbour — class B"
+    },
+    {
+      "key": "script.5895fdfea359",
+      "tr": "Hedef sınıf nedir? (B — bu havuzda en yakın komşu aranır)",
+      "en": "What is the target class? (B — the nearest neighbour is sought in this pool)"
+    },
+    {
+      "key": "script.139542876e7b",
+      "tr": "Yakınlık yarıçapı (µm)",
+      "en": "Proximity radius (µm)"
+    },
+    {
+      "key": "script.9fed9b706b6e",
+      "tr": "Kaç µm yarıçap içindeki A hücreleri sayılsın?\n(Varsayılan: 50 µm)",
+      "en": "Within what radius (µm) should A cells be counted?\n(Default: 50 µm)"
+    },
+    {
+      "key": "script.9d8438d9cdaf",
+      "tr": "Geçersiz yarıçap",
+      "en": "Invalid radius"
+    },
+    {
+      "key": "script.eb63d123cb3f",
+      "tr": "Yarıçap bir sayı olmalı (ör. 50 ya da 75.5). Girilen: '",
+      "en": "The radius must be a number (e.g. 50 or 75.5). Entered: '"
+    },
+    {
+      "key": "script.aaae99e0c668",
+      "tr": "Aynı sınıf",
+      "en": "Same class"
+    },
+    {
+      "key": "script.53e35a091a93",
+      "tr": "A ve B sınıfı farklı olmalı.",
+      "en": "Classes A and B must be different."
+    },
+    {
+      "key": "script.4277b763a640",
+      "tr": "Tespit yok",
+      "en": "No detections"
+    },
+    {
+      "key": "script.70fe347f0a97",
+      "tr": "Eksik seçim",
+      "en": "Selection missing"
+    },
+    {
+      "key": "script.94905042e46b",
+      "tr": "Lütfen X ve Y için birer ölçüm seçin.",
+      "en": "Select a measurement for both X and Y."
+    },
+    {
+      "key": "script.0c3cd5ac7013",
+      "tr": "Çizilecek tespit yok. Önce bir tespit/ölçüm adımı çalıştırın.",
+      "en": "No detections to plot. Run a detection/measurement step first."
+    },
+    {
+      "key": "script.08e9aece49b2",
+      "tr": "Grafik açılamadı",
+      "en": "Could not open the chart"
+    },
+    {
+      "key": "script.fefc78fdcc60",
+      "tr": "Dağılım grafiği — iki ölçüm seç",
+      "en": "Scatter plot — select two measurements"
+    },
+    {
+      "key": "script.a84140786522",
+      "tr": "Çizilebilir ölçüm bulunamadı.\n\nÖnce ölçümlü tespitler oluşturun (Hücre tespiti / Nükleer boya / Sitoplazmik boya /\nTümör içi Ki-67 modülleri), ya da fenotip/UMAP\netiketlerini içe aktarın (Yardımcılar → Kümeleme/fenotip etiketlerini içe aktar).\nSonra '⟳ Yenile'.",
+      "en": "No measurements to plot.\n\nCreate detections with measurements first (Cell detection / Nuclear stain / Cytoplasmic stain /\nIntra-tumoral Ki-67 modules), or import phenotype/UMAP\nlabels (Utilities → Import cluster/phenotype labels (TSV)).\nThen choose '⟳ Refresh'."
+    },
+    {
+      "key": "script.0b3dffaa7a47",
+      "tr": " tespit · ",
+      "en": " detections · "
+    },
+    {
+      "key": "script.41fd26a07624",
+      "tr": " ölçüm. Noktalar lamdaki sınıf renkleriyle gösterilir.",
+      "en": " measurements. Points use the slide's class colours."
+    },
+    {
+      "key": "script.11ede729b0e5",
+      "tr": "X ekseni:",
+      "en": "X axis:"
+    },
+    {
+      "key": "script.6fe1602674e3",
+      "tr": "Y ekseni:",
+      "en": "Y axis:"
+    },
+    {
+      "key": "script.2ea02fef4e27",
+      "tr": "Ölçüm listesini yeniden tara",
+      "en": "Scan the measurement list again"
+    },
+    {
+      "key": "script.bb1b8e0c0fbf",
+      "tr": "Grafiği aç ▶",
+      "en": "Open chart ▶"
+    },
+    {
+      "key": "script.7a4b706d1848",
+      "tr": "Seçili iki ölçümü QuPath dağılım grafiğinde çiz",
+      "en": "Plots the two selected measurements in QuPath's scatter plot"
+    },
+    {
+      "key": "script.1620e92e32c0",
+      "tr": "Yalnızca araştırma/eğitim amaçlı; var olan ölçümleri çizer, yorum üretmez.",
+      "en": "For research/teaching only; plots existing measurements without interpretation."
+    },
+    {
+      "key": "script.7ffd45941f9e",
+      "tr": "Dağılım grafiği sihirbazı",
+      "en": "Scatter plot wizard"
+    },
+    {
+      "key": "script.2b498b3b5a90",
+      "tr": "Önce hücre tespiti yapılmış bir lam açın.",
+      "en": "Open a slide with cell detections first."
+    },
+    {
+      "key": "script.bd9ad9944f29",
+      "tr": "Yetersiz hücre",
+      "en": "Not enough cells"
+    },
+    {
+      "key": "script.191e6daea415",
+      "tr": "Tespit doğrulama — altın standarda karşı",
+      "en": "Detection validation — against the reference standard"
+    },
+    {
+      "key": "script.e2638bc5557c",
+      "tr": "Önce bir lam açın, sonra \"⟳ Yenile\".",
+      "en": "Open a slide first, then choose \"⟳ Refresh\"."
+    },
+    {
+      "key": "script.f97f8432ffe4",
+      "tr": "Önce bir DOĞRULAMA BÖLGESİ seçin.\n\nYapın:\n  1. Tespit içeren bir lamda küçük bir bölge anotasyonu çizin\n  2. O bölge içindeki gerçek çekirdekleri ELLE işaretleyin; ayrı bir\n     sınıf verin (ör. \"Altın standart\"). Nokta aracı ya da küçük poligon.\n  3. Doğrulama bölgesi anotasyonunu SEÇİN\n  4. \"⟳ Yenile\"",
+      "en": "Select a VALIDATION REGION first.\n\nSteps:\n  1. Draw a small region annotation on a slide with detections\n  2. MANUALLY mark the true nuclei in that region; assign a separate\n     class (e.g. \"Altın standart\"). Use the point tool or small polygons.\n  3. SELECT the validation region annotation\n  4. Choose \"⟳ Refresh\""
+    },
+    {
+      "key": "script.58c700ec9b7b",
+      "tr": "Seçili bölge içinde hiç nesne yok. Önce tespit çalıştırın ve\nreferans (altın standart) nesnelerini işaretleyin, sonra \"⟳ Yenile\".",
+      "en": "There are no objects in the selected region. Run detection and\nmark the reference standard objects, then choose \"⟳ Refresh\"."
+    },
+    {
+      "key": "script.45684f47e979",
+      "tr": "Seçili bölge içinde ",
+      "en": "Found "
+    },
+    {
+      "key": "script.49727753675f",
+      "tr": " nesne bulundu.",
+      "en": " objects in the selected region."
+    },
+    {
+      "key": "script.572748f5247e",
+      "tr": " bölge seçiliydi; ilki kullanıldı.)",
+      "en": " regions were selected; the first was used.)"
+    },
+    {
+      "key": "script.0eefbc6de381",
+      "tr": "Altın standart sınıfı:",
+      "en": "Reference standard class:"
+    },
+    {
+      "key": "script.a0648495d807",
+      "tr": "Tahmin kümesi:",
+      "en": "Prediction set:"
+    },
+    {
+      "key": "script.61a93ad431dc",
+      "tr": "Eşleştirme modu:",
+      "en": "Matching mode:"
+    },
+    {
+      "key": "script.4d82dc0166c4",
+      "tr": "IoU (alan örtüşmesi)",
+      "en": "IoU (area overlap)"
+    },
+    {
+      "key": "script.74ec1d769eb0",
+      "tr": "Merkez (nokta GT)",
+      "en": "Centroid (point reference)"
+    },
+    {
+      "key": "script.3e1183058df9",
+      "tr": "IoU eşiği:",
+      "en": "IoU threshold:"
+    },
+    {
+      "key": "script.633c7e18577b",
+      "tr": "Merkez eşiği (µm):",
+      "en": "Centroid threshold (µm):"
+    },
+    {
+      "key": "script.e532840dc87c",
+      "tr": "Merkez eşiği (px):",
+      "en": "Centroid threshold (px):"
+    },
+    {
+      "key": "script.518276ddb001",
+      "tr": "Tahminleri renklendir (TP yeşil / FP kırmızı) — sınıflarını değiştirir",
+      "en": "Colour predictions (TP green / FP red) — changes their classes"
+    },
+    {
+      "key": "script.9fafc67d1fb0",
+      "tr": "FN referanslarını da işaretle (mor) — altın standart sınıfını değiştirir (yalnız poligon referans)",
+      "en": "Also mark FN references (purple) — changes the reference standard class (polygon references only)"
+    },
+    {
+      "key": "script.af3c7013879a",
+      "tr": "Nokta (dot) ile işaretlenmiş referans için \"Merkez\" modunu kullanın;\nküçük poligonlarla işaretlediyseniz \"IoU\" modu daha katıdır.",
+      "en": "For a reference marked with points (dots), use \"Centroid\" mode;\nif marked with small polygons, \"IoU\" mode is stricter."
+    },
+    {
+      "key": "script.bf7efd123522",
+      "tr": "Hesapla ▶",
+      "en": "Calculate ▶"
+    },
+    {
+      "key": "script.2997459108e0",
+      "tr": "Seçili bölgede altın standart ile tahminleri eşleştirir; F1 hesaplar",
+      "en": "Matches reference objects to predictions in the selected region; calculates F1"
+    },
+    {
+      "key": "script.14b1aea7b716",
+      "tr": "Hesaplanıyor…",
+      "en": "Calculating…"
+    },
+    {
+      "key": "script.fa7e9d619bd3",
+      "tr": "Altın standart ile tahminler eşleştiriliyor. Lütfen bekleyin…",
+      "en": "Matching reference objects to predictions. Please wait…"
+    },
+    {
+      "key": "script.dc3068782f2c",
+      "tr": "Doğrulama sonucu",
+      "en": "Validation result"
+    },
+    {
+      "key": "script.8b1247ab9bd1",
+      "tr": "Renklendirildi: ",
+      "en": "Coloured: "
+    },
+    {
+      "key": "script.ed302c97c82d",
+      "tr": " nesne TP/FP/FN sınıfına ayrıldı. ",
+      "en": " objects assigned to TP/FP/FN classes. "
+    },
+    {
+      "key": "script.681c82ce183c",
+      "tr": "Geri almak için tespiti yeniden çalıştırın ya da sınıfları temizleyin ",
+      "en": "To undo, run detection again or clear the classes "
+    },
+    {
+      "key": "script.9bc5b46a2904",
+      "tr": "(FN için altın standart sınıfını yeniden atayın).",
+      "en": "(for FN, reassign the reference standard class)."
+    },
+    {
+      "key": "script.ee3ccf080294",
+      "tr": "◀ Forma dön",
+      "en": "◀ Back to form"
+    },
+    {
+      "key": "script.7216c337aea8",
+      "tr": "Önce bir lam açın, sonra \"◀ Forma dön\".",
+      "en": "Open a slide first, then choose \"◀ Back to form\"."
+    },
+    {
+      "key": "script.94e84d2df73a",
+      "tr": "Doğrulama bölgesi seçili değil",
+      "en": "No validation region selected"
+    },
+    {
+      "key": "script.2598788505f6",
+      "tr": "Bir bölge anotasyonu çizip SEÇİN, sonra \"◀ Forma dön\".",
+      "en": "Draw and SELECT a region annotation, then choose \"◀ Back to form\"."
+    },
+    {
+      "key": "script.069928839c77",
+      "tr": "Doğrulama yapılamadı",
+      "en": "Could not validate"
+    },
+    {
+      "key": "script.a2637d322f7e",
+      "tr": "IoU modu alan (poligon) referans gerektirir, ama altın standart nokta\nolarak işaretlenmiş görünüyor.\n\n\"Merkez moduna geç\" ile tekrar deneyin.",
+      "en": "IoU mode requires area (polygon) references, but the reference standard\nappears to be marked with points.\n\nTry again with \"Switch to centroid mode\"."
+    },
+    {
+      "key": "script.e9e5cf6b895c",
+      "tr": "Merkez moduna geç ▶",
+      "en": "Switch to centroid mode ▶"
+    },
+    {
+      "key": "script.078fb323fdd3",
+      "tr": "Altın standart ve tahmin aynı topluluk olamaz. Farklı sınıflar seçin\n(ör. GT = \"Altın standart\", Tahmin = \"▸ Tüm tespitler\").",
+      "en": "The reference and prediction sets cannot be the same population. Select different classes\n(e.g. reference = \"Altın standart\", prediction = \"▸ Tüm tespitler\")."
+    },
+    {
+      "key": "script.18504df9c08a",
+      "tr": "Seçilen altın standart sınıfında bölge içinde nesne yok.\nReferansı işaretleyip o sınıfı verdiğinizden emin olun.",
+      "en": "There are no objects of the selected reference class in this region.\nMake sure the reference objects are marked and assigned to that class."
+    },
+    {
+      "key": "script.c96d3a0ca11c",
+      "tr": "Tahmin (tespit) bulunamadı. Önce bir tespit adımı çalıştırın\n(Hücre tespiti / Nükleer boya modülleri / StarDist sihirbazı).",
+      "en": "No predictions (detections) found. Run a detection step first\n(Cell detection / Nuclear stain modules / StarDist wizard)."
+    },
+    {
+      "key": "script.6143a32d1504",
+      "tr": "Beklenmeyen durum: ",
+      "en": "Unexpected state: "
+    },
+    {
+      "key": "script.bd6a70a72c9b",
+      "tr": "(bilinmiyor)",
+      "en": "(unknown)"
+    },
+    {
+      "key": "script.694a288260ce",
+      "tr": "Tespit doğrulama (F1 / IoU)",
+      "en": "Detection validation (F1 / IoU)"
+    },
+    {
+      "key": "script.830fe38f7e53",
+      "tr": "Proje yok",
+      "en": "No project"
+    },
+    {
+      "key": "script.d160a36f227f",
+      "tr": "Eşikleyici seç",
+      "en": "Choose thresholder"
+    },
+    {
+      "key": "script.4ec849de2690",
+      "tr": "Ölçülecek kayıtlı piksel sınıflandırıcı (eşikleyici):",
+      "en": "Saved pixel classifier (thresholder) to measure:"
+    },
+    {
+      "key": "script.ea8a4476846b",
+      "tr": "Yüklenemedi",
+      "en": "Could not load"
+    },
+    {
+      "key": "script.3f056d1badd0",
+      "tr": "Uyumlu ölçüm bulunamadı",
+      "en": "No compatible measurements found"
+    },
+    {
+      "key": "script.126b974f87c2",
+      "tr": "Görüntüde \"Membrane/Nucleus/Cytoplasm: <boya> OD mean\" deseninde ölçüm taşıyan tespit yok.\nÖnce Nükleer boya / ER-PR H-score / Membran boya / Sitoplazmik boya / Tümör içi Ki-67 modüllerinden birini çalıştırın, sonra bu yardımcıyı yeniden açın.",
+      "en": "There are no detections with measurements matching \"Membrane/Nucleus/Cytoplasm: <boya> OD mean\".\nRun one of the Nuclear stain / ER-PR H-score / Membrane stain / Cytoplasmic stain / Intra-tumoral Ki-67 modules first, then open this helper again."
+    },
+    {
+      "key": "script.35ea511684f2",
+      "tr": "Sütun:",
+      "en": "Column:"
+    },
+    {
+      "key": "script.0ac363c3592d",
+      "tr": "değişiklikler henüz uygulanmadı",
+      "en": "changes have not been applied yet"
+    },
+    {
+      "key": "script.970dbbd01996",
+      "tr": "Hazır",
+      "en": "Ready"
+    },
+    {
+      "key": "script.228b24feb84c",
+      "tr": "Canlı uygula",
+      "en": "Apply live"
+    },
+    {
+      "key": "script.08a24723d591",
+      "tr": "Uygula",
+      "en": "Apply"
+    },
+    {
+      "key": "script.82c50a2e9fd7",
+      "tr": "Sıfırla",
+      "en": "Reset"
+    },
+    {
+      "key": "script.068e63c022e6",
+      "tr": "Otomatik öner",
+      "en": "Suggest automatically"
+    },
+    {
+      "key": "script.d7340282e8b9",
+      "tr": "3-eşik Otsu: veri-güdümlü bir BAŞLANGIÇ önerisi — \"doğru\" eşik değildir; yöntem referansınızla sabitleyip belgeleyin.",
+      "en": "Three-threshold Otsu: a data-driven STARTING suggestion — it is not the 'correct' threshold; fix and document it against your method reference."
+    },
+    {
+      "key": "script.097a775f4706",
+      "tr": "Bu eşikleri varsayılan yap",
+      "en": "Save these thresholds as defaults"
+    },
+    {
+      "key": "script.e7a37add5ef4",
+      "tr": "Negatif %,d (%%%.1f) · 1+ %,d (%%%.1f) · 2+ %,d (%%%.1f) · 3+ %,d (%%%.1f) · ≥1+ %,d (%%%.1f) · H-score %.0f",
+      "en": "Negative %,d (%%%.1f) · 1+ %,d (%%%.1f) · 2+ %,d (%%%.1f) · 3+ %,d (%%%.1f) · ≥1+ %,d (%%%.1f) · H-score %.0f"
+    },
+    {
+      "key": "script.8deac644d3bb",
+      "tr": "kümülatif %%%.1f",
+      "en": "cumulative %%%.1f"
+    },
+    {
+      "key": "script.97bf47ae1f8f",
+      "tr": "Renk şeridi yok: boya vektörleri arasında \"",
+      "en": "No colour strip: no stain named \""
+    },
+    {
+      "key": "script.b30f8dd2d0e4",
+      "tr": "\" adlı boya bulunamadı. (Histogram ve kesitler çalışmaya devam eder.)",
+      "en": "\" was found among the stain vectors. (The histogram and sections still work.)"
+    },
+    {
+      "key": "script.62f402c54521",
+      "tr": " — kesit okunamadı",
+      "en": " — could not read section"
+    },
+    {
+      "key": "script.6b6e40a775ad",
+      "tr": "Sınırlamalar — neden böyle?",
+      "en": "Limitations — why?"
+    },
+    {
+      "key": "script.62a13087164b",
+      "tr": "Hata: ",
+      "en": "Error: "
+    },
+    {
+      "key": "script.b191668e82bb",
+      "tr": "Uygulanıyor…",
+      "en": "Applying…"
+    },
+    {
+      "key": "script.6403bdc3c342",
+      "tr": "Kapsam artık geçerli değil — pencereyi kapatın",
+      "en": "The scope is no longer valid — close this window"
+    },
+    {
+      "key": "script.dccc0300a351",
+      "tr": "Otsu önerisi hesaplanıyor…",
+      "en": "Calculating Otsu suggestion…"
+    },
+    {
+      "key": "script.cbfd5a990814",
+      "tr": "Kapsam/sütun değişti — Otomatik öner'i güncel veriyle yeniden çalıştırın.",
+      "en": "The scope/column has changed — run Suggest automatically again with the current data."
+    },
+    {
+      "key": "script.1f2fd4db9a23",
+      "tr": "Otsu önerisi için yeterli veri yok.",
+      "en": "Not enough data for an Otsu suggestion."
+    },
+    {
+      "key": "script.0d0d3713d064",
+      "tr": "Otsu önerisi türetilemedi.",
+      "en": "Could not derive an Otsu suggestion."
+    },
+    {
+      "key": "script.9585e961f298",
+      "tr": "Otsu önerisi uygulandı: %.3f / %.3f / %.3f — başlangıç noktasıdır; yöntem referansınızla sabitleyip belgeleyin.",
+      "en": "Otsu suggestion applied: %.3f / %.3f / %.3f — a starting point; fix and document it against your method reference."
+    },
+    {
+      "key": "script.cf8d39c478ed",
+      "tr": "Varsayılan kaydedildi",
+      "en": "Defaults saved"
+    },
+    {
+      "key": "script.f1aa4028a04c",
+      "tr": "Yeni varsayılan eşikler kaydedildi:\n  1+: %.3f\n  2+: %.3f\n  3+: %.3f",
+      "en": "New default thresholds saved:\n  1+: %.3f\n  2+: %.3f\n  3+: %.3f"
+    },
+    {
+      "key": "script.4b53a3b8457b",
+      "tr": "Atölye eklentisi yüklü değil — varsayılan kaydedilemedi.",
+      "en": "The workshop extension is not loaded — could not save defaults."
+    },
+    {
+      "key": "script.832662034af3",
+      "tr": "Kapsam:",
+      "en": "Scope:"
+    },
+    {
+      "key": "script.cf6099f0a005",
+      "tr": "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
+      "en": "⚠️ Produces measurements for research/teaching only."
+    },
+    {
+      "key": "script.17ab7cded31c",
+      "tr": "Eşik paleti",
+      "en": "Threshold palette"
+    },
+    {
+      "key": "script.aa6ca16719b5",
+      "tr": "Pencere açılamadı: ",
+      "en": "Could not open window: "
+    },
+    {
+      "key": "script.e94ae017b9b4",
+      "tr": "Piksel eşikleyici",
+      "en": "Pixel thresholder"
+    },
+    {
+      "key": "script.740b851b6f59",
+      "tr": "Önce bir lam açın; eşikleyici açık görüntü ister.",
+      "en": "Open a slide first; the thresholder requires an open image."
+    },
+    {
+      "key": "script.b9b0d6d2dd14",
+      "tr": "Menüden açın: Classify → Pixel classification → Create thresholder.\nDoku maskesi için: çözünürlük düşük, ölçüm = Hematoksilen OD (ya da parlaklık), eşik > 0 seçin; sonra 'Create objects' ile 'Doku' anotasyonuna çevirin.",
+      "en": "Open from the menu: Classify → Pixel classification → Create thresholder.\nFor a tissue mask: use low resolution, measurement = Hematoxylin OD (or brightness), threshold > 0; then use 'Create objects' to create a 'Doku' annotation."
+    },
+    {
+      "key": "script.16c51e5c1696",
+      "tr": "(önizleme çizilemedi)",
+      "en": "(could not draw preview)"
+    },
+    {
+      "key": "script.9bcabe556ddc",
+      "tr": "Bu görüntüde renk dekonvolüsyonu (boya vektörü) tanımlı değil — büyük olasılıkla brightfield değil. Görüntü tipini ayarlayın (Yardımcılar → Görüntü tipi ayarla). Aşağıdaki Gaussian/eşik sayfaları gri (yoğunluk) kanalı üzerinden çalışır.",
+      "en": "No colour deconvolution (stain vectors) is defined for this image — it is probably not brightfield. Set the image type (Utilities → Set image type). The Gaussian/threshold pages below use the grey (intensity) channel."
+    },
+    {
+      "key": "script.ba8662516434",
+      "tr": "Önizleme hesaplanıyor…",
+      "en": "Calculating preview…"
+    },
+    {
+      "key": "script.c28e2c55a501",
+      "tr": "Önizleme için \"↻ Bölgeyi oku/yenile\".",
+      "en": "For a preview, choose \"↻ Read/refresh region\"."
+    },
+    {
+      "key": "script.0dc0a7fb01e8",
+      "tr": "Örneklenen bölge: ",
+      "en": "Sampled region: "
+    },
+    {
+      "key": "script.fa019c766fff",
+      "tr": "  ·  ~1/%.0f altörnekleme",
+      "en": "  ·  ~1/%.0f downsampling"
+    },
+    {
+      "key": "script.6f49b5604e90",
+      "tr": "↻ Bölgeyi oku/yenile",
+      "en": "↻ Read/refresh region"
+    },
+    {
+      "key": "script.9ff3cfd0230d",
+      "tr": "Bitir",
+      "en": "Finish"
+    },
+    {
+      "key": "script.5c0f1b020f97",
+      "tr": "Yalnızca araştırma/eğitim amaçlı; ölçüm veya klinik karar üretmez.",
+      "en": "For research/teaching only; produces no measurement or clinical decision."
+    },
+    {
+      "key": "script.fee9dbbce7a4",
+      "tr": "Görüntü işleme kavramları",
+      "en": "Image processing concepts"
+    },
+    {
+      "key": "script.bde2c50086d3",
+      "tr": "Görüntü künyesi ve histogram",
+      "en": "Image information and histogram"
+    },
+    {
+      "key": "script.b19e443a7ab8",
+      "tr": "Görüntü yakala (rapor/sunum)",
+      "en": "Capture image (report/presentation)"
+    },
+    {
+      "key": "script.8a9a901e0442",
+      "tr": "Görüntüleyici (overlay'lerle)",
+      "en": "Viewer (with overlays)"
+    },
+    {
+      "key": "script.a8bc424bdb76",
+      "tr": "Tüm QuPath penceresi",
+      "en": "Entire QuPath window"
+    },
+    {
+      "key": "script.cfa31cf0e928",
+      "tr": "Dosyaya kaydet",
+      "en": "Save to file"
+    },
+    {
+      "key": "script.cfce69a58bef",
+      "tr": "Panoya kopyala",
+      "en": "Copy to clipboard"
+    },
+    {
+      "key": "script.cc9187efabde",
+      "tr": "Çıktı klasörü seçin",
+      "en": "Choose output folder"
+    },
+    {
+      "key": "script.15792b8e0b4d",
+      "tr": "Görüntünün kaydedileceği klasörü seçin",
+      "en": "Choose the folder where the image will be saved"
+    },
+    {
+      "key": "script.4249586073a4",
+      "tr": "temel dosya adı (uzantısız)",
+      "en": "base file name (without extension)"
+    },
+    {
+      "key": "script.64ed98f848ce",
+      "tr": "Benzersiz isim (üzerine yazma)",
+      "en": "Unique name (no overwrite)"
+    },
+    {
+      "key": "script.12de89c0aa25",
+      "tr": "Klasör:",
+      "en": "Folder:"
+    },
+    {
+      "key": "script.08692440ac82",
+      "tr": "Dosya adı:",
+      "en": "File name:"
+    },
+    {
+      "key": "script.6c53985d5392",
+      "tr": "⚠ Yakalama başarısız: ",
+      "en": "⚠ Capture failed: "
+    },
+    {
+      "key": "script.98b9bfde23a9",
+      "tr": "⚠ Yakalanacak içerik bulunamadı (önce bir lam açın).",
+      "en": "⚠ Nothing to capture (open a slide first)."
+    },
+    {
+      "key": "script.20dc32a81e1a",
+      "tr": "✅ Panoya kopyalandı (%d×%d px). Başka bir uygulamaya yapıştırabilirsiniz.",
+      "en": "✅ Copied to clipboard (%d×%d px). You can paste it into another application."
+    },
+    {
+      "key": "script.b00d0d53da2b",
+      "tr": "⚠ Panoya kopyalanamadı: ",
+      "en": "⚠ Could not copy to clipboard: "
+    },
+    {
+      "key": "script.53b1fff9ff22",
+      "tr": "⚠ Klasör ve dosya adı boş olamaz.",
+      "en": "⚠ Folder and file name cannot be empty."
+    },
+    {
+      "key": "script.e1a9e83d5492",
+      "tr": "⚠ Geçerli bir klasör seçin (klasör bulunamadı).",
+      "en": "⚠ Choose a valid folder (folder not found)."
+    },
+    {
+      "key": "script.4152de67a765",
+      "tr": "Yazılıyor: ",
+      "en": "Writing: "
+    },
+    {
+      "key": "script.caf64cb42edc",
+      "tr": "⚠ Kaydedilemedi: ",
+      "en": "⚠ Could not save: "
+    },
+    {
+      "key": "script.bcf8510a81a8",
+      "tr": "✅ Kaydedildi (%d×%d px):\n%s",
+      "en": "✅ Saved (%d×%d px):\n%s"
+    },
+    {
+      "key": "script.b03439457052",
+      "tr": "Yakala ▶",
+      "en": "Capture ▶"
+    },
+    {
+      "key": "script.028b2aab166e",
+      "tr": "Seçili türde görüntüyü yakalar",
+      "en": "Captures an image of the selected type"
+    },
+    {
+      "key": "script.2b5c1f8159b6",
+      "tr": "Yalnızca araştırma/eğitim amaçlı görsel bir yardımcıdır; ölçüm/klinik karar üretmez.",
+      "en": "A visual helper for research/teaching only; produces no measurement/clinical decision."
+    },
+    {
+      "key": "script.9fbd154af229",
+      "tr": "Görüntü yakala penceresi açılamadı",
+      "en": "Could not open image capture window"
+    },
+    {
+      "key": "script.979211f17202",
+      "tr": "Proje gerekli",
+      "en": "Project required"
+    },
+    {
+      "key": "script.6608dc8525a8",
+      "tr": "Dikdörtgen yok",
+      "en": "No rectangles"
+    },
+    {
+      "key": "script.1b804907668e",
+      "tr": "Kırpılmış proje girdileri — seçenekler",
+      "en": "Cropped project entries — options"
+    },
+    {
+      "key": "script.9d6ad5bc1e98",
+      "tr": "Örtüşen anotasyonları kırparak yeni girdiye kopyala",
+      "en": "Crop overlapping annotations and copy them to the new entry"
+    },
+    {
+      "key": "script.6f482c6086cc",
+      "tr": "Sınıf filtresi:",
+      "en": "Class filter:"
+    },
+    {
+      "key": "script.b7652a839342",
+      "tr": "Girdileri oluştur",
+      "en": "Create entries"
+    },
+    {
+      "key": "script.a7585060e74b",
+      "tr": "Eşleşen dikdörtgen yok",
+      "en": "No matching rectangles"
+    },
+    {
+      "key": "script.9cd15cfae93e",
+      "tr": "Bölge seçilmedi",
+      "en": "No region selected"
+    },
+    {
+      "key": "script.db4f107ceebc",
+      "tr": "Sınıflandırma yok",
+      "en": "No classification"
+    },
+    {
+      "key": "script.311aaf538df2",
+      "tr": "Göz Kararı Kalibrasyon Alıştırması",
+      "en": "Visual Estimation Calibration Exercise"
+    },
+    {
+      "key": "script.e30dfdd8ab55",
+      "tr": "🔬 Göz Kararı Değerlendirme vs. QuPath Sayısal Ölçümü",
+      "en": "🔬 Visual Estimation vs. QuPath Numerical Measurement"
+    },
+    {
+      "key": "script.339ded07b50a",
+      "tr": "Seçili bölgedeki renkli tespit halkaları KÖR TAHMİN için geçici olarak gizlendi.\nBölge: ",
+      "en": "Coloured detection outlines in the selected region have been temporarily hidden for a BLIND ESTIMATE.\nRegion: "
+    },
+    {
+      "key": "script.18213d127497",
+      "tr": ") · Hedef oran: ",
+      "en": ") · Target proportion: "
+    },
+    {
+      "key": "script.a46d75af53c2",
+      "tr": "📐 Seçili bölge üzerine geçici 4×4 kalibrasyon ızgarası (16 alt kare) yerleştir",
+      "en": "📐 Place a temporary 4×4 calibration grid (16 squares) over the selected region"
+    },
+    {
+      "key": "script.cf804cf47cb7",
+      "tr": "🙈 Kör görünüm: hücre tespit halkalarını gizli tut",
+      "en": "🙈 Blind view: keep cell detection outlines hidden"
+    },
+    {
+      "key": "script.415eeaea8e93",
+      "tr": "1. Göz kararı HÜCRE oranı tahmininiz (%):",
+      "en": "1. Your visual estimate of the CELL proportion (%):"
+    },
+    {
+      "key": "script.663bfab6f10b",
+      "tr": "Örn. 25 veya 27,5 (0–100)",
+      "en": "E.g. 25 or 27.5 (0–100)"
+    },
+    {
+      "key": "script.e58ecf5ed6c9",
+      "tr": "2. İsteğe bağlı — pozitif ALAN oranı tahmininiz (%):",
+      "en": "2. Optional — your estimate of the positive AREA proportion (%):"
+    },
+    {
+      "key": "script.37475f31ee4f",
+      "tr": "Boş bırakılabilir (boyut yanılgısı testi)",
+      "en": "Can be left blank (size bias test)"
+    },
+    {
+      "key": "script.66a9bc148c96",
+      "tr": "🔍 QuPath Ölçümünü Açıkla ve Karşılaştır",
+      "en": "🔍 Reveal and Compare the QuPath Measurement"
+    },
+    {
+      "key": "script.3267374dc212",
+      "tr": "Geçersiz yüzde",
+      "en": "Invalid percentage"
+    },
+    {
+      "key": "script.f833fa0b9f02",
+      "tr": "Hücre oranı tahmini için 0 ile 100 arasında bir sayı girin (ör. 25 veya 27,5).",
+      "en": "Enter a number between 0 and 100 for the cell proportion estimate (e.g. 25 or 27.5)."
+    },
+    {
+      "key": "script.d333fd710145",
+      "tr": "Geçersiz alan yüzdesi",
+      "en": "Invalid area percentage"
+    },
+    {
+      "key": "script.13a74b78269e",
+      "tr": "İsteğe bağlı alan tahmini 0 ile 100 arasında olmalıdır.",
+      "en": "The optional area estimate must be between 0 and 100."
+    },
+    {
+      "key": "script.895571ec8a3b",
+      "tr": "📋 Kopyala",
+      "en": "📋 Copy"
+    },
+    {
+      "key": "script.cb3ed2211f0a",
+      "tr": "Boş proje",
+      "en": "Empty project"
+    },
+    {
+      "key": "script.05f7e81a10c9",
+      "tr": "GrandQC kohort KK özeti",
+      "en": "GrandQC cohort QC summary"
+    },
+    {
+      "key": "script.540d5d46fe47",
+      "tr": "Yazma hatası",
+      "en": "Write error"
+    },
+    {
+      "key": "script.7a75e43c3a3c",
+      "tr": "Görüntü Tipi Ayarla",
+      "en": "Set Image Type"
+    },
+    {
+      "key": "script.5f9cc931fc98",
+      "tr": "Hedef görüntü tipi:",
+      "en": "Target image type:"
+    },
+    {
+      "key": "script.76266db51fee",
+      "tr": "Not: Renk dekonvolüsyon vektörleri varsayılan değerlere sıfırlanır.\nÖzel kalibre vektörler kullanıyorsanız, sonra yeniden uygulayın.",
+      "en": "Note: colour deconvolution vectors are reset to defaults.\nIf you use custom calibrated vectors, apply them again afterwards."
+    },
+    {
+      "key": "script.a1340d7f708e",
+      "tr": "Geçersiz tip",
+      "en": "Invalid type"
+    },
+    {
+      "key": "script.8d13b11c3ecf",
+      "tr": "Görüntü tipi tanınmadı: ",
+      "en": "Image type not recognised: "
+    },
+    {
+      "key": "script.a621e2e6af14",
+      "tr": "Toplu güncelleme için bir QuPath projesi gerekir.\n[File → Project → Create / Open project] ile bir proje açın.",
+      "en": "Batch updates require a QuPath project.\nOpen a project with [File → Project → Create / Open project]."
+    },
+    {
+      "key": "script.31c96e8d3208",
+      "tr": "Eşik boş",
+      "en": "Empty threshold result"
+    },
+    {
+      "key": "script.7a4be4011db1",
+      "tr": "Uygun seçim yok",
+      "en": "No suitable selection"
+    },
+    {
+      "key": "script.1dc2ed4a181f",
+      "tr": "Yumuşatma yapılamadı",
+      "en": "Could not smooth"
+    },
+    {
+      "key": "script.66586705b08c",
+      "tr": "Lamda piksel boyutu (µm) tanımlı değil; yoğunluk hesaplanamaz.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).",
+      "en": "No pixel size (µm) is defined for this slide; density cannot be calculated.\n\nSet it with: Extensions → Atölye → Utilities → Basic tools → Calibration (pixel size)."
+    },
+    {
+      "key": "script.daf4df7bf253",
+      "tr": "Önce A ve B sınıflı alan anotasyonları olan bir lam açın.",
+      "en": "Open a slide with area annotations of classes A and B first."
+    },
+    {
+      "key": "script.542aac19e376",
+      "tr": "Lamda piksel boyutu (µm) tanımlı değil; alan µm² olarak hesaplanamaz.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).",
+      "en": "No pixel size (µm) is defined for this slide; area cannot be calculated in µm².\n\nSet it with: Extensions → Atölye → Utilities → Calibration (pixel size)."
+    },
+    {
+      "key": "script.c2526a49ba64",
+      "tr": "Kesişim alanı — A sınıfı",
+      "en": "Intersection area — class A"
+    },
+    {
+      "key": "script.b0d880955b72",
+      "tr": "Ölçüm hangi sınıfın anotasyonlarına yazılsın? (A — 'B ile örtüşme' burada birikir)",
+      "en": "Which class's annotations should receive the measurements? (A — 'overlap with B' is accumulated here)"
+    },
+    {
+      "key": "script.837fc98ea13b",
+      "tr": "Kesişim alanı — B sınıfı",
+      "en": "Intersection area — class B"
+    },
+    {
+      "key": "script.0a644bad5227",
+      "tr": "A'nın hangi sınıfla (B) örtüşmesi ölçülsün?",
+      "en": "With which class (B) should A's overlap be measured?"
+    },
+    {
+      "key": "script.527be9b53936",
+      "tr": "Kohort özet toplayıcı",
+      "en": "Cohort summary collector"
+    },
+    {
+      "key": "script.f5ab1abd2b8c",
+      "tr": "Önce nesneleri (hücre tespiti/anotasyon) olan bir lam açın.",
+      "en": "Open a slide with objects (cell detections/annotations) first."
+    },
+    {
+      "key": "script.f012b5aa73f5",
+      "tr": "Dış bükey zarf",
+      "en": "Convex hull"
+    },
+    {
+      "key": "script.e0ff07c9d734",
+      "tr": "Zarfı hangi nesnelerden oluşturayım?",
+      "en": "Which objects should form the hull?"
+    },
+    {
+      "key": "script.1cdff0f34508",
+      "tr": "Yetersiz nesne",
+      "en": "Not enough objects"
+    },
+    {
+      "key": "script.53cb8e0abe69",
+      "tr": "Geometri yok",
+      "en": "No geometry"
+    },
+    {
+      "key": "script.131e5a40a612",
+      "tr": "Zarf yok",
+      "en": "No hull"
+    },
+    {
+      "key": "script.ad2ee773f83d",
+      "tr": "Görüntü ve proje açık değil",
+      "en": "No image or project open"
+    },
+    {
+      "key": "script.b042ebdc6319",
+      "tr": "İşlem kaydı — kapsam",
+      "en": "Run manifest — scope"
+    },
+    {
+      "key": "script.5cd1d31e7f26",
+      "tr": "Manifest hangi kapsamda oluşturulsun?",
+      "en": "For which scope should the manifest be created?"
+    },
+    {
+      "key": "script.5648e473d696",
+      "tr": "İşlem kaydı — not",
+      "en": "Run manifest — note"
+    },
+    {
+      "key": "script.37e425c86319",
+      "tr": "İsteğe bağlı not (ör. kullanılan parametre seti, analiz amacı):",
+      "en": "Optional note (e.g. parameter set used, purpose of analysis):"
+    },
+    {
+      "key": "script.f3757a3b3b1f",
+      "tr": "Önce etiketlerin ait olduğu WSI'yi açın.",
+      "en": "Open the WSI to which the labels belong first."
+    },
+    {
+      "key": "script.0dbf494fd200",
+      "tr": "Bu görüntüde hiç tespit yok. Önce hücre tespiti çalıştırın (ilgili modüllerde).",
+      "en": "This image has no detections. Run cell detection first (in the relevant modules)."
+    },
+    {
+      "key": "script.fe7de7b41be9",
+      "tr": "Boş dosya",
+      "en": "Empty file"
+    },
+    {
+      "key": "script.1894765fb2c5",
+      "tr": "Tabloda başlık + en az bir veri satırı bekleniyor.",
+      "en": "The table must contain a header and at least one data row."
+    },
+    {
+      "key": "script.8294bd16a925",
+      "tr": "Eşleştirme sütunu yok",
+      "en": "No matching column"
+    },
+    {
+      "key": "script.a5d6bd4eb946",
+      "tr": "Tablo, tespitleri eşleştirmek için 'object_id' (önerilen) ya da\n'centroid_x_um' + 'centroid_y_um' sütunlarını içermelidir.\n\nİpucu: özellik matrisi yardımcısı object_id sütununu otomatik yazar.",
+      "en": "The table must contain 'object_id' (recommended) or\n'centroid_x_um' + 'centroid_y_um' columns to match detections.\n\nTip: the feature matrix helper writes the object_id column automatically."
+    },
+    {
+      "key": "script.dd4f8b850724",
+      "tr": "Eşleşme yok",
+      "en": "No matches"
+    },
+    {
+      "key": "script.07bffa7add1b",
+      "tr": "Tablodaki hiçbir satır mevcut tespitlerle eşleşmedi. ",
+      "en": "No table rows matched the current detections. "
+    },
+    {
+      "key": "script.95f37f2f01b2",
+      "tr": "object_id'ler aynı projeden mi?",
+      "en": "Are the object_id values from the same project?"
+    },
+    {
+      "key": "script.69ab3de67cfa",
+      "tr": "centroid'ler aynı kalibrasyonda mı?",
+      "en": "Do the centroids use the same calibration?"
+    },
+    {
+      "key": "script.6595248f2575",
+      "tr": "Önce merkez/çevreye bölünecek alanı anotasyon olarak çizip seçin.",
+      "en": "Draw and select the region to divide into centre/periphery first."
+    },
+    {
+      "key": "script.821202426064",
+      "tr": "Lamda piksel boyutu (µm) tanımlı değil; alan µm² olarak üretilemez.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).",
+      "en": "No pixel size (µm) is defined for this slide; area cannot be produced in µm².\n\nSet it with: Extensions → Atölye → Utilities → Calibration (pixel size)."
+    },
+    {
+      "key": "script.22e7e0edca91",
+      "tr": "Alan seçili değil",
+      "en": "No area selected"
+    },
+    {
+      "key": "script.827e93b4fcce",
+      "tr": "Eşit-alan merkez/çevre",
+      "en": "Equal-area centre/periphery"
+    },
+    {
+      "key": "script.3eddff49b493",
+      "tr": "Kaç eşit alanlı bölge? (2 = merkez + çevre; en çok ",
+      "en": "How many equal-area regions? (2 = centre + periphery; maximum "
+    },
+    {
+      "key": "script.54cde46c5e98",
+      "tr": "Geçersiz sayı",
+      "en": "Invalid number"
+    },
+    {
+      "key": "script.cd8581a452e1",
+      "tr": "Bölge sayısı bir tam sayı olmalı (2–",
+      "en": "The number of regions must be an integer (2–"
+    },
+    {
+      "key": "script.62605099298f",
+      "tr": "Bölge yok",
+      "en": "No regions"
+    },
+    {
+      "key": "script.ae2303e91c93",
+      "tr": "Çalışma günlüğünü kaydet",
+      "en": "Save run log"
+    },
+    {
+      "key": "script.f78f1962faba",
+      "tr": "Mitoz modelleri listesi",
+      "en": "Mitosis model list"
+    },
+    {
+      "key": "script.6c014450748f",
+      "tr": "Menüden açın: Extensions → Atölye → Modüller → Mitoz tespiti → Mitoz modelleri listesi",
+      "en": "Open from the menu: Extensions → Atölye → Modules → Mitosis detection → Mitosis models hub"
+    },
+    {
+      "key": "script.1fe777c4e88b",
+      "tr": "Mitoz modelleri karşılaştırma",
+      "en": "Mitosis model comparison"
+    },
+    {
+      "key": "script.8a12d6b747a3",
+      "tr": "Önce bir H&E lamı açın, ilgi ALANINI çizip seçin, sonra \"⟳ Yenile\".",
+      "en": "Open an H&E slide, draw and select a REGION of interest, then choose \"⟳ Refresh\"."
+    },
+    {
+      "key": "script.1b1fe25a3f7e",
+      "tr": "Aynı seçili bölgede birden çok mitoz DEDEKTÖRÜNÜ çalıştırıp tespitlerini karşılaştırır. Her model ayrı renkte eklenir; sonra modeller-arası uzlaşı (konsensüs) hesaplanır. Kurulu olmayan model gri görünür.",
+      "en": "Runs multiple mitosis DETECTORS in the same selected region and compares their detections. Each model is added in a separate colour; agreement (consensus) across models is then calculated. Models that are not installed appear grey."
+    },
+    {
+      "key": "script.bc1363cae3f4",
+      "tr": "⚠ \"kurulu değil\" görünen model(ler) için \"⚙ Python ortamı\" ile ilgili ortamı kurun.",
+      "en": "⚠ For model(s) marked \"not installed\", install the relevant environment with \"⚙ Python environment\"."
+    },
+    {
+      "key": "script.1221fc880375",
+      "tr": "boş = 10",
+      "en": "blank = 10"
+    },
+    {
+      "key": "script.2bf5f5e0d9ee",
+      "tr": "boş = her modelin varsayılanı",
+      "en": "blank = each model's default"
+    },
+    {
+      "key": "script.81d418530836",
+      "tr": "Eşleşme yarıçapı (µm):",
+      "en": "Matching radius (µm):"
+    },
+    {
+      "key": "script.f8eebb03c5a8",
+      "tr": "Ortak duyarlılık eşiği:",
+      "en": "Shared sensitivity threshold:"
+    },
+    {
+      "key": "script.5002ed77b135",
+      "tr": "Eşleşme yarıçapı: iki modelin noktaları bu mesafeden (µm) yakınsa \"aynı mitoz\" sayılır (varsayılan ~10 µm). Ortak duyarlılık: boşsa her model kendi varsayılan eşiğini kullanır (KongNet 0.99 çok tutucudur → adil karşılaştırma için ör. 0.5 girin; eşik kullanan tüm dedektörlere uygulanır). HoVer-NeXt isteğe bağlıdır: mitoz dedektörü değil, çekirdek sınıflandırıcısıdır — eşik uygulanmaz, kalibrasyon ister ve eklenirse konsensüs (çalışan tüm modellerde bulunanlar) daralır.",
+      "en": "Matching radius: points from two models closer than this distance (µm) count as the \"same mitosis\" (default ~10 µm). Shared sensitivity: when blank, each model uses its default threshold (KongNet 0.99 is very conservative → enter e.g. 0.5 for a fair comparison; applies to all detectors that use a threshold). HoVer-NeXt is optional: it is a nucleus classifier rather than a mitosis detector — the threshold does not apply, calibration is required, and including it narrows the consensus (detections found by all running models)."
+    },
+    {
+      "key": "script.dac815c1f71c",
+      "tr": "Seçili bölge: %d anotasyon · Kalibrasyon: %s",
+      "en": "Selected region: %d annotations · Calibration: %s"
+    },
+    {
+      "key": "script.dbe94663bb77",
+      "tr": "⚠ Önce en az 1 alan anotasyonu çizin/seçin.",
+      "en": "⚠ Draw/select at least one area annotation first."
+    },
+    {
+      "key": "script.12071e493772",
+      "tr": "⚠ Kalibrasyon yok — FCOS native çözünürlükte çalışır ve yarıçap piksel varsayımıyla hesaplanır.",
+      "en": "⚠ No calibration — FCOS runs at native resolution and the radius uses an assumed pixel scale."
+    },
+    {
+      "key": "script.edfc11aab1a1",
+      "tr": "⚙ Python ortamı",
+      "en": "⚙ Python environment"
+    },
+    {
+      "key": "script.f943853987bf",
+      "tr": "Atölye Python ortam yöneticisini aç (eksik modelleri kur)",
+      "en": "Open the workshop Python environment manager (install missing models)"
+    },
+    {
+      "key": "script.9833e75f0062",
+      "tr": "Karşılaştır ▶",
+      "en": "Compare ▶"
+    },
+    {
+      "key": "script.44f61c6ed9ee",
+      "tr": "Seçili modelleri aynı bölgede çalıştırıp karşılaştır",
+      "en": "Runs the selected models in the same region and compares them"
+    },
+    {
+      "key": "script.f21946ac82be",
+      "tr": "Modeller sırayla çalışıyor (her biri ilk çalıştırmada ağırlık indirmiş olmalı).",
+      "en": "Models are running in sequence (each model's weights must have been downloaded on first use)."
+    },
+    {
+      "key": "script.f98bd28a223c",
+      "tr": "Karşılaştırma tamam ✅",
+      "en": "Comparison complete ✅"
+    },
+    {
+      "key": "script.c1e9c02df6cb",
+      "tr": "Her model \"Mitoz — <model>\" renkli nokta-anotasyonlarında; ortak bulunanlar \"",
+      "en": "Each model appears as coloured \"Mitoz — <model>\" point annotations; shared detections are \""
+    },
+    {
+      "key": "script.39dfa77240ea",
+      "tr": "\" (yeşil). Her noktanın çevresinde etiketli bir görüntü halkası var (konsensüs halkası biraz daha büyük) — mitoz ortada açık kalır; halka yalnız görüntüdür, veri noktadadır. Annotations panelinden sınıfları aç/kapat ederek örtüşmeyi inceleyin.",
+      "en": "\" (green). A labelled visual ring surrounds each point (consensus rings are slightly larger) — the mitosis at the centre stays visible; the ring is a display aid and the data are in the point. Toggle classes in the Annotations panel to inspect overlap."
+    },
+    {
+      "key": "script.b92ed056af0e",
+      "tr": "◀ Mitoz listesi",
+      "en": "◀ Mitosis list"
+    },
+    {
+      "key": "script.aa26895608db",
+      "tr": "Bu pencereyi kapatıp mitoz modelleri listesini açar — başka bir model başlatmak için",
+      "en": "Closes this window and opens the mitosis model list to start another model"
+    },
+    {
+      "key": "script.66653f05abfc",
+      "tr": "Yalnızca araştırma/eğitim amaçlı UYUM ölçüsü üretir; doğruluk/klinik karar üretmez.",
+      "en": "Produces an AGREEMENT measure for research/teaching only; makes no accuracy/clinical decision."
+    },
+    {
+      "key": "script.a94f01ac5545",
+      "tr": "Mitoz tespiti — model listesi",
+      "en": "Mitosis detection — model list"
+    },
+    {
+      "key": "script.b1e880c53ba9",
+      "tr": "Bir model seçip \"Aç ▶\" ile başlatın (bu liste kapanır). O modelle işiniz bitince sihirbaz penceresindeki \"◀ Mitoz listesi\" düğmesi sizi bu listeye geri getirir; buradan başka bir model başlatabilirsiniz.\nÖnerilen sıra: ① bir dedektörle mitozları bulun → ② isteğe bağlı: atipik sınıflandırıcıyla tipik/atipik ayırın → ③ isteğe bağlı: dedektörleri aynı bölgede karşılaştırın.",
+      "en": "Select a model and choose \"Open ▶\" (this list closes). When you finish with that model, \"◀ Mitosis list\" in its wizard returns here, where you can start another model.\nSuggested order: ① find mitoses with a detector → ② optionally classify typical/atypical mitoses → ③ optionally compare detectors in the same region."
+    },
+    {
+      "key": "script.5d8d564ea73b",
+      "tr": "Açık lam: yok — sihirbazlar bir H&E lamı ve seçili bir alan anotasyonu bekler.",
+      "en": "Open slide: none — the wizards expect an H&E slide and a selected area annotation."
+    },
+    {
+      "key": "script.7dfd8f241999",
+      "tr": "Açık lam: ",
+      "en": "Open slide: "
+    },
+    {
+      "key": "script.d5d1d0d0f7a6",
+      "tr": "⊘ devre dışı",
+      "en": "⊘ disabled"
+    },
+    {
+      "key": "script.b36edf646bfa",
+      "tr": "Aç ▶",
+      "en": "Open ▶"
+    },
+    {
+      "key": "script.7c6320b488f5",
+      "tr": " sihirbazını açar (bu liste kapanır)",
+      "en": " — opens this wizard (this list closes)"
+    },
+    {
+      "key": "script.b50c08f4bdb7",
+      "tr": "Ortam durumu yalnız bilgi amaçlıdır: \"○ kurulu değil\" görünen bir modeli yine de açabilirsiniz; sihirbaz eksik adımı (Python ortamı, model indirme) kendi penceresinde gösterir.",
+      "en": "Environment status is information only: you can still open a model marked \"○ not installed\"; its wizard shows the missing step (Python environment, model download) in its own window."
+    },
+    {
+      "key": "script.bb63e418786d",
+      "tr": "Atölye Python ortam yöneticisini açar; kurulum bitince \"Sihirbaza dön ▶\" bu listeye döner",
+      "en": "Opens the workshop Python environment manager; after installation, \"Return to wizard ▶\" returns to this list"
+    },
+    {
+      "key": "script.0a98be1e643b",
+      "tr": "Sihirbaz açılıyor; açıldığında bu liste kapanır. Listeye dönmek için sihirbazdaki \"◀ Mitoz listesi\" düğmesini kullanın.",
+      "en": "Opening wizard; this list closes when it opens. Use \"◀ Mitosis list\" in the wizard to return here."
+    },
+    {
+      "key": "script.b8a6d810dfb2",
+      "tr": "◀ Listeye dön",
+      "en": "◀ Back to list"
+    },
+    {
+      "key": "script.5329cd419ddd",
+      "tr": "Liste açılamadı",
+      "en": "Could not open list"
+    },
+    {
+      "key": "script.3058538209dd",
+      "tr": "OME-Zarr dışa aktarma — seçenekler",
+      "en": "OME-Zarr export — options"
+    },
+    {
+      "key": "script.5d7f52d35bfc",
+      "tr": "Piramit (çok düzeyli) oluştur",
+      "en": "Create pyramid (multiple levels)"
+    },
+    {
+      "key": "script.24a074b1cbb5",
+      "tr": "Parça boyutu (px):",
+      "en": "Chunk size (px):"
+    },
+    {
+      "key": "script.1626d727a0c8",
+      "tr": "Piramit:",
+      "en": "Pyramid:"
+    },
+    {
+      "key": "script.ce0c9cf58753",
+      "tr": "Sıkıştırma:",
+      "en": "Compression:"
+    },
+    {
+      "key": "script.ba34fa923f16",
+      "tr": "blosc (QuPath varsayılanı)",
+      "en": "blosc (QuPath default)"
+    },
+    {
+      "key": "script.cff275b74696",
+      "tr": "Geçersiz",
+      "en": "Invalid"
+    },
+    {
+      "key": "script.728a3e678707",
+      "tr": "Parça boyutu pozitif olmalı.",
+      "en": "Chunk size must be positive."
+    },
+    {
+      "key": "script.1435eaf7d7b2",
+      "tr": "Parça boyutu çok büyük (≤ 8192).",
+      "en": "Chunk size is too large (≤ 8192)."
+    },
+    {
+      "key": "script.9cc391204f66",
+      "tr": "Sayı formatı",
+      "en": "Number format"
+    },
+    {
+      "key": "script.47e4044a564d",
+      "tr": "Parça boyutu tam sayı olmalı (ör. 512).",
+      "en": "Chunk size must be an integer (e.g. 512)."
+    },
+    {
+      "key": "script.4a2f706ae19a",
+      "tr": "Önce bir lam açın, sonra bu betiği tekrar çalıştırın.",
+      "en": "Open a slide first, then run this script again."
+    },
+    {
+      "key": "script.25ef2c931d3f",
+      "tr": "Seçili anotasyon yok",
+      "en": "No annotations selected"
+    },
+    {
+      "key": "script.91303e430279",
+      "tr": "'Seçili anotasyon(lar)' kapsamı için önce bir veya birden çok anotasyon seçin\n(Annotations panelinden ya da lam üzerinde tıklayarak), sonra tekrar çalıştırın.",
+      "en": "For 'Selected annotation(s)' scope, select one or more annotations first\n(in the Annotations panel or by clicking on the slide), then run again."
+    },
+    {
+      "key": "script.9908dfadc2cc",
+      "tr": "Seçili anotasyonun sınırlayıcı kutusu görüntü dışında.",
+      "en": "The selected annotation's bounding box is outside the image."
+    },
+    {
+      "key": "script.a899584cd8f6",
+      "tr": "Büyük dışa aktarım",
+      "en": "Large export"
+    },
+    {
+      "key": "script.5afbdbb8722c",
+      "tr": "Bu, tüm lamı (%,d × %,d px) OME-Zarr'a yazacak.\nBüyük lamlarda dakikalar sürebilir ve diskte GB'larca yer kaplayabilir.\n\nDevam edilsin mi? (Yalnızca bir bölge istiyorsanız iptal edip bir anotasyon\nseçin ve 'Seçili anotasyon(lar)' kapsamını kullanın.)",
+      "en": "This will write the whole slide (%,d × %,d px) to OME-Zarr.\nLarge slides may take minutes and use GBs of disk space.\n\nContinue? (For a single region, cancel, select an annotation\nand use 'Selected annotation(s)' scope.)"
+    },
+    {
+      "key": "script.18c1683b74b6",
+      "tr": "Bu yardımcı proje seviyesinde çalışır.\nÖnce [File → Project] ile bir proje açın, sonra tekrar çalıştırın.",
+      "en": "This helper works at project level.\nOpen a project with [File → Project] first, then run again."
+    },
+    {
+      "key": "script.415060817466",
+      "tr": "Zaten mevcut",
+      "en": "Already exists"
+    },
+    {
+      "key": "script.7d662e93e1b3",
+      "tr": "Projenizde zaten '",
+      "en": "Your project already has a classifier named '"
+    },
+    {
+      "key": "script.4e1f76131b98",
+      "tr": "' adlı bir sınıflandırıcı var.\n",
+      "en": "'.\n"
+    },
+    {
+      "key": "script.2d1f017333d4",
+      "tr": "Mevcut modeliniz korunuyor; örnek model kurulmadı.\n\n",
+      "en": "Your existing model is kept; the example model was not installed.\n\n"
+    },
+    {
+      "key": "script.3ca7b49b31ff",
+      "tr": "Kendi modelinizi kullanmak istemiyorsanız önce onu silin, sonra bu\n",
+      "en": "If you do not want to use your own model, delete it first, then run this\n"
+    },
+    {
+      "key": "script.685887a1887c",
+      "tr": "yardımcıyı tekrar çalıştırın.",
+      "en": "helper again."
+    },
+    {
+      "key": "script.c01c8afe6d7a",
+      "tr": "Örnek model alınamadı",
+      "en": "Could not obtain example model"
+    },
+    {
+      "key": "script.d5b355bfb752",
+      "tr": "Örnek sınıflandırıcı ne eklenti JAR'ında bulundu ne de internetten indirilebildi.\n\nÇözüm:\n  • İnternet bağlantınızı kontrol edip tekrar deneyin, veya\n  • Modeli elle indirin: OSF veri paketi osf.io/v7mjq → atolye-eklenti/, veya\n    GitHub: github.com/sbalci/qupath-extension-workshop (classifiers/), ve\n    projenizin classifiers/ klasörüne koyun.\n\nAlternatif: kendi modelinizi Tümör/Stroma modülünün sihirbazından 'Yeni sınıflandırıcı eğit' ile eğitin.",
+      "en": "The example classifier was neither found in the extension JAR nor downloaded.\n\nNext steps:\n  • Check your internet connection and try again, or\n  • Download the model manually: OSF data package osf.io/v7mjq → atolye-eklenti/, or\n    GitHub: github.com/sbalci/qupath-extension-workshop (classifiers/), and\n    place it in your project's classifiers/ folder.\n\nAlternative: train your own model with 'Train a new classifier ▶' in the Tumor/Stroma module's wizard."
+    },
+    {
+      "key": "script.5c4e48b0a222",
+      "tr": "Sınıflandırıcı yüklenemedi",
+      "en": "Could not load classifier"
+    },
+    {
+      "key": "script.9ebfd1b74183",
+      "tr": "Eklentiyle gelen örnek model okunamadı (JSON ayrıştırılamadı).",
+      "en": "The bundled example model could not be read (JSON could not be parsed)."
+    },
+    {
+      "key": "script.ff82ad1ace23",
+      "tr": "Kuruldu",
+      "en": "Installed"
+    },
+    {
+      "key": "script.4285532a4453",
+      "tr": "' projenize kaydedildi.\n\n",
+      "en": "' has been saved to your project.\n\n"
+    },
+    {
+      "key": "script.671f865057f8",
+      "tr": "[Classify → Pixel classification] listesinde görünür; Tümör/Stroma modülünü\n",
+      "en": "It appears in [Classify → Pixel classification]; you can now use this model\n"
+    },
+    {
+      "key": "script.2b350407f462",
+      "tr": "artık bu modelle çalıştırabilirsiniz.\n\n",
+      "en": "in the Tumor/Stroma module.\n\n"
+    },
+    {
+      "key": "script.47bd28634423",
+      "tr": "⚠️ Yalnızca araştırma/eğitim amaçlıdır.",
+      "en": "⚠️ For research/teaching only."
+    },
+    {
+      "key": "script.67d3df87bdf1",
+      "tr": "\n\nEvet: ",
+      "en": "\n\nYes: "
+    },
+    {
+      "key": "script.06ce0f1a5ed0",
+      "tr": "\nHayır: ",
+      "en": "\nNo: "
+    },
+    {
+      "key": "script.b0233b7e0986",
+      "tr": "Önce kaynak yapıyı (tümör vb.) anotasyon olarak çizip seçin.",
+      "en": "Draw and select the source structure (e.g. tumour) as an annotation first."
+    },
+    {
+      "key": "script.42db62f0c526",
+      "tr": "Lamda piksel boyutu (µm) tanımlı değil; bant µm cinsinden üretilemez.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).",
+      "en": "No pixel size (µm) is defined for this slide; the band cannot be produced in µm.\n\nSet it with: Extensions → Atölye → Utilities → Calibration (pixel size)."
+    },
+    {
+      "key": "script.584f0675ba8a",
+      "tr": "Yapı seçili değil",
+      "en": "No structure selected"
+    },
+    {
+      "key": "script.28c908cb2604",
+      "tr": "Peritümöral bant",
+      "en": "Peritumoral band"
+    },
+    {
+      "key": "script.24a50c4af048",
+      "tr": "Bant genişliği (µm):",
+      "en": "Band width (µm):"
+    },
+    {
+      "key": "script.6342080b5aeb",
+      "tr": "Bant genişliği bir sayı olmalı (µm).",
+      "en": "Band width must be a number (µm)."
+    },
+    {
+      "key": "script.842cac15d901",
+      "tr": "Bant yönü:",
+      "en": "Band direction:"
+    },
+    {
+      "key": "script.e6fd00663be3",
+      "tr": "Geçersiz genişlik",
+      "en": "Invalid width"
+    },
+    {
+      "key": "script.139137752d51",
+      "tr": "Bant genişliği pozitif olmalı (µm).",
+      "en": "Band width must be positive (µm)."
+    },
+    {
+      "key": "script.cc7d90585cd5",
+      "tr": "Bant yok",
+      "en": "No band"
+    },
+    {
+      "key": "script.b0052b4a9349",
+      "tr": "Senkron ızgara",
+      "en": "Synchronized grid"
+    },
+    {
+      "key": "script.31b37e71a786",
+      "tr": "Önce bir PROJE açın — ızgara projedeki lamlardan doldurulur.",
+      "en": "Open a PROJECT first — the grid is populated from project slides."
+    },
+    {
+      "key": "script.11cb50e48ef8",
+      "tr": "Projede en az 2 slayt olmalı (senkron ızgara birden çok slayt gösterir).",
+      "en": "The project must contain at least two slides (the synchronized grid shows multiple slides)."
+    },
+    {
+      "key": "script.307d6e930184",
+      "tr": "Senkron ızgara — seri lamları birlikte aç",
+      "en": "Synchronized grid — open serial slides together"
+    },
+    {
+      "key": "script.d17e306c9728",
+      "tr": "Açılacak lamları işaretleyin (aynı vakanın seri kesitleri). QuPath çoklu görünüm ızgarası kurar ve panelleri SENKRONLAR — birinde kaydır/yakınlaştır, hepsi birlikte hareket eder. En fazla ",
+      "en": "Check the slides to open (serial sections from the same case). QuPath creates a multi-view grid and SYNCHRONIZES the panels — pan/zoom in one and all move together. Maximum "
+    },
+    {
+      "key": "script.7c3513ac40e2",
+      "tr": " panel (2×3).",
+      "en": " panels (2×3)."
+    },
+    {
+      "key": "script.814c2d28ea9a",
+      "tr": "⚠ Senkron = \"birlikte hareket\", otomatik hizalama DEĞİL. Ham seri kesitler derine yakınlaştıkça örtüşmeyebilir. Gerçek örtüşme için ÖNCEDEN hizalanmış görüntüler açın (VALIS çıktısı / dönüşümü gömülü OME-TIFF). Ayrıntı: Ekler → Görüntü Hizalama §9.",
+      "en": "⚠ Synchronized means \"moving together\"; it does not perform automatic registration. Unregistered serial sections may fail to overlap when zoomed in. For spatial overlap, open images that have ALREADY been registered (VALIS output / OME-TIFF with embedded transform). Details: Appendices → Image Registration §9."
+    },
+    {
+      "key": "script.ef0b6d89aaa3",
+      "tr": "Tümünü seç",
+      "en": "Select all"
+    },
+    {
+      "key": "script.77d4b2feec04",
+      "tr": "Tümünü kaldır",
+      "en": "Clear all"
+    },
+    {
+      "key": "script.0125f10f5179",
+      "tr": "Aç (senkron ızgara)",
+      "en": "Open (synchronized grid)"
+    },
+    {
+      "key": "script.a0d2eaac284a",
+      "tr": "Tek görünüme dön",
+      "en": "Return to single view"
+    },
+    {
+      "key": "script.39dc8cd96806",
+      "tr": "En az 2 lam seçin.",
+      "en": "Select at least two slides."
+    },
+    {
+      "key": "script.21c6a7550dbe",
+      "tr": "Görüntüleyicilerdeki bazı görüntülerde kaydedilmemiş değişiklik var; ızgara bunların yerini alır ve değişiklikler kaybolabilir. Devam edilsin mi?",
+      "en": "Some images in the viewers have unsaved changes; the grid replaces them and the changes may be lost. Continue?"
+    },
+    {
+      "key": "script.1b0bd09732bd",
+      "tr": "Izgara ayarlanamadı (çok fazla açık görüntüleyici olabilir). Fazla görüntüleyicileri kapatıp yeniden deneyin.",
+      "en": "Could not configure the grid (too many viewers may be open). Close extra viewers and try again."
+    },
+    {
+      "key": "script.068420139469",
+      "tr": " lam senkron ızgarada açılıyor",
+      "en": " slides opening in synchronized grid"
+    },
+    {
+      "key": "script.017e56b7ed83",
+      "tr": ". Kaydırma/yakınlaştırma artık ",
+      "en": ". Panning/zooming now moves "
+    },
+    {
+      "key": "script.a082fcbea59e",
+      "tr": "birlikte. (Yakınlaştırmayı tam eşitlemek için: View → Multi-view → Match viewer resolutions.)",
+      "en": "together. (To match zoom exactly: View → Multi-view → Match viewer resolutions.)"
+    },
+    {
+      "key": "script.6fb77d9ff96a",
+      "tr": "Kapatma iptal edildi; ızgara olduğu gibi bırakıldı (senkron kapalı).",
+      "en": "Closing was cancelled; the grid was kept as it was (synchronization off)."
+    },
+    {
+      "key": "script.4071339d04e9",
+      "tr": "Tek görünüme dönüldü (senkron kapalı).",
+      "en": "Returned to single view (synchronization off)."
+    },
+    {
+      "key": "script.f8da58985e6f",
+      "tr": "Önce sınıflandırılmış tespitler içeren bir lam açın.",
+      "en": "Open a slide with classified detections first."
+    },
+    {
+      "key": "script.8094a507868c",
+      "tr": "Stroma bulunamadı",
+      "en": "No stroma found"
+    },
+    {
+      "key": "script.b2d0e9e97b0d",
+      "tr": "Hücre bulunamadı",
+      "en": "No cells found"
+    },
+    {
+      "key": "script.e5eb54ec8b86",
+      "tr": "Önce tahminlerin ait olduğu WSI'yi açın.",
+      "en": "Open the WSI to which the predictions belong first."
+    },
+    {
+      "key": "script.21192fd373aa",
+      "tr": "Geçersiz GeoJSON",
+      "en": "Invalid GeoJSON"
+    },
+    {
+      "key": "script.5e3831af61ed",
+      "tr": "Dosyada 'features' dizisi yok (FeatureCollection bekleniyor).",
+      "en": "The file has no 'features' array (FeatureCollection expected)."
+    },
+    {
+      "key": "script.b147d1274e17",
+      "tr": "GeoJSON okunamadı",
+      "en": "Could not read GeoJSON"
+    },
+    {
+      "key": "script.5430313684bd",
+      "tr": "Dosya ayrıştırılamadı:\n\n",
+      "en": "Could not parse file:\n\n"
+    },
+    {
+      "key": "script.59836cc28f23",
+      "tr": "Poligon yok",
+      "en": "No polygons"
+    },
+    {
+      "key": "script.1149564c8762",
+      "tr": "GeoJSON dosyasında geçerli Polygon/MultiPolygon özelliği bulunamadı (atlanan: ",
+      "en": "No valid Polygon/MultiPolygon features were found in the GeoJSON file (skipped: "
+    },
+    {
+      "key": "script.dd2c102cce23",
+      "tr": "Önceki içe aktarım bulundu",
+      "en": "Previous import found"
+    },
+    {
+      "key": "script.cb9ed0395ead",
+      "tr": "Bu görüntüde önceki bir içe aktarımdan ",
+      "en": "This image has "
+    },
+    {
+      "key": "script.465be7ff125b",
+      "tr": " anotasyon var (\"",
+      "en": " annotations from a previous import (\""
+    },
+    {
+      "key": "script.732bf5e9932d",
+      "tr": "• Ekle: hiçbir şey silinmez; yeni poligonlar öncekilerin yanına eklenir (aynı dosyayı\n",
+      "en": "• Add: nothing is deleted; new polygons are added alongside the previous ones (importing\n"
+    },
+    {
+      "key": "script.186ea928ba70",
+      "tr": "  yeniden içe aktarıyorsanız çift kopya oluşur).\n",
+      "en": "  the same file again creates duplicates).\n"
+    },
+    {
+      "key": "script.51a408148751",
+      "tr": "• Değiştir: yalnız bu önceki anotasyonlar kaldırılır (elle düzelttiğiniz sınırlar dahil);\n",
+      "en": "• Replace: only those previous annotations are removed (including manually corrected boundaries);\n"
+    },
+    {
+      "key": "script.4d12c7800032",
+      "tr": "  altlarındaki tespitler ve diğer anotasyonlar korunur.",
+      "en": "  their child detections and other annotations are kept."
+    },
+    {
+      "key": "script.8f3603c4331c",
+      "tr": "Yalnızca sahipsiz tespitleri sil",
+      "en": "Delete only unparented detections"
+    },
+    {
+      "key": "script.69f6bbc48d61",
+      "tr": "Tümünü sil",
+      "en": "Delete all"
+    },
+    {
+      "key": "script.757c1c356953",
+      "tr": "Küçük çekirdekleri sil…",
+      "en": "Delete small nuclei…"
+    },
+    {
+      "key": "script.69bd386127f2",
+      "tr": "Silinecek tespit yok",
+      "en": "No detections to delete"
+    },
+    {
+      "key": "script.9b1359419b67",
+      "tr": "Bu lamda hiç detection nesnesi bulunmuyor.",
+      "en": "This slide has no detection objects."
+    },
+    {
+      "key": "script.f20532d46f48",
+      "tr": "Tüm tespitler silinsin mi?",
+      "en": "Delete all detections?"
+    },
+    {
+      "key": "script.dbd45ead7564",
+      "tr": "Bu lamdaki %,d tespitin TAMAMI silinecek (anotasyonlar korunur).\n\nDevam edilsin mi?",
+      "en": "ALL %,d detections on this slide will be deleted (annotations are kept).\n\nContinue?"
+    },
+    {
+      "key": "script.2f648e73e944",
+      "tr": "Olanaksız küçük çekirdekler",
+      "en": "Implausibly small nuclei"
+    },
+    {
+      "key": "script.7d37036dacf8",
+      "tr": "Bu alandan (µm²) KÜÇÜK çekirdekler silinsin:",
+      "en": "Delete nuclei SMALLER than this area (µm²):"
+    },
+    {
+      "key": "script.b6c82c9b997b",
+      "tr": "Eşik bir sayı olmalı (µm²).",
+      "en": "The threshold must be a number (µm²)."
+    },
+    {
+      "key": "script.46fe7852ffec",
+      "tr": "Geçersiz eşik",
+      "en": "Invalid threshold"
+    },
+    {
+      "key": "script.831141421ea3",
+      "tr": "Eşik pozitif olmalı (µm²).",
+      "en": "The threshold must be positive (µm²)."
+    },
+    {
+      "key": "script.186e6331ed6b",
+      "tr": "Sınıflı anotasyon yok",
+      "en": "No classified annotations"
+    },
+    {
+      "key": "script.2739bdcf8bd3",
+      "tr": "Bölge maskesi üretmek için anotasyonların bir SINIFI (PathClass) olmalı\n(ör. Tumor, Stroma). Lamda sınıflı anotasyon bulunamadı.\n\nÇözüm: anotasyonları sınıflandırın (Tümör/Stroma modülü).",
+      "en": "Annotations need a CLASS (PathClass) to generate a region mask\n(e.g. Tumor, Stroma). No classified annotations were found on this slide.\n\nNext step: classify the annotations (Tumor/Stroma module)."
+    },
+    {
+      "key": "script.d7a8778b920f",
+      "tr": "TIA Toolbox için bölge maskesi",
+      "en": "Region mask for TIA Toolbox"
+    },
+    {
+      "key": "script.49df253cfec4",
+      "tr": "Maske çözünürlüğü (µm/px) — düşük çözünürlük = küçük dosya (öneri: 2–8):",
+      "en": "Mask resolution (µm/px) — lower resolution = smaller file (suggested: 2–8):"
+    },
+    {
+      "key": "script.9c654ce50a8b",
+      "tr": "Çözünürlük ondalık bir sayı olmalı (ör. 4.0).",
+      "en": "Resolution must be a decimal number (e.g. 4.0)."
+    },
+    {
+      "key": "script.b2fc0aa1ffc0",
+      "tr": "Çözünürlük pozitif olmalı.",
+      "en": "Resolution must be positive."
+    },
+    {
+      "key": "script.6031d7e4b44f",
+      "tr": "Büyük maske",
+      "en": "Large mask"
+    },
+    {
+      "key": "script.39e4d23c94b9",
+      "tr": "Maske yaklaşık %,d × %,d piksel olacak — büyük bir dosya.%n%nDevam edilsin mi? (Çözünürlüğü [µm/px] artırmak maskeyi küçültür.)",
+      "en": "The mask will be approximately %,d × %,d pixels — a large file.%n%nContinue? (Increasing the resolution value [µm/px] makes the mask smaller.)"
+    },
+    {
+      "key": "script.413b9dadce29",
+      "tr": "Maske yazılamadı",
+      "en": "Could not write mask"
+    },
+    {
+      "key": "script.250da01cf5ff",
+      "tr": "Önce dearray edilmiş bir TMA lamı açın.",
+      "en": "Open a dearrayed TMA slide first."
+    },
+    {
+      "key": "script.f8d7e11126af",
+      "tr": "TMA bulunamadı",
+      "en": "No TMA found"
+    },
+    {
+      "key": "script.c12ffb3efff3",
+      "tr": "Tuş/fare göstergesi",
+      "en": "Key/mouse indicator"
+    },
+    {
+      "key": "script.b33b352bd187",
+      "tr": "QuPath ana penceresi bulunamadı; gösterge açılamadı.",
+      "en": "QuPath's main window was not found; could not open the indicator."
+    },
+    {
+      "key": "script.e66e0cbe2791",
+      "tr": "Kapatıldı.",
+      "en": "Closed."
+    },
+    {
+      "key": "script.71b0b7844134",
+      "tr": "Açıldı — bastığınız tuşlar ve fare işlemleri ekranda görünür. Kapatmak için betiği yeniden çalıştırın.",
+      "en": "Opened — keystrokes and mouse actions are visible on screen. Run the script again to close it."
+    },
+    {
+      "key": "script.17804adf064e",
+      "tr": "Gösterge açılamadı: ",
+      "en": "Could not open indicator: "
+    },
+    {
+      "key": "script.f8708d8abcd6",
+      "tr": "Önce WSInfer çıkarımı yapılmış bir lam açın.",
+      "en": "Open a slide with WSInfer inference results first."
+    },
+    {
+      "key": "script.ab46e48d894b",
+      "tr": "Karo yok",
+      "en": "No tiles"
+    },
+    {
+      "key": "script.753ba3398a45",
+      "tr": "Karoları birleştir?",
+      "en": "Merge tiles?"
+    },
+    {
+      "key": "script.b5baebf361c4",
+      "tr": "Her sınıf için karoları tek bir kilitli anotasyona birleştireyim mi?\n(Tümör alanı gibi bölge ölçümleri için pratiktir; çok sayıda karoda biraz sürebilir.)",
+      "en": "Merge each class's tiles into a single locked annotation?\n(Useful for region measurements such as tumour area; may take time with many tiles.)"
+    },
+    {
+      "key": "script.f515091dc00d",
+      "tr": "Lamda piksel boyutu (µm) tanımlı değil; mesafe µm olarak hesaplanamaz.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).",
+      "en": "No pixel size (µm) is defined for this slide; distances cannot be calculated in µm.\n\nSet it with: Extensions → Atölye → Utilities → Calibration (pixel size)."
+    },
+    {
+      "key": "script.56149e028592",
+      "tr": "Yapıya uzaklık — korelasyon",
+      "en": "Distance to structure — correlation"
+    },
+    {
+      "key": "script.8203bed22323",
+      "tr": "İsteğe bağlı: bir hücre ölçümünün mesafeyle Pearson/Spearman korelasyonu?\n(\"Bu belirteç yapıya yaklaştıkça değişiyor mu?\")",
+      "en": "Optional: correlate a cell measurement with distance using Pearson/Spearman?\n(\"Does this marker change closer to the structure?\")"
+    },
+    {
+      "key": "script.ffc031074489",
+      "tr": "Piksel boyutu tanımlı değil; hücre/mm² hesaplanamaz.",
+      "en": "No pixel size is defined; cells/mm² cannot be calculated."
+    },
+    {
+      "key": "script.acef16918bfc",
+      "tr": "Analiz alanı seçili değil",
+      "en": "No analysis area selected"
+    },
+    {
+      "key": "script.17f12d8e0b7d",
+      "tr": "Yoğunluk haritası için ölçülecek anotasyonları açıkça seçin.",
+      "en": "Explicitly select the annotations to measure for the density map."
+    },
+    {
+      "key": "script.b4950149348d",
+      "tr": "Geçersiz analiz alanı",
+      "en": "Invalid analysis area"
+    },
+    {
+      "key": "script.fb9e7cf45f98",
+      "tr": "Seçili anotasyonlar geçerli bir analiz alanı oluşturmuyor.",
+      "en": "The selected annotations do not form a valid analysis area."
     }
   ],
   "source_contracts": {
@@ -3130,6 +5373,266 @@
     "yardimci-grandqc-sihirbaz.groovy": {
       "revision": "a93a2117daf270c8a867eeb39575850c771c9fd2",
       "sha256": "c66a490440658650695f8a8499c5d7d07aee3fc43fd6b03159b4600b7174be2a"
+    },
+    "yardimci-ajan-kopru-denetimi.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "eec2568da2f956c76e250ca4ef3535a07caad250a5a0f1133ae1fef32a70152c"
+    },
+    "yardimci-alan-pozitiflik.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "60fc745ee2925ccd4bb007a93e7a419e762345cb77259c52c1730ffb601b3bd0"
+    },
+    "yardimci-anotasyon-disa-aktar.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "fa144c6b1393f8db031071d64658a80a3504ae1139bbc35f0e8fef2d75aaff34"
+    },
+    "yardimci-anotasyon-ice-aktar.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "44de68de42478b5abc09d13e6eabff4d74c698ca2b899dda3db17f764ad2ccba"
+    },
+    "yardimci-anotasyon-qc.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "81214cd5cdb0d0bb0d65d7f5fd47510b9af5a8e5df95f02775b506348ade4ecb"
+    },
+    "yardimci-boya-kalite-qc.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "7c3553547140b2e874cc65eda1f45eefbab21a21dc4b92da92e8e42b776df021"
+    },
+    "yardimci-capraz-nn-mesafe.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "915f88909b56fcaa1ae446a4daa3ff10ce1b184ae986d65fd321e07f4e596bb4",
+      "expressions": [
+        {
+          "original": "\"Yarıçap bir sayı olmalı (ör. 50 ya da 75.5). Girilen: '${radStr}'.\"",
+          "replacement": "\"${workshopText('script.eb63d123cb3f', 'Yarıçap bir sayı olmalı (ör. 50 ya da 75.5). Girilen: \\'')}${radStr}'.\"",
+          "count": 1,
+          "context": "showErrorMessage"
+        }
+      ]
+    },
+    "yardimci-dagilim-grafigi.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "aaad79cb53460a2b4be5d9a364c8554f1ce032ca0a371af3f554b3b5811ccfef",
+      "expressions": [
+        {
+          "original": "\"${dets.size()} tespit · ${names.size()} ölçüm. Noktalar lamdaki sınıf renkleriyle gösterilir.\"",
+          "replacement": "\"${dets.size()}${workshopText('script.0b3dffaa7a47', ' tespit · ')}${names.size()}${workshopText('script.41fd26a07624', ' ölçüm. Noktalar lamdaki sınıf renkleriyle gösterilir.')}\"",
+          "count": 1,
+          "context": "new Label"
+        }
+      ]
+    },
+    "yardimci-delaunay-komsuluk.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "739e7cf689b2ba70c3f2c71ac166ffe36553d1f90f845aa105a9c5c73bc62dca"
+    },
+    "yardimci-dogrulama-f1.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "5cd88ceffe30474a023c62175aed10d8f43a40da0ff70e601f8506038cfd5740"
+    },
+    "yardimci-esik-alan.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "2ae95b9237a7002ab9b5d5d7b52cbc15113abded2972757d6bf88a22c05c883f"
+    },
+    "yardimci-esik-ayarla.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "e1146f135d2cfe2350cde6a5ed80ce12cdfcfe17954710401fcf0b06219c198b"
+    },
+    "yardimci-esik-siniflandirici.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "5d6aaac7707df24c8c97d82980a96080df6c97bd34f8c6e3396449d40a9107ac"
+    },
+    "yardimci-goruntu-isleme-turu.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "a7fd16f6847a27272dd127e5d341efda79d401c20b83bc1d05c9b5b3062032ed"
+    },
+    "yardimci-goruntu-kunye.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "efc53775963b44d20bd54a55d6d6e29d4ee9cd60462be8916c4ea6bb6678e21a"
+    },
+    "yardimci-goruntu-yakala.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "0ed62145c35f8f9bdacfdb9ee3771843c78f3e6c5c6bb0f890a8e429ae504340"
+    },
+    "yardimci-goruntuden-alan-cikart.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "6f30e1b557b7dce63aad8a09b65eaa48d7b50ff56f2c88410952387a15a7eb5a"
+    },
+    "yardimci-goz-karari-kalibrasyon.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "ea2f6dc65c2ad0068fce3245894499bcb76bbb4e61701e81789b12da2dd5aa67"
+    },
+    "yardimci-grandqc-kohort-ozet.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "e342bc1dba6830969741b39088a5b05a1e2a90507834fa057d7718af467eba05"
+    },
+    "yardimci-image-type.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "4eb1c358b73fc7367c88489bc86fb4522883715b552f456050c3cbdeb8870d3e",
+      "expressions": [
+        {
+          "original": "\"Görüntü tipi tanınmadı: ${targetTypeName}\"",
+          "replacement": "\"${workshopText('script.8d13b11c3ecf', 'Görüntü tipi tanınmadı: ')}${targetTypeName}\"",
+          "count": 1,
+          "context": "showErrorMessage"
+        }
+      ]
+    },
+    "yardimci-imagej-otsu-anotasyon.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "53b3029eebb80acd5c94f08980cdd8d14c1e5fee153c1f13a400e87327feb74e"
+    },
+    "yardimci-imagej-spline-duzeltme.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "4923ece1da0744b6197202ba37bd3eea5d9a0136b346811c100ce561217bc9c0"
+    },
+    "yardimci-immun-yogunluk.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "11b77eb586ac1b2c8d1e0647f9164a16015868699f0722bfa87853e6ac8b325a"
+    },
+    "yardimci-kesisim-alani.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "8eafb373891cca91eab5e52c13e997c577ff99084c04b01f759e18fe9b54426c"
+    },
+    "yardimci-kohort-ozet-topla.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "399daef39a175c590c13b9745b9a74b700d0e930e6373e569ede848a9d7d234b"
+    },
+    "yardimci-konveks-zarf.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "7b81da302c5a7409d6a8f995a86625d0b21c7fe6a4a7fd866ddc7ee73693fba8"
+    },
+    "yardimci-kosu-manifesti.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "b5e6f49c1ec9205ebc7c1adde9375f9983ddc3c2b14e955b1b1b0c9d2b7b73a3"
+    },
+    "yardimci-kume-etiketi-iceaktar.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "6bb5e868a5349490212f46672ede2959a407e35b2b48c9f3a504b0e9d675ecbb"
+    },
+    "yardimci-merkez-cevre.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "c54b9abaed069521c919994c9613f5cd80034ecb4dd06f545704228ce7919747",
+      "expressions": [
+        {
+          "original": "\"Kaç eşit alanlı bölge? (2 = merkez + çevre; en çok ${MAX_REGIONS})\"",
+          "replacement": "\"${workshopText('script.3eddff49b493', 'Kaç eşit alanlı bölge? (2 = merkez + çevre; en çok ')}${MAX_REGIONS})\"",
+          "count": 1,
+          "context": "showInputDialog"
+        },
+        {
+          "original": "\"Bölge sayısı bir tam sayı olmalı (2–${MAX_REGIONS}).\"",
+          "replacement": "\"${workshopText('script.cd8581a452e1', 'Bölge sayısı bir tam sayı olmalı (2–')}${MAX_REGIONS}).\"",
+          "count": 1,
+          "context": "showErrorMessage"
+        }
+      ]
+    },
+    "yardimci-mitoz-karsilastir.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "20d9276a3326fd911ea09996cc1289bbe014f19c8d82e040114c958334505595"
+    },
+    "yardimci-mitoz-merkez.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "ef79914816c96a4fa61de302ba26b6812c6280124e2417eaabce9527eda19400"
+    },
+    "yardimci-nn-mesafe.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "f17d4e36af5c5b3fe7cf0cbd8859ca833808b194731a796a792dfe22f84b8a17"
+    },
+    "yardimci-omezarr-disa-aktarma.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "f94f7141fe74b3e2421686f8abdd85c3b119d95e73ffe7a8fb6a818ae1f391d1"
+    },
+    "yardimci-ornek-siniflandirici.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "91e5574e1405e8d108d4c25e323e97bff2f9499ebd9867d6c216702d4f235558",
+      "expressions": [
+        {
+          "original": "\"Projenizde zaten '${classifierName}' adlı bir sınıflandırıcı var.\\n\"",
+          "replacement": "\"${workshopText('script.7d662e93e1b3', 'Projenizde zaten \\'')}${classifierName}${workshopText('script.4e1f76131b98', '\\' adlı bir sınıflandırıcı var.\\n')}\"",
+          "count": 1,
+          "context": "showMessageDialog"
+        },
+        {
+          "original": "\"Örnek sınıflandırıcı '${classifierName}' projenize kaydedildi.\\n\\n\"",
+          "replacement": "\"${workshopText('script.09633f283982', 'Örnek sınıflandırıcı \\'')}${classifierName}${workshopText('script.4285532a4453', '\\' projenize kaydedildi.\\n\\n')}\"",
+          "count": 1,
+          "context": "showMessageDialog"
+        }
+      ]
+    },
+    "yardimci-ozellik-matrisi.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "ab742adfc258fd68522d001d16f73b050167f2cd1c0c5a96e6e512c247745678",
+      "expressions": [
+        {
+          "original": "\"${windowBody}\\n\\nEvet: ${optionB}\\nHayır: ${optionA}\"",
+          "replacement": "\"${windowBody}${workshopText('script.67d3df87bdf1', '\\n\\nEvet: ')}${optionB}${workshopText('script.06ce0f1a5ed0', '\\nHayır: ')}${optionA}\"",
+          "count": 1,
+          "context": "showConfirmDialog"
+        }
+      ]
+    },
+    "yardimci-peritumoral-bant.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "e3fc661fe7af3ac18555db8e9c41215618b794b9e354e88cf6dde0799e4e3d0c"
+    },
+    "yardimci-senkron-izgara.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "ead2c2180b1b41cc21f01a882483cf6a28ec551895d9349e9bc6fbf1d6aaf43c"
+    },
+    "yardimci-sinif-sayim.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "febd33468c447b86e5024d3a9c7f3d3a8ffa9d086110f3efa93c7bb92e1d0116"
+    },
+    "yardimci-stromal-til.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "ebf3162e23251970e280bd08d2aaaf19409ae45de50abdf9374cc159c2522bf0"
+    },
+    "yardimci-tahmin-iceaktar.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "f4d88cc4b4aa34b4a1465eae9fffa4796a5861bb3453e63e3aeeb428c3717555",
+      "expressions": [
+        {
+          "original": "\"GeoJSON dosyasında geçerli Polygon/MultiPolygon özelliği bulunamadı (atlanan: ${skipped}).\"",
+          "replacement": "\"${workshopText('script.1149564c8762', 'GeoJSON dosyasında geçerli Polygon/MultiPolygon özelliği bulunamadı (atlanan: ')}${skipped}).\"",
+          "count": 1,
+          "context": "showWarningNotification"
+        }
+      ]
+    },
+    "yardimci-tespitleri-sil.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "67abe5f45fade4a452d17fb39f586f9c45b31c8ec9d65bc95caacaf5aa64626c"
+    },
+    "yardimci-tiatoolbox-maske.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "0b1f2053d4e71023390172d970c4096d7e0a6b4301ca8c41d8b1b56f5d33cb18"
+    },
+    "yardimci-tma-cekirdek-aktarim.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "f5896ef1a27b1c22ebda92f129fab72e28783e5b1f2a231aa49b61d47bdd6f01"
+    },
+    "yardimci-tus-fare-gostergesi.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "25637cb6178c22249749a1bac52ba71367257c1872e69821b3d1db836b5edd56"
+    },
+    "yardimci-wsinfer-denetim.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "42b4f4b2f3724d4d56341cbc280d149cb29d7d1c9be44dfe0e8851076adf6d1b"
+    },
+    "yardimci-wsinfer-ozet.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "38d8f2140564e0bb33bc67206a69980da93acfc05dc5f44edca84c22ebc3b0d8"
+    },
+    "yardimci-yapi-uzaklik.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "fea7af442d9101273554b8f66aebadf2643af6909b39c6d372a14964ad9c2398"
+    },
+    "yardimci-yogunluk-haritasi.groovy": {
+      "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
+      "sha256": "a7ae72d49f4adddbe655654873e48bc48b1a5a5c4b297d9a0731a19f75dc6c8f"
     }
   }
 }

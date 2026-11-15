@@ -65,13 +65,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -79,7 +79,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -92,7 +92,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -114,7 +114,7 @@ String SEL_OPT    = "▸ Seçili nesneler"
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce nesneleri (hücre tespiti/anotasyon) olan bir lam açın.")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.f5ab1abd2b8c', "Önce nesneleri (hücre tespiti/anotasyon) olan bir lam açın."))
     return
 }
 def cal = imageData.getServer().getPixelCalibration()
@@ -141,8 +141,8 @@ if (isHeadless) {
 } else {
     def options = [SEL_OPT] + classNames
     def def0 = options.contains(prefs.get('source', '')) ? prefs.get('source', '') : SEL_OPT
-    source = Dialogs.showChoiceDialog("Dış bükey zarf",
-        "Zarfı hangi nesnelerden oluşturayım?", options, def0)
+    source = Dialogs.showChoiceDialog(workshopText('script.f012b5aa73f5', "Dış bükey zarf"),
+        workshopText('script.e0ff07c9d734', "Zarfı hangi nesnelerden oluşturayım?"), options, def0)
     if (source == null) { println "İptal edildi."; return }
 }
 prefs.put('source', source)
@@ -161,7 +161,7 @@ if (source == SEL_OPT) {
 if (objs.size() < 3) {
     def msg = "Dış bükey zarf için en az 3 nesne gerekir (bulunan: ${objs.size()}).\n" +
               (source == SEL_OPT ? "Önce zarfını istediğiniz nesneleri SEÇİN." : "Bu sınıfta yeterli nesne yok.")
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Yetersiz nesne", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.1cdff0f34508', "Yetersiz nesne"), msg)
     return
 }
 
@@ -170,7 +170,7 @@ def plane = objs[0].getROI().getImagePlane()
 def geoms = objs.collect { it.getROI().getGeometry() }.findAll { it != null && !it.isEmpty() }
 if (geoms.isEmpty()) {
     def msg = "Nesnelerden geçerli geometri elde edilemedi."
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Geometri yok", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.53cb8e0abe69', "Geometri yok"), msg)
     return
 }
 def union = (geoms.size() == 1) ? geoms[0] : org.locationtech.jts.operation.union.UnaryUnionOp.union(geoms)
@@ -178,7 +178,7 @@ def hull = union.convexHull()
 def hullRoi = qupath.lib.roi.GeometryTools.geometryToROI(hull, plane)
 if (hullRoi == null || hullRoi.isEmpty() || !hullRoi.isArea()) {
     def msg = "Zarf bir alan poligonu oluşturmadı (nesneler eşdoğrusal olabilir)."
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Zarf yok", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.131e5a40a612', "Zarf yok"), msg)
     return
 }
 
@@ -221,3 +221,14 @@ println String.format(java.util.Locale.US,
     "✓ Dış bükey zarf oluşturuldu — kaynak '%s', %,d nesne%s.",
     srcLabel, objs.size(),
     (Double.isNaN(hullAreaUm2) ? "" : String.format(java.util.Locale.US, ", alan %,.0f µm²", hullAreaUm2)))
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

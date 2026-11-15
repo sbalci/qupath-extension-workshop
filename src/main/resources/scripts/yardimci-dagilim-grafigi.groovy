@@ -87,12 +87,12 @@ def openChart = {
     def xName = (xc != null) ? xc.getValue() : null
     def yName = (yc != null) ? yc.getValue() : null
     if (xName == null || yName == null) {
-        Dialogs.showWarningNotification("Eksik seçim", "Lütfen X ve Y için birer ölçüm seçin.")
+        Dialogs.showWarningNotification(workshopText('script.70fe347f0a97', "Eksik seçim"), workshopText('script.94905042e46b', "Lütfen X ve Y için birer ölçüm seçin."))
         return
     }
     def dets = QP.getDetectionObjects()
     if (dets.isEmpty()) {
-        Dialogs.showWarningNotification("Tespit yok", "Çizilecek tespit yok. Önce bir tespit/ölçüm adımı çalıştırın.")
+        Dialogs.showWarningNotification(workshopText('script.4277b763a640', "Tespit yok"), workshopText('script.0c3cd5ac7013', "Çizilecek tespit yok. Önce bir tespit/ölçüm adımı çalıştırın."))
         return
     }
     try {
@@ -102,7 +102,7 @@ def openChart = {
             .measurements(dets, xName, yName)
             .show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage("Grafik açılamadı", (t.getMessage() ?: t.getClass().getSimpleName()))
+        Dialogs.showErrorMessage(workshopText('script.08e9aece49b2', "Grafik açılamadı"), (t.getMessage() ?: t.getClass().getSimpleName()))
     }
 }
 
@@ -111,7 +111,7 @@ render = { ->
     if (stage == null) return
     stage.setAlwaysOnTop(alwaysTop.get())
 
-    def title = new javafx.scene.control.Label("Dağılım grafiği — iki ölçüm seç")
+    def title = new javafx.scene.control.Label(workshopText('script.fefc78fdcc60', "Dağılım grafiği — iki ölçüm seç"))
     title.setStyle('-fx-font-size: 14px; -fx-font-weight: bold;')
     def center = new javafx.scene.layout.VBox(10)
     center.setPadding(new javafx.geometry.Insets(14))
@@ -122,11 +122,11 @@ render = { ->
 
     if (dets.isEmpty() || names.isEmpty()) {
         def lbl = new javafx.scene.control.Label(
-            "Çizilebilir ölçüm bulunamadı.\n\n" +
+            workshopText('script.a84140786522', "Çizilebilir ölçüm bulunamadı.\n\n" +
             "Önce ölçümlü tespitler oluşturun (Hücre tespiti / Nükleer boya / Sitoplazmik boya /\n" +
             "Tümör içi Ki-67 modülleri), ya da fenotip/UMAP\n" +
             "etiketlerini içe aktarın (Yardımcılar → Kümeleme/fenotip etiketlerini içe aktar).\n" +
-            "Sonra '⟳ Yenile'.")
+            "Sonra '⟳ Yenile'."))
         lbl.setWrapText(true)
         center.getChildren().add(lbl)
         xComboRef.set(null); yComboRef.set(null)
@@ -145,27 +145,27 @@ render = { ->
         xComboRef.set(xCombo); yComboRef.set(yCombo)
 
         def info = new javafx.scene.control.Label(
-            "${dets.size()} tespit · ${names.size()} ölçüm. Noktalar lamdaki sınıf renkleriyle gösterilir.")
+            "${dets.size()}${workshopText('script.0b3dffaa7a47', ' tespit · ')}${names.size()}${workshopText('script.41fd26a07624', ' ölçüm. Noktalar lamdaki sınıf renkleriyle gösterilir.')}")
         info.setWrapText(true)
 
         def grid = new javafx.scene.layout.GridPane()
         grid.setHgap(8); grid.setVgap(8)
-        grid.add(new javafx.scene.control.Label("X ekseni:"), 0, 0)
+        grid.add(new javafx.scene.control.Label(workshopText('script.11ede729b0e5', "X ekseni:")), 0, 0)
         grid.add(xCombo, 1, 0)
-        grid.add(new javafx.scene.control.Label("Y ekseni:"), 0, 1)
+        grid.add(new javafx.scene.control.Label(workshopText('script.6fe1602674e3', "Y ekseni:")), 0, 1)
         grid.add(yCombo, 1, 1)
         center.getChildren().addAll(info, grid)
     }
 
     // Alt çubuk
     def actions = new ArrayList()
-    actions.add(navButton('Kapat', { stage.close() }))
-    actions.add(navButton('⟳ Yenile', { render() }, 'Ölçüm listesini yeniden tara'))
-    def openBtn = navButton('Grafiği aç ▶', { openChart() }, 'Seçili iki ölçümü QuPath dağılım grafiğinde çiz')
+    actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+    actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }, workshopText('script.2ea02fef4e27', 'Ölçüm listesini yeniden tara')))
+    def openBtn = navButton(workshopText('script.bb1b8e0c0fbf', 'Grafiği aç ▶'), { openChart() }, workshopText('script.7a4b706d1848', 'Seçili iki ölçümü QuPath dağılım grafiğinde çiz'))
     openBtn.setDisable(dets.isEmpty() || names.isEmpty())
     actions.add(openBtn)
 
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
@@ -178,7 +178,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı; var olan ölçümleri çizer, yorum üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.1620e92e32c0', 'Yalnızca araştırma/eğitim amaçlı; var olan ölçümleri çizer, yorum üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
     def bottom = new javafx.scene.layout.VBox(8, disclaimer, bar)
@@ -195,12 +195,23 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Dağılım grafiği sihirbazı')
+        stage.setTitle(workshopText('script.7ffd45941f9e', 'Dağılım grafiği sihirbazı'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ Dağılım grafiği sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

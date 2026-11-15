@@ -97,20 +97,20 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
                 content.putString(windowBody)
                 cb.setContent(content)
             })
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -122,7 +122,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -141,7 +141,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ──────────────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir lam açın, sonra bu betiği tekrar çalıştırın.")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.4a2f706ae19a', "Önce bir lam açın, sonra bu betiği tekrar çalıştırın."))
     return
 }
 def server = imageData.getServer()
@@ -156,10 +156,10 @@ boolean calibrated = (avgPx > 0 && !Double.isNaN(avgPx))
 def classifiedAnns = QP.getAnnotationObjects().findAll { it.getROI() != null && it.getPathClass() != null }
 if (classifiedAnns.isEmpty()) {
     Dialogs.showErrorMessage(
-        "Sınıflı anotasyon yok",
-        "Bölge maskesi üretmek için anotasyonların bir SINIFI (PathClass) olmalı\n" +
+        workshopText('script.186e6331ed6b', "Sınıflı anotasyon yok"),
+        workshopText('script.2739bdcf8bd3', "Bölge maskesi üretmek için anotasyonların bir SINIFI (PathClass) olmalı\n" +
         "(ör. Tumor, Stroma). Lamda sınıflı anotasyon bulunamadı.\n\n" +
-        "Çözüm: anotasyonları sınıflandırın (Tümör/Stroma modülü)."
+        "Çözüm: anotasyonları sınıflandırın (Tümör/Stroma modülü).")
     )
     return
 }
@@ -172,18 +172,18 @@ if (isHeadless) {
     return
 }
 def umText = Dialogs.showInputDialog(
-    "TIA Toolbox için bölge maskesi",
-    "Maske çözünürlüğü (µm/px) — düşük çözünürlük = küçük dosya (öneri: 2–8):",
+    workshopText('script.d7a8778b920f', "TIA Toolbox için bölge maskesi"),
+    workshopText('script.49df253cfec4', "Maske çözünürlüğü (µm/px) — düşük çözünürlük = küçük dosya (öneri: 2–8):"),
     "4.0")
 if (umText == null) { println "İptal edildi."; return }
 double umPerPx
 try {
     umPerPx = Double.parseDouble(umText.trim().replace(',', '.'))
 } catch (NumberFormatException nfe) {
-    Dialogs.showErrorMessage("Sayı formatı", "Çözünürlük ondalık bir sayı olmalı (ör. 4.0).")
+    Dialogs.showErrorMessage(workshopText('script.9cc391204f66', "Sayı formatı"), workshopText('script.9c654ce50a8b', "Çözünürlük ondalık bir sayı olmalı (ör. 4.0)."))
     return
 }
-if (!(umPerPx > 0)) { Dialogs.showErrorMessage("Geçersiz", "Çözünürlük pozitif olmalı."); return }
+if (!(umPerPx > 0)) { Dialogs.showErrorMessage(workshopText('script.cff275b74696', "Geçersiz"), workshopText('script.b2fc0aa1ffc0', "Çözünürlük pozitif olmalı.")); return }
 
 double downsample = calibrated ? (umPerPx / avgPx) : umPerPx
 if (!(downsample > 0)) downsample = 1.0d
@@ -193,10 +193,10 @@ long maskW = (long) Math.ceil(server.getWidth() / downsample)
 long maskH = (long) Math.ceil(server.getHeight() / downsample)
 if (maskW > 10000 || maskH > 10000) {
     def ok = Dialogs.showConfirmDialog(
-        "Büyük maske",
+        workshopText('script.6031d7e4b44f', "Büyük maske"),
         String.format(java.util.Locale.US,
-            "Maske yaklaşık %,d × %,d piksel olacak — büyük bir dosya.%n%n" +
-            "Devam edilsin mi? (Çözünürlüğü [µm/px] artırmak maskeyi küçültür.)", maskW, maskH))
+            workshopText('script.39e4d23c94b9', "Maske yaklaşık %,d × %,d piksel olacak — büyük bir dosya.%n%n" +
+            "Devam edilsin mi? (Çözünürlüğü [µm/px] artırmak maskeyi küçültür.)"), maskW, maskH))
     if (!ok) { println "Kullanıcı büyük-maske onayını reddetti."; return }
 }
 
@@ -247,7 +247,7 @@ double elapsed = (System.currentTimeMillis() - t0) / 1000.0
 
 if (!ok && errMsg == null) errMsg = "Maske yazılamadı (bilinmeyen neden)."
 if (errMsg != null) {
-    Dialogs.showErrorMessage("Maske yazılamadı", errMsg)
+    Dialogs.showErrorMessage(workshopText('script.413b9dadce29', "Maske yazılamadı"), errMsg)
     println "HATA: ${errMsg}"
     return
 }
@@ -308,3 +308,14 @@ showResultWindow(
 
 println String.format(java.util.Locale.US, "Tamamlandı: maske %,d × %,d px, %.1f sn", maskW, maskH, elapsed)
 println "Çıktı: ${outDir.getAbsolutePath()}"
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

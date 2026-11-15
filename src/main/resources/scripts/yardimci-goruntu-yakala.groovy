@@ -101,60 +101,60 @@ javafx.application.Platform.runLater {
     try {
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Görüntü yakala (rapor/sunum)')
+        stage.setTitle(workshopText('script.b19e443a7ab8', 'Görüntü yakala (rapor/sunum)'))
         stage.setAlwaysOnTop(true)
 
         // --- Yakalama türü ---
         def typeGroup = new javafx.scene.control.ToggleGroup()
-        def rbViewer = new javafx.scene.control.RadioButton('Görüntüleyici (overlay\'lerle)')
+        def rbViewer = new javafx.scene.control.RadioButton(workshopText('script.8a9a901e0442', 'Görüntüleyici (overlay\'lerle)'))
         rbViewer.setToggleGroup(typeGroup); rbViewer.setSelected(true)
         rbViewer.setUserData(SnapshotType.VIEWER)
-        def rbWindow = new javafx.scene.control.RadioButton('Tüm QuPath penceresi')
+        def rbWindow = new javafx.scene.control.RadioButton(workshopText('script.a8bc424bdb76', 'Tüm QuPath penceresi'))
         rbWindow.setToggleGroup(typeGroup); rbWindow.setUserData(SnapshotType.MAIN_SCENE)
 
         // --- Çıktı hedefi ---
         def outGroup = new javafx.scene.control.ToggleGroup()
-        def rbSave = new javafx.scene.control.RadioButton('Dosyaya kaydet')
+        def rbSave = new javafx.scene.control.RadioButton(workshopText('script.cfa31cf0e928', 'Dosyaya kaydet'))
         rbSave.setToggleGroup(outGroup); rbSave.setSelected(true)
-        def rbClip = new javafx.scene.control.RadioButton('Panoya kopyala')
+        def rbClip = new javafx.scene.control.RadioButton(workshopText('script.cfce69a58bef', 'Panoya kopyala'))
         rbClip.setToggleGroup(outGroup)
 
         // --- Kayıt seçenekleri (panoda devre dışı) ---
         def dirField = new javafx.scene.control.TextField(defaultDir().getAbsolutePath())
         javafx.scene.layout.HBox.setHgrow(dirField, javafx.scene.layout.Priority.ALWAYS)
-        def browseBtn = navButton('Seç…', {
+        def browseBtn = navButton(workshopText('script.dfd12ee38484', 'Seç…'), {
             try {
                 def cur = (dirField.getText() ?: '').trim()
                 def init = cur ? new File(cur) : null
                 def initDir = (init != null && init.isDirectory()) ? init : null
-                def chosen = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Çıktı klasörü seçin', initDir)
+                def chosen = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.cc9187efabde', 'Çıktı klasörü seçin'), initDir)
                 if (chosen != null) dirField.setText(chosen.getAbsolutePath())
             } catch (Throwable ignored) { }
-        }, 'Görüntünün kaydedileceği klasörü seçin')
+        }, workshopText('script.15792b8e0b4d', 'Görüntünün kaydedileceği klasörü seçin'))
         def dirBox = new javafx.scene.layout.HBox(8, dirField, browseBtn)
 
         def nameField = new javafx.scene.control.TextField('qupath-goruntu')
-        nameField.setPromptText('temel dosya adı (uzantısız)')
+        nameField.setPromptText(workshopText('script.4249586073a4', 'temel dosya adı (uzantısız)'))
 
         def formatBox = new javafx.scene.control.ChoiceBox()
         formatBox.getItems().addAll('PNG', 'JPEG (yüksek kalite)')
         formatBox.getSelectionModel().select(0)
 
-        def cbUnique = new javafx.scene.control.CheckBox('Benzersiz isim (üzerine yazma)')
+        def cbUnique = new javafx.scene.control.CheckBox(workshopText('script.64ed98f848ce', 'Benzersiz isim (üzerine yazma)'))
         cbUnique.setSelected(true)
 
         def saveBox = new javafx.scene.layout.VBox(8,
-            new javafx.scene.control.Label('Klasör:'), dirBox,
-            new javafx.scene.control.Label('Dosya adı:'), nameField,
+            new javafx.scene.control.Label(workshopText('script.12de89c0aa25', 'Klasör:')), dirBox,
+            new javafx.scene.control.Label(workshopText('script.08692440ac82', 'Dosya adı:')), nameField,
             new javafx.scene.layout.HBox(12,
-                new javafx.scene.control.Label('Biçim:'), formatBox, cbUnique))
+                new javafx.scene.control.Label(workshopText('script.071c30132baf', 'Biçim:')), formatBox, cbUnique))
         def syncSaveEnabled = { -> saveBox.setDisable(rbClip.isSelected()) }
         outGroup.selectedToggleProperty().addListener(
             { obs, o, n -> syncSaveEnabled() } as javafx.beans.value.ChangeListener)
         syncSaveEnabled()
 
         // --- Durum satırı ---
-        def statusLbl = new javafx.scene.control.Label('Hazır.')
+        def statusLbl = new javafx.scene.control.Label(workshopText('script.86bb45e59294', 'Hazır.'))
         statusLbl.setWrapText(true); statusLbl.setMaxWidth(Double.MAX_VALUE)
 
         // --- Yakalama eylemi ---
@@ -168,12 +168,12 @@ javafx.application.Platform.runLater {
                 img = GuiTools.makeSnapshot(QuPathGUI.getInstance(), type)
             } catch (Throwable t) {
                 statusLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
-                statusLbl.setText('⚠ Yakalama başarısız: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+                statusLbl.setText(workshopText('script.6c53985d5392', '⚠ Yakalama başarısız: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
                 return
             }
             if (img == null) {
                 statusLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
-                statusLbl.setText('⚠ Yakalanacak içerik bulunamadı (önce bir lam açın).')
+                statusLbl.setText(workshopText('script.98b9bfde23a9', '⚠ Yakalanacak içerik bulunamadı (önce bir lam açın).'))
                 return
             }
 
@@ -184,11 +184,11 @@ javafx.application.Platform.runLater {
                     Clipboard.getSystemClipboard().setContent(cc)
                     statusLbl.setStyle('-fx-text-fill: -fx-text-base-color;')
                     statusLbl.setText(String.format(java.util.Locale.US,
-                        '✅ Panoya kopyalandı (%d×%d px). Başka bir uygulamaya yapıştırabilirsiniz.',
+                        workshopText('script.20dc32a81e1a', '✅ Panoya kopyalandı (%d×%d px). Başka bir uygulamaya yapıştırabilirsiniz.'),
                         img.getWidth(), img.getHeight()))
                 } catch (Throwable t) {
                     statusLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
-                    statusLbl.setText('⚠ Panoya kopyalanamadı: ' + t.getClass().getSimpleName())
+                    statusLbl.setText(workshopText('script.b00d0d53da2b', '⚠ Panoya kopyalanamadı: ') + t.getClass().getSimpleName())
                 }
                 return
             }
@@ -198,13 +198,13 @@ javafx.application.Platform.runLater {
             def base = (nameField.getText() ?: '').trim()
             if (dirText.isEmpty() || base.isEmpty()) {
                 statusLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
-                statusLbl.setText('⚠ Klasör ve dosya adı boş olamaz.')
+                statusLbl.setText(workshopText('script.53b1fff9ff22', '⚠ Klasör ve dosya adı boş olamaz.'))
                 return
             }
             def dir = new File(dirText)
             if (!dir.isDirectory()) {
                 statusLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
-                statusLbl.setText('⚠ Geçerli bir klasör seçin (klasör bulunamadı).')
+                statusLbl.setText(workshopText('script.e1a9e83d5492', '⚠ Geçerli bir klasör seçin (klasör bulunamadı).'))
                 return
             }
             boolean jpeg = formatBox.getSelectionModel().getSelectedIndex() == 1
@@ -212,7 +212,7 @@ javafx.application.Platform.runLater {
             def outFile = confirmFile(dir, base, ext, cbUnique.isSelected())
 
             statusLbl.setStyle('-fx-text-fill: -fx-text-base-color;')
-            statusLbl.setText('Yazılıyor: ' + outFile.getName() + ' …')
+            statusLbl.setText(workshopText('script.4152de67a765', 'Yazılıyor: ') + outFile.getName() + ' …')
             def worker = new Thread({
                 String err = null
                 try {
@@ -224,11 +224,11 @@ javafx.application.Platform.runLater {
                 javafx.application.Platform.runLater {
                     if (err != null) {
                         statusLbl.setStyle('-fx-text-fill: -qp-script-error-color;')
-                        statusLbl.setText('⚠ Kaydedilemedi: ' + err)
+                        statusLbl.setText(workshopText('script.caf64cb42edc', '⚠ Kaydedilemedi: ') + err)
                     } else {
                         statusLbl.setStyle('-fx-text-fill: -fx-text-base-color;')
                         statusLbl.setText(String.format(java.util.Locale.US,
-                            '✅ Kaydedildi (%d×%d px):\n%s', img.getWidth(), img.getHeight(),
+                            workshopText('script.bcf8510a81a8', '✅ Kaydedildi (%d×%d px):\n%s'), img.getWidth(), img.getHeight(),
                             outFile.getAbsolutePath()))
                         println 'Görüntü yakalandı → ' + outFile.getAbsolutePath()
                     }
@@ -250,20 +250,20 @@ javafx.application.Platform.runLater {
             new javafx.scene.control.Separator(),
             statusLbl)
 
-        def alwaysTop = new javafx.scene.control.CheckBox('Üstte tut')
+        def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
         alwaysTop.setSelected(true)
         alwaysTop.selectedProperty().addListener(
             { obs, o, n -> stage.setAlwaysOnTop(n as boolean) } as javafx.beans.value.ChangeListener)
 
         def buttons = new javafx.scene.layout.HBox(8,
             alwaysTop,
-            navButton('Kapat', { stage.close() }),
-            navButton('Yakala ▶', { doCapture() }, 'Seçili türde görüntüyü yakalar'))
+            navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }),
+            navButton(workshopText('script.b03439457052', 'Yakala ▶'), { doCapture() }, workshopText('script.028b2aab166e', 'Seçili türde görüntüyü yakalar')))
         buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
 
         // Kalıcı sorumluluk reddi — tema-duyarlı (açık/koyu tema).
         def disclaimer = new javafx.scene.control.Label(
-            'Yalnızca araştırma/eğitim amaçlı görsel bir yardımcıdır; ölçüm/klinik karar üretmez.')
+            workshopText('script.2b5c1f8159b6', 'Yalnızca araştırma/eğitim amaçlı görsel bir yardımcıdır; ölçüm/klinik karar üretmez.'))
         disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
         disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
             '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -277,7 +277,18 @@ javafx.application.Platform.runLater {
         stage.setScene(new javafx.scene.Scene(root, 520, 420))
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Görüntü yakala penceresi açılamadı',
+        Dialogs.showErrorMessage(workshopText('script.9fbd154af229', 'Görüntü yakala penceresi açılamadı'),
             t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+    }
+}
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
     }
 }

@@ -21,7 +21,7 @@ class DynamicScriptLanguageTest {
         c.source_contracts.each { filename,contract ->
             contract.expressions?.each { rewrite -> probe.verify(rewrite as Map,rows); count += rewrite.count as int }
         }
-        assertEquals(37,count)
+        assertEquals(46,count)
     }
 
     @Test
@@ -32,8 +32,8 @@ class DynamicScriptLanguageTest {
         def previous = field.get(null)
         try {
             def result = probe.probe(c,sources,getClass().classLoader,{ language -> field.set(null,language) },['tr','en'])
-            assertEquals(36,result.expressions)
-            assertEquals(144,result.renders)
+            assertEquals(45,result.expressions)
+            assertEquals(180,result.renders)
             assertEquals(12,result.scopeChecks)
         } finally { field.set(null,previous) }
     }

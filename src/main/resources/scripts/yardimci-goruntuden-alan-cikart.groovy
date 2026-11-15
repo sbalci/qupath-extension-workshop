@@ -82,13 +82,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -96,7 +96,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -109,7 +109,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -130,14 +130,14 @@ if (project == null) {
     def msg = "Proje açık değil.\n\n" +
               "Kırpılmış girdiler bir PROJEYE eklenir. Önce [File → Project... → Create project]\n" +
               "ile bir proje oluşturun (ya da mevcut projeyi açın), lamı projeden açın."
-    if (isHeadless) println msg else Dialogs.showErrorMessage("Proje gerekli", msg)
+    if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.979211f17202', "Proje gerekli"), msg)
     return
 }
 
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     def msg = "Görüntü açık değil. Önce projedeki bir lamı açın ve dikdörtgen anotasyon(lar) çizin."
-    if (isHeadless) println msg else Dialogs.showErrorMessage("Görüntü açık değil", msg)
+    if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), msg)
     return
 }
 
@@ -159,7 +159,7 @@ if (allRects.isEmpty()) {
               "Dikdörtgen aracıyla (R) bir ya da daha çok bölge çizin; girdiye ad vermek için\n" +
               "anotasyona sağ tık → [Annotations → Set properties] ile ad yazın, sonra bu betiği\n" +
               "tekrar çalıştırın. (Elips/poligon/fırça şekilleri bu betikte kullanılmaz.)"
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Dikdörtgen yok", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.6608dc8525a8', "Dikdörtgen yok"), msg)
     return
 }
 
@@ -184,7 +184,7 @@ def showOptionsForm = { int selCount, int allCount, List<String> classChoices ->
         try {
             def stage = new javafx.stage.Stage()
             stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle("Kırpılmış proje girdileri — seçenekler")
+            stage.setTitle(workshopText('script.1b804907668e', "Kırpılmış proje girdileri — seçenekler"))
             stage.setAlwaysOnTop(true)
 
             def scopeBox = new javafx.scene.control.ChoiceBox<String>()
@@ -203,7 +203,7 @@ def showOptionsForm = { int selCount, int allCount, List<String> classChoices ->
             else
                 classBox.setValue("(sınıf filtresi yok)")
 
-            def copyCheck = new javafx.scene.control.CheckBox("Örtüşen anotasyonları kırparak yeni girdiye kopyala")
+            def copyCheck = new javafx.scene.control.CheckBox(workshopText('script.9d6ad5bc1e98', "Örtüşen anotasyonları kırparak yeni girdiye kopyala"))
             copyCheck.setSelected(true)
 
             def help = { String s ->
@@ -218,16 +218,16 @@ def showOptionsForm = { int selCount, int allCount, List<String> classChoices ->
             grid.setHgap(12); grid.setVgap(8)
             grid.setPadding(new javafx.geometry.Insets(12))
             int r = 0
-            grid.add(new javafx.scene.control.Label("Kapsam:"), 0, r)
+            grid.add(new javafx.scene.control.Label(workshopText('script.832662034af3', "Kapsam:")), 0, r)
             grid.add(scopeBox, 1, r)
             grid.add(help("Seçili: yalnız seçtiğiniz dikdörtgen anotasyonlar. Tüm: lamdaki her dikdörtgen anotasyon."), 2, r); r++
-            grid.add(new javafx.scene.control.Label("Sınıf filtresi:"), 0, r)
+            grid.add(new javafx.scene.control.Label(workshopText('script.6f482c6086cc', "Sınıf filtresi:")), 0, r)
             grid.add(classBox, 1, r)
             grid.add(help("Yalnız bu sınıfa atanmış dikdörtgenler kullanılır. Orijinal betik (Zindy, image.sc) 'ROI' sınıfını kullanır."), 2, r); r++
             grid.add(copyCheck, 0, r, 2, 1)
             grid.add(help("Dikdörtgenle örtüşen anotasyonlar kesişim alınarak kopyalanır; sınıf ve ad korunur, ölçümler kopyalanmaz."), 2, r); r++
 
-            def okBtn = new javafx.scene.control.Button("Girdileri oluştur")
+            def okBtn = new javafx.scene.control.Button(workshopText('script.b7652a839342', "Girdileri oluştur"))
             okBtn.setDefaultButton(true)
             okBtn.setOnAction({
                 def scope = scopeBox.getValue().startsWith("Seçili") ? 'selected' : 'all'
@@ -235,7 +235,7 @@ def showOptionsForm = { int selCount, int allCount, List<String> classChoices ->
                 result.set([scope: scope, classFilter: cf, copyAnnotations: copyCheck.isSelected()])
                 stage.close()
             })
-            def cancelBtn = new javafx.scene.control.Button("İptal")
+            def cancelBtn = new javafx.scene.control.Button(workshopText('script.72278748133a', "İptal"))
             cancelBtn.setCancelButton(true)
             cancelBtn.setOnAction({ result.set(null); stage.close() })
 
@@ -278,7 +278,7 @@ if (opts.classFilter != null)
 if (rects.isEmpty()) {
     def msg = "Seçilen kapsam ve sınıf filtresiyle eşleşen dikdörtgen anotasyon yok.\n" +
               "Kapsamı ya da sınıf filtresini değiştirip yeniden deneyin."
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Eşleşen dikdörtgen yok", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.a7585060e74b', "Eşleşen dikdörtgen yok"), msg)
     return
 }
 
@@ -427,3 +427,14 @@ body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 showResultWindow("Seçimlerden oluşturulan alanlar", body.toString())
 println String.format(java.util.Locale.US, "✓ Kırpılmış proje girdileri: %d oluşturuldu, %d atlandı.",
     created.size(), skipped.size())
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

@@ -73,13 +73,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -87,7 +87,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -100,7 +100,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -121,7 +121,7 @@ String preferredName = null   // headless/varsayılan seçim için (null → ilk
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir lam açın.")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.12204d6dbab7', "Önce bir lam açın."))
     return
 }
 
@@ -129,7 +129,7 @@ def project = QP.getProject()
 if (project == null) {
     def msg = "Bu betik bir proje gerektirir (kayıtlı sınıflandırıcılar projede tutulur).\n" +
               "Lamı bir QuPath projesine ekleyip tekrar deneyin."
-    if (isHeadless) println msg else Dialogs.showErrorMessage("Proje yok", msg)
+    if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.830fe38f7e53', "Proje yok"), msg)
     return
 }
 
@@ -139,7 +139,7 @@ if (cal == null || !cal.hasPixelSizeMicrons()) {
     def msg = "Görüntü kalibrasyonu (µm/px) yok; alanlar µm²/mm² olarak ölçülemez.\n\n" +
               "Önce piksel boyutunu ayarlayın:\n" +
               "  [Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu)]"
-    if (isHeadless) println msg else Dialogs.showErrorMessage("Kalibrasyon yok", msg)
+    if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), msg)
     return
 }
 double pxW = cal.getPixelWidthMicrons()
@@ -148,7 +148,7 @@ double pxH = cal.getPixelHeightMicrons()
 def targets = QP.getSelectedObjects().findAll { it.isAnnotation() }
 if (targets.isEmpty()) {
     def msg = "Ölçülecek anotasyon yok.\n\nÖnce bölgeyi anotasyon olarak çizin ve SEÇİN."
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Anotasyon yok", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.469472ee53f3', "Anotasyon yok"), msg)
     return
 }
 
@@ -166,7 +166,7 @@ if (names.isEmpty()) {
               "  [Classify → Pixel classification → Create thresholder]\n" +
               "  • Channel + Threshold ayarlayın, sınıfları adlandırın, [Save].\n\n" +
               "Ayrıntı: Tümör/Stroma modülü — \"Önce en basit sınıflandırıcı: eşikleyici\"."
-    if (isHeadless) println msg else Dialogs.showErrorMessage("Sınıflandırıcı yok", msg)
+    if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.9b963a692abd', "Sınıflandırıcı yok"), msg)
     return
 }
 
@@ -178,8 +178,8 @@ if (isHeadless) {
     chosen = names[0]
 } else {
     def defaultChoice = (preferredName != null && names.contains(preferredName)) ? preferredName : names[0]
-    chosen = Dialogs.showChoiceDialog("Eşikleyici seç",
-        "Ölçülecek kayıtlı piksel sınıflandırıcı (eşikleyici):", names, defaultChoice)
+    chosen = Dialogs.showChoiceDialog(workshopText('script.d160a36f227f', "Eşikleyici seç"),
+        workshopText('script.4ec849de2690', "Ölçülecek kayıtlı piksel sınıflandırıcı (eşikleyici):"), names, defaultChoice)
     if (chosen == null) {
         println "İptal edildi."
         return
@@ -196,7 +196,7 @@ try {
 if (classifier == null) {
     def msg = "Sınıflandırıcı yüklenemedi: \"${chosen}\"\n\n" +
               "Adın birebir eşleştiğinden ve sınıflandırıcının bozulmadığından emin olun."
-    if (isHeadless) println msg else Dialogs.showErrorMessage("Yüklenemedi", msg)
+    if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.ea8a4476846b', "Yüklenemedi"), msg)
     return
 }
 
@@ -247,7 +247,7 @@ if (classAreaUm2.isEmpty() || totalRegionUm2 <= 0) {
     def msg = "Sınıflandırıcı çalıştı ama beklenen alan ölçümleri bulunamadı.\n\n" +
               "Seçili bölgenin sınıflandırıcının çalıştığı alanı içerdiğinden ve\n" +
               "sınıflandırıcının alan ölçümü ürettiğinden emin olun."
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Ölçüm yok", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.e3dc9a444a25', "Ölçüm yok"), msg)
     return
 }
 
@@ -282,3 +282,14 @@ body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
 showResultWindow("Eşik ile alan ölçümü", body.toString())
 println "✓ % bölge ölçümleri yazıldı (her anotasyon, her sınıf)."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

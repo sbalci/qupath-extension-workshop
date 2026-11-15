@@ -70,13 +70,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -84,7 +84,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -97,7 +97,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -165,14 +165,14 @@ def project = QP.getProject()
 if (project == null) {
     def msg = "Önce bir QuPath projesi açın. (Dosya → Proje aç…)\nBu betik tek lam modunda çalışmaz."
     if (isHeadless) { println msg; return }
-    Dialogs.showErrorMessage("Proje açık değil", msg)
+    Dialogs.showErrorMessage(workshopText('script.a38d0e6adac0', "Proje açık değil"), msg)
     return
 }
 def entries = project.getImageList()
 if (entries == null || entries.isEmpty()) {
     def msg = "Projede görüntü bulunamadı."
     if (isHeadless) { println msg; return }
-    Dialogs.showErrorMessage("Boş proje", msg)
+    Dialogs.showErrorMessage(workshopText('script.cb3ed2211f0a', "Boş proje"), msg)
     return
 }
 
@@ -253,7 +253,7 @@ if (rows.isEmpty()) {
     def msg = "Hiçbir görüntüde GrandQC anotasyonu (\"" + GRANDQC_SENTINEL + "\") bulunamadı.\n" +
               "Önce GrandQC sihirbazıyla lamları işleyip GeoJSON'u içe aktarın."
     if (isHeadless) { println msg; return }
-    Dialogs.showWarningNotification("GrandQC kohort KK özeti", msg)
+    Dialogs.showWarningNotification(workshopText('script.05f7e81a10c9', "GrandQC kohort KK özeti"), msg)
     return
 }
 
@@ -267,7 +267,7 @@ try {
     }
 } catch (Throwable t) {
     def msg = "TSV yazılamadı: ${t.getMessage() ?: t.getClass().getSimpleName()}\nHedef: ${tsvFile.getAbsolutePath()}"
-    if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage("Yazma hatası", msg)
+    if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage(workshopText('script.540d5d46fe47', "Yazma hatası"), msg)
     return
 }
 
@@ -290,3 +290,14 @@ showResultWindow("GrandQC Kohort KK Özeti", body.toString())
 println String.format(java.util.Locale.US,
     "✓ TSV yazıldı: %d görüntü özetlendi (%d atlandı, %d hata) → %s",
     rows.size(), skipped, failed, tsvFile.getAbsolutePath())
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

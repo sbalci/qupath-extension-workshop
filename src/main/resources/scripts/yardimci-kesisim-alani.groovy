@@ -71,13 +71,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -85,7 +85,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -98,7 +98,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -119,15 +119,15 @@ String summaryName = "Kesişim Alanı Özet"
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce A ve B sınıflı alan anotasyonları olan bir lam açın.")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.daf4df7bf253', "Önce A ve B sınıflı alan anotasyonları olan bir lam açın."))
     return
 }
 def cal = imageData.getServer().getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0) || !(ph > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok", "Lamda piksel boyutu (µm) tanımlı değil; alan µm² olarak hesaplanamaz." +
-        "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).")
+    Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), workshopText('script.542aac19e376', "Lamda piksel boyutu (µm) tanımlı değil; alan µm² olarak hesaplanamaz." +
+        "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu)."))
     return
 }
 
@@ -142,7 +142,7 @@ if (classNames.size() < 2) {
     def msg = "Kesişim için en az İKİ farklı sınıfta alan anotasyonu gerekir.\n" +
               "Mevcut sınıf(lar): " + (classNames.join(', ') ?: '(yok)') + "\n\n" +
               "Anotasyonları elle çizip sınıflayın ya da bir piksel sınıflandırıcı (Tümör/Stroma modülü) çalıştırın."
-    if (isHeadless) println msg else Dialogs.showErrorMessage("Yetersiz sınıf", msg)
+    if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.f34b330b89e2', "Yetersiz sınıf"), msg)
     return
 }
 
@@ -159,17 +159,17 @@ if (isHeadless) {
     }
 } else {
     def defA = classNames.contains(prefs.get('classA', '')) ? prefs.get('classA', '') : classNames[0]
-    classA = Dialogs.showChoiceDialog("Kesişim alanı — A sınıfı",
-        "Ölçüm hangi sınıfın anotasyonlarına yazılsın? (A — 'B ile örtüşme' burada birikir)", classNames, defA)
+    classA = Dialogs.showChoiceDialog(workshopText('script.c2526a49ba64', "Kesişim alanı — A sınıfı"),
+        workshopText('script.b0d880955b72', "Ölçüm hangi sınıfın anotasyonlarına yazılsın? (A — 'B ile örtüşme' burada birikir)"), classNames, defA)
     if (classA == null) { println "İptal edildi."; return }
     def bOpts = classNames.findAll { it != classA }
     def defB = bOpts.contains(prefs.get('classB', '')) ? prefs.get('classB', '') : bOpts[0]
-    classB = Dialogs.showChoiceDialog("Kesişim alanı — B sınıfı",
-        "A'nın hangi sınıfla (B) örtüşmesi ölçülsün?", bOpts, defB)
+    classB = Dialogs.showChoiceDialog(workshopText('script.837fc98ea13b', "Kesişim alanı — B sınıfı"),
+        workshopText('script.0a644bad5227', "A'nın hangi sınıfla (B) örtüşmesi ölçülsün?"), bOpts, defB)
     if (classB == null) { println "İptal edildi."; return }
 }
 if (classA == classB) {
-    Dialogs.showErrorMessage("Aynı sınıf", "A ve B sınıfı farklı olmalı.")
+    Dialogs.showErrorMessage(workshopText('script.aaae99e0c668', "Aynı sınıf"), workshopText('script.53e35a091a93', "A ve B sınıfı farklı olmalı."))
     return
 }
 prefs.put('classA', classA); prefs.put('classB', classB)
@@ -180,7 +180,7 @@ def aAnnos = QP.getAnnotationObjects().findAll { it.getROI()?.isArea() && it.get
 def bAnnos = QP.getAnnotationObjects().findAll { it.getROI()?.isArea() && it.getPathClass()?.toString() == classB }
 if (aAnnos.isEmpty() || bAnnos.isEmpty()) {
     def msg = "Seçilen sınıflarda alan anotasyonu kalmadı (A: ${aAnnos.size()}, B: ${bAnnos.size()})."
-    if (isHeadless) println msg else Dialogs.showErrorMessage("Anotasyon yok", msg)
+    if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.469472ee53f3', "Anotasyon yok"), msg)
     return
 }
 
@@ -282,3 +282,14 @@ showResultWindow("Kesişim alanı", body.toString())
 println String.format(java.util.Locale.US,
     "✓ Kesişim alanı yazıldı: '%s' ∩ '%s' → genel örtüşme %%%.1f (%,d/%,d A örtüşüyor).",
     classA, classB, overallPct, overlapCount, aAnnos.size())
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

@@ -41,27 +41,38 @@ javafx.application.Platform.runLater {
     try {
         def win = gui.getStage()
         if (win == null) {
-            Dialogs.showErrorMessage('Tuş/fare göstergesi',
-                'QuPath ana penceresi bulunamadı; gösterge açılamadı.')
+            Dialogs.showErrorMessage(workshopText('script.c12ffb3efff3', 'Tuş/fare göstergesi'),
+                workshopText('script.b33b352bd187', 'QuPath ana penceresi bulunamadı; gösterge açılamadı.'))
             return
         }
         def existing = win.getProperties().get(PROP_KEY)
         if (existing != null) {
             try { existing.hide() } catch (Throwable ignore) {}
             win.getProperties().remove(PROP_KEY)
-            Dialogs.showInfoNotification('Tuş/fare göstergesi', 'Kapatıldı.')
+            Dialogs.showInfoNotification(workshopText('script.c12ffb3efff3', 'Tuş/fare göstergesi'), workshopText('script.e66e0cbe2791', 'Kapatıldı.'))
         } else {
             // Tüm QuPath pencerelerini izle (ana pencere + diyaloglar), böylece
             // odak hangi pencerede olursa olsun tuşlar görünür.
             def display = new InputDisplay(win, javafx.stage.Window.getWindows())
             display.show()
             win.getProperties().put(PROP_KEY, display)
-            Dialogs.showInfoNotification('Tuş/fare göstergesi',
-                'Açıldı — bastığınız tuşlar ve fare işlemleri ekranda görünür. ' +
-                'Kapatmak için betiği yeniden çalıştırın.')
+            Dialogs.showInfoNotification(workshopText('script.c12ffb3efff3', 'Tuş/fare göstergesi'),
+                workshopText('script.71b0b7844134', 'Açıldı — bastığınız tuşlar ve fare işlemleri ekranda görünür. ' +
+                'Kapatmak için betiği yeniden çalıştırın.'))
         }
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Tuş/fare göstergesi',
-            'Gösterge açılamadı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage(workshopText('script.c12ffb3efff3', 'Tuş/fare göstergesi'),
+            workshopText('script.17804adf064e', 'Gösterge açılamadı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+    }
+}
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
     }
 }

@@ -75,13 +75,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -89,7 +89,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -102,7 +102,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -129,15 +129,15 @@ int DET_CAP = 200000        // bu sayıdan çok tespit varsa bölge-başı sayı
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce merkez/çevreye bölünecek alanı anotasyon olarak çizip seçin.")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.6595248f2575', "Önce merkez/çevreye bölünecek alanı anotasyon olarak çizip seçin."))
     return
 }
 def cal = imageData.getServer().getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0) || !(ph > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok", "Lamda piksel boyutu (µm) tanımlı değil; alan µm² olarak üretilemez." +
-        "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).")
+    Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), workshopText('script.821202426064', "Lamda piksel boyutu (µm) tanımlı değil; alan µm² olarak üretilemez." +
+        "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu)."))
     return
 }
 
@@ -148,7 +148,7 @@ if (targets.isEmpty()) {
     def msg = "Kaynak alan seçili değil.\n\n" +
               "Merkez/çevreye bölünecek alanı (tümör yuvası, hidrojel, lezyon vb.)\n" +
               "ALAN anotasyonu olarak çizin ve SEÇİN, sonra betiği tekrar çalıştırın."
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Alan seçili değil", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.22e7e0edca91', "Alan seçili değil"), msg)
     return
 }
 
@@ -158,11 +158,11 @@ if (isHeadless) {
     try { numRegions = Integer.parseInt(prefs.get('numRegions', String.valueOf(DEF_REGIONS))) } catch (Throwable t) { numRegions = DEF_REGIONS }
 } else {
     def defN = prefs.get('numRegions', String.valueOf(DEF_REGIONS))
-    def nTxt = Dialogs.showInputDialog("Eşit-alan merkez/çevre",
-        "Kaç eşit alanlı bölge? (2 = merkez + çevre; en çok ${MAX_REGIONS})", defN)
+    def nTxt = Dialogs.showInputDialog(workshopText('script.827e93b4fcce', "Eşit-alan merkez/çevre"),
+        "${workshopText('script.3eddff49b493', 'Kaç eşit alanlı bölge? (2 = merkez + çevre; en çok ')}${MAX_REGIONS})", defN)
     if (nTxt == null) { println "İptal edildi."; return }
     try { numRegions = Integer.parseInt(nTxt.trim()) }
-    catch (Throwable t) { Dialogs.showErrorMessage("Geçersiz sayı", "Bölge sayısı bir tam sayı olmalı (2–${MAX_REGIONS})."); return }
+    catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.54cde46c5e98', "Geçersiz sayı"), "${workshopText('script.cd8581a452e1', 'Bölge sayısı bir tam sayı olmalı (2–')}${MAX_REGIONS})."); return }
 }
 if (numRegions < 2) numRegions = 2
 if (numRegions > MAX_REGIONS) numRegions = MAX_REGIONS
@@ -284,7 +284,7 @@ targets.eachWithIndex { t, si ->
 if (created.isEmpty()) {
     def msg = "Eşit-alan bölge üretilemedi (seçili alanların geometrisi bölme için uygun değil).\n" +
               "Bölge sayısını azaltmayı ya da daha kompakt/geniş bir alan seçmeyi deneyin."
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Bölge yok", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.62605099298f', "Bölge yok"), msg)
     return
 }
 
@@ -331,3 +331,14 @@ showResultWindow("Eşit-alan merkez/çevre", body.toString())
 println String.format(java.util.Locale.US,
     "✓ %,d eşit alanlı bölge üretildi (%d bölge/kaynak, %,d kaynak).",
     created.size(), numRegions, targets.size() - skippedSrc)
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

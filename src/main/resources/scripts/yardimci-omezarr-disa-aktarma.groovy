@@ -108,7 +108,7 @@ def showOptionsForm = { int selCount ->
         try {
             def stage = new javafx.stage.Stage()
             stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle("OME-Zarr dışa aktarma — seçenekler")
+            stage.setTitle(workshopText('script.3058538209dd', "OME-Zarr dışa aktarma — seçenekler"))
             stage.setAlwaysOnTop(true)
 
             def scopeBox = new javafx.scene.control.ChoiceBox<String>()
@@ -119,7 +119,7 @@ def showOptionsForm = { int selCount ->
             def chunkField = new javafx.scene.control.TextField("512")
             chunkField.setPrefColumnCount(8)
 
-            def pyramidCheck = new javafx.scene.control.CheckBox("Piramit (çok düzeyli) oluştur")
+            def pyramidCheck = new javafx.scene.control.CheckBox(workshopText('script.5d7f52d35bfc', "Piramit (çok düzeyli) oluştur"))
             pyramidCheck.setSelected(true)
 
             def help = { String s ->
@@ -134,26 +134,26 @@ def showOptionsForm = { int selCount ->
             grid.setHgap(12); grid.setVgap(6)
             grid.setPadding(new javafx.geometry.Insets(12))
             int r = 0
-            grid.add(new javafx.scene.control.Label("Kapsam:"), 0, r);  grid.add(scopeBox, 1, r); grid.add(help("Tüm görüntü: açık lamın tamamı (büyük lamlarda yavaş/büyük). Seçili anotasyon(lar): seçtiğiniz ROI'lerin sınırlayıcı kutusu."), 2, r); r++
-            grid.add(new javafx.scene.control.Label("Parça boyutu (px):"), 0, r); grid.add(chunkField, 1, r); grid.add(help("OME-Zarr parça (chunk/tile) kenarı. Tipik: 256–1024. Varsayılan 512."), 2, r); r++
-            grid.add(new javafx.scene.control.Label("Piramit:"), 0, r);  grid.add(pyramidCheck, 1, r); grid.add(help("İşaretliyse taban çözünürlük + 2× katları (çok düzeyli) yazılır — yakınlaş/uzaklaş için gereklidir. Kapalıysa yalnızca tam çözünürlük."), 2, r); r++
-            grid.add(new javafx.scene.control.Label("Sıkıştırma:"), 0, r); grid.add(new javafx.scene.control.Label("blosc (QuPath varsayılanı)"), 1, r); grid.add(help("Parçalar varsayılan blosc kodlayıcısıyla sıkıştırılır; ayrı ayar gerekmez."), 2, r); r++
+            grid.add(new javafx.scene.control.Label(workshopText('script.832662034af3', "Kapsam:")), 0, r);  grid.add(scopeBox, 1, r); grid.add(help("Tüm görüntü: açık lamın tamamı (büyük lamlarda yavaş/büyük). Seçili anotasyon(lar): seçtiğiniz ROI'lerin sınırlayıcı kutusu."), 2, r); r++
+            grid.add(new javafx.scene.control.Label(workshopText('script.24a074b1cbb5', "Parça boyutu (px):")), 0, r); grid.add(chunkField, 1, r); grid.add(help("OME-Zarr parça (chunk/tile) kenarı. Tipik: 256–1024. Varsayılan 512."), 2, r); r++
+            grid.add(new javafx.scene.control.Label(workshopText('script.1626d727a0c8', "Piramit:")), 0, r);  grid.add(pyramidCheck, 1, r); grid.add(help("İşaretliyse taban çözünürlük + 2× katları (çok düzeyli) yazılır — yakınlaş/uzaklaş için gereklidir. Kapalıysa yalnızca tam çözünürlük."), 2, r); r++
+            grid.add(new javafx.scene.control.Label(workshopText('script.ce0c9cf58753', "Sıkıştırma:")), 0, r); grid.add(new javafx.scene.control.Label(workshopText('script.ba34fa923f16', "blosc (QuPath varsayılanı)")), 1, r); grid.add(help("Parçalar varsayılan blosc kodlayıcısıyla sıkıştırılır; ayrı ayar gerekmez."), 2, r); r++
 
-            def exportBtn = new javafx.scene.control.Button("Dışa aktar")
+            def exportBtn = new javafx.scene.control.Button(workshopText('script.d4f745cb3bf5', "Dışa aktar"))
             exportBtn.setDefaultButton(true)
             exportBtn.setOnAction({
                 try {
                     int ck = Integer.parseInt(chunkField.getText().trim())
-                    if (ck <= 0)     { Dialogs.showErrorMessage("Geçersiz", "Parça boyutu pozitif olmalı."); return }
-                    if (ck > 8192)   { Dialogs.showErrorMessage("Geçersiz", "Parça boyutu çok büyük (≤ 8192)."); return }
+                    if (ck <= 0)     { Dialogs.showErrorMessage(workshopText('script.cff275b74696', "Geçersiz"), workshopText('script.728a3e678707', "Parça boyutu pozitif olmalı.")); return }
+                    if (ck > 8192)   { Dialogs.showErrorMessage(workshopText('script.cff275b74696', "Geçersiz"), workshopText('script.1435eaf7d7b2', "Parça boyutu çok büyük (≤ 8192).")); return }
                     def scope = scopeBox.getValue().startsWith("Seçili") ? 'selected' : 'whole'
                     result.set([scope: scope, chunk: ck, pyramid: pyramidCheck.isSelected()])
                     stage.close()
                 } catch (NumberFormatException nfe) {
-                    Dialogs.showErrorMessage("Sayı formatı", "Parça boyutu tam sayı olmalı (ör. 512).")
+                    Dialogs.showErrorMessage(workshopText('script.9cc391204f66', "Sayı formatı"), workshopText('script.47e4044a564d', "Parça boyutu tam sayı olmalı (ör. 512)."))
                 }
             })
-            def cancelBtn = new javafx.scene.control.Button("İptal")
+            def cancelBtn = new javafx.scene.control.Button(workshopText('script.72278748133a', "İptal"))
             cancelBtn.setCancelButton(true)
             cancelBtn.setOnAction({ result.set(null); stage.close() })
 
@@ -196,20 +196,20 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
                 content.putString(windowBody)
                 cb.setContent(content)
             })
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -221,7 +221,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -255,7 +255,7 @@ dirSize = { File dir ->
 // ──────────────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir lam açın, sonra bu betiği tekrar çalıştırın.")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.4a2f706ae19a', "Önce bir lam açın, sonra bu betiği tekrar çalıştırın."))
     return
 }
 def server = imageData.getServer()
@@ -280,9 +280,9 @@ long expH = server.getHeight()
 if (selectedScope) {
     if (selectedAnns.isEmpty()) {
         Dialogs.showErrorMessage(
-            "Seçili anotasyon yok",
-            "'Seçili anotasyon(lar)' kapsamı için önce bir veya birden çok anotasyon seçin\n" +
-            "(Annotations panelinden ya da lam üzerinde tıklayarak), sonra tekrar çalıştırın."
+            workshopText('script.25ef2c931d3f', "Seçili anotasyon yok"),
+            workshopText('script.91303e430279', "'Seçili anotasyon(lar)' kapsamı için önce bir veya birden çok anotasyon seçin\n" +
+            "(Annotations panelinden ya da lam üzerinde tıklayarak), sonra tekrar çalıştırın.")
         )
         return
     }
@@ -306,7 +306,7 @@ if (selectedScope) {
     rw = Math.min(rw, server.getWidth() - rx)
     rh = Math.min(rh, server.getHeight() - ry)
     if (rw <= 0 || rh <= 0) {
-        Dialogs.showErrorMessage("Geçersiz bölge", "Seçili anotasyonun sınırlayıcı kutusu görüntü dışında.")
+        Dialogs.showErrorMessage(workshopText('script.37d5cbd6aa45', "Geçersiz bölge"), workshopText('script.9908dfadc2cc', "Seçili anotasyonun sınırlayıcı kutusu görüntü dışında."))
         return
     }
     region = ImageRegion.createInstance(rx, ry, rw, rh, z, t)
@@ -319,12 +319,12 @@ if (selectedScope) {
 long pixels = expW * expH
 if (!isHeadless && !selectedScope && pixels > 100_000_000L) {
     def ok = Dialogs.showConfirmDialog(
-        "Büyük dışa aktarım",
+        workshopText('script.a899584cd8f6', "Büyük dışa aktarım"),
         String.format(java.util.Locale.US,
-            "Bu, tüm lamı (%,d × %,d px) OME-Zarr'a yazacak.\n" +
+            workshopText('script.5afbdbb8722c', "Bu, tüm lamı (%,d × %,d px) OME-Zarr'a yazacak.\n" +
             "Büyük lamlarda dakikalar sürebilir ve diskte GB'larca yer kaplayabilir.\n\n" +
             "Devam edilsin mi? (Yalnızca bir bölge istiyorsanız iptal edip bir anotasyon\n" +
-            "seçin ve 'Seçili anotasyon(lar)' kapsamını kullanın.)", expW, expH)
+            "seçin ve 'Seçili anotasyon(lar)' kapsamını kullanın.)"), expW, expH)
     )
     if (!ok) { println "Kullanıcı büyük-dışa-aktarım onayını reddetti."; return }
 }
@@ -471,3 +471,14 @@ showResultWindow(
 println String.format(java.util.Locale.US, "Tamamlandı: %d düzey, %.1f MB, %.1f sn", downsamples.length, mb, elapsed)
 println "Çıktı: ${outPath}"
 println "─────────────────────────────────────"
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

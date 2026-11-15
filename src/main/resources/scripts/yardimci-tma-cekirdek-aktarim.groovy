@@ -57,13 +57,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -71,7 +71,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -84,7 +84,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -102,7 +102,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce dearray edilmiş bir TMA lamı açın.")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.250da01cf5ff', "Önce dearray edilmiş bir TMA lamı açın."))
     return
 }
 
@@ -112,7 +112,7 @@ if (tmaGrid == null || tmaGrid.nCores() == 0) {
     def msg = "Bu lamda TMA ızgarası yok.\n\n" +
               "Önce [TMA → TMA dearrayer] ile çekirdekleri ızgaraya ayırın,\n" +
               "sonra bir tespit modülü (Hücre Tespiti, Nükleer Boya vb.) çalıştırın."
-    if (isHeadless) println msg else Dialogs.showWarningNotification("TMA bulunamadı", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.f8d7e11126af', "TMA bulunamadı"), msg)
     return
 }
 
@@ -166,7 +166,7 @@ if (!anyDetections) {
     def msg = "TMA ızgarası var ama çekirdeklerde hiç hücre tespiti yok.\n\n" +
               "Önce bir tespit modülü (Hücre Tespiti, Nükleer Boya, ER/PR H-score,\n" +
               "Membran Boya veya Sitoplazmik Boya modüllerinden biri) çalıştırın, sonra bu betiği tekrar deneyin."
-    if (isHeadless) println msg else Dialogs.showWarningNotification("Tespit yok", msg)
+    if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.4277b763a640', "Tespit yok"), msg)
     return
 }
 
@@ -207,3 +207,14 @@ body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
 showResultWindow("TMA çekirdek dışa aktarım", body.toString())
 println "✓ TMA çekirdek özeti yazıldı: ${tsvFile.getAbsolutePath()}"
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

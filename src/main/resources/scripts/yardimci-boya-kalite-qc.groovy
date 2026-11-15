@@ -57,19 +57,19 @@ def showResultWindow = { String windowTitle, String windowBody ->
             def textArea = new javafx.scene.control.TextArea(windowBody)
             textArea.setEditable(false); textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut"); alwaysTop.setSelected(true)
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut")); alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener({ obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent(); content.putString(windowBody); cb.setContent(content)
             })
-            def closeBtn = new javafx.scene.control.Button("Kapat"); closeBtn.setDefaultButton(true); closeBtn.setOnAction({ stage.close() })
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat")); closeBtn.setDefaultButton(true); closeBtn.setOnAction({ stage.close() })
             def spacer = new javafx.scene.layout.Region(); javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
             def buttons = new javafx.scene.layout.HBox(10, alwaysTop, spacer, copyBtn, closeBtn)
             buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT); buttons.setPadding(new javafx.geometry.Insets(8))
             def root = new javafx.scene.layout.BorderPane(); root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons); __bottom.setPadding(new javafx.geometry.Insets(8))
@@ -93,7 +93,7 @@ def labL = { double r, double g, double b ->
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     if (isHeadless) { println "Görüntü açık değil."; return }
-    Dialogs.showErrorMessage("Görüntü yok", "Önce bir lam açın."); return
+    Dialogs.showErrorMessage(workshopText('script.3fa03a8fb823', "Görüntü yok"), workshopText('script.12204d6dbab7', "Önce bir lam açın.")); return
 }
 def server = imageData.getServer()
 def stains = imageData.getColorDeconvolutionStains()
@@ -101,7 +101,7 @@ if (stains == null) {
     def msg = "Bu yardımcı renk dekonvolüsyonu (parlak alan H&E / H-DAB) gerektirir; boya vektörleri tanımlı değil.\n" +
               "[Image → Set image type] ile Brightfield seçin ya da Boya vektörleri sihirbazını çalıştırın."
     if (isHeadless) { println msg; return }
-    Dialogs.showErrorMessage("Boya vektörü yok", msg); return
+    Dialogs.showErrorMessage(workshopText('script.a7c7cbba6d84', "Boya vektörü yok"), msg); return
 }
 def s1name = stains.getStain(1)?.getName() ?: "Boya 1"
 def s2name = stains.getStain(2)?.getName() ?: "Boya 2"
@@ -116,13 +116,13 @@ def roi = sel.isEmpty() ? null : sel.iterator().next().getROI()
 int rx, ry, rw, rh
 if (roi != null) { rx = (int) Math.max(0, roi.getBoundsX()); ry = (int) Math.max(0, roi.getBoundsY()); rw = (int) Math.min(server.getWidth()-rx, Math.ceil(roi.getBoundsWidth())); rh = (int) Math.min(server.getHeight()-ry, Math.ceil(roi.getBoundsHeight())) }
 else { rx = 0; ry = 0; rw = server.getWidth(); rh = server.getHeight() }
-if (rw <= 0 || rh <= 0) { if (!isHeadless) Dialogs.showErrorMessage("Geçersiz bölge", "Bölge boyutu okunamadı."); else println "Geçersiz bölge."; return }
+if (rw <= 0 || rh <= 0) { if (!isHeadless) Dialogs.showErrorMessage(workshopText('script.37d5cbd6aa45', "Geçersiz bölge"), workshopText('script.efa1e38da33a', "Bölge boyutu okunamadı.")); else println "Geçersiz bölge."; return }
 double downsample = Math.max(1.0d, Math.max(rw, rh) / (double) MAX_DIM)
 
 def img
 try { img = server.readRegion(RegionRequest.createInstance(server.getPath(), downsample, rx, ry, rw, rh)) }
-catch (Throwable t) { def m = "Bölge okunamadı: " + (t.getMessage() ?: t.getClass().getSimpleName()); if (!isHeadless) Dialogs.showErrorMessage("Okuma hatası", m); else println m; return }
-if (img == null) { if (!isHeadless) Dialogs.showErrorMessage("Okuma hatası", "Bölge boş okundu."); else println "Bölge boş."; return }
+catch (Throwable t) { def m = "Bölge okunamadı: " + (t.getMessage() ?: t.getClass().getSimpleName()); if (!isHeadless) Dialogs.showErrorMessage(workshopText('script.1a92c50caa82', "Okuma hatası"), m); else println m; return }
+if (img == null) { if (!isHeadless) Dialogs.showErrorMessage(workshopText('script.1a92c50caa82', "Okuma hatası"), workshopText('script.83970d478d15', "Bölge boş okundu.")); else println "Bölge boş."; return }
 
 int iw = img.getWidth(), ih = img.getHeight()
 int[] rgb = img.getRGB(0, 0, iw, ih, null, 0, iw)
@@ -150,7 +150,7 @@ for (int i = 0; i < rgb.length; i++) {
 
 if (nTissue == 0) {
     def m = "Doku pikseli bulunamadı (arka plan eşiği OD < " + BG_OD + ").\nDaha dokulu bir bölge seçin ya da eşiği gözden geçirin."
-    if (!isHeadless) Dialogs.showErrorMessage("Doku yok", m); else println m; return
+    if (!isHeadless) Dialogs.showErrorMessage(workshopText('script.2155874eeb11', "Doku yok"), m); else println m; return
 }
 
 double meanOD1 = sumOD1 / nTissue, meanOD2 = sumOD2 / nTissue
@@ -195,3 +195,14 @@ sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik yo
 
 showResultWindow("Boya kalitesi QC — Tamamlandı 🎨", sb.toString())
 println String.format(java.util.Locale.US, "Boya kalitesi QC: %s OD %.3f, %s OD %.3f, H:E L* oranı %.3f (%,d doku piksel)", s1name, meanOD1, s2name, meanOD2, lRatio, nTissue)
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

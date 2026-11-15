@@ -66,7 +66,7 @@ String WINDOW_TITLE   = 'Eşik paleti — Eşikleri ayarla'
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     if (isHeadless) { println 'Görüntü açık değil.'; return }
-    Dialogs.showErrorMessage('Görüntü açık değil', 'Önce bir lam açın.')
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', 'Görüntü açık değil'), workshopText('script.12204d6dbab7', 'Önce bir lam açın.'))
     return
 }
 def server = imageData.getServer()
@@ -238,20 +238,20 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
                 content.putString(windowBody)
                 cb.setContent(content)
             })
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -263,7 +263,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -312,10 +312,10 @@ String initialScope = SCOPE_ALL
 if (!discoverColumns(cellsForScope(SCOPE_SELECTED)).isEmpty()) initialScope = SCOPE_SELECTED
 if (discoverColumns(cellsForScope(initialScope)).isEmpty()) initialScope = SCOPE_ALL
 if (discoverColumns(cellsForScope(initialScope)).isEmpty()) {
-    Dialogs.showErrorMessage('Uyumlu ölçüm bulunamadı',
-        'Görüntüde "Membrane/Nucleus/Cytoplasm: <boya> OD mean" deseninde ölçüm taşıyan tespit yok.\n' +
+    Dialogs.showErrorMessage(workshopText('script.3f056d1badd0', 'Uyumlu ölçüm bulunamadı'),
+        workshopText('script.126b974f87c2', 'Görüntüde "Membrane/Nucleus/Cytoplasm: <boya> OD mean" deseninde ölçüm taşıyan tespit yok.\n' +
         'Önce Nükleer boya / ER-PR H-score / Membran boya / Sitoplazmik boya / Tümör içi Ki-67 ' +
-        'modüllerinden birini çalıştırın, sonra bu yardımcıyı yeniden açın.')
+        'modüllerinden birini çalıştırın, sonra bu yardımcıyı yeniden açın.'))
     return
 }
 
@@ -350,7 +350,7 @@ javafx.application.Platform.runLater {
         def scopeBox = new javafx.scene.control.ComboBox(
             javafx.collections.FXCollections.observableArrayList([SCOPE_SELECTED, SCOPE_ALL]))
         scopeBox.getSelectionModel().select(initialScope)
-        def columnLabel = new javafx.scene.control.Label('Sütun:')
+        def columnLabel = new javafx.scene.control.Label(workshopText('script.35ea511684f2', 'Sütun:'))
         def columnBox = new javafx.scene.control.ComboBox()
         columnLabel.setVisible(false); columnLabel.setManaged(false)
         columnBox.setVisible(false); columnBox.setManaged(false)
@@ -418,27 +418,27 @@ javafx.application.Platform.runLater {
         // ── ⑤ Canlı istatistik + durum ──
         def statsLabel = new javafx.scene.control.Label('')
         statsLabel.setWrapText(true); statsLabel.setMaxWidth(Double.MAX_VALUE)
-        def dirtyLabel = new javafx.scene.control.Label('değişiklikler henüz uygulanmadı')
+        def dirtyLabel = new javafx.scene.control.Label(workshopText('script.0ac363c3592d', 'değişiklikler henüz uygulanmadı'))
         dirtyLabel.setStyle('-fx-text-fill: #B45309; -fx-font-size: 11px;')
         dirtyLabel.setVisible(false); dirtyLabel.setManaged(true)
-        def statusLabel = new javafx.scene.control.Label('Hazır')
+        def statusLabel = new javafx.scene.control.Label(workshopText('script.970dbbd01996', 'Hazır'))
         statusLabel.setWrapText(true); statusLabel.setMaxWidth(Double.MAX_VALUE)
 
         // ── ⑥ Düğmeler ──
-        def liveChk = new javafx.scene.control.CheckBox('Canlı uygula')
+        def liveChk = new javafx.scene.control.CheckBox(workshopText('script.228b24feb84c', 'Canlı uygula'))
         liveChk.setSelected(defLive)
-        def applyBtn = new javafx.scene.control.Button('Uygula')
+        def applyBtn = new javafx.scene.control.Button(workshopText('script.08a24723d591', 'Uygula'))
         applyBtn.setDefaultButton(true)
-        def resetBtn = new javafx.scene.control.Button('Sıfırla')
-        def autoBtn = new javafx.scene.control.Button('Otomatik öner')
+        def resetBtn = new javafx.scene.control.Button(workshopText('script.82c50a2e9fd7', 'Sıfırla'))
+        def autoBtn = new javafx.scene.control.Button(workshopText('script.068e63c022e6', 'Otomatik öner'))
         autoBtn.setTooltip(new javafx.scene.control.Tooltip(
-            '3-eşik Otsu: veri-güdümlü bir BAŞLANGIÇ önerisi — "doğru" eşik değildir; ' +
-            'yöntem referansınızla sabitleyip belgeleyin.'))
-        def saveBtn = new javafx.scene.control.Button('Bu eşikleri varsayılan yap')
-        def closeBtn = new javafx.scene.control.Button('Kapat')
+            workshopText('script.d7340282e8b9', '3-eşik Otsu: veri-güdümlü bir BAŞLANGIÇ önerisi — "doğru" eşik değildir; ' +
+            'yöntem referansınızla sabitleyip belgeleyin.')))
+        def saveBtn = new javafx.scene.control.Button(workshopText('script.097a775f4706', 'Bu eşikleri varsayılan yap'))
+        def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', 'Kapat'))
         closeBtn.setCancelButton(true)
         closeBtn.setOnAction({ stage.close() })
-        def alwaysTop = new javafx.scene.control.CheckBox('Üstte tut')
+        def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
         alwaysTop.setSelected(true)
         alwaysTop.selectedProperty().addListener(
             { obs, o, n -> stage.setAlwaysOnTop((boolean) n) } as javafx.beans.value.ChangeListener)
@@ -453,15 +453,15 @@ javafx.application.Platform.runLater {
             double hs = hScoreOf(c)
             def pc = { int x -> c.n > 0 ? 100.0d * x / c.n : 0.0d }
             statsLabel.setText(String.format(java.util.Locale.US,
-                'Negatif %,d (%%%.1f) · 1+ %,d (%%%.1f) · 2+ %,d (%%%.1f) · 3+ %,d (%%%.1f) · ≥1+ %,d (%%%.1f) · H-score %.0f',
+                workshopText('script.e7a37add5ef4', 'Negatif %,d (%%%.1f) · 1+ %,d (%%%.1f) · 2+ %,d (%%%.1f) · 3+ %,d (%%%.1f) · ≥1+ %,d (%%%.1f) · H-score %.0f'),
                 c.n0, pc((int) c.n0), c.n1, pc((int) c.n1), c.n2, pc((int) c.n2), c.n3, pc((int) c.n3),
                 (int) (c.n1 + c.n2 + c.n3), pc((int) (c.n1 + c.n2 + c.n3)), hs))
             double cum1 = pc((int) c.n0)
             double cum2 = pc((int) (c.n0 + c.n1))
             double cum3 = pc((int) (c.n0 + c.n1 + c.n2))
-            cumLabels[0].setText(String.format(java.util.Locale.US, 'kümülatif %%%.1f', cum1))
-            cumLabels[1].setText(String.format(java.util.Locale.US, 'kümülatif %%%.1f', cum2))
-            cumLabels[2].setText(String.format(java.util.Locale.US, 'kümülatif %%%.1f', cum3))
+            cumLabels[0].setText(String.format(java.util.Locale.US, workshopText('script.8deac644d3bb', 'kümülatif %%%.1f'), cum1))
+            cumLabels[1].setText(String.format(java.util.Locale.US, workshopText('script.8deac644d3bb', 'kümülatif %%%.1f'), cum2))
+            cumLabels[2].setText(String.format(java.util.Locale.US, workshopText('script.8deac644d3bb', 'kümülatif %%%.1f'), cum3))
             def la = (double[]) lastApplied.get()
             dirtyLabel.setVisible(la == null || la[0] != t[0] || la[1] != t[1] || la[2] != t[2])
             relayoutBand?.call()
@@ -691,8 +691,8 @@ javafx.application.Platform.runLater {
             def stain = stainForColumn((String) d.column)
             if (stain == null) {
                 def lbl = new javafx.scene.control.Label(
-                    'Renk şeridi yok: boya vektörleri arasında "' + chromogenTokenOf((String) d.column) +
-                    '" adlı boya bulunamadı. (Histogram ve kesitler çalışmaya devam eder.)')
+                    workshopText('script.97bf47ae1f8f', 'Renk şeridi yok: boya vektörleri arasında "') + chromogenTokenOf((String) d.column) +
+                    workshopText('script.b30f8dd2d0e4', '" adlı boya bulunamadı. (Histogram ve kesitler çalışmaya devam eder.)'))
                 lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE)
                 lbl.setStyle('-fx-font-size: 11px; -fx-opacity: 0.75;')
                 rampHolder.getChildren().add(lbl)
@@ -787,7 +787,7 @@ javafx.application.Platform.runLater {
                     } catch (Throwable ignored) {
                         javafx.application.Platform.runLater {
                             ((javafx.scene.control.Tooltip) e.tip).setText(
-                                ((javafx.scene.control.Tooltip) e.tip).getText() + ' — kesit okunamadı')
+                                ((javafx.scene.control.Tooltip) e.tip).getText() + workshopText('script.62f402c54521', ' — kesit okunamadı'))
                         }
                     }
                 }
@@ -848,13 +848,13 @@ javafx.application.Platform.runLater {
             limitLabel('10) Varsayılan eşikler DAB için kalibredir — AEC gibi diğer kromojenlerde başlangıç ' +
                 'noktasıdır, doğrulanmış varsayılan değildir.'))
         limitsBox.setPadding(new javafx.geometry.Insets(4, 8, 4, 8))
-        def limitsPane = new javafx.scene.control.TitledPane('Sınırlamalar — neden böyle?', limitsBox)
+        def limitsPane = new javafx.scene.control.TitledPane(workshopText('script.6b6e40a775ad', 'Sınırlamalar — neden böyle?'), limitsBox)
         limitsPane.setExpanded(false)
 
         // ── Veri (yeniden) kurulumu: kapsam/sütun değişimi + açılış ──
         def rebuildData = { String scope, String forcedColumn, boolean resetThresholds ->
             long myRebuild = rebuildSeq.incrementAndGet()
-            statusLabel.setText('Hesaplanıyor…')
+            statusLabel.setText(workshopText('script.14b1aea7b716', 'Hesaplanıyor…'))
             new Thread({
                 def result = null
                 def err = null
@@ -888,7 +888,7 @@ javafx.application.Platform.runLater {
                 def errF = err
                 javafx.application.Platform.runLater {
                     if (myRebuild != rebuildSeq.get()) return   // eski (terk edilmiş) kurulum — at
-                    if (errF != null) { statusLabel.setText('Hata: ' + errF); return }
+                    if (errF != null) { statusLabel.setText(workshopText('script.62a13087164b', 'Hata: ') + errF); return }
                     DATA.set(resultF)
                     double am = (double) resultF.axisMax
                     xAxis.setLowerBound(0.0d)
@@ -914,7 +914,7 @@ javafx.application.Platform.runLater {
                     rebuildRamp?.call()
                     rebuildThumbs?.call()
                     relayoutAligned?.call()
-                    statusLabel.setText('Hazır')
+                    statusLabel.setText(workshopText('script.970dbbd01996', 'Hazır'))
                     if (liveChk.isSelected() && !invalidated.get()) submitApply?.call(false)
                 }
             } as Runnable).start()
@@ -940,7 +940,7 @@ javafx.application.Platform.runLater {
             if (d == null || invalidated.get()) return
             def t = curThr()
             long mySeq = applySeq.incrementAndGet()
-            statusLabel.setText('Uygulanıyor…')
+            statusLabel.setText(workshopText('script.b191668e82bb', 'Uygulanıyor…'))
             applyExec.submit({
                 try {
                     // Birleştirme: kuyruktaki eski CANLI görevler atlanır (Uygula asla atlanmaz)
@@ -951,7 +951,7 @@ javafx.application.Platform.runLater {
                     if (!stillValid) {
                         invalidated.set(true)
                         javafx.application.Platform.runLater {
-                            statusLabel.setText('Kapsam artık geçerli değil — pencereyi kapatın')
+                            statusLabel.setText(workshopText('script.6403bdc3c342', 'Kapsam artık geçerli değil — pencereyi kapatın'))
                             liveChk.setSelected(false); liveChk.setDisable(true)
                             applyBtn.setDisable(true); autoBtn.setDisable(true)
                         }
@@ -964,7 +964,7 @@ javafx.application.Platform.runLater {
                     double elapsed = (System.currentTimeMillis() - t0) / 1000.0d
                     def s = showResult ? summarizeFromObjects((List) d.cells) : null
                     javafx.application.Platform.runLater {
-                        statusLabel.setText('Hazır')
+                        statusLabel.setText(workshopText('script.970dbbd01996', 'Hazır'))
                         updateStats()
                         if (showResult) {
                             showResultWindow('Eşikler Uygulandı 🎛️',
@@ -975,7 +975,7 @@ javafx.application.Platform.runLater {
                     }
                 } catch (Throwable err) {
                     javafx.application.Platform.runLater {
-                        statusLabel.setText('Hata: ' + (err.getMessage() ?: err.getClass().getSimpleName()))
+                        statusLabel.setText(workshopText('script.62a13087164b', 'Hata: ') + (err.getMessage() ?: err.getClass().getSimpleName()))
                     }
                 }
             } as Runnable)
@@ -993,7 +993,7 @@ javafx.application.Platform.runLater {
         autoBtn.setOnAction({
             def d = DATA.get(); if (d == null || invalidated.get()) return
             autoBtn.setDisable(true)
-            statusLabel.setText('Otsu önerisi hesaplanıyor…')
+            statusLabel.setText(workshopText('script.dccc0300a351', 'Otsu önerisi hesaplanıyor…'))
             new Thread({
                 def sugg = null
                 try { sugg = multiOtsu3((double[]) d.sorted, (double) d.axisMax) } catch (Throwable ignored) { }
@@ -1001,18 +1001,18 @@ javafx.application.Platform.runLater {
                 javafx.application.Platform.runLater {
                     autoBtn.setDisable(invalidated.get())
                     if (DATA.get() != d) {
-                        statusLabel.setText('Kapsam/sütun değişti — Otomatik öner\'i güncel veriyle yeniden çalıştırın.')
+                        statusLabel.setText(workshopText('script.cbfd5a990814', 'Kapsam/sütun değişti — Otomatik öner\'i güncel veriyle yeniden çalıştırın.'))
                         return
                     }
-                    if (suggF == null) { statusLabel.setText('Otsu önerisi için yeterli veri yok.'); return }
+                    if (suggF == null) { statusLabel.setText(workshopText('script.1f2fd4db9a23', 'Otsu önerisi için yeterli veri yok.')); return }
                     double eps = ((double) d.axisMax) / 128.0d
                     double s1 = suggF[0]
                     double s2 = Math.max((double) suggF[1], s1 + eps)
                     double s3 = Math.max((double) suggF[2], s2 + eps)
-                    if (!(s1 < s2 && s2 < s3)) { statusLabel.setText('Otsu önerisi türetilemedi.'); return }
+                    if (!(s1 < s2 && s2 < s3)) { statusLabel.setText(workshopText('script.0d0d3713d064', 'Otsu önerisi türetilemedi.')); return }
                     setThresholds(s1, s2, s3)
                     statusLabel.setText(String.format(java.util.Locale.US,
-                        'Otsu önerisi uygulandı: %.3f / %.3f / %.3f — başlangıç noktasıdır; yöntem referansınızla sabitleyip belgeleyin.',
+                        workshopText('script.9585e961f298', 'Otsu önerisi uygulandı: %.3f / %.3f / %.3f — başlangıç noktasıdır; yöntem referansınızla sabitleyip belgeleyin.'),
                         s1, s2, s3))
                     if (liveChk.isSelected() && !invalidated.get()) submitApply?.call(false)
                 }
@@ -1030,11 +1030,11 @@ javafx.application.Platform.runLater {
                             .invoke(null, (String) pair[0], ((Number) pair[1]).doubleValue())
                     } catch (Throwable ignored) { }
                 }
-                Dialogs.showMessageDialog('Varsayılan kaydedildi', String.format(java.util.Locale.US,
-                    'Yeni varsayılan eşikler kaydedildi:\n  1+: %.3f\n  2+: %.3f\n  3+: %.3f', t[0], t[1], t[2]))
+                Dialogs.showMessageDialog(workshopText('script.cf8d39c478ed', 'Varsayılan kaydedildi'), String.format(java.util.Locale.US,
+                    workshopText('script.f1aa4028a04c', 'Yeni varsayılan eşikler kaydedildi:\n  1+: %.3f\n  2+: %.3f\n  3+: %.3f'), t[0], t[1], t[2]))
             } else {
-                Dialogs.showWarningNotification('Kaydedilemedi',
-                    'Atölye eklentisi yüklü değil — varsayılan kaydedilemedi.')
+                Dialogs.showWarningNotification(workshopText('script.4066bc1f732a', 'Kaydedilemedi'),
+                    workshopText('script.4b53a3b8457b', 'Atölye eklentisi yüklü değil — varsayılan kaydedilemedi.'))
             }
         } as javafx.event.EventHandler)
 
@@ -1056,7 +1056,7 @@ javafx.application.Platform.runLater {
 
         // ── Yerleşim ──
         def scopeRow = new javafx.scene.layout.HBox(8,
-            new javafx.scene.control.Label('Kapsam:'), scopeBox, columnLabel, columnBox, moduleLabel)
+            new javafx.scene.control.Label(workshopText('script.832662034af3', 'Kapsam:')), scopeBox, columnLabel, columnBox, moduleLabel)
         scopeRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
         scopeRow.setPadding(new javafx.geometry.Insets(10, 10, 4, 10))
 
@@ -1084,7 +1084,7 @@ javafx.application.Platform.runLater {
         def buttons = new javafx.scene.layout.HBox(10, liveBox, alwaysTop, spacer, autoBtn, resetBtn, saveBtn, closeBtn, applyBtn)
         buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
 
-        def disclaimer = new javafx.scene.control.Label('⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
+        def disclaimer = new javafx.scene.control.Label(workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'))
         disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
         disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-font-size: 11px;')
 
@@ -1100,7 +1100,18 @@ javafx.application.Platform.runLater {
         stage.show()
         rebuildData(initialScope, null, true)
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Eşik paleti',
-            'Pencere açılamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName()))
+        Dialogs.showErrorMessage(workshopText('script.17ab7cded31c', 'Eşik paleti'),
+            workshopText('script.aa6ca16719b5', 'Pencere açılamadı: ') + (t.getMessage() ?: t.getClass().getSimpleName()))
+    }
+}
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
     }
 }

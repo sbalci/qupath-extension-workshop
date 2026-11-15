@@ -35,7 +35,7 @@ if (gui == null) {
     return
 }
 if (QP.getCurrentImageData() == null) {
-    Dialogs.showWarningNotification("Piksel eşikleyici", "Önce bir lam açın; eşikleyici açık görüntü ister.")
+    Dialogs.showWarningNotification(workshopText('script.e94ae017b9b4', "Piksel eşikleyici"), workshopText('script.740b851b6f59', "Önce bir lam açın; eşikleyici açık görüntü ister."))
     return
 }
 
@@ -52,13 +52,24 @@ javafx.application.Platform.runLater {
             act.handle(new javafx.event.ActionEvent())
             println "✓ Piksel eşikleyici açıldı."
         } else {
-            Dialogs.showInfoNotification("Piksel eşikleyici",
-                "Menüden açın: Classify → Pixel classification → Create thresholder.\n" +
+            Dialogs.showInfoNotification(workshopText('script.e94ae017b9b4', "Piksel eşikleyici"),
+                workshopText('script.b9b0d6d2dd14', "Menüden açın: Classify → Pixel classification → Create thresholder.\n" +
                 "Doku maskesi için: çözünürlük düşük, ölçüm = Hematoksilen OD (ya da parlaklık), eşik > 0 seçin; " +
-                "sonra 'Create objects' ile 'Doku' anotasyonuna çevirin.")
+                "sonra 'Create objects' ile 'Doku' anotasyonuna çevirin."))
         }
     } catch (Throwable t) {
-        Dialogs.showErrorMessage("Piksel eşikleyici", (t.getMessage() ?: t.getClass().getSimpleName()))
+        Dialogs.showErrorMessage(workshopText('script.e94ae017b9b4', "Piksel eşikleyici"), (t.getMessage() ?: t.getClass().getSimpleName()))
     }
 }
 println "Piksel eşikleyici başlatıcı çalıştı. ⚠️ Yalnızca araştırma/eğitim amaçlıdır."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}
