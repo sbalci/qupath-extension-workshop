@@ -11295,13 +11295,21 @@
     },
     "yardimci-doku-tespiti-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "f43debd110826a0e4d18efe66f807cc01c3faa9d463954fb7504212067aeac30",
+      "sha256": "3b0b1deb66ec302df15c1759adb63501b40fa1c2518712ac4ca2bf114e9a9692",
       "expressions": [
         {
           "original": "\"Hata: ${result.error}\"",
           "replacement": "\"${workshopText('script.62a13087164b', 'Hata: ')}${result.error}\"",
           "count": 1,
           "context": "setText"
+        }
+      ],
+      "baseline_reviews": [
+        {
+          "revision": "cc8d89ad314f4d22d1de3f78d0467d0ca662fc89",
+          "previous_sha256": "f43debd110826a0e4d18efe66f807cc01c3faa9d463954fb7504212067aeac30",
+          "sha256": "3b0b1deb66ec302df15c1759adb63501b40fa1c2518712ac4ca2bf114e9a9692",
+          "record": "docs/source-baseline-review-2026-11-15.md"
         }
       ]
     },
@@ -11331,7 +11339,7 @@
     },
     "yardimci-hotspot-sirali.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "fc043667ce98a651fad005c915c4d20a9ba42d63c91fad02d01de6ce673f9930",
+      "sha256": "45d21797c25864f010d4795d94edc9fdfe089562dc91dfb175b874b591670964",
       "expressions": [
         {
           "original": "\"'${chosenClass}' sınıfındaki karolarda sayısal ölçüm bulunamadı.\"",
@@ -11345,11 +11353,27 @@
           "count": 1,
           "context": "showConfirmDialog"
         }
+      ],
+      "baseline_reviews": [
+        {
+          "revision": "cc8d89ad314f4d22d1de3f78d0467d0ca662fc89",
+          "previous_sha256": "fc043667ce98a651fad005c915c4d20a9ba42d63c91fad02d01de6ce673f9930",
+          "sha256": "45d21797c25864f010d4795d94edc9fdfe089562dc91dfb175b874b591670964",
+          "record": "docs/source-baseline-review-2026-11-15.md"
+        }
       ]
     },
     "yardimci-hovernext-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "e45d954bde7a4a4f557d7d181aa8bd606d17e69344b7208331ae28037e432a3e"
+      "sha256": "df07231a096871bf71d58705241d7bf7cf57feb160a53d6605c0caa11dba6a1e",
+      "baseline_reviews": [
+        {
+          "revision": "cc8d89ad314f4d22d1de3f78d0467d0ca662fc89",
+          "previous_sha256": "e45d954bde7a4a4f557d7d181aa8bd606d17e69344b7208331ae28037e432a3e",
+          "sha256": "df07231a096871bf71d58705241d7bf7cf57feb160a53d6605c0caa11dba6a1e",
+          "record": "docs/source-baseline-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-icc-denetci-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
@@ -11369,7 +11393,15 @@
     },
     "yardimci-ki67-heterojenlik.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "82253fcf716977e16139292177589671e5d31881c4e511bbf70cdf8e554a36e9"
+      "sha256": "77cb51ad5f6a150dc66c9b06c9f49f9bc665d640d2102241dc6aab622427feaf",
+      "baseline_reviews": [
+        {
+          "revision": "cc8d89ad314f4d22d1de3f78d0467d0ca662fc89",
+          "previous_sha256": "82253fcf716977e16139292177589671e5d31881c4e511bbf70cdf8e554a36e9",
+          "sha256": "77cb51ad5f6a150dc66c9b06c9f49f9bc665d640d2102241dc6aab622427feaf",
+          "record": "docs/source-baseline-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-kohort-boya-qc.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
