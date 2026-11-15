@@ -4419,7 +4419,7 @@
     {
       "key": "script.66653f05abfc",
       "tr": "Yalnızca araştırma/eğitim amaçlı UYUM ölçüsü üretir; doğruluk/klinik karar üretmez.",
-      "en": "Produces an AGREEMENT measure for research/teaching only; makes no accuracy/clinical decision."
+      "en": "Produces an AGREEMENT measure for research/teaching only; does not measure accuracy or make clinical decisions."
     },
     {
       "key": "script.a94f01ac5545",
@@ -5085,6 +5085,16 @@
       "key": "script.fb9e7cf45f98",
       "tr": "Seçili anotasyonlar geçerli bir analiz alanı oluşturmuyor.",
       "en": "The selected annotations do not form a valid analysis area."
+    },
+    {
+      "key": "script.2d3a030df408",
+      "tr": "③ Ağırlık (checkpoint.pth, CC BY-NC 4.0, kapılı)",
+      "en": "③ Weights (checkpoint.pth, CC BY-NC 4.0, gated)"
+    },
+    {
+      "key": "script.1257781af5f3",
+      "tr": "İndirmeden önce: (1) Hugging Face hesabı açın, (2) huggingface.co/zhihuanglab/CytoFormer sayfasında koşulları kabul edin (otomatik onay), (3) bir OKUMA (read) jetonu oluşturun, (4) bir terminalde \"hf auth login\" çalıştırın YA DA jetonu aşağıya yapıştırın (diske yazılmaz).",
+      "en": "Before downloading: (1) create a Hugging Face account, (2) accept the terms at huggingface.co/zhihuanglab/CytoFormer (automatic approval), (3) create a READ token, (4) run \"hf auth login\" in a terminal OR paste the token below (it is not saved to disk)."
     }
   ],
   "source_contracts": {

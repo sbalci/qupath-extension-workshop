@@ -1075,7 +1075,7 @@ render = { ->
         dlCodeBtn.setDisable(!(st.pythonOk && st.runnerOk && (prefs.get(PREF_LICENSE, '') == CODE_SHA)))
         rowOf([dlCodeBtn])
 
-        section('③ Ağırlık (checkpoint.pth, CC BY-NC 4.0, kapılı)')
+        section(workshopText('script.2d3a030df408', '③ Ağırlık (checkpoint.pth, CC BY-NC 4.0, kapılı)'))
         def tg = new javafx.scene.control.ToggleGroup()
         def rbFolder = new javafx.scene.control.RadioButton(workshopText('script.bea611f0f64c', 'Klasördeki modeli kullan')); rbFolder.setToggleGroup(tg)
         def rbDl = new javafx.scene.control.RadioButton(workshopText('script.32b0b3013b2d', 'Hugging Face\'ten indir')); rbDl.setToggleGroup(tg)
@@ -1086,7 +1086,7 @@ render = { ->
             rowOf([navButton(workshopText('script.6b16a609ae4a', 'Klasör seç…'), { def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.737a83f7a6aa', 'Model klasörü (checkpoint.pth + organ_celltype_map.json)'), null); if (x != null) { putPref(PREF_FOLDER, x.getAbsolutePath()); later { render() } } }),
                    new javafx.scene.control.Label(cfg.folder?.trim() ? cfg.folder : workshopText('script.04c03d49215c', '(klasör seçilmedi — ör. J:\\zhihuanglab\\CytoFormer)'))])
         } else {
-            addGuidance('İndirmeden önce: (1) Hugging Face hesabı açın, (2) huggingface.co/zhihuanglab/CytoFormer sayfasında koşulları kabul edin (otomatik onay), (3) bir OKUMA (read) jetonu oluşturun, (4) bir terminalde "hf auth login" çalıştırın YA DA jetonu aşağıya yapıştırın (diske yazılmaz).')
+            addGuidance(workshopText('script.1257781af5f3', 'İndirmeden önce: (1) Hugging Face hesabı açın, (2) huggingface.co/zhihuanglab/CytoFormer sayfasında koşulları kabul edin (otomatik onay), (3) bir OKUMA (read) jetonu oluşturun, (4) bir terminalde "hf auth login" çalıştırın YA DA jetonu aşağıya yapıştırın (diske yazılmaz).'))
             def tokenField = new javafx.scene.control.PasswordField(); tokenField.setPromptText(workshopText('script.f1b75239bd07', 'Hugging Face jetonu (isteğe bağlı — hf auth login yapıldıysa boş bırakın)')); tokenField.setPrefColumnCount(30)
             tokenFieldRef.set(tokenField)
             rowOf([new javafx.scene.control.Label(workshopText('script.96ad2d65e41c', 'HF jetonu:')), tokenField])
