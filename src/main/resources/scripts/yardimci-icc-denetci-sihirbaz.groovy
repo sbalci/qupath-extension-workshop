@@ -269,9 +269,9 @@ def buildReport = { String imageName, String path, Map g ->
 
     sb << '\nNE ANLAMA GELİYOR\n─────────────────\n'
     if (any) {
-        sb << '  • ImageScope bu profili UYGULAR → renkler "doğru" görünür.\n'
-        sb << '  • QuPath / Bio-Formats UYGULAMAZ → aynı lam QuPath\'te biraz\n'
-        sb << '    farklı (genelde daha soğuk/mavi) görünebilir. Bu bir HATA değildir.\n'
+        sb << '  • Profilin dosyada bulunması, kullanılan okuyucunun onu uyguladığını göstermez.\n'
+        sb << '  • QuPath 0.7+ OpenSlide ile ICC profilini isteğe bağlı uygulayabilir;\n'
+        sb << '    okuyucuyu ve ICC tercihini ayrıca kontrol edin. Bu denetçi etkin dönüşümü sınamaz.\n'
         if (g.hasFFFF) {
             sb << '  • Profil 0xFFFF etiketinde: GT450 sınıfı tarayıcılar profili buraya\n'
             sb << '    TAŞIR ki standart okuyucular çifte renk dönüşümü yapmasın — bu yüzden\n'
@@ -374,10 +374,7 @@ render = { ->
     if (cur == 'READY') {
         def imageData = QP.getCurrentImageData()
         title.setText('ICC renk profili denetçisi')
-        addGuidance('Açık lamın DOSYASINDA gömülü bir ICC renk profili olup olmadığını okur ' +
-            've raporlar. Salt okunur: görüntüyü, renkleri veya analizinizi değiştirmez.\n\n' +
-            'Aperio SVS dosyaları gömülü ICC profili taşır; ImageScope bunu uygular, QuPath uygulamaz ' +
-            '→ aynı lam iki yazılımda farklı renkte görünür. Bu araç hangi durumun geçerli olduğunu gösterir.')
+        addGuidance('Açık lamın DOSYASINDA gömülü ICC renk profili arar; görüntüyü, renkleri veya analizinizi değiştirmez.\n\nQuPath 0.7+ OpenSlide ile ICC profilini isteğe bağlı uygulayabilir; 0.6 bu özelliği içermez. Profilin dosyada bulunması, görüntüde etkin olduğunu göstermez. Kullanılan okuyucuyu ve ICC tercihini ayrıca kontrol edin. Bu araç etkin renk dönüşümünü sınamaz.')
         if (imageData == null) addGuidance('⚠ Açık lam yok. Önce yerel bir TIFF/SVS lamı açın.')
         actions.add(navButton('Kapat', { stage.close() }))
         def go = navButton('Bu lamı denetle ▶', { startInspect() }, 'Açık lamın dosyasında gömülü ICC profilini arar')
