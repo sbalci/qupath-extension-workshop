@@ -29,7 +29,7 @@ if snapshot:
                 target = root / entry.name
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(tar.extractfile(entry).read())
-version = re.search(r'^version = "([^"]+)"', (root / 'build.gradle.kts').read_text(), re.M)[1]
+version = re.search(r'^version = "([^"]+)"', (root / 'build.gradle.kts').read_text(encoding='utf-8'), re.M)[1]
 jar = args.jar.resolve() if args.jar else root / f'build/libs/qupath-extension-workshop-{version}.jar'
 digest = hashlib.sha256(jar.read_bytes()).hexdigest()
 if args.expect_sha256:
@@ -52,7 +52,7 @@ with zipfile.ZipFile(jar) as z:
     for p in resources.rglob('*'):
         if p.is_file():
             assert z.read(p.relative_to(resources).as_posix()) == p.read_bytes(), str(p)
-    java_source = (root / 'src/main/java/io/github/sbalci/qupath/workshop/WorkshopExtension.java').read_text()
+    java_source = (root / 'src/main/java/io/github/sbalci/qupath/workshop/WorkshopExtension.java').read_text(encoding='utf-8')
     scripts = sorted(set(re.findall(r'"([^"/]+\.groovy)"', java_source)))
     for script in scripts:
         assert 'scripts/' + script in names, script
