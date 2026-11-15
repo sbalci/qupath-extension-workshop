@@ -3331,9 +3331,12 @@ render = { ->
             // yoğunluğuyla ayırt eder). warpOnly/"↻ Yeniden birleştir" yollarında zaten kayıt YAPILMADIĞI için
             // (kayıtlı registrar kullanılır) bu seçim o yollarda etkisizdir.
             def refChoice = new javafx.scene.control.ChoiceBox()
-            ['Açık lam (kaynak)', 'Otomatik (en geniş doku alanı)'].each { refChoice.getItems().add(it) }
-            refChoice.setValue(referenceModeRef.get() == 'auto' ? 'Otomatik (en geniş doku alanı)' : 'Açık lam (kaynak)')
-            refChoice.valueProperty().addListener({ o, ov, nv -> referenceModeRef.set((nv?.toString() ?: '').startsWith('Otomatik') ? 'auto' : 'open') } as javafx.beans.value.ChangeListener)
+            // Mantık sabit kimliklerle ('open' | 'auto') çalışır; ekrandaki metin çevrilebilir. Kimlik, seçilen SIRAdan okunur.
+            def refIds = ['open', 'auto']
+            def refLabels = ['open': workshopText('script.9a6e570d55d9', 'Açık lam (kaynak)'), 'auto': workshopText('script.ae54faa8a479', 'Otomatik (en geniş doku alanı)')]
+            refIds.each { refChoice.getItems().add(refLabels[it]) }
+            refChoice.setValue(refLabels[referenceModeRef.get() == 'auto' ? 'auto' : 'open'])
+            refChoice.getSelectionModel().selectedIndexProperty().addListener({ o, ov, nv -> int ri = (nv == null ? -1 : nv.intValue()); referenceModeRef.set((ri >= 0 && ri < refIds.size()) ? refIds[ri] : 'open') } as javafx.beans.value.ChangeListener)
             def refRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label(workshopText('script.440c56a3268b', 'Referans:')), refChoice)
             refRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT); center.getChildren().add(refRow)
             addGuidance(workshopText('script.915c930ffa17', 'Hız: "Yalnız rigid" non-rigid aşamasını (~40 dk olabilir) atlar — seri kesitlerde çoğu zaman yeterli, hassasiyet biraz düşer. ') +

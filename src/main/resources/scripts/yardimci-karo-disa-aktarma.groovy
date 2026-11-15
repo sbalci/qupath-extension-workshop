@@ -163,6 +163,7 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
         //   duzen=etiket-lam|lam-etiket|etiket · adetiket=evet|hayir · adbolme=evet|hayir · liste=evet|hayir
         //   doku=0..100 · beyaz=0..255 · yalnizliste=evet|hayir · onizleme=evet|hayir
         //   disla=A,B* · etiketler=A,B · cikti=<klasör>   (bölme okuma kapatılamaz)
+        //   kopyalar=hepsi|enyeni   (yalnız aynı sonucun kopyaları varsa gerekir; yoksa verilmese de olur)
         def cli = (binding.hasVariable('args') && binding.getVariable('args') != null) ? (binding.getVariable('args') as List) : []
         for (a in cli) {
             String s = a.toString()
@@ -187,6 +188,7 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
             else if ((k == 'etiketler' || k == 'siniflar') && !raw.isEmpty()) defaults.labels = csv(raw) as Set
             else if (k == 'cikti' && !raw.isEmpty()) defaults.outRoot = raw
             else if (k == 'senaryo') continue          // tools/test-karo-etiket.groovy kendi bağımsız değişkeni
+            else if (k == 'kopyalar' && ['hepsi', 'enyeni'].contains(v)) continue   // kopya sorusu betiğin başında yanıtlanır (bkz. kopya kontrolü)
             else { println "Tanınmayan bağımsız değişken: " + s + ". Karo yazılmadı."; return null }
         }
         println "=== Karo dışa aktarma (headless) === " + defaults.findAll { k, v -> !(k in ['splitKeys', 'patientKeys']) }
@@ -230,12 +232,21 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
             def check = { String text, boolean on -> def c = new javafx.scene.control.CheckBox(text); c.setMnemonicParsing(false); c.setSelected(on); return c }
 
             // ── Sekme 1: Temel ──
-            def modeBox  = choice(["Sadece görüntü", "Görüntü + etiket maskesi"])
-            def scopeBox = choice(["Tüm anotasyonlar (${allCount})".toString(), "Seçili anotasyon(lar) (${selCount})".toString()])
+            // Seçim listeleri: mantık yalnız sabit ASCII kimliklere bakar (idOf = seçili sıra → kimlik); görünen metin yalnız etikettir.
+            // Kimlik sırası = kutudaki sıra; Rehber ön ayarları kutuları sıra numarasıyla seçer (mod 0 = image, biçim 0 = png).
+            def modeIds   = ['image', 'mask']
+            def scopeIds  = ['all', 'selected']
+            def formatIds = ['png', 'jpg', 'tiff']
+            def formatExt = [png: '.png', jpg: '.jpg', tiff: '.tif']
+            def groupIds  = ['class', 'name', 'both']
+            def layoutIds = ['label-slide', 'slide-label', 'label']
+            def idOf = { javafx.scene.control.ChoiceBox b, List ids -> ids[Math.max(0, b.getSelectionModel().getSelectedIndex())] }
+            def modeBox  = choice([workshopText('script.78f68b95c255', 'Sadece görüntü'), workshopText('script.bc8e4d958ea2', 'Görüntü + etiket maskesi')])
+            def scopeBox = choice([String.format(java.util.Locale.US, workshopText('script.404d84ffe951', 'Tüm anotasyonlar (%d)'), allCount), String.format(java.util.Locale.US, workshopText('script.e649f679ad2d', 'Seçili anotasyon(lar) (%d)'), selCount)])
             def tileField    = field("512", 8)
             def umField      = field("1.0", 8)
             def overlapField = field("0", 8)
-            def formatBox = choice(["PNG (kayıpsız)", "JPG (küçük, kayıplı)", "TIFF (kayıpsız)"])
+            def formatBox = choice([workshopText('script.d1219512ec00', 'PNG (kayıpsız)'), workshopText('script.5619c036c22e', 'JPG (küçük, kayıplı)'), workshopText('script.85a90291f442', 'TIFF (kayıpsız)')])
             def qualityField = field("90", 8)
             def g1 = newGrid()
             int r = 0
@@ -248,16 +259,15 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
             addRow(g1, r++, workshopText('script.a20e7e828354', 'JPG kalitesi (1–100):'), qualityField, workshopText('script.cfe99d363120', 'Yalnız JPG seçiliyse kullanılır.'))
 
             // ── Sekme 2: Etiket ve bölge ──
-            def groupBox = choice(["Sınıfa göre (yoksa ada göre)", "Anotasyon adına göre (yoksa sınıfa göre)", "Sınıf + ad"])
+            def groupBox = choice([workshopText('script.d04d4d1a8b3e', 'Sınıfa göre (yoksa ada göre)'), workshopText('script.c10fc566dc8a', 'Anotasyon adına göre (yoksa sınıfa göre)'), workshopText('script.1b5025173301', 'Sınıf + ad')])
             def excludeField = field("Ignore*", 16)
             // Etiket listesi CANLIDIR: kapsam, klasörleme ve dışlama alanı değiştikçe yeniden kurulur.
             def labelPane = new javafx.scene.layout.FlowPane(10, 4)
             labelPane.setPrefWrapLength(260)
             def unchecked = new HashSet()               // kullanıcının kapattığı etiketler (yeniden kurulurken korunur)
             def rebuildLabels = { ->
-                boolean onlySel = scopeBox.getValue().startsWith("Seçili")
-                String gv0 = groupBox.getValue()
-                String mode0 = gv0.startsWith("Anotasyon adına") ? 'name' : (gv0.startsWith("Sınıf +") ? 'both' : 'class')
+                boolean onlySel = (idOf(scopeBox, scopeIds) == 'selected')
+                String mode0 = idOf(groupBox, groupIds)
                 def pats = csv(excludeField.getText())
                 def counts = new java.util.TreeMap<String, Integer>()
                 annInfo.each { a ->
@@ -312,7 +322,7 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
                 if (picked != null) outField.setText(picked.getAbsolutePath())
             })
             def outBox = new javafx.scene.layout.HBox(6, outField, browseBtn)
-            def layoutBox = choice(["<Etiket>/<lam>/dosya", "<lam>/<Etiket>/dosya", "<Etiket>/dosya (lam klasörü yok)"])
+            def layoutBox = choice([workshopText('script.3b0c7b3fc0da', '<Etiket>/<lam>/dosya'), workshopText('script.107a2d0e2b73', '<lam>/<Etiket>/dosya'), workshopText('script.65c52f0097ec', '<Etiket>/dosya (lam klasörü yok)')])
             def labelNameBox = check(workshopText('script.f6d7fb2b11e1', 'Dosya adına etiketi yaz'), true)
             def splitNameBox = check(workshopText('script.203a66546c4b', 'Dosya adına bölmeyi yaz'), false)
             def manifestBox = check(workshopText('script.1dab070f0634', 'Karo listesini yaz (karo_listesi__<lam>.tsv)'), true)
@@ -408,8 +418,8 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
                     if (cal && ds < 0.98d) sb << workshopText('script.7492ecb2e771', '⚠ İstenen ölçek lamın kendi çözünürlüğünden ince: karo büyütülerek üretilir, yeni ayrıntı içermez.\n')
                     if (!cal) sb << workshopText('script.ea5ad31036f4', '⚠ Lam kalibre değil: önce piksel boyutunu girin, yoksa lamlar arasında ölçek tutmaz.\n')
                     if (ov > 0) sb << workshopText('script.27021c01b978', '⚠ Örtüşme açık: karo sayısı artar; karo düzeyinde rastgele bölme sızıntı olur.\n')
-                    if (formatBox.getValue().startsWith("JPG")) sb << workshopText('script.e1700b176125', '⚠ JPG kayıplıdır: renk ölçümü ya da yeniden sıkıştırma gerekiyorsa PNG seçin.\n')
-                    if (modeBox.getValue().startsWith("Görüntü +") && !formatBox.getValue().startsWith("PNG")) sb << workshopText('script.fcde55740736', 'ℹ Maske modunda biçim PNG\'ye çevrilir.\n')
+                    if (idOf(formatBox, formatIds) == 'jpg') sb << workshopText('script.e1700b176125', '⚠ JPG kayıplıdır: renk ölçümü ya da yeniden sıkıştırma gerekiyorsa PNG seçin.\n')
+                    if (idOf(modeBox, modeIds) == 'mask' && idOf(formatBox, formatIds) != 'png') sb << workshopText('script.fcde55740736', 'ℹ Maske modunda biçim PNG\'ye çevrilir.\n')
                 } catch (Throwable ignore) {
                     sb << workshopText('script.2bccd1ff62a4', 'Karo boyutu, µm/px ve örtüşme alanlarına geçerli sayı girin.\n')
                 }
@@ -475,19 +485,16 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
                     def sk = csv(splitKeyField.getText()).collect { it.toLowerCase(java.util.Locale.ROOT) }
                     def pk = csv(patientKeyField.getText()).collect { it.toLowerCase(java.util.Locale.ROOT) }
                     if (sk.isEmpty()) { Dialogs.showErrorMessage(workshopText('script.cff275b74696', "Geçersiz"), workshopText('script.f789ee23e760', "En az bir bölme anahtarı gerekir; boş bırakmak bölme denetimini kapatırdı.")); return }
-                    def fv = formatBox.getValue()
-                    def gv = groupBox.getValue()
-                    def lv = layoutBox.getValue()
                     result.set([
-                        mode: (modeBox.getValue().startsWith("Görüntü +") ? 'mask' : 'image'),
-                        scope: (scopeBox.getValue().startsWith("Seçili") ? 'selected' : 'all'),
-                        group: (gv.startsWith("Anotasyon adına") ? 'name' : (gv.startsWith("Sınıf +") ? 'both' : 'class')),
+                        mode: idOf(modeBox, modeIds),
+                        scope: idOf(scopeBox, scopeIds),
+                        group: idOf(groupBox, groupIds),
                         tileSize: ts, umPerPx: um, overlap: ov,
-                        ext: (fv.startsWith("JPG") ? '.jpg' : (fv.startsWith("TIFF") ? '.tif' : '.png')),
+                        ext: formatExt[idOf(formatBox, formatIds)],
                         minCover: mc / 100.0d, subtractIgnore: ignoreBox.isSelected(), subtractChildren: childBox.isSelected(),
                         labels: (picked.size() == labelChecks.size() ? null : picked), exclude: csv(excludeField.getText()),
                         maxPerLabel: mx,
-                        layout: (lv.startsWith("<lam>") ? 'slide-label' : (lv.contains("lam klasörü yok") ? 'label' : 'label-slide')),
+                        layout: idOf(layoutBox, layoutIds),
                         labelInName: labelNameBox.isSelected(), splitInName: splitNameBox.isSelected(),
                         jpegQuality: jq, writeManifest: manifestBox.isSelected(), outRoot: outText,
                         minTissue: mt / 100.0d, whiteThreshold: wt, coordsOnly: coordsBox.isSelected(), preview: previewBox.isSelected(),
@@ -582,6 +589,96 @@ def showResultWindow = { String windowTitle, String windowBody ->
 }
 
 // ──────────────────────────────────────────────────────────────
+// Kopya grupları: bir lamda aynı sonucun "ad", "ad (2)", "ad (3)" … olarak yan yana durması.
+// Kural (tam eşleşme, önek eşleşmesi YOK): "X (N)" (N tam sayı ≥ 2) "X" tabanına aittir. Bir grup,
+// o tabanın en az İKİ farklı numarası (taban = 1) aynı lamda varsa kopya grubudur; tek başına bir
+// "X (N)" (X silinmiş) grup değildir. "X (notlarım)" ve "X (1)" kopya değildir. En yeni = en yüksek numara.
+// Karo dışa aktarmaya YALNIZ anotasyonlar girer (karo bölgesi + etiket maskesi); tespitler ve ölçümler girmez,
+// bu yüzden tarama yalnız anotasyonlara bakar. closure'lar veri-aktarma.groovy ile aynıdır (tespit sayımı hariç).
+// Başsız kipte soru sorulamaz: açık bağımsız değişken gerekir (ör. -a kopyalar=hepsi).
+// ──────────────────────────────────────────────────────────────
+def headlessArg = { String key ->
+    def list = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) list = (a as List) } } catch (Throwable ignore) {}
+    def found = null
+    list.each { a -> def s = a?.toString() ?: ''; int i = s.indexOf('='); if (i > 0 && s.substring(0, i).trim() == key) found = s.substring(i + 1).trim().toLowerCase(java.util.Locale.ROOT) }
+    return found
+}
+def copiesParse = { String name ->
+    if (name == null) return null
+    def m = (name =~ '^(.+) \\((\\d{1,6})\\)$')
+    if (!m.matches()) return null
+    int n = Integer.parseInt(m.group(2))
+    return (n >= 2) ? [base: m.group(1), index: n] : null
+}
+def copiesGroups = { Collection items, Closure nameOf ->
+    def all = new LinkedHashMap()
+    def bases = new HashSet()
+    items.each { a -> def p = copiesParse(nameOf(a)); if (p != null) bases << p.base }
+    items.each { a ->
+        String nm = nameOf(a)
+        if (nm == null) return
+        def p = copiesParse(nm)
+        if (p != null) all.get(p.base, new TreeMap()).get(p.index, []) << a
+        if (p == null || bases.contains(nm)) all.get(nm, new TreeMap()).get(1, []) << a
+    }
+    def out = new LinkedHashMap()
+    all.each { b, idx -> if (idx.size() >= 2) out[b] = idx }
+    return out
+}
+def copiesOlder = { Map groups ->
+    def older = Collections.newSetFromMap(new IdentityHashMap())
+    groups.each { b, idx ->
+        def mx = idx.keySet().max()
+        idx.each { i, objs -> if (i != mx) older.addAll(objs) }
+    }
+    return older
+}
+def copiesAncestorHit = { obj, Set ids ->
+    def o = obj
+    while (o != null) {
+        if (ids.contains(o.getID())) return true
+        o = o.getParent()
+    }
+    return false
+}
+def copiesReportLines = { Map results, boolean newest ->
+    def lines = []
+    results.each { k, v ->
+        v.scan.groups.each { b, idx ->
+            lines << (v.name + ' · ' + b + ': ' + idx.keySet().join(', ') + (newest ? ' → ' + idx.keySet().max() : ''))
+        }
+    }
+    return lines
+}
+// veri-aktarma.groovy'deki copiesScanHierarchy'nin anotasyon-yalnız hali: tespit sayımı yok (tespitler çıktıya girmez).
+def copiesScanHierarchy = { hierarchy ->
+    def annos = hierarchy.getAnnotationObjects() as List
+    def groups = copiesGroups(annos, { it.getName() })
+    if (groups.isEmpty()) return null
+    def ids = new HashSet(copiesOlder(groups).collect { it.getID() })
+    int leftAnn = annos.count { copiesAncestorHit(it, ids) }
+    return [groups: groups, ids: ids, leftAnn: leftAnn]
+}
+def copiesAskChoice = { String title, String body, List options, String dflt ->
+    if (javafx.application.Platform.isFxApplicationThread()) return Dialogs.showChoiceDialog(title, body, options, dflt)
+    def answer = new java.util.concurrent.atomic.AtomicReference(null)
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    javafx.application.Platform.runLater {
+        try { answer.set(Dialogs.showChoiceDialog(title, body, options, dflt)) } finally { latch.countDown() }
+    }
+    latch.await()
+    return answer.get()
+}
+
+// Bilinmeyen -a kopyalar=… değeri HER durumda durdurur (kopya olmasa da; fail closed).
+def copiesArg = headlessArg('kopyalar')
+if (copiesArg != null && copiesArg != 'hepsi' && copiesArg != 'enyeni') {
+    println String.format(java.util.Locale.US, workshopText('script.96d140502a36', 'DURDU: bilinmeyen kopyalar değeri "%s". Geçerli değerler: hepsi | enyeni. Hiçbir şey dışa aktarılmadı.'), copiesArg)
+    return
+}
+
+// ──────────────────────────────────────────────────────────────
 // 1) Ön kontrol: açık görüntü
 // ──────────────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
@@ -605,6 +702,48 @@ if (allAnns.isEmpty()) {
         "üretin (Tümör/Stroma modülü), sonra tekrar deneyin.")
     )
     return
+}
+
+// ──────────────────────────────────────────────────────────────
+// 1.5) Kopya kontrolü — SORU, seçenek formundan ve hiçbir karo yazılmadan ÖNCE (form, etiket listesini
+// bu seçime göre kurar). Kopya grubu yoksa hiçbir şey sorulmaz, çıktı eskisiyle aynıdır.
+// "Yalnız en yenisi": her grupta yalnız en yüksek numaralı kopya kalır; eski kopyalar ve içlerindeki
+// anotasyonlar ne karo bölgesine ne etiket maskesine girer. Lamdaki hiçbir şey silinmez.
+// ──────────────────────────────────────────────────────────────
+def copiesScan = null
+try { copiesScan = copiesScanHierarchy(imageData.getHierarchy()) } catch (Throwable t) { copiesScan = null }
+def copiesScanResults = [:]
+def copiesChoice = null     // null: kopya grubu yok | 'all' | 'newest'
+if (copiesScan != null) {
+    copiesScanResults['image'] = [name: server.getMetadata().getName(), scan: copiesScan]
+    int copiesGrpCount = copiesScan.groups.size()
+    def copiesExamples = copiesReportLines(copiesScanResults, false).take(5)
+    if (isHeadless) {
+        if (copiesArg == null) {
+            println String.format(java.util.Locale.US, workshopText('script.28f1493e94bc', 'DURDU: Bu lamda aynı sonucun birden çok kopyası var (ör. %s). Hiçbir şey dışa aktarılmadı. Tüm kopyalar için -a kopyalar=hepsi, yalnız en yeni kopyalar için -a kopyalar=enyeni ile yeniden çalıştırın.'), copiesExamples.join('; '))
+            return
+        }
+        copiesChoice = (copiesArg == 'enyeni') ? 'newest' : 'all'
+    } else {
+        // Mantık sabit kimliğe bakar ('all' | 'newest'); görünen metin yalnız etikettir. Tanınmayan yanıt = 'all' (hiçbir şey dışarıda kalmaz).
+        def copiesIds = ['all', 'newest']
+        def copiesLabels = [workshopText('script.d3e7f99b619b', 'Tüm kopyalar — hepsi dışa aktarılır (varsayılan)'), workshopText('script.7e68f1304c36', 'Yalnız en yenisi — eski kopyalar ve içlerindeki nesneler dışa aktarılmaz')]
+        def copiesPick = copiesAskChoice(workshopText('script.2a83adf213c8', 'Aynı sonucun birden çok kopyası var'),
+            String.format(java.util.Locale.US, workshopText('script.b93c5237457f', 'Bu lamda %,d kopya grubu var: aynı sonuç lamda "ad", "ad (2)", "ad (3)" biçiminde yan yana duruyor. Kopyalar farklı bölgeler içerebilir; hangisinin güncel olduğuna dışa aktarma karar veremez.\n\nÖrnekler (lam · ad: kopya numaraları; 1 = numarasız ad):\n%s\n\n"Tüm kopyalar": her anotasyon karo bölgesine ve (maske modunda) maskeye girer. Karo listesinin biçimi değişmez; kopyalar sonuç penceresinde ve çıktı klasöründeki ".kopyalar.txt" dosyasında listelenir.\n\n"Yalnız en yenisi": her grupta yalnız en yüksek numaralı kopya kalır; eski kopyalar ve içlerindeki anotasyonlar ne karo üretir ne maskeye girer. Lamdaki hiçbir şey silinmez.\n\nİptal: hiçbir şey dışa aktarılmaz.\n\nHangisi dışa aktarılsın?'), copiesGrpCount, copiesExamples.collect { "  • " + it }.join("\n")),
+            copiesLabels, copiesLabels[0])
+        if (copiesPick == null) {
+            println workshopText('script.977448c268af', 'İptal: hiçbir şey dışa aktarılmadı.')
+            return
+        }
+        int copiesPickIdx = copiesLabels.indexOf(copiesPick)
+        copiesChoice = (copiesPickIdx >= 0) ? copiesIds[copiesPickIdx] : 'all'
+    }
+}
+def copiesExcludedIds = (copiesChoice == 'newest') ? copiesScan.ids : null
+int copiesLeftAnn = (copiesExcludedIds != null) ? copiesScan.leftAnn : 0
+if (copiesExcludedIds != null) {
+    selectedAnns = selectedAnns.findAll { !copiesAncestorHit(it, copiesExcludedIds) }
+    allAnns = allAnns.findAll { !copiesAncestorHit(it, copiesExcludedIds) }
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -1186,6 +1325,11 @@ if (maskMode) {
         .backgroundLabel(0, ColorTools.WHITE)
         .downsample(downsample)
         .multichannelOutput(false)
+    // "Yalnız en yenisi": eski kopyalar ve içlerindeki anotasyonlar maskeye de girmez (varsayılan süzgeç yalnız anotasyonlardır).
+    if (copiesExcludedIds != null) {
+        def keepOut = copiesExcludedIds
+        builder.useFilter({ o -> o.isAnnotation() && !copiesAncestorHit(o, keepOut) } as java.util.function.Predicate)
+    }
     legend << "0 = arka plan"
     classIndex.entrySet().sort { it.getValue() }.each { e ->
         builder.addLabel(e.getKey(), e.getValue())
@@ -1209,19 +1353,24 @@ String oldTilesNote = null
 if (!oldTileFiles.isEmpty()) {
     String KEEP = workshopText('script.911ea0b688c3', 'Eski karoları bırak (yalnız üzerine yaz)')
     String WIPE = workshopText('script.0b180df72f39', 'Bu lamın eski karolarını sil, sonra yaz')
-    String choice = KEEP
+    // Mantık sabit kimliğe bakar ('keep' | 'wipe'); görünen metin yalnız etikettir. Tanınmayan yanıt = 'keep' (hiçbir şey silinmez).
+    def oldTileIds = ['keep', 'wipe']
+    def oldTileLabels = [KEEP, WIPE]
+    String choiceId = 'keep'
     if (!isHeadless) {
-        choice = Dialogs.showChoiceDialog(
+        def oldTilePick = Dialogs.showChoiceDialog(
             workshopText('script.0b1b92e95b6b', "Bu lamın eski karoları var"),
             String.format(java.util.Locale.US,
                 workshopText('script.f8460a5c1829', "Bu çıktı kümesinde bu lama ait %,d karo dosyası zaten var.\n\n" +
                 "Anotasyonu yeniden çizdiyseniz ya da sınıfını değiştirdiyseniz eski karolar\n" +
                 "klasörde kalır; aynı karo iki etiket klasöründe birden bulunabilir.\n\n" +
                 "Silme yalnız bu lamın, bu kümedeki karo dosyalarını kapsar."), oldTileFiles.size()),
-            [KEEP, WIPE], KEEP)
-        if (choice == null) { println "Karo dışa aktarımı iptal edildi."; return }
+            oldTileLabels, oldTileLabels[0])
+        if (oldTilePick == null) { println "Karo dışa aktarımı iptal edildi."; return }
+        int oldTileIdx = oldTileLabels.indexOf(oldTilePick)
+        choiceId = (oldTileIdx >= 0) ? oldTileIds[oldTileIdx] : 'keep'
     }
-    if (choice == WIPE) {
+    if (choiceId == 'wipe') {
         int removed = 0
         oldTileFiles.each { try { if (it.delete()) removed++ } catch (Throwable ignore) {} }
         oldTilesNote = workshopText('script.2f315f619a9f', '  • Bu lamın ') + removed + workshopText('script.8821de9f1bf9', ' eski karo dosyası silindi (seçiminizle).')
@@ -1514,6 +1663,23 @@ if (!setRows.isEmpty()) {
     setSummaryBlock = workshopText('script.e76613b943ae', '\n🧮 Küme özeti (bu kümedeki tüm karo listeleri · ') + setSummaryFile.getName() + ")\n──────────────\n" + sl.join("\n") + "\n" + warns.join("\n") + "\n"
 }
 
+// Kopya grubu varsa: seçimi yan dosyaya yaz (karo listesinin sütunlarına HİÇBİR şey eklenmez).
+// Dosya bu lama aittir (<lam>.kopyalar.txt); aynı lam aynı ayarla yeniden dışa aktarılırsa karo listesi gibi güncellenir.
+def copiesSidecarName = null
+if (copiesChoice != null) {
+    try {
+        copiesSidecarName = slug + ".kopyalar.txt"
+        def sideFile = new File(outDir, copiesSidecarName)
+        def sideLines = [String.format(java.util.Locale.US, workshopText('script.e5d7e6223d81', 'Kopya grupları — seçim: %s'),
+            (copiesChoice == 'newest') ? workshopText('script.3b5c8754d6fc', 'yalnız en yenisi') : workshopText('script.b353e57316fe', 'tüm kopyalar')), ""]
+        sideLines.addAll(copiesReportLines(copiesScanResults, copiesChoice == 'newest'))
+        sideFile.write(sideLines.join("\n") + "\n", "UTF-8")
+    } catch (Throwable t) {
+        copiesSidecarName = null
+        errors << "kopyalar.txt: ${t.getMessage()}"
+    }
+}
+
 // Önizleme: lamın küçük görüntüsü üzerinde, listeye giren karoların kutuları (etikete göre renkli)
 def previewFile = new File(outDir, "onizleme__" + slug + ".jpg")
 boolean previewWritten = false
@@ -1590,6 +1756,16 @@ if (useSplit) {
 }
 if (oldTilesNote != null) notes << oldTilesNote
 def noteBlock = notes.isEmpty() ? "" : ("\nℹ️  Notlar\n" + notes.join("\n") + "\n")
+def copiesBlock = ""
+if (copiesChoice != null) {
+    def copiesLines = copiesReportLines(copiesScanResults, copiesChoice == 'newest')
+    def copiesListed = copiesLines.take(20).collect { "    • " + it }.join("\n") + (copiesLines.size() > 20 ? "\n    …" : "")
+    copiesBlock = "\n🗂 " + ((copiesChoice == 'newest')
+        ? String.format(java.util.Locale.US, workshopText('script.348ff8ba06a5', 'Kopya grupları — seçim: yalnız en yenisi\n  %,d grup. Dışarıda bırakılan: %,d anotasyon (eski kopyalar ve içlerindekiler).'), copiesLines.size(), copiesLeftAnn)
+        : String.format(java.util.Locale.US, workshopText('script.d41049f54dc2', 'Kopya grupları — seçim: tüm kopyalar\n  %,d grup. Kopyalar karo listesinde işaretli DEĞİLDİR; hangi sonucun güncel olduğunu aşağıdaki listeden kontrol edin.'), copiesLines.size())) + "\n" +
+        (copiesSidecarName != null ? "  " + String.format(java.util.Locale.US, workshopText('script.34c095b0b6b2', 'Kopya listesi dosyası: %s'), copiesSidecarName) + "\n" : "") +
+        copiesListed + "\n"
+}
 
 showResultWindow(
     workshopText('script.521eb030acd5', 'Karo dışa aktarma — Tamamlandı 🧩'),
@@ -1612,7 +1788,7 @@ showResultWindow(
         workshopText('script.ae087872e0df', '  Görüntü karosu : %,d\n') +
         workshopText('script.1feb29d920f0', '  Maske karosu   : %,d\n') +
         workshopText('script.dc0fc9eca957', '  Süre           : %.1f sn\n') +
-        "%s%s%s%s\n" +
+        "%s%s%s%s%s\n" +
         workshopText('script.bccb206f399a', '📝 Sonraki adım:\n') +
         workshopText('script.f92e69376f19', '  • Karoları derin öğrenme / harici AI araçlarına verin (<Etiket>/<dosya> düzeni).\n') +
         workshopText('script.f9da5d84bafb', '  • Veri bölmeyi karo listesindeki lam / hasta düzeyinde yapın, karo düzeyinde değil.\n') +
@@ -1634,7 +1810,7 @@ showResultWindow(
         legendBlock,
         labelBlock,
         imageTiles, maskTiles, elapsed,
-        setSummaryBlock, errBlock, emptyHint, noteBlock
+        setSummaryBlock, errBlock, emptyHint, noteBlock, copiesBlock
     )
 )
 

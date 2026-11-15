@@ -76,7 +76,7 @@ jobs:
           import xml.etree.ElementTree as E
           from pathlib import Path
           cases = [c for p in Path('build/test-results/test').glob('TEST-*.xml') for c in E.parse(p).getroot().findall('testcase')]
-          assert len(cases) >= 230
+          assert len(cases) >= 255
           assert len({(c.attrib.get('classname'), c.attrib['name']) for c in cases}) == len(cases)
           assert not any(any(c.find(t) is not None for t in ['failure', 'error', 'skipped']) for c in cases)
           PY

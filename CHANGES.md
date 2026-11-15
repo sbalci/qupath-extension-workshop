@@ -4,6 +4,38 @@ Local branch, 14 commits on top of `ceb2935`. **Nothing was pushed, tagged or re
 
 **Release order that must be kept:** owner's GUI pass → release `v0.2.2-rc9` → only then merge the QuPath site branch `fix/audit-2026-11-15`. The site branch describes the questions this branch adds; the installable rc8 does not ask them.
 
+## Second round, 16 November 2026 (owner's decisions of that day)
+
+Still local, still `0.2.2-rc8` in the version string, nothing pushed.
+
+| Decision | Result |
+|---|---|
+| Trace the number patterns | 674 whole-number conversions and the 607 format calls new on this branch were checked against how each value is computed; no mismatch found. New `FormatCallArgumentTest` fails the build when a translated pattern has too few arguments or is fed a value of the wrong kind by construction. |
+| Ask about copies in the other exporters | Added to the batch annotation export and the tile exporter (`kopyalar=hepsi|enyeni`; headless stops when copies exist and no value is given). **Not added, on purpose:** cohort stain QC (reads pixels and stain vectors only), OME-Zarr export (pixels of the area the user selects), WSInfer summary (reads WSInfer's own tiles; its summary already asks add/replace), TMA core transfer (counts only detections directly under a core), run manifest (records the slide as it is). |
+| Anonymisation wizard in English | Windows, dialogs, log lines and headless messages follow the language. Report files, key files, CSV headers and status codes are byte-identical to before; a status shown on screen in English carries its code, e.g. "Clean (TEMİZ)". |
+| StarDist filter asks first | After the classifier runs, a choice dialog states the class and count; "keep" is preselected and closing the dialog keeps. The result text says whether the kept detections are in the count (they are). |
+| Mitosis ring clean-up | One button in `Mitoz modelleri listesi`: finds rings by the exact metadata key the wizards write whose point no longer exists, shows the count per model, "leave" preselected. |
+| Translatable choice lists | Tile exporter (mode, scope, format, foldering, layout, old tiles), VALIS reference, peritumoural band direction compare stable ids. Headless values, stored preference values and everything written to files are unchanged. |
+
+Tests: 241 → 265. All 103 scripts compile in QuPath 0.6.0 and 0.7.0.
+
+**Add to the GUI pass:**
+
+9. Result windows in **Turkish** too (the rebuilt number patterns run in both languages): core modules, Tümör/Stroma, data export.
+10. Tile exporter in mask mode with "newest only": older copies must be absent from the mask. (The default mask filter was assumed to be annotations only.)
+11. Batch annotation export and tile exporter with a `… (2)` result on the slide: the question appears before anything is written; Cancel writes nothing.
+12. StarDist with a filter classifier: the question appears, Enter keeps.
+13. `Mitoz modelleri listesi` → `Yetim halkaları temizle` with and without orphan rings.
+14. Anonymisation wizard in English: compare one report file with one written in Turkish mode — they must be identical apart from paths and times.
+
+**New points for the owner's decision:**
+
+- FCOS, RetinaNet and TIA Toolbox mitosis wizards still sweep every orphan ring on the slide (other models' rings too) inside their Replace branch. The hub button makes this unnecessary; removing it changes behaviour.
+- The anonymiser's per-file detail lines (also written to the report) stay Turkish on screen in English mode; translating them needs a parallel screen copy of the detail text.
+- "Only the newest" follows the name rule, so a user's own `Region` and `Region (2)` count as copies. "All" is the default and the dialog lists what would be left out.
+- The StarDist filter classifier is applied to all detections on the image, not only under the selected annotation (unchanged).
+- Should the run manifest list copy groups as an extra field?
+
 ## What changed
 
 | Plan item | Result | Commit |

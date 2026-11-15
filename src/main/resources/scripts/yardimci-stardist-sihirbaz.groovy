@@ -11,7 +11,7 @@
  *        (model eksikse otomatik iner, SHA-256 doğrulanır; gerekirse elle seçim).
  *     2. ÇEKİRDEK TESPİTİ — seçili ROI içinde StarDist çalışır.
  *     3. (İsteğe bağlı) YANLIŞ-POZİTİF FİLTRESİ — kayıtlı bir nesne sınıflandırıcısı
- *        çalıştırıp 'yanlış' sınıfına atanan tespitleri siler (artefakt temizliği).
+ *        çalıştırıp 'yanlış' sınıfına atanan tespitleri silmeden ÖNCE SORAR (varsayılan: tut).
  *     4. Özet: çekirdek sayısı, ROI alanı (mm²), yoğunluk (çekirdek/mm²), süre.
  *   StarDist QuPath İÇİNDE OpenCV ile çalışır — bu .pb modelleri için ayrıca DJL/
  *   TensorFlow kurmak GEREKMEZ.
@@ -46,6 +46,7 @@ import java.io.File
 
 def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
+def stage = null   // sihirbaz penceresi (aşağıda kurulur; soru pencereleri için önceden bildirilir)
 // Hücreleri değiştirme sorusu: varsayılan seçim "dokunma"dır — Enter/Tamam hiçbir şeyi değiştirmez.
 // (Evet/Hayır penceresinde Enter "Evet" anlamına gelir; bu yüzden seçim penceresi kullanılır.)
 def confirmReplaceCells = { String title, String body ->
@@ -60,6 +61,24 @@ def confirmReplaceCells = { String title, String body ->
     }
     latch.await()
     return picked.get() == replaceOpt
+}
+// Yanlış-pozitif sınıfındaki tespitleri silme sorusu: varsayılan "tut"tur; pencereyi kapatmak da "tut" demektir.
+// İşçi iş parçacığından çağrılır → pencere FX iş parçacığında açılır, işçi sonucu bekler. true = sil.
+def chooseRemoveFalseClass = { String title, String body, String keepOpt, String removeOpt ->
+    def ask = { ->
+        def wasTop = false
+        try { wasTop = (stage != null && stage.isAlwaysOnTop()); if (stage != null) stage.setAlwaysOnTop(false) } catch (Throwable ig) {}
+        try { return qupath.fx.dialogs.Dialogs.showChoiceDialog(title, body, [keepOpt, removeOpt], keepOpt) }
+        finally { try { if (stage != null) stage.setAlwaysOnTop(wasTop) } catch (Throwable ig) {} }
+    }
+    if (javafx.application.Platform.isFxApplicationThread()) return ask() == removeOpt
+    def picked = new java.util.concurrent.atomic.AtomicReference(null)
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    javafx.application.Platform.runLater {
+        try { picked.set(ask()) } finally { latch.countDown() }
+    }
+    latch.await()
+    return picked.get() == removeOpt
 }
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
 
@@ -226,8 +245,7 @@ if (isHeadless) {
 
 // ── Durum makinesi alanları ──────────────────────────────────────────────────
 // NEED_INSTALL | READY | RUNNING | RESULT | ERROR
-def stage = null
-def step          = new java.util.concurrent.atomic.AtomicReference('READY')
+def step         = new java.util.concurrent.atomic.AtomicReference('READY')
 def alwaysTop     = new java.util.concurrent.atomic.AtomicBoolean(true)
 def cancelledRef  = new java.util.concurrent.atomic.AtomicBoolean(false)
 def logAreaRef    = new java.util.concurrent.atomic.AtomicReference(null)
@@ -382,13 +400,28 @@ def startDetection = {
         // (İsteğe bağlı) yanlış-pozitif filtresi (Gallik/Helsinki BioImage 2026 deseni):
         // kayıtlı bir nesne sınıflandırıcısını çalıştır → 'yanlış' sınıfına atanan tespitleri sil.
         // StarDist her şeyi bulur; RF sınıflandırıcı gerçek çekirdeği artefakttan ayırır; reddedilenler silinir.
+        int keptFalse = 0        // sınıf filtresi: 'yanlış' sınıfta tutulan tespit sayısı
+        int removedFalse = 0     // sınıf filtresi: silinen tespit sayısı (yalnız kullanıcı onayıyla)
         if (clsName) {
             try {
                 QP.runObjectClassifier(clsName)
                 if (falseName) {
                     def fpc = QP.getPathClass(falseName)
                     def bad = selected.getChildObjects().findAll { it.isDetection() }.findAll { it.getPathClass() == fpc }
-                    if (!bad.isEmpty()) { selected.removePathObjects(bad); appendLine(workshopText('script.9f06a4344667', '  Filtre: "') + falseName + workshopText('script.d61b6f0ead31', '" sınıfından ') + bad.size() + workshopText('script.1987449407b6', ' yanlış-pozitif silindi.')) }
+                    if (!bad.isEmpty()) {
+                        int badN = bad.size()
+                        String removeTitleText = workshopText('script.23f6840a7125', 'Yanlış-pozitif sınıfındaki tespitler silinsin mi?')
+                        String removeBodyText = String.format(java.util.Locale.US, workshopText('script.74a4474a0924', 'Sınıflandırıcı "%s" sınıfına %d tespit atadı.\n\nVarsayılan seçim bu tespitleri yerinde tutar: silinmezler, sınıfları değişmez ve çekirdek sayısına ve yoğunluğa dahil edilirler.\n\nİsterseniz silebilirsiniz; bu işlem geri alınamaz.\n\nPencereyi kapatırsanız hiçbir şey silinmez.'), falseName, badN)
+                        String keepOptText = workshopText('script.3c74e8bfc064', 'Tespitleri tut — hiçbir şeyi silme (varsayılan)')
+                        String removeOptText = String.format(java.util.Locale.US, workshopText('script.9c80fd99248d', 'Sil: "%s" sınıfındaki %d tespit'), falseName, badN)
+                        if (chooseRemoveFalseClass(removeTitleText, removeBodyText, keepOptText, removeOptText)) {
+                            selected.removePathObjects(bad); removedFalse = badN
+                            appendLine(workshopText('script.9f06a4344667', '  Filtre: "') + falseName + workshopText('script.d61b6f0ead31', '" sınıfından ') + badN + workshopText('script.1987449407b6', ' yanlış-pozitif silindi.'))
+                        } else {
+                            keptFalse = badN
+                            appendLine(String.format(java.util.Locale.US, workshopText('script.4a3f5a3f8369', '  Filtre: "%s" sınıfındaki %d tespit tutuldu (silinmedi).'), falseName, badN))
+                        }
+                    }
                     else { appendLine(workshopText('script.9f06a4344667', '  Filtre: "') + falseName + workshopText('script.ab9e2aaf2d3d', '" sınıfında silinecek tespit yok.')) }
                 }
             } catch (Throwable ct) { appendLine(workshopText('script.8c5fc43520d7', '  ⚠ Sınıflandırıcı filtresi atlandı: ') + (ct.getMessage() ?: ct.getClass().getSimpleName())) }
@@ -424,7 +457,7 @@ def startDetection = {
 
         def slideName = imageNameOf(imageData)
         javafx.application.Platform.runLater {
-            resultTextRef.set((redetectPrev > 0 ? String.format(java.util.Locale.US, workshopText('script.784fe373ea77', 'Önceki %,d hücre değiştirildi.'), redetectPrev) + '\n\n' : '') + buildResultText(slideName, n, areaMm2, density, secs, thr, px, exp, calOk))
+            resultTextRef.set((keptFalse > 0 ? String.format(java.util.Locale.US, workshopText('script.92ae0486c617', '"%s" sınıfındaki %d tespit silinmedi. Bu tespitler sınıflarıyla birlikte yerinde kalır ve aşağıdaki çekirdek sayısına ve yoğunluğa dahildir.'), falseName, keptFalse) + '\n\n' : '') + (removedFalse > 0 ? String.format(java.util.Locale.US, workshopText('script.d17229c6e9ec', '"%s" sınıfındaki %d tespit sizin onayınızla silindi; aşağıdaki çekirdek sayısına ve yoğunluğa dahil değildir.'), falseName, removedFalse) + '\n\n' : '') + (redetectPrev > 0 ? String.format(java.util.Locale.US, workshopText('script.784fe373ea77', 'Önceki %,d hücre değiştirildi.'), redetectPrev) + '\n\n' : '') + buildResultText(slideName, n, areaMm2, density, secs, thr, px, exp, calOk))
             step.set('RESULT'); render()
         }
     }, 'AtolyeStarDist-Run')
@@ -534,9 +567,9 @@ render = { ->
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.88ad247a7ada', 'Hücre genişletme (µm, 0=yok):')), expField)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model (.pb):'), mdField, browse)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0,
-            workshopText('script.d969429cda79', 'İsteğe bağlı: tespitten sonra kayıtlı bir nesne sınıflandırıcısını çalıştırıp aşağıdaki sınıfı siler (yanlış-pozitif temizliği). Boş = atla.'),
+            workshopText('script.70bc03c2013d', 'İsteğe bağlı: tespitten sonra kayıtlı bir nesne sınıflandırıcısını çalıştırır. Aşağıdaki sınıfa atanan tespitleri silmeden önce size sorar (varsayılan: tut). Boş = atla.'),
             new javafx.scene.control.Label(workshopText('script.6db611fe714e', 'Filtre sınıflandırıcısı (ops.):')), clsField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.e2f2fc2a1ea5', 'Silinecek "yanlış" sınıf:')), falseField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.eb655dbae9c1', '"Yanlış" sınıf (silmeden önce sorulur):')), falseField)
         center.getChildren().add(grid)
     }
 

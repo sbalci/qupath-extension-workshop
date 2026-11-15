@@ -71,7 +71,8 @@ class CoreScriptLanguageTest {
         def catalog = new Gson().fromJson(getClass().getResource('/i18n/script-core.json').getText('UTF-8'), Map)
         def signature = { String text ->
             // Java Formatter conversions only: prose such as "% ve" is not a format token.
-            (text =~ /((?<!%)%(?!%)(?:\d+\$)?[-#+0, (<]*\d*(?:\.\d+)?(?:[tT][a-zA-Z]|[bBhHsScCdoxXeEfgGaAn]))/).collect { it[0] }
+            // A doubled percent is a literal sign; drop it first so "%%%.0f" reads as one conversion.
+            (text.replace('%%', '') =~ /((?<!%)%(?!%)(?:\d+\$)?[-#+0, (<]*\d*(?:\.\d+)?(?:[tT][a-zA-Z]|[bBhHsScCdoxXeEfgGaAn]))/).collect { it[0] }
         }
         catalog.strings.each { row ->
             assertEquals(row.key, signature(row.tr as String), signature(row.en as String))

@@ -124,10 +124,16 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
 // ── Sabitler ────────────────────────────────────────────────────────
 String BAND_CLASS = "Peritümöral bant"
-String DIR_OUT    = "Dışa (peritümöral halka)"
-String DIR_IN     = "İçe (iç kenar bandı)"
-String DIR_BOTH   = "Her iki yön (invazif kenar bandı)"
-def dirOpts = [DIR_OUT, DIR_IN, DIR_BOTH]
+// Bant yönü: kod DAİMA sabit ASCII kimlikle karşılaştırır; ekranda görünen metin çevrilebilir.
+// dirStored = kalıcı tercihte (prefs 'direction') her zaman yazılan ESKİ Türkçe değer — eski sürümlerle uyumlu.
+// Okurken hem eski Türkçe değer hem kimlik kabul edilir. Nesne adı (dirShort) ve ölçüm adları değişmez.
+String DIR_OUT    = "outer"
+String DIR_IN     = "inner"
+String DIR_BOTH   = "both"
+def dirIds = [DIR_OUT, DIR_IN, DIR_BOTH]
+def dirStored = [(DIR_OUT): "Dışa (peritümöral halka)", (DIR_IN): "İçe (iç kenar bandı)", (DIR_BOTH): "Her iki yön (invazif kenar bandı)"]
+def dirLabels = [(DIR_OUT): workshopText('script.601b913f3794', 'Dışa (peritümöral halka)'), (DIR_IN): workshopText('script.362c9158d823', 'İçe (iç kenar bandı)'), (DIR_BOTH): workshopText('script.d74e64b953b1', 'Her iki yön (invazif kenar bandı)')]
+def dirIdOf = { String v -> v == null ? null : (dirIds.contains(v) ? v : dirIds.find { dirStored[it] == v }) }
 double defWidth = 50.0
 
 // ── Önceki sonuç: SORULMADAN silinmez (ev kuralı) ────────────────────
@@ -221,23 +227,24 @@ double widthUm
 String direction
 if (isHeadless) {
     try { widthUm = Double.parseDouble(prefs.get('widthUm', String.valueOf(defWidth))) } catch (Throwable t) { widthUm = defWidth }
-    direction = prefs.get('direction', DIR_OUT)
-    if (!dirOpts.contains(direction)) direction = DIR_OUT
+    direction = dirIdOf(prefs.get('direction', dirStored[DIR_OUT])) ?: DIR_OUT
 } else {
     def wTxt = Dialogs.showInputDialog(workshopText('script.28c908cb2604', "Peritümöral bant"),
         workshopText('script.24a50c4af048', "Bant genişliği (µm):"), String.format(java.util.Locale.US, "%.0f", defWidth))
     if (wTxt == null) { println "İptal edildi."; return }
     try { widthUm = Double.parseDouble(wTxt.trim().replace(',', '.')) }
     catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.54cde46c5e98', "Geçersiz sayı"), workshopText('script.6342080b5aeb', "Bant genişliği bir sayı olmalı (µm).")); return }
-    def defDir = dirOpts.contains(prefs.get('direction', DIR_OUT)) ? prefs.get('direction', DIR_OUT) : DIR_OUT
-    direction = Dialogs.showChoiceDialog(workshopText('script.28c908cb2604', "Peritümöral bant"), workshopText('script.842cac15d901', "Bant yönü:"), dirOpts, defDir)
-    if (direction == null) { println "İptal edildi."; return }
+    String defDir = dirIdOf(prefs.get('direction', dirStored[DIR_OUT])) ?: DIR_OUT
+    def dirLabelList = dirIds.collect { dirLabels[it] }
+    def pickedDirLabel = Dialogs.showChoiceDialog(workshopText('script.28c908cb2604', "Peritümöral bant"), workshopText('script.842cac15d901', "Bant yönü:"), dirLabelList, dirLabels[defDir])
+    if (pickedDirLabel == null) { println "İptal edildi."; return }
+    direction = dirIds[dirLabelList.indexOf(pickedDirLabel)]
 }
 if (!(widthUm > 0)) {
     Dialogs.showErrorMessage(workshopText('script.e6fd00663be3', "Geçersiz genişlik"), workshopText('script.139137752d51', "Bant genişliği pozitif olmalı (µm)."))
     return
 }
-prefs.put('widthUm', String.valueOf(widthUm)); prefs.put('direction', direction)
+prefs.put('widthUm', String.valueOf(widthUm)); prefs.put('direction', dirStored[direction])
 try { prefs.flush() } catch (Throwable ig) {}
 
 double rPx = widthUm / avgUm     // µm → piksel (buffer piksel koordinatında çalışır)
@@ -354,7 +361,7 @@ double totalBandUm2 = rows.collect { it.area as double }.sum() as double
 def body = new StringBuilder()
 body << workshopText('script.b8b65bc95f26', 'PERİTÜMÖRAL BANT (kenar halkası)\n')
 body << "════════════════════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, workshopText('script.35213e37777b', 'Yön                : %s\n'), direction)
+body << String.format(java.util.Locale.US, workshopText('script.35213e37777b', 'Yön                : %s\n'), dirLabels[direction])
 body << String.format(java.util.Locale.US, workshopText('script.9411ac235cf3', 'Bant genişliği     : %.0f µm%n'), widthUm)
 body << String.format(java.util.Locale.US, workshopText('script.b43b676e595e', 'Üretilen bant      : %,d  (atlanan: %,d)%n'), created.size(), skipped)
 body << String.format(java.util.Locale.US, workshopText('script.a1eb00b127ed', 'Toplam bant alanı  : %,.0f µm²%n'), totalBandUm2)

@@ -431,20 +431,20 @@ def ensureZxing = { boolean allowDownload, Closure log ->
     if (jar.isFile() && sha256Of(jar) == ZX_SHA256) return jar
     if (!allowDownload) return null
     try {
-        log('ZXing (DataMatrix çözücü, Apache-2.0) indiriliyor: ' + ZX_URL)
+        log(workshopText('script.412f9c65b07f', 'ZXing (DataMatrix çözücü, Apache-2.0) indiriliyor') + ': ' + ZX_URL)
         def client = java.net.http.HttpClient.newBuilder().followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
             .connectTimeout(java.time.Duration.ofSeconds(20)).build()
         def req = java.net.http.HttpRequest.newBuilder(java.net.URI.create(ZX_URL)).timeout(java.time.Duration.ofSeconds(60)).GET().build()
         def resp = client.send(req, java.net.http.HttpResponse.BodyHandlers.ofByteArray())
-        if (resp.statusCode() != 200) { log('ZXing indirilemedi: HTTP ' + resp.statusCode()); return null }
+        if (resp.statusCode() != 200) { log(workshopText('script.ecfda90ecca9', 'ZXing indirilemedi: HTTP') + ' ' + resp.statusCode()); return null }
         jar.getParentFile().mkdirs()
         File tmp = new File(jar.getParentFile(), jar.getName() + '.tmp')
         tmp.bytes = resp.body()
-        if (sha256Of(tmp) != ZX_SHA256) { tmp.delete(); log('ZXing SHA-256 uyuşmadı — dosya reddedildi.'); return null }
+        if (sha256Of(tmp) != ZX_SHA256) { tmp.delete(); log(workshopText('script.2cfccc3e8e2f', 'ZXing SHA-256 uyuşmadı — dosya reddedildi.')); return null }
         Files.move(tmp.toPath(), jar.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
         return jar
     } catch (Throwable t) {
-        log('ZXing indirilemedi (' + (t.getMessage() ?: t.getClass().getSimpleName()) + ') — barkod çözülmeden devam ediliyor.')
+        log(String.format(java.util.Locale.US, workshopText('script.3161078ebcb9', 'ZXing indirilemedi (%s) — barkod çözülmeden devam ediliyor.'), (t.getMessage() ?: t.getClass().getSimpleName())))
         return null
     }
 }
@@ -865,7 +865,7 @@ def fpString = { fp -> fp == null ? '' : ('size=' + fp.size + ';mtime=' + fp.mti
 def compileAccession = { String p ->
     String src = (p != null && !p.trim().isEmpty()) ? p.trim() : ACCESSION_DEFAULT
     try { return java.util.regex.Pattern.compile(src) }
-    catch (java.util.regex.PatternSyntaxException e) { throw new IllegalArgumentException('Geçersiz kayıt numarası deseni: ' + e.getDescription()) }
+    catch (java.util.regex.PatternSyntaxException e) { throw new IllegalArgumentException(workshopText('script.89e09c562087', 'Geçersiz kayıt numarası deseni') + ': ' + e.getDescription()) }
 }
 // Değer ASLA yazılmaz: yalnız şekil (rakam → #, harf → a) — ör. "7-25" → "#-##"
 def maskHit = { String s -> (s ?: '').replaceAll('[0-9]', '#').replaceAll('[A-Za-z]', 'a') }
@@ -1036,51 +1036,63 @@ def stemsOf = { u ->
 def runAudit = { List items, Closure log, AtomicBoolean cancel, Map opts = [:] ->
     def units = groupUnits(items)
     def counts = ['TEMİZ': 0, 'EKSİK': 0, 'BELİRSİZ': 0, 'ATLANDI': 0]
+    // Screen-only labels for the status codes; the codes themselves (counts keys, verdict) are never changed.
+    def AUDIT_LABEL = ['TEMİZ': workshopText('script.6383cc1effcb', 'TEMİZ'), 'EKSİK': workshopText('script.04e54f586268', 'EKSİK'), 'BELİRSİZ': workshopText('script.c72d0841dff7', 'BELİRSİZ'), 'ATLANDI': workshopText('script.a164326e4c0b', 'ATLANDI')]
+    int sw = Math.max(8, AUDIT_LABEL.values().collect { it.length() }.max())
+    def KLS = [
+        aperio: workshopText('script.eac3c720d927', 'Aperio SVS (tam destek)'),
+        tiff: workshopText('script.8101bd774790', 'Genel TIFF (kısmi)'),
+        ndpi: workshopText('script.5c460c1676eb', 'NDPI (kısmi)'),
+        other: workshopText('script.d6f831a99b7e', 'Diğer tek dosya (kısmi)'),
+        multi: workshopText('script.26fa3159b169', 'Çok dosyalı biçim (atlanır)'),
+        missing: workshopText('script.5b7cd620a675', 'Yerel dosya yok (atlanır)'),
+        unreadable: workshopText('script.7f64f2356474', 'Okunamadı (kilitli / erişim yok — atlanır)')
+    ]
     def gallery = []
     def edgeNames = []
     def decoder = null
     if (opts.decodeLabels && !(cancel != null && cancel.get())) {
-        try { decoder = makeDecoder(ensureZxing(true, log)) } catch (Throwable t) { log('Barkod çözücü yüklenemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName())) }
+        try { decoder = makeDecoder(ensureZxing(true, log)) } catch (Throwable t) { log(workshopText('script.4135a4717741', 'Barkod çözücü yüklenemedi') + ': ' + (t.getMessage() ?: t.getClass().getSimpleName())) }
     }
     def sb = new StringBuilder()
-    sb << 'ANONİMLİK DENETİMİ (salt okunur)\n'
+    sb << workshopText('script.9255570c8459', 'ANONİMLİK DENETİMİ (salt okunur)') << '\n'
     sb << '════════════════════════════════\n'
-    sb << 'Etiket barkodu (DataMatrix): ' << (decoder != null ? 'çözülüyor (ZXing)' : (opts.decodeLabels ? 'ÇÖZÜCÜ YOK — çevrimdışı; etiketler yalnız görsel ölçütle değerlendirildi' : 'kapalı')) << '\n\n'
+    sb << workshopText('script.24fdc0c94910', 'Etiket barkodu (DataMatrix)') << ': ' << (decoder != null ? workshopText('script.06e05dbf4fa7', 'çözülüyor (ZXing)') : (opts.decodeLabels ? workshopText('script.50d37b13d9ce', 'ÇÖZÜCÜ YOK — çevrimdışı; etiketler yalnız görsel ölçütle değerlendirildi') : workshopText('script.358e18ead1a3', 'kapalı'))) << '\n\n'
     int i = 0
     for (u in units) {
-        if (cancel != null && cancel.get()) { sb << '\n(İptal edildi)\n'; break }
+        if (cancel != null && cancel.get()) { sb << '\n(' << workshopText('script.dbd417da03e1', 'İptal edildi') << ')\n'; break }
         i++
         String fname = u.file?.getName() ?: (u.items[0].name ?: '?')
         log(String.format(java.util.Locale.US, '[%d/%d] %s', i, units.size(), fname))
         def findings = []; def notes = []; def unsure = []
         String verdict
         if (u.kind in ['multi', 'missing', 'unreadable']) {
-            verdict = 'ATLANDI'; notes << KIND_LABEL[u.kind]
+            verdict = 'ATLANDI'; notes << KLS[u.kind]
         } else {
             def qp = qupathCheck(u.file)
-            if (!qp.ok) unsure << 'QuPath açamadı: ' + qp.error
+            if (!qp.ok) unsure << workshopText('script.e0ad0fd54634', 'QuPath açamadı') + ': ' + qp.error
             def ac = assocCheck(u.file, decoder, (boolean) opts.keepThumbs, (File) opts.saveDir)
             switch (ac.label.state) {
-                case 'ANON': notes << 'Etiket: Sectra anonim etiketi ✓ — "' + ac.label.code + '" (DataMatrix doğrulandı)'; break
-                case 'ANON_DEGIL': findings << 'Etiket kodu çözüldü ama ANON ile BAŞLAMIYOR (içerik gösterilmez) — gözle kontrol edin'; break
-                case 'SENTETIK_COZULEMEDI': unsure << 'Etiket sentetik çizim (siyah-beyaz) ama kodu okunamadı — gözle doğrulayın'; break
-                case 'FOTOGRAF': findings << String.format(java.util.Locale.US, 'Etiket FOTOĞRAF gibi (siyah-beyaz oranı %%%.0f) — kimlik içerebilir', 100d * ac.label.bw); break
-                case 'OKUNAMADI': unsure << 'Etiket görüntüsü var ama okunamadı — gözle doğrulayın'; break
+                case 'ANON': notes << String.format(java.util.Locale.US, workshopText('script.a04f081edd9c', 'Etiket: Sectra anonim etiketi ✓ — "%s" (DataMatrix doğrulandı)'), ac.label.code); break
+                case 'ANON_DEGIL': findings << workshopText('script.849372d52399', 'Etiket kodu çözüldü ama ANON ile BAŞLAMIYOR (içerik gösterilmez) — gözle kontrol edin'); break
+                case 'SENTETIK_COZULEMEDI': unsure << workshopText('script.7dcb388bec27', 'Etiket sentetik çizim (siyah-beyaz) ama kodu okunamadı — gözle doğrulayın'); break
+                case 'FOTOGRAF': findings << String.format(java.util.Locale.US, workshopText('script.b9b9f4170ecb', 'Etiket FOTOĞRAF gibi (siyah-beyaz oranı %%%.0f) — kimlik içerebilir'), 100d * ac.label.bw); break
+                case 'OKUNAMADI': unsure << workshopText('script.0ac897c9101a', 'Etiket görüntüsü var ama okunamadı — gözle doğrulayın'); break
                 default: break
             }
             switch (ac.macro.state) {
-                case 'BOS': notes << 'Makro: boş (tek renk) ✓'; break
-                case 'ICERIK': findings << 'Makro görüntüsü içerik taşıyor (lamın tamamı; etiket bölgesi görünebilir)'; break
-                case 'OKUNAMADI': unsure << 'Makro görüntüsü var ama okunamadı — gözle doğrulayın'; break
+                case 'BOS': notes << workshopText('script.feac7a0d3ce5', 'Makro: boş (tek renk) ✓'); break
+                case 'ICERIK': findings << workshopText('script.7ffa70e50f29', 'Makro görüntüsü içerik taşıyor (lamın tamamı; etiket bölgesi görünebilir)'); break
+                case 'OKUNAMADI': unsure << workshopText('script.4dffd54bfabd', 'Makro görüntüsü var ama okunamadı — gözle doğrulayın'); break
                 default: break
             }
             if (ac.sidecar != null) {
                 String rid = ac.sidecar.requestId ?: ''
                 String code = (ac.label.state == 'ANON') ? ac.label.code.split(';')[0] : null
-                if (ac.sidecar.error) unsure << 'Sectra .import yan dosyası okunamadı'
-                else if (!rid.startsWith('ANON')) findings << 'Sectra .import yan dosyasında RequestId ANON ile başlamıyor (içerik gösterilmez)'
-                else if (code != null && rid != code) findings << 'Sectra .import RequestId etiketteki kodla uyuşmuyor'
-                else notes << 'Sectra .import RequestId: ' + rid + (code != null ? ' (etiketle uyumlu ✓)' : '')
+                if (ac.sidecar.error) unsure << workshopText('script.7749a82e9bf4', 'Sectra .import yan dosyası okunamadı')
+                else if (!rid.startsWith('ANON')) findings << workshopText('script.aa4336a6d16e', 'Sectra .import yan dosyasında RequestId ANON ile başlamıyor (içerik gösterilmez)')
+                else if (code != null && rid != code) findings << workshopText('script.057415854023', 'Sectra .import RequestId etiketteki kodla uyuşmuyor')
+                else notes << workshopText('script.09eb6b318d19', 'Sectra .import RequestId') + ': ' + rid + (code != null ? ' ' + workshopText('script.fccaa44b1730', '(etiketle uyumlu ✓)') : '')
             }
             // Ana tarama alanı: en düşük çözünürlüklü küçük resim + kenar bandı skoru. Yalnız İNCELEME notudur;
             // TEMİZ/EKSİK/BELİRSİZ kararını DEĞİŞTİRMEZ.
@@ -1089,56 +1101,54 @@ def runAudit = { List items, Closure log, AtomicBoolean cancel, Map opts = [:] -
                 ms = mainScanCheck(u.file, (boolean) opts.keepThumbs)
                 if (ms != null && ms.ok && ms.flagged) {
                     edgeNames << fname
-                    notes << String.format(java.util.Locale.US, 'Tarama alanında etiket şeridi olabilir — gözle kontrol edin (sol %%%.0f · sağ %%%.0f koyu satır)', 100d * ms.left, 100d * ms.right)
-                } else if (ms != null && !ms.ok) notes << 'Tarama kenarı denetlenemedi (ana görüntü okunamadı)'
+                    notes << String.format(java.util.Locale.US, workshopText('script.ac16a6024ab3', 'Tarama alanında etiket şeridi olabilir — gözle kontrol edin (sol %%%.0f · sağ %%%.0f koyu satır)'), 100d * ms.left, 100d * ms.right)
+                } else if (ms != null && !ms.ok) notes << workshopText('script.c8def44c8278', 'Tarama kenarı denetlenemedi (ana görüntü okunamadı)')
             }
             if (opts.keepThumbs && gallery.size() < 60)
                 gallery << [name: fname, label: ac.labelThumb, macro: ac.macroThumb, state: ac.label.state, macroState: ac.macro.state,
                             main: ms?.thumb, edgeFlagged: (ms != null && ms.ok && ms.flagged)]
             if (u.kind in ['aperio', 'tiff']) {
                 def ins = inspectTiff(u.file, u.kind, stemsOf(u))
-                if (!ins.ok) unsure << 'TIFF okunamadı: ' + ins.error
+                if (!ins.ok) unsure << workshopText('script.c6281ba41495', 'TIFF okunamadı') + ': ' + ins.error
                 else {
                     if (!ins.phi.isEmpty())
-                        findings << 'Dolu kimlik alanları: ' + ins.phi.collect { k, v -> k + ' (IFD ' + v.join(',') + ')' }.join('; ')
-                    if (!ins.std.isEmpty()) findings << 'Dolu standart TIFF etiketleri: ' + ins.std.join(', ')
-                    if (ins.stemHit) findings << 'Dosya/giriş adı dosyanın içinde (ASCII etiket) geçiyor'
+                        findings << workshopText('script.a35037b1d631', 'Dolu kimlik alanları') + ': ' + ins.phi.collect { k, v -> k + ' (IFD ' + v.join(',') + ')' }.join('; ')
+                    if (!ins.std.isEmpty()) findings << workshopText('script.8b96c9d3d6fc', 'Dolu standart TIFF etiketleri') + ': ' + ins.std.join(', ')
+                    if (ins.stemHit) findings << workshopText('script.7fb4b9cb7238', 'Dosya/giriş adı dosyanın içinde (ASCII etiket) geçiyor')
                     if (!ins.assocIfds.isEmpty() && !ac.opened)
-                        unsure << 'Etiket/makro IFD var (görüntü açılamadı): ' + ins.assocIfds.join(', ')
+                        unsure << workshopText('script.dee23aecf75c', 'Etiket/makro IFD var (görüntü açılamadı)') + ': ' + ins.assocIfds.join(', ')
                 }
-                if (u.kind == 'tiff') notes << 'ImageDescription biçimi tanınmadı (OME/üretici XML) — elle kontrol edin'
+                if (u.kind == 'tiff') notes << workshopText('script.9104ffc4414d', 'ImageDescription biçimi tanınmadı (OME/üretici XML) — elle kontrol edin')
             } else {
-                notes << 'Bu biçimin üst verisi dosya düzeyinde denetlenemiyor (yalnız QuPath ilişkili görüntü listesi)'
+                notes << workshopText('script.ece288fa5b92', 'Bu biçimin üst verisi dosya düzeyinde denetlenemiyor (yalnız QuPath ilişkili görüntü listesi)')
             }
             verdict = !findings.isEmpty() ? 'EKSİK' : ((!unsure.isEmpty() || u.kind != 'aperio') ? 'BELİRSİZ' : 'TEMİZ')
         }
         counts[verdict] = counts[verdict] + 1
         String mark = ['TEMİZ': '✓', 'EKSİK': '✗', 'BELİRSİZ': '?', 'ATLANDI': '–'][verdict]
-        sb << String.format(java.util.Locale.US, '%s %-8s %s   [%s]%n', mark, verdict, fname, KIND_LABEL[u.kind])
-        u.items.findAll { it.name && it.name != fname }.each { it -> sb << '      QuPath giriş adı: ' << it.name << '\n' }
+        sb << String.format(java.util.Locale.US, '%s %s %s   [%s]%n', mark, "${AUDIT_LABEL[verdict] ?: verdict}".padRight(sw), fname, KLS[u.kind])
+        u.items.findAll { it.name && it.name != fname }.each { it -> sb << '      ' << workshopText('script.058fc71e052e', 'QuPath giriş adı') << ': ' << it.name << '\n' }
         findings.each { sb << '      • ' << it << '\n' }
         unsure.each { sb << '      ? ' << it << '\n' }
         notes.each { sb << '      · ' << it << '\n' }
     }
-    sb << String.format(java.util.Locale.US, '%nSonuç: TEMİZ %d · EKSİK %d · BELİRSİZ %d · ATLANDI %d (toplam %d dosya)%n',
+    sb << String.format(java.util.Locale.US, workshopText('script.32fec60dc427', '%nSonuç: TEMİZ %d · EKSİK %d · BELİRSİZ %d · ATLANDI %d (toplam %d dosya)%n'),
         counts['TEMİZ'], counts['EKSİK'], counts['BELİRSİZ'], counts['ATLANDI'], units.size())
     if (opts.mainScan) {
-        sb << '\nTarama alanı kenar şeridi (olası etiket; ana görüntü içinde — etiket/makro silme buna ULAŞMAZ): '
-        if (edgeNames.isEmpty()) sb << 'şüpheli dosya yok (yine de gözle bakın).\n'
+        sb << '\n' << workshopText('script.6be23fc9b607', 'Tarama alanı kenar şeridi (olası etiket; ana görüntü içinde — etiket/makro silme buna ULAŞMAZ)') << ': '
+        if (edgeNames.isEmpty()) sb << workshopText('script.380b2f9090ba', 'şüpheli dosya yok (yine de gözle bakın).') << '\n'
         else {
-            sb << edgeNames.size() << ' dosya\n'
+            sb << edgeNames.size() << ' ' << workshopText('script.826ed8cff3d2', 'dosya') << '\n'
             edgeNames.each { sb << '   ⚑ ' << it << '\n' }
         }
     }
-    sb << '\nOkuma kılavuzu:\n'
-    sb << '  TEMİZ    = Aperio yapısal denetimi temiz: kimlik alanları boş; etiket yok ya da DataMatrix\'i\n'
-    sb << '             "ANON" ile başlayan Sectra anonim etiketi; makro yok ya da boş.\n'
-    sb << '  EKSİK    = en az bir PHI katmanı duruyor → "Anonimleştir" ile temiz kopya üretin.\n'
-    sb << '  BELİRSİZ = tam denetlenemedi (genel TIFF/NDPI/CZI … ya da etiket/makro okunamadı) → gözle bakın.\n'
-    sb << '⚠ Dosya adlarının ve QuPath giriş adlarının kimlik içerip içermediğini SİZ değerlendirin;\n'
-    sb << '  bayt düzeyi tam tarama anonimleştirme sırasında her kopyada yapılır.\n'
-    if (opts.saveDir != null) sb << '\nEtiket/makro görüntüleri kaydedildi: ' << ((File) opts.saveDir).getAbsolutePath() << '\n'
-    sb << '⚠️ Yalnızca araştırma/eğitim amaçlıdır; klinik karar üretmez.'
+    sb << '\n' << workshopText('script.a7afad36aa97', 'Okuma kılavuzu') << ':\n'
+    sb << '  ' << workshopText('script.6b7522ffe59f', 'TEMİZ    = Aperio yapısal denetimi temiz: kimlik alanları boş; etiket yok ya da DataMatrix\'i\n             "ANON" ile başlayan Sectra anonim etiketi; makro yok ya da boş.') << '\n'
+    sb << '  ' << workshopText('script.823ad295c764', 'EKSİK    = en az bir PHI katmanı duruyor → "Anonimleştir" ile temiz kopya üretin.') << '\n'
+    sb << '  ' << workshopText('script.17d8eedde580', 'BELİRSİZ = tam denetlenemedi (genel TIFF/NDPI/CZI … ya da etiket/makro okunamadı) → gözle bakın.') << '\n'
+    sb << '⚠ ' << workshopText('script.b628dd4576f8', 'Dosya adlarının ve QuPath giriş adlarının kimlik içerip içermediğini SİZ değerlendirin;\n  bayt düzeyi tam tarama anonimleştirme sırasında her kopyada yapılır.') << '\n'
+    if (opts.saveDir != null) sb << '\n' << workshopText('script.96e3105637bc', 'Etiket/makro görüntüleri kaydedildi') << ': ' << ((File) opts.saveDir).getAbsolutePath() << '\n'
+    sb << '⚠️ ' << workshopText('script.b82384fd9d01', 'Yalnızca araştırma/eğitim amaçlıdır; klinik karar üretmez.')
     return [text: sb.toString(), counts: counts, gallery: gallery, edgeFlagged: edgeNames]
 }
 
@@ -1201,30 +1211,26 @@ def assertSaveDirSafe = { File saveDir, Collection forbidden ->
     forbidden.findAll { it != null }.each { File x ->
         String k = dirKey(x)
         if (s.startsWith(k) || k.startsWith(s))
-            throw new IllegalArgumentException('Etiket/makro PNG klasörü çıktı ya da anahtar klasörünün içinde (ya da üstünde) olamaz: PNG\'ler özgün dosya adlarını taşır.')
+            throw new IllegalArgumentException(workshopText('script.29778b496095', 'Etiket/makro PNG klasörü çıktı ya da anahtar klasörünün içinde (ya da üstünde) olamaz: PNG\'ler özgün dosya adlarını taşır.'))
     }
 }
 def assertKeyDirSafe = { File keyDir, File outDir ->
     String k = dirKey(keyDir), o = dirKey(outDir)
     if (k.startsWith(o) || o.startsWith(k))
-        throw new IllegalArgumentException('Anahtar klasörü çıktı klasörünün İÇİNDE (ya da çıktı klasörü anahtar klasörünün içinde) olamaz: ' +
-            'anahtar ve tuz kişisel veridir, paylaşılan klasöre sızar. Çıktı dışında ayrı bir anahtar klasörü seçin.')
+        throw new IllegalArgumentException(workshopText('script.3b6cc31d31c6', 'Anahtar klasörü çıktı klasörünün İÇİNDE (ya da çıktı klasörü anahtar klasörünün içinde) olamaz: anahtar ve tuz kişisel veridir, paylaşılan klasöre sızar. Çıktı dışında ayrı bir anahtar klasörü seçin.'))
 }
 def keyDirOf = { cfg ->
     String k = (cfg.keyDir ?: '').toString().trim()
     return k ? new File(k) : new File(atolyeDataRoot(), 'anonim-anahtar')
 }
 def saltNotice = { File keyDir ->
-    '⚠ YENİ TUZ ÜRETİLDİ: ' + new File(keyDir, SALT_FILE).getAbsolutePath() + '\n' +
-    '   Bu dosyayı (salt.bin, 32 bayt) ŞİMDİ güvenli bir yere YEDEKLEYİN (çıktı klasöründen ve paylaşılan yerlerden AYRI).\n' +
-    '   Kaybederseniz sonraki partilerde aynı takma adlar yeniden üretilemez; eski çıktılarla eşleşme bozulur.\n' +
-    '   Tuzu başkasıyla paylaşmayın: tuz + aday dosya adı ile takma ad doğrulanabilir.'
+    String.format(java.util.Locale.US, workshopText('script.0f6501d3b438', '⚠ YENİ TUZ ÜRETİLDİ: %s\n   Bu dosyayı (salt.bin, 32 bayt) ŞİMDİ güvenli bir yere YEDEKLEYİN (çıktı klasöründen ve paylaşılan yerlerden AYRI).\n   Kaybederseniz sonraki partilerde aynı takma adlar yeniden üretilemez; eski çıktılarla eşleşme bozulur.\n   Tuzu başkasıyla paylaşmayın: tuz + aday dosya adı ile takma ad doğrulanabilir.'), new File(keyDir, SALT_FILE).getAbsolutePath())
 }
 def loadSalt = { File keyDir, boolean create ->
     File sf = new File(keyDir, SALT_FILE)
     if (sf.exists()) {
         byte[] b = Files.readAllBytes(sf.toPath())
-        if (b.length != 32) throw new IllegalStateException('salt.bin 32 bayt değil (' + b.length + ') — DOKUNULMADI; yedekten geri yükleyin ya da dosyayı inceleyin: ' + sf.getAbsolutePath())
+        if (b.length != 32) throw new IllegalStateException(String.format(java.util.Locale.US, workshopText('script.6f42a094690b', 'salt.bin 32 bayt değil (%d) — DOKUNULMADI; yedekten geri yükleyin ya da dosyayı inceleyin: %s'), b.length, sf.getAbsolutePath()))
         return [salt: b, created: false]
     }
     if (!create) return [salt: null, created: false]
@@ -1243,23 +1249,23 @@ def loadCrosswalk = { File keyDir ->
     if (!cf.isFile()) return st
     def lines = cf.getText('UTF-8').split('\r?\n').toList()
     if (lines.isEmpty() || lines[0].replace('﻿', '') != KEY_COLUMNS.join(','))
-        throw new IllegalStateException('anahtar.csv başlığı tanınmadı — dosya DEĞİŞTİRİLMEDİ: ' + cf.getAbsolutePath())
+        throw new IllegalStateException(workshopText('script.2ca644a77eaf', 'anahtar.csv başlığı tanınmadı — dosya DEĞİŞTİRİLMEDİ') + ': ' + cf.getAbsolutePath())
     for (int i = 1; i < lines.size(); i++) {
         if (lines[i].trim().isEmpty()) continue
         def c = parseCsvLine(lines[i])
-        if (c.size() < 6) throw new IllegalStateException('anahtar.csv satır ' + (i + 1) + ' bozuk')
+        if (c.size() < 6) throw new IllegalStateException(String.format(java.util.Locale.US, workshopText('script.dadeeccb4560', 'anahtar.csv satır %d bozuk'), (i + 1)))
         String name = c[0], pseud = c[2], mode = c[3]
         if (!pseud) continue
         st.rows++
         if (name) {
             def first = st.byOrig.get(name)
             if (first == null) st.byOrig.put(name, [pseudonym: pseud, mode: mode])
-            else if (first.pseudonym != pseud) throw new IllegalStateException('anahtar.csv çelişkili: aynı özgün ad iki farklı takma adla kayıtlı (satır ' + (i + 1) + ')')
+            else if (first.pseudonym != pseud) throw new IllegalStateException(String.format(java.util.Locale.US, workshopText('script.1ad04f9b0f28', 'anahtar.csv çelişkili: aynı özgün ad iki farklı takma adla kayıtlı (satır %d)'), (i + 1)))
         }
         String key = pseud.toLowerCase(java.util.Locale.ROOT)
         String owner = st.usedBases.get(key)
         if (owner == null || owner.isEmpty()) st.usedBases.put(key, name)
-        else if (name && owner != name) throw new IllegalStateException('anahtar.csv çelişkili: bir takma ad iki farklı özgün ada verilmiş (satır ' + (i + 1) + ')')
+        else if (name && owner != name) throw new IllegalStateException(String.format(java.util.Locale.US, workshopText('script.91a3367401e4', 'anahtar.csv çelişkili: bir takma ad iki farklı özgün ada verilmiş (satır %d)'), (i + 1)))
     }
     return st
 }
@@ -1267,7 +1273,7 @@ def prepareKeyState = { cfg, File outDir, Closure log ->
     File kd = keyDirOf(cfg)
     assertKeyDirSafe(kd, outDir)
     kd.mkdirs()
-    if (!kd.isDirectory()) throw new IllegalStateException('Anahtar klasörü oluşturulamadı: ' + kd.getAbsolutePath())
+    if (!kd.isDirectory()) throw new IllegalStateException(workshopText('script.795328e2eda6', 'Anahtar klasörü oluşturulamadı') + ': ' + kd.getAbsolutePath())
     def sl = loadSalt(kd, cfg.naming == 'hmac')
     def cw = loadCrosswalk(kd)
     if (sl.created) log(saltNotice(kd))
@@ -1295,7 +1301,7 @@ def appendCrosswalk = { File keyDir, Collection rows ->
 def buildPlan = { cfg, List items, File outDir ->
     String prefix = cfg.prefix ?: 'case'
     if (prefix in ['.', '..'] || prefix.contains('/') || prefix.contains('\\'))
-        throw new IllegalArgumentException('Önek bir dosya adı olmalıdır; klasör yolu olamaz.')
+        throw new IllegalArgumentException(workshopText('script.615715bf337c', 'Önek bir dosya adı olmalıdır; klasör yolu olamaz.'))
     String naming = cfg.naming ?: 'sequential'
     def ks = cfg.keyState
     def units = groupUnits(items)
@@ -1319,19 +1325,18 @@ def buildPlan = { cfg, List items, File outDir ->
         def seenNames = new HashSet<String>()
         proc.each { u ->
             if (!seenNames.add(u.file.getName()))
-                throw new IllegalArgumentException('Aynı dosya adı birden çok dosyada geçiyor (geri alınabilir mod özgün adı anahtar tablosunda tutar): ' +
-                    'dosyaları ayrı partilere bölün ya da geri alınamaz modu seçin.')
+                throw new IllegalArgumentException(workshopText('script.07e8c429132b', 'Aynı dosya adı birden çok dosyada geçiyor (geri alınabilir mod özgün adı anahtar tablosunda tutar): dosyaları ayrı partilere bölün ya da geri alınamaz modu seçin.'))
         }
     }
     // Numaralama sırası özgün (proje-giriş / kabul) sırasını YANSITMAZ: tuz varsa tuzlu-HMAC sırası, yoksa
     // SecureRandom karıştırması. Sıralı adlar + yazma sırası aksi hâlde özgün sırayı (çoğu kez kabul numarası
     // sırasını) sızdırırdı.
     if (naming == 'hmac') {
-        if (ks == null || ks.salt == null) throw new IllegalStateException('hmac adlandırması için tuz (salt.bin) gerekli')
+        if (ks == null || ks.salt == null) throw new IllegalStateException(workshopText('script.181476bfd63a', 'hmac adlandırması için tuz (salt.bin) gerekli'))
         def seen = new HashSet<String>()
         proc.each { u ->
             if (!seen.add(u.file.getName().toLowerCase(java.util.Locale.ROOT)))
-                throw new IllegalArgumentException('hmac kipi dosya ADINA dayanır; aynı ad birden çok dosyada geçiyor: bu plan reddedildi (adlandırmayı değiştirin ya da dosyaları ayrı partilere bölün).')
+                throw new IllegalArgumentException(workshopText('script.acfd95d25dc8', 'hmac kipi dosya ADINA dayanır; aynı ad birden çok dosyada geçiyor: bu plan reddedildi (adlandırmayı değiştirin ya da dosyaları ayrı partilere bölün).'))
             u.hmacFull = hmacHex(ks.salt, u.file.getName())
         }
         proc.sort { a, b -> a.hmacFull <=> b.hmacFull }
@@ -1367,8 +1372,7 @@ def buildPlan = { cfg, List items, File outDir ->
             if (naming == 'hmac' && prior.mode == 'hmac') {
                 String hexPart = prior.pseudonym.substring(prior.pseudonym.lastIndexOf('_') + 1)
                 if (!(hexPart.length() in [10, 12, 16]) || !u.hmacFull.startsWith(hexPart))
-                    throw new IllegalStateException('HMAC uyuşmazlığı: anahtar tablosundaki takma ad bu tuzla üretilen değerle örtüşmüyor (tuz değişmiş ya da tablo bozulmuş olabilir). ' +
-                        'Sessizce yeni takma ad verilmedi; salt.bin yedeğini geri yükleyin.')
+                    throw new IllegalStateException(workshopText('script.fa6070a61c49', 'HMAC uyuşmazlığı: anahtar tablosundaki takma ad bu tuzla üretilen değerle örtüşmüyor (tuz değişmiş ya da tablo bozulmuş olabilir). Sessizce yeni takma ad verilmedi; salt.bin yedeğini geri yükleyin.'))
             }
             base = prior.pseudonym; u.reused = true
         } else if (naming == 'hmac') {
@@ -1377,7 +1381,7 @@ def buildPlan = { cfg, List items, File outDir ->
                 String cand = prefix + '_' + u.hmacFull.substring(0, len)
                 if (!taken(cand, u.file.getName())) { base = cand; break }
             }
-            if (base == null) throw new IllegalStateException('Takma ad çarpışması 16 karakterde de çözülemedi')
+            if (base == null) throw new IllegalStateException(workshopText('script.eadcbf124ef6', 'Takma ad çarpışması 16 karakterde de çözülemedi'))
         } else if (naming == 'uuid') {
             base = prefix + '_' + UUID.randomUUID().toString()
         } else {
@@ -1436,15 +1440,15 @@ def processUnitCore = { u, cfg, File outDir, Closure log, AtomicBoolean cancel -
         // Own a unique temporary file; never delete a pre-existing user's file.
         tmp = File.createTempFile('atolye-anon-', '.' + extOf(u.file), outDir)
         def orig = qupathCheck(u.file)
-        log('    kopyalanıyor (' + fmtBytes(u.file.length()) + ') …')
+        log('    ' + String.format(java.util.Locale.US, workshopText('script.356486bf651e', 'kopyalanıyor (%s) …'), fmtBytes(u.file.length())))
         Files.copy(u.file.toPath(), tmp.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)            // öznitelik (tarih) KOPYALANMAZ
         if (cancel.get()) throw new InterruptedException('iptal')
         def ed = [values: [], keys: [], removed: [], stemEdits: 0, zeroed: [], ifdCountBefore: 0]
         if (u.kind in ['aperio', 'tiff']) {
-            log('    üst veri / etiket düzenleniyor …')
+            log('    ' + workshopText('script.5f3c8f9d92c7', 'üst veri / etiket düzenleniyor …'))
             ed = editTiff(tmp, u.kind, cfg, stems)
         }
-        log('    doğrulanıyor (IFD + sıfırlama + bayt taraması + desen + QuPath) …')
+        log('    ' + workshopText('script.031857267b47', 'doğrulanıyor (IFD + sıfırlama + bayt taraması + desen + QuPath) …'))
         def issues = []; def notes = []; def review = []
         if (u.kind in ['aperio', 'tiff']) {
             def ins = inspectTiff(tmp, u.kind, [])
@@ -1555,7 +1559,7 @@ def processUnit = { u, cfg, File outDir, Closure log, AtomicBoolean cancel ->
     }
     if (produced) {
         u.pin = pinTimes(fin)
-        if (!u.pin.mtime) log('    ⚠ zaman damgası sabitlenemedi' + (u.pin.error ? (': ' + u.pin.error) : ''))
+        if (!u.pin.mtime) log('    ⚠ ' + workshopText('script.0309c595f8e1', 'zaman damgası sabitlenemedi') + (u.pin.error ? (': ' + u.pin.error) : ''))
     }
     return r
 }
@@ -1623,7 +1627,7 @@ def createAnonProject = { plan, Closure log ->
             pentry.saveImageData(nd)
             try { pentry.setThumbnail(qupath.lib.gui.commands.ProjectCommands.getThumbnailRGB(server)) } catch (Throwable ignore) {}
             added++
-            log('    projeye eklendi: ' + entryName)
+            log('    ' + workshopText('script.243460dd3396', 'projeye eklendi') + ': ' + entryName)
         } catch (Throwable t) {
             warns << (entryName + ': ' + (t.getMessage() ?: t.getClass().getSimpleName()))
         } finally {
@@ -1809,89 +1813,103 @@ def writePackage = { plan, String ts, File reportFile, Closure log ->
 
 def buildApplyText = { plan, projInfo, List keyFiles, boolean showOrig, Map ext = [:] ->
     def cfg = plan.cfg
+    // showOrig=false → shareable report FILE (Turkish, unchanged). showOrig=true → on-screen summary (UI language).
+    // L(fileText, screenText) picks one; file texts are never tokens.
+    def L = { String fileText, String screenText -> showOrig ? screenText : fileText }
+    def STATUS_LABEL = ['TAMAM': workshopText('script.c644c315e0bb', 'TAMAM'), 'KISMİ': workshopText('script.2c70f825bd01', 'KISMİ'), 'İNCELE': workshopText('script.ddde6b64fbe8', 'İNCELE'), 'HATA': workshopText('script.1a6b99320832', 'HATA'), 'ATLANDI': workshopText('script.a164326e4c0b', 'ATLANDI')]
+    def stLbl = { String s -> showOrig ? (STATUS_LABEL[s] ?: s) : s }
+    int sw = showOrig ? Math.max(7, STATUS_LABEL.values().collect { it.length() }.max()) : 7
+    def yn = { b -> L(b ? 'evet' : 'hayır', b ? workshopText('script.23f31d553dea', 'evet') : workshopText('script.5935eed908c4', 'hayır')) }
     def c = ['TAMAM': 0, 'KISMİ': 0, 'İNCELE': 0, 'HATA': 0, 'ATLANDI': 0]
     plan.units.each { u -> c[u.status] = (c[u.status] ?: 0) + 1 }
     def sb = new StringBuilder()
-    sb << 'WSI ANONİMLEŞTİRME — ÖZET\n'
+    sb << L('WSI ANONİMLEŞTİRME — ÖZET', workshopText('script.ce120a5e4d8e', 'WSI ANONİMLEŞTİRME — ÖZET')) << '\n'
     sb << '═══════════════════════════\n\n'
     // Paylaşılabilir raporda mutlak yol YOK (kullanıcı adı / kurum klasörü sızdırabilir): yalnız klasör adı
-    sb << 'Çıktı klasörü : ' << (showOrig ? plan.outDir.getAbsolutePath() : plan.outDir.getName()) << '\n'
-    sb << 'Mod           : ' << (cfg.reversible ? 'Geri alınabilir (eşleştirme anahtarı yazıldı)' : 'Geri alınamaz (özgün ad yazılmadı)') << '\n'
-    sb << 'Adlandırma    : ' << (cfg.naming ?: 'sequential') << (cfg.naming == 'hmac' ? ' (tuzlu HMAC-SHA256; her çalıştırmada aynı girdi → aynı takma ad)' : '') << '\n'
-    if (showOrig && cfg.keyState != null) sb << 'Anahtar klasörü: ' << cfg.keyState.dir.getAbsolutePath() << '  (PHI — paylaşmayın)\n'
-    else sb << 'Anahtar/tuz   : çıktı klasörünün DIŞINDA tutuldu (pakete dahil değil)\n'
-    sb << 'Seçenekler    : etiket/makro sil=' << (cfg.removeLabels ? 'evet' : 'hayır') << ' · üst veri temizle=' <<
-        (cfg.redactMeta ? 'evet' : 'hayır') << ' · kısmi biçimler=' << (cfg.includePartial ? 'evet' : 'hayır') << '\n'
-    sb << String.format(java.util.Locale.US, 'Sonuç         : TAMAM %d · KISMİ %d · İNCELE %d · HATA %d · ATLANDI %d (toplam %d dosya)%n%n',
-        c['TAMAM'], c['KISMİ'], c['İNCELE'], c['HATA'], c['ATLANDI'], plan.units.size())
+    sb << L('Çıktı klasörü : ', workshopText('script.bf6711b12e67', 'Çıktı klasörü :') + ' ') << (showOrig ? plan.outDir.getAbsolutePath() : plan.outDir.getName()) << '\n'
+    sb << L('Mod           : ', workshopText('script.c0a78ebc21e1', 'Mod           :') + ' ') << (cfg.reversible ? L('Geri alınabilir (eşleştirme anahtarı yazıldı)', workshopText('script.7fbff6f6c696', 'Geri alınabilir (eşleştirme anahtarı yazıldı)')) : L('Geri alınamaz (özgün ad yazılmadı)', workshopText('script.45758f1b9b56', 'Geri alınamaz (özgün ad yazılmadı)'))) << '\n'
+    sb << L('Adlandırma    : ', workshopText('script.bf71c7247bb6', 'Adlandırma    :') + ' ') << (cfg.naming ?: 'sequential') << (cfg.naming == 'hmac' ? L(' (tuzlu HMAC-SHA256; her çalıştırmada aynı girdi → aynı takma ad)', ' ' + workshopText('script.83049123b0fe', '(tuzlu HMAC-SHA256; her çalıştırmada aynı girdi → aynı takma ad)')) : '') << '\n'
+    if (showOrig && cfg.keyState != null) sb << workshopText('script.92a7f62bf7b2', 'Anahtar klasörü:') << ' ' << cfg.keyState.dir.getAbsolutePath() << '  ' << workshopText('script.7f0a5f67087e', '(PHI — paylaşmayın)') << '\n'
+    else sb << L('Anahtar/tuz   : çıktı klasörünün DIŞINDA tutuldu (pakete dahil değil)', workshopText('script.5b243cb81268', 'Anahtar/tuz   : çıktı klasörünün DIŞINDA tutuldu (pakete dahil değil)')) << '\n'
+    sb << L('Seçenekler    : etiket/makro sil=', workshopText('script.fa9a907f51cd', 'Seçenekler    :') + ' ' + workshopText('script.30e6918d3503', 'etiket/makro sil') + '=') << yn(cfg.removeLabels) <<
+        L(' · üst veri temizle=', ' · ' + workshopText('script.6d703bbc20aa', 'üst veri temizle') + '=') << yn(cfg.redactMeta) <<
+        L(' · kısmi biçimler=', ' · ' + workshopText('script.e81c49e273e9', 'kısmi biçimler') + '=') << yn(cfg.includePartial) << '\n'
+    sb << L(String.format(java.util.Locale.US, 'Sonuç         : TAMAM %d · KISMİ %d · İNCELE %d · HATA %d · ATLANDI %d (toplam %d dosya)%n%n',
+        c['TAMAM'], c['KISMİ'], c['İNCELE'], c['HATA'], c['ATLANDI'], plan.units.size()),
+        String.format(java.util.Locale.US, workshopText('script.044171ea9dd8', 'Sonuç         : TAMAM %d · KISMİ %d · İNCELE %d · HATA %d · ATLANDI %d (toplam %d dosya)%n%n'),
+        c['TAMAM'], c['KISMİ'], c['İNCELE'], c['HATA'], c['ATLANDI'], plan.units.size()))
     plan.units.each { u ->
         String mark = ['TAMAM': '✓', 'KISMİ': '◐', 'İNCELE': '⚑', 'HATA': '✗', 'ATLANDI': '–'][u.status] ?: '?'
         String origShown = showOrig ? (u.file?.getName() ?: u.items[0].name) : '(gizli)'
-        sb << String.format(java.util.Locale.US, '%s %-7s %-22s ← %s%n', mark, u.status, (u.anon ?: '—'), origShown)
+        sb << String.format(java.util.Locale.US, '%s %s %-22s ← %s%n', mark, "${stLbl(u.status)}".padRight(sw), (u.anon ?: '—'), origShown)
         if (u.detail) sb << '      ' << u.detail << '\n'
     }
     def changed = plan.units.findAll { it.sourceChanged }
     if (!changed.isEmpty()) {
-        sb << '\n⚠⚠ ORİJİNAL DOSYA DEĞİŞİKLİĞİ: ' << changed.size() << ' kaynak dosyanın parmak izi işlem sırasında DEĞİŞTİ (ilgili kopyalar silindi, durum HATA):\n'
+        sb << '\n' << L('⚠⚠ ORİJİNAL DOSYA DEĞİŞİKLİĞİ: ' + changed.size() + ' kaynak dosyanın parmak izi işlem sırasında DEĞİŞTİ (ilgili kopyalar silindi, durum HATA):',
+            String.format(java.util.Locale.US, workshopText('script.15c7eefd7e97', '⚠⚠ ORİJİNAL DOSYA DEĞİŞİKLİĞİ: %d kaynak dosyanın parmak izi işlem sırasında DEĞİŞTİ (ilgili kopyalar silindi, durum HATA):'), changed.size())) << '\n'
         changed.each { u -> sb << '   • ' << (u.anon ?: '—') << (showOrig ? ('  ← ' + (u.file?.getName() ?: '?')) : '') << '\n' }
-        sb << '   Bu bir yazılım hatası ya da eşitleme/yedekleme/antivirüs müdahalesi olabilir; kaynak dosyaları ve bulut eşitleme durumunu hemen denetleyin.\n'
+        sb << L('   Bu bir yazılım hatası ya da eşitleme/yedekleme/antivirüs müdahalesi olabilir; kaynak dosyaları ve bulut eşitleme durumunu hemen denetleyin.', '   ' + workshopText('script.9ff0dd940c4b', 'Bu bir yazılım hatası ya da eşitleme/yedekleme/antivirüs müdahalesi olabilir; kaynak dosyaları ve bulut eşitleme durumunu hemen denetleyin.')) << '\n'
     } else if (plan.units.any { it.fpBefore != null }) {
-        sb << '\n✓ Orijinal dosyalar: işlem öncesi, her birim sonrası ve çalışma sonunda parmak izi (boyut + zaman + ilk/son 16 MB SHA-256) değişmedi.\n'
+        sb << '\n' << L('✓ Orijinal dosyalar: işlem öncesi, her birim sonrası ve çalışma sonunda parmak izi (boyut + zaman + ilk/son 16 MB SHA-256) değişmedi.', workshopText('script.868366dfc9bd', '✓ Orijinal dosyalar: işlem öncesi, her birim sonrası ve çalışma sonunda parmak izi (boyut + zaman + ilk/son 16 MB SHA-256) değişmedi.')) << '\n'
     }
     def ed = edgeFlagged(plan)
-    sb << '\nTarama alanı kenar şeridi (olası etiket): '
-    if (ed.isEmpty()) sb << 'şüpheli dosya yok (yine de gözle bakın).\n'
+    sb << '\n' << L('Tarama alanı kenar şeridi (olası etiket): ', workshopText('script.53acd0e2da6c', 'Tarama alanı kenar şeridi (olası etiket)') + ': ')
+    if (ed.isEmpty()) sb << L('şüpheli dosya yok (yine de gözle bakın).', workshopText('script.380b2f9090ba', 'şüpheli dosya yok (yine de gözle bakın).')) << '\n'
     else {
-        sb << ed.size() << ' dosya işaretlendi:\n'
+        sb << ed.size() << L(' dosya işaretlendi:', ' ' + workshopText('script.215dda70ab2b', 'dosya işaretlendi:')) << '\n'
         ed.each { sb << '   • ' << it << '\n' }
     }
-    sb << '   Etiket/makro silme ana tarama alanına (Seviye V) uzanmaz; bu dosyaları QuPath\'te gözle kontrol edin. El yazısı da görüntünün parçasıdır.\n'
+    sb << L('   Etiket/makro silme ana tarama alanına (Seviye V) uzanmaz; bu dosyaları QuPath\'te gözle kontrol edin. El yazısı da görüntünün parçasıdır.', '   ' + workshopText('script.c32db5170f1c', 'Etiket/makro silme ana tarama alanına (Seviye V) uzanmaz; bu dosyaları QuPath\'te gözle kontrol edin. El yazısı da görüntünün parçasıdır.')) << '\n'
     def rv = reviewUnits(plan)
     if (!rv.isEmpty()) {
-        sb << '\nKayıt numarasına benzeyen desen kalan dosyalar (İNCELE) — değerler gösterilmez, yalnız şekil:\n'
+        sb << '\n' << L('Kayıt numarasına benzeyen desen kalan dosyalar (İNCELE) — değerler gösterilmez, yalnız şekil:', workshopText('script.b6429a23b10c', 'Kayıt numarasına benzeyen desen kalan dosyalar (İNCELE) — değerler gösterilmez, yalnız şekil:')) << '\n'
         rv.each { u -> sb << '   • ' << u.anon << ': ' << (u.review ?: []).join('; ') << '\n' }
-        sb << '   Bunları gözle doğrulamadan paylaşmayın.\n'
+        sb << L('   Bunları gözle doğrulamadan paylaşmayın.', '   ' + workshopText('script.73d2638c4bb6', 'Bunları gözle doğrulamadan paylaşmayın.')) << '\n'
     }
-    sb << '\nKayıt numarası taraması: ' << (cfg.accPattern ? 'özel desen kullanıldı.' : ACC_COVERAGE_TR) << '\n'
+    sb << '\n' << L('Kayıt numarası taraması: ', workshopText('script.3abf94b5ba89', 'Kayıt numarası taraması') + ': ') << (cfg.accPattern ? L('özel desen kullanıldı.', workshopText('script.a54ba2fd6b86', 'özel desen kullanıldı.')) : L(ACC_COVERAGE_TR, workshopText('script.5b5630bfaa90', 'Varsayılan kayıt numarası deseni yalnız NNN-YY ve NNNNN-NA biçimlerini (ör. 1021-25, 7-25, 12345-1A) arar; S25-12345, B2025-1234 ya da 25-12345 gibi biçimleri YAKALAMAZ. Kurumunuzun biçimi farklıysa desen= (arayüzde "Kayıt no deseni") ile verin; "desen bulunmadı" yalnız aranan desen için geçerlidir.'))) << '\n'
     if (projInfo != null) {
-        sb << '\nAnonim QuPath projesi:\n'
+        sb << '\n' << L('Anonim QuPath projesi:', workshopText('script.907fbfc45531', 'Anonim QuPath projesi:')) << '\n'
         if (projInfo.created) {
             sb << '  ' << (showOrig ? projInfo.file.getAbsolutePath() : (projInfo.dir.getName() + '/' + projInfo.file.getName())) << '\n'
-            sb << '  ' << projInfo.added << ' giriş eklendi' << (cfg.transferObjects ? (', ' + projInfo.objects + ' nesne YENİ kimliklerle aktarıldı') : ' (nesne aktarımı kapalı)') << '\n'
-            if (projInfo.named > 0) sb << '  ⚠ ' << projInfo.named << ' nesnenin adı/açıklaması var — PHI içermediğini kontrol edin.\n'
-            if (projInfo.tma > 0) sb << '  ⚠ ' << projInfo.tma << ' girişteki TMA ızgarası aktarılmadı.\n'
-            if (!projInfo.skipped.isEmpty()) sb << '  · Dönüştürülmüş/kırpılmış ' << projInfo.skipped.size() << ' giriş eklenmedi (kaynağı anonimleştirildi; yeni projede yeniden oluşturun).\n'
+            sb << '  ' << projInfo.added << L(' giriş eklendi', ' ' + workshopText('script.85c5a14dd884', 'giriş eklendi')) << (cfg.transferObjects ? L(', ' + projInfo.objects + ' nesne YENİ kimliklerle aktarıldı', ', ' + projInfo.objects + ' ' + workshopText('script.9837c6a15f61', 'nesne YENİ kimliklerle aktarıldı')) : L(' (nesne aktarımı kapalı)', ' (' + workshopText('script.1ede48f4696a', 'nesne aktarımı kapalı') + ')')) << '\n'
+            if (projInfo.named > 0) sb << L('  ⚠ ' + projInfo.named + ' nesnenin adı/açıklaması var — PHI içermediğini kontrol edin.', '  ⚠ ' + String.format(java.util.Locale.US, workshopText('script.c1945c129208', '%s nesnenin adı/açıklaması var — PHI içermediğini kontrol edin.'), projInfo.named)) << '\n'
+            if (projInfo.tma > 0) sb << L('  ⚠ ' + projInfo.tma + ' girişteki TMA ızgarası aktarılmadı.', '  ⚠ ' + String.format(java.util.Locale.US, workshopText('script.1cf4fb6f54a3', '%s girişteki TMA ızgarası aktarılmadı.'), projInfo.tma)) << '\n'
+            if (!projInfo.skipped.isEmpty()) sb << L('  · Dönüştürülmüş/kırpılmış ' + projInfo.skipped.size() + ' giriş eklenmedi (kaynağı anonimleştirildi; yeni projede yeniden oluşturun).',
+                '  · ' + String.format(java.util.Locale.US, workshopText('script.5f03d1cc2f5f', 'Dönüştürülmüş/kırpılmış %d giriş eklenmedi (kaynağı anonimleştirildi; yeni projede yeniden oluşturun).'), projInfo.skipped.size())) << '\n'
             projInfo.warns.each { sb << '  ✗ ' << it << '\n' }
-            if (!projInfo.leaks.isEmpty()) sb << '  ⚠ project.qpproj içinde orijinal ad/yol izi: ' << projInfo.leaks.size() << ' — kontrol edin.\n'
-            else sb << '  ✓ project.qpproj içinde orijinal dosya adı / klasör yolu bulunmadı.\n'
-            sb << '  · Proje klasörü paylaşılabilir pakete (SHA256SUMS/BENIOKU) DAHİL DEĞİLDİR.\n'
-        } else sb << '  oluşturulmadı: ' << projInfo.reason << '\n'
+            if (!projInfo.leaks.isEmpty()) sb << L('  ⚠ project.qpproj içinde orijinal ad/yol izi: ' + projInfo.leaks.size() + ' — kontrol edin.', '  ⚠ ' + String.format(java.util.Locale.US, workshopText('script.06f5e6dc8a62', 'project.qpproj içinde orijinal ad/yol izi: %d — kontrol edin.'), projInfo.leaks.size())) << '\n'
+            else sb << L('  ✓ project.qpproj içinde orijinal dosya adı / klasör yolu bulunmadı.', '  ✓ ' + workshopText('script.f124a5a79e92', 'project.qpproj içinde orijinal dosya adı / klasör yolu bulunmadı.')) << '\n'
+            sb << L('  · Proje klasörü paylaşılabilir pakete (SHA256SUMS/BENIOKU) DAHİL DEĞİLDİR.', '  · ' + workshopText('script.3c9cfb3b409b', 'Proje klasörü paylaşılabilir pakete (SHA256SUMS/BENIOKU) DAHİL DEĞİLDİR.')) << '\n'
+        } else sb << L('  oluşturulmadı: ', '  ' + workshopText('script.577a6337dcfc', 'oluşturulmadı') + ': ') << ((showOrig && projInfo.reason == 'Projeye eklenecek uygun giriş yok') ? workshopText('script.9db09062f82d', 'Projeye eklenecek uygun giriş yok') : projInfo.reason) << '\n'
     }
     if (showOrig && !keyFiles.isEmpty()) {
-        sb << '\nAnahtar klasöründe üretilen dosyalar (PHI):\n'
+        sb << '\n' << workshopText('script.731f01849674', 'Anahtar klasöründe üretilen dosyalar (PHI)') << ':\n'
         keyFiles.each { f -> sb << '  • ' << f.getName() << '\n' }
     }
     if (ext.pkg != null) {
-        sb << '\nPaylaşım paketi (' << ext.pkg.files.size() << ' dosya): ' << ext.pkg.sums.getName() << ' (LF, sha256sum -c ile doğrulanır) + ' << ext.pkg.readme.getName() << '\n'
+        sb << '\n' << L('Paylaşım paketi (' + ext.pkg.files.size() + ' dosya): ' + ext.pkg.sums.getName() + ' (LF, sha256sum -c ile doğrulanır) + ' + ext.pkg.readme.getName(),
+            String.format(java.util.Locale.US, workshopText('script.d5211cbe5326', 'Paylaşım paketi (%d dosya): %s (LF, sha256sum -c ile doğrulanır) + %s'), ext.pkg.files.size(), ext.pkg.sums.getName(), ext.pkg.readme.getName())) << '\n'
         if (showOrig) {
             if (ext.pkg.notCreation > 0)
-                sb << '  ⚠ ' << ext.pkg.notCreation << ' dosyada OLUŞTURMA zamanı sabitlenemedi (dosya sistemi desteklemiyor olabilir); değiştirilme zamanı sabitlendi: ' << PIN_ISO << '\n'
-            else sb << '  ✓ Değiştirilme + oluşturma + erişim zamanı ' << PIN_ISO << ' olarak sabitlendi.\n'
+                sb << '  ⚠ ' << String.format(java.util.Locale.US, workshopText('script.ce288417d2dd', '%d dosyada OLUŞTURMA zamanı sabitlenemedi (dosya sistemi desteklemiyor olabilir); değiştirilme zamanı sabitlendi: %s'), ext.pkg.notCreation, PIN_ISO) << '\n'
+            else sb << '  ✓ ' << String.format(java.util.Locale.US, workshopText('script.fee0225f7197', 'Değiştirilme + oluşturma + erişim zamanı %s olarak sabitlendi.'), PIN_ISO) << '\n'
         }
-    } else if (ext.pkgPlanned) sb << '\nPaylaşım paketi: SHA256SUMS.txt (LF; sha256sum -c ile doğrulanır) ve BENIOKU.md bu klasörde; rapor dahil tüm paylaşılabilir dosyaların zaman damgaları ' << PIN_ISO << ' olarak sabitlenir.\n'
-    else if (ext.pkgSkipped) sb << '\nPaylaşım paketi (SHA256SUMS/BENIOKU) yazılmadı: ' << ext.pkgSkipped << '\n'
+    } else if (ext.pkgPlanned) sb << '\n' << L('Paylaşım paketi: SHA256SUMS.txt (LF; sha256sum -c ile doğrulanır) ve BENIOKU.md bu klasörde; rapor dahil tüm paylaşılabilir dosyaların zaman damgaları ' + PIN_ISO + ' olarak sabitlenir.',
+        String.format(java.util.Locale.US, workshopText('script.9774c2d99ffe', 'Paylaşım paketi: SHA256SUMS.txt (LF; sha256sum -c ile doğrulanır) ve BENIOKU.md bu klasörde; rapor dahil tüm paylaşılabilir dosyaların zaman damgaları %s olarak sabitlenir.'), PIN_ISO)) << '\n'
+    else if (ext.pkgSkipped) sb << '\n' << L('Paylaşım paketi (SHA256SUMS/BENIOKU) yazılmadı: ', workshopText('script.34bce800107e', 'Paylaşım paketi (SHA256SUMS/BENIOKU) yazılmadı') + ': ') << ext.pkgSkipped << '\n'
     if (showOrig && ext.foreign) {
-        sb << '\n⚠ Çıktı klasöründe BU çalıştırmanın paylaşılabilir çıktısı olmayan dosyalar var (SİLİNMEDİ) — paylaşmadan önce gözden geçirin:\n'
-        ext.foreign.each { f -> sb << '   • ' << f.name << (f.phi ? '   ← anahtar/PHI olabilir, paylaşmayın!' : '') << '\n' }
+        sb << '\n⚠ ' << workshopText('script.ef3d98cef0b6', 'Çıktı klasöründe BU çalıştırmanın paylaşılabilir çıktısı olmayan dosyalar var (SİLİNMEDİ) — paylaşmadan önce gözden geçirin') << ':\n'
+        ext.foreign.each { f -> sb << '   • ' << f.name << (f.phi ? '   ← ' + workshopText('script.7e5ad016abd0', 'anahtar/PHI olabilir, paylaşmayın!') : '') << '\n' }
     }
     if (showOrig && ext.saltNotice) sb << '\n' << ext.saltNotice << '\n'
-    sb << '\nDurumlar: TAMAM = Seviye I+III+IV, doğrulandı · KISMİ = yazıldı ama en az bir katman kapsanmadı ·\n'
-    sb << '          İNCELE = yazıldı ama kayıt numarası benzeri desen kaldı; gözle doğrulayın ·\n'
-    sb << '          HATA = doğrulama geçmedi, kopya silindi · ATLANDI = biçim desteklenmiyor / iptal.\n'
-    if (cfg.reversible) sb << '⚠ Eşleştirme anahtarı (anahtar klasörü) PHI içerir — güvenli saklayın, anonim lamlarla paylaşmayın.\n'
-    else sb << '⚠ Geri alınamaz mod: orijinal↔anonim bağlantısı YAZILMADI.\n'
-    sb << '⚠ Doku görüntüsünün kendisi (Seviye V) anonimleştirilmez; her kopyayı QuPath\'te gözle de kontrol edin.\n'
-    sb << '⚠️ Yalnızca araştırma/eğitim amaçlıdır; klinik karar üretmez.'
+    sb << '\n' << L('Durumlar: TAMAM = Seviye I+III+IV, doğrulandı · KISMİ = yazıldı ama en az bir katman kapsanmadı ·', workshopText('script.80247c32cf7e', 'Durumlar: TAMAM = Seviye I+III+IV, doğrulandı · KISMİ = yazıldı ama en az bir katman kapsanmadı ·')) << '\n'
+    sb << L('          İNCELE = yazıldı ama kayıt numarası benzeri desen kaldı; gözle doğrulayın ·', '          ' + workshopText('script.26da0c256447', 'İNCELE = yazıldı ama kayıt numarası benzeri desen kaldı; gözle doğrulayın ·')) << '\n'
+    sb << L('          HATA = doğrulama geçmedi, kopya silindi · ATLANDI = biçim desteklenmiyor / iptal.', '          ' + workshopText('script.c8c0f0f4caf6', 'HATA = doğrulama geçmedi, kopya silindi · ATLANDI = biçim desteklenmiyor / iptal.')) << '\n'
+    if (cfg.reversible) sb << L('⚠ Eşleştirme anahtarı (anahtar klasörü) PHI içerir — güvenli saklayın, anonim lamlarla paylaşmayın.', '⚠ ' + workshopText('script.5c2328c66e6f', 'Eşleştirme anahtarı (anahtar klasörü) PHI içerir — güvenli saklayın, anonim lamlarla paylaşmayın.')) << '\n'
+    else sb << L('⚠ Geri alınamaz mod: orijinal↔anonim bağlantısı YAZILMADI.', '⚠ ' + workshopText('script.ecca5d60218e', 'Geri alınamaz mod: orijinal↔anonim bağlantısı YAZILMADI.')) << '\n'
+    sb << L('⚠ Doku görüntüsünün kendisi (Seviye V) anonimleştirilmez; her kopyayı QuPath\'te gözle de kontrol edin.', '⚠ ' + workshopText('script.d983eb15d7c1', 'Doku görüntüsünün kendisi (Seviye V) anonimleştirilmez; her kopyayı QuPath\'te gözle de kontrol edin.')) << '\n'
+    sb << L('⚠️ Yalnızca araştırma/eğitim amaçlıdır; klinik karar üretmez.', '⚠️ ' + workshopText('script.b82384fd9d01', 'Yalnızca araştırma/eğitim amaçlıdır; klinik karar üretmez.'))
     return sb.toString()
 }
 
@@ -1918,10 +1936,12 @@ def sanitizerFor = { plan ->
 def runApply = { plan, Closure log, AtomicBoolean cancel ->
     def cfg = plan.cfg
     def ks = cfg.keyState
-    if (ks == null) throw new IllegalStateException('Anahtar klasörü hazırlanmadı (anahtar durumu yok)')
+    if (ks == null) throw new IllegalStateException(workshopText('script.a75669ac0ce3', 'Anahtar klasörü hazırlanmadı (anahtar durumu yok)'))
     String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern('yyyyMMdd_HHmmss'))
     def clean = sanitizerFor(plan)
     def todo = plan.units.findAll { it.process }       // takma ad sırası: dosyalar özgün sırada YAZILMAZ
+    // Screen-only labels for the log lines; u.status (the code) is never changed.
+    def LOG_STATUS = ['TAMAM': workshopText('script.c644c315e0bb', 'TAMAM'), 'KISMİ': workshopText('script.2c70f825bd01', 'KISMİ'), 'İNCELE': workshopText('script.ddde6b64fbe8', 'İNCELE'), 'HATA': workshopText('script.1a6b99320832', 'HATA'), 'ATLANDI': workshopText('script.a164326e4c0b', 'ATLANDI')]
     plan.units.findAll { !it.process }.each { u -> u.status = 'ATLANDI'; u.detail = u.skipReason }
     def xrow = { u, String status ->
         [origName: cfg.reversible ? (u.file?.getName() ?: '') : '', origPath: cfg.reversible ? (u.file?.getAbsolutePath() ?: '') : '',
@@ -1936,7 +1956,7 @@ def runApply = { plan, Closure log, AtomicBoolean cancel ->
         try { appendCrosswalk(ks.dir, [xrow(u, 'BASLADI')]) }
         catch (Throwable t) {
             u.status = 'HATA'; u.detail = 'Anahtar tablosuna yazılamadı (' + clean(t.getMessage() ?: t.getClass().getSimpleName()) + ') → kopya yazılmadı'
-            log('    ' + u.status + ' — ' + u.detail); continue
+            log('    ' + (LOG_STATUS[u.status] ?: u.status) + ' — ' + u.detail); continue
         }
         def r = processUnit(u, cfg, plan.outDir, log, cancel)
         u.status = r.status; u.detail = clean(r.detail)
@@ -1947,7 +1967,7 @@ def runApply = { plan, Closure log, AtomicBoolean cancel ->
                 u.status = 'HATA'; u.detail = 'Anahtar tablosuna yazılamadı → kopya silindi'
             }
         }
-        log('    ' + u.status + ' — ' + u.detail)
+        log('    ' + (LOG_STATUS[u.status] ?: u.status) + ' — ' + u.detail)
     }
     // Çalışma sonu: TÜM kaynakların parmak izi bir kez daha
     todo.findAll { it.fpBefore != null && it.file != null }.each { u ->
@@ -1962,12 +1982,12 @@ def runApply = { plan, Closure log, AtomicBoolean cancel ->
                 u.detail = '⚠ ORİJİNAL DOSYA ÇALIŞMA SONUNDA DEĞİŞMİŞ GÖRÜNÜYOR (parmak izi farklı) → kopya silindi; kaynağı ve eşitleme araçlarını hemen denetleyin'
                 try { appendCrosswalk(ks.dir, [xrow(u, 'HATA')]) } catch (Throwable ignore) {}
             }
-            log('    ⚠⚠ ORİJİNAL DEĞİŞTİ: ' + u.anon)
+            log('    ⚠⚠ ' + workshopText('script.0db93ea161fe', 'ORİJİNAL DEĞİŞTİ') + ': ' + u.anon)
         }
     }
     def projInfo = null
     if (cfg.makeProject && !cancel.get()) {
-        log('Anonim QuPath projesi oluşturuluyor …')
+        log(workshopText('script.1f8cb7c30205', 'Anonim QuPath projesi oluşturuluyor …'))
         try { projInfo = createAnonProject(plan, log) }
         catch (Throwable t) { projInfo = [created: false, reason: (t.getMessage() ?: t.getClass().getSimpleName())] }
         projInfo.reason = clean((String) projInfo.reason)
@@ -1975,12 +1995,12 @@ def runApply = { plan, Closure log, AtomicBoolean cancel ->
     }
     def keyFiles = []
     try { keyFiles = writeKeyFiles(plan, ts) }
-    catch (Throwable t) { log('Anahtar dosyaları yazılamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())) }
+    catch (Throwable t) { log(workshopText('script.1d9db4904245', 'Anahtar dosyaları yazılamadı') + ': ' + (t.getMessage() ?: t.getClass().getSimpleName())) }
     // D3: paylaşılabilir çıktı olmayan dosyalar (rapor/BENIOKU/SHA256SUMS yazılmadan ÖNCE)
     def expected = plan.units.findAll { it.status in PKG_STATUSES && it.anon }.collect { it.anon }
     if (projInfo?.created) expected << projInfo.dir.getName()
     def foreign = foreignOutputs(plan.outDir, expected)
-    foreign.each { f -> log('    ⚠ çıktı klasöründe paylaşılabilir çıktı olmayan öğe: ' + f.name + (f.phi ? '  (anahtar/PHI olabilir!)' : '')) }
+    foreign.each { f -> log('    ⚠ ' + workshopText('script.08251e381dbd', 'çıktı klasöründe paylaşılabilir çıktı olmayan öğe') + ': ' + f.name + (f.phi ? '  (' + workshopText('script.6cbfd22bb797', 'anahtar/PHI olabilir!') + ')' : '')) }
     boolean producedAny = plan.units.any { it.status in PKG_STATUSES }
     boolean willPackage = producedAny && !cancel.get()
     def ext = [foreign: foreign, saltNotice: (ks.saltCreated ? saltNotice(ks.dir) : null)]
@@ -1991,16 +2011,16 @@ def runApply = { plan, Closure log, AtomicBoolean cancel ->
                         pkgSkipped: willPackage ? null : (cancel.get() ? 'çalışma iptal edildi' : 'üretilen lam yok')]
         Files.write(rep.toPath(), buildApplyText(plan, projInfo, [], false, shareExt).getBytes(StandardCharsets.UTF_8),
             java.nio.file.StandardOpenOption.CREATE_NEW, java.nio.file.StandardOpenOption.WRITE)   // orijinal ad İÇERMEZ
-    } catch (Throwable t) { log('Rapor yazılamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())); rep = null }
+    } catch (Throwable t) { log(workshopText('script.e47e363a93a5', 'Rapor yazılamadı') + ': ' + (t.getMessage() ?: t.getClass().getSimpleName())); rep = null }
     def pkg = null
     if (willPackage) {
         try { pkg = writePackage(plan, ts, rep, log) }
-        catch (Throwable t) { log('Paket (SHA256SUMS/BENIOKU) yazılamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())) }
+        catch (Throwable t) { log(workshopText('script.84c09af55f67', 'Paket (SHA256SUMS/BENIOKU) yazılamadı') + ': ' + (t.getMessage() ?: t.getClass().getSimpleName())) }
     }
-    if (pkg != null && pkg.notCreation > 0) log('⚠ ' + pkg.notCreation + ' dosyada oluşturma zamanı sabitlenemedi (dosya sistemi desteklemiyor); değiştirilme zamanı sabitlendi.')
+    if (pkg != null && pkg.notCreation > 0) log('⚠ ' + String.format(java.util.Locale.US, workshopText('script.3ec2916d544a', '%d dosyada oluşturma zamanı sabitlenemedi (dosya sistemi desteklemiyor); değiştirilme zamanı sabitlendi.'), pkg.notCreation))
     ext.pkg = pkg
     if (rep != null && rep.isFile()) pinTimes(rep)       // paket yazılmasa bile paylaşılabilir rapor sabitlenir
-    if (pkg == null) ext.pkgSkipped = willPackage ? 'yazma hatası (günlüğe bakın)' : (cancel.get() ? 'çalışma iptal edildi' : 'üretilen lam yok')
+    if (pkg == null) ext.pkgSkipped = willPackage ? workshopText('script.3f9c43dc7805', 'yazma hatası (günlüğe bakın)') : (cancel.get() ? workshopText('script.d30900a1f564', 'çalışma iptal edildi') : workshopText('script.c4fb4905f70c', 'üretilen lam yok'))
     return [text: buildApplyText(plan, projInfo, keyFiles, true, ext), projInfo: projInfo, saltCreated: ks.saltCreated,
             saltNotice: ext.saltNotice, pkg: pkg, foreign: foreign]
 }
@@ -2008,26 +2028,35 @@ def runApply = { plan, Closure log, AtomicBoolean cancel ->
 def planPreviewText = { plan ->
     def sb = new StringBuilder()
     def cfg = plan.cfg
-    sb << 'Çıktı klasörü : ' << plan.outDir.getAbsolutePath() << '\n'
-    sb << 'Dosya / giriş : ' << plan.units.size() << ' dosya, ' << plan.units.sum { it.items.size() } << ' giriş\n'
-    sb << 'Mod           : ' << (cfg.reversible ? 'Geri alınabilir (anahtar yazılır)' : 'Geri alınamaz (özgün ad yazılmaz)') << '\n'
-    sb << 'Adlandırma    : ' << (cfg.naming ?: 'sequential') << '\n'
+    def KLS = [
+        aperio: workshopText('script.eac3c720d927', 'Aperio SVS (tam destek)'),
+        tiff: workshopText('script.8101bd774790', 'Genel TIFF (kısmi)'),
+        ndpi: workshopText('script.5c460c1676eb', 'NDPI (kısmi)'),
+        other: workshopText('script.d6f831a99b7e', 'Diğer tek dosya (kısmi)'),
+        multi: workshopText('script.26fa3159b169', 'Çok dosyalı biçim (atlanır)'),
+        missing: workshopText('script.5b7cd620a675', 'Yerel dosya yok (atlanır)'),
+        unreadable: workshopText('script.7f64f2356474', 'Okunamadı (kilitli / erişim yok — atlanır)')
+    ]
+    sb << workshopText('script.bf6711b12e67', 'Çıktı klasörü :') << ' ' << plan.outDir.getAbsolutePath() << '\n'
+    sb << String.format(java.util.Locale.US, workshopText('script.d458d0fee0de', 'Dosya / giriş : %d dosya, %s giriş'), plan.units.size(), plan.units.sum { it.items.size() }) << '\n'
+    sb << workshopText('script.c0a78ebc21e1', 'Mod           :') << ' ' << (cfg.reversible ? workshopText('script.dcdd23a7ee7b', 'Geri alınabilir (anahtar yazılır)') : workshopText('script.09adf40eedd4', 'Geri alınamaz (özgün ad yazılmaz)')) << '\n'
+    sb << workshopText('script.bf71c7247bb6', 'Adlandırma    :') << ' ' << (cfg.naming ?: 'sequential') << '\n'
     if (cfg.keyState != null) {
-        sb << 'Anahtar klasörü: ' << cfg.keyState.dir.getAbsolutePath() << '  (çıktı DIŞI; PHI — paylaşmayın)\n'
+        sb << workshopText('script.92a7f62bf7b2', 'Anahtar klasörü:') << ' ' << cfg.keyState.dir.getAbsolutePath() << '  ' << workshopText('script.be7debbcb506', '(çıktı DIŞI; PHI — paylaşmayın)') << '\n'
         if (cfg.keyState.saltCreated) sb << '\n' << saltNotice(cfg.keyState.dir) << '\n\n'
     }
-    sb << 'Yazılacak     : ' << fmtBytes(plan.bytes) << ' (boş alan: ' << fmtBytes(plan.outDir.getUsableSpace()) << ')\n\n'
+    sb << String.format(java.util.Locale.US, workshopText('script.d52f0086b866', 'Yazılacak     : %s (boş alan: %s)'), fmtBytes(plan.bytes), fmtBytes(plan.outDir.getUsableSpace())) << '\n\n'
     def byKind = plan.units.groupBy { it.kind }
-    byKind.each { k, list -> sb << String.format(java.util.Locale.US, '  %-34s %d%n', KIND_LABEL[k], list.size()) }
-    sb << '\nEşleştirme:\n'
+    byKind.each { k, list -> sb << String.format(java.util.Locale.US, '  %-34s %d%n', KLS[k], list.size()) }
+    sb << '\n' << workshopText('script.efe658fa25ae', 'Eşleştirme') << ':\n'
     int shown = 0
     plan.units.each { u ->
         if (shown++ < 12) {
             String src = u.file?.getName() ?: u.items[0].name
-            sb << String.format(java.util.Locale.US, '  %-34s → %s%n', src, u.process ? u.anon : ('ATLANACAK: ' + u.skipReason))
+            sb << String.format(java.util.Locale.US, '  %-34s → %s%n', src, u.process ? u.anon : (workshopText('script.b9467539f35d', 'ATLANACAK') + ': ' + u.skipReason))
         }
     }
-    if (plan.units.size() > 12) sb << String.format(java.util.Locale.US, '  … ve %d dosya daha%n', plan.units.size() - 12)
+    if (plan.units.size() > 12) sb << String.format(java.util.Locale.US, workshopText('script.98e3f2946bcb', '  … ve %d dosya daha%n'), plan.units.size() - 12)
     return sb.toString()
 }
 
@@ -2056,7 +2085,7 @@ def argBool = { Map a, String key, boolean dflt ->
     if (v == null || v.isEmpty()) return dflt
     if (foldTr(v) in BOOL_TRUE) return true
     if (foldTr(v) in BOOL_FALSE) return false
-    throw new IllegalArgumentException('Geçersiz değer: ' + key + '=' + v + ' (evet/hayır, true/false, 1/0 kabul edilir)')
+    throw new IllegalArgumentException(String.format(java.util.Locale.US, workshopText('script.38cf5daf245c', 'Geçersiz değer: %s=%s (evet/hayır, true/false, 1/0 kabul edilir)'), key, v))
 }
 
 if (isHeadless) {
@@ -2065,13 +2094,13 @@ if (isHeadless) {
                       'anahtarklasor', 'desen', 'tarama']
     def badKeys = a.keySet().findAll { !VALID_KEYS.contains(it) }
     if (!badKeys.isEmpty())
-        throw new IllegalArgumentException('Bilinmeyen argüman: ' + badKeys.join(', ') + '. Geçerli anahtarlar: ' + VALID_KEYS.join(', '))
+        throw new IllegalArgumentException(String.format(java.util.Locale.US, workshopText('script.c187cb01aa1e', 'Bilinmeyen argüman: %s. Geçerli anahtarlar: %s'), badKeys.join(', '), VALID_KEYS.join(', ')))
     String kip = a.kip ? foldTr((String) a.kip) : 'denetle'
     if (!(kip in ['denetle', 'anonimlestir']))
-        throw new IllegalArgumentException('Geçersiz kip: ' + a.kip + ' (denetle | anonimlestir)')
+        throw new IllegalArgumentException(String.format(java.util.Locale.US, workshopText('script.f9937483ecc0', 'Geçersiz kip: %s (denetle | anonimlestir)'), a.kip))
     String naming = a.adlandirma ? foldTr((String) a.adlandirma) : 'sirali'
     if (!(naming in ['sirali', 'uuid', 'hmac']))
-        throw new IllegalArgumentException('Geçersiz adlandırma: ' + a.adlandirma + ' (sirali | uuid | hmac)')
+        throw new IllegalArgumentException(String.format(java.util.Locale.US, workshopText('script.816fafa3c06b', 'Geçersiz adlandırma: %s (sirali | uuid | hmac)'), a.adlandirma))
     def cfg = [prefix         : (a.onek ?: 'case'),
                naming         : (naming == 'uuid' ? 'uuid' : (naming == 'hmac' ? 'hmac' : 'sequential')),
                keyDir         : (a.anahtarklasor ?: ''),
@@ -2084,12 +2113,12 @@ if (isHeadless) {
                makeProject    : argBool(a, 'yeniproje', false),
                transferObjects: argBool(a, 'nesneler', false)]
     if (QP.getProject() != null)
-        throw new IllegalArgumentException("Bu betik projeyi kendisi açar: QuPath'i -p OLMADAN, --args \"proje=<proje.qpproj>\" ile çalıştırın.")
+        throw new IllegalArgumentException(workshopText('script.d86160988a08', 'Bu betik projeyi kendisi açar: QuPath\'i -p OLMADAN, --args "proje=<proje.qpproj>" ile çalıştırın.'))
     def project = a.proje ? ProjectIO.loadProject(new File((String) a.proje), BufferedImage.class) : null
     def items = (project != null) ? collectItems('proje', null, project, null)
                                   : collectItems('acik', null, null, QP.getCurrentImageData())
     if (items.isEmpty())
-        throw new IllegalArgumentException('Kapsamda görüntü yok: --args "proje=<proje.qpproj>" ya da -i <lam> verin.')
+        throw new IllegalArgumentException(workshopText('script.3120596b783f', 'Kapsamda görüntü yok: --args "proje=<proje.qpproj>" ya da -i <lam> verin.'))
     def cancel = new AtomicBoolean(false)
     def logc = { String s -> println s }
     if (kip == 'denetle') {
@@ -2098,14 +2127,14 @@ if (isHeadless) {
                                                saveDir: (a.etiketler ? new File((String) a.etiketler) : null)]).text
         return
     }
-    if (!a.cikti) throw new IllegalArgumentException('Çıktı klasörü gerekli: --args "cikti=<klasör>"')
-    if (cfg.makeProject && project == null) throw new IllegalArgumentException('yeniproje=evet yalnız proje= ile kullanılabilir.')
+    if (!a.cikti) throw new IllegalArgumentException(workshopText('script.7f74d953d3c6', 'Çıktı klasörü gerekli: --args "cikti=<klasör>"'))
+    if (cfg.makeProject && project == null) throw new IllegalArgumentException(workshopText('script.918e07d1b35a', 'yeniproje=evet yalnız proje= ile kullanılabilir.'))
     File outDir = new File((String) a.cikti)
-    if (!outDir.isDirectory() && !outDir.mkdirs()) throw new IllegalStateException('Çıktı klasörü oluşturulamadı: ' + outDir)
+    if (!outDir.isDirectory() && !outDir.mkdirs()) throw new IllegalStateException(String.format(java.util.Locale.US, workshopText('script.840d6d1cd255', 'Çıktı klasörü oluşturulamadı: %s'), outDir))
     compileAccession(cfg.accPattern)                                   // geçersiz desen → hemen hata
     cfg.keyState = prepareKeyState(cfg, outDir, logc)                  // anahtar klasörü çıktı içindeyse HATA; tuz yoksa (hmac) üretilir
     def plan = buildPlan(cfg, items, outDir)
-    if (plan.bytes > outDir.getUsableSpace()) throw new IllegalStateException('Yetersiz disk alanı: ' + fmtBytes(plan.bytes) + ' gerekli')
+    if (plan.bytes > outDir.getUsableSpace()) throw new IllegalStateException(String.format(java.util.Locale.US, workshopText('script.86b1614168b6', 'Yetersiz disk alanı: %s gerekli'), fmtBytes(plan.bytes)))
     println planPreviewText(plan)
     println runApply(plan, logc, cancel).text
     return
@@ -2367,14 +2396,14 @@ render = { ->
         def mk = { String key, String text, boolean val ->
             def cb = new javafx.scene.control.CheckBox(text); cb.setSelected(val); ctl.put(key, cb); center.getChildren().add(cb); cb
         }
-        mk('decodeLabels', 'Denetimde etiket DataMatrix kodunu çöz — Sectra "ANON…" etiketini tanır (ZXing; ilk kullanımda ~0,6 MB indirilir)', (boolean) cfg.decodeLabels)
-        mk('mainScan', 'Denetimde ve anonimleştirmede ana tarama alanı kenar şeridini (olası etiket) ara — küçük resim + koyu bant ölçütü; yalnız uyarı verir', (boolean) cfg.mainScan)
-        mk('removeLabels', 'Etiket ve makro görüntüsünü sil (Aperio SVS — Seviye III; IFD tablosu ve değerleri de sıfırlanır)', (boolean) cfg.removeLabels)
-        mk('redactMeta', 'Üst veriyi temizle: Filename/Date/User/ScanScope ID/ImageID … tüm IFD\'lerde + standart TIFF etiketleri (Seviye IV)', (boolean) cfg.redactMeta)
-        mk('reversible', 'Geri alınabilir mod (özgün adları anahtar klasörüne yaz: anahtar.csv + eşleştirme CSV/JSON)', (boolean) cfg.reversible)
-        mk('includePartial', 'Tam anonimleştirilemeyen biçimleri de kopyala (genel TIFF/NDPI/CZI …; KISMİ olarak işaretlenir)', (boolean) cfg.includePartial)
-        def mp = mk('makeProject', 'Anonim kopyalardan yeni QuPath projesi kur (çıktı klasöründe qupath-projesi/)', (boolean) cfg.makeProject)
-        def to = mk('transferObjects', '   └ anotasyon/tespitleri yeni projeye aktar (yeni kimliklerle; kaydedilmiş hâl)', (boolean) cfg.transferObjects)
+        mk('decodeLabels', workshopText('script.3131ca7c5c07', 'Denetimde etiket DataMatrix kodunu çöz — Sectra "ANON…" etiketini tanır (ZXing; ilk kullanımda ~0,6 MB indirilir)'), (boolean) cfg.decodeLabels)
+        mk('mainScan', workshopText('script.187bc14b84a6', 'Denetimde ve anonimleştirmede ana tarama alanı kenar şeridini (olası etiket) ara — küçük resim + koyu bant ölçütü; yalnız uyarı verir'), (boolean) cfg.mainScan)
+        mk('removeLabels', workshopText('script.f0d39cd4ab4c', 'Etiket ve makro görüntüsünü sil (Aperio SVS — Seviye III; IFD tablosu ve değerleri de sıfırlanır)'), (boolean) cfg.removeLabels)
+        mk('redactMeta', workshopText('script.32a360527888', 'Üst veriyi temizle: Filename/Date/User/ScanScope ID/ImageID … tüm IFD\'lerde + standart TIFF etiketleri (Seviye IV)'), (boolean) cfg.redactMeta)
+        mk('reversible', workshopText('script.6dc376a4ba41', 'Geri alınabilir mod (özgün adları anahtar klasörüne yaz: anahtar.csv + eşleştirme CSV/JSON)'), (boolean) cfg.reversible)
+        mk('includePartial', workshopText('script.6dbf8fec4a98', 'Tam anonimleştirilemeyen biçimleri de kopyala (genel TIFF/NDPI/CZI …; KISMİ olarak işaretlenir)'), (boolean) cfg.includePartial)
+        def mp = mk('makeProject', workshopText('script.56182dfdf5d4', 'Anonim kopyalardan yeni QuPath projesi kur (çıktı klasöründe qupath-projesi/)'), (boolean) cfg.makeProject)
+        def to = mk('transferObjects', '   └ ' + workshopText('script.5245c16d4ebf', 'anotasyon/tespitleri yeni projeye aktar (yeni kimliklerle; kaydedilmiş hâl)'), (boolean) cfg.transferObjects)
         to.disableProperty().bind(mp.selectedProperty().not().or(mp.disableProperty()))
         syncScope()
 
@@ -2417,9 +2446,9 @@ render = { ->
         if (!gal.isEmpty()) {
             def flow = new javafx.scene.layout.FlowPane(10, 10)
             flow.setPadding(new javafx.geometry.Insets(4))
-            def STATE_TR = [ANON: '✓ Sectra ANON', ANON_DEGIL: '✗ ANON değil', SENTETIK_COZULEMEDI: '? kod okunamadı',
-                            FOTOGRAF: '✗ fotoğraf etiket', OKUNAMADI: '? okunamadı', YOK: '— etiket yok']
-            def MAC_TR = [BOS: 'makro boş ✓', ICERIK: 'makro DOLU ✗', OKUNAMADI: 'makro okunamadı ?', YOK: 'makro yok']
+            def STATE_TR = [ANON: '✓ Sectra ANON', ANON_DEGIL: workshopText('script.2f14ca1c8e90', '✗ ANON değil'), SENTETIK_COZULEMEDI: workshopText('script.1b6e54c030a0', '? kod okunamadı'),
+                            FOTOGRAF: workshopText('script.6a8859468396', '✗ fotoğraf etiket'), OKUNAMADI: workshopText('script.7cd3cd2c975c', '? okunamadı'), YOK: workshopText('script.eb614faa1800', '— etiket yok')]
+            def MAC_TR = [BOS: workshopText('script.7bf9b1bea0c3', 'makro boş ✓'), ICERIK: workshopText('script.332125f93e39', 'makro DOLU ✗'), OKUNAMADI: workshopText('script.1ee1fbc2bc85', 'makro okunamadı ?'), YOK: workshopText('script.58b3001a1172', 'makro yok')]
             gal.each { g ->
                 def card = new javafx.scene.layout.VBox(4)
                 card.setStyle(g.edgeFlagged ? '-fx-border-color: #d9822b; -fx-border-width: 2; -fx-border-radius: 4; -fx-padding: 6;'
@@ -2467,7 +2496,7 @@ render = { ->
         actions.add(navButton(workshopText('script.d7b4a2c2c188', '↻ Yeni işlem'), { step.set('CONFIG'); render() }))
     } else {
         title.setText(workshopText('script.307b9dc7912d', 'Hata'))
-        addMonoArea(errorRef.get() ?: 'Bilinmeyen hata.')
+        addMonoArea(errorRef.get() ?: workshopText('script.334b848286b9', 'Bilinmeyen hata.'))
         actions.add(navButton(workshopText('script.c8b5f18cded5', '◀ Yapılandırmaya dön'), { step.set('CONFIG'); render() }))
         actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
@@ -2513,7 +2542,7 @@ javafx.application.Platform.runLater {
         Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
-println '✓ WSI anonimleştirme sihirbazı açıldı.'
+println '✓ ' + workshopText('script.0ebf9002ab25', 'WSI anonimleştirme sihirbazı açıldı.')
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.
 private String workshopText(String key, String fallback) {

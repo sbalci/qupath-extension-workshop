@@ -10,7 +10,9 @@
  *   başlatabilirsiniz. Her satırda modelin Python ortamının kurulu olup olmadığı gösterilir.
  *
  * NE ÜRETİR (ve ne ÜRETMEZ):
- *   Bu pencere ölçüm yapmaz ve lama hiçbir şey yazmaz; yalnızca sihirbazları açar.
+ *   Bu pencere ölçüm yapmaz ve lama kendiliğinden hiçbir şey yazmaz; sihirbazları açar.
+ *   Tek istisna "Yetim halkaları temizle" düğmesidir: noktası silinmiş mitoz görüntü halkalarını
+ *   bulur, sayar ve YALNIZ siz onaylarsanız siler (varsayılan: dokunma).
  *   Sayım ve yoğunluk, açılan sihirbazın kendisi tarafından üretilir.
  *
  * ÖNERİLEN SIRA:
@@ -84,6 +86,35 @@ def statusOf = { item ->
     int n = (ids.count { envInstalled(it) }) as int
     if (item.anyEnv) return [ok: n > 0, text: (n > 0 ? String.format(java.util.Locale.US, workshopText('script.f28f3f3f485b', '✓ %d/%d dedektör ortamı kurulu'), n, ids.size()) : workshopText('script.d84902bc96dc', '○ dedektör ortamı kurulu değil'))]
     return [ok: n == ids.size(), text: (n == ids.size() ? workshopText('script.6643d1d804cf', '✓ Python ortamı kurulu') : workshopText('script.2b6de925f0bc', '○ Python ortamı kurulu değil'))]
+}
+
+// ── Yetim görüntü halkaları ───────────────────────────────────────────────────
+// Mitoz sihirbazları noktanın çevresine kilitli bir HALKA (görüntü etiketi) çizer ve halkanın
+// metadata'sına bağlı noktanın ID'sini 'atolye.mitoz.nokta' anahtarıyla yazar. Kullanıcı noktayı
+// silerse halka kalır. Halka ancak (a) bu TAM metadata anahtarını taşıyorsa ve (b) değeri olan
+// ID'li hiçbir nesne (nokta anotasyonu ya da tespiti) lamda yoksa "yetim" sayılır — şekle, ada
+// ya da önek eşleşmesine bakılmaz; kullanıcının kendi anotasyonları bu anahtarı taşımaz.
+def RING_LINK_KEY = 'atolye.mitoz.nokta'
+def findOrphanRings = { hierarchy ->
+    if (hierarchy == null) return []
+    def ids = new HashSet<String>()
+    hierarchy.getAllObjects(false).each { ids.add(it.getID().toString()) }
+    return hierarchy.getAnnotationObjects().findAll { a ->
+        def link = a.getMetadata().get(RING_LINK_KEY)
+        link != null && !ids.contains(link.toString())
+    }
+}
+// Yalnız GÖSTERİM için: halka adı "<model> #<n>" ise model adı; ad yoksa/başka biçimdeyse adın kendisi.
+def ringModelLabel = { ring ->
+    String nm = ring.getName()
+    if (nm == null || nm.trim().isEmpty()) return workshopText('script.2966ac6511d8', '(adsız)')
+    def m = java.util.regex.Pattern.compile('^(.*) #\\d+$').matcher(nm)
+    return m.matches() ? m.group(1) : nm
+}
+def orphanRingLines = { orphans ->
+    def counts = new TreeMap<String, Integer>()
+    orphans.each { r -> String k = ringModelLabel(r); counts.put(k, (counts.containsKey(k) ? counts.get(k) : 0) + 1) }
+    return counts.collect { k, v -> '  ' + k + ': ' + v }.join('\n')
 }
 
 // ── Headless ──────────────────────────────────────────────────────────────────
@@ -167,6 +198,29 @@ def openEnvManager = { ->
     launchScript('yardimci-python-ortam-yoneticisi.groovy', hook, null)
 }
 
+// "Yetim halkaları temizle": bul → say → SOR (varsayılan: dokunma) → yalnız onayla sil → bildir.
+def cleanOrphanRings = { ->
+    String ringTitle = workshopText('script.b4a97a4b3b0b', 'Yetim mitoz halkaları')
+    def imageData = QP.getCurrentImageData()
+    if (imageData == null) { Dialogs.showInfoNotification(ringTitle, workshopText('script.c77bfd557e5c', 'Önce bir lam açın. Bu işlem açık lamdaki halkalara bakar.')); return }
+    def hier = imageData.getHierarchy()
+    def orphans = findOrphanRings(hier)
+    if (orphans.isEmpty()) { Dialogs.showInfoNotification(ringTitle, workshopText('script.8d669cb6806d', 'Noktası silinmiş mitoz halkası bulunmadı. Hiçbir şey değiştirilmedi.')); return }
+    int nOrphans = orphans.size()
+    String leaveOpt = workshopText('script.81e8d1adaccd', 'Halkalara dokunma (varsayılan)')
+    String removeOpt = String.format(java.util.Locale.US, workshopText('script.57b841cff18d', 'Sil: %d yetim halka'), nOrphans)
+    String body = String.format(java.util.Locale.US, workshopText('script.0d614d7f6324', 'Açık lamda, bağlı mitoz noktası artık olmayan %d halka var. Halkalar, bu eklentinin mitoz sihirbazlarının yazdığı bağ bilgisiyle tanınır; başka anotasyonlara bakılmaz.\n\nModele göre:\n%s\n\nHalka yalnızca görüntüde bir etikettir; veri noktadadır. Silme geri alınamaz.\n\nVarsayılan seçim hiçbir şeyi silmez. Pencereyi kapatırsanız da hiçbir şey silinmez.'), nOrphans, orphanRingLines(orphans))
+    boolean wasTop = (stage != null && stage.isAlwaysOnTop())
+    if (stage != null) stage.setAlwaysOnTop(false)
+    def pick = null
+    try { pick = Dialogs.showChoiceDialog(ringTitle, body, [leaveOpt, removeOpt], leaveOpt) }
+    finally { if (stage != null) stage.setAlwaysOnTop(wasTop) }
+    if (pick != removeOpt) { Dialogs.showInfoNotification(ringTitle, workshopText('script.addb3dd4c061', 'Halkalara dokunulmadı.')); return }
+    hier.removeObjects(orphans, false)
+    javafx.application.Platform.runLater { try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {} }
+    Dialogs.showMessageDialog(ringTitle, String.format(java.util.Locale.US, workshopText('script.e143a5406547', '%d yetim halka silindi.\n\nModele göre:\n%s'), nOrphans, orphanRingLines(orphans)))
+}
+
 def slideNameOf = { imageData ->
     try { return imageData.getServer().getMetadata().getName() ?: workshopText('script.2966ac6511d8', '(adsız)') } catch (Throwable t) { return workshopText('script.2966ac6511d8', '(adsız)') }
 }
@@ -222,6 +276,7 @@ render = { ->
         addGuidance(workshopText('script.b50c08f4bdb7', 'Ortam durumu yalnız bilgi amaçlıdır: "○ kurulu değil" görünen bir modeli yine de açabilirsiniz; sihirbaz eksik adımı (Python ortamı, model indirme) kendi penceresinde gösterir.'))
         actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
         actions.add(navButton(workshopText('script.edfc11aab1a1', '⚙ Python ortamı'), { openEnvManager() }, workshopText('script.bb63e418786d', 'Atölye Python ortam yöneticisini açar; kurulum bitince "Sihirbaza dön ▶" bu listeye döner')))
+        actions.add(navButton(workshopText('script.c5aa754e0d52', 'Yetim halkaları temizle'), { cleanOrphanRings() }, workshopText('script.5b8f9a544384', 'Açık lamda noktası silinmiş mitoz halkalarını bulur; silmeden önce sorar (varsayılan: dokunma)')))
         actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
     } else if (cur == 'OPENING') {
         title.setText(openingRef.get())
