@@ -259,11 +259,11 @@ def launchBundledScript = { String resourceName ->
             def url = null
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + resourceName) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + resourceName)
-            if (url == null) { javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }; return }
+            if (url == null) { javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.612821b4f218', 'Betik bulunamadı'), workshopText('script.9641266ba42d', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi')) }; return }
             def cl = this.getClass().getClassLoader()
             try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
             new GroovyShell(cl).evaluate(url.getText('UTF-8'), resourceName)
-        } catch (Throwable t) { javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) } }
+        } catch (Throwable t) { javafx.application.Platform.runLater { Dialogs.showErrorMessage(workshopText('script.e83c5641f38e', 'Açılamadı'), (t.getMessage() ?: t.getClass().getSimpleName())) } }
     } as Runnable).start()
 }
 
@@ -274,12 +274,12 @@ def appendLog = { String ln -> synchronized (runLog) { runLog.append(ln == null 
 def logSnapshot = { -> synchronized (runLog) { return runLog.toString() } }
 def autoSaveLog = { File dir, String base -> try { if (dir == null) return null; dir.mkdirs(); def f = new File(dir, (base ?: 'mitoz-atipik') + '_run.log'); f.setText(logSnapshot(), 'UTF-8'); logFileRef.set(f); return f } catch (Throwable t) { return null } }
 def saveLogInteractive = {
-    def txt = logSnapshot(); if (!txt?.trim()) { Dialogs.showInfoNotification('Günlük', 'Kaydedilecek günlük yok.'); return }
+    def txt = logSnapshot(); if (!txt?.trim()) { Dialogs.showInfoNotification(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.6d25a44e68f7', 'Kaydedilecek günlük yok.')); return }
     try {
         def suggested = logFileRef.get() ?: new File(System.getProperty('user.home'), 'mitoz-atipik_run.log')
-        def f = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, 'Çalışma günlüğünü kaydet', suggested, new javafx.stage.FileChooser.ExtensionFilter('Günlük (*.log, *.txt)', '*.log', '*.txt'))
-        if (f != null) { f.setText(txt, 'UTF-8'); Dialogs.showInfoNotification('Günlük', 'Kaydedildi: ' + f.getAbsolutePath()) }
-    } catch (Throwable t) { Dialogs.showErrorMessage('Günlük', 'Kaydedilemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName())) }
+        def f = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, workshopText('script.ae2303e91c93', 'Çalışma günlüğünü kaydet'), suggested, new javafx.stage.FileChooser.ExtensionFilter('Günlük (*.log, *.txt)', '*.log', '*.txt'))
+        if (f != null) { f.setText(txt, 'UTF-8'); Dialogs.showInfoNotification(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.cbe9b591564d', 'Kaydedildi: ') + f.getAbsolutePath()) }
+    } catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.a0f73789f289', 'Kaydedilemedi: ') + (t.getMessage() ?: t.getClass().getSimpleName())) }
 }
 def textOf = { ref -> def f = ref.get(); return (f != null ? f.getText() : '').trim() }
 def persistFields = {
@@ -452,7 +452,7 @@ def envReturnHook = [
                 if (!stage.isShowing()) stage.show()
                 stage.toFront(); stage.requestFocus()
             } catch (Throwable t) {
-                Dialogs.showErrorMessage('Sihirbaza dönüş', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+                Dialogs.showErrorMessage(workshopText('script.95854db5b310', 'Sihirbaza dönüş'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
             }
         }
     }
@@ -465,8 +465,8 @@ def launchEnvManager = { ->
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + res) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + res)
             if (url == null) {
-                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
-                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.612821b4f218', 'Betik bulunamadı'),
+                    workshopText('script.9641266ba42d', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi')) }
                 return
             }
             def cl = this.getClass().getClassLoader()
@@ -475,7 +475,7 @@ def launchEnvManager = { ->
             shellBinding.setVariable('atolyeReturnHook', envReturnHook)
             new GroovyShell(cl, shellBinding).evaluate(url.getText('UTF-8'), res)
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage(workshopText('script.e83c5641f38e', 'Açılamadı'), (t.getMessage() ?: t.getClass().getSimpleName())) }
         }
     } as Runnable).start()
 }
@@ -488,7 +488,7 @@ def openMitosisHub = { ->
     try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + hubScript) } catch (Throwable t) {}
     if (url == null) url = this.getClass().getResource('/scripts/' + hubScript)
     if (url == null) {
-        Dialogs.showInfoNotification('Mitoz modelleri listesi', 'Menüden açın: Extensions → Atölye → Modüller → Mitoz tespiti → Mitoz modelleri listesi')
+        Dialogs.showInfoNotification(workshopText('script.f78f1962faba', 'Mitoz modelleri listesi'), workshopText('script.6c014450748f', 'Menüden açın: Extensions → Atölye → Modüller → Mitoz tespiti → Mitoz modelleri listesi'))
         return
     }
     launchBundledScript(hubScript)
@@ -513,64 +513,64 @@ render = { ->
     def addLiveLog = { -> def la = logAreaRef.get(); if (la != null) { javafx.scene.layout.VBox.setVgrow(la, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(la) } }
 
     if (cur == 'CONFIG_INCOMPLETE') {
-        title.setText('Atipik sınıflama — çalışma zamanı gerekli')
+        title.setText(workshopText('script.6a2788fed365', 'Atipik sınıflama — çalışma zamanı gerekli'))
         def miss = configMissing(cfg)
-        addGuidance('Bu modül torch + timm ortamını (env id: midog-atypical) gerektirir.\nEksik/geçersiz:\n  • ' + (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
-            '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi → "MIDOG25 EffNetV2 — atipik sınıflandırıcı".\nKöprü: handson/python/midog/atypical_effnet.py')
-        actions.add(navButton('Kapat', { stage.close() })); actions.add(navButton('⚙ Python ortamını kur/aç', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar → "MIDOG25 EffNetV2"yi kurun')); actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
+        addGuidance(workshopText('script.d339d2a46b88', 'Bu modül torch + timm ortamını (env id: midog-atypical) gerektirir.\nEksik/geçersiz:\n  • ') + (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')) +
+            workshopText('script.713f4ab40a33', '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi → "MIDOG25 EffNetV2 — atipik sınıflandırıcı".\nKöprü: handson/python/midog/atypical_effnet.py'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() })); actions.add(navButton(workshopText('script.719f58ad7970', '⚙ Python ortamını kur/aç'), { launchEnvManager() }, workshopText('script.d48b765b668a', 'Atölye Python ortam yöneticisini açar → "MIDOG25 EffNetV2"yi kurun'))); actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
-        title.setText('Atipik sınıflama — yapılandırma')
+        title.setText(workshopText('script.327f4ae1f23a', 'Atipik sınıflama — yapılandırma'))
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         def pyField = new javafx.scene.control.TextField(cfg.python ?: ''); def rnField = new javafx.scene.control.TextField(cfg.runner ?: ''); def wdField = new javafx.scene.control.TextField(cfg.workDir ?: '')
-        def tmppField = new javafx.scene.control.TextField(cfg.targetMpp ?: ''); tmppField.setPromptText('boş = 0.25')
-        def patchField = new javafx.scene.control.TextField(cfg.patchUm ?: ''); patchField.setPromptText('boş = 32')
+        def tmppField = new javafx.scene.control.TextField(cfg.targetMpp ?: ''); tmppField.setPromptText(workshopText('script.388c69411b39', 'boş = 0.25'))
+        def patchField = new javafx.scene.control.TextField(cfg.patchUm ?: ''); patchField.setPromptText(workshopText('script.e4c278b0c6c4', 'boş = 32'))
         [pyField, rnField, wdField].each { it.setPrefColumnCount(36) }; [tmppField, patchField].each { it.setPrefColumnCount(8) }
         def deviceChoice = new javafx.scene.control.ChoiceBox(); ['cuda', 'cpu'].each { deviceChoice.getItems().add(it) }; deviceChoice.setValue((cfg.device == 'cpu') ? 'cpu' : 'cuda')
         pyFieldRef.set(pyField); runnerFieldRef.set(rnField); workFieldRef.set(wdField); deviceChoiceRef.set(deviceChoice); tmppFieldRef.set(tmppField); patchFieldRef.set(patchField)
-        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Dosya seç'); if (x != null) f.setText(x.getAbsolutePath()) }
-        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Dizin seç', null); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.8622b674942a', 'Dosya seç')); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.15f8cfe83dc9', 'Dizin seç'), null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model:'), new javafx.scene.control.Label(MODEL + ' (sabit)'))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model:'), new javafx.scene.control.Label(MODEL + workshopText('script.cb60f7ba43c4', ' (sabit)')))
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (.venv/python.exe):'), pyField, navButton('…', { browseFile(pyField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Köprü (atypical_effnet.py):'), rnField, navButton('…', { browseFile(rnField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Çalışma dizini (ops.):'), wdField, navButton('…', { browseDir(wdField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Cihaz:'), deviceChoice)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Hedef çözünürlük (µm/px):'), tmppField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Yama boyutu (µm):'), patchField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.541544ff0809', 'Köprü (atypical_effnet.py):')), rnField, navButton('…', { browseFile(rnField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.2719ca64ba94', 'Çalışma dizini (ops.):')), wdField, navButton('…', { browseDir(wdField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.d4336c3867bc', 'Cihaz:')), deviceChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.c353a87a343a', 'Hedef çözünürlük (µm/px):')), tmppField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.afc01d2888e6', 'Yama boyutu (µm):')), patchField)
         center.getChildren().add(grid)
         def mcf = modelCacheFile()
-        def mcLbl = new javafx.scene.control.Label(mcf.isFile() ? ('✓ Yerel model VAR: ' + mcf.getAbsolutePath()) : '○ Yerel model yok — "Modeli yerel indir" ile bir kez indirin (~213 MB).')
+        def mcLbl = new javafx.scene.control.Label(mcf.isFile() ? (workshopText('script.8d6e67c0e1b6', '✓ Yerel model VAR: ') + mcf.getAbsolutePath()) : workshopText('script.c58019b14294', '○ Yerel model yok — "Modeli yerel indir" ile bir kez indirin (~213 MB).'))
         mcLbl.setWrapText(true); mcLbl.setMaxWidth(Double.MAX_VALUE); mcLbl.setStyle('-fx-opacity: 0.85; -fx-font-size: 11px;'); center.getChildren().add(mcLbl)
-        addGuidance('Bu bir DEDEKTÖR değildir: mevcut "Mitosis"/"Mitoz (konsensüs)" noktalarını tipik/atipik olarak sınıflar. Ağırlık paketlenmez; "Modeli yerel indir" v1.0.0 yayınından çeker (LİSANS yok → araştırma/eğitim). Yama boyutu: her mitoz çevresinde kırpılan alan (µm); referans ~32 µm (≈128 px @ 40x). Hedef çözünürlük varsayılanı 0.25 (T2 eğitim ölçeği).')
-        actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('⚙ Python ortamı', { launchEnvManager() }, 'Atölye Python ortam yöneticisini aç'))
-        actions.add(navButton('Modeli yerel indir', { startModelDownload() }))
-        actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }))
-        actions.add(navButton('Kaydet ▶', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        addGuidance(workshopText('script.d2b5efebebf2', 'Bu bir DEDEKTÖR değildir: mevcut "Mitosis"/"Mitoz (konsensüs)" noktalarını tipik/atipik olarak sınıflar. Ağırlık paketlenmez; "Modeli yerel indir" v1.0.0 yayınından çeker (LİSANS yok → araştırma/eğitim). Yama boyutu: her mitoz çevresinde kırpılan alan (µm); referans ~32 µm (≈128 px @ 40x). Hedef çözünürlük varsayılanı 0.25 (T2 eğitim ölçeği).'))
+        actions.add(navButton(workshopText('script.72278748133a', 'İptal'), { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.edfc11aab1a1', '⚙ Python ortamı'), { launchEnvManager() }, workshopText('script.9569e7820482', 'Atölye Python ortam yöneticisini aç')))
+        actions.add(navButton(workshopText('script.3352626164a4', 'Modeli yerel indir'), { startModelDownload() }))
+        actions.add(navButton(workshopText('script.8369fe631575', 'Bağımlılık kontrolü'), { startSelftest() }))
+        actions.add(navButton(workshopText('script.96f6bd4b06cc', 'Kaydet ▶'), { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
     } else if (cur == 'CHECK_RUNNING') {
-        title.setText('Bağımlılık kontrolü çalışıyor…'); center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        title.setText(workshopText('script.8e84f306c3c6', 'Bağımlılık kontrolü çalışıyor…')); center.getChildren().add(busyBar()); addLiveLog()
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'CHECK_DONE') {
-        title.setText(selftestOkRef.get() ? 'Bağımlılık kontrolü tamam ✅' : '⚠ Bağımlılık kontrolü BAŞARISIZ — günlüğe bakın'); addLiveLog()
-        actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
-        if (logSnapshot()?.trim()) actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
-        if (selftestOkRef.get()) actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, 'Kontrol tamam — bölgede çalıştırma ekranına döner'))
+        title.setText(selftestOkRef.get() ? workshopText('script.93f447fe25d4', 'Bağımlılık kontrolü tamam ✅') : workshopText('script.5557b2e2bc01', '⚠ Bağımlılık kontrolü BAŞARISIZ — günlüğe bakın')); addLiveLog()
+        actions.add(navButton(workshopText('script.c8b5f18cded5', '◀ Yapılandırmaya dön'), { step.set('CONFIG'); render() }))
+        if (logSnapshot()?.trim()) actions.add(navButton(workshopText('script.bba9c203d381', 'Günlüğü kaydet…'), { saveLogInteractive() }))
+        if (selftestOkRef.get()) actions.add(navButton(workshopText('script.2065029c612d', 'Çalıştırma ekranına dön ▶'), { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, workshopText('script.a61a0e32a390', 'Kontrol tamam — bölgede çalıştırma ekranına döner')))
     } else if (cur == 'DL_RUNNING') {
-        title.setText('Model indiriliyor…'); addGuidance('EfficientNetV2-M ağırlığı (~213 MB) veri kökü altına indiriliyor.'); center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        title.setText(workshopText('script.4177a3b67263', 'Model indiriliyor…')); addGuidance(workshopText('script.f0435ad31a2e', 'EfficientNetV2-M ağırlığı (~213 MB) veri kökü altına indiriliyor.')); center.getChildren().add(busyBar()); addLiveLog()
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'DL_DONE') {
-        title.setText(dlOkRef.get() ? 'Model indirildi ✅' : '⚠ İndirilemedi — günlüğe bakın'); addLiveLog()
-        actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
-        if (logSnapshot()?.trim()) actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
-        if (dlOkRef.get()) actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, 'İndirme tamam — bölgede çalıştırma ekranına döner'))
+        title.setText(dlOkRef.get() ? workshopText('script.393975cd47cc', 'Model indirildi ✅') : workshopText('script.302555a8f8cc', '⚠ İndirilemedi — günlüğe bakın')); addLiveLog()
+        actions.add(navButton(workshopText('script.c8b5f18cded5', '◀ Yapılandırmaya dön'), { step.set('CONFIG'); render() }))
+        if (logSnapshot()?.trim()) actions.add(navButton(workshopText('script.bba9c203d381', 'Günlüğü kaydet…'), { saveLogInteractive() }))
+        if (dlOkRef.get()) actions.add(navButton(workshopText('script.2065029c612d', 'Çalıştırma ekranına dön ▶'), { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, workshopText('script.760bddd41f88', 'İndirme tamam — bölgede çalıştırma ekranına döner')))
     } else if (cur == 'READY') {
         if (imageData == null) {
-            title.setText('Görüntü açık değil'); addGuidance('Önce bir H&E lamı açıp bir dedektör çalıştırın, ilgi ALANINI seçin, sonra "⟳ Yenile".')
-            actions.add(navButton('Kapat', { stage.close() })); actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() })); actions.add(navButton('⟳ Yenile', { render() }))
+            title.setText(workshopText('script.b4c901dc184b', 'Görüntü açık değil')); addGuidance(workshopText('script.3c9b707a1d9e', 'Önce bir H&E lamı açıp bir dedektör çalıştırın, ilgi ALANINI seçin, sonra "⟳ Yenile".'))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() })); actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() })); actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
         } else {
             def regions = selectedRegions(imageData); def regionRois = regions.collect { it.getROI() }
             def points = mitosisPointsIn(imageData, regionRois); def cal = pixelMicrons(imageData)
-            title.setText('Atipik mitoz sınıflama — EfficientNetV2')
+            title.setText(workshopText('script.186b725ffb20', 'Atipik mitoz sınıflama — EfficientNetV2'))
             def sb = new StringBuilder()
             sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Model          : " << MODEL << "\n"
@@ -580,43 +580,43 @@ render = { ->
             sb << String.format(java.util.Locale.US, "Sınıflanacak   : %,d mitoz noktası%n", points.size())
             sb << "Kalibrasyon    : " << (cal != null ? String.format(java.util.Locale.US, '%.3f µm/px', (cal.pw + cal.ph) / 2.0) : 'KALİBRE DEĞİL') << "\n"
             addMonoArea(sb.toString())
-            addGuidance('Bu bir DEDEKTÖR değildir: seçili bölgedeki mevcut mitoz noktalarını (dedektör çıktısı / konsensüs) tipik vs atipik olarak sınıflar. Sonuç: noktalar (ve çevrelerindeki etiketli görüntü halkaları) KIRMIZI (atipik) / YEŞİL (tipik) yeniden renklenir + "Atipik olasılık" ölçümü (noktada; halka yalnız görüntüdür).')
-            if (points.isEmpty()) addWarnLabel('⚠ Sınıflanacak mitoz noktası yok — önce bir mitoz dedektörü (KongNet / FCOS / RetinaNet ya da Karşılaştır) çalıştırın.')
+            addGuidance(workshopText('script.50a3d37ce892', 'Bu bir DEDEKTÖR değildir: seçili bölgedeki mevcut mitoz noktalarını (dedektör çıktısı / konsensüs) tipik vs atipik olarak sınıflar. Sonuç: noktalar (ve çevrelerindeki etiketli görüntü halkaları) KIRMIZI (atipik) / YEŞİL (tipik) yeniden renklenir + "Atipik olasılık" ölçümü (noktada; halka yalnız görüntüdür).'))
+            if (points.isEmpty()) addWarnLabel(workshopText('script.a2477cfc9755', '⚠ Sınıflanacak mitoz noktası yok — önce bir mitoz dedektörü (KongNet / FCOS / RetinaNet ya da Karşılaştır) çalıştırın.'))
             boolean canRun = configComplete(cfg) && points.size() >= 1
-            if (!configComplete(cfg)) addWarnLabel('⚠ Python ortamı (midog-atypical) kurulu değil — "⚙ Python ortamını kur/aç" ile kurun.')
-            actions.add(navButton('Kapat', { stage.close() }))
-            if (!configComplete(cfg)) actions.add(navButton('⚙ Python ortamını kur/aç', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar'))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() })); actions.add(navButton('⟳ Yenile', { render() }))
-            def runBtn = navButton('Sınıfla ▶', { startRun() }, 'Seçili bölgedeki mitoz noktalarını tipik/atipik sınıfla'); runBtn.setDisable(!canRun)
+            if (!configComplete(cfg)) addWarnLabel(workshopText('script.f8447d25667b', '⚠ Python ortamı (midog-atypical) kurulu değil — "⚙ Python ortamını kur/aç" ile kurun.'))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            if (!configComplete(cfg)) actions.add(navButton(workshopText('script.719f58ad7970', '⚙ Python ortamını kur/aç'), { launchEnvManager() }, workshopText('script.b70b9a59c9eb', 'Atölye Python ortam yöneticisini açar')))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() })); actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
+            def runBtn = navButton(workshopText('script.bf8e5ce730b0', 'Sınıfla ▶'), { startRun() }, workshopText('script.d213e3279390', 'Seçili bölgedeki mitoz noktalarını tipik/atipik sınıfla')); runBtn.setDisable(!canRun)
             actions.add(runBtn)
         }
     } else if (cur == 'RUN_RUNNING') {
-        title.setText(runPhaseRef.get()); addGuidance('EfficientNetV2 sınıflaması çalışıyor.'); center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
-        actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
+        title.setText(runPhaseRef.get()); addGuidance(workshopText('script.3732066df69d', 'EfficientNetV2 sınıflaması çalışıyor.')); center.getChildren().add(busyBar()); addLiveLog()
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.bba9c203d381', 'Günlüğü kaydet…'), { saveLogInteractive() }))
     } else if (cur == 'RESULT') {
-        title.setText('Sınıflama tamam ✅'); addMonoArea(resultTextRef.get())
-        addGuidance('Noktalar Annotations panelinde "Mitoz (atipik)" (kırmızı) / "Mitoz (tipik)" (yeşil) sınıflarında; sınıfları aç/kapat ederek inceleyin.')
-        def lf = logFileRef.get(); if (lf != null) addGuidance('Çalışma günlüğü: ' + lf.getAbsolutePath())
-        actions.add(navButton('Kapat', { stage.close() })); actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-        actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
-        actions.add(navButton('↻ Yeniden', { step.set('READY'); render() }))
+        title.setText(workshopText('script.c00e74c04c57', 'Sınıflama tamam ✅')); addMonoArea(resultTextRef.get())
+        addGuidance(workshopText('script.859d7ffa965f', 'Noktalar Annotations panelinde "Mitoz (atipik)" (kırmızı) / "Mitoz (tipik)" (yeşil) sınıflarında; sınıfları aç/kapat ederek inceleyin.'))
+        def lf = logFileRef.get(); if (lf != null) addGuidance(workshopText('script.ecfba16bfe62', 'Çalışma günlüğü: ') + lf.getAbsolutePath())
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() })); actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.bba9c203d381', 'Günlüğü kaydet…'), { saveLogInteractive() }))
+        actions.add(navButton(workshopText('script.171029fff08d', '↻ Yeniden'), { step.set('READY'); render() }))
     } else {
-        title.setText('Hata'); addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
-        if (logSnapshot()?.trim()) actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        title.setText(workshopText('script.307b9dc7912d', 'Hata')); addMonoArea(errorTextRef.get())
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
+        if (logSnapshot()?.trim()) actions.add(navButton(workshopText('script.bba9c203d381', 'Günlüğü kaydet…'), { saveLogInteractive() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut'); topChk.setSelected(alwaysTop.get())
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut')); topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n -> alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
     def spacer = new javafx.scene.layout.Region(); javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
     def bar = new javafx.scene.layout.HBox(8); bar.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
     bar.getChildren().add(topChk)
     // Çalışan işlem yokken: bu pencereyi kapatıp mitoz modelleri listesine dön (başka bir model başlatmak için).
-    if (!['RUN_RUNNING', 'CHECK_RUNNING', 'DL_RUNNING', 'BUSY'].contains(cur)) bar.getChildren().add(navButton('◀ Mitoz listesi', { openMitosisHub() }, 'Bu pencereyi kapatıp mitoz modelleri listesini açar — başka bir model başlatmak için'))
+    if (!['RUN_RUNNING', 'CHECK_RUNNING', 'DL_RUNNING', 'BUSY'].contains(cur)) bar.getChildren().add(navButton(workshopText('script.b92ed056af0e', '◀ Mitoz listesi'), { openMitosisHub() }, workshopText('script.aa26895608db', 'Bu pencereyi kapatıp mitoz modelleri listesini açar — başka bir model başlatmak için')))
     bar.getChildren().add(spacer); bar.getChildren().addAll(actions)
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
     def bottom = new javafx.scene.layout.VBox(8, disclaimer, bar); bottom.setPadding(new javafx.geometry.Insets(10))
@@ -628,8 +628,19 @@ step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE')
 javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage(); stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Atipik mitoz sınıflama — EfficientNetV2 (MIDOG25 Track-2)'); stage.setAlwaysOnTop(alwaysTop.get())
+        stage.setTitle(workshopText('script.6ccb162c3cba', 'Atipik mitoz sınıflama — EfficientNetV2 (MIDOG25 Track-2)')); stage.setAlwaysOnTop(alwaysTop.get())
         render(); stage.show()
-    } catch (Throwable t) { Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)')) }
+    } catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)'))) }
 }
 println "✓ Atipik mitoz sınıflama (EfficientNetV2 · MIDOG25 Track-2) sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

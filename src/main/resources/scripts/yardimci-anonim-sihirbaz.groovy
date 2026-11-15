@@ -2190,11 +2190,11 @@ def goAudit = { File saveDirFor = null ->
     def cfg = readConfigFromFields()
     def items = currentItems(cfg)
     if (items.isEmpty()) {
-        Dialogs.showWarningNotification('Görüntü yok', cfg.scope == 'acik' ? 'Açık görüntü yok.' : 'Listeden en az bir görüntü seçin.')
+        Dialogs.showWarningNotification(workshopText('script.3fa03a8fb823', 'Görüntü yok'), cfg.scope == 'acik' ? workshopText('script.6e37e2715871', 'Açık görüntü yok.') : workshopText('script.94b38ca9b077', 'Listeden en az bir görüntü seçin.'))
         return
     }
     try { assertSaveDirSafe(saveDirFor, [cfg.outDir ? new File((String) cfg.outDir) : null, keyDirOf(cfg)]) }
-    catch (Throwable t) { Dialogs.showErrorMessage('PNG klasörü reddedildi', t.getMessage() ?: t.getClass().getSimpleName()); return }
+    catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.b7b40c930489', 'PNG klasörü reddedildi'), t.getMessage() ?: t.getClass().getSimpleName()); return }
     saveConfig(cfg)
     startWorker('AtolyeAnonimDenetim', { log ->
         def r = runAudit(items, log, cancelFlag, [decodeLabels: cfg.decodeLabels, mainScan: cfg.mainScan, keepThumbs: true, saveDir: saveDirFor])
@@ -2205,17 +2205,17 @@ def goAudit = { File saveDirFor = null ->
 def goPreview = { ->
     def cfg = readConfigFromFields()
     if (!cfg.outDir) {
-        Dialogs.showWarningNotification('Çıktı klasörü gerekli', 'Önce bir çıktı (hedef) klasörü seçin.')
+        Dialogs.showWarningNotification(workshopText('script.5519be0eb6a6', 'Çıktı klasörü gerekli'), workshopText('script.b85c601c232e', 'Önce bir çıktı (hedef) klasörü seçin.'))
         return
     }
     def outDir = new File(cfg.outDir)
     if (!outDir.isDirectory() && !outDir.mkdirs()) {
-        Dialogs.showErrorMessage('Klasör oluşturulamadı', 'Çıktı klasörü oluşturulamadı:\n' + outDir.getAbsolutePath())
+        Dialogs.showErrorMessage(workshopText('script.8b7d690e7301', 'Klasör oluşturulamadı'), workshopText('script.6e7303206957', 'Çıktı klasörü oluşturulamadı:\n') + outDir.getAbsolutePath())
         return
     }
     def items = currentItems(cfg)
     if (items.isEmpty()) {
-        Dialogs.showWarningNotification('Görüntü yok', cfg.scope == 'acik' ? 'Açık görüntü yok.' : 'Listeden en az bir görüntü seçin.')
+        Dialogs.showWarningNotification(workshopText('script.3fa03a8fb823', 'Görüntü yok'), cfg.scope == 'acik' ? workshopText('script.6e37e2715871', 'Açık görüntü yok.') : workshopText('script.94b38ca9b077', 'Listeden en az bir görüntü seçin.'))
         return
     }
     def plan
@@ -2227,7 +2227,7 @@ def goPreview = { ->
         else if (saltPending.get() != null && saltPending.get() == cfg.keyState.dir.getAbsolutePath()) cfg.keyState.saltCreated = true
         plan = buildPlan(cfg, items, outDir)
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Plan kurulamadı', t.getMessage() ?: t.getClass().getSimpleName())
+        Dialogs.showErrorMessage(workshopText('script.698a8b52d965', 'Plan kurulamadı'), t.getMessage() ?: t.getClass().getSimpleName())
         return
     }
     saveConfig(cfg)
@@ -2242,7 +2242,7 @@ def goApply = { ->
         def r = runApply(plan, log, cancelFlag)
         javafx.application.Platform.runLater {
             resultRef.set(r); step.set('DONE'); render()
-            if (r.saltNotice) Dialogs.showMessageDialog('Tuzu (salt.bin) YEDEKLEYİN', (String) r.saltNotice)
+            if (r.saltNotice) Dialogs.showMessageDialog(workshopText('script.08b00a4b70b4', 'Tuzu (salt.bin) YEDEKLEYİN'), (String) r.saltNotice)
         }
     })
 }
@@ -2276,23 +2276,23 @@ render = { ->
     }
 
     if (cur == 'NO_SOURCE') {
-        title.setText('Proje ya da görüntü açık değil')
-        addGuidance('Anonimleştirme/denetim bir proje ya da açık bir görüntü üzerinde çalışır.\n\n' +
-            'Bir QuPath projesi ya da lam açın, sonra "⟳ Yenile".')
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('⟳ Yenile', {
+        title.setText(workshopText('script.ca9ac2c1a26b', 'Proje ya da görüntü açık değil'))
+        addGuidance(workshopText('script.59d32267bf20', 'Anonimleştirme/denetim bir proje ya da açık bir görüntü üzerinde çalışır.\n\n' +
+            'Bir QuPath projesi ya da lam açın, sonra "⟳ Yenile".'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), {
             step.set((QP.getProject() == null && QP.getCurrentImageData() == null) ? 'NO_SOURCE' : 'CONFIG'); render()
         }))
     } else if (cur == 'CONFIG') {
-        title.setText('WSI anonimleştirme — kapsam ve seçenekler')
+        title.setText(workshopText('script.664e6f900c6e', 'WSI anonimleştirme — kapsam ve seçenekler'))
         def project = QP.getProject()
         def imageData = QP.getCurrentImageData()
         ctl.clear()
 
         // Kapsam
         def tg = new javafx.scene.control.ToggleGroup()
-        def rbOpen = new javafx.scene.control.RadioButton('Yalnız açık görüntü' + (imageData == null ? ' (açık görüntü yok)' : ''))
-        def rbProj = new javafx.scene.control.RadioButton('Proje görüntüleri — aşağıdan seçin (tümü = proje geneli)')
+        def rbOpen = new javafx.scene.control.RadioButton(workshopText('script.62adcb911884', 'Yalnız açık görüntü') + (imageData == null ? workshopText('script.5aa4b2569708', ' (açık görüntü yok)') : ''))
+        def rbProj = new javafx.scene.control.RadioButton(workshopText('script.a4e8f83b3b62', 'Proje görüntüleri — aşağıdan seçin (tümü = proje geneli)'))
         rbOpen.setToggleGroup(tg); rbProj.setToggleGroup(tg)
         rbOpen.setDisable(imageData == null); rbProj.setDisable(project == null)
         boolean useOpen = (project == null) || (cfg.scope == 'acik' && imageData != null)
@@ -2314,8 +2314,8 @@ render = { ->
         }
         def scroll = new javafx.scene.control.ScrollPane(listBox)
         scroll.setFitToWidth(true); scroll.setPrefViewportHeight(130)
-        def allBtn = navButton('Tümünü seç', { boxes.each { it.setSelected(true) } })
-        def noneBtn = navButton('Hiçbirini seçme', { boxes.each { it.setSelected(false) } })
+        def allBtn = navButton(workshopText('script.ef0b6d89aaa3', 'Tümünü seç'), { boxes.each { it.setSelected(true) } })
+        def noneBtn = navButton(workshopText('script.3c4ff0240c46', 'Hiçbirini seçme'), { boxes.each { it.setSelected(false) } })
         def listRow = new javafx.scene.layout.HBox(8, allBtn, noneBtn)
         def syncScope = { ->
             boolean dis = rbOpen.isSelected() || project == null
@@ -2338,30 +2338,30 @@ render = { ->
         namingChoice.setValue(NAMING_OPTIONS.contains(cfg.naming) ? cfg.naming : 'sequential')
         ctl.put('outDir', outField); ctl.put('prefix', prefixField); ctl.put('naming', namingChoice)
         def browseDir = { ->
-            def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Çıktı klasörü seç', null)
+            def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.9c8f655f3669', 'Çıktı klasörü seç'), null)
             if (x != null) outField.setText(x.getAbsolutePath())
         }
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, 0, 0, null, new javafx.scene.control.Label('Çıktı klasörü:'), outField, navButton('…', { browseDir() }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, 1, 0, null, new javafx.scene.control.Label('Ad öneki:'), prefixField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, 2, 0, null, new javafx.scene.control.Label('Adlandırma (sequential | uuid | hmac):'), namingChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, 0, 0, null, new javafx.scene.control.Label(workshopText('script.599185445cd3', 'Çıktı klasörü:')), outField, navButton('…', { browseDir() }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, 1, 0, null, new javafx.scene.control.Label(workshopText('script.a9af5e93bcee', 'Ad öneki:')), prefixField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, 2, 0, null, new javafx.scene.control.Label(workshopText('script.599bfc914e7e', 'Adlandırma (sequential | uuid | hmac):')), namingChoice)
         // Anahtar klasörü: tuz + eşleştirme tablosu; ÇIKTI klasörünün içinde olamaz
         def keyField = new javafx.scene.control.TextField(cfg.keyDir ?: '')
         keyField.setPrefColumnCount(34)
-        keyField.setPromptText('boş = ' + new File(atolyeDataRoot(), 'anonim-anahtar').getAbsolutePath())
+        keyField.setPromptText(workshopText('script.9f16ac1248df', 'boş = ') + new File(atolyeDataRoot(), 'anonim-anahtar').getAbsolutePath())
         ctl.put('keyDir', keyField)
         def browseKey = { ->
-            def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Anahtar klasörü seç (çıktı klasörü DIŞINDA)', null)
+            def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.ecf274893ba7', 'Anahtar klasörü seç (çıktı klasörü DIŞINDA)'), null)
             if (x != null) keyField.setText(x.getAbsolutePath())
         }
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, 3, 0, null, new javafx.scene.control.Label('Anahtar klasörü (PHI):'), keyField, navButton('…', { browseKey() }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, 3, 0, null, new javafx.scene.control.Label(workshopText('script.6aafd934473e', 'Anahtar klasörü (PHI):')), keyField, navButton('…', { browseKey() }))
         def accField = new javafx.scene.control.TextField(cfg.accPattern ?: '')
         accField.setPrefColumnCount(34)
-        accField.setPromptText('boş = varsayılan: yalnız NNN-YY / NNNNN-NA (1021-25, 7-25, 12345-1A); S25-12345, 25-12345 gibi biçimleri KENDİNİZ yazın')
+        accField.setPromptText(workshopText('script.a5560b58c844', 'boş = varsayılan: yalnız NNN-YY / NNNNN-NA (1021-25, 7-25, 12345-1A); S25-12345, 25-12345 gibi biçimleri KENDİNİZ yazın'))
         ctl.put('accPattern', accField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, 4, 0, null, new javafx.scene.control.Label('Kayıt no deseni (regex):'), accField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, 4, 0, null, new javafx.scene.control.Label(workshopText('script.d9d298f5236e', 'Kayıt no deseni (regex):')), accField)
         center.getChildren().add(grid)
-        addGuidance('hmac: takma ad = önek + tuzlu HMAC-SHA256(özgün dosya adı) ilk 10 onaltılı karakter; aynı girdi + aynı tuz = her partide aynı takma ad. ' +
-            'Tuz (salt.bin) ilk kullanımda anahtar klasöründe üretilir — YEDEKLEYİN; kaybolursa sonraki partilerde aynı takma adlar üretilemez.')
+        addGuidance(workshopText('script.5c3d61abf3ae', 'hmac: takma ad = önek + tuzlu HMAC-SHA256(özgün dosya adı) ilk 10 onaltılı karakter; aynı girdi + aynı tuz = her partide aynı takma ad. ' +
+            'Tuz (salt.bin) ilk kullanımda anahtar klasöründe üretilir — YEDEKLEYİN; kaybolursa sonraki partilerde aynı takma adlar üretilemez.'))
 
         // Seçenekler
         def mk = { String key, String text, boolean val ->
@@ -2378,40 +2378,40 @@ render = { ->
         to.disableProperty().bind(mp.selectedProperty().not().or(mp.disableProperty()))
         syncScope()
 
-        addWarnLabel('⚠ Eşleştirme anahtarı ve tuz PHI içerir — güvenli saklayın, çıktı klasörüne KOYMAYIN. Çıktı klasörünün yolunda hasta adı/numarası olmasın.')
-        addGuidance('Orijinal lamlar yalnız okunur. "Denetle" hiçbir dosyaya yazmaz; mevcut lamların ne kadar anonim olduğunu raporlar.')
+        addWarnLabel(workshopText('script.6bc180866f3d', '⚠ Eşleştirme anahtarı ve tuz PHI içerir — güvenli saklayın, çıktı klasörüne KOYMAYIN. Çıktı klasörünün yolunda hasta adı/numarası olmasın.'))
+        addGuidance(workshopText('script.9ec2f68cad83', 'Orijinal lamlar yalnız okunur. "Denetle" hiçbir dosyaya yazmaz; mevcut lamların ne kadar anonim olduğunu raporlar.'))
 
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Denetle (salt okunur)', { goAudit(null) },'Etiket/makro, dolu kimlik alanları ve standart etiketleri raporlar; yazmaz'))
-        actions.add(navButton('Önizle ▶', { goPreview() }, 'Eşleştirmeyi hesaplar ve onay ekranını gösterir'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.edf96aa5da6d', 'Denetle (salt okunur)'), { goAudit(null) },workshopText('script.d6e91a8799d6', 'Etiket/makro, dolu kimlik alanları ve standart etiketleri raporlar; yazmaz')))
+        actions.add(navButton(workshopText('script.0ec7bb5905ce', 'Önizle ▶'), { goPreview() }, workshopText('script.b98774464288', 'Eşleştirmeyi hesaplar ve onay ekranını gösterir')))
     } else if (cur == 'CONFIRM') {
         def plan = planRef.get()
-        title.setText('Onay — anonimleştirme planı')
+        title.setText(workshopText('script.5fe6082e3470', 'Onay — anonimleştirme planı'))
         addMonoArea(planPreviewText(plan))
         int nProc = plan.units.count { it.process }
-        if (nProc == 0) addWarnLabel('⚠ İşlenecek dosya yok (hepsi atlanacak). Kısmi biçimleri açmayı ya da kapsamı değiştirmeyi deneyin.')
-        if (plan.bytes > plan.outDir.getUsableSpace()) addWarnLabel('⚠ Çıktı diskinde yeterli boş alan yok.')
+        if (nProc == 0) addWarnLabel(workshopText('script.4cea82a14a73', '⚠ İşlenecek dosya yok (hepsi atlanacak). Kısmi biçimleri açmayı ya da kapsamı değiştirmeyi deneyin.'))
+        if (plan.bytes > plan.outDir.getUsableSpace()) addWarnLabel(workshopText('script.1975984dafa9', '⚠ Çıktı diskinde yeterli boş alan yok.'))
         if (plan.cfg.makeProject && plan.cfg.transferObjects) {
             def cur2 = QP.getCurrentImageData()
-            if (cur2 != null && cur2.isChanged()) addWarnLabel('⚠ Açık görüntüde kaydedilmemiş değişiklik var — nesne aktarımı KAYDEDİLMİŞ hâli kullanır (önce Ctrl+S).')
+            if (cur2 != null && cur2.isChanged()) addWarnLabel(workshopText('script.fb22f72caaf6', '⚠ Açık görüntüde kaydedilmemiş değişiklik var — nesne aktarımı KAYDEDİLMİŞ hâli kullanır (önce Ctrl+S).'))
         }
         String pathLower = plan.outDir.getAbsolutePath().toLowerCase(java.util.Locale.ROOT)
         if (plan.units.any { u -> u.file != null && stemOf(u.file.getName()).length() >= 4 && pathLower.contains(stemOf(u.file.getName()).toLowerCase(java.util.Locale.ROOT)) })
-            addWarnLabel('⚠ Çıktı klasörünün yolu bir orijinal dosya adını içeriyor — başka bir klasör seçin.')
-        actions.add(navButton('◀ Geri', { step.set('CONFIG'); render() }))
-        def start = navButton('Başlat ▶', { goApply() }, 'Anonim kopyaları yazar, her birini doğrular')
+            addWarnLabel(workshopText('script.6f08e9d78bba', '⚠ Çıktı klasörünün yolu bir orijinal dosya adını içeriyor — başka bir klasör seçin.'))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('CONFIG'); render() }))
+        def start = navButton(workshopText('script.b342aa42ccce', 'Başlat ▶'), { goApply() }, workshopText('script.7dbb18517337', 'Anonim kopyaları yazar, her birini doğrular'))
         start.setDisable(nProc == 0 || plan.bytes > plan.outDir.getUsableSpace())
         actions.add(start)
     } else if (cur == 'RUNNING') {
-        title.setText('Çalışıyor…')
-        addGuidance('Büyük WSI dosyalarında kopyalama + bayt taraması dosya başına birkaç dakika sürebilir.')
+        title.setText(workshopText('script.29f409509207', 'Çalışıyor…'))
+        addGuidance(workshopText('script.f7be7d2d4a59', 'Büyük WSI dosyalarında kopyalama + bayt taraması dosya başına birkaç dakika sürebilir.'))
         def pb = new javafx.scene.control.ProgressBar(); pb.setProgress(-1.0); pb.setMaxWidth(Double.MAX_VALUE)
         center.getChildren().add(pb)
         def la = logAreaRef.get()
         if (la != null) { javafx.scene.layout.VBox.setVgrow(la, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(la) }
-        actions.add(navButton('İptal', { cancelFlag.set(true) }, 'Geçerli adımdan sonra durur; yarım kopya silinir'))
+        actions.add(navButton(workshopText('script.72278748133a', 'İptal'), { cancelFlag.set(true) }, workshopText('script.a10af1346ebf', 'Geçerli adımdan sonra durur; yarım kopya silinir')))
     } else if (cur == 'AUDIT_DONE') {
-        title.setText('Denetim sonucu')
+        title.setText(workshopText('script.b268c0ce3d54', 'Denetim sonucu'))
         // Etiket / makro galerisi: kullanıcının GÖZLE doğrulaması için (en çok 60 lam)
         def gal = resultRef.get()?.gallery ?: []
         if (!gal.isEmpty()) {
@@ -2433,7 +2433,7 @@ render = { ->
                     }
                 }
                 def cap = new javafx.scene.control.Label(g.name + '\n' + (STATE_TR[g.state] ?: g.state) + ' · ' + (MAC_TR[g.macroState] ?: g.macroState) +
-                    (g.edgeFlagged ? '\n⚑ tarama kenarında etiket şeridi olabilir — gözle kontrol edin' : ''))
+                    (g.edgeFlagged ? workshopText('script.88d7ef4a9d07', '\n⚑ tarama kenarında etiket şeridi olabilir — gözle kontrol edin') : ''))
                 cap.setWrapText(true); cap.setMaxWidth(420)
                 card.getChildren().addAll(row, cap)
                 flow.getChildren().add(card)
@@ -2443,36 +2443,36 @@ render = { ->
             center.getChildren().add(gs)
         }
         addMonoArea(resultRef.get()?.text)
-        actions.add(navButton('◀ Yapılandırma', { step.set('CONFIG'); render() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultRef.get()?.text) }))
-        actions.add(navButton('Etiketleri klasöre kaydet…', {
-            def d = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Etiket/makro PNG klasörü', null)
+        actions.add(navButton(workshopText('script.ad1d10a845ae', '◀ Yapılandırma'), { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultRef.get()?.text) }))
+        actions.add(navButton(workshopText('script.ef721bfd4fbe', 'Etiketleri klasöre kaydet…'), {
+            def d = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.71dc0a8b7b5a', 'Etiket/makro PNG klasörü'), null)
             if (d != null) goAudit(d)
-        }, 'Denetimi yeniden çalıştırır ve her lamın etiket + makro görüntüsünü tam boyutta PNG olarak yazar'))
-        actions.add(navButton('Anonimleştirmeye geç ▶', { goPreview() }))
+        }, workshopText('script.7cb35fd8c900', 'Denetimi yeniden çalıştırır ve her lamın etiket + makro görüntüsünü tam boyutta PNG olarak yazar')))
+        actions.add(navButton(workshopText('script.a4480032cb91', 'Anonimleştirmeye geç ▶'), { goPreview() }))
     } else if (cur == 'DONE') {
-        title.setText('Tamamlandı')
+        title.setText(workshopText('script.7c6f3f5f37bc', 'Tamamlandı'))
         def r = resultRef.get()
         addMonoArea(r?.text)
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(r?.text) }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(r?.text) }))
         if (r?.projInfo?.created) {
-            actions.add(navButton('Anonim projeyi aç', {
-                if (Dialogs.showConfirmDialog('Anonim projeyi aç', 'Açık proje kapatılıp anonim proje açılacak. Devam edilsin mi?')) {
+            actions.add(navButton(workshopText('script.14b03351f55b', 'Anonim projeyi aç'), {
+                if (Dialogs.showConfirmDialog(workshopText('script.14b03351f55b', 'Anonim projeyi aç'), workshopText('script.f6c9dbaee35f', 'Açık proje kapatılıp anonim proje açılacak. Devam edilsin mi?'))) {
                     try { gui.setProject(ProjectIO.loadProject(r.projInfo.file, BufferedImage.class)) }
-                    catch (Throwable t) { Dialogs.showErrorMessage('Proje açılamadı', t.getMessage() ?: t.getClass().getSimpleName()) }
+                    catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.ee0b448acefc', 'Proje açılamadı'), t.getMessage() ?: t.getClass().getSimpleName()) }
                 }
             }))
         }
-        actions.add(navButton('↻ Yeni işlem', { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.d7b4a2c2c188', '↻ Yeni işlem'), { step.set('CONFIG'); render() }))
     } else {
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         addMonoArea(errorRef.get() ?: 'Bilinmeyen hata.')
-        actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.c8b5f18cded5', '◀ Yapılandırmaya dön'), { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
@@ -2483,7 +2483,7 @@ render = { ->
     bar.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
     bar.getChildren().addAll(topChk, spacer)
     bar.getChildren().addAll(actions)
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlıdır; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.b82384fd9d01', 'Yalnızca araştırma/eğitim amaçlıdır; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -2504,13 +2504,24 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('WSI anonimleştirme sihirbazı')
+        stage.setTitle(workshopText('script.d22825c46bff', 'WSI anonimleştirme sihirbazı'))
         stage.setAlwaysOnTop(alwaysTop.get())
         stage.setOnCloseRequest({ ev -> if (running.get()) cancelFlag.set(true) } as javafx.event.EventHandler)
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println '✓ WSI anonimleştirme sihirbazı açıldı.'
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

@@ -532,7 +532,7 @@ render = { ->
         rootLbl.setStyle('-fx-opacity: 0.85; -fx-font-weight: bold;'); rootLbl.setWrapText(true)
         def chooseRoot = navButton(workshopText('script.18b5fd32f00e', 'Değiştir…'), {
             def start = dataRoot.exists() ? dataRoot : dataRoot.getParentFile()
-            def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Atölye veri klasörü — içine bir ".atolye" klasörü oluşturulur', start)
+            def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.e9cfd7d981ba', 'Atölye veri klasörü — içine bir ".atolye" klasörü oluşturulur'), start)
             if (x != null) {
                 // Seçilen klasörü PARENT kabul et; içine '.atolye' koy (varsayılan ~/.atolye
                 // ile tutarlı — sürücü kökü D:\ seçilirse D:\.atolye olur; doğrudan D:\ kirlenmez).

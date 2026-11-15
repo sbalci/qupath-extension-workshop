@@ -94,8 +94,8 @@ def openUrl = { String url ->
             try {
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def cc = new javafx.scene.input.ClipboardContent(); cc.putString(url); cb.setContent(cc)
-                Dialogs.showMessageDialog('Bağlantı panoya kopyalandı', 'Tarayıcı otomatik açılamadı. Bağlantı panoya kopyalandı:\n' + url)
-            } catch (Throwable t) { Dialogs.showMessageDialog('İndirme bağlantısı', url) }
+                Dialogs.showMessageDialog(workshopText('script.072d21314064', 'Bağlantı panoya kopyalandı'), workshopText('script.4fdd757ec6b9', 'Tarayıcı otomatik açılamadı. Bağlantı panoya kopyalandı:\n') + url)
+            } catch (Throwable t) { Dialogs.showMessageDialog(workshopText('script.faa3b940c076', 'İndirme bağlantısı'), url) }
         }
     }, 'OpenUrl').start()
 }
@@ -121,7 +121,7 @@ def showAlignInstall = {
         '  • Log\'a bakın (View → Show log; "align" arayın) — uyumsuzluk/yükleme hatası orada yazar.\n' +
         '  • Elle .jar yerine KATALOGDAN, sürümünüzle eşleşen Align\'ı kurun (0.5.0 bazı 0.6/0.7 sürümlerinde yüklenmeyebilir).\n\n' +
         'GitHub sürüm sayfasını şimdi açayım mı?'
-    if (Dialogs.showConfirmDialog('Align eklentisi nasıl kurulur?', steps)) openUrl(ALIGN_RELEASES_URL)
+    if (Dialogs.showConfirmDialog(workshopText('script.b9087b724a59', 'Align eklentisi nasıl kurulur?'), steps)) openUrl(ALIGN_RELEASES_URL)
 }
 
 // ── Özyinelemeli dönüşüm (Bankhead gist deseni): nesneyi + tüm alt nesnelerini taşı
@@ -146,17 +146,17 @@ def parseMatrix = { String text ->
 // ── Ön kontroller ───────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Aktarımın HEDEF lamını açın (anotasyonların kopyalanacağı lam).")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.06e050a2afff', "Aktarımın HEDEF lamını açın (anotasyonların kopyalanacağı lam)."))
     return
 }
 def project = QP.getProject()
 if (project == null) {
-    Dialogs.showErrorMessage("Proje açık değil", "Kaynak ve hedef lam AYNI QuPath projesinde olmalıdır.")
+    Dialogs.showErrorMessage(workshopText('script.a38d0e6adac0', "Proje açık değil"), workshopText('script.94d00a2c421b', "Kaynak ve hedef lam AYNI QuPath projesinde olmalıdır."))
     return
 }
 def entries = project.getImageList()
 if (entries == null || entries.isEmpty()) {
-    Dialogs.showErrorMessage("Projede lam yok", "Hizalama aktarımı için projede en az bir kaynak lam olmalı.")
+    Dialogs.showErrorMessage(workshopText('script.9b147d756945', "Projede lam yok"), workshopText('script.9df5df6146ce', "Hizalama aktarımı için projede en az bir kaynak lam olmalı."))
     return
 }
 if (isHeadless) {
@@ -266,14 +266,14 @@ javafx.application.Platform.runLater {
 
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Hizalama sihirbazı (afin — otomatik/elle)')
+        stage.setTitle(workshopText('script.bfef327a90ad', 'Hizalama sihirbazı (afin — otomatik/elle)'))
         stage.setAlwaysOnTop(true)
 
         def info = new javafx.scene.control.Label(
-            'Kaynak lamı seçin. (A) Otomatik: Align eklentisi kaynağı bu (HEDEF) lama afin hizalar ve\n' +
+            workshopText('script.a295c2a388f8', 'Kaynak lamı seçin. (A) Otomatik: Align eklentisi kaynağı bu (HEDEF) lama afin hizalar ve\n' +
             'anotasyonları aktarır. (B) Elle: [Analyze → Alignment → Interactive image alignment] penceresindeki\n' +
             '6 sayıyı yapıştırın. Her iki durumda kaynağın üst düzey anotasyonları buraya kilitli kopyalanır;\n' +
-            'örtüşmeyi opaklık kaydırıcısıyla gözle doğrulayın.')
+            'örtüşmeyi opaklık kaydırıcısıyla gözle doğrulayın.'))
         info.setWrapText(true); info.setMaxWidth(Double.MAX_VALUE)
 
         def sourceBox = new javafx.scene.control.ChoiceBox()
@@ -281,41 +281,41 @@ javafx.application.Platform.runLater {
         if (!sourceBox.getItems().isEmpty()) sourceBox.getSelectionModel().selectFirst()
         sourceBox.setMaxWidth(Double.MAX_VALUE)
 
-        def measChk = new javafx.scene.control.CheckBox('Ölçümleri kopyala'); measChk.setSelected(true)
-        def lockChk = new javafx.scene.control.CheckBox('Aktarılanları kilitle'); lockChk.setSelected(true)
+        def measChk = new javafx.scene.control.CheckBox(workshopText('script.b5d46a3255ec', 'Ölçümleri kopyala')); measChk.setSelected(true)
+        def lockChk = new javafx.scene.control.CheckBox(workshopText('script.f9efed6c13a8', 'Aktarılanları kilitle')); lockChk.setSelected(true)
 
         // — (A) Otomatik —
         def typeBox = new javafx.scene.control.ChoiceBox()
         typeBox.getItems().addAll('INTENSITY', 'AREA_ANNOTATIONS', 'POINT_ANNOTATIONS'); typeBox.getSelectionModel().selectFirst()
         def transformBox = new javafx.scene.control.ChoiceBox()
         transformBox.getItems().addAll('AFFINE', 'RIGID'); transformBox.getSelectionModel().selectFirst()
-        def dsField = new javafx.scene.control.TextField(); dsField.setPromptText('boş = otomatik'); dsField.setPrefColumnCount(6)
-        def autoBtn = new javafx.scene.control.Button('Otomatik hizala + aktar')
+        def dsField = new javafx.scene.control.TextField(); dsField.setPromptText(workshopText('script.a9a111622b2f', 'boş = otomatik')); dsField.setPrefColumnCount(6)
+        def autoBtn = new javafx.scene.control.Button(workshopText('script.716ea7f610e3', 'Otomatik hizala + aktar'))
         def autoNote = new javafx.scene.control.Label(
-            alignPresent ? 'INTENSITY: anotasyon gerektirmez (yoğunluk/ECC). AREA/POINT: her iki lamda uygun anotasyon ister.' :
-            alignGuiOnly ? '⚠ Align KURULU ama bu SÜRÜM otomatik-hizalama sınıfını (AutoAligner) içermez (yayınlanmış 0.5.0 böyle — AutoAligner yalnız geliştirme/main dalında). [Analyze → Alignment → Interactive image alignment] ile hizalayıp 6 sayıyı (B)\'ye yapıştırın. Ayrıntı: "Otomatik neden kapalı?" düğmesi.'
-                         : '⚠ qupath-extension-align YÜKLENMEDİ — otomatik hizalama devre dışı. "Align eklentisini kur (nasıl?)" düğmesine basın (kurulu ama tanınmıyorsa: sürüm uyumsuzluğu — düğme log/çözümü açıklar). Ya da (B) elle matrisi kullanın.')
+            alignPresent ? workshopText('script.718cc55dc2f9', 'INTENSITY: anotasyon gerektirmez (yoğunluk/ECC). AREA/POINT: her iki lamda uygun anotasyon ister.') :
+            alignGuiOnly ? workshopText('script.e1dc814fad80', '⚠ Align KURULU ama bu SÜRÜM otomatik-hizalama sınıfını (AutoAligner) içermez (yayınlanmış 0.5.0 böyle — AutoAligner yalnız geliştirme/main dalında). [Analyze → Alignment → Interactive image alignment] ile hizalayıp 6 sayıyı (B)\'ye yapıştırın. Ayrıntı: "Otomatik neden kapalı?" düğmesi.')
+                         : workshopText('script.3a993989b3b4', '⚠ qupath-extension-align YÜKLENMEDİ — otomatik hizalama devre dışı. "Align eklentisini kur (nasıl?)" düğmesine basın (kurulu ama tanınmıyorsa: sürüm uyumsuzluğu — düğme log/çözümü açıklar). Ya da (B) elle matrisi kullanın.'))
         autoNote.setWrapText(true); autoNote.setMaxWidth(Double.MAX_VALUE)
         if (!alignPresent) autoNote.setStyle('-fx-text-fill: -qp-script-error-color;')
         // (A) kapalıysa yardım düğmesi: metni duruma göre değişir (kurulu-ama-AutoAligner-yok vs kurulu-değil).
-        def installBtn = new javafx.scene.control.Button(alignGuiOnly ? 'Otomatik neden kapalı?' : 'Align eklentisini kur (nasıl?)')
+        def installBtn = new javafx.scene.control.Button(alignGuiOnly ? workshopText('script.22158275eb3a', 'Otomatik neden kapalı?') : workshopText('script.b312d2b11f19', 'Align eklentisini kur (nasıl?)'))
         installBtn.setOnAction({ showAlignInstall() })
         if (!alignPresent) { typeBox.setDisable(true); transformBox.setDisable(true); dsField.setDisable(true); autoBtn.setDisable(true) }
 
         // — (B) Elle —
         def matrixField = new javafx.scene.control.TextArea()
-        matrixField.setPromptText('ör.  -0.998  -0.070  127256.994  0.070  -0.998  72627.371')
+        matrixField.setPromptText(workshopText('script.6c8c55d1c07d', 'ör.  -0.998  -0.070  127256.994  0.070  -0.998  72627.371'))
         matrixField.setPrefRowCount(2); matrixField.setWrapText(true)
-        def invChk  = new javafx.scene.control.CheckBox('Ters çevir (konum yanlış çıkarsa açık tutun)'); invChk.setSelected(true)
-        def manualBtn = new javafx.scene.control.Button('Elle matrisle aktar')
+        def invChk  = new javafx.scene.control.CheckBox(workshopText('script.3dd9b0e54f15', 'Ters çevir (konum yanlış çıkarsa açık tutun)')); invChk.setSelected(true)
+        def manualBtn = new javafx.scene.control.Button(workshopText('script.62fa43017902', 'Elle matrisle aktar'))
 
-        def status = new javafx.scene.control.Label('Hazır.'); status.setWrapText(true); status.setMaxWidth(Double.MAX_VALUE)
-        def kapatBtn = new javafx.scene.control.Button('Kapat'); kapatBtn.setOnAction({ stage.close() })
+        def status = new javafx.scene.control.Label(workshopText('script.86bb45e59294', 'Hazır.')); status.setWrapText(true); status.setMaxWidth(Double.MAX_VALUE)
+        def kapatBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', 'Kapat')); kapatBtn.setOnAction({ stage.close() })
 
         def showResult = { r ->
             if (r.ok) {
                 status.setStyle(''); status.setText(String.format(java.util.Locale.US,
-                    'Tamamlandı ✅ — %,d anotasyon aktarıldı. Örtüşmeyi gözle doğrulayın.', r.count))
+                    workshopText('script.bfcc323dc363', 'Tamamlandı ✅ — %,d anotasyon aktarıldı. Örtüşmeyi gözle doğrulayın.'), r.count))
                 def msg = new StringBuilder()
                 msg << String.format(java.util.Locale.US, 'Kaynak: %s%n', r.source)
                 msg << String.format(java.util.Locale.US, 'Aktarılan anotasyon: %,d (kilitli; ad "%s")%n', r.count, SENTINEL)
@@ -323,19 +323,19 @@ javafx.application.Platform.runLater {
                 msg << '\nAktarılan sınır seri kesitte YAKLAŞIK aynı bölgeyi gösterir; örtüşmeyi\n'
                 msg << 'opaklık kaydırıcısıyla doğrulayın. Hücre-hücre kesinlik için Warpy kullanın.\n'
                 msg << '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.'
-                Dialogs.showMessageDialog('Hizalama aktarımı tamamlandı', msg.toString())
+                Dialogs.showMessageDialog(workshopText('script.c97bb2b11831', 'Hizalama aktarımı tamamlandı'), msg.toString())
             } else {
-                status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + (r.error ?: 'Bilinmeyen hata'))
+                status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + (r.error ?: workshopText('script.da001998a5bd', 'Bilinmeyen hata')))
             }
         }
 
         autoBtn.setOnAction({
             def src = sourceBox.getValue()
-            if (!src) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Önce kaynak lamı seçin.'); return }
+            if (!src) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText(workshopText('script.c43c48c1957f', 'Önce kaynak lamı seçin.')); return }
             Integer userDs = null
             def dsTxt = dsField.getText()?.trim()
-            if (dsTxt) { try { userDs = Integer.parseInt(dsTxt); if (userDs < 1) throw new NumberFormatException() } catch (Throwable t) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Downsample pozitif tam sayı olmalı (ya da boş).'); return } }
-            autoBtn.setDisable(true); manualBtn.setDisable(true); status.setStyle(''); status.setText('Otomatik hizalanıyor… (kaynak görüntü açılıyor, büyük lam yavaş olabilir)')
+            if (dsTxt) { try { userDs = Integer.parseInt(dsTxt); if (userDs < 1) throw new NumberFormatException() } catch (Throwable t) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText(workshopText('script.45a760468538', 'Downsample pozitif tam sayı olmalı (ya da boş).')); return } }
+            autoBtn.setDisable(true); manualBtn.setDisable(true); status.setStyle(''); status.setText(workshopText('script.53d61fd0efa4', 'Otomatik hizalanıyor… (kaynak görüntü açılıyor, büyük lam yavaş olabilir)'))
             def worker = new Thread({
                 def r = doTransferAuto(src, typeBox.getValue(), transformBox.getValue(), userDs, measChk.isSelected(), lockChk.isSelected())
                 javafx.application.Platform.runLater { autoBtn.setDisable(false); manualBtn.setDisable(false); showResult(r) }
@@ -344,10 +344,10 @@ javafx.application.Platform.runLater {
 
         manualBtn.setOnAction({
             def src = sourceBox.getValue()
-            if (!src) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Önce kaynak lamı seçin.'); return }
+            if (!src) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText(workshopText('script.c43c48c1957f', 'Önce kaynak lamı seçin.')); return }
             def m = parseMatrix(matrixField.getText())
-            if (m == null) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Matris tam 6 sayı olmalı (boşluk/virgül ayrılmış).'); return }
-            autoBtn.setDisable(true); manualBtn.setDisable(true); status.setStyle(''); status.setText('Aktarılıyor…')
+            if (m == null) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText(workshopText('script.c4c17e024795', 'Matris tam 6 sayı olmalı (boşluk/virgül ayrılmış).')); return }
+            autoBtn.setDisable(true); manualBtn.setDisable(true); status.setStyle(''); status.setText(workshopText('script.e7ae44366dcf', 'Aktarılıyor…'))
             def worker = new Thread({
                 def r = doTransferManual(src, m, invChk.isSelected(), measChk.isSelected(), lockChk.isSelected())
                 javafx.application.Platform.runLater { autoBtn.setDisable(false); manualBtn.setDisable(false); showResult(r) }
@@ -357,17 +357,17 @@ javafx.application.Platform.runLater {
         // — Yerleşim —
         def grid = new javafx.scene.layout.GridPane()
         grid.setHgap(8); grid.setVgap(8); grid.setPadding(new javafx.geometry.Insets(4))
-        grid.addRow(0, new javafx.scene.control.Label('Kaynak lam:'), sourceBox)
+        grid.addRow(0, new javafx.scene.control.Label(workshopText('script.a4aab64f8584', 'Kaynak lam:')), sourceBox)
         javafx.scene.layout.GridPane.setHgrow(sourceBox, javafx.scene.layout.Priority.ALWAYS)
 
-        def autoTitle = new javafx.scene.control.Label('(A) Otomatik hizala (qupath-extension-align)'); autoTitle.setStyle('-fx-font-weight: bold;')
+        def autoTitle = new javafx.scene.control.Label(workshopText('script.51ca954222cd', '(A) Otomatik hizala (qupath-extension-align)')); autoTitle.setStyle('-fx-font-weight: bold;')
         def autoRow = new javafx.scene.layout.HBox(8,
-            new javafx.scene.control.Label('Mod:'), typeBox, new javafx.scene.control.Label('Dönüşüm:'), transformBox,
+            new javafx.scene.control.Label(workshopText('script.e79a63f3a487', 'Mod:')), typeBox, new javafx.scene.control.Label(workshopText('script.2866438262a5', 'Dönüşüm:')), transformBox,
             new javafx.scene.control.Label('Downsample:'), dsField, autoBtn)
         autoRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
         if (!alignPresent) autoRow.getChildren().add(installBtn)   // eklenti yoksa kurulum düğmesini (A) satırına ekle
 
-        def manTitle = new javafx.scene.control.Label('(B) Elle matris (Interactive image alignment penceresindeki 6 sayı)'); manTitle.setStyle('-fx-font-weight: bold;')
+        def manTitle = new javafx.scene.control.Label(workshopText('script.681ab8ea1f89', '(B) Elle matris (Interactive image alignment penceresindeki 6 sayı)')); manTitle.setStyle('-fx-font-weight: bold;')
         def manRow = new javafx.scene.layout.HBox(8, invChk, manualBtn); manRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
 
         def spacer = new javafx.scene.layout.Region()
@@ -375,7 +375,7 @@ javafx.application.Platform.runLater {
         def buttons = new javafx.scene.layout.HBox(8, spacer, kapatBtn)
         buttons.setAlignment(javafx.geometry.Pos.CENTER_RIGHT)
 
-        def disclaimer = new javafx.scene.control.Label('⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar; klinik karar üretmez.')
+        def disclaimer = new javafx.scene.control.Label(workshopText('script.690db56ca047', '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar; klinik karar üretmez.'))
         disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
         disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-font-size: 11px; -fx-padding: 4 2 4 2;')
 
@@ -393,6 +393,17 @@ javafx.application.Platform.runLater {
         stage.setScene(new javafx.scene.Scene(root, 720, 520))
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Hizalama sihirbazı açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage(workshopText('script.934aee7fda81', 'Hizalama sihirbazı açılamadı'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+    }
+}
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
     }
 }

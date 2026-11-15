@@ -373,33 +373,33 @@ render = { ->
 
     if (cur == 'READY') {
         def imageData = QP.getCurrentImageData()
-        title.setText('ICC renk profili denetçisi')
-        addGuidance('Açık lamın DOSYASINDA gömülü ICC renk profili arar; görüntüyü, renkleri veya analizinizi değiştirmez.\n\nQuPath 0.7+ OpenSlide ile ICC profilini isteğe bağlı uygulayabilir; 0.6 bu özelliği içermez. Profilin dosyada bulunması, görüntüde etkin olduğunu göstermez. Kullanılan okuyucuyu ve ICC tercihini ayrıca kontrol edin. Bu araç etkin renk dönüşümünü sınamaz.')
-        if (imageData == null) addGuidance('⚠ Açık lam yok. Önce yerel bir TIFF/SVS lamı açın.')
-        actions.add(navButton('Kapat', { stage.close() }))
-        def go = navButton('Bu lamı denetle ▶', { startInspect() }, 'Açık lamın dosyasında gömülü ICC profilini arar')
+        title.setText(workshopText('script.447623c0be7e', 'ICC renk profili denetçisi'))
+        addGuidance(workshopText('script.e9ecd278fd33', 'Açık lamın DOSYASINDA gömülü ICC renk profili arar; görüntüyü, renkleri veya analizinizi değiştirmez.\n\nQuPath 0.7+ OpenSlide ile ICC profilini isteğe bağlı uygulayabilir; 0.6 bu özelliği içermez. Profilin dosyada bulunması, görüntüde etkin olduğunu göstermez. Kullanılan okuyucuyu ve ICC tercihini ayrıca kontrol edin. Bu araç etkin renk dönüşümünü sınamaz.'))
+        if (imageData == null) addGuidance(workshopText('script.ba1e453bc8d3', '⚠ Açık lam yok. Önce yerel bir TIFF/SVS lamı açın.'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        def go = navButton(workshopText('script.f6a7fa26df29', 'Bu lamı denetle ▶'), { startInspect() }, workshopText('script.e58218743302', 'Açık lamın dosyasında gömülü ICC profilini arar'))
         go.setDisable(imageData == null)
         actions.add(go)
     } else if (cur == 'SCANNING') {
-        title.setText('Lam dosyası okunuyor…')
-        addGuidance('Dosyanın etiket (IFD) verisi okunuyor; pikseller okunmaz, bu yüzden büyük lamlarda da hızlıdır.')
+        title.setText(workshopText('script.076c5e2bb229', 'Lam dosyası okunuyor…'))
+        addGuidance(workshopText('script.1e1982d39c71', 'Dosyanın etiket (IFD) verisi okunuyor; pikseller okunmaz, bu yüzden büyük lamlarda da hızlıdır.'))
         center.getChildren().add(busyBar())
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     } else if (cur == 'RESULT') {
-        title.setText('Denetim tamamlandı ✅')
+        title.setText(workshopText('script.0ac1ec6f0095', 'Denetim tamamlandı ✅'))
         addMonoArea(resultTextRef.get())
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }, 'Raporu panoya kopyala'))
-        actions.add(navButton('↻ Yeniden denetle', { startInspect() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }, workshopText('script.8d19ae1b08d1', 'Raporu panoya kopyala')))
+        actions.add(navButton(workshopText('script.47e225e64d35', '↻ Yeniden denetle'), { startInspect() }))
     } else { // ERROR
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
     // Alt çubuk: "Üstte tut" (sol) + disclaimer + eylem düğmeleri (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
@@ -412,7 +412,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -430,12 +430,23 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('ICC renk profili denetçisi')
+        stage.setTitle(workshopText('script.447623c0be7e', 'ICC renk profili denetçisi'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println '✓ ICC renk profili denetçisi açıldı.'
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

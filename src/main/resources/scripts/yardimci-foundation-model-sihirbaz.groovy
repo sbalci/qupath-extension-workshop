@@ -198,7 +198,7 @@ render = { ->
     }
 
     def imageData = QP.getCurrentImageData()
-    title.setText('Foundation model hazırlık ve sağlamlık sihirbazı')
+    title.setText(workshopText('script.c3c6ae9f5759', 'Foundation model hazırlık ve sağlamlık sihirbazı'))
     if (imageData != null) {
         def rep
         try { rep = buildReport(extractReadiness(imageData)) }
@@ -207,14 +207,14 @@ render = { ->
         addMonoArea(rep)
     } else {
         reportRef.set('')
-        addGuidance('Önce bir lam açın. Bu sihirbaz açık lamın FM-hazırlık olgularını ve sağlamlık kontrol listesini raporlar (salt okunur).')
+        addGuidance(workshopText('script.00646c4e81ed', 'Önce bir lam açın. Bu sihirbaz açık lamın FM-hazırlık olgularını ve sağlamlık kontrol listesini raporlar (salt okunur).'))
     }
-    actions.add(navButton('Kapat', { stage.close() }))
-    if (imageData != null) actions.add(navButton('Kopyala', { copyToClipboard(reportRef.get()) }, 'Raporu panoya kopyala'))
-    actions.add(navButton('⟳ Yenile', { render() }, 'Lam/anotasyon değiştiyse yeniden hesapla'))
+    actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+    if (imageData != null) actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(reportRef.get()) }, workshopText('script.8d19ae1b08d1', 'Raporu panoya kopyala')))
+    actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }, workshopText('script.8920f9a8fda3', 'Lam/anotasyon değiştiyse yeniden hesapla')))
 
     // Alt çubuk: "Üstte tut" (sol) + disclaimer + eylem düğmeleri (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
@@ -227,7 +227,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Salt okunur; FM çalıştırmaz, pertürbasyon üretmez. Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.bb156276cb84', 'Salt okunur; FM çalıştırmaz, pertürbasyon üretmez. Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -245,12 +245,23 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Foundation model hazırlık ve sağlamlık sihirbazı')
+        stage.setTitle(workshopText('script.c3c6ae9f5759', 'Foundation model hazırlık ve sağlamlık sihirbazı'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println '✓ Foundation model hazırlık ve sağlamlık sihirbazı açıldı.'
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

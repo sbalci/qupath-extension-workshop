@@ -76,13 +76,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -90,7 +90,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -103,7 +103,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -216,13 +216,13 @@ def project = QP.getProject()
 if (project == null) {
     def msg = "Bu betik açık bir QuPath projesi gerektirir.\nÖnce bir proje açın (File → Open Project)."
     if (isHeadless) { println msg; return }
-    Dialogs.showErrorMessage("Proje yok", msg); return
+    Dialogs.showErrorMessage(workshopText('script.830fe38f7e53', "Proje yok"), msg); return
 }
 def entries = project.getImageList()
 if (entries == null || entries.isEmpty()) {
     def msg = "Projede hiç görüntü yok."
     if (isHeadless) { println msg; return }
-    Dialogs.showErrorMessage("Görüntü yok", msg); return
+    Dialogs.showErrorMessage(workshopText('script.3fa03a8fb823', "Görüntü yok"), msg); return
 }
 
 // ── Çıktı dizini: <proje>/boya-qc/ ─────────────────────────────────────────
@@ -273,7 +273,7 @@ if (rows.isEmpty()) {
     def msg = String.format(java.util.Locale.US,
         "Hiçbir görüntüden ölçüm alınamadı (atlandı: %d, hata: %d).\nTüm görüntülerin H&E/H-DAB boya vektörleri tanımlı mı?", skipped, errCount)
     if (isHeadless) { println msg; return }
-    Dialogs.showErrorMessage("Sonuç yok", msg); return
+    Dialogs.showErrorMessage(workshopText('script.e4abb9d051d0', "Sonuç yok"), msg); return
 }
 
 // ── CSV yaz ──────────────────────────────────────────────────────────────────
@@ -373,3 +373,14 @@ showResultWindow("Kohort Boya OD Drift", sb.toString())
 println String.format(java.util.Locale.US,
     "✓ Kohort boya QC tamamlandı: %d görüntü, %d outlier. CSV: %s",
     rows.size(), outlierRows.size(), csvFile.getAbsolutePath())
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

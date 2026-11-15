@@ -593,7 +593,7 @@ def envReturnHook = [
                 if (!stage.isShowing()) stage.show()
                 stage.toFront(); stage.requestFocus()
             } catch (Throwable t) {
-                Dialogs.showErrorMessage('Sihirbaza dönüş', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+                Dialogs.showErrorMessage(workshopText('script.95854db5b310', 'Sihirbaza dönüş'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
             }
         }
     }
@@ -606,8 +606,8 @@ def launchEnvManager = { ->
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + res) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + res)
             if (url == null) {
-                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
-                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi ("nuclick" kaydını kurun).') }
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.612821b4f218', 'Betik bulunamadı'),
+                    workshopText('script.df5870effef8', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi ("nuclick" kaydını kurun).')) }
                 return
             }
             def cl = this.getClass().getClassLoader()
@@ -616,7 +616,7 @@ def launchEnvManager = { ->
             shellBinding.setVariable('atolyeReturnHook', envReturnHook)
             new GroovyShell(cl, shellBinding).evaluate(url.getText('UTF-8'), res)
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage(workshopText('script.e83c5641f38e', 'Açılamadı'), (t.getMessage() ?: t.getClass().getSimpleName())) }
         }
     } as Runnable).start()
 }
@@ -710,14 +710,14 @@ def startRun = {
         sb << 'o konturlarda ELLE yaptığınız düzeltmeler de gider. '
         sb << 'Nokta işaretlerinize ve kendi anotasyonlarınıza hiçbir kipte dokunulmaz.'
         sb << '\n\nÖnceki NuClick sonucu ne olsun?'
-        def pick = Dialogs.showChoiceDialog('Önceki NuClick sonucu', sb.toString(),
+        def pick = Dialogs.showChoiceDialog(workshopText('script.27c0b5f4898a', 'Önceki NuClick sonucu'), sb.toString(),
                 [MODE_ADD, MODE_REPLACE], MODE_ADD)
         if (pick == null) return                       // İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz
         mode = (String) pick
         if (mode == MODE_REPLACE) {
-            boolean ok = Dialogs.showConfirmDialog('Önceki NuClick sonucu silinecek',
+            boolean ok = Dialogs.showConfirmDialog(workshopText('script.80cc2001942e', 'Önceki NuClick sonucu silinecek'),
                 String.format(java.util.Locale.US,
-                    '%,d katman ve %,d çekirdek silinip yeniden üretilecek. Bu konturlarda elle yaptığınız düzeltmeler KAYBOLUR ve geri alınamaz.\n\nDevam edilsin mi?',
+                    workshopText('script.5285f19e71ed', '%,d katman ve %,d çekirdek silinip yeniden üretilecek. Bu konturlarda elle yaptığınız düzeltmeler KAYBOLUR ve geri alınamaz.\n\nDevam edilsin mi?'),
                     nPrevLayers, nPrevDets))
             if (!ok) return
         }
@@ -788,10 +788,10 @@ render = {
     String cur = step.get()
 
     if (cur == 'READY' || cur == 'CONFIG_INCOMPLETE' || cur == 'CHECK_DONE' || cur == 'DL_DONE') {
-        title.setText('NuClick — tıkla → çekirdek sınırı')
+        title.setText(workshopText('script.f45346430f41', 'NuClick — tıkla → çekirdek sınırı'))
         def info = new javafx.scene.control.Label(
-            'Lamda "Points" aracıyla işaretlediğiniz her çekirdeğin sınırını üretir.\n' +
-            'Hücre TİPİ atamaz — yalnız sınır çizer.')
+            workshopText('script.d774d9d2568d', 'Lamda "Points" aracıyla işaretlediğiniz her çekirdeğin sınırını üretir.\n' +
+            'Hücre TİPİ atamaz — yalnız sınır çizer.'))
         info.setWrapText(true)
         body.getChildren().add(info)
 
@@ -799,8 +799,8 @@ render = {
             def col = collectPoints(imageData)
             def n = col.points.size()
             def lbl = new javafx.scene.control.Label(
-                n == 0 ? '⚠ Hiç nokta işareti yok — önce "Points" aracıyla çekirdeklere tıklayın.'
-                       : ('Bulunan nokta: ' + n + (col.fromSelection ? '  (seçili anotasyonlardan)' : '  (tüm nokta anotasyonları)')))
+                n == 0 ? workshopText('script.1690a8c10b5a', '⚠ Hiç nokta işareti yok — önce "Points" aracıyla çekirdeklere tıklayın.')
+                       : (workshopText('script.cebe7408359c', 'Bulunan nokta: ') + n + (col.fromSelection ? workshopText('script.c38d2799c85a', '  (seçili anotasyonlardan)') : workshopText('script.497eb226b2b8', '  (tüm nokta anotasyonları)'))))
             lbl.setWrapText(true)
             if (n == 0) lbl.setStyle('-fx-text-fill: #b45309;')
             body.getChildren().add(lbl)
@@ -811,30 +811,30 @@ render = {
                 body.getChildren().add(w)
             }
         } else {
-            def l = new javafx.scene.control.Label('⚠ Açık lam yok.')
+            def l = new javafx.scene.control.Label(workshopText('script.d7c5979fdd82', '⚠ Açık lam yok.'))
             l.setStyle('-fx-text-fill: #b45309;')
             body.getChildren().add(l)
         }
 
-        if (cur == 'CHECK_DONE') body.getChildren().add(new javafx.scene.control.Label('✓ Ortam denetimi tamam.'))
-        if (cur == 'DL_DONE')    body.getChildren().add(new javafx.scene.control.Label('✓ Model ağırlıkları hazır.'))
+        if (cur == 'CHECK_DONE') body.getChildren().add(new javafx.scene.control.Label(workshopText('script.8a4fda9adc26', '✓ Ortam denetimi tamam.')))
+        if (cur == 'DL_DONE')    body.getChildren().add(new javafx.scene.control.Label(workshopText('script.cb53dca30aaf', '✓ Model ağırlıkları hazır.')))
         if (cur == 'CONFIG_INCOMPLETE') {
-            def l = new javafx.scene.control.Label('Yapılandırma eksik:\n  • ' + configMissing(cfg).join('\n  • '))
+            def l = new javafx.scene.control.Label(workshopText('script.4a66d68d3339', 'Yapılandırma eksik:\n  • ') + configMissing(cfg).join('\n  • '))
             l.setWrapText(true); l.setStyle('-fx-text-fill: #b45309;')
             body.getChildren().add(l)
         }
 
-        actions.add(navButton('② Ortamı kur', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar ve "nuclick" kaydını vurgular'))
-        actions.add(navButton('③ Model ağırlıklarını indir', { startSimple('Ağırlık indirme', downloadCmd(cfg), 'DL_DONE') }, '~255 MB, bir kez'))
-        actions.add(navButton('Bağımlılıkları denetle', { startSimple('Ortam denetimi', selftestCmd(cfg), 'CHECK_DONE') }))
-        actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
-        def runBtn = navButton('Çalıştır', { startRun() })
+        actions.add(navButton(workshopText('script.56f53642a3b8', '② Ortamı kur'), { launchEnvManager() }, workshopText('script.f732946648b5', 'Atölye Python ortam yöneticisini açar ve "nuclick" kaydını vurgular')))
+        actions.add(navButton(workshopText('script.83b406a90097', '③ Model ağırlıklarını indir'), { startSimple('Ağırlık indirme', downloadCmd(cfg), 'DL_DONE') }, workshopText('script.c7b79268334a', '~255 MB, bir kez')))
+        actions.add(navButton(workshopText('script.9679be2279c4', 'Bağımlılıkları denetle'), { startSimple('Ortam denetimi', selftestCmd(cfg), 'CHECK_DONE') }))
+        actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
+        def runBtn = navButton(workshopText('script.79ef801ff99f', 'Çalıştır'), { startRun() })
         runBtn.setDefaultButton(true)
         runBtn.setDisable(imageData == null || !configComplete(cfg))
         actions.add(runBtn)
 
     } else if (cur == 'CONFIG') {
-        title.setText('NuClick yapılandırması')
+        title.setText(workshopText('script.a426bae81f2a', 'NuClick yapılandırması'))
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         def pyField = new javafx.scene.control.TextField(cfg.python ?: '')
         def brField = new javafx.scene.control.TextField(cfg.bridge ?: '')
@@ -857,24 +857,24 @@ render = {
                     def sel = dirOnly ? qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, titleTxt, null)
                                       : qupath.fx.dialogs.FileChoosers.promptForFile(stage, titleTxt)
                     if (sel != null) f.setText(sel.getAbsolutePath())
-                } catch (Throwable t) { Dialogs.showErrorMessage('Seçilemedi', (t.getMessage() ?: t.getClass().getSimpleName())) }
+                } catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.c87f96c1a300', 'Seçilemedi'), (t.getMessage() ?: t.getClass().getSimpleName())) }
             })
         }
         int r = 0
-        grid.add(new javafx.scene.control.Label('Python (nuclick ortamı):'), 0, r); grid.add(pyField, 1, r); grid.add(browse(pyField, 'python.exe seçin', false), 2, r); r++
+        grid.add(new javafx.scene.control.Label(workshopText('script.6a31b6bde327', 'Python (nuclick ortamı):')), 0, r); grid.add(pyField, 1, r); grid.add(browse(pyField, 'python.exe seçin', false), 2, r); r++
         grid.add(new javafx.scene.control.Label('nuclick_bridge.py:'), 0, r); grid.add(brField, 1, r); grid.add(browse(brField, 'nuclick_bridge.py seçin', false), 2, r); r++
-        grid.add(new javafx.scene.control.Label('Çalışma dizini (boş = proje yanı):'), 0, r); grid.add(wdField, 1, r); grid.add(browse(wdField, 'Klasör seçin', true), 2, r); r++
-        grid.add(new javafx.scene.control.Label('Downsample (boş = otomatik):'), 0, r); grid.add(dsField, 1, r); r++
-        grid.add(new javafx.scene.control.Label('Maks. nokta:'), 0, r); grid.add(mpField, 1, r); r++
-        grid.add(new javafx.scene.control.Label('Eşik (0-1, varsayılan 0,33):'), 0, r); grid.add(thField, 1, r); r++
-        grid.add(new javafx.scene.control.Label('Aygıt:'), 0, r); grid.add(devChoice, 1, r); r++
+        grid.add(new javafx.scene.control.Label(workshopText('script.982e5d872667', 'Çalışma dizini (boş = proje yanı):')), 0, r); grid.add(wdField, 1, r); grid.add(browse(wdField, 'Klasör seçin', true), 2, r); r++
+        grid.add(new javafx.scene.control.Label(workshopText('script.998faaff6f85', 'Downsample (boş = otomatik):')), 0, r); grid.add(dsField, 1, r); r++
+        grid.add(new javafx.scene.control.Label(workshopText('script.99683b43ae05', 'Maks. nokta:')), 0, r); grid.add(mpField, 1, r); r++
+        grid.add(new javafx.scene.control.Label(workshopText('script.ef6f2a61fc33', 'Eşik (0-1, varsayılan 0,33):')), 0, r); grid.add(thField, 1, r); r++
+        grid.add(new javafx.scene.control.Label(workshopText('script.72e0fecf25c7', 'Aygıt:')), 0, r); grid.add(devChoice, 1, r); r++
         body.getChildren().add(grid)
         def hint = new javafx.scene.control.Label(
-            'Downsample boş bırakılırsa lamın µm/px değerinden hedef 0,25 µm/px (40×) için otomatik hesaplanır — önerilen budur.')
+            workshopText('script.49f167efc3d7', 'Downsample boş bırakılırsa lamın µm/px değerinden hedef 0,25 µm/px (40×) için otomatik hesaplanır — önerilen budur.'))
         hint.setWrapText(true)
         body.getChildren().add(hint)
-        actions.add(navButton('◀ Geri', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('Kaydet', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.c1fe2ecdff02', 'Kaydet'), { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
 
     } else if (cur == 'BUSY') {
         title.setText('NuClick — ' + busyLabelRef.get())
@@ -883,35 +883,35 @@ render = {
         ta.setEditable(false); ta.setPrefRowCount(16); ta.setStyle(MONO)
         logAreaRef.set(ta)
         body.getChildren().add(ta)
-        actions.add(navButton('İptal', {
+        actions.add(navButton(workshopText('script.72278748133a', 'İptal'), {
             cancelledRef.set(true)
             def p = processRef.get()
             if (p != null) { try { p.destroy() } catch (Throwable ignore) {} }
         }))
 
     } else if (cur == 'DONE') {
-        title.setText('NuClick — bitti')
+        title.setText(workshopText('script.692cf9b6657f', 'NuClick — bitti'))
         def ta = new javafx.scene.control.TextArea(resultTextRef.get())
         ta.setEditable(false); ta.setPrefRowCount(16); ta.setStyle(MONO)
         body.getChildren().add(ta)
-        actions.add(navButton('Panoya kopyala', { copyToClipboard(resultTextRef.get()) }))
-        actions.add(navButton('◀ Başa dön', { step.set('READY'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.cfce69a58bef', 'Panoya kopyala'), { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.2ac55044af23', '◀ Başa dön'), { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
 
     } else if (cur == 'ERROR') {
-        title.setText('NuClick — hata')
+        title.setText(workshopText('script.43221480e38a', 'NuClick — hata'))
         def ta = new javafx.scene.control.TextArea(errorTextRef.get())
         ta.setEditable(false); ta.setPrefRowCount(10); ta.setStyle(MONO)
         body.getChildren().add(ta)
-        actions.add(navButton('② Ortamı kur', { launchEnvManager() }))
-        actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
-        actions.add(navButton('◀ Başa dön', { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.56f53642a3b8', '② Ortamı kur'), { launchEnvManager() }))
+        actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.2ac55044af23', '◀ Başa dön'), { step.set('READY'); render() }))
     }
 
     def spacer = new javafx.scene.layout.Region()
     javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
     actions.add(spacer)
-    def topCheck = new javafx.scene.control.CheckBox('Üstte kalsın')
+    def topCheck = new javafx.scene.control.CheckBox(workshopText('script.e8fb9da63e76', 'Üstte kalsın'))
     topCheck.setSelected(alwaysTop.get())
     topCheck.selectedProperty().addListener({ o, ov, nv ->
         alwaysTop.set(nv); try { stage.setAlwaysOnTop(nv) } catch (Throwable ignore) {}
@@ -921,11 +921,22 @@ render = {
 
 javafx.application.Platform.runLater {
     stage = new javafx.stage.Stage()
-    stage.setTitle('NuClick — tıkla → çekirdek sınırı')
+    stage.setTitle(workshopText('script.f45346430f41', 'NuClick — tıkla → çekirdek sınırı'))
     stage.initOwner(gui.getStage())
     stage.setAlwaysOnTop(alwaysTop.get())
     stage.setScene(new javafx.scene.Scene(root))
     step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE')
     render()
     stage.show()
+}
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
 }

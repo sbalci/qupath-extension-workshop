@@ -75,13 +75,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -89,7 +89,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -102,7 +102,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -125,7 +125,7 @@ int maxDistinctLabels     = 256                   // bunun üstünde maske ikili
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce maskenin türetildiği lamı açın.")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.8138977fc63e', "Önce maskenin türetildiği lamı açın."))
     return
 }
 if (isHeadless) {
@@ -176,8 +176,8 @@ if (img == null) {
     finally { try { ms?.close() } catch (Throwable ignore) {} }
 }
 if (img == null) {
-    Dialogs.showErrorMessage("Maske okunamadı",
-        "Dosya bir görüntü olarak açılamadı.\nTek kanallı indeksli/gri PNG önerilir.")
+    Dialogs.showErrorMessage(workshopText('script.218214fb0be5', "Maske okunamadı"),
+        workshopText('script.ff368f6f756d', "Dosya bir görüntü olarak açılamadı.\nTek kanallı indeksli/gri PNG önerilir."))
     return
 }
 def raster = img.getRaster()
@@ -185,7 +185,7 @@ int maskW = raster.getWidth()
 int maskH = raster.getHeight()
 int numBands = raster.getNumBands()
 if (maskW <= 0 || maskH <= 0) {
-    Dialogs.showErrorMessage("Geçersiz maske", "Maske boyutları okunamadı.")
+    Dialogs.showErrorMessage(workshopText('script.2b3e2a1bab37', "Geçersiz maske"), workshopText('script.2b4aac9fce3c', "Maske boyutları okunamadı."))
     return
 }
 
@@ -198,14 +198,14 @@ if (sidecar != null && sidecar.downsample != null) {
     double suggested = (maskW > 0) ? (server.getWidth() / (double) maskW) : 1.0d
     if (!(suggested > 0)) suggested = 1.0d
     def dsText = Dialogs.showInputDialog(
-        "Maske içe aktar",
-        "Downsample — 1 maske pikseli kaç görüntü pikseline denk?\n" +
-        "(Boyut oranından öneri: " + String.format(java.util.Locale.US, "%.3f", suggested) + ")",
+        workshopText('script.a1e83025004d', "Maske içe aktar"),
+        workshopText('script.718a1e0c9997', "Downsample — 1 maske pikseli kaç görüntü pikseline denk?\n" +
+        "(Boyut oranından öneri: ") + String.format(java.util.Locale.US, "%.3f", suggested) + ")",
         String.format(java.util.Locale.US, "%.3f", suggested))
     if (dsText == null) { println "İptal edildi."; return }
     try { downsample = Double.parseDouble(dsText.trim().replace(',', '.')) }
     catch (NumberFormatException nfe) {
-        Dialogs.showErrorMessage("Sayı formatı", "Downsample ondalık bir sayı olmalı (ör. 4.0).")
+        Dialogs.showErrorMessage(workshopText('script.9cc391204f66', "Sayı formatı"), workshopText('script.0d0e0e36ccff', "Downsample ondalık bir sayı olmalı (ör. 4.0)."))
         return
     }
 }
@@ -215,11 +215,11 @@ if (!(downsample > 0)) downsample = 1.0d
 double impliedW = maskW * downsample
 double tolerance = Math.max(8.0d, server.getWidth() * 0.02d)
 if (Math.abs(impliedW - server.getWidth()) > tolerance) {
-    def proceed = Dialogs.showConfirmDialog("Boyut uyuşmuyor",
+    def proceed = Dialogs.showConfirmDialog(workshopText('script.2c91f9a51247', "Boyut uyuşmuyor"),
         String.format(java.util.Locale.US,
-            "Maske × downsample = %,.0f px, açık görüntü genişliği = %,d px.%n%n" +
+            workshopText('script.cca1fafeaa39', "Maske × downsample = %,.0f px, açık görüntü genişliği = %,d px.%n%n" +
             "Maske bu lamdan türememiş ya da downsample yanlış olabilir.%n" +
-            "Yine de devam edilsin mi?",
+            "Yine de devam edilsin mi?"),
             impliedW, server.getWidth()))
     if (!proceed) { println "Kullanıcı boyut-uyuşmazlığı onayını reddetti."; return }
 }
@@ -242,8 +242,8 @@ for (int y = 0; y < maskH; y++) {
     if (labelsPresent.size() > maxDistinctLabels) binaryFallback = true
 }
 if (labelsPresent.isEmpty()) {
-    Dialogs.showWarningNotification("Boş maske",
-        "Maskede sıfır-dışı (ön plan) piksel bulunamadı — tüm görüntü arka plan (0).")
+    Dialogs.showWarningNotification(workshopText('script.f8130546efea', "Boş maske"),
+        workshopText('script.91f9c6f28913', "Maskede sıfır-dışı (ön plan) piksel bulunamadı — tüm görüntü arka plan (0)."))
     return
 }
 
@@ -251,16 +251,16 @@ if (labelsPresent.isEmpty()) {
 String fgName = null
 def unmapped = labelsPresent.findAll { !labelClass.containsKey(it) }
 if (binaryFallback || !unmapped.isEmpty()) {
-    fgName = Dialogs.showInputDialog("Maske içe aktar", "Ön plan (foreground) sınıf adı:", "Maske")
+    fgName = Dialogs.showInputDialog(workshopText('script.a1e83025004d', "Maske içe aktar"), workshopText('script.203eedab575f', "Ön plan (foreground) sınıf adı:"), "Maske")
     if (fgName == null) { println "İptal edildi."; return }
     fgName = fgName.trim()
     if (fgName.isEmpty()) fgName = "Maske"
 }
 
 // ── 8) Bölme seçeneği ───────────────────────────────────────────────
-boolean split = Dialogs.showConfirmDialog("Bölme seçeneği",
-    "Evet: bitişik her bölge ayrı anotasyon.\n" +
-    "Hayır: sınıf başına tek (birleşik) anotasyon.")
+boolean split = Dialogs.showConfirmDialog(workshopText('script.662023511552', "Bölme seçeneği"),
+    workshopText('script.8ecb4f6a92b7', "Evet: bitişik her bölge ayrı anotasyon.\n" +
+    "Hayır: sınıf başına tek (birleşik) anotasyon."))
 
 // ── 9) Maske → anotasyon (ContourTracing) ───────────────────────────
 def request = RegionRequest.createInstance(
@@ -307,8 +307,8 @@ if (binaryFallback) {
 }
 
 if (newAnns.isEmpty()) {
-    Dialogs.showWarningNotification("Bölge izlenemedi",
-        "Maske okundu ancak izlenebilir bir ön plan bölgesi üretilemedi.")
+    Dialogs.showWarningNotification(workshopText('script.feae2d0ca081', "Bölge izlenemedi"),
+        workshopText('script.373b013cf087', "Maske okundu ancak izlenebilir bir ön plan bölgesi üretilemedi."))
     return
 }
 
@@ -320,12 +320,12 @@ def oldImports = QP.getAnnotationObjects().findAll { it.getName() == importSenti
 if (!oldImports.isEmpty()) {
     def optAdd = "Ekle — hiçbir şeyi silme"
     def optRep = "Önceki içe aktarımı değiştir"
-    def ch = Dialogs.showChoiceDialog("Önceki içe aktarım bulundu",
-        "Bu görüntüde önceki bir içe aktarımdan " + oldImports.size() + " anotasyon var (\"" + importSentinelName + "\").\n\n" +
-        "• Ekle: hiçbir şey silinmez; yeni bölgeler öncekilerin yanına eklenir (aynı maskeyi\n" +
-        "  yeniden içe aktarıyorsanız çift kopya oluşur).\n" +
-        "• Değiştir: yalnız bu önceki anotasyonlar kaldırılır (elle düzelttiğiniz sınırlar dahil);\n" +
-        "  altlarındaki tespitler ve diğer anotasyonlar korunur.",
+    def ch = Dialogs.showChoiceDialog(workshopText('script.dd2c102cce23', "Önceki içe aktarım bulundu"),
+        workshopText('script.cb9ed0395ead', "Bu görüntüde önceki bir içe aktarımdan ") + oldImports.size() + workshopText('script.465be7ff125b', " anotasyon var (\"") + importSentinelName + "\").\n\n" +
+        workshopText('script.529d5ee71f24', "• Ekle: hiçbir şey silinmez; yeni bölgeler öncekilerin yanına eklenir (aynı maskeyi\n") +
+        workshopText('script.186ea928ba70', "  yeniden içe aktarıyorsanız çift kopya oluşur).\n") +
+        workshopText('script.51a408148751', "• Değiştir: yalnız bu önceki anotasyonlar kaldırılır (elle düzelttiğiniz sınırlar dahil);\n") +
+        workshopText('script.4d12c7800032', "  altlarındaki tespitler ve diğer anotasyonlar korunur."),
         [optAdd, optRep], optAdd)
     if (ch == null) { println "İptal edildi — hiçbir şey değiştirilmedi."; return }
     if (ch == optRep) QP.removeObjects(oldImports, true)
@@ -364,3 +364,14 @@ body << "⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar."
 
 showResultWindow("Maske içe aktarma", body.toString())
 println "✓ Maske içe aktarımı tamamlandı (${newAnns.size()} anotasyon, ${labelsPresent.size()} indeks)."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

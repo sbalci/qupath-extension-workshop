@@ -398,13 +398,13 @@ def startRun = {
 def importToProject = {
     def outDir = resultDirRef.get()
     def converted = (outDir != null) ? listConverted(outDir) : []
-    if (converted.isEmpty()) { Dialogs.showWarningNotification('DICOM → SVS', 'Aktarılacak dönüştürülmüş dosya bulunamadı.'); return }
-    if (QP.getProject() == null) { Dialogs.showWarningNotification('DICOM → SVS', 'Önce bir proje açın (File → Project…).'); return }
+    if (converted.isEmpty()) { Dialogs.showWarningNotification('DICOM → SVS', workshopText('script.8e66a2e91c8c', 'Aktarılacak dönüştürülmüş dosya bulunamadı.')); return }
+    if (QP.getProject() == null) { Dialogs.showWarningNotification('DICOM → SVS', workshopText('script.1ac0c7aace2b', 'Önce bir proje açın (File → Project…).')); return }
     try {
         String[] paths = converted.collect { it.getAbsolutePath() } as String[]
         qupath.lib.gui.commands.ProjectCommands.promptToImportImages(gui, paths)
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('DICOM → SVS', 'İçe aktarma başlatılamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName()))
+        Dialogs.showErrorMessage('DICOM → SVS', workshopText('script.3490b3ba31fd', 'İçe aktarma başlatılamadı: ') + (t.getMessage() ?: t.getClass().getSimpleName()))
     }
 }
 def openFolder = { File dir ->
@@ -412,9 +412,9 @@ def openFolder = { File dir ->
         if (dir != null && dir.isDirectory() && java.awt.Desktop.isDesktopSupported())
             java.awt.Desktop.getDesktop().open(dir)
         else
-            Dialogs.showWarningNotification('DICOM → SVS', 'Klasör açılamadı: ' + (dir != null ? dir.getAbsolutePath() : '(yok)'))
+            Dialogs.showWarningNotification('DICOM → SVS', workshopText('script.6d10d15d03de', 'Klasör açılamadı: ') + (dir != null ? dir.getAbsolutePath() : workshopText('script.715392eca0f8', '(yok)')))
     } catch (Throwable t) {
-        Dialogs.showWarningNotification('DICOM → SVS', 'Klasör açılamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName()))
+        Dialogs.showWarningNotification('DICOM → SVS', workshopText('script.6d10d15d03de', 'Klasör açılamadı: ') + (t.getMessage() ?: t.getClass().getSimpleName()))
     }
 }
 
@@ -422,16 +422,16 @@ def openFolder = { File dir ->
 def launchExe = {
     def p = textOf(exeFieldRef)
     if (!p || !(new File(p)).isFile()) {
-        Dialogs.showWarningNotification('DICOM → SVS', 'Önce indirdiğiniz DICOMtoSVS uygulamasını seçin.'); return
+        Dialogs.showWarningNotification('DICOM → SVS', workshopText('script.3081c9bec408', 'Önce indirdiğiniz DICOMtoSVS uygulamasını seçin.')); return
     }
     prefs.put(PREF_EXE, p)
     try { prefs.flush() } catch (Throwable ignore) {}
     try {
         // ProcessBuilder List<String> — önceden tırnaklanmış komut dizesi KULLANMA (boşluklu yol güvenli).
         new ProcessBuilder([p]).start()
-        Dialogs.showInfoNotification('DICOM → SVS', 'Resmî uygulama başlatıldı — kendi penceresini ve konsolunu açar.')
+        Dialogs.showInfoNotification('DICOM → SVS', workshopText('script.c6ed907726ac', 'Resmî uygulama başlatıldı — kendi penceresini ve konsolunu açar.'))
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('DICOM → SVS', 'Uygulama başlatılamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName()))
+        Dialogs.showErrorMessage('DICOM → SVS', workshopText('script.4dbb8e8abb6d', 'Uygulama başlatılamadı: ') + (t.getMessage() ?: t.getClass().getSimpleName()))
     }
 }
 
@@ -467,43 +467,43 @@ render = { ->
     }
 
     if (cur == 'CONFIG_INCOMPLETE') {
-        title.setText('DICOM → SVS yapılandırması gerekli')
+        title.setText(workshopText('script.0eebc3e27527', 'DICOM → SVS yapılandırması gerekli'))
         def miss = configMissing(cfg)
-        addGuidance('Köprü bir Python ortamı + DICOMtoSVS.py betiği gerektirir. Eksik/geçersiz:\n  • ' +
-            (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
-            '\n\nOrtam: [Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi] → "DICOMtoSVS".' +
-            '\nBetik: aşağıdaki "İndir/Güncelle" düğmesi sabitlenmiş sürümü indirir (depo lisanssız → paketlenmez).')
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('İndir/Güncelle ⇩', { startDownload() }, 'DICOMtoSVS.py — sabitlenmiş sürüm ' + PIN_SHA.substring(0, 7)))
-        actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
+        addGuidance(workshopText('script.e119083147a6', 'Köprü bir Python ortamı + DICOMtoSVS.py betiği gerektirir. Eksik/geçersiz:\n  • ') +
+            (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')) +
+            workshopText('script.194faa563e2b', '\n\nOrtam: [Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi] → "DICOMtoSVS".') +
+            workshopText('script.2ba1a9ff2e1b', '\nBetik: aşağıdaki "İndir/Güncelle" düğmesi sabitlenmiş sürümü indirir (depo lisanssız → paketlenmez).'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.f6a2dc28ddf1', 'İndir/Güncelle ⇩'), { startDownload() }, workshopText('script.a31f8fa418b4', 'DICOMtoSVS.py — sabitlenmiş sürüm ') + PIN_SHA.substring(0, 7)))
+        actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
-        title.setText('DICOM → SVS yapılandırması')
+        title.setText(workshopText('script.c3f92ec6162c', 'DICOM → SVS yapılandırması'))
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         def pyField = new javafx.scene.control.TextField(cfg.python ?: '')
         def scField = new javafx.scene.control.TextField(cfg.script ?: '')
         [pyField, scField].each { it.setPrefColumnCount(40) }
         pyFieldRef.set(pyField); scriptFieldRef.set(scField)
-        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Dosya seç'); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.8622b674942a', 'Dosya seç')); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (python.exe):'), pyField, navButton('…', { browseFile(pyField) }))
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('DICOMtoSVS.py:'), scField, navButton('…', { browseFile(scField) }))
         center.getChildren().add(grid)
-        addGuidance('Python alanı boş bırakılırsa ortam yöneticisinin kurduğu "DICOMtoSVS" ortamı otomatik bulunur. ' +
-            'Betik alanı boş bırakılırsa öntanımlı konum kullanılır: ' + defaultScriptFile().getAbsolutePath())
-        actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('İndir/Güncelle ⇩', { persistConfigFields(); startDownload() }, 'DICOMtoSVS.py — sabitlenmiş sürüm ' + PIN_SHA.substring(0, 7)))
-        actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }, 'pydicom + tifffile + imagecodecs + pylibjpeg içe aktarılabiliyor mu?'))
-        actions.add(navButton('Kaydet ▶', { persistConfigFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        addGuidance(workshopText('script.5d7ed7a5eb6f', 'Python alanı boş bırakılırsa ortam yöneticisinin kurduğu "DICOMtoSVS" ortamı otomatik bulunur. ' +
+            'Betik alanı boş bırakılırsa öntanımlı konum kullanılır: ') + defaultScriptFile().getAbsolutePath())
+        actions.add(navButton(workshopText('script.72278748133a', 'İptal'), { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.f6a2dc28ddf1', 'İndir/Güncelle ⇩'), { persistConfigFields(); startDownload() }, workshopText('script.a31f8fa418b4', 'DICOMtoSVS.py — sabitlenmiş sürüm ') + PIN_SHA.substring(0, 7)))
+        actions.add(navButton(workshopText('script.8369fe631575', 'Bağımlılık kontrolü'), { startSelftest() }, workshopText('script.42b569c43c95', 'pydicom + tifffile + imagecodecs + pylibjpeg içe aktarılabiliyor mu?')))
+        actions.add(navButton(workshopText('script.96f6bd4b06cc', 'Kaydet ▶'), { persistConfigFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
     } else if (cur == 'CHECK_RUNNING') {
-        title.setText('Çalışıyor…')
+        title.setText(workshopText('script.29f409509207', 'Çalışıyor…'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'CHECK_DONE') {
-        title.setText('Tamamlandı')
+        title.setText(workshopText('script.7c6f3f5f37bc', 'Tamamlandı'))
         addLiveLog()
-        actions.add(navButton('◀ Devam', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.2177a2c82481', '◀ Devam'), { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
     } else if (cur == 'READY') {
-        title.setText('DICOM → SVS dönüştürme — hazır')
+        title.setText(workshopText('script.2e23374c0592', 'DICOM → SVS dönüştürme — hazır'))
         def sb = new StringBuilder()
         sb << 'Python  : ' << (cfg.python ?: '(ayarsız)') << '\n'
         def scF = new File(cfg.script ?: '')
@@ -514,15 +514,15 @@ render = { ->
         def inField = new javafx.scene.control.TextField(cfg.inputDir ?: '')
         inField.setPrefColumnCount(40)
         inputFieldRef.set(inField)
-        def browseDir = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'DICOM klasörünü seç', null); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseDir = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.230a56b244d4', 'DICOM klasörünü seç'), null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('DICOM girdi klasörü:'), inField, navButton('…', { browseDir(inField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.8ff35633c708', 'DICOM girdi klasörü:')), inField, navButton('…', { browseDir(inField) }))
         center.getChildren().add(grid)
-        def zipChk   = new javafx.scene.control.CheckBox('Lamlar zip\'li (her lam kendi .zip dosyasında)')
-        def labelChk = new javafx.scene.control.CheckBox('Etiket (label) görüntüsünü ekle')
-        def macroChk = new javafx.scene.control.CheckBox('Makro (overview) görüntüsünü ekle')
-        def anonChk  = new javafx.scene.control.CheckBox('Anonimleştir (dosya adı yenilenir; etiket/makro atılır; duyarlı meta veri temizlenir)')
-        def tagsChk  = new javafx.scene.control.CheckBox('DICOM etiketlerini TIFF\'e göm (özel etiket 65000)')
+        def zipChk   = new javafx.scene.control.CheckBox(workshopText('script.781f76c47c03', 'Lamlar zip\'li (her lam kendi .zip dosyasında)'))
+        def labelChk = new javafx.scene.control.CheckBox(workshopText('script.9cf703791b98', 'Etiket (label) görüntüsünü ekle'))
+        def macroChk = new javafx.scene.control.CheckBox(workshopText('script.93277f2a4d8d', 'Makro (overview) görüntüsünü ekle'))
+        def anonChk  = new javafx.scene.control.CheckBox(workshopText('script.005e7b5e268a', 'Anonimleştir (dosya adı yenilenir; etiket/makro atılır; duyarlı meta veri temizlenir)'))
+        def tagsChk  = new javafx.scene.control.CheckBox(workshopText('script.c7492933708a', 'DICOM etiketlerini TIFF\'e göm (özel etiket 65000)'))
         zipChk.setSelected(cfg.isZipped); labelChk.setSelected(cfg.label); macroChk.setSelected(cfg.macro)
         anonChk.setSelected(cfg.anonymize); tagsChk.setSelected(cfg.addTags)
         zipChkRef.set(zipChk); labelChkRef.set(labelChk); macroChkRef.set(macroChk)
@@ -536,60 +536,60 @@ render = { ->
         syncAnon()
         def opts = new javafx.scene.layout.VBox(6, zipChk, labelChk, macroChk, anonChk, tagsChk)
         center.getChildren().add(opts)
-        addGuidance('Girdi klasörü her lamı kendi ALT KLASÖRÜNDE (ya da zip\'li seçeneğiyle kendi .zip dosyasında) barındırmalıdır. ' +
-            'Çıktılar "<girdi-klasörü>_output" içine yazılır. Dönüşüm kayıpsızdır; multipleks/z-stack lamlar atlanır.')
-        addWarnLabel('⚠ İnternetten indirilen araçlar için kurumunuzun BT onayını alın; yalnız güvendiğiniz kaynaklardan gelen DICOM dosyalarını işleyin.')
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Yapılandır', { persistRunFields(); step.set('CONFIG'); render() }))
-        actions.add(navButton('Resmî uygulama…', { persistRunFields(); step.set('EXE'); render() }, 'İndirdiğiniz DICOMtoSVS uygulamasını (exe) başlat'))
-        def runBtn = navButton('Dönüştür ▶', { startRun() }, 'Klasördeki tüm DICOM lamlarını SVS-benzeri TIFF\'e çevirir')
+        addGuidance(workshopText('script.361536b19a5f', 'Girdi klasörü her lamı kendi ALT KLASÖRÜNDE (ya da zip\'li seçeneğiyle kendi .zip dosyasında) barındırmalıdır. ' +
+            'Çıktılar "<girdi-klasörü>_output" içine yazılır. Dönüşüm kayıpsızdır; multipleks/z-stack lamlar atlanır.'))
+        addWarnLabel(workshopText('script.4829a755b35c', '⚠ İnternetten indirilen araçlar için kurumunuzun BT onayını alın; yalnız güvendiğiniz kaynaklardan gelen DICOM dosyalarını işleyin.'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { persistRunFields(); step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.f1a99570e7c8', 'Resmî uygulama…'), { persistRunFields(); step.set('EXE'); render() }, workshopText('script.5e826d1b9545', 'İndirdiğiniz DICOMtoSVS uygulamasını (exe) başlat')))
+        def runBtn = navButton(workshopText('script.a61f3ecc806e', 'Dönüştür ▶'), { startRun() }, workshopText('script.a83c98d9f6f1', 'Klasördeki tüm DICOM lamlarını SVS-benzeri TIFF\'e çevirir'))
         runBtn.setDisable(!configComplete(cfg))
         actions.add(runBtn)
     } else if (cur == 'RUNNING') {
-        title.setText('Dönüştürülüyor…')
-        addGuidance('DICOMtoSVS köprüsü çalışıyor; ilerleme aşağıda akıyor. ~1 GB\'lık bir lam tipik olarak saniyeler sürer. ' +
-            'Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        title.setText(workshopText('script.07fa910208c8', 'Dönüştürülüyor…'))
+        addGuidance(workshopText('script.2e6eea519d08', 'DICOMtoSVS köprüsü çalışıyor; ilerleme aşağıda akıyor. ~1 GB\'lık bir lam tipik olarak saniyeler sürer. ' +
+            'Zaman aşımı: ') + PYTHON_TIMEOUT_SECONDS + workshopText('script.9d84a2f3efc0', ' sn.'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'RESULT') {
-        title.setText('Tamamlandı ✅')
+        title.setText(workshopText('script.92c17020894f', 'Tamamlandı ✅'))
         addMonoArea(resultTextRef.get())
         boolean hasProject = QP.getProject() != null
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-        actions.add(navButton('Klasörü aç', { openFolder(resultDirRef.get()) }))
-        def impBtn = navButton('Projeye aktar ▶', { importToProject() },
-            hasProject ? 'Dönüştürülen dosyaları QuPath\'in içe aktarma diyaloğuna verir'
-                       : 'Önce bir proje açın (File → Project…)')
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.d6f2f6cad078', 'Klasörü aç'), { openFolder(resultDirRef.get()) }))
+        def impBtn = navButton(workshopText('script.d34516c6eea1', 'Projeye aktar ▶'), { importToProject() },
+            hasProject ? workshopText('script.a49373c5ba8e', 'Dönüştürülen dosyaları QuPath\'in içe aktarma diyaloğuna verir')
+                       : workshopText('script.291f4636e369', 'Önce bir proje açın (File → Project…)'))
         impBtn.setDisable(!hasProject)
         actions.add(impBtn)
-        actions.add(navButton('↻ Yeni dönüşüm', { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.6cef966eb3db', '↻ Yeni dönüşüm'), { step.set('READY'); render() }))
     } else if (cur == 'EXE') {
-        title.setText('Resmî DICOMtoSVS uygulaması (exe)')
-        addGuidance('Kurumsal/çevrimdışı kullanım için resmî uygulamayı GitHub README\'sindeki bağlantıdan indirin ' +
-            '(' + REPO_URL + '), zip\'i açın ("_internal" klasörü exe\'nin yanında kalmalı) ve aşağıda exe\'yi seçin. ' +
-            'Uygulama kendi penceresini ve konsolunu açar; çıktılar yine "<klasör>_output" içine yazılır. ' +
-            'Windows\'ta Microsoft Visual C++ Redistributable gerekir.')
+        title.setText(workshopText('script.500996c05e84', 'Resmî DICOMtoSVS uygulaması (exe)'))
+        addGuidance(workshopText('script.69b8917e6ce9', 'Kurumsal/çevrimdışı kullanım için resmî uygulamayı GitHub README\'sindeki bağlantıdan indirin ' +
+            '(') + REPO_URL + workshopText('script.5b7078796f71', '), zip\'i açın ("_internal" klasörü exe\'nin yanında kalmalı) ve aşağıda exe\'yi seçin. ') +
+            workshopText('script.115980e8c843', 'Uygulama kendi penceresini ve konsolunu açar; çıktılar yine "<klasör>_output" içine yazılır. ') +
+            workshopText('script.a5e85fd40502', 'Windows\'ta Microsoft Visual C++ Redistributable gerekir.'))
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         def exField = new javafx.scene.control.TextField(cfg.exePath ?: '')
         exField.setPrefColumnCount(40)
         exeFieldRef.set(exField)
-        def browseExe = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'DICOMtoSVS uygulamasını seç'); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseExe = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.264643162bde', 'DICOMtoSVS uygulamasını seç')); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('DICOMtoSVS uygulaması:'), exField, navButton('…', { browseExe(exField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.56d6bc9327f8', 'DICOMtoSVS uygulaması:')), exField, navButton('…', { browseExe(exField) }))
         center.getChildren().add(grid)
-        addWarnLabel('⚠ İnternetten indirilen çalıştırılabilirler için kurumunuzun BT onayını alın (bkz. Ekler → WSI Dosya Formatları).')
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
-        actions.add(navButton('Başlat ▶', { launchExe() }))
+        addWarnLabel(workshopText('script.c928cc8db16c', '⚠ İnternetten indirilen çalıştırılabilirler için kurumunuzun BT onayını alın (bkz. Ekler → WSI Dosya Formatları).'))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.b342aa42ccce', 'Başlat ▶'), { launchExe() }))
     } else { // ERROR
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
     // Alt çubuk: "Üstte tut" (sol) + disclaimer + eylem düğmeleri (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
@@ -602,7 +602,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -622,12 +622,23 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('DICOM → SVS dönüştürme (DICOMtoSVS)')
+        stage.setTitle(workshopText('script.b87206ada197', 'DICOM → SVS dönüştürme (DICOMtoSVS)'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ DICOM → SVS dönüştürme sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

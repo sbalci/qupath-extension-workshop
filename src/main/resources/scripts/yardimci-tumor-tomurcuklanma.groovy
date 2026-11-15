@@ -378,14 +378,14 @@ render = { ->
 
     def cur = step.get()
     if (cur == 'CONFIG') {
-        title.setText('Tümör tomurcuklanma kantifikasyonu')
+        title.setText(workshopText('script.93c91460eae6', 'Tümör tomurcuklanma kantifikasyonu'))
         bodyLbl.setText(
-            "Ön koşullar:\n" +
-            "  ${s.image ? '✓' : '✗'} Görüntü açık\n" +
-            "  ${s.bf ? '✓' : '✗'} Parlak-alan (brightfield) — CK-DAB beklenir\n" +
-            "  ${s.calib ? '✓' : '✗'} Piksel kalibrasyonu (µm/px)\n\n" +
-            "Seçim: alan=${s.areas}, çizgi=${s.lines}, TMA çekirdek=${s.tma}\n\n" +
-            "Mod seçin, sonra istediğiniz bölge(ler)i SEÇİP 'Tomurcukları say'.")
+            workshopText('script.6e0412933740', "Ön koşullar:\n") +
+            "  ${s.image ? '✓' : '✗'}${workshopText('script.9ff446d4392c', ' Görüntü açık\n')}" +
+            "  ${s.bf ? '✓' : '✗'}${workshopText('script.e9e13c68c531', ' Parlak-alan (brightfield) — CK-DAB beklenir\n')}" +
+            "  ${s.calib ? '✓' : '✗'}${workshopText('script.3422216beab9', ' Piksel kalibrasyonu (µm/px)\n\n')}" +
+            "${workshopText('script.5eec2726000d', 'Seçim: alan=')}${s.areas}${workshopText('script.254d0bd1384d', ', çizgi=')}${s.lines}${workshopText('script.b0690b5e023a', ', TMA çekirdek=')}${s.tma}\n\n" +
+            workshopText('script.0bc8304cadae', "Mod seçin, sonra istediğiniz bölge(ler)i SEÇİP 'Tomurcukları say'."))
 
         def tg = new javafx.scene.control.ToggleGroup()
         def modesBox = new javafx.scene.layout.VBox(4)
@@ -403,65 +403,65 @@ render = { ->
 
         def grid = new javafx.scene.layout.GridPane()
         grid.setHgap(8); grid.setVgap(6)
-        grid.add(new javafx.scene.control.Label('Alt boyut (µm²):'), 0, 0); grid.add(numField(budMinRef), 1, 0)
-        grid.add(new javafx.scene.control.Label('Üst boyut (µm²):'), 2, 0); grid.add(numField(budMaxRef), 3, 0)
-        grid.add(new javafx.scene.control.Label('Cephe yarıçapı (µm):'), 0, 1); grid.add(numField(frontRef), 1, 1)
-        grid.add(new javafx.scene.control.Label('TMA aşındırma (µm):'), 2, 1); grid.add(numField(erodeRef), 3, 1)
-        def fillCb = new javafx.scene.control.CheckBox('CK⁺ bölge içi delikleri doldur')
+        grid.add(new javafx.scene.control.Label(workshopText('script.e161f8656a18', 'Alt boyut (µm²):')), 0, 0); grid.add(numField(budMinRef), 1, 0)
+        grid.add(new javafx.scene.control.Label(workshopText('script.579416aa3a27', 'Üst boyut (µm²):')), 2, 0); grid.add(numField(budMaxRef), 3, 0)
+        grid.add(new javafx.scene.control.Label(workshopText('script.c91e74f657f8', 'Cephe yarıçapı (µm):')), 0, 1); grid.add(numField(frontRef), 1, 1)
+        grid.add(new javafx.scene.control.Label(workshopText('script.7c373bf008ff', 'TMA aşındırma (µm):')), 2, 1); grid.add(numField(erodeRef), 3, 1)
+        def fillCb = new javafx.scene.control.CheckBox(workshopText('script.16fc5fbd1773', 'CK⁺ bölge içi delikleri doldur'))
         fillCb.setSelected(fillRef.get())
         fillCb.selectedProperty().addListener({ obs, o, n -> fillRef.set(n) } as javafx.beans.value.ChangeListener)
         content.getChildren().addAll(grid, fillCb)
 
         buttons.getChildren().addAll(
-            navButton('Kapat', { stage.close() }),
-            navButton('⟳ Yenile', { render() }, 'Ön koşul ve seçim durumunu yeniler'),
-            navButton('Tomurcukları say ▶', { startRun() },
-                'Seçili bölge(ler)de CK⁺ tomurcukları tespit eder, boyutla süzer ve sayar', 'PLAY'))
+            navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }),
+            navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }, workshopText('script.871ea66be61e', 'Ön koşul ve seçim durumunu yeniler')),
+            navButton(workshopText('script.4d64e50dbed5', 'Tomurcukları say ▶'), { startRun() },
+                workshopText('script.e41c7bf73262', 'Seçili bölge(ler)de CK⁺ tomurcukları tespit eder, boyutla süzer ve sayar'), 'PLAY'))
     } else if (cur == 'RUNNING') {
-        title.setText('Tomurcuklar sayılıyor…')
-        bodyLbl.setText("CK piksel sınıflandırıcısı çalışıyor, tespitler boyutla süzülüyor. Lütfen bekleyin…")
+        title.setText(workshopText('script.a2558dd13558', 'Tomurcuklar sayılıyor…'))
+        bodyLbl.setText(workshopText('script.072d9a72d988', "CK piksel sınıflandırıcısı çalışıyor, tespitler boyutla süzülüyor. Lütfen bekleyin…"))
         content.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
         def r = runResult.get()
         if (r != null && r.ok) {
-            title.setText('Tomurcuk sayımı ✅')
+            title.setText(workshopText('script.a396d26ade0e', 'Tomurcuk sayımı ✅'))
             def ta = new javafx.scene.control.TextArea(r.text)
             ta.setEditable(false); ta.setWrapText(false)
             ta.setStyle('-fx-font-family: monospace;')
             ta.setPrefRowCount(14)
             content.getChildren().add(ta)
             buttons.getChildren().addAll(
-                navButton('Kapat', { stage.close() }),
-                navButton('Kopyala', {
+                navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }),
+                navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), {
                     def cc = new javafx.scene.input.ClipboardContent(); cc.putString(r.text)
                     javafx.scene.input.Clipboard.getSystemClipboard().setContent(cc)
-                }, 'Sonuç metnini panoya kopyalar'),
-                navButton('◀ Yeni sayım', { step.set('CONFIG'); render() }))
+                }, workshopText('script.26a9ce9d6020', 'Sonuç metnini panoya kopyalar')),
+                navButton(workshopText('script.4570a7ae7bd9', '◀ Yeni sayım'), { step.set('CONFIG'); render() }))
         } else {
             def err = r?.error
             if (err == 'NO_REGION') {
-                title.setText('Önce bir alan seçin')
-                bodyLbl.setText('Bir alan anotasyonu çizip SEÇİN (Brush/Polygon), sonra tekrar deneyin.')
+                title.setText(workshopText('script.48e4eeeb7d93', 'Önce bir alan seçin'))
+                bodyLbl.setText(workshopText('script.0307c8681acf', 'Bir alan anotasyonu çizip SEÇİN (Brush/Polygon), sonra tekrar deneyin.'))
             } else if (err == 'NO_LINE') {
-                title.setText('Önce bir çizgi seçin')
-                bodyLbl.setText('İnvazif cepheyi bir çizgi (V) anotasyonuyla çizip SEÇİN, sonra tekrar deneyin.')
+                title.setText(workshopText('script.05346c905644', 'Önce bir çizgi seçin'))
+                bodyLbl.setText(workshopText('script.433c610f2735', 'İnvazif cepheyi bir çizgi (V) anotasyonuyla çizip SEÇİN, sonra tekrar deneyin.'))
             } else if (err == 'NO_TMA') {
-                title.setText('TMA dearray gerekli')
-                bodyLbl.setText('Önce [TMA → Dearray] ile çekirdekleri oluşturun, sonra TMA modunu çalıştırın.')
+                title.setText(workshopText('script.0c1d78a7a2a6', 'TMA dearray gerekli'))
+                bodyLbl.setText(workshopText('script.7cc002f26e32', 'Önce [TMA → Dearray] ile çekirdekleri oluşturun, sonra TMA modunu çalıştırın.'))
             } else {
-                title.setText('Sayım yapılamadı')
-                bodyLbl.setText((err ?: 'Bilinmeyen hata.').toString())
+                title.setText(workshopText('script.451ad8636fdc', 'Sayım yapılamadı'))
+                bodyLbl.setText((err ?: workshopText('script.334b848286b9', 'Bilinmeyen hata.')).toString())
             }
             buttons.getChildren().addAll(
-                navButton('Kapat', { stage.close() }),
-                navButton('◀ Geri', { step.set('CONFIG'); render() }))
+                navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }),
+                navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('CONFIG'); render() }))
         }
     }
 
     def root = new javafx.scene.layout.BorderPane()
     root.setCenter(content)
     def disclaimer = new javafx.scene.control.Label(
-        'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; ITBCC derecesi (Bd1/2/3) ya da klinik karar üretmez.')
+        workshopText('script.31f35d66136d', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; ITBCC derecesi (Bd1/2/3) ya da klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -475,11 +475,22 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Tümör tomurcuklanma kantifikasyonu (CK / ITBCC)')
+        stage.setTitle(workshopText('script.32d46968c0a3', 'Tümör tomurcuklanma kantifikasyonu (CK / ITBCC)'))
         stage.setAlwaysOnTop(true)
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
+    }
+}
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
     }
 }

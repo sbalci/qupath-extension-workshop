@@ -670,16 +670,16 @@ render = { ->
     def addLiveLog = { -> def la = logAreaRef.get(); if (la != null) { javafx.scene.layout.VBox.setVgrow(la, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(la) } }
 
     if (cur == 'CONFIG_INCOMPLETE') {
-        title.setText('TIA Toolbox yapılandırması gerekli')
+        title.setText(workshopText('script.2fbb28af23d9', 'TIA Toolbox yapılandırması gerekli'))
         def miss = configMissing(cfg)
-        addGuidance('Bu sihirbaz TIA Toolbox çalışma zamanını (tiatoolbox + torch) gerektirir.\nEksik/geçersiz:\n  • ' +
-            (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
-            '\n\nÇalışma zamanı resmî eklentiyle kurulur: Extensions → TIAToolbox → Install Python runtime…\n' +
-            'Köprü betiği: handson/python/tiatoolbox/region_runner.py')
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
+        addGuidance(workshopText('script.1f115f1ba353', 'Bu sihirbaz TIA Toolbox çalışma zamanını (tiatoolbox + torch) gerektirir.\nEksik/geçersiz:\n  • ') +
+            (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')) +
+            workshopText('script.296ec99a9e29', '\n\nÇalışma zamanı resmî eklentiyle kurulur: Extensions → TIAToolbox → Install Python runtime…\n') +
+            workshopText('script.a8291bc65bb3', 'Köprü betiği: handson/python/tiatoolbox/region_runner.py'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
-        title.setText('TIA Toolbox bölge sihirbazı — yapılandırma')
+        title.setText(workshopText('script.fe2f256d0c01', 'TIA Toolbox bölge sihirbazı — yapılandırma'))
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         def pyField = new javafx.scene.control.TextField(cfg.python ?: '')
         def rnField = new javafx.scene.control.TextField(cfg.runner ?: '')
@@ -692,42 +692,42 @@ render = { ->
         deviceChoice.setValue((cfg.device == 'cpu') ? 'cpu' : 'cuda')
         pyFieldRef.set(pyField); runnerFieldRef.set(rnField); workFieldRef.set(wdField)
         deviceChoiceRef.set(deviceChoice); mdsFieldRef.set(mdsField); batchFieldRef.set(batchField)
-        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Dosya seç'); if (x != null) f.setText(x.getAbsolutePath()) }
-        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Dizin seç', null); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.8622b674942a', 'Dosya seç')); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.15f8cfe83dc9', 'Dizin seç'), null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (.venv/python.exe):'), pyField, navButton('…', { browseFile(pyField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Köprü (region_runner.py):'), rnField, navButton('…', { browseFile(rnField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Çalışma dizini (ops.):'), wdField, navButton('…', { browseDir(wdField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Cihaz:'), deviceChoice)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Maske downsample:'), mdsField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.a192e5990ac1', 'Köprü (region_runner.py):')), rnField, navButton('…', { browseFile(rnField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.2719ca64ba94', 'Çalışma dizini (ops.):')), wdField, navButton('…', { browseDir(wdField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.d4336c3867bc', 'Cihaz:')), deviceChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.bd1a1253a793', 'Maske downsample:')), mdsField)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Batch size:'), batchField)
         center.getChildren().add(grid)
-        addGuidance('Python + köprü otomatik bulunur (tiatoolbox-runtime/.venv ve handson/python/tiatoolbox/). ' +
+        addGuidance(workshopText('script.67a0b903d7cb', 'Python + köprü otomatik bulunur (tiatoolbox-runtime/.venv ve handson/python/tiatoolbox/). ' +
             'Maske downsample: büyük = küçük maske dosyası, kaba bölge sınırı (16–32 önerilir; tiatoolbox karo düzeyinde maskeler). ' +
-            'Cihaz: GPU için cuda (RTX A4000 uyumlu).')
-        actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }, 'region_runner.py selftest'))
-        actions.add(navButton('Kaydet ▶', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+            'Cihaz: GPU için cuda (RTX A4000 uyumlu).'))
+        actions.add(navButton(workshopText('script.72278748133a', 'İptal'), { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.8369fe631575', 'Bağımlılık kontrolü'), { startSelftest() }, 'region_runner.py selftest'))
+        actions.add(navButton(workshopText('script.96f6bd4b06cc', 'Kaydet ▶'), { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
     } else if (cur == 'CHECK_RUNNING') {
-        title.setText('Bağımlılık kontrolü çalışıyor…')
+        title.setText(workshopText('script.8e84f306c3c6', 'Bağımlılık kontrolü çalışıyor…'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'CHECK_DONE') {
-        title.setText(selftestOkRef.get() ? 'Bağımlılık kontrolü tamam ✅'
-            : '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın (Python / bağımlılık)'); addLiveLog()
-        actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
+        title.setText(selftestOkRef.get() ? workshopText('script.93f447fe25d4', 'Bağımlılık kontrolü tamam ✅')
+            : workshopText('script.228c923a71ee', '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın (Python / bağımlılık)')); addLiveLog()
+        actions.add(navButton(workshopText('script.c8b5f18cded5', '◀ Yapılandırmaya dön'), { step.set('CONFIG'); render() }))
     } else if (cur == 'READY') {
         if (imageData == null) {
-            title.setText('Görüntü açık değil')
-            addGuidance('Önce bir lam açın (tercihen OpenSlide), ilgi BÖLGESİNİ çizip seçin, sonra "⟳ Yenile".')
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
+            title.setText(workshopText('script.b4c901dc184b', 'Görüntü açık değil'))
+            addGuidance(workshopText('script.2cc0a8c631ef', 'Önce bir lam açın (tercihen OpenSlide), ilgi BÖLGESİNİ çizip seçin, sonra "⟳ Yenile".'))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
         } else {
             def rois = regionRoisOf(imageData)
             def scope = cfg.scope ?: 'annotation'
             def project = QP.getProject()
-            title.setText('TIA Toolbox — tespit')
+            title.setText(workshopText('script.76da4893501d', 'TIA Toolbox — tespit'))
             def sb = new StringBuilder()
             sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
@@ -751,19 +751,19 @@ render = { ->
                 }
             } as javafx.beans.value.ChangeListener)
             def scopeRow = new javafx.scene.layout.HBox(8); scopeRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
-            scopeRow.getChildren().addAll(new javafx.scene.control.Label('Kapsam:'), scopeChoice)
+            scopeRow.getChildren().addAll(new javafx.scene.control.Label(workshopText('script.832662034af3', 'Kapsam:')), scopeChoice)
             center.getChildren().add(scopeRow)
             def scopeHint = (scope == 'annotation') ? 'Yalnız çizili/seçili alan(lar) içinde çalışır (tek bölge tespiti).'
                           : (scope == 'image')      ? 'Açık lamın TAMAMINDA çalışır (tüm-görüntü maskesi).'
                           :                            'Projedeki TÜM görüntülerde tek tek çalışır; sonuç her girdiye kaydedilir.'
-            addGuidance('Kapsam — ' + scopeHint)
+            addGuidance(workshopText('script.fa44c5666154', 'Kapsam — ') + scopeHint)
 
             // ── Aranabilir model seçici (TIA Toolbox model-arama penceresi taklidi) ──
             def curModel = modelByName(cfg.model)
             def infoLbl = new javafx.scene.control.Label()
             infoLbl.setWrapText(true); infoLbl.setStyle('-fx-opacity: 0.85;')
             def labelOf = { m -> m.name + '  —  ' + m.task }
-            def setInfo = { m -> if (m != null) infoLbl.setText('• Görev: ' + m.task + '\n• Çıktı sınıfları (' + m.classes.size() + '): ' + m.classes.join(', ') + '\n• ' + m.desc) }
+            def setInfo = { m -> if (m != null) infoLbl.setText(workshopText('script.10e57629c47a', '• Görev: ') + m.task + workshopText('script.7859d53b2438', '\n• Çıktı sınıfları (') + m.classes.size() + '): ' + m.classes.join(', ') + '\n• ' + m.desc) }
             def matchModels = { String q ->
                 def words = (q ?: '').toLowerCase(java.util.Locale.ROOT).trim().split(/\s+/).findAll { it }
                 if (words.isEmpty()) return MODELS
@@ -774,7 +774,7 @@ render = { ->
             }
             def modelCombo = new javafx.scene.control.ComboBox(); modelCombo.setPrefWidth(440)
             def filterField = new javafx.scene.control.TextField()
-            filterField.setPromptText('Model ara… (ad / görev / sınıf)'); filterField.setPrefColumnCount(24)
+            filterField.setPromptText(workshopText('script.77787de14200', 'Model ara… (ad / görev / sınıf)')); filterField.setPrefColumnCount(24)
             def fillCombo = { List ms, String selectName ->
                 modelCombo.getItems().setAll(ms.collect { labelOf(it) })
                 def want = ms.find { it.name == selectName } ?: (ms.isEmpty() ? null : ms[0])
@@ -785,59 +785,59 @@ render = { ->
                 def keepName = modelByLabel(modelCombo.getValue()?.toString() ?: '')?.name
                 def ms = matchModels(n)
                 fillCombo(ms, keepName)
-                if (ms.isEmpty()) infoLbl.setText('(arama eşleşmedi — ' + MODELS.size() + ' modelden filtreyi daraltın)')
+                if (ms.isEmpty()) infoLbl.setText(workshopText('script.53867cc4048d', '(arama eşleşmedi — ') + MODELS.size() + workshopText('script.4b4883b2a9ab', ' modelden filtreyi daraltın)'))
             } as javafx.beans.value.ChangeListener)
             modelCombo.valueProperty().addListener({ obs, o, n ->
                 if (n != null) { def m = modelByLabel(n.toString()); prefs.put(PREF_MODEL, m.name); try { prefs.flush() } catch (Throwable ig) {}; setInfo(m) }
             } as javafx.beans.value.ChangeListener)
-            def clearBtn = navButton('✕', { filterField.clear() }, 'Aramayı temizle')
+            def clearBtn = navButton('✕', { filterField.clear() }, workshopText('script.5a3f99c5c09d', 'Aramayı temizle'))
             javafx.scene.layout.HBox.setHgrow(filterField, javafx.scene.layout.Priority.ALWAYS)
             def filterRow = new javafx.scene.layout.HBox(8); filterRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
             filterRow.getChildren().addAll(new javafx.scene.control.Label('Model:'), filterField, clearBtn)
             def comboRow = new javafx.scene.layout.HBox(8); comboRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
-            comboRow.getChildren().addAll(modelCombo, new javafx.scene.control.Label('   cihaz: ' + (cfg.device ?: 'cuda')))
+            comboRow.getChildren().addAll(modelCombo, new javafx.scene.control.Label(workshopText('script.5858f14350aa', '   cihaz: ') + (cfg.device ?: 'cuda')))
             center.getChildren().addAll(filterRow, comboRow, infoLbl)
-            addGuidance('Modeli ad/görev/sınıf yazarak filtreleyin (' + MODELS.size() + ' model). Sonuç sınıf başına kilitli nokta-anotasyonu olarak içe alınır.')
+            addGuidance(workshopText('script.a60c1377bc14', 'Modeli ad/görev/sınıf yazarak filtreleyin (') + MODELS.size() + workshopText('script.49b7fe84b407', ' model). Sonuç sınıf başına kilitli nokta-anotasyonu olarak içe alınır.'))
 
             boolean needsAnn  = (scope == 'annotation')
             boolean needsProj = (scope == 'project')
             boolean canRun = configComplete(cfg) &&
                              (!needsAnn  || rois.size() >= 1) &&
                              (!needsProj || (project != null && !project.getImageList().isEmpty()))
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
             def runLabel = needsProj ? 'Projede çalıştır ▶' : (scope == 'image' ? 'Görüntüde çalıştır ▶' : 'Bölgede çalıştır ▶')
-            def runBtn = navButton(runLabel, { needsProj ? startProjectRun() : startRun(scope) }, 'Seçili modeli seçilen kapsamda çalıştırır')
+            def runBtn = navButton(runLabel, { needsProj ? startProjectRun() : startRun(scope) }, workshopText('script.d52b5dec4771', 'Seçili modeli seçilen kapsamda çalıştırır'))
             runBtn.setDisable(!canRun)
-            if (needsAnn  && rois.size() < 1) addWarnLabel('⚠ "Anotasyon bölgesi" kapsamı için önce en az 1 alan anotasyonu çizin/seçin (ya da kapsamı değiştirin).')
-            if (needsProj && (project == null || project.getImageList().isEmpty())) addWarnLabel('⚠ "Tüm proje" kapsamı için görüntü içeren bir QuPath projesi gerekir.')
+            if (needsAnn  && rois.size() < 1) addWarnLabel(workshopText('script.ef2fa8733bca', '⚠ "Anotasyon bölgesi" kapsamı için önce en az 1 alan anotasyonu çizin/seçin (ya da kapsamı değiştirin).'))
+            if (needsProj && (project == null || project.getImageList().isEmpty())) addWarnLabel(workshopText('script.d6b7d2b46279', '⚠ "Tüm proje" kapsamı için görüntü içeren bir QuPath projesi gerekir.'))
             actions.add(runBtn)
         }
     } else if (cur == 'RUN_RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('TIA Toolbox köprüsü çalışıyor (ilk çalıştırmada model ağırlıkları indirilebilir). Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance(workshopText('script.d8ca076c7b84', 'TIA Toolbox köprüsü çalışıyor (ilk çalıştırmada model ağırlıkları indirilebilir). Zaman aşımı: ') + PYTHON_TIMEOUT_SECONDS + workshopText('script.9d84a2f3efc0', ' sn.'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {
-        title.setText(busyLabelRef.get()); addGuidance('Lütfen bekleyin…'); center.getChildren().add(busyBar())
+        title.setText(busyLabelRef.get()); addGuidance(workshopText('script.245c572ec2ea', 'Lütfen bekleyin…')); center.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
-        title.setText('Tamamlandı ✅'); addMonoArea(resultTextRef.get())
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-        actions.add(navButton('↻ Yeniden çalıştır', { step.set('READY'); render() }))
+        title.setText(workshopText('script.92c17020894f', 'Tamamlandı ✅')); addMonoArea(resultTextRef.get())
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.c94499b243e4', '↻ Yeniden çalıştır'), { step.set('READY'); render() }))
     } else { // ERROR
-        title.setText('Hata'); addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        title.setText(workshopText('script.307b9dc7912d', 'Hata')); addMonoArea(errorTextRef.get())
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut'); topChk.setSelected(alwaysTop.get())
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut')); topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n -> alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
     def spacer = new javafx.scene.layout.Region(); javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
     def bar = new javafx.scene.layout.HBox(8); bar.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
     bar.getChildren().add(topChk); bar.getChildren().add(spacer); bar.getChildren().addAll(actions)
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
     def bottom = new javafx.scene.layout.VBox(8, disclaimer, bar); bottom.setPadding(new javafx.geometry.Insets(10))
@@ -851,11 +851,22 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('TIA Toolbox bölgede çekirdek/mitoz tespiti')
+        stage.setTitle(workshopText('script.5882615b7ca3', 'TIA Toolbox bölgede çekirdek/mitoz tespiti'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render(); stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ TIA Toolbox bölgede çekirdek/mitoz tespiti sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

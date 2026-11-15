@@ -83,8 +83,8 @@ def openUrl = { String url ->
             try {
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def cc = new javafx.scene.input.ClipboardContent(); cc.putString(url); cb.setContent(cc)
-                Dialogs.showMessageDialog('Bağlantı panoya kopyalandı', 'Tarayıcı otomatik açılamadı. Bağlantı panoya kopyalandı:\n' + url)
-            } catch (Throwable t) { Dialogs.showMessageDialog('Bağlantı', url) }
+                Dialogs.showMessageDialog(workshopText('script.072d21314064', 'Bağlantı panoya kopyalandı'), workshopText('script.4fdd757ec6b9', 'Tarayıcı otomatik açılamadı. Bağlantı panoya kopyalandı:\n') + url)
+            } catch (Throwable t) { Dialogs.showMessageDialog(workshopText('script.7916c8f0474b', 'Bağlantı'), url) }
         }
     }, 'OpenUrl').start()
 }
@@ -101,7 +101,7 @@ def showWarpyInstall = {
         '  • Fiji\'de PTBIOP güncelleme sitesini açın + elastix wrapper\'larını ayarlayın\n' +
         '    (Plugins → BIOP → Set and Check Wrappers). BigWarp Fiji çekirdeğinde gelir.\n\n' +
         'BIOP katalog sayfasını şimdi açayım mı?'
-    if (Dialogs.showConfirmDialog('Warpy nasıl kurulur? (BIOP kataloğu)', steps)) openUrl(BIOP_CATALOG_URL)
+    if (Dialogs.showConfirmDialog(workshopText('script.a374f8165f51', 'Warpy nasıl kurulur? (BIOP kataloğu)'), steps)) openUrl(BIOP_CATALOG_URL)
 }
 def showFijiPlugins = {
     def s = 'FIJI EKLENTİLERİ (Warpy hizalaması için) — Fiji açıkken:\n\n' +
@@ -123,7 +123,7 @@ def showFijiPlugins = {
         '3) BigWarp: Fiji çekirdeğinde gelir (kurulum gerekmez).\n\n' +
         'Sonra Fiji\'yi yeniden başlatın; Warpy komutu Plugins → BigDataViewer-Playground → Sources → Register\n' +
         'altında görünür. elastix sürüm sayfasını şimdi açayım mı?'
-    if (Dialogs.showConfirmDialog('Fiji eklentileri nasıl kurulur? (PTBIOP + elastix)', s)) openUrl(ELASTIX_URL)
+    if (Dialogs.showConfirmDialog(workshopText('script.d38ca9de9c03', 'Fiji eklentileri nasıl kurulur? (PTBIOP + elastix)'), s)) openUrl(ELASTIX_URL)
 }
 
 // ── İsteğe bağlı bağımlılık: Warpy sınıfı yalnız BIOP eklentisi kuruluysa vardır.
@@ -139,7 +139,7 @@ def callStatic = { Class c, String name, List args ->
 // ── Ön kontroller ───────────────────────────────────────────────────
 def project = QP.getProject()
 if (project == null) {
-    Dialogs.showErrorMessage("Proje açık değil", "Kaynak ve hedef lam AYNI QuPath projesinde olmalıdır.")
+    Dialogs.showErrorMessage(workshopText('script.a38d0e6adac0', "Proje açık değil"), workshopText('script.94d00a2c421b', "Kaynak ve hedef lam AYNI QuPath projesinde olmalıdır."))
     return
 }
 if (isHeadless) {
@@ -197,7 +197,7 @@ javafx.application.Platform.runLater {
     try {
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Warpy hizalama sihirbazı (esnek; Fiji köprüsü)')
+        stage.setTitle(workshopText('script.cad4190acc89', 'Warpy hizalama sihirbazı (esnek; Fiji köprüsü)'))
         stage.setAlwaysOnTop(true)
 
         // Adım başlığı + açıklama yardımcıları (4 adımlı rehber için).
@@ -214,11 +214,11 @@ javafx.application.Platform.runLater {
         def W0 = warpyClass()
         def warpyOk = (W0 != null)
         def warpyLbl = new javafx.scene.control.Label(
-            warpyOk ? '✓ Warpy eklentisi kurulu.' : '✗ Warpy eklentisi YÜKLENMEDİ — BIOP kataloğundan kurun (aşağıdaki "Warpy nasıl kurulur?").')
+            warpyOk ? workshopText('script.68b6595f8d13', '✓ Warpy eklentisi kurulu.') : workshopText('script.d92228d4f3c2', '✗ Warpy eklentisi YÜKLENMEDİ — BIOP kataloğundan kurun (aşağıdaki "Warpy nasıl kurulur?").'))
         warpyLbl.setWrapText(true); warpyLbl.setMaxWidth(Double.MAX_VALUE)
         warpyLbl.setStyle(warpyOk ? '-fx-text-fill: -qp-script-info-color;' : '-fx-text-fill: -qp-script-error-color;')
         // Warpy yoksa: BIOP kataloğu kurulum yardımı düğmesi.
-        def warpyInstallBtn = new javafx.scene.control.Button('Warpy nasıl kurulur? (BIOP kataloğu)')
+        def warpyInstallBtn = new javafx.scene.control.Button(workshopText('script.a374f8165f51', 'Warpy nasıl kurulur? (BIOP kataloğu)'))
         warpyInstallBtn.setOnAction({ showWarpyInstall() })
         def warpyRow = warpyOk ? new javafx.scene.layout.HBox(8, warpyLbl)
                                : new javafx.scene.layout.HBox(8, warpyLbl, warpyInstallBtn)
@@ -226,35 +226,35 @@ javafx.application.Platform.runLater {
         javafx.scene.layout.HBox.setHgrow(warpyLbl, javafx.scene.layout.Priority.ALWAYS)
 
         def fijiField = new javafx.scene.control.TextField(prefs.get(PREF_FIJI, ''))
-        fijiField.setPromptText('ör.  C:\\Fiji.app\\ImageJ-win64.exe')
+        fijiField.setPromptText(workshopText('script.022d4ea95aca', 'ör.  C:\\Fiji.app\\ImageJ-win64.exe'))
         fijiField.setMaxWidth(Double.MAX_VALUE)
         def fijiBrowse = new javafx.scene.control.Button('…')
         fijiBrowse.setOnAction({
-            def x = FileChoosers.promptForFile(stage, 'Fiji/ImageJ çalıştırılabilir dosyasını seç')
+            def x = FileChoosers.promptForFile(stage, workshopText('script.1c9be3a7bfbb', 'Fiji/ImageJ çalıştırılabilir dosyasını seç'))
             if (x != null) { fijiField.setText(x.getAbsolutePath()); prefs.put(PREF_FIJI, x.getAbsolutePath()) }
         })
 
-        def fijiDownloadBtn = new javafx.scene.control.Button('Fiji indir')
+        def fijiDownloadBtn = new javafx.scene.control.Button(workshopText('script.7109a74e1e1f', 'Fiji indir'))
         fijiDownloadBtn.setOnAction({ openUrl(FIJI_DOWNLOAD_URL) })
-        def launchBtn = new javafx.scene.control.Button('Fiji\'yi başlat')
+        def launchBtn = new javafx.scene.control.Button(workshopText('script.29c85f0196be', 'Fiji\'yi başlat'))
         launchBtn.setOnAction({
             def p = fijiField.getText()?.trim()
             if (!p || !(new File(p)).isFile()) {
-                Dialogs.showErrorMessage('Fiji bulunamadı',
-                    'Geçerli bir Fiji/ImageJ çalıştırılabilir dosyası seçin (… düğmesi).\n' +
+                Dialogs.showErrorMessage(workshopText('script.998d7aea13d1', 'Fiji bulunamadı'),
+                    workshopText('script.c1383bf7b943', 'Geçerli bir Fiji/ImageJ çalıştırılabilir dosyası seçin (… düğmesi).\n' +
                     'Fiji kurulu değilse "Fiji indir" ile fiji.sc\'den indirin (Fiji = ayrı uygulama; hizalama orada yapılır),\n' +
-                    'arşivi açın ve içindeki çalıştırılabiliri (Windows: ImageJ-win64.exe) seçin.')
+                    'arşivi açın ve içindeki çalıştırılabiliri (Windows: ImageJ-win64.exe) seçin.'))
                 return
             }
             prefs.put(PREF_FIJI, p)
             try {
                 // ProcessBuilder List<String> — önceden tırnaklanmış komut dizesi KULLANMA (boşluklu yol güvenli).
                 new ProcessBuilder([p]).start()
-                Dialogs.showMessageDialog('Fiji başlatıldı',
-                    'Fiji açılıyor. ③. adımdaki komutları izleyin (a: Create BDV Dataset (QuPath) → project.qpproj, b: Create Warpy Registration).\n' +
-                    'Hizalama bittiğinde QuPath\'e dönün, HEDEF lamı açıp ④. adımdan aktarın.')
+                Dialogs.showMessageDialog(workshopText('script.a13eb72116e6', 'Fiji başlatıldı'),
+                    workshopText('script.7eb8e9a5075a', 'Fiji açılıyor. ③. adımdaki komutları izleyin (a: Create BDV Dataset (QuPath) → project.qpproj, b: Create Warpy Registration).\n' +
+                    'Hizalama bittiğinde QuPath\'e dönün, HEDEF lamı açıp ④. adımdan aktarın.'))
             } catch (Throwable t) {
-                Dialogs.showErrorMessage('Fiji başlatılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+                Dialogs.showErrorMessage(workshopText('script.b6a5d31b46d7', 'Fiji başlatılamadı'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
             }
         })
 
@@ -276,32 +276,32 @@ javafx.application.Platform.runLater {
             } catch (Throwable ignore) {}
         }
         refreshSources()
-        def refreshBtn = new javafx.scene.control.Button('↻ Kaynakları tazele')
+        def refreshBtn = new javafx.scene.control.Button(workshopText('script.91dc2acd438e', '↻ Kaynakları tazele'))
         refreshBtn.setOnAction({ refreshSources()
             if (sourceBox.getItems().isEmpty())
-                Dialogs.showMessageDialog('Warpy dönüşümü yok',
-                    'Bu (HEDEF) lam için kayıtlı Warpy dönüşümü bulunamadı. Önce Fiji\'de hizalamayı tamamlayıp bu lamı açın.')
+                Dialogs.showMessageDialog(workshopText('script.bb1e7389c5b9', 'Warpy dönüşümü yok'),
+                    workshopText('script.ec5584d6ddb7', 'Bu (HEDEF) lam için kayıtlı Warpy dönüşümü bulunamadı. Önce Fiji\'de hizalamayı tamamlayıp bu lamı açın.'))
         })
 
-        def measChk = new javafx.scene.control.CheckBox('Aktarım sonrası HEDEF lamda yoğunluk ölçümü ekle — aktarılan nesnelere hedef boyanın (İHK) sinyalini ölçer (yavaş; hata verirse aktarım yine tamamlanır)')
+        def measChk = new javafx.scene.control.CheckBox(workshopText('script.6d56abab1228', 'Aktarım sonrası HEDEF lamda yoğunluk ölçümü ekle — aktarılan nesnelere hedef boyanın (İHK) sinyalini ölçer (yavaş; hata verirse aktarım yine tamamlanır)'))
         measChk.setSelected(false); measChk.setWrapText(true)
         def dsField = new javafx.scene.control.TextField('1'); dsField.setPrefColumnCount(4)
         dsField.disableProperty().bind(measChk.selectedProperty().not())
-        def dsRow = new javafx.scene.layout.HBox(6, new javafx.scene.control.Label('   Ölçüm downsample (px; 1=tam çözünürlük, 2–4 daha hızlı):'), dsField)
+        def dsRow = new javafx.scene.layout.HBox(6, new javafx.scene.control.Label(workshopText('script.0621eaf4bc3b', '   Ölçüm downsample (px; 1=tam çözünürlük, 2–4 daha hızlı):')), dsField)
         dsRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
-        def lockChk = new javafx.scene.control.CheckBox('Aktarılanları kilitle'); lockChk.setSelected(true)
+        def lockChk = new javafx.scene.control.CheckBox(workshopText('script.f9efed6c13a8', 'Aktarılanları kilitle')); lockChk.setSelected(true)
 
-        def status = new javafx.scene.control.Label(warpyOk ? 'Hazır.' : 'Warpy eklentisi gerekli.'); status.setWrapText(true); status.setMaxWidth(Double.MAX_VALUE)
-        def aktarBtn = new javafx.scene.control.Button('Anotasyonları aktar'); aktarBtn.setDefaultButton(true)
-        def kapatBtn = new javafx.scene.control.Button('Kapat'); kapatBtn.setOnAction({ stage.close() })
+        def status = new javafx.scene.control.Label(warpyOk ? workshopText('script.86bb45e59294', 'Hazır.') : workshopText('script.c6c70a2c72ef', 'Warpy eklentisi gerekli.')); status.setWrapText(true); status.setMaxWidth(Double.MAX_VALUE)
+        def aktarBtn = new javafx.scene.control.Button(workshopText('script.3631e657b0d6', 'Anotasyonları aktar')); aktarBtn.setDefaultButton(true)
+        def kapatBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', 'Kapat')); kapatBtn.setOnAction({ stage.close() })
 
         aktarBtn.setOnAction({
-            if (!warpyOk) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Warpy eklentisi kurulu değil.'); return }
-            if (QP.getCurrentImageData() == null) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Aktarımın HEDEF lamını açın.'); return }
+            if (!warpyOk) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText(workshopText('script.ddf88e27c650', 'Warpy eklentisi kurulu değil.')); return }
+            if (QP.getCurrentImageData() == null) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText(workshopText('script.39f1e858e936', 'Aktarımın HEDEF lamını açın.')); return }
             def srcName = sourceBox.getValue()
-            if (!srcName) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('Kaynak yok — önce Fiji\'de hizalamayı tamamlayıp "Kaynakları tazele"ye basın.'); return }
+            if (!srcName) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText(workshopText('script.00f5c8cc1719', 'Kaynak yok — önce Fiji\'de hizalamayı tamamlayıp "Kaynakları tazele"ye basın.')); return }
             def srcEntry = sourceEntries[srcName]
-            aktarBtn.setDisable(true); status.setStyle(''); status.setText('Aktarılıyor…')
+            aktarBtn.setDisable(true); status.setStyle(''); status.setText(workshopText('script.e7ae44366dcf', 'Aktarılıyor…'))
             double ds = 1.0d
             try { def _t = (dsField.getText() ?: '1').trim(); if (_t) ds = Math.max(1.0d, Double.parseDouble(_t)) } catch (ignore) {}
             def worker = new Thread({
@@ -310,16 +310,16 @@ javafx.application.Platform.runLater {
                     aktarBtn.setDisable(false)
                     if (r.ok) {
                         status.setStyle(''); status.setText(String.format(java.util.Locale.US,
-                            'Tamamlandı ✅ — %,d nesne aktarıldı. Örtüşmeyi gözle doğrulayın.', r.count))
+                            workshopText('script.8d4f44cf84e8', 'Tamamlandı ✅ — %,d nesne aktarıldı. Örtüşmeyi gözle doğrulayın.'), r.count))
                         def msg = new StringBuilder()
                         msg << String.format(java.util.Locale.US, 'Kaynak: %s%n', srcName)
                         msg << String.format(java.util.Locale.US, 'Aktarılan nesne: %,d (kilitli; ad "%s")%n', r.count, SENTINEL)
                         if (r.measWarn) msg << ('\nNot: yoğunluk ölçümü eklenemedi (aktarım tamam): ' + r.measWarn + '\n')
                         msg << '\nEsnek dönüşüm hücre düzeyinde daha iyidir; yine de örtüşmeyi opaklık\n'
                         msg << 'kaydırıcısıyla doğrulayın. ⚠️ Yalnızca araştırma/eğitim amaçlıdır.'
-                        Dialogs.showMessageDialog('Warpy aktarımı tamamlandı', msg.toString())
+                        Dialogs.showMessageDialog(workshopText('script.ef00ffdefd8a', 'Warpy aktarımı tamamlandı'), msg.toString())
                     } else {
-                        status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + (r.error ?: 'Bilinmeyen hata'))
+                        status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + (r.error ?: workshopText('script.da001998a5bd', 'Bilinmeyen hata')))
                     }
                 }
             }, 'WarpyAktarim'); worker.setDaemon(true); worker.start()
@@ -338,10 +338,10 @@ javafx.application.Platform.runLater {
             instr('Warpy esnek (non-rigid) hizalamayı Fiji ile yapar. Eklentiyi BIOP kataloğundan kurun (elle .jar\'dan güvenli), sonra QuPath\'i yeniden başlatın.'))
 
         // ② Fiji uygulamasını + eklentilerini kur
-        def fijiRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Fiji yolu:'), fijiField, fijiBrowse, fijiDownloadBtn)
+        def fijiRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label(workshopText('script.610d768d402a', 'Fiji yolu:')), fijiField, fijiBrowse, fijiDownloadBtn)
         fijiRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
         javafx.scene.layout.HBox.setHgrow(fijiField, javafx.scene.layout.Priority.ALWAYS)
-        def fijiPluginsBtn = new javafx.scene.control.Button('Fiji eklentileri (PTBIOP + elastix) nasıl kurulur?')
+        def fijiPluginsBtn = new javafx.scene.control.Button(workshopText('script.ee7167c3031a', 'Fiji eklentileri (PTBIOP + elastix) nasıl kurulur?'))
         fijiPluginsBtn.setOnAction({ showFijiPlugins() })
         def step2 = new javafx.scene.layout.VBox(6,
             stepHeader('② Fiji uygulamasını ve eklentilerini kur'),
@@ -359,11 +359,11 @@ javafx.application.Platform.runLater {
                   '     rigid → elastix afin → elastix spline → (ops.) BigWarp → dönüşüm QuPath projesine YAZILIR (transform_<hedef>_<kaynak>.json).'))
 
         // ④ QuPath'e dön → anotasyonları aktar
-        def srcRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Kaynak lam:'), sourceBox, refreshBtn)
+        def srcRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label(workshopText('script.a4aab64f8584', 'Kaynak lam:')), sourceBox, refreshBtn)
         srcRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
         javafx.scene.layout.HBox.setHgrow(sourceBox, javafx.scene.layout.Priority.ALWAYS)
         sourceBox.setMaxWidth(Double.MAX_VALUE)
-        def srcNote = new javafx.scene.control.Label('Kaynak listesi, ③\'teki Fiji hizalaması projeye yazıldıktan SONRA "↻ Kaynakları tazele" ile dolar. HEDEF (sabit) lam AÇIK olmalı; henüz hizalama yoksa liste BOŞTUR.')
+        def srcNote = new javafx.scene.control.Label(workshopText('script.ffe0a5050b9c', 'Kaynak listesi, ③\'teki Fiji hizalaması projeye yazıldıktan SONRA "↻ Kaynakları tazele" ile dolar. HEDEF (sabit) lam AÇIK olmalı; henüz hizalama yoksa liste BOŞTUR.'))
         srcNote.setWrapText(true); srcNote.setMaxWidth(Double.MAX_VALUE); srcNote.setStyle('-fx-opacity: 0.8; -fx-font-size: 11px;')
         def step4 = new javafx.scene.layout.VBox(6,
             stepHeader('④ QuPath\'e dön → anotasyonları aktar'),
@@ -372,7 +372,7 @@ javafx.application.Platform.runLater {
             new javafx.scene.layout.VBox(4, measChk, dsRow, lockChk),
             status)
 
-        def disclaimer = new javafx.scene.control.Label('⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar; klinik karar üretmez.')
+        def disclaimer = new javafx.scene.control.Label(workshopText('script.690db56ca047', '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar; klinik karar üretmez.'))
         disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
         disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-font-size: 11px; -fx-padding: 4 2 4 2;')
 
@@ -389,6 +389,17 @@ javafx.application.Platform.runLater {
         stage.setScene(new javafx.scene.Scene(root, 720, 620))
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Warpy sihirbazı açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage(workshopText('script.c552359af77c', 'Warpy sihirbazı açılamadı'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+    }
+}
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
     }
 }

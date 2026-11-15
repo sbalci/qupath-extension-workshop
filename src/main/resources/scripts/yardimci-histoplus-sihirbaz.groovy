@@ -369,13 +369,13 @@ def appendLog   = { String ln -> synchronized (runLog) { runLog.append(ln == nul
 def logSnapshot = { -> synchronized (runLog) { return runLog.toString() } }
 def saveLogInteractive = {
     def txt = logSnapshot()
-    if (!txt?.trim()) { Dialogs.showInfoNotification('Günlük', 'Kaydedilecek günlük yok.'); return }
+    if (!txt?.trim()) { Dialogs.showInfoNotification(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.6d25a44e68f7', 'Kaydedilecek günlük yok.')); return }
     try {
         def suggested = new File(workDirRef.get() ?: new File(System.getProperty('user.home')), 'histoplus_wizard.log')
-        def f = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, 'Günlüğü kaydet', suggested,
+        def f = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, workshopText('script.c47d1c4e0b3a', 'Günlüğü kaydet'), suggested,
             new javafx.stage.FileChooser.ExtensionFilter('Günlük (*.log, *.txt)', '*.log', '*.txt'))
-        if (f != null) { f.setText(txt, 'UTF-8'); Dialogs.showInfoNotification('Günlük', 'Kaydedildi: ' + f.getAbsolutePath()) }
-    } catch (Throwable t) { Dialogs.showErrorMessage('Günlük', 'Kaydedilemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName())) }
+        if (f != null) { f.setText(txt, 'UTF-8'); Dialogs.showInfoNotification(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.cbe9b591564d', 'Kaydedildi: ') + f.getAbsolutePath()) }
+    } catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.a0f73789f289', 'Kaydedilemedi: ') + (t.getMessage() ?: t.getClass().getSimpleName())) }
 }
 
 // Süreç AĞACINI sonlandır (köprünün olası alt süreçleri GPU'da yetim kalmasın).
@@ -478,7 +478,7 @@ def envReturnHook = [
                 if (!stage.isShowing()) stage.show()
                 stage.toFront(); stage.requestFocus()
             } catch (Throwable t) {
-                Dialogs.showErrorMessage('Sihirbaza dönüş', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+                Dialogs.showErrorMessage(workshopText('script.95854db5b310', 'Sihirbaza dönüş'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
             }
         }
     }
@@ -491,8 +491,8 @@ def launchEnvManager = { ->
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + res) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + res)
             if (url == null) {
-                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
-                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.612821b4f218', 'Betik bulunamadı'),
+                    workshopText('script.9641266ba42d', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi')) }
                 return
             }
             def cl = this.getClass().getClassLoader()
@@ -501,7 +501,7 @@ def launchEnvManager = { ->
             shellBinding.setVariable('atolyeReturnHook', envReturnHook)
             new GroovyShell(cl, shellBinding).evaluate(url.getText('UTF-8'), res)
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage(workshopText('script.e83c5641f38e', 'Açılamadı'), (t.getMessage() ?: t.getClass().getSimpleName())) }
         }
     } as Runnable).start()
 }
@@ -950,13 +950,13 @@ def startRun = {
         sb << 'ürettiği tespitler de dahil (eşleşme sınıf adına göredir, kökene göre değil). '
         sb << 'Kendi anotasyonlarınıza ve diğer sınıflara hiçbir kipte dokunulmaz.'
         sb << '\n\nÖnceki HistoPLUS sonucu ne olsun?'
-        def pick = Dialogs.showChoiceDialog('Önceki HistoPLUS sonucu', sb.toString(), [MODE_ADD, MODE_REPLACE], MODE_ADD)
+        def pick = Dialogs.showChoiceDialog(workshopText('script.d2435b8e7d13', 'Önceki HistoPLUS sonucu'), sb.toString(), [MODE_ADD, MODE_REPLACE], MODE_ADD)
         if (pick == null) return                      // İptal → çalıştırma yok, yazma yok
         replacePrev = (pick == MODE_REPLACE)
         if (replacePrev) {
-            boolean ok = Dialogs.showConfirmDialog('Önceki HistoPLUS sonucu silinecek',
+            boolean ok = Dialogs.showConfirmDialog(workshopText('script.e005be5bfa05', 'Önceki HistoPLUS sonucu silinecek'),
                 String.format(java.util.Locale.US,
-                    'Bu alandaki %,d özet ve HistoPLUS sınıflı %,d tespit silinecek. Bu tespitlerde elle yaptığınız sınıf düzeltmeleri de KAYBOLUR ve geri alınamaz.\n\nDevam edilsin mi?',
+                    workshopText('script.543d20fe230a', 'Bu alandaki %,d özet ve HistoPLUS sınıflı %,d tespit silinecek. Bu tespitlerde elle yaptığınız sınıf düzeltmeleri de KAYBOLUR ve geri alınamaz.\n\nDevam edilsin mi?'),
                     nPrevSummaries, nPrevDets))
             if (!ok) return
         }
@@ -1000,7 +1000,7 @@ def startRun = {
                 if (r.exitCode == -3) {
                     // İptal hata DEĞİLDİR: Çalıştırma ekranına (READY) dönülür; hiçbir şey içe aktarılmadı.
                     javafx.application.Platform.runLater {
-                        Dialogs.showInfoNotification('HistoPLUS', 'Çalıştırma iptal edildi.')
+                        Dialogs.showInfoNotification('HistoPLUS', workshopText('script.90579d82ba75', 'Çalıştırma iptal edildi.'))
                         precheckRef.set(null); step.set('READY'); render()
                     }
                     return
@@ -1091,28 +1091,28 @@ render = { ->
     def later = { Closure c -> javafx.application.Platform.runLater { c() } }
 
     if (cur == 'CONFIG_INCOMPLETE') {
-        title.setText('HistoPLUS — kurulum')
+        title.setText(workshopText('script.04329c23c96f', 'HistoPLUS — kurulum'))
         def st = setupStatus(cfg)
-        addGuidance('HistoPLUS\'u çalıştırmak için iki adım vardır. Her satırın durumu ve düğmesi aşağıdadır; ikisi tamamlanınca "Çalıştırma ekranına geç" etkinleşir.')
+        addGuidance(workshopText('script.3c1f4a9667f2', 'HistoPLUS\'u çalıştırmak için iki adım vardır. Her satırın durumu ve düğmesi aşağıdadır; ikisi tamamlanınca "Çalıştırma ekranına geç" etkinleşir.'))
 
-        section('① Python ortamı')
+        section(workshopText('script.d6bef5796014', '① Python ortamı'))
         statusLine(st.pythonOk, st.pythonOk ? ('Python: ' + cfg.python) :
-            'Python ortamı (histoplus) kurulu değil — ortam yöneticisinde "HistoPLUS — H&E hücre segmentasyonu" satırını kurun (~6 GB, GPU torch).')
-        statusLine(st.runnerOk, st.runnerOk ? ('Köprü: ' + cfg.runner) :
-            'Köprü betiği bulunamadı (histoplus_runner.py eklentiyle birlikte gelir — özel yol için "Köprü seç…").')
-        statusLine(st.envOk, st.envOk ? 'Denetim tamam (upstream yapı taşları içe aktarıldı).' :
-            (cfg.pipeline == '0' ? 'Denetim başarısız — ortamı ortam yöneticisinden yeniden kurun, sonra "Denetle".' :
-                (cfg.pipeline?.trim() ? 'Ortam son denetimden sonra değişmiş — "Denetle" ile yeniden denetleyin.' : 'Ortam henüz denetlenmedi — "Denetle".')))
-        addGuidance(cfg.cuda == '1' ? 'Denetim: CUDA GPU var.' :
-            (cfg.cuda == '0' ? 'Denetim: CUDA yok — HistoPLUS CPU\'da çalışır (çok yavaş, ~7 dk/mm²; küçük alan seçin).' : 'GPU henüz denetlenmedi — "Denetle".'))
-        rowOf([navButton('Python ortam yöneticisi…', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar; "Sihirbaza dön ▶" ile geri gelirsiniz'),
-               navButton('Denetle', { startSelftest() }, 'histoplus_runner.py selftest — paketler, upstream yapı taşları, sabit commit + CUDA'),
-               navButton('Köprü seç…', {
-                   def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'histoplus_runner.py seçin')
+            workshopText('script.6f51300ef3f6', 'Python ortamı (histoplus) kurulu değil — ortam yöneticisinde "HistoPLUS — H&E hücre segmentasyonu" satırını kurun (~6 GB, GPU torch).'))
+        statusLine(st.runnerOk, st.runnerOk ? (workshopText('script.95fb1b4d5633', 'Köprü: ') + cfg.runner) :
+            workshopText('script.6b7222868281', 'Köprü betiği bulunamadı (histoplus_runner.py eklentiyle birlikte gelir — özel yol için "Köprü seç…").'))
+        statusLine(st.envOk, st.envOk ? workshopText('script.f276ba52adb3', 'Denetim tamam (upstream yapı taşları içe aktarıldı).') :
+            (cfg.pipeline == '0' ? workshopText('script.2e1517b1b995', 'Denetim başarısız — ortamı ortam yöneticisinden yeniden kurun, sonra "Denetle".') :
+                (cfg.pipeline?.trim() ? workshopText('script.9ecdc1305cc5', 'Ortam son denetimden sonra değişmiş — "Denetle" ile yeniden denetleyin.') : workshopText('script.0697c915ab65', 'Ortam henüz denetlenmedi — "Denetle".'))))
+        addGuidance(cfg.cuda == '1' ? workshopText('script.3ee6fc77c08c', 'Denetim: CUDA GPU var.') :
+            (cfg.cuda == '0' ? workshopText('script.8301f4804563', 'Denetim: CUDA yok — HistoPLUS CPU\'da çalışır (çok yavaş, ~7 dk/mm²; küçük alan seçin).') : workshopText('script.1833b772b279', 'GPU henüz denetlenmedi — "Denetle".')))
+        rowOf([navButton(workshopText('script.82bedbe63b36', 'Python ortam yöneticisi…'), { launchEnvManager() }, workshopText('script.9c5672594ffe', 'Atölye Python ortam yöneticisini açar; "Sihirbaza dön ▶" ile geri gelirsiniz')),
+               navButton(workshopText('script.3bef56b42b8a', 'Denetle'), { startSelftest() }, workshopText('script.778b866b956b', 'histoplus_runner.py selftest — paketler, upstream yapı taşları, sabit commit + CUDA')),
+               navButton(workshopText('script.4b73cf2c4ab9', 'Köprü seç…'), {
+                   def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.51179709a3f7', 'histoplus_runner.py seçin'))
                    if (x != null) { putPref(PREF_RUNNER, x.getAbsolutePath()); later { render() } }
                })])
 
-        section('② Lisans ve ağırlıklar')
+        section(workshopText('script.6ea97bd5d4f2', '② Lisans ve ağırlıklar'))
         def licenseArea = new javafx.scene.control.TextArea(
             'HistoPLUS kodu ve ağırlıkları CC BY-NC-ND 4.0 lisanslıdır (depo LICENSE.md ve Hugging Face kapısı; makaledeki ' +
             '"CC-BY-4.0" ifadesi depoyla çelişir — geçerli olan depo/HF lisansıdır). Atölye kodu ve ağırlıkları PAKETLEMEZ.\n\n' +
@@ -1127,73 +1127,73 @@ render = { ->
             '(DİKKAT: "owkin/histoplus" değil, "Owkin-Bioptimus/histoplus").')
         licenseArea.setEditable(false); licenseArea.setWrapText(true); licenseArea.setPrefRowCount(9)
         center.getChildren().add(licenseArea)
-        def licenseChk = new javafx.scene.control.CheckBox('Okudum; bu koşulları kendi adıma kabul ediyorum ve Hugging Face erişim formunu KENDİ hesabımla doldurdum.')
+        def licenseChk = new javafx.scene.control.CheckBox(workshopText('script.f7bc35cf69e0', 'Okudum; bu koşulları kendi adıma kabul ediyorum ve Hugging Face erişim formunu KENDİ hesabımla doldurdum.'))
         licenseChk.setWrapText(true); licenseChk.setMaxWidth(Double.MAX_VALUE)
         licenseChk.setSelected(st.licenseOk)
         licenseChk.selectedProperty().addListener({ obs, o, n -> putPref(PREF_LICENSE, n ? LICENSE_TOKEN : ''); later { render() } } as javafx.beans.value.ChangeListener)
         center.getChildren().add(licenseChk)
 
         def tg = new javafx.scene.control.ToggleGroup()
-        def rbFolder = new javafx.scene.control.RadioButton('Klasördeki ağırlıkları kullan'); rbFolder.setToggleGroup(tg)
-        def rbDl = new javafx.scene.control.RadioButton('İndir (veri köküne; HF girişi gerekir)'); rbDl.setToggleGroup(tg)
+        def rbFolder = new javafx.scene.control.RadioButton(workshopText('script.69aac9fb0747', 'Klasördeki ağırlıkları kullan')); rbFolder.setToggleGroup(tg)
+        def rbDl = new javafx.scene.control.RadioButton(workshopText('script.109db1f87ad5', 'İndir (veri köküne; HF girişi gerekir)')); rbDl.setToggleGroup(tg)
         (cfg.source == 'folder' ? rbFolder : rbDl).setSelected(true)
         tg.selectedToggleProperty().addListener({ obs, o, n ->
             if (n != null) { putPref(PREF_SOURCE, n == rbFolder ? 'folder' : 'download'); later { render() } }
         } as javafx.beans.value.ChangeListener)
         rowOf([rbFolder, rbDl])
         if (cfg.source == 'folder') {
-            rowOf([navButton('Klasör seç…', {
-                       def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'HistoPLUS ağırlık klasörü (histoplus_cellvit_segmentor_40x.pt …)', null)
+            rowOf([navButton(workshopText('script.6b16a609ae4a', 'Klasör seç…'), {
+                       def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.16b06ca2334d', 'HistoPLUS ağırlık klasörü (histoplus_cellvit_segmentor_40x.pt …)'), null)
                        if (x != null) { putPref(PREF_FOLDER, x.getAbsolutePath()); later { render() } }
-                   }), new javafx.scene.control.Label(cfg.folder?.trim() ? cfg.folder : '(klasör seçilmedi)')])
+                   }), new javafx.scene.control.Label(cfg.folder?.trim() ? cfg.folder : workshopText('script.fd22c2ea6aea', '(klasör seçilmedi)'))])
         } else {
             def tokenField = new javafx.scene.control.PasswordField()
-            tokenField.setPromptText('Hugging Face jetonu (isteğe bağlı — "hf auth login" yapıldıysa boş bırakın)'); tokenField.setPrefColumnCount(30)
+            tokenField.setPromptText(workshopText('script.af804d882d47', 'Hugging Face jetonu (isteğe bağlı — "hf auth login" yapıldıysa boş bırakın)')); tokenField.setPrefColumnCount(30)
             tokenFieldRef.set(tokenField)
-            rowOf([new javafx.scene.control.Label('HF jetonu:'), tokenField])
+            rowOf([new javafx.scene.control.Label(workshopText('script.96ad2d65e41c', 'HF jetonu:')), tokenField])
         }
         WEIGHTS.each { k, w ->
             def f = weightFileOf(cfg, k)
-            if (f == null) statusLine(false, w.label + ': klasör seçilmedi.')
-            else if (!f.isFile()) statusLine(false, w.label + ': dosya yok — ' + f.getAbsolutePath())
-            else if (!isVerified(f)) statusLine(false, w.label + ': var ama doğrulanmadı — "Doğrula" (SHA-256)')
-            else statusLine(true, w.label + ': doğrulandı — ' + f.getAbsolutePath())
+            if (f == null) statusLine(false, w.label + workshopText('script.00cee0446767', ': klasör seçilmedi.'))
+            else if (!f.isFile()) statusLine(false, w.label + workshopText('script.a8a7e11488ea', ': dosya yok — ') + f.getAbsolutePath())
+            else if (!isVerified(f)) statusLine(false, w.label + workshopText('script.64bfde3ce620', ': var ama doğrulanmadı — "Doğrula" (SHA-256)'))
+            else statusLine(true, w.label + workshopText('script.20c5186f3961', ': doğrulandı — ') + f.getAbsolutePath())
         }
-        addGuidance('Tek bir model yeterlidir: 40× (≈0.25 µm/px) taramalar 40× modelini, 20× (≈0.5 µm/px) taramalar 20× modelini kullanır — seçimi köprü lamdan yapar. GT450/AT2 taramaları 40× modelini kullanır.')
+        addGuidance(workshopText('script.f7b56ef193ee', 'Tek bir model yeterlidir: 40× (≈0.25 µm/px) taramalar 40× modelini, 20× (≈0.5 µm/px) taramalar 20× modelini kullanır — seçimi köprü lamdan yapar. GT450/AT2 taramaları 40× modelini kullanır.'))
         def modelBtns = []
         if (!st.present.isEmpty() && st.verified.size() < st.present.size())
-            modelBtns << navButton('Doğrula', { startVerify() }, 'SHA-256 sabitlenmiş Hugging Face revizyonuyla karşılaştırılır')
+            modelBtns << navButton(workshopText('script.4e8b339e360e', 'Doğrula'), { startVerify() }, workshopText('script.e7f9273764bd', 'SHA-256 sabitlenmiş Hugging Face revizyonuyla karşılaştırılır'))
         if (cfg.source == 'download' && st.verified.size() < WEIGHTS.size()) {
-            def dlBtn = navButton('İndir (2 × ~285 MB)', { startDownload(tokenFieldRef.get()?.getText()) }, 'Hugging Face ' + HF_REPO + ' (sabit revizyon cde2eee) → veri kökü')
+            def dlBtn = navButton(workshopText('script.0be82c8f1698', 'İndir (2 × ~285 MB)'), { startDownload(tokenFieldRef.get()?.getText()) }, 'Hugging Face ' + HF_REPO + workshopText('script.06e32354a2a2', ' (sabit revizyon cde2eee) → veri kökü'))
             dlBtn.setDisable(!st.licenseOk || !st.pythonOk || !st.runnerOk)
             modelBtns << dlBtn
         }
         if (!modelBtns.isEmpty()) rowOf(modelBtns)
-        if (!st.licenseOk) addWarnLabel('Lisans onay kutusu işaretlenmeden indirme ve çalıştırma kapalıdır.')
+        if (!st.licenseOk) addWarnLabel(workshopText('script.ec0f6e94d35e', 'Lisans onay kutusu işaretlenmeden indirme ve çalıştırma kapalıdır.'))
 
-        actions.add(navButton('Kapat', { closeWizard() }))
-        def goBtn = navButton('Çalıştırma ekranına geç ▶', { precheckRef.set(null); step.set('READY'); render() })
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { closeWizard() }))
+        def goBtn = navButton(workshopText('script.7c289f6fe3f1', 'Çalıştırma ekranına geç ▶'), { precheckRef.set(null); step.set('READY'); render() })
         goBtn.setDisable(!setupComplete(cfg))
         actions.add(goBtn)
     } else if (cur == 'CHECK_RUNNING' || cur == 'DL_RUNNING') {
         title.setText(jobTitleRef.get() + '…')
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { killRunning() }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { killRunning() }))
     } else if (cur == 'CHECK_DONE' || cur == 'DL_DONE') {
-        title.setText(jobTitleRef.get() + (jobOkRef.get() ? ' — tamam ✅' : (cancelledRef.get() ? ' — iptal edildi' : ' — BAŞARISIZ (günlüğe bakın)')))
+        title.setText(jobTitleRef.get() + (jobOkRef.get() ? workshopText('script.98cb471bb8ad', ' — tamam ✅') : (cancelledRef.get() ? workshopText('script.b7ea4cee1008', ' — iptal edildi') : workshopText('script.9f30a211defc', ' — BAŞARISIZ (günlüğe bakın)'))))
         addLiveLog()
-        actions.add(navButton('◀ Kuruluma dön', { step.set('CONFIG_INCOMPLETE'); render() }))
-        if (logSnapshot()?.trim()) actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
-        if (jobOkRef.get() && setupComplete(loadConfig())) actions.add(navButton('Çalıştırma ekranına dön ▶', { precheckRef.set(null); step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.0f890b2dbd3f', '◀ Kuruluma dön'), { step.set('CONFIG_INCOMPLETE'); render() }))
+        if (logSnapshot()?.trim()) actions.add(navButton(workshopText('script.bba9c203d381', 'Günlüğü kaydet…'), { saveLogInteractive() }))
+        if (jobOkRef.get() && setupComplete(loadConfig())) actions.add(navButton(workshopText('script.2065029c612d', 'Çalıştırma ekranına dön ▶'), { precheckRef.set(null); step.set('READY'); render() }))
     } else if (cur == 'READY') {
         if (imageData == null) {
-            title.setText('Görüntü açık değil')
-            addGuidance('Önce bir H&E lamı açın, ilgi alanını çizip seçin, sonra "⟳ Yenile".')
-            actions.add(navButton('◀ Kurulum', { step.set('CONFIG_INCOMPLETE'); render() }))
-            actions.add(navButton('⟳ Yenile', { refreshPrecheck() }))
+            title.setText(workshopText('script.b4c901dc184b', 'Görüntü açık değil'))
+            addGuidance(workshopText('script.a45ef11abb75', 'Önce bir H&E lamı açın, ilgi alanını çizip seçin, sonra "⟳ Yenile".'))
+            actions.add(navButton(workshopText('script.79fdaba65b05', '◀ Kurulum'), { step.set('CONFIG_INCOMPLETE'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { refreshPrecheck() }))
         } else {
             def rd = readiness(imageData, cfg)
-            title.setText('HistoPLUS — seçili alanda çekirdek segmentasyonu + sınıflama')
+            title.setText(workshopText('script.f7e0ca4b56b0', 'HistoPLUS — seçili alanda çekirdek segmentasyonu + sınıflama'))
             def sb = new StringBuilder()
             sb << "Lam        : " << imageNameOf(imageData) << "\n"
             sb << "Dosya        : " << (rd.slide.ok ? rd.slide.file.getAbsolutePath() : '—') << "\n"
@@ -1216,7 +1216,7 @@ render = { ->
                 int i = n as int
                 if (i >= 0) { putPref(PREF_DEVICE, devIds[i]); later { render() } }
             } as javafx.beans.value.ChangeListener)
-            rowOf([new javafx.scene.control.Label('Cihaz:'), devChoice])
+            rowOf([new javafx.scene.control.Label(workshopText('script.d4336c3867bc', 'Cihaz:')), devChoice])
             def batchField = new javafx.scene.control.TextField(cfg.batchSize); batchField.setPrefColumnCount(5)
             def thrField = new javafx.scene.control.TextField(cfg.ppThreads); thrField.setPrefColumnCount(5)
             batchField.textProperty().addListener({ obs, o, n -> putPref(PREF_BATCH, n) } as javafx.beans.value.ChangeListener)
@@ -1224,20 +1224,20 @@ render = { ->
             // Odak kaybında yeniden çiz: her tuşta sahne yeniden kurulup odak çalınmasın.
             batchField.focusedProperty().addListener({ obs, o, n -> if (!n) later { render() } } as javafx.beans.value.ChangeListener)
             thrField.focusedProperty().addListener({ obs, o, n -> if (!n) later { render() } } as javafx.beans.value.ChangeListener)
-            def adv = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Batch size (784 px karo; 4 ≈ 5.6 GB VRAM):'), batchField,
-                new javafx.scene.control.Label('Son-işleme iş parçacığı:'), thrField)
+            def adv = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label(workshopText('script.d723a00ad0d0', 'Batch size (784 px karo; 4 ≈ 5.6 GB VRAM):')), batchField,
+                new javafx.scene.control.Label(workshopText('script.6d6a98cc79c7', 'Son-işleme iş parçacığı:')), thrField)
             adv.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
-            def advPane = new javafx.scene.control.TitledPane('Gelişmiş', adv); advPane.setExpanded(false)
+            def advPane = new javafx.scene.control.TitledPane(workshopText('script.7f46475b1055', 'Gelişmiş'), adv); advPane.setExpanded(false)
             center.getChildren().add(advPane)
 
             rd.blocks.each { addWarnLabel('⛔ ' + it) }
             rd.warns.each { addWarnLabel('⚠ ' + it) }
-            addGuidance('HistoPLUS YALNIZ seçili alan(lar)la kesişen karolarda çalışır; sayım yalnız alan İÇİNDEKİ çekirdeklerdir. Sonuç: her çekirdek için "<Sınıf> (HistoPLUS)" sınıflı poligon tespiti + sınıf başına sayım, % ve yoğunluk (hücre/mm²). Bu alanda önceki bir HistoPLUS sonucu varsa çalıştırmadan önce ne yapılacağı sorulur — varsayılan hiçbir şeyi silmez.')
+            addGuidance(workshopText('script.106c1f398937', 'HistoPLUS YALNIZ seçili alan(lar)la kesişen karolarda çalışır; sayım yalnız alan İÇİNDEKİ çekirdeklerdir. Sonuç: her çekirdek için "<Sınıf> (HistoPLUS)" sınıflı poligon tespiti + sınıf başına sayım, % ve yoğunluk (hücre/mm²). Bu alanda önceki bir HistoPLUS sonucu varsa çalıştırmadan önce ne yapılacağı sorulur — varsayılan hiçbir şeyi silmez.'))
 
-            actions.add(navButton('Kapat', { closeWizard() }))
-            actions.add(navButton('◀ Kurulum', { step.set('CONFIG_INCOMPLETE'); render() }))
-            actions.add(navButton('⟳ Yenile', { refreshPrecheck() }, 'Seçimi ve lam ön denetimini yeniden okur'))
-            def runBtn = navButton('Seçili alanda çalıştır ▶', { startRun() }, 'HistoPLUS\'u seçili alanda çalıştırır')
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { closeWizard() }))
+            actions.add(navButton(workshopText('script.79fdaba65b05', '◀ Kurulum'), { step.set('CONFIG_INCOMPLETE'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { refreshPrecheck() }, workshopText('script.179082a34166', 'Seçimi ve lam ön denetimini yeniden okur')))
+            def runBtn = navButton(workshopText('script.0e054133c4a1', 'Seçili alanda çalıştır ▶'), { startRun() }, workshopText('script.3d8b586e0129', 'HistoPLUS\'u seçili alanda çalıştırır'))
             runBtn.setDisable(!rd.ok)
             actions.add(runBtn)
         }
@@ -1245,41 +1245,41 @@ render = { ->
         if (cur == 'RUN_RUNNING') {
             title.setText(runPhaseRef.get())
             def clock = new javafx.scene.control.Label(); clock.setStyle('-fx-opacity: 0.8;')
-            def tick = { clock.setText('Geçen süre: ' + elapsedText(System.currentTimeMillis() - runStartRef.get())) }
+            def tick = { clock.setText(workshopText('script.b8848d073c4a', 'Geçen süre: ') + elapsedText(System.currentTimeMillis() - runStartRef.get())) }
             tick()
             def tl = new javafx.animation.Timeline(new javafx.animation.KeyFrame(javafx.util.Duration.seconds(1), { e -> tick() } as javafx.event.EventHandler))
             tl.setCycleCount(javafx.animation.Animation.INDEFINITE); tl.play(); timelineRef.set(tl)
-            addGuidance('HistoPLUS ayrı bir Python süreci olarak çalışıyor (ağırlık doğrulama + model yükleme + karo çıkarımı + son-işleme). Çubuk çıkarılan karo oranını gösterir. "İptal et" süreci durdurur; hiçbir şey içe aktarılmaz.')
+            addGuidance(workshopText('script.cc60b3578695', 'HistoPLUS ayrı bir Python süreci olarak çalışıyor (ağırlık doğrulama + model yükleme + karo çıkarımı + son-işleme). Çubuk çıkarılan karo oranını gösterir. "İptal et" süreci durdurur; hiçbir şey içe aktarılmaz.'))
             center.getChildren().add(clock)
             def pb = busyBar(); progressRef.set(pb)
             center.getChildren().add(pb); addLiveLog()
-            actions.add(navButton('İptal et', { killRunning() }))
-            actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
+            actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { killRunning() }))
+            actions.add(navButton(workshopText('script.bba9c203d381', 'Günlüğü kaydet…'), { saveLogInteractive() }))
         } else if (cur == 'BUSY') {
             progressRef.set(null)
-            title.setText(busyLabelRef.get()); addGuidance('Lütfen bekleyin…'); center.getChildren().add(busyBar())
+            title.setText(busyLabelRef.get()); addGuidance(workshopText('script.245c572ec2ea', 'Lütfen bekleyin…')); center.getChildren().add(busyBar())
         } else {
             progressRef.set(null)
-            title.setText('Tamamlandı ✅'); addMonoArea(resultTextRef.get())
-            addGuidance('Hücre sınıflarını Annotations/Hierarchy panelinden ya da View → Show detections ile inceleyin; sınıf renklerini "Classes" listesinden açıp kapatın.')
-            actions.add(navButton('Kapat', { closeWizard() }))
-            actions.add(navButton('Klasörü aç', { openFolder(workDirRef.get()) }, 'roi.geojson, histoplus_cells.geojson, cell_masks.json (upstream biçimi), histoplus_run.json'))
-            actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-            actions.add(navButton('↻ Yeniden çalıştır', { precheckRef.set(null); step.set('READY'); render() }))
+            title.setText(workshopText('script.92c17020894f', 'Tamamlandı ✅')); addMonoArea(resultTextRef.get())
+            addGuidance(workshopText('script.381033c8a558', 'Hücre sınıflarını Annotations/Hierarchy panelinden ya da View → Show detections ile inceleyin; sınıf renklerini "Classes" listesinden açıp kapatın.'))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { closeWizard() }))
+            actions.add(navButton(workshopText('script.d6f2f6cad078', 'Klasörü aç'), { openFolder(workDirRef.get()) }, workshopText('script.3c5f01a48f9a', 'roi.geojson, histoplus_cells.geojson, cell_masks.json (upstream biçimi), histoplus_run.json')))
+            actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
+            actions.add(navButton(workshopText('script.c94499b243e4', '↻ Yeniden çalıştır'), { precheckRef.set(null); step.set('READY'); render() }))
         }
     } else { // ERROR
-        title.setText('Hata'); addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set(setupComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        if (logSnapshot()?.trim()) actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }))
-        actions.add(navButton('Kapat', { closeWizard() }))
+        title.setText(workshopText('script.307b9dc7912d', 'Hata')); addMonoArea(errorTextRef.get())
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set(setupComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        if (logSnapshot()?.trim()) actions.add(navButton(workshopText('script.bba9c203d381', 'Günlüğü kaydet…'), { saveLogInteractive() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { closeWizard() }))
     }
 
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut'); topChk.setSelected(alwaysTop.get())
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut')); topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n -> alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
     def spacer = new javafx.scene.layout.Region(); javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
     def bar = new javafx.scene.layout.HBox(8); bar.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
     bar.getChildren().add(topChk); bar.getChildren().add(spacer); bar.getChildren().addAll(actions)
-    def disclaimer = new javafx.scene.control.Label('⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.808d79f60179', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
     def scroll = new javafx.scene.control.ScrollPane(center); scroll.setFitToWidth(true); scroll.setFitToHeight(true)
@@ -1295,7 +1295,7 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('HistoPLUS — H&E hücre segmentasyonu + sınıflama (seçili alanda)')
+        stage.setTitle(workshopText('script.c1a13e23b878', 'HistoPLUS — H&E hücre segmentasyonu + sınıflama (seçili alanda)'))
         stage.setAlwaysOnTop(alwaysTop.get())
         stage.setOnCloseRequest({ e ->
             if ((step.get() ?: '').endsWith('_RUNNING')) { cancelledRef.set(true); killTree(processRef.get()) }
@@ -1304,7 +1304,18 @@ javafx.application.Platform.runLater {
         } as javafx.event.EventHandler)
         render(); stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ HistoPLUS hücre segmentasyonu sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

@@ -199,7 +199,7 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
         try {
             def stage = new javafx.stage.Stage()
             stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle("Karo (tile) dışa aktarma — seçenekler")
+            stage.setTitle(workshopText('script.9018fd17f4aa', "Karo (tile) dışa aktarma — seçenekler"))
             stage.setAlwaysOnTop(true)
 
             def help = { String s ->
@@ -274,7 +274,7 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
                     labelPane.getChildren().add(c)
                 }
                 if (counts.isEmpty()) {
-                    def none = new javafx.scene.control.Label(onlySel ? "Seçili anotasyon yok ya da hepsi dışlama sınıfında." : "Karo üretecek anotasyon yok.")
+                    def none = new javafx.scene.control.Label(onlySel ? workshopText('script.06a83001f81e', "Seçili anotasyon yok ya da hepsi dışlama sınıfında.") : workshopText('script.53725d87c09e', "Karo üretecek anotasyon yok."))
                     none.setStyle("-fx-text-fill: #a32d2d;")
                     labelPane.getChildren().add(none)
                 }
@@ -304,11 +304,11 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
 
             // ── Sekme 3: Çıktı düzeni ──
             def outField = field(defaultOutRoot.getAbsolutePath(), 30)
-            def browseBtn = new javafx.scene.control.Button("Seç…")
+            def browseBtn = new javafx.scene.control.Button(workshopText('script.dfd12ee38484', "Seç…"))
             browseBtn.setOnAction({
                 def cur = new File(outField.getText().trim())
                 while (cur != null && !cur.isDirectory()) cur = cur.getParentFile()
-                def picked = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, "Karo çıktı klasörü", cur)
+                def picked = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.b0bff692c3f0', "Karo çıktı klasörü"), cur)
                 if (picked != null) outField.setText(picked.getAbsolutePath())
             })
             def outBox = new javafx.scene.layout.HBox(6, outField, browseBtn)
@@ -332,13 +332,13 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
             def splitKeyField = field(defaults.splitKeys.findAll { it ==~ /[a-z_]+/ }.join(', '), 24)
             def patientKeyField = field("patient, hasta, case, vaka, patient_pseudonym", 24)
             def leakInfo = new javafx.scene.control.Label(
-                "Üst veride bölme varsa yok sayılamaz; şu denetimler HER ZAMAN yapılır ve kapatılamaz:\n" +
+                workshopText('script.422a4173507c', "Üst veride bölme varsa yok sayılamaz; şu denetimler HER ZAMAN yapılır ve kapatılamaz:\n" +
                 "  • aynı lam birden çok bölmeye yazılamaz,\n" +
                 "  • lamın karoları aynı kümede başka bölmede varsa durur,\n" +
                 "  • aynı hastanın başka lamı projede farklı bölmedeyse durur,\n" +
                 "  • bölmeli ve bölmesiz lamlar aynı kümeye yazılamaz,\n" +
                 "  • hasta kimliği yoksa durur (onayla devam yolu yoktur).\n" +
-                "Betik bölme atamaz; yalnız var olan bölmeyi okur.")
+                "Betik bölme atamaz; yalnız var olan bölmeyi okur."))
             leakInfo.setWrapText(true)
             leakInfo.setStyle("-fx-font-size: 11px; -fx-text-fill: #7a1f1f; -fx-background-color: #fdeeee; -fx-padding: 8;")
             def g4 = newGrid()
@@ -383,14 +383,14 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
             whyLabel.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE)
             liveLabel.setStyle("-fx-font-family: 'Consolas', 'Menlo', monospace; -fx-font-size: 12px; -fx-padding: 6 8 6 8;")
             def rules = new javafx.scene.control.Label(
-                "Genel ilkeler\n" +
+                workshopText('script.1a6cade51ab0', "Genel ilkeler\n" +
                 "  1. Ölçeği büyütmeyle değil µm/px ile verin; görüş alanı = karo (px) × µm/px.\n" +
                 "  2. Örtüşmeyi yalnız karolar yeniden birleştirilecekse ya da kenarda kesilen yapı önemliyse açın.\n" +
                 "     Örtüşen karolar neredeyse kopyadır: aynı bölmede kalmalıdır.\n" +
                 "  3. Bölmeyi karo düzeyinde değil hasta düzeyinde yapın (Bölme ve sızıntı sekmesi).\n" +
                 "  4. Arka planı ve artefaktı karodan önce dışlayın: Doku tespiti, Ignore* anotasyonları, en az kapsama.\n" +
                 "  5. Ayarları ve seçim stratejisini kaydedin: küme klasörünün adı ve karo listesi bunu taşır.\n" +
-                "Tek bir doğru ayar yoktur; görev ve modele bağlıdır.")
+                "Tek bir doğru ayar yoktur; görev ve modele bağlıdır."))
             rules.setWrapText(true)
             rules.setStyle("-fx-font-size: 11px; -fx-text-fill: #444;")
             def refresh = { ->
@@ -432,7 +432,7 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
             [modeBox, formatBox].each { b -> b.valueProperty().addListener({ obs, o, n -> refresh() } as javafx.beans.value.ChangeListener) }
             refresh()
             def g0 = new javafx.scene.layout.VBox(10,
-                new javafx.scene.layout.HBox(10, new javafx.scene.control.Label("Amaç:"), presetBox),
+                new javafx.scene.layout.HBox(10, new javafx.scene.control.Label(workshopText('script.1a1d63ded5bb', "Amaç:")), presetBox),
                 help("Bir amaç seçince karo boyutu, µm/px, örtüşme, kapsama ve mod başlangıç değerlerine ayarlanır; sonra diğer sekmelerde istediğinizi değiştirin."),
                 whyLabel, liveLabel, new javafx.scene.control.Separator(), rules)
             g0.setPadding(new javafx.geometry.Insets(12))
@@ -445,7 +445,7 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
                 tabs.getTabs().add(new javafx.scene.control.Tab((String) p[0], sp))
             }
 
-            def exportBtn = new javafx.scene.control.Button("Dışa aktar")
+            def exportBtn = new javafx.scene.control.Button(workshopText('script.d4f745cb3bf5', "Dışa aktar"))
             exportBtn.setDefaultButton(true)
             exportBtn.setOnAction({
                 try {
@@ -457,24 +457,24 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
                     int jq = Integer.parseInt(qualityField.getText().trim())
                     double mt = Double.parseDouble(tissueField.getText().trim().replace(',', '.'))
                     int wt = Integer.parseInt(whiteField.getText().trim())
-                    if (mt < 0 || mt > 100) { Dialogs.showErrorMessage("Geçersiz", "En az doku 0 ile 100 arasında olmalı."); return }
-                    if (wt < 0 || wt > 255) { Dialogs.showErrorMessage("Geçersiz", "Beyazlık eşiği 0 ile 255 arasında olmalı."); return }
-                    if (coordsBox.isSelected() && !manifestBox.isSelected()) { Dialogs.showErrorMessage("Geçersiz", "\"Yalnız karo listesi\" seçiliyken karo listesi yazılmalıdır; yoksa hiçbir çıktı kalmaz."); return }
-                    if (ts <= 0)            { Dialogs.showErrorMessage("Geçersiz", "Karo boyutu pozitif olmalı."); return }
-                    if (!(um > 0))          { Dialogs.showErrorMessage("Geçersiz", "Çözünürlük pozitif olmalı."); return }
-                    if (ov < 0 || ov >= ts) { Dialogs.showErrorMessage("Geçersiz", "Örtüşme 0 ile karo boyutu arasında olmalı."); return }
-                    if (mc < 0 || mc > 100) { Dialogs.showErrorMessage("Geçersiz", "En az kapsama 0 ile 100 arasında olmalı."); return }
-                    if (mx < 0)             { Dialogs.showErrorMessage("Geçersiz", "Etiket başına en çok karo 0 ya da pozitif olmalı."); return }
-                    if (jq < 1 || jq > 100) { Dialogs.showErrorMessage("Geçersiz", "JPG kalitesi 1 ile 100 arasında olmalı."); return }
+                    if (mt < 0 || mt > 100) { Dialogs.showErrorMessage(workshopText('script.cff275b74696', "Geçersiz"), workshopText('script.32dda5ecb3ae', "En az doku 0 ile 100 arasında olmalı.")); return }
+                    if (wt < 0 || wt > 255) { Dialogs.showErrorMessage(workshopText('script.cff275b74696', "Geçersiz"), workshopText('script.f40f8cbb77d2', "Beyazlık eşiği 0 ile 255 arasında olmalı.")); return }
+                    if (coordsBox.isSelected() && !manifestBox.isSelected()) { Dialogs.showErrorMessage(workshopText('script.cff275b74696', "Geçersiz"), workshopText('script.f926121d0385', "\"Yalnız karo listesi\" seçiliyken karo listesi yazılmalıdır; yoksa hiçbir çıktı kalmaz.")); return }
+                    if (ts <= 0)            { Dialogs.showErrorMessage(workshopText('script.cff275b74696', "Geçersiz"), workshopText('script.6e9ec408d92c', "Karo boyutu pozitif olmalı.")); return }
+                    if (!(um > 0))          { Dialogs.showErrorMessage(workshopText('script.cff275b74696', "Geçersiz"), workshopText('script.b2fc0aa1ffc0', "Çözünürlük pozitif olmalı.")); return }
+                    if (ov < 0 || ov >= ts) { Dialogs.showErrorMessage(workshopText('script.cff275b74696', "Geçersiz"), workshopText('script.0cf85ef92df6', "Örtüşme 0 ile karo boyutu arasında olmalı.")); return }
+                    if (mc < 0 || mc > 100) { Dialogs.showErrorMessage(workshopText('script.cff275b74696', "Geçersiz"), workshopText('script.8e93cdec978b', "En az kapsama 0 ile 100 arasında olmalı.")); return }
+                    if (mx < 0)             { Dialogs.showErrorMessage(workshopText('script.cff275b74696', "Geçersiz"), workshopText('script.872f63359aff', "Etiket başına en çok karo 0 ya da pozitif olmalı.")); return }
+                    if (jq < 1 || jq > 100) { Dialogs.showErrorMessage(workshopText('script.cff275b74696', "Geçersiz"), workshopText('script.4f430437da6b', "JPG kalitesi 1 ile 100 arasında olmalı.")); return }
                     def labelChecks = labelPane.getChildren().findAll { it instanceof javafx.scene.control.CheckBox }
                     def picked = new LinkedHashSet()
                     labelChecks.each { if (it.isSelected()) picked.add(it.getUserData().toString()) }
-                    if (picked.isEmpty()) { Dialogs.showErrorMessage("Geçersiz", "En az bir etiket işaretli olmalı."); return }
+                    if (picked.isEmpty()) { Dialogs.showErrorMessage(workshopText('script.cff275b74696', "Geçersiz"), workshopText('script.d26b732a080f', "En az bir etiket işaretli olmalı.")); return }
                     String outText = outField.getText().trim()
-                    if (outText.isEmpty()) { Dialogs.showErrorMessage("Geçersiz", "Çıktı klasörü boş olamaz."); return }
+                    if (outText.isEmpty()) { Dialogs.showErrorMessage(workshopText('script.cff275b74696', "Geçersiz"), workshopText('script.d6a9056600e1', "Çıktı klasörü boş olamaz.")); return }
                     def sk = csv(splitKeyField.getText()).collect { it.toLowerCase(java.util.Locale.ROOT) }
                     def pk = csv(patientKeyField.getText()).collect { it.toLowerCase(java.util.Locale.ROOT) }
-                    if (sk.isEmpty()) { Dialogs.showErrorMessage("Geçersiz", "En az bir bölme anahtarı gerekir; boş bırakmak bölme denetimini kapatırdı."); return }
+                    if (sk.isEmpty()) { Dialogs.showErrorMessage(workshopText('script.cff275b74696', "Geçersiz"), workshopText('script.f789ee23e760', "En az bir bölme anahtarı gerekir; boş bırakmak bölme denetimini kapatırdı.")); return }
                     def fv = formatBox.getValue()
                     def gv = groupBox.getValue()
                     def lv = layoutBox.getValue()
@@ -495,10 +495,10 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
                         patientKeys: (pk.isEmpty() ? defaults.patientKeys : pk)])
                     stage.close()
                 } catch (NumberFormatException nfe) {
-                    Dialogs.showErrorMessage("Sayı formatı", "Karo boyutu, örtüşme, en çok karo ve JPG kalitesi tam sayı; çözünürlük ve kapsama ondalık olmalı (ör. 512 / 64 / 0 / 90 / 0.5 / 50).")
+                    Dialogs.showErrorMessage(workshopText('script.9cc391204f66', "Sayı formatı"), workshopText('script.33772ce511e9', "Karo boyutu, örtüşme, en çok karo ve JPG kalitesi tam sayı; çözünürlük ve kapsama ondalık olmalı (ör. 512 / 64 / 0 / 90 / 0.5 / 50)."))
                 }
             })
-            def cancelBtn = new javafx.scene.control.Button("İptal")
+            def cancelBtn = new javafx.scene.control.Button(workshopText('script.72278748133a', "İptal"))
             cancelBtn.setCancelButton(true)
             cancelBtn.setOnAction({ result.set(null); stage.close() })
 
@@ -542,20 +542,20 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
                 content.putString(windowBody)
                 cb.setContent(content)
             })
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -567,7 +567,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -586,7 +586,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ──────────────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir lam açın, sonra bu betiği tekrar çalıştırın.")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.4a2f706ae19a', "Önce bir lam açın, sonra bu betiği tekrar çalıştırın."))
     return
 }
 def server = imageData.getServer()
@@ -599,10 +599,10 @@ def allAnns = QP.getAnnotationObjects().findAll { it.getROI() != null }
 
 if (allAnns.isEmpty()) {
     Dialogs.showErrorMessage(
-        "Anotasyon yok",
-        "Karo dışa aktarımı anotasyonla sınırlıdır; lamdaki hiçbir anotasyon bulunamadı.\n\n" +
+        workshopText('script.469472ee53f3', "Anotasyon yok"),
+        workshopText('script.c5113f949edb', "Karo dışa aktarımı anotasyonla sınırlıdır; lamdaki hiçbir anotasyon bulunamadı.\n\n" +
         "Önce bir bölge çizin (dikdörtgen/çokgen) ya da maske için sınıflı anotasyon\n" +
-        "üretin (Tümör/Stroma modülü), sonra tekrar deneyin."
+        "üretin (Tümör/Stroma modülü), sonra tekrar deneyin.")
     )
     return
 }
@@ -658,9 +658,9 @@ if (!(downsample > 0)) downsample = 1.0d
 def inScope = selectedScope ? selectedAnns : allAnns
 if (selectedScope && inScope.isEmpty()) {
     Dialogs.showErrorMessage(
-        "Seçili anotasyon yok",
-        "'Seçili anotasyon(lar)' kapsamı için önce bir veya birden çok anotasyon seçin\n" +
-        "(Project/Annotations panelinden ya da lam üzerinde tıklayarak), sonra tekrar çalıştırın."
+        workshopText('script.25ef2c931d3f', "Seçili anotasyon yok"),
+        workshopText('script.4160b841af71', "'Seçili anotasyon(lar)' kapsamı için önce bir veya birden çok anotasyon seçin\n" +
+        "(Project/Annotations panelinden ya da lam üzerinde tıklayarak), sonra tekrar çalıştırın.")
     )
     return
 }
@@ -676,11 +676,11 @@ if (maskMode) {
                          .findAll { !excludeMatch(it, excludePatterns) }.unique().sort()
     if (maskClasses.isEmpty()) {
         Dialogs.showErrorMessage(
-            "Sınıflı anotasyon yok",
-            "Etiket maskesi üretmek için anotasyonların bir SINIFI (PathClass) olmalı\n" +
+            workshopText('script.186e6331ed6b', "Sınıflı anotasyon yok"),
+            workshopText('script.5b240d08f801', "Etiket maskesi üretmek için anotasyonların bir SINIFI (PathClass) olmalı\n" +
             "(ör. Tumor, Stroma). Kapsamdaki anotasyonların hiçbiri sınıflı değil.\n\n" +
             "Çözüm: anotasyonları sınıflandırın (Tümör/Stroma modülü) ya da\n" +
-            "'Sadece görüntü' modunu kullanın."
+            "'Sadece görüntü' modunu kullanın.")
         )
         return
     }
@@ -814,10 +814,10 @@ inScope.each { ann ->
 }
 if (!badSplits.isEmpty()) {
     Dialogs.showErrorMessage(
-        "Bölme değeri okunamadı",
-        "Şu bölme değerleri klasör adına çevrilemedi: " + badSplits.take(6).join(", ") + ".\n\n" +
-        "Bölme değeri Latin harfi ya da rakam içermelidir (ör. train, val, test, fold_1).\n" +
-        "Değer yok sayılıp bölmesiz yazılsaydı sızıntı denetimi yapılamazdı; hiçbir karo yazılmadı."
+        workshopText('script.326e26874d5b', "Bölme değeri okunamadı"),
+        workshopText('script.a1762b2c0af6', "Şu bölme değerleri klasör adına çevrilemedi: ") + badSplits.take(6).join(", ") + ".\n\n" +
+        workshopText('script.5988a86f67f1', "Bölme değeri Latin harfi ya da rakam içermelidir (ör. train, val, test, fold_1).\n") +
+        workshopText('script.94c3b310dc73', "Değer yok sayılıp bölmesiz yazılsaydı sızıntı denetimi yapılamazdı; hiçbir karo yazılmadı.")
     )
     return
 }
@@ -835,10 +835,10 @@ def keyTitle = { String key ->
 }
 if (groupGeoms.isEmpty()) {
     Dialogs.showErrorMessage(
-        "Karo üretilecek bölge yok",
-        "Kapsamdaki anotasyonlardan alan içeren bir bölge kalmadı.\n\n" +
+        workshopText('script.daa24eb1690c', "Karo üretilecek bölge yok"),
+        workshopText('script.7c40c30e7704', "Kapsamdaki anotasyonlardan alan içeren bir bölge kalmadı.\n\n" +
         "Olası nedenler: yalnız Ignore* sınıflı, çizgi ya da nokta anotasyonları var;\n" +
-        "ya da bölgelerin tamamı Ignore* / alt anotasyon çıkarmasıyla boşaldı."
+        "ya da bölgelerin tamamı Ignore* / alt anotasyon çıkarmasıyla boşaldı.")
     )
     return
 }
@@ -926,11 +926,11 @@ if (capAfterTissue) {
 }
 if (!isHeadless && expectedTiles > 5000) {
     def ok = Dialogs.showConfirmDialog(
-        "Çok sayıda karo",
+        workshopText('script.584b895b0825', "Çok sayıda karo"),
         String.format(java.util.Locale.US,
-            "Bu ayarlarla %s%,d karo yazılacak.\n\n" +
+            workshopText('script.7fc150e4bd79', "Bu ayarlarla %s%,d karo yazılacak.\n\n" +
             "Devam edilsin mi? (Karo boyutunu büyütmek, µm/px değerini büyütmek ya da\n" +
-            "en az kapsama eşiğini yükseltmek karo sayısını azaltır.)", (capAfterTissue ? "en çok " : ""), expectedTiles)
+            "en az kapsama eşiğini yükseltmek karo sayısını azaltır.)"), (capAfterTissue ? "en çok " : ""), expectedTiles)
     )
     if (!ok) { println "Kullanıcı çok-karo onayını reddetti."; return }
 }
@@ -992,29 +992,29 @@ otherListFiles.each { lf ->
 }
 if (!unreadableLists.isEmpty()) {
     Dialogs.showErrorMessage(
-        "Veri sızıntısı denetlenemedi: karo listesi okunamadı",
-        "Bu çıktı kümesindeki şu karo listeleri okunamadı ya da 'bolme' sütunu yok:\n  " + unreadableLists.take(8).join("\n  ") + "\n\n" +
-        "Bu listeler olmadan kümedeki diğer lamların bölmesi ve hastası denetlenemez. Hiçbir karo yazılmadı.\n" +
-        "Dosya başka bir programda açıksa kapatın; bozuksa o lamı yeniden dışa aktarın ya da başka bir çıktı klasörü seçin."
+        workshopText('script.2941868451aa', "Veri sızıntısı denetlenemedi: karo listesi okunamadı"),
+        workshopText('script.bb34a95600f5', "Bu çıktı kümesindeki şu karo listeleri okunamadı ya da 'bolme' sütunu yok:\n  ") + unreadableLists.take(8).join("\n  ") + "\n\n" +
+        workshopText('script.5a27f09ec829', "Bu listeler olmadan kümedeki diğer lamların bölmesi ve hastası denetlenemez. Hiçbir karo yazılmadı.\n") +
+        workshopText('script.273fea5f4e76', "Dosya başka bir programda açıksa kapatın; bozuksa o lamı yeniden dışa aktarın ya da başka bir çıktı klasörü seçin.")
     )
     return
 }
 if (!useSplit && !setSplitLists.isEmpty()) {
     Dialogs.showErrorMessage(
-        "Veri sızıntısı önlendi: bölmesiz lam, bölmeli küme",
-        "Bu çıktı kümesinde bölmesi olan lamlar var:\n  " + setSplitLists.take(8).join("\n  ") + "\n\n" +
-        "Bu lamda bölme üst verisi yok. Bölmesiz yazılırsa hasta ↔ bölme denetimi bu lam için çalışmaz;\n" +
-        "aynı hasta hem bir bölmede hem bölmesiz klasörde bulunabilir. Hiçbir karo yazılmadı.\n\n" +
-        "Bu lama bölme verin (proje girdisi ya da anotasyon üst verisi) ya da başka bir çıktı klasörü seçin."
+        workshopText('script.bba2fe9182b9', "Veri sızıntısı önlendi: bölmesiz lam, bölmeli küme"),
+        workshopText('script.23ff200884dd', "Bu çıktı kümesinde bölmesi olan lamlar var:\n  ") + setSplitLists.take(8).join("\n  ") + "\n\n" +
+        workshopText('script.12c73a70a240', "Bu lamda bölme üst verisi yok. Bölmesiz yazılırsa hasta ↔ bölme denetimi bu lam için çalışmaz;\n") +
+        workshopText('script.d0630e8a70ad', "aynı hasta hem bir bölmede hem bölmesiz klasörde bulunabilir. Hiçbir karo yazılmadı.\n\n") +
+        workshopText('script.9d85e2f57d6f', "Bu lama bölme verin (proje girdisi ya da anotasyon üst verisi) ya da başka bir çıktı klasörü seçin.")
     )
     return
 }
 if (useSplit && !setUnsplitLists.isEmpty()) {
     Dialogs.showErrorMessage(
-        "Veri sızıntısı önlendi: bölmeli lam, bölmesiz küme",
-        "Bu çıktı kümesinde bölmesiz yazılmış lamlar var:\n  " + setUnsplitLists.take(8).join("\n  ") + "\n\n" +
-        "O lamların hastaları hiçbir bölmeye bağlı değil; bu lamın hastasıyla çakışıp çakışmadığı denetlenemez.\n" +
-        "Hiçbir karo yazılmadı. O lamlara bölme verip yeniden dışa aktarın ya da başka bir çıktı klasörü seçin."
+        workshopText('script.44cfbfdeb758', "Veri sızıntısı önlendi: bölmeli lam, bölmesiz küme"),
+        workshopText('script.d45f3f0ca3f2', "Bu çıktı kümesinde bölmesiz yazılmış lamlar var:\n  ") + setUnsplitLists.take(8).join("\n  ") + "\n\n" +
+        workshopText('script.821be73504f6', "O lamların hastaları hiçbir bölmeye bağlı değil; bu lamın hastasıyla çakışıp çakışmadığı denetlenemez.\n") +
+        workshopText('script.94e3cdbadf35', "Hiçbir karo yazılmadı. O lamlara bölme verip yeniden dışa aktarın ya da başka bir çıktı klasörü seçin.")
     )
     return
 }
@@ -1022,13 +1022,13 @@ if (useSplit) {
     def distinct = new java.util.TreeSet(groupInfo.values().collect { it.split != null ? it.split.toString() : NO_SPLIT })
     if (distinct.size() > 1) {
         Dialogs.showErrorMessage(
-            "Veri sızıntısı önlendi: bir lam, birden çok bölme",
-            "Bu lamdaki anotasyonlar birden çok bölmeye düşüyor: " + distinct.join(", ") + ".\n\n" +
-            "Aynı lamın (aynı hastanın) karoları eğitim ve test kümelerine birlikte girerse\n" +
-            "model sınanırken gördüğü dokuyu tanır; ölçülen başarım olduğundan yüksek çıkar.\n\n" +
-            "Hiçbir karo yazılmadı. Bölmeyi lam / hasta düzeyinde verin: bu lamdaki bütün\n" +
-            "anotasyonlar aynı bölmeyi taşımalı (ya da bölme proje girdisine yazılmalı).\n" +
-            "\"" + NO_SPLIT + "\" = bölme üst verisi olmayan anotasyon."
+            workshopText('script.3c46a36fd1b4', "Veri sızıntısı önlendi: bir lam, birden çok bölme"),
+            workshopText('script.645498b93fb5', "Bu lamdaki anotasyonlar birden çok bölmeye düşüyor: ") + distinct.join(", ") + ".\n\n" +
+            workshopText('script.1276b95c5786', "Aynı lamın (aynı hastanın) karoları eğitim ve test kümelerine birlikte girerse\n") +
+            workshopText('script.09e1e4ce298e', "model sınanırken gördüğü dokuyu tanır; ölçülen başarım olduğundan yüksek çıkar.\n\n") +
+            workshopText('script.cd404f6e8160', "Hiçbir karo yazılmadı. Bölmeyi lam / hasta düzeyinde verin: bu lamdaki bütün\n") +
+            workshopText('script.093e6f1561f5', "anotasyonlar aynı bölmeyi taşımalı (ya da bölme proje girdisine yazılmalı).\n") +
+            "\"" + NO_SPLIT + workshopText('script.17170fe2af33', "\" = bölme üst verisi olmayan anotasyon.")
         )
         return
     }
@@ -1046,10 +1046,10 @@ if (useSplit) {
     }
     if (!clash.isEmpty()) {
         Dialogs.showErrorMessage(
-            "Veri sızıntısı önlendi: lam başka bölmede zaten var",
-            "Bu lamın karoları aynı çıktı kümesinde başka bir bölmede bulunuyor:\n  " + clash.take(6).join("\n  ") + "\n\n" +
-            "Şimdiki bölme: " + slideSplit + ". Hiçbir karo yazılmadı.\n" +
-            "Önce eski klasörü kendiniz kaldırın ya da bölme üst verisini düzeltin."
+            workshopText('script.fa07d80bdfcf', "Veri sızıntısı önlendi: lam başka bölmede zaten var"),
+            workshopText('script.8b7a523fadd3', "Bu lamın karoları aynı çıktı kümesinde başka bir bölmede bulunuyor:\n  ") + clash.take(6).join("\n  ") + "\n\n" +
+            workshopText('script.b1dbb67c67d4', "Şimdiki bölme: ") + slideSplit + workshopText('script.5349b8eaf318', ". Hiçbir karo yazılmadı.\n") +
+            workshopText('script.ed43f1da8d18', "Önce eski klasörü kendiniz kaldırın ya da bölme üst verisini düzeltin.")
         )
         return
     }
@@ -1091,17 +1091,17 @@ if (useSplit) {
         } catch (Throwable ignore) {}
         if (!conflicts.isEmpty()) {
             Dialogs.showErrorMessage(
-                "Veri sızıntısı önlendi: aynı hasta, farklı bölme",
-                "Bu lamın hastası (" + patientId + ") projede başka bir bölmede de var:\n  " + conflicts.take(8).join("\n  ") + "\n\n" +
-                "Şimdiki lamın bölmesi: " + slideSplit + ". Hiçbir karo yazılmadı.\n" +
-                "Bir hastanın bütün lamları aynı bölmede olmalıdır."
+                workshopText('script.28463a075157', "Veri sızıntısı önlendi: aynı hasta, farklı bölme"),
+                workshopText('script.1e13660413bc', "Bu lamın hastası (") + patientId + workshopText('script.8c5265c62c37', ") projede başka bir bölmede de var:\n  ") + conflicts.take(8).join("\n  ") + "\n\n" +
+                workshopText('script.8d8262ca4027', "Şimdiki lamın bölmesi: ") + slideSplit + workshopText('script.5349b8eaf318', ". Hiçbir karo yazılmadı.\n") +
+                workshopText('script.7d9d4a05f06b', "Bir hastanın bütün lamları aynı bölmede olmalıdır.")
             )
             return
         }
         if (!unreadable.isEmpty()) {
             String why2 = "Aynı hastanın (" + patientId + ") şu lamlarının anotasyonları okunamadı; bölmeleri denetlenemedi:\n  " + unreadable.take(8).join("\n  ")
             if (isHeadless) { println "Veri sızıntısı denetlenemedi; karo yazılmadı.\n" + why2; return }
-            if (!Dialogs.showConfirmDialog("Hasta düzeyinde sızıntı denetlenemedi", why2 + "\n\nBu lamların aynı bölmede olduğundan eminseniz devam edin.\nDevam edilsin mi?")) {
+            if (!Dialogs.showConfirmDialog(workshopText('script.6e36e104161a', "Hasta düzeyinde sızıntı denetlenemedi"), why2 + workshopText('script.e8375469cf87', "\n\nBu lamların aynı bölmede olduğundan eminseniz devam edin.\nDevam edilsin mi?"))) {
                 println "Kullanıcı dışa aktarmayı durdurdu."; return
             }
         }
@@ -1123,9 +1123,9 @@ if (useSplit) {
         }
         if (!listClash.isEmpty()) {
             Dialogs.showErrorMessage(
-                "Veri sızıntısı önlendi: aynı hasta, farklı bölme",
-                "Bu hastanın (" + patientId + ") karoları aynı çıktı kümesinde başka bir bölmede zaten var:\n  " + listClash.take(8).join("\n  ") + "\n\n" +
-                "Şimdiki lamın bölmesi: " + slideSplit + ". Hiçbir karo yazılmadı."
+                workshopText('script.28463a075157', "Veri sızıntısı önlendi: aynı hasta, farklı bölme"),
+                workshopText('script.140de774d40d', "Bu hastanın (") + patientId + workshopText('script.ecb824dedc2a', ") karoları aynı çıktı kümesinde başka bir bölmede zaten var:\n  ") + listClash.take(8).join("\n  ") + "\n\n" +
+                workshopText('script.8d8262ca4027', "Şimdiki lamın bölmesi: ") + slideSplit + workshopText('script.8792ccfebe77', ". Hiçbir karo yazılmadı.")
             )
             return
         }
@@ -1140,7 +1140,7 @@ if (useSplit) {
                      "(takma ad olabilir; aynı hastanın bütün lamlarında aynı olmalı). Sonra yeniden çalıştırın.\n" +
                      "Hiçbir karo yazılmadı."
         println "Veri sızıntısı denetlenemedi; karo yazılmadı.\n" + why
-        if (!isHeadless) Dialogs.showErrorMessage("Hasta kimliği yok: karo yazılmadı", why)
+        if (!isHeadless) Dialogs.showErrorMessage(workshopText('script.e5f99f712db8', "Hasta kimliği yok: karo yazılmadı"), why)
         return
     }
 }
@@ -1168,10 +1168,10 @@ if (maskMode) {
         } catch (Throwable t) { bad = true }
         if (bad) {
             Dialogs.showErrorMessage(
-                "labels.txt okunamadı",
-                "Bu çıktı kümesindeki labels.txt okunamadı ya da aynı indeks / sınıf iki kez geçiyor:\n  " + labelsFile.getAbsolutePath() + "\n\n" +
-                "Maske indeksleri kümedeki diğer lamlarla aynı olmak zorundadır; dosya olmadan bu sağlanamaz.\n" +
-                "Hiçbir karo yazılmadı. Dosyayı düzeltin ya da başka bir çıktı klasörü seçin."
+                workshopText('script.1837cf652944', "labels.txt okunamadı"),
+                workshopText('script.6212e280db0f', "Bu çıktı kümesindeki labels.txt okunamadı ya da aynı indeks / sınıf iki kez geçiyor:\n  ") + labelsFile.getAbsolutePath() + "\n\n" +
+                workshopText('script.17ab6cc23b30', "Maske indeksleri kümedeki diğer lamlarla aynı olmak zorundadır; dosya olmadan bu sağlanamaz.\n") +
+                workshopText('script.7920ba1f9a78', "Hiçbir karo yazılmadı. Dosyayı düzeltin ya da başka bir çıktı klasörü seçin.")
             )
             return
         }
@@ -1179,7 +1179,7 @@ if (maskMode) {
     int nextIndex = classIndex.isEmpty() ? 1 : (classIndex.values().max() + 1)
     maskClasses.each { String cn -> if (!classIndex.containsKey(cn)) { classIndex.put(cn, nextIndex); nextIndex++ } }
     if (classIndex.values().max() > 255) {
-        Dialogs.showErrorMessage("Çok fazla sınıf", "Bu çıktı kümesinde 255'ten fazla maske sınıfı birikti; 8 bit maskeye sığmaz. Hiçbir karo yazılmadı.")
+        Dialogs.showErrorMessage(workshopText('script.d9494b42b423', "Çok fazla sınıf"), workshopText('script.60a41656041c', "Bu çıktı kümesinde 255'ten fazla maske sınıfı birikti; 8 bit maskeye sığmaz. Hiçbir karo yazılmadı."))
         return
     }
     def builder = new LabeledImageServer.Builder(imageData)
@@ -1195,7 +1195,7 @@ if (maskMode) {
     // Karolardan ÖNCE yazılır: yazılamıyorsa indeks kaydı olmayan maske üretilmez.
     try { labelsFile.write(legend.join("\n") + "\n", "UTF-8") }
     catch (Throwable t) {
-        Dialogs.showErrorMessage("labels.txt yazılamadı", "Sınıf → indeks kaydı yazılamadı: " + t.getMessage() + "\nHiçbir karo yazılmadı.")
+        Dialogs.showErrorMessage(workshopText('script.ea9ef857ebee', "labels.txt yazılamadı"), workshopText('script.fc54162b8f36', "Sınıf → indeks kaydı yazılamadı: ") + t.getMessage() + workshopText('script.bb83e904dabf', "\nHiçbir karo yazılmadı."))
         return
     }
 }
@@ -1212,12 +1212,12 @@ if (!oldTileFiles.isEmpty()) {
     String choice = KEEP
     if (!isHeadless) {
         choice = Dialogs.showChoiceDialog(
-            "Bu lamın eski karoları var",
+            workshopText('script.0b1b92e95b6b', "Bu lamın eski karoları var"),
             String.format(java.util.Locale.US,
-                "Bu çıktı kümesinde bu lama ait %,d karo dosyası zaten var.\n\n" +
+                workshopText('script.f8460a5c1829', "Bu çıktı kümesinde bu lama ait %,d karo dosyası zaten var.\n\n" +
                 "Anotasyonu yeniden çizdiyseniz ya da sınıfını değiştirdiyseniz eski karolar\n" +
                 "klasörde kalır; aynı karo iki etiket klasöründe birden bulunabilir.\n\n" +
-                "Silme yalnız bu lamın, bu kümedeki karo dosyalarını kapsar.", oldTileFiles.size()),
+                "Silme yalnız bu lamın, bu kümedeki karo dosyalarını kapsar."), oldTileFiles.size()),
             [KEEP, WIPE], KEEP)
         if (choice == null) { println "Karo dışa aktarımı iptal edildi."; return }
     }
@@ -1642,3 +1642,14 @@ println String.format(java.util.Locale.US, "Tamamlandı: %,d görüntü + %,d ma
 if (!errors.isEmpty()) println "⚠️  ${errors.size()} hata (detay sonuç penceresinde)"
 println "Çıktı: ${outDir.getAbsolutePath()}"
 println "─────────────────────────────────────"
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

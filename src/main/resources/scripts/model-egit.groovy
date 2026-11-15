@@ -101,14 +101,14 @@ def waitForConfirm = { String windowTitle, String windowBody ->
             def scrollPane = new javafx.scene.control.ScrollPane(label)
             scrollPane.setFitToWidth(true)
 
-            def okBtn = new javafx.scene.control.Button("Çalıştır")
+            def okBtn = new javafx.scene.control.Button(workshopText('script.79ef801ff99f', "Çalıştır"))
             okBtn.setDefaultButton(true)
             okBtn.setOnAction({
                 confirmed.set(true)
                 stage.close()
             })
 
-            def cancelBtn = new javafx.scene.control.Button("İptal")
+            def cancelBtn = new javafx.scene.control.Button(workshopText('script.72278748133a', "İptal"))
             cancelBtn.setCancelButton(true)
             cancelBtn.setOnAction({
                 confirmed.set(false)
@@ -117,7 +117,7 @@ def waitForConfirm = { String windowTitle, String windowBody ->
 
             stage.setOnHidden({ latch.countDown() })
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
@@ -164,13 +164,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -178,7 +178,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -191,7 +191,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -220,26 +220,26 @@ def askOverwrite = { String existingName, String versionedName ->
         try {
             def stage = new javafx.stage.Stage()
             stage.initModality(javafx.stage.Modality.NONE)
-            stage.setTitle("Sınıflandırıcı zaten var")
+            stage.setTitle(workshopText('script.d51cf3ad0424', "Sınıflandırıcı zaten var"))
             stage.setAlwaysOnTop(true)
 
             def label = new javafx.scene.control.Label(
-                "Projede '${existingName}' adlı bir piksel sınıflandırıcı zaten var.\n\n" +
-                "• Üzerine yaz : eski model silinir, yenisi '${existingName}' olur.\n" +
-                "• Sürümle     : eski model korunur; yeni model '${versionedName}' olur\n" +
-                "                (Tümör/Stroma sihirbazı (uygula) varsayılan olarak '${existingName}'\n" +
-                "                arar — sürümlerseniz Atölye Ayarları'ndan adı değiştirin).\n\n" +
-                "Hatalı bir güncellemenin geri dönüşü zordur (Tümör/Stroma modülü §4.3)."
+                "${workshopText('script.6262c9f6828d', 'Projede \'')}${existingName}${workshopText('script.db440695c39b', '\' adlı bir piksel sınıflandırıcı zaten var.\n\n')}" +
+                "${workshopText('script.fe9402d6d2d7', '• Üzerine yaz : eski model silinir, yenisi \'')}${existingName}${workshopText('script.c6e4aa3752cc', '\' olur.\n')}" +
+                "${workshopText('script.4272c6ff9eaf', '• Sürümle     : eski model korunur; yeni model \'')}${versionedName}${workshopText('script.95aca84d8ffd', '\' olur\n')}" +
+                "${workshopText('script.3c5da07fa47a', '                (Tümör/Stroma sihirbazı (uygula) varsayılan olarak \'')}${existingName}'\n" +
+                workshopText('script.cb68389080db', "                arar — sürümlerseniz Atölye Ayarları'ndan adı değiştirin).\n\n") +
+                workshopText('script.00498729bc98', "Hatalı bir güncellemenin geri dönüşü zordur (Tümör/Stroma modülü §4.3).")
             )
             label.setWrapText(true)
             label.setStyle("-fx-font-size: 12px; -fx-padding: 8px;")
 
-            def owBtn = new javafx.scene.control.Button("Üzerine yaz")
+            def owBtn = new javafx.scene.control.Button(workshopText('script.983952c4424b', "Üzerine yaz"))
             owBtn.setOnAction({ choice.set("OVERWRITE"); stage.close() })
-            def verBtn = new javafx.scene.control.Button("Sürümle (${versionedName})")
+            def verBtn = new javafx.scene.control.Button("${workshopText('script.f4ab6a75ba8d', 'Sürümle (')}${versionedName})")
             verBtn.setDefaultButton(true)
             verBtn.setOnAction({ choice.set("VERSION"); stage.close() })
-            def cancelBtn = new javafx.scene.control.Button("İptal")
+            def cancelBtn = new javafx.scene.control.Button(workshopText('script.72278748133a', "İptal"))
             cancelBtn.setCancelButton(true)
             cancelBtn.setOnAction({ choice.set("CANCEL"); stage.close() })
 
@@ -257,8 +257,8 @@ def askOverwrite = { String existingName, String versionedName ->
             stage.show()
         } catch (Throwable t) {
             choice.set(qupath.fx.dialogs.Dialogs.showConfirmDialog(
-                "Sınıflandırıcı zaten var",
-                "'${existingName}' var. Üzerine yazmak için Tamam, korumak (sürümlemek) için İptal.")
+                workshopText('script.d51cf3ad0424', "Sınıflandırıcı zaten var"),
+                "'${existingName}${workshopText('script.b67b787edaf5', '\' var. Üzerine yazmak için Tamam, korumak (sürümlemek) için İptal.')}")
                 ? "OVERWRITE" : "VERSION")
             latch.countDown()
         }
@@ -273,8 +273,8 @@ def askOverwrite = { String existingName, String versionedName ->
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     Dialogs.showErrorMessage(
-        "Görüntü açık değil",
-        "Önce bir H&E lamı açın, Tumor/Stroma bölgeleri çizin, sonra bu betiği tekrar çalıştırın."
+        workshopText('script.b4c901dc184b', "Görüntü açık değil"),
+        workshopText('script.f3f3a5d73643', "Önce bir H&E lamı açın, Tumor/Stroma bölgeleri çizin, sonra bu betiği tekrar çalıştırın.")
     )
     return
 }
@@ -282,9 +282,9 @@ if (imageData == null) {
 def project = QP.getProject()
 if (project == null) {
     Dialogs.showErrorMessage(
-        "Proje açık değil",
-        "Bu betik modeli proje klasörüne kaydeder.\n" +
-        "Önce [File → Project → Create project] ile bir proje oluşturun ve lamlarınızı ekleyin."
+        workshopText('script.a38d0e6adac0', "Proje açık değil"),
+        workshopText('script.b05e604138a8', "Bu betik modeli proje klasörüne kaydeder.\n" +
+        "Önce [File → Project → Create project] ile bir proje oluşturun ve lamlarınızı ekleyin.")
     )
     return
 }
@@ -295,11 +295,11 @@ def normalizedImageType = imageTypeName.toUpperCase(java.util.Locale.ROOT).repla
 def stains = imageData.getColorDeconvolutionStains()
 if (stains == null || !normalizedImageType.contains('BRIGHTFIELD_H_E')) {
     Dialogs.showErrorMessage(
-        "Görüntü tipi uygun değil",
-        "Bu betik Hematoxylin/Eosin renk ayrıştırma kanallarını kullanır; bunun için\n" +
+        workshopText('script.762ff995cda6', "Görüntü tipi uygun değil"),
+        workshopText('script.1fae35d24240', "Bu betik Hematoxylin/Eosin renk ayrıştırma kanallarını kullanır; bunun için\n" +
         "görüntü tipi Brightfield (H&E) olmalı ve boya vektörleri tanımlı olmalı.\n\n" +
         "Çözüm: Extensions → Atölye → Yardımcılar → Görüntü tipi ayarla ile tipi\n" +
-        "Brightfield (H&E) yapın, sonra bu betiği tekrar çalıştırın."
+        "Brightfield (H&E) yapın, sonra bu betiği tekrar çalıştırın.")
     )
     return
 }
@@ -309,10 +309,10 @@ def cal = imageData.getServer().getPixelCalibration()
 def basePixelMicrons = cal.getAveragedPixelSizeMicrons()
 if (!(basePixelMicrons > 0)) {
     Dialogs.showErrorMessage(
-        "Kalibrasyon yok",
-        "Lamda piksel boyutu (µm/px) tanımlı değil; sınıflandırıcı çözünürlüğü hesaplanamaz.\n\n" +
+        workshopText('script.a5a01874aff2', "Kalibrasyon yok"),
+        workshopText('script.bff255079a29', "Lamda piksel boyutu (µm/px) tanımlı değil; sınıflandırıcı çözünürlüğü hesaplanamaz.\n\n" +
         "Çözüm: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).\n" +
-        "Sonra bu betiği tekrar çalıştırın."
+        "Sonra bu betiği tekrar çalıştırın.")
     )
     return
 }
@@ -331,16 +331,16 @@ def stromaCount = classCounts['Stroma'] ?: 0
 
 if (tumorCount == 0 || stromaCount == 0) {
     Dialogs.showErrorMessage(
-        "Eğitim anotasyonu eksik",
-        "Bir Random Forest eğitmek için lamda en az birer **Tumor** ve **Stroma**\n" +
-        "sınıflı (alan) anotasyon gerekir.\n\n" +
-        "Şu an bulunan: Tumor = ${tumorCount}, Stroma = ${stromaCount}\n\n" +
-        "Çözüm (Tümör/Stroma modülü §2):\n" +
-        "  1. Annotations panel → + Add class ile Tumor (kırmızı) ve Stroma (yeşil) ekleyin\n" +
-        "  2. Brush (B) ile 3-5 farklı tümör adasına küçük Tumor anotasyonları çizin\n" +
-        "  3. Sınıfı Stroma'ya çevirip 3-5 stromal bölge çizin\n" +
-        "  4. Bu betiği tekrar çalıştırın\n\n" +
-        "İsterseniz Background* / Necrosis* gibi ek sınıflar da çizebilirsiniz (sona * ekleyin: nesne ve alan ölçümü dışı kalır)."
+        workshopText('script.f5fcfe6d1ac7', "Eğitim anotasyonu eksik"),
+        workshopText('script.f47059686bbb', "Bir Random Forest eğitmek için lamda en az birer **Tumor** ve **Stroma**\n" +
+        "sınıflı (alan) anotasyon gerekir.\n\n") +
+        "${workshopText('script.d44f8e99c9e3', 'Şu an bulunan: Tumor = ')}${tumorCount}, Stroma = ${stromaCount}\n\n" +
+        workshopText('script.9cb21ab3346e', "Çözüm (Tümör/Stroma modülü §2):\n") +
+        workshopText('script.aeb9aa13eebf', "  1. Annotations panel → + Add class ile Tumor (kırmızı) ve Stroma (yeşil) ekleyin\n") +
+        workshopText('script.97c3ff43b99d', "  2. Brush (B) ile 3-5 farklı tümör adasına küçük Tumor anotasyonları çizin\n") +
+        workshopText('script.4ae80a14de67', "  3. Sınıfı Stroma'ya çevirip 3-5 stromal bölge çizin\n") +
+        workshopText('script.0dc4e69b8522', "  4. Bu betiği tekrar çalıştırın\n\n") +
+        workshopText('script.2d1948071a50', "İsterseniz Background* / Necrosis* gibi ek sınıflar da çizebilirsiniz (sona * ekleyin: nesne ve alan ölçümü dışı kalır).")
     )
     return
 }
@@ -441,9 +441,9 @@ try {
 
     if (labelMap == null || labelMap.size() < 2) {
         Dialogs.showErrorMessage(
-            "Eğitim verisi yetersiz",
-            "Anotasyonlardan en az iki sınıf çıkarılamadı. Tumor ve Stroma bölgelerinin\n" +
-            "boş olmadığından ve alan (area) anotasyonu olduğundan emin olun."
+            workshopText('script.43dc59f56fbb', "Eğitim verisi yetersiz"),
+            workshopText('script.fc30ea13fc1e', "Anotasyonlardan en az iki sınıf çıkarılamadı. Tumor ve Stroma bölgelerinin\n" +
+            "boş olmadığından ve alan (area) anotasyonu olduğundan emin olun.")
         )
         return
     }
@@ -477,11 +477,11 @@ try {
     project.getPixelClassifiers().put(targetName, classifier)
 } catch (Throwable t) {
     Dialogs.showErrorMessage(
-        "Eğitim başarısız",
-        "Model eğitilirken bir hata oluştu:\n\n" +
-        t.getClass().getSimpleName() + ": " + (t.getMessage() ?: "(mesaj yok)") + "\n\n" +
-        "Sık nedenler: anotasyonlar çok küçük/boş, görüntü tipi H&E değil, veya boya\n" +
-        "vektörleri hatalı. Detay için View → Show log dialogue."
+        workshopText('script.4768938ec5c2', "Eğitim başarısız"),
+        workshopText('script.1d797877ecfc', "Model eğitilirken bir hata oluştu:\n\n") +
+        t.getClass().getSimpleName() + ": " + (t.getMessage() ?: workshopText('script.5c099e44e889', "(mesaj yok)")) + "\n\n" +
+        workshopText('script.3075dc1ed51c', "Sık nedenler: anotasyonlar çok küçük/boş, görüntü tipi H&E değil, veya boya\n") +
+        workshopText('script.6edcf9d33c6f', "vektörleri hatalı. Detay için View → Show log dialogue.")
     )
     return
 }
@@ -575,3 +575,14 @@ if (isHeadless) {
 println "─────────────────────────────────────"
 println "Tamamlandı: ${targetName}"
 println "─────────────────────────────────────"
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

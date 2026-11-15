@@ -83,7 +83,7 @@ def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').t
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     def msg = "Önce bir lam açın, sonra bu sihirbazı tekrar çalıştırın."
-    if (isHeadless) { println msg } else { Dialogs.showErrorMessage("Görüntü açık değil", msg) }
+    if (isHeadless) { println msg } else { Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), msg) }
     return
 }
 
@@ -300,9 +300,9 @@ def applyMenuHighlight = { String menuName ->
     }
 }
 def menuHighlightToggle = { String menuName ->
-    def tb = new javafx.scene.control.ToggleButton(menuName + ' menüsünü göster')
+    def tb = new javafx.scene.control.ToggleButton(menuName + workshopText('script.ef07407189c3', ' menüsünü göster'))
     tb.setTooltip(new javafx.scene.control.Tooltip(
-        'Üst menü çubuğunda "' + menuName + '" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).'))
+        workshopText('script.242839f75398', 'Üst menü çubuğunda "') + menuName + workshopText('script.f4d336f42a58', '" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).')))
     tb.setOnAction({ if (tb.isSelected()) applyMenuHighlight(menuName) else clearMenuHighlight() })
     return tb
 }
@@ -311,22 +311,22 @@ javafx.application.Platform.runLater {
     try {
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Cellpose hücre / çekirdek tespiti sihirbazı')
+        stage.setTitle(workshopText('script.596b519f2156', 'Cellpose hücre / çekirdek tespiti sihirbazı'))
         stage.setAlwaysOnTop(true)
         stage.setOnHidden({ clearMenuHighlight() })   // #3: pencere kapanınca menü vurgusunu kaldır
 
-        def title = new javafx.scene.control.Label('Cellpose hücre / çekirdek tespiti')
+        def title = new javafx.scene.control.Label(workshopText('script.bb9620ca0faa', 'Cellpose hücre / çekirdek tespiti'))
         title.setStyle('-fx-font-size: 14px; -fx-font-weight: bold;')
 
         def banner = new javafx.scene.control.Label(cellposeHere
-            ? '✅ BIOP Cellpose eklentisi bulundu. Python yolu: Edit → Preferences → Cellpose/Omnipose.'
-            : '⚠ BIOP Cellpose eklentisi bulunamadı. Kurulum: Cellpose eki § 2. Bu sihirbaz ölçüm yapamaz.')
+            ? workshopText('script.4e6f3a97696e', '✅ BIOP Cellpose eklentisi bulundu. Python yolu: Edit → Preferences → Cellpose/Omnipose.')
+            : workshopText('script.52853be38938', '⚠ BIOP Cellpose eklentisi bulunamadı. Kurulum: Cellpose eki § 2. Bu sihirbaz ölçüm yapamaz.'))
         banner.setWrapText(true)
         banner.setStyle(cellposeHere ? '' : '-fx-text-fill: -qp-script-error-color;')
 
         def info = new javafx.scene.control.Label(
-            'Bir bölge anotasyonu çizip SEÇİN (kenarı sarı), parametreleri seçip "Çalıştır".\n' +
-            'Segmentasyon QuPath dışındaki Python (venv) ortamında çalışır; ilk çalıştırmada model indirilebilir.')
+            workshopText('script.a185012100fd', 'Bir bölge anotasyonu çizip SEÇİN (kenarı sarı), parametreleri seçip "Çalıştır".\n' +
+            'Segmentasyon QuPath dışındaki Python (venv) ortamında çalışır; ilk çalıştırmada model indirilebilir.'))
         info.setWrapText(true)
 
         def familyBox = new javafx.scene.control.ChoiceBox()
@@ -351,19 +351,19 @@ javafx.application.Platform.runLater {
 
         def grid = new javafx.scene.layout.GridPane()
         grid.setHgap(8); grid.setVgap(6); grid.setPadding(new javafx.geometry.Insets(6))
-        grid.addRow(0, new javafx.scene.control.Label('Aile'),              familyBox)
+        grid.addRow(0, new javafx.scene.control.Label(workshopText('script.3add4b84bf03', 'Aile')),              familyBox)
         grid.addRow(1, new javafx.scene.control.Label('Model'),             modelField)
-        grid.addRow(2, new javafx.scene.control.Label('Kanal modu'),        channelBox)
-        grid.addRow(3, new javafx.scene.control.Label('Çap diameter (px)'), spDia)
-        grid.addRow(4, new javafx.scene.control.Label('Piksel boyutu (µm)'),spPx)
+        grid.addRow(2, new javafx.scene.control.Label(workshopText('script.07dff4c63738', 'Kanal modu')),        channelBox)
+        grid.addRow(3, new javafx.scene.control.Label(workshopText('script.dc2713f6d806', 'Çap diameter (px)')), spDia)
+        grid.addRow(4, new javafx.scene.control.Label(workshopText('script.03a8af98a6fb', 'Piksel boyutu (µm)')),spPx)
         grid.addRow(5, new javafx.scene.control.Label('flowThreshold'),     spFlow)
         grid.addRow(6, new javafx.scene.control.Label('cellprobThreshold'), spProb)
-        grid.addRow(7, new javafx.scene.control.Label('Hücre genişletme (µm)'), spExp)
-        grid.addRow(8, new javafx.scene.control.Label('Floresan 2-kanal — sito · çekirdek (1-tabanlı)'),
+        grid.addRow(7, new javafx.scene.control.Label(workshopText('script.54ce968f12fc', 'Hücre genişletme (µm)')), spExp)
+        grid.addRow(8, new javafx.scene.control.Label(workshopText('script.02f77d359136', 'Floresan 2-kanal — sito · çekirdek (1-tabanlı)')),
             new javafx.scene.layout.HBox(6, spCyto, spNuc))
 
         // İHK yoğunluk binning (isteğe bağlı, gelişmiş)
-        def binChk = new javafx.scene.control.CheckBox('İHK yoğunluk binning uygula (0/1+/2+/3+)')
+        def binChk = new javafx.scene.control.CheckBox(workshopText('script.41c3c73b553b', 'İHK yoğunluk binning uygula (0/1+/2+/3+)'))
         binChk.setSelected(Boolean.parseBoolean(cfg.ihcBin))
         def compartBox = new javafx.scene.control.ChoiceBox()
         compartBox.getItems().addAll('Cell: DAB OD mean', 'Membrane: DAB OD mean', 'Nucleus: DAB OD mean', 'Cytoplasm: DAB OD mean')
@@ -391,21 +391,21 @@ javafx.application.Platform.runLater {
         def binGrid = new javafx.scene.layout.GridPane()
         binGrid.setHgap(8); binGrid.setVgap(6); binGrid.setPadding(new javafx.geometry.Insets(6))
         binGrid.addRow(0, binChk)
-        binGrid.addRow(1, new javafx.scene.control.Label('Bölme (compartment)'), compartBox)
-        binGrid.addRow(2, new javafx.scene.control.Label('OD eşikleri 1+/2+/3+'),
+        binGrid.addRow(1, new javafx.scene.control.Label(workshopText('script.1122e9d85667', 'Bölme (compartment)')), compartBox)
+        binGrid.addRow(2, new javafx.scene.control.Label(workshopText('script.5fe335d7c17a', 'OD eşikleri 1+/2+/3+')),
             new javafx.scene.layout.HBox(6, spT1, spT2, spT3))
-        def advBin = new javafx.scene.control.TitledPane('⚙ İHK yoğunluk binning (isteğe bağlı)', binGrid)
+        def advBin = new javafx.scene.control.TitledPane(workshopText('script.917057591e61', '⚙ İHK yoğunluk binning (isteğe bağlı)'), binGrid)
         advBin.setExpanded(false); advBin.setAnimated(false)
 
-        def status = new javafx.scene.control.Label('Hazır.')
+        def status = new javafx.scene.control.Label(workshopText('script.86bb45e59294', 'Hazır.'))
         def progress = new javafx.scene.control.ProgressBar()
         progress.setMaxWidth(Double.MAX_VALUE); progress.setVisible(false); progress.setManaged(false)
         def resultArea = new javafx.scene.control.TextArea()
         resultArea.setEditable(false); resultArea.setWrapText(false); resultArea.setPrefRowCount(11)
-        resultArea.setPromptText('Sonuçlar burada görünecek…')
+        resultArea.setPromptText(workshopText('script.4adde9b85aed', 'Sonuçlar burada görünecek…'))
         resultArea.setStyle(MONO)
 
-        def runBtn = new javafx.scene.control.Button('Çalıştır'); runBtn.setDefaultButton(true)
+        def runBtn = new javafx.scene.control.Button(workshopText('script.79ef801ff99f', 'Çalıştır')); runBtn.setDefaultButton(true)
         runBtn.setDisable(!cellposeHere)
         runBtn.setOnAction({
             // Seçimleri hatırla
@@ -441,25 +441,25 @@ javafx.application.Platform.runLater {
             def selNow = QP.getSelectedObjects().findAll { it.isAnnotation() }
             int nPrev = selNow.collect { ann -> ann.getChildObjects().findAll { it.isDetection() }.size() }.sum(0) as int
             if (nPrev > 0) {
-                boolean ok = Dialogs.showConfirmDialog('Önceki hücre tespitleri değiştirilecek',
+                boolean ok = Dialogs.showConfirmDialog(workshopText('script.c8cded1ce05d', 'Önceki hücre tespitleri değiştirilecek'),
                     String.format(java.util.Locale.US,
-                        'Seçili anotasyon(lar)da zaten %,d hücre tespiti bulunuyor.\n' +
-                        'Yeniden çalıştırma bu anotasyonlardaki mevcut tespitleri yeni Cellpose çıktısıyla değiştirecek.\n\nDevam edilsin mi?', nPrev))
+                        workshopText('script.5c13361d1b11', 'Seçili anotasyon(lar)da zaten %,d hücre tespiti bulunuyor.\n' +
+                        'Yeniden çalıştırma bu anotasyonlardaki mevcut tespitleri yeni Cellpose çıktısıyla değiştirecek.\n\nDevam edilsin mi?'), nPrev))
                 if (!ok) {
-                    status.setStyle(''); status.setText('İptal edildi — mevcut hücre tespitleri korundu.')
+                    status.setStyle(''); status.setText(workshopText('script.5c7534a1c682', 'İptal edildi — mevcut hücre tespitleri korundu.'))
                     return
                 }
             }
 
             runBtn.setDisable(true)
-            status.setStyle(''); status.setText('… Cellpose çalışıyor (ilk çalıştırmada model indirilebilir)…')
+            status.setStyle(''); status.setText(workshopText('script.0fde4bf9fc6d', '… Cellpose çalışıyor (ilk çalıştırmada model indirilebilir)…'))
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             def worker = new Thread({
                 def res = runDetection(fam, mdl, chan, dia, px, fl, pr, ex, bin, t1, t2, t3, comp, cytoCh, nucCh)
                 javafx.application.Platform.runLater {
                     progress.setVisible(false); progress.setManaged(false); runBtn.setDisable(false)
                     if (res.ok) {
-                        status.setStyle(''); status.setText('Tamamlandı ✅ — parametreleri değiştirip tekrar çalıştırabilirsiniz.')
+                        status.setStyle(''); status.setText(workshopText('script.63bbb69e1f63', 'Tamamlandı ✅ — parametreleri değiştirip tekrar çalıştırabilirsiniz.'))
                         resultArea.setText(res.text)
                     } else {
                         status.setStyle('-fx-text-fill: #c0392b;'); status.setText('⚠ ' + res.error)
@@ -469,17 +469,17 @@ javafx.application.Platform.runLater {
             worker.setDaemon(true); worker.start()
         })
 
-        def alwaysTop = new javafx.scene.control.CheckBox('Üstte tut'); alwaysTop.setSelected(true)
+        def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut')); alwaysTop.setSelected(true)
         alwaysTop.selectedProperty().addListener(
             { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
-        def copyBtn = new javafx.scene.control.Button('Kopyala')
+        def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', 'Kopyala'))
         copyBtn.setOnAction({
             def cb = javafx.scene.input.Clipboard.getSystemClipboard()
             def c = new javafx.scene.input.ClipboardContent(); c.putString(resultArea.getText()); cb.setContent(c)
         })
-        def closeBtn = new javafx.scene.control.Button('Kapat'); closeBtn.setOnAction({ stage.close() })
+        def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', 'Kapat')); closeBtn.setOnAction({ stage.close() })
 
-        def footer = new javafx.scene.control.Label('QuPath Atölye Betikleri · araştırma/eğitim amaçlı')
+        def footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', 'QuPath Atölye Betikleri · araştırma/eğitim amaçlı'))
         footer.setMaxWidth(Double.MAX_VALUE)
         footer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;')
 
@@ -499,6 +499,17 @@ javafx.application.Platform.runLater {
         stage.setScene(new javafx.scene.Scene(root, 640, 680))
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Cellpose sihirbazı açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage(workshopText('script.1012e1ce85d3', 'Cellpose sihirbazı açılamadı'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+    }
+}
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
     }
 }

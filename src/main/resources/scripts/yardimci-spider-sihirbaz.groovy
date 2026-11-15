@@ -690,22 +690,22 @@ render = { ->
     }
 
     if (cur == 'CONFIG_INCOMPLETE') {
-        title.setText('SPIDER yapılandırması gerekli')
+        title.setText(workshopText('script.ae607b21867d', 'SPIDER yapılandırması gerekli'))
         def miss = configMissing(cfg)
-        addGuidance('SPIDER köprüsü bir Python ortamı gerektirir. Aşağıdakiler eksik/geçersiz:\n  • ' +
-            (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
-            '\n\nKurulum: Ekler → SPIDER Doku Sınıflandırıcı § kurulum (veya Kaynaklar → İleri kurulumlar G).')
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
+        addGuidance(workshopText('script.5afae0791a82', 'SPIDER köprüsü bir Python ortamı gerektirir. Aşağıdakiler eksik/geçersiz:\n  • ') +
+            (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')) +
+            workshopText('script.1cde1245b84d', '\n\nKurulum: Ekler → SPIDER Doku Sınıflandırıcı § kurulum (veya Kaynaklar → İleri kurulumlar G).'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
-        title.setText('SPIDER yapılandırması')
+        title.setText(workshopText('script.12747301bd53', 'SPIDER yapılandırması'))
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         def pyField = new javafx.scene.control.TextField(cfg.python ?: '')
         def brField = new javafx.scene.control.TextField(cfg.bridge ?: '')
         def mdField = new javafx.scene.control.TextField(cfg.modelDir ?: '')
         def wdField = new javafx.scene.control.TextField(cfg.workDir ?: '')
         def tsField = new javafx.scene.control.TextField(cfg.tileSize ?: '1120')
-        def dsField = new javafx.scene.control.TextField(cfg.downsample ?: ''); dsField.setPromptText('boş = otomatik')
+        def dsField = new javafx.scene.control.TextField(cfg.downsample ?: ''); dsField.setPromptText(workshopText('script.a9a111622b2f', 'boş = otomatik'))
         def mtField = new javafx.scene.control.TextField(cfg.maxTiles ?: '0')
         [pyField, brField, mdField, wdField].each { it.setPrefColumnCount(34) }
         [tsField, dsField, mtField].each { it.setPrefColumnCount(8) }
@@ -717,47 +717,47 @@ render = { ->
         pyFieldRef.set(pyField); bridgeFieldRef.set(brField); modelFieldRef.set(mdField); workFieldRef.set(wdField)
         tileFieldRef.set(tsField); dsFieldRef.set(dsField); maxTFieldRef.set(mtField)
         organChoiceRef.set(organChoice); granChoiceRef.set(granChoice); deviceChoiceRef.set(deviceChoice)
-        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Dosya seç'); if (x != null) f.setText(x.getAbsolutePath()) }
-        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Dizin seç', null); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.8622b674942a', 'Dosya seç')); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.15f8cfe83dc9', 'Dizin seç'), null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (python.exe):'), pyField, navButton('…', { browseFile(pyField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('SPIDER köprüsü (spider_bridge.py):'), brField, navButton('…', { browseFile(brField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model dizini (ops., çevrimdışı):'), mdField, navButton('…', { browseDir(mdField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Çalışma dizini (ops.):'), wdField, navButton('…', { browseDir(wdField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Organ modeli:'), organChoice)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Granülarite:'), granChoice)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Karo boyutu (px):'), tsField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.2262e6480a2c', 'SPIDER köprüsü (spider_bridge.py):')), brField, navButton('…', { browseFile(brField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.52855724c856', 'Model dizini (ops., çevrimdışı):')), mdField, navButton('…', { browseDir(mdField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.2719ca64ba94', 'Çalışma dizini (ops.):')), wdField, navButton('…', { browseDir(wdField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.3c2e26050a7a', 'Organ modeli:')), organChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.77c7142f1bb2', 'Granülarite:')), granChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.91c09ece8069', 'Karo boyutu (px):')), tsField)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Downsample:'), dsField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Anotasyon başı maks. karo (0=tümü):'), mtField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Aygıt:'), deviceChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.385cd7498856', 'Anotasyon başı maks. karo (0=tümü):')), mtField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.72e0fecf25c7', 'Aygıt:')), deviceChoice)
         center.getChildren().add(grid)
         if (!cfg.modelDir?.trim())
-            addWarnLabel('⚠ SPIDER modelleri KAPILIDIR (CC BY-NC 4.0). Model dizini boşsa indirme için HuggingFace token gerekir (huggingface-cli login). Çevrimdışı için indirilmiş klasörü "Model dizini"ne yazın — bkz. Kaynaklar § G.')
-        addGuidance('Karo boyutu SPIDER için 1120 (sabit bağlam penceresi). Downsample: boş bırakın, lamın µm/px değerinden 0.5 µm/px (20x) hedefine otomatik hesaplanır (0,25 µm/px tarayıcıda 2.0). ' +
-            'Granülarite: "Anotasyon düzeyi" her anotasyona tek sınıf; "Karo ızgarası" her 1120 karo için renkli alt-tespit (ısı haritası).')
-        actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }, 'spider_bridge.py selftest — bağımlılık + HF erişimi doğrular'))
-        actions.add(navButton('Kaydet ▶', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+            addWarnLabel(workshopText('script.0e6ff2e20ded', '⚠ SPIDER modelleri KAPILIDIR (CC BY-NC 4.0). Model dizini boşsa indirme için HuggingFace token gerekir (huggingface-cli login). Çevrimdışı için indirilmiş klasörü "Model dizini"ne yazın — bkz. Kaynaklar § G.'))
+        addGuidance(workshopText('script.056d16d7c6b0', 'Karo boyutu SPIDER için 1120 (sabit bağlam penceresi). Downsample: boş bırakın, lamın µm/px değerinden 0.5 µm/px (20x) hedefine otomatik hesaplanır (0,25 µm/px tarayıcıda 2.0). ' +
+            'Granülarite: "Anotasyon düzeyi" her anotasyona tek sınıf; "Karo ızgarası" her 1120 karo için renkli alt-tespit (ısı haritası).'))
+        actions.add(navButton(workshopText('script.72278748133a', 'İptal'), { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.8369fe631575', 'Bağımlılık kontrolü'), { startSelftest() }, workshopText('script.cc4c82c9ba2f', 'spider_bridge.py selftest — bağımlılık + HF erişimi doğrular')))
+        actions.add(navButton(workshopText('script.96f6bd4b06cc', 'Kaydet ▶'), { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
     } else if (cur == 'CHECK_RUNNING') {
-        title.setText('Bağımlılık kontrolü çalışıyor…')
+        title.setText(workshopText('script.8e84f306c3c6', 'Bağımlılık kontrolü çalışıyor…'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'CHECK_DONE') {
-        title.setText(selftestOkRef.get() ? 'Bağımlılık kontrolü tamam ✅'
-            : '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın (Python / bağımlılık / HF erişimi)')
+        title.setText(selftestOkRef.get() ? workshopText('script.93f447fe25d4', 'Bağımlılık kontrolü tamam ✅')
+            : workshopText('script.202de3d08ba4', '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın (Python / bağımlılık / HF erişimi)'))
         addLiveLog()
-        actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.c8b5f18cded5', '◀ Yapılandırmaya dön'), { step.set('CONFIG'); render() }))
     } else if (cur == 'READY') {
         if (imageData == null) {
-            title.setText('Görüntü açık değil')
-            addGuidance('Önce bir lam açın ve sınıflandırmak istediğiniz bölge(ler) için alan anotasyonu çizin, sonra "⟳ Yenile".')
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
+            title.setText(workshopText('script.b4c901dc184b', 'Görüntü açık değil'))
+            addGuidance(workshopText('script.5dc531b09dd4', 'Önce bir lam açın ve sınıflandırmak istediğiniz bölge(ler) için alan anotasyonu çizin, sonra "⟳ Yenile".'))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
         } else {
             def workDir = resolveWorkDir(cfg, imageData)
             def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() }
-            title.setText('SPIDER — hazır')
+            title.setText(workshopText('script.79892e25adf7', 'SPIDER — hazır'))
             def sb = new StringBuilder()
             sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Çalışma dizini : " << workDir.getAbsolutePath() << "\n"
@@ -766,7 +766,7 @@ render = { ->
             sb << "Aygıt          : " << cfg.device << "\n"
             sb << String.format(java.util.Locale.US, "Alan anotasyonu: %,d%n", anns.size())
             addMonoArea(sb.toString())
-            addGuidance('SPIDER ÖN-EĞİTİMLİDİR — kendi etiketlerinize gerek yok; sadece organ + granülarite seçip "Sınıflandır" deyin.')
+            addGuidance(workshopText('script.6a2ae0e96800', 'SPIDER ÖN-EĞİTİMLİDİR — kendi etiketlerinize gerek yok; sadece organ + granülarite seçip "Sınıflandır" deyin.'))
 
             // Organ + granülarite hızlı seçiciler (anında kaydeder, READY'yi tazeler)
             def organChoice = makeOrganChoice()
@@ -780,42 +780,42 @@ render = { ->
             def selRow = new javafx.scene.layout.HBox(8)
             selRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
             selRow.getChildren().addAll(new javafx.scene.control.Label('Organ:'), organChoice,
-                new javafx.scene.control.Label('   Granülarite:'), granChoice)
+                new javafx.scene.control.Label(workshopText('script.78c5e74fe6b1', '   Granülarite:')), granChoice)
             center.getChildren().add(selRow)
 
             if (!cfg.modelDir?.trim())
-                addWarnLabel('⚠ KAPILI model — HuggingFace token gerekir (huggingface-cli login) ya da "Model dizini" ayarlayın. CPU yavaştır; GPU önerilir.')
+                addWarnLabel(workshopText('script.2611f35e062f', '⚠ KAPILI model — HuggingFace token gerekir (huggingface-cli login) ya da "Model dizini" ayarlayın. CPU yavaştır; GPU önerilir.'))
 
             boolean canRun = configComplete(cfg) && anns.size() >= 1
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
-            def runBtn = navButton('Sınıflandır ▶', { startRun() }, 'Seçili organ modeliyle alan anotasyonlarını sınıflandırır')
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
+            def runBtn = navButton(workshopText('script.fbdec7f3d90f', 'Sınıflandır ▶'), { startRun() }, workshopText('script.d5b0fc54585d', 'Seçili organ modeliyle alan anotasyonlarını sınıflandırır'))
             runBtn.setDisable(!canRun)
             actions.add(runBtn)
         }
     } else if (cur == 'RUN_RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('Python köprüsü çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance(workshopText('script.74f34d4d16a3', 'Python köprüsü çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ') + PYTHON_TIMEOUT_SECONDS + workshopText('script.9d84a2f3efc0', ' sn.'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {
-        title.setText(busyLabelRef.get()); addGuidance('Lütfen bekleyin…'); center.getChildren().add(busyBar())
+        title.setText(busyLabelRef.get()); addGuidance(workshopText('script.245c572ec2ea', 'Lütfen bekleyin…')); center.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
-        title.setText('Tamamlandı ✅')
+        title.setText(workshopText('script.92c17020894f', 'Tamamlandı ✅'))
         addMonoArea(resultTextRef.get())
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-        actions.add(navButton('↻ Yeniden çalıştır', { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.c94499b243e4', '↻ Yeniden çalıştır'), { step.set('READY'); render() }))
     } else { // ERROR
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
     // Alt çubuk: "Üstte tut" (sol) + disclaimer + eylem düğmeleri (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
@@ -828,7 +828,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -848,12 +848,23 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('SPIDER doku sınıflandırıcı sihirbazı')
+        stage.setTitle(workshopText('script.ec575cbc114f', 'SPIDER doku sınıflandırıcı sihirbazı'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ SPIDER doku sınıflandırıcı sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

@@ -762,22 +762,22 @@ render = { ->
     }
 
     if (cur == 'CONFIG_INCOMPLETE') {
-        title.setText('Kaiko Midnight yapılandırması gerekli')
+        title.setText(workshopText('script.f7de64aeccdc', 'Kaiko Midnight yapılandırması gerekli'))
         def miss = configMissing(cfg)
-        addGuidance('Kaiko köprüsü bir Python ortamı gerektirir. Aşağıdakiler eksik/geçersiz:\n  • ' +
-            (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
-            '\n\nKurulum: Ekler → Kaiko Midnight § kurulum (veya Kaynaklar → İleri kurulumlar F).')
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
+        addGuidance(workshopText('script.554ad883fc7e', 'Kaiko köprüsü bir Python ortamı gerektirir. Aşağıdakiler eksik/geçersiz:\n  • ') +
+            (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')) +
+            workshopText('script.442170f44549', '\n\nKurulum: Ekler → Kaiko Midnight § kurulum (veya Kaynaklar → İleri kurulumlar F).'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
-        title.setText('Kaiko Midnight yapılandırması')
+        title.setText(workshopText('script.5d01f3440c53', 'Kaiko Midnight yapılandırması'))
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         def pyField = new javafx.scene.control.TextField(cfg.python ?: '')
         def brField = new javafx.scene.control.TextField(cfg.bridge ?: '')
         def mdField = new javafx.scene.control.TextField(cfg.modelDir ?: '')
         def wdField = new javafx.scene.control.TextField(cfg.workDir ?: '')
         def tsField = new javafx.scene.control.TextField(cfg.tileSize ?: '224')
-        def dsField = new javafx.scene.control.TextField(cfg.downsample ?: ''); dsField.setPromptText('boş = otomatik')
+        def dsField = new javafx.scene.control.TextField(cfg.downsample ?: ''); dsField.setPromptText(workshopText('script.a9a111622b2f', 'boş = otomatik'))
         def neField = new javafx.scene.control.TextField(cfg.nEstimators ?: '100')
         def mpField = new javafx.scene.control.TextField(cfg.minPerClass ?: '2')
         def mtField = new javafx.scene.control.TextField(cfg.maxTiles ?: '20')
@@ -789,40 +789,40 @@ render = { ->
         pyFieldRef.set(pyField); bridgeFieldRef.set(brField); modelFieldRef.set(mdField); workFieldRef.set(wdField)
         tileFieldRef.set(tsField); dsFieldRef.set(dsField); nEstFieldRef.set(neField); minPCFieldRef.set(mpField)
         maxTFieldRef.set(mtField); deviceChoiceRef.set(deviceChoice)
-        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Dosya seç'); if (x != null) f.setText(x.getAbsolutePath()) }
-        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Dizin seç', null); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.8622b674942a', 'Dosya seç')); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.15f8cfe83dc9', 'Dizin seç'), null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (python.exe):'), pyField, navButton('…', { browseFile(pyField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Kaiko köprüsü (kaiko_bridge.py):'), brField, navButton('…', { browseFile(brField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model dizini (ops.):'), mdField, navButton('…', { browseDir(mdField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Çalışma dizini (ops.):'), wdField, navButton('…', { browseDir(wdField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Karo boyutu (px):'), tsField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.659eb4a8c8ca', 'Kaiko köprüsü (kaiko_bridge.py):')), brField, navButton('…', { browseFile(brField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.98113e28d8ef', 'Model dizini (ops.):')), mdField, navButton('…', { browseDir(mdField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.2719ca64ba94', 'Çalışma dizini (ops.):')), wdField, navButton('…', { browseDir(wdField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.91c09ece8069', 'Karo boyutu (px):')), tsField)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Downsample:'), dsField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('RF ağaç sayısı:'), neField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Sınıf başı min. anotasyon:'), mpField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Anotasyon başı maks. karo:'), mtField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Aygıt:'), deviceChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.d5c17dc84fc3', 'RF ağaç sayısı:')), neField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.839c7266b123', 'Sınıf başı min. anotasyon:')), mpField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.8d9b9efb4717', 'Anotasyon başı maks. karo:')), mtField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.72e0fecf25c7', 'Aygıt:')), deviceChoice)
         center.getChildren().add(grid)
-        addGuidance('Downsample: boş bırakın, lamın µm/px değerinden 0.5 µm/px hedefine otomatik hesaplanır (0.25 µm/px tarayıcıda 2.0). Eğitim ve tahminde aynı değeri kullanın. ' +
-            'Model dizini boşsa Midnight ilk çalıştırmada HuggingFace\'ten indirilir (~4 GB).')
-        actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }, 'kaiko_bridge.py selftest — bağımlılıkları doğrular'))
-        actions.add(navButton('Kaydet ▶', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        addGuidance(workshopText('script.ca354ec3f061', 'Downsample: boş bırakın, lamın µm/px değerinden 0.5 µm/px hedefine otomatik hesaplanır (0.25 µm/px tarayıcıda 2.0). Eğitim ve tahminde aynı değeri kullanın. ' +
+            'Model dizini boşsa Midnight ilk çalıştırmada HuggingFace\'ten indirilir (~4 GB).'))
+        actions.add(navButton(workshopText('script.72278748133a', 'İptal'), { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.8369fe631575', 'Bağımlılık kontrolü'), { startSelftest() }, workshopText('script.1a256b36e5fa', 'kaiko_bridge.py selftest — bağımlılıkları doğrular')))
+        actions.add(navButton(workshopText('script.96f6bd4b06cc', 'Kaydet ▶'), { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
     } else if (cur == 'CHECK_RUNNING') {
-        title.setText('Bağımlılık kontrolü çalışıyor…')
+        title.setText(workshopText('script.8e84f306c3c6', 'Bağımlılık kontrolü çalışıyor…'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'CHECK_DONE') {
-        title.setText('Bağımlılık kontrolü tamam')
+        title.setText(workshopText('script.1a0affc7af74', 'Bağımlılık kontrolü tamam'))
         addLiveLog()
-        actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.c8b5f18cded5', '◀ Yapılandırmaya dön'), { step.set('CONFIG'); render() }))
     } else if (cur == 'READY') {
         if (imageData == null) {
-            title.setText('Görüntü açık değil')
-            addGuidance('Önce bir lam açın ve sınıflı + sınıfsız anotasyonlar çizin, sonra "⟳ Yenile".')
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
+            title.setText(workshopText('script.b4c901dc184b', 'Görüntü açık değil'))
+            addGuidance(workshopText('script.64f2e54d11a7', 'Önce bir lam açın ve sınıflı + sınıfsız anotasyonlar çizin, sonra "⟳ Yenile".'))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
         } else {
             def workDir = resolveWorkDir(cfg, imageData)
             def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() }
@@ -831,7 +831,7 @@ render = { ->
             def byClass = new TreeMap<String, Integer>()
             classified.each { def cn = it.getPathClass().getName(); byClass[cn] = (byClass.getOrDefault(cn, 0)) + 1 }
             boolean classifierExists = (new File(workDir, 'classifier.pkl')).isFile()
-            title.setText('Kaiko Midnight — hazır')
+            title.setText(workshopText('script.94714b56ab99', 'Kaiko Midnight — hazır'))
             def sb = new StringBuilder()
             sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Çalışma dizini : " << workDir.getAbsolutePath() << "\n"
@@ -844,51 +844,51 @@ render = { ->
             else byClass.each { cn, n -> sb << String.format(java.util.Locale.US, "  %-24s : %,d%n", cn, n) }
             sb << String.format(java.util.Locale.US, "Sınıfsız anotasyonlar (tahmin) : %,d%n", unclassified.size())
             addMonoArea(sb.toString())
-            addWarnLabel('⚠ Midnight ~1.1B parametre. İlk çalıştırmada model (~4 GB) indirilir; CPU\'da karo başına birkaç saniye (GPU önerilir).')
+            addWarnLabel(workshopText('script.0747a795c037', '⚠ Midnight ~1.1B parametre. İlk çalıştırmada model (~4 GB) indirilir; CPU\'da karo başına birkaç saniye (GPU önerilir).'))
 
             boolean canTrain = configComplete(cfg) && byClass.size() >= 2 && classified.size() >= 2 && unclassified.size() >= 1
             boolean canPredict = configComplete(cfg) && classifierExists && unclassified.size() >= 1
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
-            def predBtn = navButton('Yalnızca Tahmin Et', { startRun(false) }, 'Mevcut sınıflandırıcıyı sınıfsız anotasyonlara uygular')
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
+            def predBtn = navButton(workshopText('script.37a9d27f5b6a', 'Yalnızca Tahmin Et'), { startRun(false) }, workshopText('script.82415c91d8b8', 'Mevcut sınıflandırıcıyı sınıfsız anotasyonlara uygular'))
             predBtn.setDisable(!canPredict)
             actions.add(predBtn)
-            def trainBtn = navButton('Eğit ve Tahmin Et ▶', { startRun(true) }, '≥2 sınıf için sınıflı anotasyon + ≥1 sınıfsız anotasyon gerekir')
+            def trainBtn = navButton(workshopText('script.f9355d8dd969', 'Eğit ve Tahmin Et ▶'), { startRun(true) }, workshopText('script.6ff24838e1e5', '≥2 sınıf için sınıflı anotasyon + ≥1 sınıfsız anotasyon gerekir'))
             trainBtn.setDisable(!canTrain)
             actions.add(trainBtn)
         }
     } else if (cur == 'TRAIN_RUNNING' || cur == 'PREDICT_RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('Python köprüsü çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance(workshopText('script.74f34d4d16a3', 'Python köprüsü çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ') + PYTHON_TIMEOUT_SECONDS + workshopText('script.9d84a2f3efc0', ' sn.'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {}; try { if (persistentRef.get()) stopWorker() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {}; try { if (persistentRef.get()) stopWorker() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {
-        title.setText(busyLabelRef.get()); addGuidance('Lütfen bekleyin…'); center.getChildren().add(busyBar())
+        title.setText(busyLabelRef.get()); addGuidance(workshopText('script.245c572ec2ea', 'Lütfen bekleyin…')); center.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
-        title.setText('Tamamlandı ✅')
+        title.setText(workshopText('script.92c17020894f', 'Tamamlandı ✅'))
         addMonoArea(resultTextRef.get())
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-        actions.add(navButton('↻ Yeniden çalıştır', { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.c94499b243e4', '↻ Yeniden çalıştır'), { step.set('READY'); render() }))
     } else { // ERROR
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
     // Alt çubuk: "Üstte tut" (sol) + disclaimer + eylem düğmeleri (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
     } as javafx.beans.value.ChangeListener)
-    def persistChk = new javafx.scene.control.CheckBox('Kalıcı çalışan (hızlı)')
+    def persistChk = new javafx.scene.control.CheckBox(workshopText('script.aed259f60e27', 'Kalıcı çalışan (hızlı)'))
     persistChk.setSelected(persistentRef.get())
     persistChk.setTooltip(new javafx.scene.control.Tooltip(
-        'Modeli bellekte tutar: eğit→tahmin ve tekrarlı tahminlerde modeli yeniden yüklemez.\n' +
-        'İlk açılışta model bir kez yüklenir (ilk sefer uzun sürebilir). Kapalıyken her çağrıda yeni süreç başlar.'))
+        workshopText('script.113af69b54af', 'Modeli bellekte tutar: eğit→tahmin ve tekrarlı tahminlerde modeli yeniden yüklemez.\n' +
+        'İlk açılışta model bir kez yüklenir (ilk sefer uzun sürebilir). Kapalıyken her çağrıda yeni süreç başlar.')))
     persistChk.selectedProperty().addListener({ obs, o, n ->
         persistentRef.set(n); prefs.putBoolean(PREF_PERSIST, n)
         try { prefs.flush() } catch (Throwable ignore) {}
@@ -903,7 +903,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -923,13 +923,24 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Kaiko Midnight sınıflandırıcı sihirbazı')
+        stage.setTitle(workshopText('script.977d5289f8bd', 'Kaiko Midnight sınıflandırıcı sihirbazı'))
         stage.setAlwaysOnTop(alwaysTop.get())
         stage.setOnHidden({ e -> try { stopWorker() } catch (Throwable ignore) {} } as javafx.event.EventHandler)
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ Kaiko Midnight sınıflandırıcı sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

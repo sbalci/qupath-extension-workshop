@@ -411,15 +411,15 @@ def launchBundledScript = { String resourceName ->
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + resourceName) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + resourceName)
             if (url == null) {
-                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
-                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.612821b4f218', 'Betik bulunamadı'),
+                    workshopText('script.9641266ba42d', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi')) }
                 return
             }
             def cl = this.getClass().getClassLoader()
             try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
             new GroovyShell(cl).evaluate(url.getText('UTF-8'), resourceName)
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage(workshopText('script.e83c5641f38e', 'Açılamadı'), (t.getMessage() ?: t.getClass().getSimpleName())) }
         }
     } as Runnable).start()
 }
@@ -547,7 +547,7 @@ def selectModel = {
         return
     }
     // Dosya seçici (kısıtlı model bakımcıdan edinilir)
-    def x = FileChoosers.promptForFile(stage, 'Model ağırlığı (.pth) seç')
+    def x = FileChoosers.promptForFile(stage, workshopText('script.f9c019eb4512', 'Model ağırlığı (.pth) seç'))
     if (x != null) {
         prefs.put(PREF_MODEL, x.getAbsolutePath()); try { prefs.flush() } catch (Throwable t) {}
         appendInstallLog('✓ Model seçildi: ' + x.getAbsolutePath())
@@ -669,7 +669,7 @@ def envReturnHook = [
                 if (!stage.isShowing()) stage.show()
                 stage.toFront(); stage.requestFocus()
             } catch (Throwable t) {
-                Dialogs.showErrorMessage('Sihirbaza dönüş', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+                Dialogs.showErrorMessage(workshopText('script.95854db5b310', 'Sihirbaza dönüş'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
             }
         }
     }
@@ -682,8 +682,8 @@ def launchEnvManager = { ->
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + res) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + res)
             if (url == null) {
-                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
-                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.612821b4f218', 'Betik bulunamadı'),
+                    workshopText('script.9641266ba42d', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi')) }
                 return
             }
             def cl = this.getClass().getClassLoader()
@@ -692,7 +692,7 @@ def launchEnvManager = { ->
             shellBinding.setVariable('atolyeReturnHook', envReturnHook)
             new GroovyShell(cl, shellBinding).evaluate(url.getText('UTF-8'), res)
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage(workshopText('script.e83c5641f38e', 'Açılamadı'), (t.getMessage() ?: t.getClass().getSimpleName())) }
         }
     } as Runnable).start()
 }
@@ -730,10 +730,10 @@ render = { ->
     }
 
     if (cur == 'CONFIG_INCOMPLETE') {
-        title.setText('Hepatosit kurulumu gerekli')
+        title.setText(workshopText('script.ca26ef23f673', 'Hepatosit kurulumu gerekli'))
         def miss = configMissing(cfg)
-        addGuidance('Bu köprü ÜÇ ayrı kurulum adımı gerektirir; aşağıdaki ①②③ butonları bu adımları ÇALIŞTIRIR ' +
-            '(terminal gerekmez). Eksik/geçersiz:\n  • ' + (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')))
+        addGuidance(workshopText('script.fd46286592b5', 'Bu köprü ÜÇ ayrı kurulum adımı gerektirir; aşağıdaki ①②③ butonları bu adımları ÇALIŞTIRIR ' +
+            '(terminal gerekmez). Eksik/geçersiz:\n  • ') + (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')))
         def resArea = new javafx.scene.control.TextArea(
             'KAYNAKLAR — ne · nereden · nereye:\n' +
             '① Python ortamı : ' + (cfg.python?.trim() ? (cfg.python + '  (kurulu)') :
@@ -745,20 +745,20 @@ render = { ->
             '   → bakımcıdan edinin, sonra "③ Model seç" ile gösterin (genel indirme yok).')
         resArea.setEditable(false); resArea.setWrapText(false); resArea.setStyle(MONO); resArea.setPrefRowCount(8); resArea.setMaxHeight(180)
         center.getChildren().add(resArea)
-        actions.add(navButton('① Python ortamı', { launchEnvManager() },
-            'Atölye Python ortam yöneticisini açar → "Hepatocyte"yi kurun; python otomatik algılanır'))
-        actions.add(navButton('② Depoyu indir', { installRepo() },
-            'sbalci/hepatocyte-app ZIP indirir + açar, köprü betiğini otomatik ayarlar'))
-        actions.add(navButton('③ Model seç', { selectModel() },
-            'Bakımcıdan edindiğiniz .pth model ağırlığını gösterin (🔒 talep üzerine)'))
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.d6bef5796014', '① Python ortamı'), { launchEnvManager() },
+            workshopText('script.767358003604', 'Atölye Python ortam yöneticisini açar → "Hepatocyte"yi kurun; python otomatik algılanır')))
+        actions.add(navButton(workshopText('script.e8cb3a5512b8', '② Depoyu indir'), { installRepo() },
+            workshopText('script.26cb398536e0', 'sbalci/hepatocyte-app ZIP indirir + açar, köprü betiğini otomatik ayarlar')))
+        actions.add(navButton(workshopText('script.42899ae528ce', '③ Model seç'), { selectModel() },
+            workshopText('script.cb1f4545a2c0', 'Bakımcıdan edindiğiniz .pth model ağırlığını gösterin (🔒 talep üzerine)')))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
         def ilog = new javafx.scene.control.TextArea(installLogSnapshot())
         ilog.setEditable(false); ilog.setWrapText(false); ilog.setStyle(MONO); ilog.setPrefRowCount(7)
         javafx.scene.layout.VBox.setVgrow(ilog, javafx.scene.layout.Priority.ALWAYS)
         installLogAreaRef.set(ilog); center.getChildren().add(ilog)
     } else if (cur == 'CONFIG') {
-        title.setText('Hepatosit yapılandırması')
+        title.setText(workshopText('script.5a1d372bfb4a', 'Hepatosit yapılandırması'))
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         def pyField = new javafx.scene.control.TextField(cfg.python ?: '')
         def brField = new javafx.scene.control.TextField(cfg.bridge ?: '')
@@ -777,43 +777,43 @@ render = { ->
         def browseFile = { f, cap -> def x = FileChoosers.promptForFile(stage, cap); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (python.exe):'), pyField, navButton('…', { browseFile(pyField, 'python.exe seç') }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Köprü (hepatocyte_qupath_inference.py):'), brField, navButton('…', { browseFile(brField, 'Köprü betiği seç') }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.71a3f82d2be5', 'Köprü (hepatocyte_qupath_inference.py):')), brField, navButton('…', { browseFile(brField, 'Köprü betiği seç') }))
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model (.pth — 🔒):'), mdField, navButton('…', { browseFile(mdField, 'Model ağırlığı seç') }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Aygıt:'), deviceChoice)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Yama boyu (px):'), psField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Min. poligon alanı (px²):'), maField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Min. ROI boyu (px):'), mrField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Hedef MPP (µm/px):'), mpField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.72e0fecf25c7', 'Aygıt:')), deviceChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.fd67989a5dba', 'Yama boyu (px):')), psField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.91d9b4a86bc6', 'Min. poligon alanı (px²):')), maField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.c7d177083490', 'Min. ROI boyu (px):')), mrField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.9b98982e1d61', 'Hedef MPP (µm/px):')), mpField)
         center.getChildren().add(grid)
-        addGuidance('Yama boyu 512, min. ROI 512 (bir yama), hedef MPP 0,25 — model eğitim ölçeği. ' +
-            'Aygıt "auto": GPU varsa CUDA, yoksa CPU (CPU yavaştır). Model kısıtlıdır (🔒 talep üzerine).')
-        actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }, 'python -c ile import + model yüklenebilirlik kontrolü'))
-        actions.add(navButton('Kaydet ▶', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        addGuidance(workshopText('script.ccde3cf33fdb', 'Yama boyu 512, min. ROI 512 (bir yama), hedef MPP 0,25 — model eğitim ölçeği. ' +
+            'Aygıt "auto": GPU varsa CUDA, yoksa CPU (CPU yavaştır). Model kısıtlıdır (🔒 talep üzerine).'))
+        actions.add(navButton(workshopText('script.72278748133a', 'İptal'), { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.8369fe631575', 'Bağımlılık kontrolü'), { startSelftest() }, workshopText('script.5b34d3deed60', 'python -c ile import + model yüklenebilirlik kontrolü')))
+        actions.add(navButton(workshopText('script.96f6bd4b06cc', 'Kaydet ▶'), { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
     } else if (cur == 'CHECK_RUNNING') {
-        title.setText('Bağımlılık kontrolü çalışıyor…')
+        title.setText(workshopText('script.8e84f306c3c6', 'Bağımlılık kontrolü çalışıyor…'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'CHECK_DONE') {
-        title.setText(selftestOkRef.get() ? 'Bağımlılık kontrolü tamam ✅'
-            : '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın (Python / paket / model)')
+        title.setText(selftestOkRef.get() ? workshopText('script.93f447fe25d4', 'Bağımlılık kontrolü tamam ✅')
+            : workshopText('script.1158344b3c20', '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın (Python / paket / model)'))
         addLiveLog()
-        actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
-        if (selftestOkRef.get()) actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, 'Kontrol tamam — bölgede çalıştırma ekranına döner'))
+        actions.add(navButton(workshopText('script.c8b5f18cded5', '◀ Yapılandırmaya dön'), { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        if (selftestOkRef.get()) actions.add(navButton(workshopText('script.2065029c612d', 'Çalıştırma ekranına dön ▶'), { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, workshopText('script.a61a0e32a390', 'Kontrol tamam — bölgede çalıştırma ekranına döner')))
     } else if (cur == 'READY') {
         if (imageData == null) {
-            title.setText('Görüntü açık değil')
-            addGuidance('Önce yerel diskteki bir karaciğer H&E lamı açın ve segmentlemek istediğiniz bölge(ler) için alan anotasyonu çizin, sonra "⟳ Yenile".')
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
+            title.setText(workshopText('script.b4c901dc184b', 'Görüntü açık değil'))
+            addGuidance(workshopText('script.2b3919d71ec4', 'Önce yerel diskteki bir karaciğer H&E lamı açın ve segmentlemek istediğiniz bölge(ler) için alan anotasyonu çizin, sonra "⟳ Yenile".'))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
         } else {
             def slidePath = resolveSlidePath(imageData)
             def anns = targetAnnotations(imageData)
             int minRoi = parseIntOr(cfg.minRoi, 512)
             int usable = anns.count { def r = it.getROI(); (int) Math.ceil(r.getBoundsWidth()) >= minRoi && (int) Math.ceil(r.getBoundsHeight()) >= minRoi }
-            title.setText('Hepatosit segmentasyonu — hazır')
+            title.setText(workshopText('script.dffce2d4f356', 'Hepatosit segmentasyonu — hazır'))
             def sb = new StringBuilder()
             sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Lam yolu     : " << (slidePath ?: '(yerel dosya değil — openslide açamaz)') << "\n"
@@ -822,38 +822,38 @@ render = { ->
             sb << "Aygıt          : " << cfg.device << "\n"
             sb << String.format(java.util.Locale.US, "Alan anotasyonu: %,d   ·   uygun (≥%d px): %,d%n", anns.size(), minRoi, usable)
             addMonoArea(sb.toString())
-            addGuidance('Seçili alan anotasyonları işlenir (hiç seçili yoksa tüm alan anotasyonları). Model KENDİ eğitilmiş TorchScript modelidir; yalnız tahmin yapar.')
-            if (slidePath == null) addWarnLabel('⚠ Lam yerel bir dosya değil — Python (openslide) açamaz. Yerel SVS/TIFF açın.')
+            addGuidance(workshopText('script.70538ad6bde8', 'Seçili alan anotasyonları işlenir (hiç seçili yoksa tüm alan anotasyonları). Model KENDİ eğitilmiş TorchScript modelidir; yalnız tahmin yapar.'))
+            if (slidePath == null) addWarnLabel(workshopText('script.21ae84824347', '⚠ Lam yerel bir dosya değil — Python (openslide) açamaz. Yerel SVS/TIFF açın.'))
             boolean canRun = configComplete(cfg) && (slidePath != null) && usable >= 1
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
-            def runBtn = navButton('Segmentle ▶', { startRun() }, 'Seçili/çizili alan anotasyonlarını hepatosit modeliyle segmentler')
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
+            def runBtn = navButton(workshopText('script.b30dabd9c656', 'Segmentle ▶'), { startRun() }, workshopText('script.70a71dda26c0', 'Seçili/çizili alan anotasyonlarını hepatosit modeliyle segmentler'))
             runBtn.setDisable(!canRun)
             actions.add(runBtn)
         }
     } else if (cur == 'RUN_RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('Python köprüsü çalışıyor (lamı openslide ile açar, modeli çalıştırır). Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance(workshopText('script.0da1b832ad89', 'Python köprüsü çalışıyor (lamı openslide ile açar, modeli çalıştırır). Çıktı aşağıda akıyor. Zaman aşımı: ') + PYTHON_TIMEOUT_SECONDS + workshopText('script.9d84a2f3efc0', ' sn.'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {
-        title.setText(busyLabelRef.get()); addGuidance('Lütfen bekleyin…'); center.getChildren().add(busyBar())
+        title.setText(busyLabelRef.get()); addGuidance(workshopText('script.245c572ec2ea', 'Lütfen bekleyin…')); center.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
-        title.setText('Tamamlandı ✅')
+        title.setText(workshopText('script.92c17020894f', 'Tamamlandı ✅'))
         addMonoArea(resultTextRef.get())
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-        actions.add(navButton('↻ Yeniden çalıştır', { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.c94499b243e4', '↻ Yeniden çalıştır'), { step.set('READY'); render() }))
     } else { // ERROR
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
     // Alt çubuk: "Üstte tut" (sol) + disclaimer + eylem düğmeleri (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
@@ -866,7 +866,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -886,12 +886,23 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Hepatosit segmentasyonu sihirbazı')
+        stage.setTitle(workshopText('script.6742cf063971', 'Hepatosit segmentasyonu sihirbazı'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ Hepatosit segmentasyonu sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

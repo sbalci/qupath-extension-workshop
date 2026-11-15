@@ -114,7 +114,7 @@ def makeProgressStage = { String msg ->
             def st = new javafx.stage.Stage()
             st.initModality(javafx.stage.Modality.NONE)
             st.setAlwaysOnTop(true)
-            st.setTitle("StarDist modeli")
+            st.setTitle(workshopText('script.ecf8bee2027c', "StarDist modeli"))
             def bar = new javafx.scene.control.ProgressBar()
             bar.setPrefWidth(300)
             bar.setProgress(javafx.scene.control.ProgressIndicator.INDETERMINATE_PROGRESS)
@@ -447,9 +447,9 @@ def applyMenuHighlight = { String menuName ->
     }
 }
 def menuHighlightToggle = { String menuName ->
-    def tb = new javafx.scene.control.ToggleButton(menuName + ' menüsünü göster')
+    def tb = new javafx.scene.control.ToggleButton(menuName + workshopText('script.ef07407189c3', ' menüsünü göster'))
     tb.setTooltip(new javafx.scene.control.Tooltip(
-        'Üst menü çubuğunda "' + menuName + '" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).'))
+        workshopText('script.242839f75398', 'Üst menü çubuğunda "') + menuName + workshopText('script.f4d336f42a58', '" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).')))
     tb.setOnAction({ if (tb.isSelected()) applyMenuHighlight(menuName) else clearMenuHighlight() })
     return tb
 }
@@ -494,34 +494,34 @@ render = { ->
         thrFieldRef.set(thrField); pxFieldRef.set(pxField); expFieldRef.set(expField); modelFieldRef.set(mdField)
         clsFieldRef.set(clsField); falseClsFieldRef.set(falseField)
         def browse = navButton('…', {
-            def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'StarDist modeli (.pb) seç')
+            def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.a4930501b252', 'StarDist modeli (.pb) seç'))
             if (x != null) mdField.setText(x.getAbsolutePath())
         })
         int row = 0
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Eşik (0-1):'), thrField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Piksel boyutu (µm/px):'), pxField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Hücre genişletme (µm, 0=yok):'), expField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.8fa26e960ca9', 'Eşik (0-1):')), thrField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.44a5ea741fd0', 'Piksel boyutu (µm/px):')), pxField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.88ad247a7ada', 'Hücre genişletme (µm, 0=yok):')), expField)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model (.pb):'), mdField, browse)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0,
             'İsteğe bağlı: tespitten sonra kayıtlı bir nesne sınıflandırıcısını çalıştırıp aşağıdaki sınıfı siler (yanlış-pozitif temizliği). Boş = atla.',
-            new javafx.scene.control.Label('Filtre sınıflandırıcısı (ops.):'), clsField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Silinecek "yanlış" sınıf:'), falseField)
+            new javafx.scene.control.Label(workshopText('script.6db611fe714e', 'Filtre sınıflandırıcısı (ops.):')), clsField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.e2f2fc2a1ea5', 'Silinecek "yanlış" sınıf:')), falseField)
         center.getChildren().add(grid)
     }
 
     if (cur == 'NEED_INSTALL') {
-        title.setText('StarDist eklentisi gerekli')
-        addGuidance('Bu sihirbaz yerel QuPath **StarDist eklentisini** kullanır; şu anda yüklü değil.\n\n' +
+        title.setText(workshopText('script.137399c5a094', 'StarDist eklentisi gerekli'))
+        addGuidance(workshopText('script.5d52b29c8c0f', 'Bu sihirbaz yerel QuPath **StarDist eklentisini** kullanır; şu anda yüklü değil.\n\n' +
             'Kurulum:\n  1. [Extensions → Manage extensions] → StarDist → Install\n  2. QuPath\'i yeniden başlatın\n  3. Bu sihirbazı tekrar açın\n\n' +
             'Ayrıntılı kurulum + model dosyaları: Ekler → StarDist (StarDist Eklentisi).\n' +
-            'Not: .pb modelleri QuPath içinde OpenCV ile çalışır — ayrıca DJL/TensorFlow GEREKMEZ.')
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('⟳ Yeniden denetle', { step.set(stardistInstalled() ? 'READY' : 'NEED_INSTALL'); render() }))
+            'Not: .pb modelleri QuPath içinde OpenCV ile çalışır — ayrıca DJL/TensorFlow GEREKMEZ.'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.c5e461092367', '⟳ Yeniden denetle'), { step.set(stardistInstalled() ? 'READY' : 'NEED_INSTALL'); render() }))
         actions.add(menuHighlightToggle('Extensions'))   // #3: Extensions menüsünü göster
     } else if (cur == 'READY') {
-        title.setText('StarDist — çekirdek tespiti')
+        title.setText(workshopText('script.a47f879375d5', 'StarDist — çekirdek tespiti'))
         if (imageData == null) {
-            addGuidance('Önce bir H&E lamı açın ve ölçülecek bölge için bir alan anotasyonu çizip SEÇİN, sonra "⟳ Yenile".')
+            addGuidance(workshopText('script.addfcf4fb091', 'Önce bir H&E lamı açın ve ölçülecek bölge için bir alan anotasyonu çizip SEÇİN, sonra "⟳ Yenile".'))
         } else {
             def selected = QP.getSelectedObject()
             boolean selOk = (selected != null && selected instanceof PathAnnotationObject && selected.hasROI() && selected.getROI().isArea())
@@ -533,36 +533,36 @@ render = { ->
             sb << "Model           : " << (modelFile.exists() ? (modelFile.getName() + ' (mevcut)') : 'eksik — tespitte otomatik iner') << "\n"
             addMonoArea(sb.toString())
             addParamGrid()
-            addGuidance('Çıktı yalnız çekirdek SAYISI + alan + yoğunluktur; sınıflandırma/yorum üretmez. ' +
-                'Tümör/non-neoplastik ayrımı + cTCF için QuANTUM modülü.')
+            addGuidance(workshopText('script.1bebfb8daabc', 'Çıktı yalnız çekirdek SAYISI + alan + yoğunluktur; sınıflandırma/yorum üretmez. ' +
+                'Tümör/non-neoplastik ayrımı + cTCF için QuANTUM modülü.'))
         }
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('⟳ Yenile', { render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
         def selectedNow = (imageData != null) ? QP.getSelectedObject() : null
         boolean canRun = (imageData != null && selectedNow != null && selectedNow instanceof PathAnnotationObject && selectedNow.hasROI() && selectedNow.getROI().isArea())
-        def runBtn = navButton('Çekirdek tespiti ▶', { startDetection() }, 'Seçili ROI içinde StarDist H&E çekirdek tespiti çalıştırır')
+        def runBtn = navButton(workshopText('script.bcc467bed532', 'Çekirdek tespiti ▶'), { startDetection() }, workshopText('script.d51a8593b618', 'Seçili ROI içinde StarDist H&E çekirdek tespiti çalıştırır'))
         runBtn.setDisable(!canRun)
         actions.add(runBtn)
     } else if (cur == 'RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('StarDist çalışıyor. İlerleme aşağıda. Büyük ROI\'lerde CPU\'da birkaç dakika sürebilir.')
+        addGuidance(workshopText('script.f1f8e7e3e018', 'StarDist çalışıyor. İlerleme aşağıda. Büyük ROI\'lerde CPU\'da birkaç dakika sürebilir.'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true) }, 'Devam eden StarDist çağrısı tamamlanana dek beklenebilir; iptal bir sonraki kontrol noktasında etkilidir'))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true) }, workshopText('script.e10929ac5e8b', 'Devam eden StarDist çağrısı tamamlanana dek beklenebilir; iptal bir sonraki kontrol noktasında etkilidir')))
     } else if (cur == 'RESULT') {
-        title.setText('Tamamlandı ✅')
+        title.setText(workshopText('script.92c17020894f', 'Tamamlandı ✅'))
         addMonoArea(resultTextRef.get())
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-        actions.add(navButton('↻ Yeniden çalıştır', { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.c94499b243e4', '↻ Yeniden çalıştır'), { step.set('READY'); render() }))
     } else { // ERROR
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set(stardistInstalled() ? 'READY' : 'NEED_INSTALL'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set(stardistInstalled() ? 'READY' : 'NEED_INSTALL'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
     // Alt çubuk: "Üstte tut" (sol) + disclaimer + eylem düğmeleri (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
@@ -575,7 +575,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -595,13 +595,24 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('StarDist çekirdek tespiti sihirbazı')
+        stage.setTitle(workshopText('script.872590f1fcc0', 'StarDist çekirdek tespiti sihirbazı'))
         stage.setAlwaysOnTop(alwaysTop.get())
         stage.setOnHidden({ clearMenuHighlight() })   // #3: pencere kapanınca menü vurgusunu kaldır
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ StarDist çekirdek tespiti sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

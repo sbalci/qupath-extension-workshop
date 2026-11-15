@@ -428,13 +428,13 @@ render = { ->
         } else if (r.state == 'NO_STAINS') {
             title.setText(workshopText('script.cfec911aa7bc', 'Boya vektörü tanımlı değil'))
             addGuidance(
-                'Bu görüntüde renk-dekonvolüsyon (boya) vektörleri yok.\n\n' +
+                workshopText('script.94f0d15b2170', 'Bu görüntüde renk-dekonvolüsyon (boya) vektörleri yok.\n\n' +
                 'Olası neden: görüntü tipi brightfield değil (örn. floresan/diğer).\n\n' +
                 'Çözüm:\n' +
                 '  • [Extensions → Atölye → Yardımcılar → Görüntü tipi ayarla] ile tipi\n' +
                 '    Brightfield (H&E) ya da Brightfield (H-DAB) yapın.\n' +
                 '  • QuPath\'in kendi komutu: Analyze → Preprocessing → Estimate stain vectors\n' +
-                '  • Ayrıntı: ' + DOCS_URL + '\n\n' +
+                '  • Ayrıntı: ') + DOCS_URL + '\n\n' +
                 'Sonra "⟳ Yenile".')
             actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
             actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
@@ -448,14 +448,14 @@ render = { ->
         }
     } else if (cur == 'ESTIMATING') {
         title.setText(workshopText('script.7c3f74b33362', 'Tahmin hesaplanıyor…'))
-        addGuidance('Seçili bölgenin pikselleri üzerinden boya vektörleri tahmin ediliyor. Lütfen bekleyin…')
+        addGuidance(workshopText('script.d1571e7fdcdb', 'Seçili bölgenin pikselleri üzerinden boya vektörleri tahmin ediliyor. Lütfen bekleyin…'))
         center.getChildren().add(busyBar())
     } else if (cur == 'PREVIEW') {
         def est = estRef.get()
         title.setText(workshopText('script.9ac77a5f8e04', 'Boya vektörleri — tahmin (eski → yeni)'))
         addReportArea(est?.text)
-        addGuidance('Yeni vektörleri inceleyin. Uygunsa [Uygula] (geri alınabilir); ' +
-            'değilse [◀ Rapora dön] — görüntü değişmez.')
+        addGuidance(workshopText('script.5f33cf07763a', 'Yeni vektörleri inceleyin. Uygunsa [Uygula] (geri alınabilir); ' +
+            'değilse [◀ Rapora dön] — görüntü değişmez.'))
         actions.add(navButton(workshopText('script.6df60940343f', '◀ Rapora dön'), { step.set('REPORT'); render() }))
         actions.add(navButton(workshopText('script.7ee3af0bcff6', '↻ Yeniden tahmin'), { startEstimate() }, workshopText('script.dddebc9070cc', 'Seçimi yeniden okuyup tekrar tahmin eder')))
         actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(est?.text) }))
@@ -479,14 +479,14 @@ render = { ->
     } else if (cur == 'NO_REGION') {
         title.setText(workshopText('script.20ce3b7f68dd', 'Önce bir bölge seçin'))
         addGuidance(
-            'Tahmin için temsilî bir BÖLGE seçili olmalı.\n\n' +
+            workshopText('script.3dccd7576426', 'Tahmin için temsilî bir BÖLGE seçili olmalı.\n\n' +
             'Yapın:\n' +
             '  1. Dikdörtgen/çokgen anotasyon aracı ile iki boyayı + biraz arka planı\n' +
             '     içeren KÜÇÜK bir alan çizin (büyük bölge gereksiz yere örneklemeyi düşürür)\n' +
             '  2. O anotasyonu seçili bırakın (üzerine tıklayın)\n' +
             '  3. Aşağıdan "↻ Tekrar dene"\n\n' +
             'QuPath tahmini bu bölgenin pikselleri üzerinden yapar.\n' +
-            '(Resmî komut: Analyze → Preprocessing → Estimate stain vectors · ' + DOCS_URL + ')')
+            '(Resmî komut: Analyze → Preprocessing → Estimate stain vectors · ') + DOCS_URL + ')')
         actions.add(navButton(workshopText('script.6df60940343f', '◀ Rapora dön'), { step.set('REPORT'); render() }))
         actions.add(navButton(workshopText('script.11e805a92450', '↻ Tekrar dene'), { startEstimate() }))
     } else { // ERROR
@@ -494,8 +494,8 @@ render = { ->
         title.setText(workshopText('script.c009d4670c6a', 'Tahmin yapılamadı'))
         addGuidance(
             (est?.error ?: 'Bilinmeyen hata.').toString() + '\n\n' +
-            'Olası neden: seçili bölge iki boyayı + biraz arka planı birlikte içermiyor\n' +
-            'olabilir (QuPath renk denetimini geçemedi). Daha temsilî, küçük bir alan seçip\n' +
+            workshopText('script.c3b80919dbd7', 'Olası neden: seçili bölge iki boyayı + biraz arka planı birlikte içermiyor\n') +
+            workshopText('script.976c7fe37c1b', 'olabilir (QuPath renk denetimini geçemedi). Daha temsilî, küçük bir alan seçip\n') +
             'tekrar deneyin.\n\n' +
             '(Resmî komut: Analyze → Preprocessing → Estimate stain vectors · ' + DOCS_URL + ')')
         actions.add(navButton(workshopText('script.6df60940343f', '◀ Rapora dön'), { step.set('REPORT'); render() }))

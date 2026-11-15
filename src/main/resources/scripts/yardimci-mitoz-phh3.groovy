@@ -102,11 +102,11 @@ def suggestStainVectors = { ->
         '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n' +
         '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et'
     if (isHeadless) { println svMsg; return }
-    if (!qupath.fx.dialogs.Dialogs.showConfirmDialog('Boya vektörleri — öneri', svMsg)) return
+    if (!qupath.fx.dialogs.Dialogs.showConfirmDialog(workshopText('script.cb5b26abe800', 'Boya vektörleri — öneri'), svMsg)) return
     def svSel = QP.getSelectedObjects().findAll { it.hasROI() && it.getROI().isArea() }
     if (svSel.isEmpty()) {
-        qupath.fx.dialogs.Dialogs.showWarningNotification('Boya vektörleri',
-            'Önce iki boya + biraz arka plan içeren temsilî bir alan anotasyonu çizip SEÇİN, sonra tekrar deneyin.')
+        qupath.fx.dialogs.Dialogs.showWarningNotification(workshopText('script.c1cc09de3ac8', 'Boya vektörleri'),
+            workshopText('script.525b4898d046', 'Önce iki boya + biraz arka plan içeren temsilî bir alan anotasyonu çizip SEÇİN, sonra tekrar deneyin.'))
         return
     }
     try {
@@ -123,11 +123,11 @@ def suggestStainVectors = { ->
         javafx.application.Platform.runLater {
             try { qupath.lib.gui.QuPathGUI.getInstance()?.getViewer()?.repaintEntireImage() } catch (Throwable svR) { }
         }
-        qupath.fx.dialogs.Dialogs.showMessageDialog('Boya vektörleri',
-            'Vektörler seçili bölgeden tahmin edilip uygulandı. Modülü şimdi çalıştırabilirsiniz.')
+        qupath.fx.dialogs.Dialogs.showMessageDialog(workshopText('script.c1cc09de3ac8', 'Boya vektörleri'),
+            workshopText('script.4e0fe0741a03', 'Vektörler seçili bölgeden tahmin edilip uygulandı. Modülü şimdi çalıştırabilirsiniz.'))
     } catch (Throwable svErr) {
-        qupath.fx.dialogs.Dialogs.showMessageDialog('Boya vektörleri',
-            'Tahmin yapılamadı: ' + (svErr.getMessage() ?: svErr.getClass().getSimpleName()))
+        qupath.fx.dialogs.Dialogs.showMessageDialog(workshopText('script.c1cc09de3ac8', 'Boya vektörleri'),
+            workshopText('script.c0b06389df5e', 'Tahmin yapılamadı: ') + (svErr.getMessage() ?: svErr.getClass().getSimpleName()))
     }
 }
 suggestStainVectors()
@@ -149,13 +149,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(true)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -163,7 +163,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -176,7 +176,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -205,7 +205,7 @@ String summaryName               = "Mitoz Özet"
 // ── 1) Ön kontroller ve açık analiz sınırı ─────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir PHH3-İHK lamı açın.")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.03e6208e26c2', "Önce bir PHH3-İHK lamı açın."))
     return
 }
 
@@ -213,8 +213,8 @@ def imageTypeName = imageData.getImageType()?.toString() ?: ""
 def normalizedImageType = imageTypeName.toUpperCase(java.util.Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
 if (!normalizedImageType.contains('H_DAB')) {
     Dialogs.showErrorMessage(
-        "Yanlış görüntü tipi",
-        "Image type Brightfield (H-DAB) olmalı. Şu anki: ${imageTypeName}"
+        workshopText('script.be9dc7d830d5', "Yanlış görüntü tipi"),
+        "${workshopText('script.2d940df6729d', 'Image type Brightfield (H-DAB) olmalı. Şu anki: ')}${imageTypeName}"
     )
     return
 }
@@ -223,8 +223,8 @@ def cal = imageData.getServer().getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0) || !(ph > 0)) {
-    Dialogs.showErrorMessage("Kalibrasyon yok",
-        "Lamda piksel boyutu (µm) tanımlı değil; mitoz yoğunluğu (mitoz/mm²) hesaplanamaz.")
+    Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"),
+        workshopText('script.8a71051b5725', "Lamda piksel boyutu (µm) tanımlı değil; mitoz yoğunluğu (mitoz/mm²) hesaplanamaz."))
     return
 }
 
@@ -232,13 +232,13 @@ def targets = QP.getSelectedObjects().findAll {
     it.isAnnotation() && it.getROI()?.isArea() && it.getName() != summaryName
 }
 if (targets.isEmpty()) {
-    Dialogs.showErrorMessage("Anotasyon seçili değil", "PHH3 ölçümü için analiz anotasyonlarını açıkça seçin.")
+    Dialogs.showErrorMessage(workshopText('script.da079a56fe7d', "Anotasyon seçili değil"), workshopText('script.ada05aed8ac8', "PHH3 ölçümü için analiz anotasyonlarını açıkça seçin."))
     return
 }
 
 def analysisROI = qupath.lib.roi.RoiTools.union(targets.collect { it.getROI() })
 if (analysisROI == null || analysisROI.isEmpty() || !analysisROI.isArea()) {
-    Dialogs.showErrorMessage("Geçersiz analiz alanı", "Seçili anotasyonlar geçerli bir birleşik ROI oluşturmuyor.")
+    Dialogs.showErrorMessage(workshopText('script.b4950149348d', "Geçersiz analiz alanı"), workshopText('script.01c291c2f0c9', "Seçili anotasyonlar geçerli bir birleşik ROI oluşturmuyor."))
     return
 }
 
@@ -251,7 +251,7 @@ if (stains != null) {
     }
 }
 if (!hasHematoxylin) {
-    Dialogs.showErrorMessage("Boya vektörü eksik", "H-DAB boya vektörlerinde Hematoxylin kanalı bulunamadı.")
+    Dialogs.showErrorMessage(workshopText('script.3869c47c0f86', "Boya vektörü eksik"), workshopText('script.b744628a7135', "H-DAB boya vektörlerinde Hematoxylin kanalı bulunamadı."))
     return
 }
 
@@ -351,3 +351,14 @@ body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
 showResultWindow("PHH3 mitoz kantifikasyonu", body.toString())
 println "✓ PHH3 mitoz ölçümü yazıldı (her seçili ROI + '${summaryName}')."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

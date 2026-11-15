@@ -58,7 +58,7 @@ def prefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/doku-tes
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     if (isHeadless) { println "Görüntü açık değil."; return }
-    Dialogs.showErrorMessage("Görüntü açık değil", "Önce analiz edilecek lamı açın.")
+    Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.7aad51bae7cb', "Önce analiz edilecek lamı açın."))
     return
 }
 def server = imageData.getServer()
@@ -233,7 +233,7 @@ javafx.application.Platform.runLater {
 
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle("Doku Tespiti — canlı önizleme")
+        stage.setTitle(workshopText('script.8144f3ee9eee', "Doku Tespiti — canlı önizleme"))
         stage.setAlwaysOnTop(true)
 
         // Kontroller
@@ -246,7 +246,7 @@ javafx.application.Platform.runLater {
         dsSlider.setShowTickMarks(true)
         def dsVal = new javafx.scene.control.Label()
 
-        def otsuChk = new javafx.scene.control.CheckBox("Otsu (otomatik eşik)")
+        def otsuChk = new javafx.scene.control.CheckBox(workshopText('script.0ff927f2e196', "Otsu (otomatik eşik)"))
         otsuChk.setSelected(defOtsu)
 
         def thrSlider = new javafx.scene.control.Slider(0, 1, 0.5)
@@ -257,7 +257,7 @@ javafx.application.Platform.runLater {
         minSlider.setMajorTickUnit(1); minSlider.setShowTickMarks(true)
         def minVal = new javafx.scene.control.Label()
 
-        def statLabel = new javafx.scene.control.Label("Yükleniyor…")
+        def statLabel = new javafx.scene.control.Label(workshopText('script.1187ee5ebeae', "Yükleniyor…"))
         statLabel.setWrapText(true); statLabel.setStyle("-fx-font-size: 12px;")
 
         // Önizleme
@@ -271,16 +271,16 @@ javafx.application.Platform.runLater {
         summaryArea.setEditable(false); summaryArea.setWrapText(false)
         summaryArea.setPrefRowCount(8)
         summaryArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
-        summaryArea.setPromptText("Parametreleri ayarlayın; 'Uygula' ile 'Doku' anotasyonunu ekleyin.")
+        summaryArea.setPromptText(workshopText('script.b2a6f0c54713', "Parametreleri ayarlayın; 'Uygula' ile 'Doku' anotasyonunu ekleyin."))
 
-        def previewBtn = new javafx.scene.control.Button("Önizle / Doku Bul")
+        def previewBtn = new javafx.scene.control.Button(workshopText('script.f650fb455cdb', "Önizle / Doku Bul"))
         previewBtn.setOnAction({ rebuild(true) })
-        def applyBtn = new javafx.scene.control.Button("Uygula (Doku anotasyonu)")
+        def applyBtn = new javafx.scene.control.Button(workshopText('script.78be6436e7a5', "Uygula (Doku anotasyonu)"))
         applyBtn.setDefaultButton(true); applyBtn.setDisable(true)
-        def copyBtn = new javafx.scene.control.Button("Özeti kopyala")
+        def copyBtn = new javafx.scene.control.Button(workshopText('script.01952a4d3c0c', "Özeti kopyala"))
         copyBtn.setDisable(true)
-        def closeBtn = new javafx.scene.control.Button("Kapat")
-        def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+        def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
+        def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
         alwaysTop.setSelected(true)
         alwaysTop.selectedProperty().addListener({ obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
 
@@ -322,7 +322,7 @@ javafx.application.Platform.runLater {
             double pct = 100.0d * fg / (double) scalar.length
             thrVal.setText(String.format(java.util.Locale.US, "%.4f", thr))
             statLabel.setText(String.format(java.util.Locale.US,
-                "Ön plan (doku): %.1f%%   ·   eşik %.4f   ·   Otsu %.4f   ·   önizleme %d×%d px",
+                workshopText('script.1b63d5236fd0', "Ön plan (doku): %.1f%%   ·   eşik %.4f   ·   Otsu %.4f   ·   önizleme %d×%d px"),
                 pct, thr, (double) c.otsu, W, H))
         }
 
@@ -334,7 +334,7 @@ javafx.application.Platform.runLater {
             int myTok = token.incrementAndGet()
             String choice = (String) choiceBox.getValue()
             double ds = (double) Math.round(dsSlider.getValue())
-            statLabel.setText("Hesaplanıyor…")
+            statLabel.setText(workshopText('script.14b1aea7b716', "Hesaplanıyor…"))
             new Thread({
                 def result
                 try { result = buildCache(ds, choice) }
@@ -343,12 +343,12 @@ javafx.application.Platform.runLater {
                     try {
                         if (myTok != token.get()) return   // daha yeni bir rebuild var → bunu at
                         if (result.error != null) {
-                            statLabel.setText("Hata: ${result.error}")
+                            statLabel.setText("${workshopText('script.62a13087164b', 'Hata: ')}${result.error}")
                             applyBtn.setDisable(true); cache.set(null); imageView.setImage(null)
                             return
                         }
                         if (result.flat) {
-                            statLabel.setText("Tüm pikseller aynı değerde — eşikleme yapılamadı.")
+                            statLabel.setText(workshopText('script.73694865997b', "Tüm pikseller aynı değerde — eşikleme yapılamadı."))
                             applyBtn.setDisable(true); cache.set(null); imageView.setImage(null)
                             return
                         }
@@ -398,7 +398,7 @@ javafx.application.Platform.runLater {
             double minAreaMm2 = minSlider.getValue()
             String choice = (String) choiceBox.getValue()
             double minAreaPx2 = (calibrated && minAreaMm2 > 0) ? (minAreaMm2 * 1_000_000.0d / (pw * ph)) : 0.0d
-            applyBtn.setDisable(true); applyBtn.setText("Uygulanıyor…")
+            applyBtn.setDisable(true); applyBtn.setText(workshopText('script.b191668e82bb', "Uygulanıyor…"))
             new Thread({
                 def d
                 try { d = detect((float[]) c.scalar, (int) c.W, (int) c.H, thr, c.request, minAreaPx2) }
@@ -406,9 +406,9 @@ javafx.application.Platform.runLater {
                 def summary = null
                 if (d != null) { try { applyAnno(d.roi) } catch (Throwable t) {}; summary = summaryOf(choice, ds, thr, useOtsu, minAreaMm2, (int) d.pieces, d.roi) }
                 javafx.application.Platform.runLater {
-                    applyBtn.setDisable(false); applyBtn.setText("Uygula (Doku anotasyonu)")
+                    applyBtn.setDisable(false); applyBtn.setText(workshopText('script.78be6436e7a5', "Uygula (Doku anotasyonu)"))
                     if (d == null) {
-                        summaryArea.setText("Doku bulunamadı — eşiği düşürün, downsample'ı ya da minimum alanı değiştirin.")
+                        summaryArea.setText(workshopText('script.dac10bca79e5', "Doku bulunamadı — eşiği düşürün, downsample'ı ya da minimum alanı değiştirin."))
                         copyBtn.setDisable(true)
                     } else {
                         summaryArea.setText(summary); copyBtn.setDisable(false)
@@ -439,15 +439,15 @@ javafx.application.Platform.runLater {
         def col2 = new javafx.scene.layout.ColumnConstraints(); col2.setMinWidth(80)
         form.getColumnConstraints().addAll(col0, col1, col2)
         int rr = 0
-        form.add(new javafx.scene.control.Label("Eşik tabanı"), 0, rr); form.add(choiceBox, 1, rr, 2, 1); rr++
-        form.add(new javafx.scene.control.Label("Alt örnekleme (downsample):"), 0, rr); form.add(dsSlider, 1, rr); form.add(dsVal, 2, rr); rr++
+        form.add(new javafx.scene.control.Label(workshopText('script.669af7d1f057', "Eşik tabanı")), 0, rr); form.add(choiceBox, 1, rr, 2, 1); rr++
+        form.add(new javafx.scene.control.Label(workshopText('script.8f86eefdf40e', "Alt örnekleme (downsample):")), 0, rr); form.add(dsSlider, 1, rr); form.add(dsVal, 2, rr); rr++
         form.add(otsuChk, 0, rr, 3, 1); rr++
-        form.add(new javafx.scene.control.Label("Eşik"), 0, rr); form.add(thrSlider, 1, rr); form.add(thrVal, 2, rr); rr++
-        form.add(new javafx.scene.control.Label("Minimum alan"), 0, rr); form.add(minSlider, 1, rr); form.add(minVal, 2, rr); rr++
+        form.add(new javafx.scene.control.Label(workshopText('script.b3e1a6068621', "Eşik")), 0, rr); form.add(thrSlider, 1, rr); form.add(thrVal, 2, rr); rr++
+        form.add(new javafx.scene.control.Label(workshopText('script.ab0fae681e5d', "Minimum alan")), 0, rr); form.add(minSlider, 1, rr); form.add(minVal, 2, rr); rr++
 
         def intro = new javafx.scene.control.Label(
-            "Kaydırıcılarla parametreleri ayarlayın; ön plan (doku) turkuaz gösterilir. " +
-            "Eşik tabanı ve downsample değişince görüntü yeniden okunur (biraz sürebilir).")
+            workshopText('script.5f60567fb520', "Kaydırıcılarla parametreleri ayarlayın; ön plan (doku) turkuaz gösterilir. " +
+            "Eşik tabanı ve downsample değişince görüntü yeniden okunur (biraz sürebilir)."))
         intro.setWrapText(true); intro.setStyle("-fx-font-size: 12px; -fx-opacity: 0.85;")
 
         def leftBox = new javafx.scene.layout.VBox(10, intro, form, new javafx.scene.control.Separator(), statLabel, summaryArea)
@@ -456,7 +456,7 @@ javafx.application.Platform.runLater {
         javafx.scene.layout.VBox.setVgrow(summaryArea, javafx.scene.layout.Priority.ALWAYS)
 
         def centerBox = new javafx.scene.layout.VBox(6,
-            new javafx.scene.control.Label("Önizleme (doku = turkuaz):"), previewHolder)
+            new javafx.scene.control.Label(workshopText('script.8545725600e9', "Önizleme (doku = turkuaz):")), previewHolder)
         centerBox.setPadding(new javafx.geometry.Insets(12, 12, 12, 0))
         javafx.scene.layout.VBox.setVgrow(previewHolder, javafx.scene.layout.Priority.ALWAYS)
 
@@ -470,7 +470,7 @@ javafx.application.Platform.runLater {
         bar.setPadding(new javafx.geometry.Insets(8, 12, 8, 12))
 
         def footer = new javafx.scene.control.Label(
-            "Bir ALAN ölçümüdür — klinik yorum/grade/tanı üretmez. Kilitli 'Doku' anotasyonu (idempotent).")
+            workshopText('script.5a9020c1aabc', "Bir ALAN ölçümüdür — klinik yorum/grade/tanı üretmez. Kilitli 'Doku' anotasyonu (idempotent)."))
         footer.setMaxWidth(Double.MAX_VALUE)
         footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 12 2 12; -fx-font-size: 11px;")
 
@@ -483,7 +483,18 @@ javafx.application.Platform.runLater {
         // İlk yükleme
         rebuild(true)
     } catch (Throwable t) {
-        Dialogs.showErrorMessage("Sihirbaz açılamadı", t.getClass().getSimpleName() + ": " + (t.getMessage() ?: ""))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', "Sihirbaz açılamadı"), t.getClass().getSimpleName() + ": " + (t.getMessage() ?: ""))
     }
 }
 println "✓ Doku Tespiti sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

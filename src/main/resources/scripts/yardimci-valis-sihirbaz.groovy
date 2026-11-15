@@ -2349,10 +2349,10 @@ def openLogFolder = { ->
         if (java.awt.Desktop.isDesktopSupported() && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.OPEN)) {
             java.awt.Desktop.getDesktop().open(dir)
         } else {
-            Dialogs.showInfoNotification('Günlük klasörü', dir.getAbsolutePath())
+            Dialogs.showInfoNotification(workshopText('script.4d8bc859eb07', 'Günlük klasörü'), dir.getAbsolutePath())
         }
     } catch (Throwable t) {
-        Dialogs.showWarningNotification('Günlük klasörü açılamadı', dir.getAbsolutePath())
+        Dialogs.showWarningNotification(workshopText('script.034ee5329e5d', 'Günlük klasörü açılamadı'), dir.getAbsolutePath())
     }
 }
 // Bilinen çökme/hata imzalarını Türkçe 'olası neden + öneri' ipucuna çevirir — ham dökümün YERİNE
@@ -2437,7 +2437,7 @@ def startRun = { List cmd, String busyLabel, String flowKind, Closure onSuccess,
     runStartRef.set(System.currentTimeMillis())
     def timedOut = new java.util.concurrent.atomic.AtomicBoolean(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO); logAreaRef.set(la)
-    def progLabel = new javafx.scene.control.Label('Başlıyor…'); progLabel.setWrapText(true); progLabel.setMaxWidth(Double.MAX_VALUE)
+    def progLabel = new javafx.scene.control.Label(workshopText('script.8478d83dc156', 'Başlıyor…')); progLabel.setWrapText(true); progLabel.setMaxWidth(Double.MAX_VALUE)
     progressLabelRef.set(progLabel)
     // Tam günlük dosyası (UTF-8 ZORUNLU — windows-1254 platform varsayılanı Türkçe karakterleri
     // bozar; süreç akışı zaten UTF-8 okunuyor). Pencere kapansa/çökse bile diskte kalır.
@@ -2595,18 +2595,18 @@ def startDirectRun = { List cmd ->
 // Docker modunda ağırlıklar konteynerde yönetilir; bu yerel ön-indirme yalnız native içindir (dockerCmd'ye dokunulmaz).
 def doPrefetch = { cfg ->
     if (cfg.mode == 'docker') {
-        Dialogs.showInfoNotification('Model ağırlıkları', 'Docker modunda model ağırlıkları konteyner içinde yönetilir; bu yerel ön-indirme yalnız native mod içindir.')
+        Dialogs.showInfoNotification(workshopText('script.b313e2d662a9', 'Model ağırlıkları'), workshopText('script.5307dfb73131', 'Docker modunda model ağırlıkları konteyner içinde yönetilir; bu yerel ön-indirme yalnız native mod içindir.'))
         return
     }
     if (cfg.mode == 'wsl') {
         // WSL süreci Windows önbelleğini (bu düğmenin yazacağı yeri) OKUMAZ (WSLENV yok) → yanıltıcı olur.
         // WSL modunda ağırlıklar ilk hizalamada WSL venv/ev dizinine iner; ayrı ön-indirme gereksiz.
-        Dialogs.showInfoNotification('Model ağırlıkları', 'WSL modunda model ağırlıkları ilk hizalama sırasında WSL ortamında iner (Windows önbelleği kullanılmaz); ayrı ön-indirme gerekmez.')
+        Dialogs.showInfoNotification(workshopText('script.b313e2d662a9', 'Model ağırlıkları'), workshopText('script.38714e2ad212', 'WSL modunda model ağırlıkları ilk hizalama sırasında WSL ortamında iner (Windows önbelleği kullanılmaz); ayrı ön-indirme gerekmez.'))
         return
     }
-    if (!cfg.python?.trim()) { Dialogs.showErrorMessage('Model ağırlıkları', 'Önce native python.exe yapılandırın (Yapılandır).'); return }
+    if (!cfg.python?.trim()) { Dialogs.showErrorMessage(workshopText('script.b313e2d662a9', 'Model ağırlıkları'), workshopText('script.1ae4b69e9f9d', 'Önce native python.exe yapılandırın (Yapılandır).')); return }
     def wr = writeRunner(cfg)
-    if (!wr.ok) { Dialogs.showErrorMessage('Model ağırlıkları', 'Köprü betiği yazılamadı: ' + (wr.error ?: '?')); return }
+    if (!wr.ok) { Dialogs.showErrorMessage(workshopText('script.b313e2d662a9', 'Model ağırlıkları'), workshopText('script.337ae8577738', 'Köprü betiği yazılamadı: ') + (wr.error ?: '?')); return }
     def ck = new File(new File(new File(new File(atolyeDataRoot(), 'cache'), 'torch'), 'hub'), 'checkpoints')
     startRun(nativeCmd(cfg, ['prefetch']), 'Model ağırlıkları indiriliyor', 'prefetch', {
         def sb = new StringBuilder()
@@ -2625,7 +2625,7 @@ def doPrefetch = { cfg ->
 def doImportWarped = {
     def project = QP.getProject()
     def plan = lastWarpPlanRef.get() ?: []
-    if (project == null || plan.isEmpty()) { Dialogs.showErrorMessage('İçe aktarım', 'Proje/hedef bilgisi yok — önce en az bir warp hedefi işaretleyip "Komut üret" ya da "Doğrudan çalıştır".'); return }
+    if (project == null || plan.isEmpty()) { Dialogs.showErrorMessage(workshopText('script.feebb3bba06c', 'İçe aktarım'), workshopText('script.319a252dc278', 'Proje/hedef bilgisi yok — önce en az bir warp hedefi işaretleyip "Komut üret" ya da "Doğrudan çalıştır".')); return }
     def srcAreaUm2 = (lastWarpSrcAreaUm2Ref.get() ?: 0.0d) as double
     int ok = 0, fail = 0
     def notes = []
@@ -2647,8 +2647,8 @@ def doImportWarped = {
     }
     def head = String.format(java.util.Locale.US, '%d/%d hedefe aktarıldı.', ok, plan.size())
     def full = head + '\n' + notes.join('\n') + (warns.isEmpty() ? '' : ('\n\n' + warns.join('\n')))
-    if (fail > 0 || !warns.isEmpty()) Dialogs.showWarningNotification('Warp\'lı anotasyon', full)
-    else Dialogs.showInfoNotification('Warp\'lı anotasyon', full)
+    if (fail > 0 || !warns.isEmpty()) Dialogs.showWarningNotification(workshopText('script.95ab5a716bdc', 'Warp\'lı anotasyon'), full)
+    else Dialogs.showInfoNotification(workshopText('script.95ab5a716bdc', 'Warp\'lı anotasyon'), full)
 }
 // addOmeToProject sonucundaki (withPreview=true ile üretilen, varsa) kanal adı+renk okumasını ve
 // hizalama QC önizlemesini RESULT ekranına ekler — yalnız HÂLÂ RESULT ekranındaysak (CMD_READY'nin
@@ -2714,8 +2714,8 @@ def doAddOme = {
             if (res.notes) allNotes.addAll(res.notes)
             if (pending.decrementAndGet() == 0) {
                 def msg = String.format(java.util.Locale.US, '%d eklendi, %d zaten vardı, %d hata.', added, skipped, failed)
-                if (failed > 0) Dialogs.showErrorMessage('OME-TIFF — kısmen/hata', msg + '\n\n' + allNotes.join('\n'))
-                else Dialogs.showInfoNotification('OME-TIFF (ayrı hizalı lamlar)', msg)
+                if (failed > 0) Dialogs.showErrorMessage(workshopText('script.c80a736b2524', 'OME-TIFF — kısmen/hata'), msg + '\n\n' + allNotes.join('\n'))
+                else Dialogs.showInfoNotification(workshopText('script.aa4e3755a7b6', 'OME-TIFF (ayrı hizalı lamlar)'), msg)
             }
         })
     }
@@ -2726,7 +2726,7 @@ def doAddMergeOut = {
     def project = QP.getProject(); def mf = lastMergeOutRef.get()
     if (project == null || mf == null) return
     if (!(mf instanceof File)) { try { mf = new File(mf.toString()) } catch (Throwable ignore) { return } }
-    if (!mf.isFile()) { Dialogs.showWarningNotification('Multipleks ekle', 'Birleşik multipleks henüz yok — önce üretilen VALIS komutunu çalıştırın:\n' + mf.getAbsolutePath()); return }
+    if (!mf.isFile()) { Dialogs.showWarningNotification(workshopText('script.db73b991d918', 'Multipleks ekle'), workshopText('script.01c58afa2edf', 'Birleşik multipleks henüz yok — önce üretilen VALIS komutunu çalıştırın:\n') + mf.getAbsolutePath()); return }
     boolean isComp = lastCompositeRef.get()
     def type = isComp ? qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_OTHER : qupath.lib.images.ImageData.ImageType.FLUORESCENCE
     addOmeToProject(project, [mf.getAbsolutePath()], type, true, { res ->
@@ -2736,8 +2736,8 @@ def doAddMergeOut = {
             ? '\nDoğal-renk parlak alan bileşiği → tür OTOMATİK "Brightfield" olarak ayarlandı. Tek pişmiş RGB görüntüdür; kanal seçilemez ("lam gibi" görünüm).'
             : '\nÇok kanallı → tür OTOMATİK "Fluorescence" olarak ayarlandı. Brightness/Contrast (Shift+C) ile 2–3 kanalı (ör. marker-DAB + marker-Hematoksilen) "Göster" ile aç/kapat; beyaz zemin için "Invert background".'
         applyAddPreview(res)
-        if (bad) Dialogs.showErrorMessage('Birleşik görüntü — kısmen/hata', msg + '\n\n' + ((res.notes) ? res.notes.join('\n') : ''))
-        else Dialogs.showInfoNotification('Birleşik görüntü', msg + hint)
+        if (bad) Dialogs.showErrorMessage(workshopText('script.fb91c2cadd62', 'Birleşik görüntü — kısmen/hata'), msg + '\n\n' + ((res.notes) ? res.notes.join('\n') : ''))
+        else Dialogs.showInfoNotification(workshopText('script.87cd22005b3e', 'Birleşik görüntü'), msg + hint)
     })
 }
 
@@ -2766,27 +2766,27 @@ def importGeojsonToCurrent = { File gjFile ->
     } catch (Throwable t) { return [ok: false, error: (t.getMessage() ?: t.getClass().getSimpleName())] }
 }
 def doImportGeojsonFromFile = {
-    def gj = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Warp\'lı GeoJSON seç (VALIS çıktısı)')
+    def gj = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.1fbbe1b2c877', 'Warp\'lı GeoJSON seç (VALIS çıktısı)'))
     if (gj == null) return
     def r = importGeojsonToCurrent(gj)
-    if (r.ok) Dialogs.showInfoNotification('Warp\'lı anotasyon', r.count + ' nesne açık lama aktarıldı (VALIS adlı, kilitli). Hizalamayı görsel doğrulayın.')
-    else Dialogs.showErrorMessage('İçe aktarım başarısız', r.error ?: '?')
+    if (r.ok) Dialogs.showInfoNotification(workshopText('script.95ab5a716bdc', 'Warp\'lı anotasyon'), r.count + workshopText('script.5779086b39f8', ' nesne açık lama aktarıldı (VALIS adlı, kilitli). Hizalamayı görsel doğrulayın.'))
+    else Dialogs.showErrorMessage(workshopText('script.e3de92afd6ab', 'İçe aktarım başarısız'), r.error ?: '?')
 }
 def doAddOmeFromFile = {
     def project = QP.getProject()
-    if (project == null) { Dialogs.showErrorMessage('OME ekle', 'Proje açık değil — önce bir QuPath projesi açın.'); return }
-    def f = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Hizalanmış/birleşik OME-TIFF seç (VALIS çıktısı)')
+    if (project == null) { Dialogs.showErrorMessage(workshopText('script.50aed63fbd26', 'OME ekle'), workshopText('script.422c48a70579', 'Proje açık değil — önce bir QuPath projesi açın.')); return }
+    def f = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.d2128fdb319c', 'Hizalanmış/birleşik OME-TIFF seç (VALIS çıktısı)'))
     if (f == null) return
     def ln = f.getName().toLowerCase(java.util.Locale.ROOT)
     if (!(ln.endsWith('.ome.tiff') || ln.endsWith('.ome.tif') || ln.endsWith('.tiff') || ln.endsWith('.tif'))) {
-        Dialogs.showWarningNotification('OME ekle', 'Seçilen dosya bir OME-TIFF/TIFF değil:\n' + f.getName()); return
+        Dialogs.showWarningNotification(workshopText('script.50aed63fbd26', 'OME ekle'), workshopText('script.2de464155f49', 'Seçilen dosya bir OME-TIFF/TIFF değil:\n') + f.getName()); return
     }
     // Elle disk-seçimi: çalıştırma bağlamı yok (hangi tip olduğu bilinmiyor) → UNSET, kullanıcı QuPath'te seçer.
     addOmeToProject(project, [f.getAbsolutePath()], qupath.lib.images.ImageData.ImageType.UNSET, false, { res ->
         def msg = String.format(java.util.Locale.US, '%d eklendi, %d zaten vardı, %d hata.', (res.added ?: 0), (res.skipped ?: 0), (res.failed ?: 0))
         boolean bad = ((res.failed ?: 0) > 0) || (res.syncOk == false)
-        if (bad) Dialogs.showErrorMessage('OME-TIFF — kısmen/hata', msg + '\n\n' + ((res.notes) ? res.notes.join('\n') : ''))
-        else Dialogs.showInfoNotification('OME-TIFF', msg + '\nÇok kanallı birleşik görüntü ise tür sorulur → "Fluorescence" seçin; sonra Brightness/Contrast (Shift+C) ile kanallara renk atayın.')
+        if (bad) Dialogs.showErrorMessage(workshopText('script.c80a736b2524', 'OME-TIFF — kısmen/hata'), msg + '\n\n' + ((res.notes) ? res.notes.join('\n') : ''))
+        else Dialogs.showInfoNotification('OME-TIFF', msg + workshopText('script.bfa2b9e7fbec', '\nÇok kanallı birleşik görüntü ise tür sorulur → "Fluorescence" seçin; sonra Brightness/Contrast (Shift+C) ile kanallara renk atayın.'))
     })
 }
 
@@ -2795,11 +2795,11 @@ def doAddOmeFromFile = {
 // "↻ Yeniden birleştir"in warp karşılığıdır: registrar'ı DEĞİŞTİRMEZ, yalnız koordinat dönüşümünü tekrar çalıştırır.
 def doWarpOnlyTransfer = { cfg ->
     def targetIds = targetIdsRef.get() ?: new java.util.LinkedHashSet()
-    if (targetIds.isEmpty()) { Dialogs.showErrorMessage('Hızlı warp', 'Önce en az bir hedef işaretleyin ("Warp hedefleri" listesinden).'); return }
+    if (targetIds.isEmpty()) { Dialogs.showErrorMessage(workshopText('script.a144e4c584cf', 'Hızlı warp'), workshopText('script.4248a1a674ba', 'Önce en az bir hedef işaretleyin ("Warp hedefleri" listesinden).')); return }
     def srcDirForCheck = null
     try { def d = QP.getCurrentImageData(); def sf = (d != null) ? slideFileOf(d) : null; srcDirForCheck = sf?.getParentFile() } catch (Throwable ignore) {}
     def pkl = registrarPickleFor(resultsDirOf(cfg), srcDirForCheck)
-    if (pkl == null) { Dialogs.showErrorMessage('Hızlı warp', 'Henüz kayıtlı hizalama yok — önce "Doğrudan çalıştır" ile bir kez tam kayıt yapın.'); return }
+    if (pkl == null) { Dialogs.showErrorMessage(workshopText('script.a144e4c584cf', 'Hızlı warp'), workshopText('script.fde0610c9793', 'Henüz kayıtlı hizalama yok — önce "Doğrudan çalıştır" ile bir kez tam kayıt yapın.')); return }
     def plan = prepareRun(cfg, true, true)
     if (!plan.ok) { errorTextRef.set(plan.error); step.set('ERROR'); render(); return }
     def cmd = (cfg.mode == 'wsl') ? plan.wslCmd : ((cfg.mode == 'native') ? plan.nativeCmd : plan.dockerCmd)
@@ -2834,17 +2834,17 @@ def addRemergeAction = { cfg, actions ->
     def tip = (pkl != null)
         ? ('Kayıtlı hizalamayı KULLANIR (yeniden KAYIT yok, ~5 dk): mevcut boya/renk/seviye/composite ile SADECE yeniden birleştirir [' + pkl.getName() + ']')
         : 'Henüz kayıtlı hizalama yok — önce "Doğrudan çalıştır" ile bir kez tam kayıt yapın.'
-    def runBtn = navButton('↻ Yeniden birleştir (kayıtlı hizalamadan)', {
+    def runBtn = navButton(workshopText('script.8bf1e524aec3', '↻ Yeniden birleştir (kayıtlı hizalamadan)'), {
         def plan = prepareRun(cfg, true)
         if (!plan.ok) { errorTextRef.set(plan.error); step.set('ERROR'); render(); return }
         startDirectRun(cfg.mode == 'wsl' ? plan.wslCmd : (cfg.mode == 'native' ? plan.nativeCmd : plan.dockerCmd))
     }, tip)
     runBtn.setDisable(pkl == null); actions.add(runBtn)
-    def copyBtn = navButton('↻ …komutu (WSL) kopyala', {
+    def copyBtn = navButton(workshopText('script.f8a608066249', '↻ …komutu (WSL) kopyala'), {
         def plan = prepareRun(cfg, true)
-        if (!plan.ok) { Dialogs.showErrorMessage('Yeniden birleştir', plan.error ?: '?'); return }
+        if (!plan.ok) { Dialogs.showErrorMessage(workshopText('script.11e975ebc0fe', 'Yeniden birleştir'), plan.error ?: '?'); return }
         copyToClipboard(cmdToText(plan.wslCmd))
-        Dialogs.showInfoNotification('Yeniden birleştir', 'WSL yeniden-birleştir komutu panoya kopyalandı (yeniden KAYIT yok). Bir terminalde çalıştırın.')
+        Dialogs.showInfoNotification(workshopText('script.11e975ebc0fe', 'Yeniden birleştir'), workshopText('script.85a540691410', 'WSL yeniden-birleştir komutu panoya kopyalandı (yeniden KAYIT yok). Bir terminalde çalıştırın.'))
     }, tip)
     copyBtn.setDisable(pkl == null); actions.add(copyBtn)
 }
@@ -2984,24 +2984,24 @@ render = { ->
     def addMono = { String txt -> def ta = new javafx.scene.control.TextArea(txt ?: ''); ta.setEditable(false); ta.setWrapText(false); ta.setStyle(MONO); javafx.scene.layout.VBox.setVgrow(ta, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(ta) }
 
     if (cur == 'CONFIG_INCOMPLETE') {
-        title.setText('VALIS yapılandırması gerekli')
+        title.setText(workshopText('script.6c10ab1e7ea7', 'VALIS yapılandırması gerekli'))
         def miss = configMissing(cfg)
-        addGuidance('VALIS Python\'dur ve QuPath dışında çalışır. İki yol: (1) Docker (önerilen; tüm bağımlılıklar hazır), ' +
-            '(2) native venv (Python 3.10 + libvips + Java). Eksik/geçersiz:\n  • ' + (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
-            '\n\nKurulum ayrıntıları: Kaynaklar → İleri kurulumlar → VALIS.')
-        actions.add(navButton('Python ortam yöneticisi (native)', {
+        addGuidance(workshopText('script.50cc1eaad1fb', 'VALIS Python\'dur ve QuPath dışında çalışır. İki yol: (1) Docker (önerilen; tüm bağımlılıklar hazır), ' +
+            '(2) native venv (Python 3.10 + libvips + Java). Eksik/geçersiz:\n  • ') + (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')) +
+            workshopText('script.04037db9a14a', '\n\nKurulum ayrıntıları: Kaynaklar → İleri kurulumlar → VALIS.'))
+        actions.add(navButton(workshopText('script.28f8bc3139f7', 'Python ortam yöneticisi (native)'), {
             new Thread({ try {
                 def url = null
                 try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/yardimci-python-ortam-yoneticisi.groovy') } catch (Throwable t) {}
                 if (url == null) url = this.getClass().getResource('/scripts/yardimci-python-ortam-yoneticisi.groovy')
                 if (url != null) { def cl = this.getClass().getClassLoader(); try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}; new GroovyShell(cl).evaluate(url.getText('UTF-8'), 'env.groovy') }
-                else javafx.application.Platform.runLater { Dialogs.showInfoNotification('Ortam yöneticisi', 'Menüden açın: Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi') }
+                else javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.3f463eb7fb9f', 'Ortam yöneticisi'), workshopText('script.efa21cc956ea', 'Menüden açın: Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi')) }
             } catch (Throwable t) {} } as Runnable).start()
-        }, 'Native mod için VALIS venv\'ini (Python 3.10) kurar; libvips + Java\'yı ayrıca kurun'))
-        actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        }, workshopText('script.a2148440eb93', 'Native mod için VALIS venv\'ini (Python 3.10) kurar; libvips + Java\'yı ayrıca kurun')))
+        actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     } else if (cur == 'CONFIG') {
-        title.setText('VALIS yapılandırması')
+        title.setText(workshopText('script.e8e420beb5cd', 'VALIS yapılandırması'))
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         def modeChoice = new javafx.scene.control.ChoiceBox(); ['docker', 'native', 'wsl'].each { modeChoice.getItems().add(it) }; modeChoice.setValue(['docker', 'native', 'wsl'].contains(cfg.mode) ? cfg.mode : 'docker')
         def pyField = new javafx.scene.control.TextField(cfg.python ?: ''); pyField.setPrefColumnCount(34)
@@ -3011,30 +3011,30 @@ render = { ->
         def memField = new javafx.scene.control.TextField(cfg.mem ?: '20'); memField.setPrefColumnCount(6)
         def cropChoice = new javafx.scene.control.ChoiceBox(); CROP_OPTIONS.each { cropChoice.getItems().add(it) }; cropChoice.setValue(CROP_OPTIONS.contains(cfg.crop) ? cfg.crop : 'overlap')
         modeChoiceRef.set(modeChoice); pyFieldRef.set(pyField); wslPyFieldRef.set(wslPyField); workFieldRef.set(wfField); outFieldRef.set(outField); memFieldRef.set(memField); cropChoiceRef.set(cropChoice)
-        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'python.exe seç'); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.ebb0a44e4e43', 'python.exe seç')); if (x != null) f.setText(x.getAbsolutePath()) }
         def browseDir = { f, ttl -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, ttl, null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Mod:'), modeChoice)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Çalışma klasörü (tek kök):'), wfField, navButton('…', { browseDir(wfField, 'Çalışma klasörü seç') }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Çıktı klasörü (boş = çalışma klasörü):'), outField, navButton('…', { browseDir(outField, 'Çıktı klasörü seç') }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.e79a63f3a487', 'Mod:')), modeChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.6747ff0ac85b', 'Çalışma klasörü (tek kök):')), wfField, navButton('…', { browseDir(wfField, 'Çalışma klasörü seç') }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.3d4e179760f5', 'Çıktı klasörü (boş = çalışma klasörü):')), outField, navButton('…', { browseDir(outField, 'Çıktı klasörü seç') }))
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('python.exe (native):'), pyField, navButton('…', { browseFile(pyField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('WSL python (wsl mod):'), wslPyField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Docker bellek (GB):'), memField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Kırpma (crop):'), cropChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.dc34b45f56be', 'WSL python (wsl mod):')), wslPyField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.4efc4cf35add', 'Docker bellek (GB):')), memField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.cf1c2ca3c232', 'Kırpma (crop):')), cropChoice)
         center.getChildren().add(grid)
-        addGuidance('Çıktılar (results / ome / geojson / multiplex) çıktı klasörünün altına yazılır; boşsa çalışma klasörü kullanılır. ' +
+        addGuidance(workshopText('script.dfcd82089a2a', 'Çıktılar (results / ome / geojson / multiplex) çıktı klasörünün altına yazılır; boşsa çalışma klasörü kullanılır. ' +
             'Native modda çıktı başka bir sürücüde olabilir (ör. büyük OME-TIFF\'ler için E:\\). ' +
             'Docker modu: girdi VE çıktı çalışma klasörünün ALTINDA olmalı (tek mount → /work). ' +
             'Native mod: python.exe VALIS venv\'ini göstermeli; libvips + Java ayrıca kurulmalı. ' +
             'WSL modu (Windows\'ta ÖNERİLEN — yerel Windows VALIS bu makinede çökebilir): WSL içindeki python yolunu (valis-wsi + pyvips[binary] kurulu venv) verin; ' +
-            'Windows yolları otomatik /mnt/... olarak çevrilir. Docker\'ın tek-kök şartı WSL\'de YOKTUR.')
-        actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('Kaydet ▶', { saveConfig() }))
+            'Windows yolları otomatik /mnt/... olarak çevrilir. Docker\'ın tek-kök şartı WSL\'de YOKTUR.'))
+        actions.add(navButton(workshopText('script.72278748133a', 'İptal'), { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.96f6bd4b06cc', 'Kaydet ▶'), { saveConfig() }))
     } else if (cur == 'READY') {
-        title.setText('VALIS — hizala + anotasyon warp')
+        title.setText(workshopText('script.5a9c2cd56c75', 'VALIS — hizala + anotasyon warp'))
         def project = QP.getProject(); def imageData = QP.getCurrentImageData()
-        if (project == null) { addGuidance('Proje açık değil — kaynak ve hedef lamları AYNI projeye ekleyin, sonra "⟳ Yenile".'); actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() })); actions.add(navButton('⟳ Yenile', { render() })); actions.add(navButton('Kapat', { stage.close() })) }
-        else if (imageData == null) { addGuidance('Kaynak lam (anotasyonun çizildiği) açık değil — açın, sonra "⟳ Yenile".'); actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() })); actions.add(navButton('⟳ Yenile', { render() })); actions.add(navButton('Kapat', { stage.close() })) }
+        if (project == null) { addGuidance(workshopText('script.12ea7b135a21', 'Proje açık değil — kaynak ve hedef lamları AYNI projeye ekleyin, sonra "⟳ Yenile".')); actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() })); actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() })); actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() })) }
+        else if (imageData == null) { addGuidance(workshopText('script.424d4de88d48', 'Kaynak lam (anotasyonun çizildiği) açık değil — açın, sonra "⟳ Yenile".')); actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() })); actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() })); actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() })) }
         else {
             def srcFile = slideFileOf(imageData); def srcName = imageData.getServer().getMetadata().getName() ?: (srcFile?.getName() ?: '?')
             def srcEntry0 = null; try { srcEntry0 = project.getEntry(imageData) } catch (Throwable ignore) {}
@@ -3056,11 +3056,11 @@ render = { ->
             addMono(sb.toString())
 
             // ── Hizalanacak lamlar (çok-seçim) + marker adı + boya tipi ──
-            addGuidance('Hizalanacak lamları işaretleyin (kaynakla AYNI klasörde olmalı; VALIS ≥2 lamı birlikte hizalar). ' +
+            addGuidance(workshopText('script.c10fbc709b72', 'Hizalanacak lamları işaretleyin (kaynakla AYNI klasörde olmalı; VALIS ≥2 lamı birlikte hizalar). ' +
                 '"Marker adı" = kanal adı ön-eki. "Boya" = renk ayrıştırma tipi: İHK için H-DAB (→ {marker}-DAB + -Hematoksilen), ' +
                 'H&E için H&E (→ -Hematoksilen + -Eozin); ad "HE" içerenler otomatik H&E seçilir. ' +
                 '"Renk" = o markerın İŞARET kanalının (DAB/Eozin) QuPath\'teki rengi — her marker için farklı renk seçin (varsayılanlar zaten ayrıktır). ' +
-                'Renk yalnız ÇOK-KANALLI multipleksi etkiler; doğal-renk bileşik gerçek boya rengini kullanır. Hematoksilen daima mavi-mor.')
+                'Renk yalnız ÇOK-KANALLI multipleksi etkiler; doğal-renk bileşik gerçek boya rengini kullanır. Hematoksilen daima mavi-mor.'))
             def stainMap = stainMapRef.get()
             def stainBoxFor = { String id, String stem ->
                 def box = new javafx.scene.control.ChoiceBox()
@@ -3087,17 +3087,17 @@ render = { ->
             }
             def rowsBox = new javafx.scene.layout.VBox(4)
             def hdr = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('✓'),
-                (({ def l = new javafx.scene.control.Label('Lam'); l.setPrefWidth(220); l })()),
-                (({ def l = new javafx.scene.control.Label('Marker adı'); l.setPrefWidth(110); l })()),
-                (({ def l = new javafx.scene.control.Label('Boya'); l.setPrefWidth(140); l })()),
-                new javafx.scene.control.Label('Renk'))
+                (({ def l = new javafx.scene.control.Label(workshopText('script.c131f1441ec3', 'Lam')); l.setPrefWidth(220); l })()),
+                (({ def l = new javafx.scene.control.Label(workshopText('script.4dbbe3c016c8', 'Marker adı')); l.setPrefWidth(110); l })()),
+                (({ def l = new javafx.scene.control.Label(workshopText('script.a2577db3c8d0', 'Boya')); l.setPrefWidth(140); l })()),
+                new javafx.scene.control.Label(workshopText('script.708170f044f8', 'Renk')))
             rowsBox.getChildren().add(hdr)
             // Kaynak satırı — daima dahil (referans); marker + boya + renk düzenlenebilir
             if (srcId0 != null && !markerMap.containsKey(srcId0)) markerMap.put(srcId0, stemOfName(srcName))
             def srcCb = new javafx.scene.control.CheckBox(); srcCb.setSelected(true); srcCb.setDisable(true)
             def srcMk = new javafx.scene.control.TextField(markerMap.get(srcId0)?.toString() ?: stemOfName(srcName)); srcMk.setPrefColumnCount(11)
             srcMk.textProperty().addListener({ o, ov, nv -> if (srcId0 != null) markerMap.put(srcId0, nv) } as javafx.beans.value.ChangeListener)
-            def srcLbl = new javafx.scene.control.Label(srcName + '  (referans)'); srcLbl.setPrefWidth(220)
+            def srcLbl = new javafx.scene.control.Label(srcName + workshopText('script.c0d32de613cd', '  (referans)')); srcLbl.setPrefWidth(220)
             def srcStainBox = stainBoxFor(srcId0, stemOfName(srcName)); srcStainBox.setPrefWidth(140)
             rowsBox.getChildren().add(new javafx.scene.layout.HBox(8, srcCb, srcLbl, srcMk, srcStainBox, colorBoxFor(srcId0, stemOfName(srcName))))
             others.each { e ->
@@ -3115,39 +3115,39 @@ render = { ->
             center.getChildren().add(rowsScroll)
 
             // ── Hız seçenekleri (kayıt aşaması) ──
-            def rigidCb = new javafx.scene.control.CheckBox('Hızlı: yalnız rigid kayıt (non-rigid atla; daha az hassas)'); rigidCb.setSelected(rigidOnlyRef.get())
+            def rigidCb = new javafx.scene.control.CheckBox(workshopText('script.af35cc3b695d', 'Hızlı: yalnız rigid kayıt (non-rigid atla; daha az hassas)')); rigidCb.setSelected(rigidOnlyRef.get())
             rigidCb.selectedProperty().addListener({ o, ov, nv -> rigidOnlyRef.set(nv) } as javafx.beans.value.ChangeListener)
             def maxProcField = new javafx.scene.control.TextField(maxProcDimRef.get() ?: ''); maxProcField.setPrefColumnCount(5)
             maxProcField.textProperty().addListener({ o, ov, nv -> maxProcDimRef.set(nv) } as javafx.beans.value.ChangeListener)
-            def hrow = new javafx.scene.layout.HBox(8, rigidCb, new javafx.scene.control.Label('Kayıt için maks. kenar (px, boş=varsayılan):'), maxProcField)
+            def hrow = new javafx.scene.layout.HBox(8, rigidCb, new javafx.scene.control.Label(workshopText('script.2103fe45bb3c', 'Kayıt için maks. kenar (px, boş=varsayılan):')), maxProcField)
             hrow.setAlignment(javafx.geometry.Pos.CENTER_LEFT); center.getChildren().add(hrow)
 
             // ── Ölçek düzeltme (farklı tarayıcı µm/px) + İnce hizalama (register_micro) ──
-            def scaleCb = new javafx.scene.control.CheckBox('Ölçek tahminli rigid\'i sabitle (benzerlik dönüşümü — VALIS 1.2.0\'da zaten varsayılan; farklı tarayıcı µm/px farkı, ör. AT2 ile GT450, görüntülerden tahmin edilip düzeltilir. Sürüm değişse de davranışı garanti eder)'); scaleCb.setSelected(correctScaleRef.get()); scaleCb.setWrapText(true)
+            def scaleCb = new javafx.scene.control.CheckBox(workshopText('script.e921b5dc7572', 'Ölçek tahminli rigid\'i sabitle (benzerlik dönüşümü — VALIS 1.2.0\'da zaten varsayılan; farklı tarayıcı µm/px farkı, ör. AT2 ile GT450, görüntülerden tahmin edilip düzeltilir. Sürüm değişse de davranışı garanti eder)')); scaleCb.setSelected(correctScaleRef.get()); scaleCb.setWrapText(true)
             scaleCb.selectedProperty().addListener({ o, ov, nv -> correctScaleRef.set(nv) } as javafx.beans.value.ChangeListener)
             center.getChildren().add(scaleCb)
-            def microCb = new javafx.scene.control.CheckBox('İnce hizalama (register_micro — yüksek çözünürlüklü 2. non-rigid geçiş; "az kaymış"ı sıkılaştırır, yavaş)'); microCb.setSelected(microRef.get()); microCb.setWrapText(true)
+            def microCb = new javafx.scene.control.CheckBox(workshopText('script.fc8ae930e419', 'İnce hizalama (register_micro — yüksek çözünürlüklü 2. non-rigid geçiş; "az kaymış"ı sıkılaştırır, yavaş)')); microCb.setSelected(microRef.get()); microCb.setWrapText(true)
             def microField = new javafx.scene.control.TextField(microDimRef.get() ?: ''); microField.setPrefColumnCount(5)
             microField.textProperty().addListener({ o, ov, nv -> microDimRef.set(nv) } as javafx.beans.value.ChangeListener)
             microField.disableProperty().bind(microCb.selectedProperty().not())
-            def microRow = new javafx.scene.layout.HBox(8, microCb, new javafx.scene.control.Label('kenar (px, boş=4096; >2048):'), microField)
+            def microRow = new javafx.scene.layout.HBox(8, microCb, new javafx.scene.control.Label(workshopText('script.3c73eff3c14d', 'kenar (px, boş=4096; >2048):')), microField)
             microRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT); center.getChildren().add(microRow)
             // Karşılıklı dışlama: register_micro NON-RIGID'dir → "Yalnız rigid" ile birlikte anlamsız (VALIS None döner). Biri açılınca diğeri kapanır.
             microCb.selectedProperty().addListener({ o, ov, nv -> microRef.set(nv); if (nv && rigidCb.isSelected()) rigidCb.setSelected(false) } as javafx.beans.value.ChangeListener)
             rigidCb.selectedProperty().addListener({ o, ov, nv -> if (nv && microCb.isSelected()) microCb.setSelected(false) } as javafx.beans.value.ChangeListener)
             // Bölge odağı: ince hizalamayı seçili anotasyonun bölgesiyle sınırla (runner, anotasyonu kayıtlı
             // çerçeveye warp edip register_micro'ya MASKE verir). Yalnız ince hizalama açıkken anlamlı.
-            def microFocusCb = new javafx.scene.control.CheckBox('Bölge odağı: ince hizalamayı SEÇİLİ anotasyonun bölgesiyle sınırla (seçili yoksa tüm anotasyonlar; açık/kaynak lamda çizili olmalı)')
+            def microFocusCb = new javafx.scene.control.CheckBox(workshopText('script.b2fa92929bbc', 'Bölge odağı: ince hizalamayı SEÇİLİ anotasyonun bölgesiyle sınırla (seçili yoksa tüm anotasyonlar; açık/kaynak lamda çizili olmalı)'))
             microFocusCb.setSelected(microFocusRef.get()); microFocusCb.setWrapText(true)
             microFocusCb.disableProperty().bind(microCb.selectedProperty().not())
             microFocusCb.selectedProperty().addListener({ o, ov, nv -> microFocusRef.set(nv) } as javafx.beans.value.ChangeListener)
             center.getChildren().add(microFocusCb)
 
             // ── µm/px (piksel boyutu) oku — farklı tarayıcı ölçek farkını çalıştırmadan ÖNCE görmek için ──
-            def mppLabel = new javafx.scene.control.Label('µm/px: (okumak için düğmeye basın)'); mppLabel.setWrapText(true); mppLabel.setMaxWidth(Double.MAX_VALUE)
-            def mppBtn = new javafx.scene.control.Button('µm/px oku (seçili lamlar)')
+            def mppLabel = new javafx.scene.control.Label(workshopText('script.6b529cc40771', 'µm/px: (okumak için düğmeye basın)')); mppLabel.setWrapText(true); mppLabel.setMaxWidth(Double.MAX_VALUE)
+            def mppBtn = new javafx.scene.control.Button(workshopText('script.de963b2bb282', 'µm/px oku (seçili lamlar)'))
             mppBtn.setOnAction({
-                mppBtn.setDisable(true); mppLabel.setText('µm/px okunuyor…')
+                mppBtn.setDisable(true); mppLabel.setText(workshopText('script.6aeef969b01b', 'µm/px okunuyor…'))
                 def openCal = imageData?.getServer()?.getPixelCalibration()
                 def sel = []
                 sel << [name: srcName, cal: openCal, entry: null]
@@ -3179,7 +3179,7 @@ render = { ->
             def mppRow = new javafx.scene.layout.HBox(8, mppBtn, mppLabel)
             mppRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT); center.getChildren().add(mppRow)
             if (cfg.mode == 'wsl') {
-                def stageCb = new javafx.scene.control.CheckBox('Lamları WSL-yerel diske kopyala (ilk kaydı ~6× hızlandırır; ~2.5 GB/slayt yer gerekir)'); stageCb.setSelected(stageSlidesRef.get())
+                def stageCb = new javafx.scene.control.CheckBox(workshopText('script.b25a72df923c', 'Lamları WSL-yerel diske kopyala (ilk kaydı ~6× hızlandırır; ~2.5 GB/slayt yer gerekir)')); stageCb.setSelected(stageSlidesRef.get())
                 stageCb.selectedProperty().addListener({ o, ov, nv -> stageSlidesRef.set(nv) } as javafx.beans.value.ChangeListener)
                 center.getChildren().add(stageCb)
             }
@@ -3191,46 +3191,46 @@ render = { ->
             ['Açık lam (kaynak)', 'Otomatik (en geniş doku alanı)'].each { refChoice.getItems().add(it) }
             refChoice.setValue(referenceModeRef.get() == 'auto' ? 'Otomatik (en geniş doku alanı)' : 'Açık lam (kaynak)')
             refChoice.valueProperty().addListener({ o, ov, nv -> referenceModeRef.set((nv?.toString() ?: '').startsWith('Otomatik') ? 'auto' : 'open') } as javafx.beans.value.ChangeListener)
-            def refRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Referans:'), refChoice)
+            def refRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label(workshopText('script.440c56a3268b', 'Referans:')), refChoice)
             refRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT); center.getChildren().add(refRow)
-            addGuidance('Hız: "Yalnız rigid" non-rigid aşamasını (~40 dk olabilir) atlar — seri kesitlerde çoğu zaman yeterli, hassasiyet biraz düşer. ' +
-                (cfg.mode == 'wsl' ? '"WSL-yerel diske kopyala" lamları yavaş /mnt sürücüsünden hızlı diske alır (ilk kayıt çok hızlanır). ' : '') +
-                '"Referans": kayıt hangi lama göre hizalanır — "Otomatik" en çok doku içeren lamı seçer (ölçüm-tabanlı, kayıt YAPMAZ; günlükte her aday puanıyla loglanır). ' +
-                'Bir kez tam kayıt yaptıktan sonra boya/renk/seviye/composite değiştirmek için "↻ Yeniden birleştir" ile ~5 dk\'da yeniden birleştirin (yeniden KAYIT yok). Ayrıntı: Ekler → Görüntü Hizalama § 7.4/§ 7.5.')
+            addGuidance(workshopText('script.915c930ffa17', 'Hız: "Yalnız rigid" non-rigid aşamasını (~40 dk olabilir) atlar — seri kesitlerde çoğu zaman yeterli, hassasiyet biraz düşer. ') +
+                (cfg.mode == 'wsl' ? workshopText('script.399c3042df1e', '"WSL-yerel diske kopyala" lamları yavaş /mnt sürücüsünden hızlı diske alır (ilk kayıt çok hızlanır). ') : '') +
+                workshopText('script.dfae54d8a2c4', '"Referans": kayıt hangi lama göre hizalanır — "Otomatik" en çok doku içeren lamı seçer (ölçüm-tabanlı, kayıt YAPMAZ; günlükte her aday puanıyla loglanır). ') +
+                workshopText('script.4d0f5beec103', 'Bir kez tam kayıt yaptıktan sonra boya/renk/seviye/composite değiştirmek için "↻ Yeniden birleştir" ile ~5 dk\'da yeniden birleştirin (yeniden KAYIT yok). Ayrıntı: Ekler → Görüntü Hizalama § 7.4/§ 7.5.'))
 
             // ── Birleşik multipleks (merge) seçenekleri ──
-            def mergeCb = new javafx.scene.control.CheckBox('Birleşik multipleks (merge) üret'); mergeCb.setSelected(mergeEnabledRef.get())
+            def mergeCb = new javafx.scene.control.CheckBox(workshopText('script.a5ebca5ff42f', 'Birleşik multipleks (merge) üret')); mergeCb.setSelected(mergeEnabledRef.get())
             mergeCb.selectedProperty().addListener({ o, ov, nv -> mergeEnabledRef.set(nv) } as javafx.beans.value.ChangeListener)
             def mmChoice = new javafx.scene.control.ChoiceBox(); ['hed', 'dab', 'rgb'].each { mmChoice.getItems().add(it) }; mmChoice.setValue(['hed', 'dab', 'rgb'].contains(mergeModeRef.get()) ? mergeModeRef.get() : 'hed')
             mmChoice.valueProperty().addListener({ o, ov, nv -> if (nv != null) mergeModeRef.set(nv.toString()) } as javafx.beans.value.ChangeListener)
             def lvlField = new javafx.scene.control.TextField(mergeLevelRef.get() ?: '2'); lvlField.setPrefColumnCount(3)
             lvlField.textProperty().addListener({ o, ov, nv -> mergeLevelRef.set(nv) } as javafx.beans.value.ChangeListener)
-            def mrow = new javafx.scene.layout.HBox(8, mergeCb, new javafx.scene.control.Label('varsayılan kanal modu:'), mmChoice, new javafx.scene.control.Label('piramit seviyesi:'), lvlField)
+            def mrow = new javafx.scene.layout.HBox(8, mergeCb, new javafx.scene.control.Label(workshopText('script.0e879d66d83f', 'varsayılan kanal modu:')), mmChoice, new javafx.scene.control.Label(workshopText('script.799eb8b37980', 'piramit seviyesi:')), lvlField)
             mrow.setAlignment(javafx.geometry.Pos.CENTER_LEFT); center.getChildren().add(mrow)
-            def compCb = new javafx.scene.control.CheckBox('Doğal-renk parlak alan bileşiği (RGB, "lam gibi" — QuPath\'te Brightfield; TEK görünüm, kanal seçilemez)'); compCb.setSelected(compositeRef.get())
+            def compCb = new javafx.scene.control.CheckBox(workshopText('script.d90c140fa2bc', 'Doğal-renk parlak alan bileşiği (RGB, "lam gibi" — QuPath\'te Brightfield; TEK görünüm, kanal seçilemez)')); compCb.setSelected(compositeRef.get())
             compCb.selectedProperty().addListener({ o, ov, nv -> compositeRef.set(nv) } as javafx.beans.value.ChangeListener)
             center.getChildren().add(compCb)
-            def omeCb = new javafx.scene.control.CheckBox('Ayrı hizalanmış lamlar (OME-TIFF) da üret (YAVAŞ; merge yeterliyse gerekmez)'); omeCb.setSelected(writeOmeRef.get())
+            def omeCb = new javafx.scene.control.CheckBox(workshopText('script.98a3e94824a7', 'Ayrı hizalanmış lamlar (OME-TIFF) da üret (YAVAŞ; merge yeterliyse gerekmez)')); omeCb.setSelected(writeOmeRef.get())
             omeCb.selectedProperty().addListener({ o, ov, nv -> writeOmeRef.set(nv) } as javafx.beans.value.ChangeListener)
             center.getChildren().add(omeCb)
             // Birleşik multipleks bittiğinde OTOMATİK projeye eklensin mi (tür de otomatik ayarlanır) —
             // KALICI tercih (/qupath/atolye/valis → autoAdd), varsayılan AÇIK. Her çıktı zaman damgalı
             // olduğundan "↻ Yeniden birleştir" ile hızlı deneme-yanılma yapan kullanıcı bunu kapatıp
             // yalnız keeper çalışmayı elle "Birleşik multipleksi ekle" ile eklemeyi tercih edebilir.
-            def autoAddCb = new javafx.scene.control.CheckBox('Bittiğinde birleşik multipleksi projeye otomatik ekle (tür otomatik ayarlanır)')
+            def autoAddCb = new javafx.scene.control.CheckBox(workshopText('script.22c0a03639be', 'Bittiğinde birleşik multipleksi projeye otomatik ekle (tür otomatik ayarlanır)'))
             autoAddCb.setSelected(cfg.autoAdd)
             autoAddCb.selectedProperty().addListener({ o, ov, nv -> prefs.putBoolean(PREF_AUTOADD, nv); try { prefs.flush() } catch (Throwable ignore) {} } as javafx.beans.value.ChangeListener)
             center.getChildren().add(autoAddCb)
-            addGuidance('Varsayılan kanal modu, yukarıda "Boya"su elle seçilmemiş ve adından H&E çıkarılamayan İHK lamlarına uygulanır: ' +
+            addGuidance(workshopText('script.509962e49777', 'Varsayılan kanal modu, yukarıda "Boya"su elle seçilmemiş ve adından H&E çıkarılamayan İHK lamlarına uygulanır: ' +
                 'hed = Hematoksilen + DAB (ÖNERİLEN) · dab = yalnız DAB · rgb = ham RGB. ' +
                 'H&E lamları satırdaki "Boya = H&E" ile Hematoksilen + Eozin üretir. Seviye 0 = tam çözünürlük (yavaş/büyük), 2 ≈ görüntüleme için iyi denge; ' +
-                '"↻ Yeniden birleştir" ile hızlı denerken seviye 3 daha da hızlıdır (küçük warp+yazma).')
-            addGuidance('İKİ ÇIKTI TÜRÜ — amacınıza göre seçin (ayrıntı: Ekler → Görüntü Hizalama § 7.2):\n' +
+                '"↻ Yeniden birleştir" ile hızlı denerken seviye 3 daha da hızlıdır (küçük warp+yazma).'))
+            addGuidance(workshopText('script.943812e20891', 'İKİ ÇIKTI TÜRÜ — amacınıza göre seçin (ayrıntı: Ekler → Görüntü Hizalama § 7.2):\n' +
                 '  • BİLEŞİK KAPALI (varsayılan) → ÇOK-KANALLI multipleks (multiplex_*.ome.tiff). QuPath\'te tür = FLUORESCENCE; ' +
                 'her kanalı ayrı aç/kapat, 2–3 markerı üst üste bindir. Markerları AYIRT/KARŞILAŞTIR için budur.\n' +
                 '  • BİLEŞİK AÇIK → DOĞAL-RENK parlak alan RGB (multiplex_composite_*.ome.tiff, Beer-Lambert). QuPath\'te tür = BRIGHTFIELD; ' +
                 'beyaz zemin, doğal boya renkleri, "LAM GİBİ" görünür — ama TEK görüntüdür, kanal seçilemez. Tek lamda doğal görünüm; ' +
-                'çok lamda sentetik bileşik (çakışan boyalar koyulaşır).')
+                'çok lamda sentetik bileşik (çakışan boyalar koyulaşır).'))
 
             // ── Anotasyon warp hedefleri (isteğe bağlı; ÇOK-SEÇİM) — kaynağın anotasyonu işaretli HER hedefe warp edilir ──
             def targetIds = targetIdsRef.get() ?: new java.util.LinkedHashSet()
@@ -3259,14 +3259,14 @@ render = { ->
             }
             // "⚡ …" düğmesi burada (kontrol listesinden ÖNCE) yaratılır ki checkbox dinleyicileri onu
             // render() beklemeden CANLI etkin/pasif güncelleyebilsin (aşağıda actions.add ile eklenecek).
-            def warpOnlyBtn = navButton('⚡ Anotasyonu hedeflere aktar (kayıtlı hizalamadan)', { doWarpOnlyTransfer(cfg) },
-                'Yeniden KAYIT YAPMAZ — yalnız kayıtlı hizalamadan (varsa) işaretli hedeflere anotasyon warp eder ve OTOMATİK içe aktarır (merge/OME üretmez).')
+            def warpOnlyBtn = navButton(workshopText('script.9887d5b33f53', '⚡ Anotasyonu hedeflere aktar (kayıtlı hizalamadan)'), { doWarpOnlyTransfer(cfg) },
+                workshopText('script.9ed049e2d798', 'Yeniden KAYIT YAPMAZ — yalnız kayıtlı hizalamadan (varsa) işaretli hedeflere anotasyon warp eder ve OTOMATİK içe aktarır (merge/OME üretmez).'))
             def refreshWarpOnlyBtn = { warpOnlyBtn.setDisable(pklCandidate == null || targetIds.isEmpty()) }
             refreshWarpOnlyBtn()
-            addGuidance('Warp hedefleri (ops., ÇOK-SEÇİM): kaynağın anotasyonu işaretli HER hedefe warp edilir (tek Python sürecinde, ' +
+            addGuidance(workshopText('script.053cef2bd6fe', 'Warp hedefleri (ops., ÇOK-SEÇİM): kaynağın anotasyonu işaretli HER hedefe warp edilir (tek Python sürecinde, ' +
                 'yeniden kayıt gerekmez). Kayıtlı bir hizalama varsa aşağıdaki "⚡ …" düğmesi yeniden KAYIT yapmadan yalnız warp\'ı ' +
-                'tekrar çalıştırıp OTOMATİK içe aktarır (merge/OME üretmez).' +
-                (sidecarNames == null && pklCandidate != null ? ' (Not: kayıtlı hizalama eski bir çalışmadan — hangi hedeflerin içinde olduğu doğrulanamıyor.)' : ''))
+                'tekrar çalıştırıp OTOMATİK içe aktarır (merge/OME üretmez).') +
+                (sidecarNames == null && pklCandidate != null ? workshopText('script.185c28d9c2a8', ' (Not: kayıtlı hizalama eski bir çalışmadan — hangi hedeflerin içinde olduğu doğrulanamıyor.)') : ''))
             def tgtRowsBox = new javafx.scene.layout.VBox(4)
             others.each { e ->
                 def id = e.getID()?.toString(); def nm = e.getImageName() ?: '(adsız)'
@@ -3285,28 +3285,28 @@ render = { ->
             def tgtScroll = new javafx.scene.control.ScrollPane(tgtRowsBox); tgtScroll.setFitToWidth(true)
             tgtScroll.setPrefHeight(Math.min(160, 30 + others.size() * 26) as double)
             def tgtBtnRow = new javafx.scene.layout.HBox(8,
-                navButton('Tümünü seç', { others.each { e -> def id = e.getID()?.toString(); if (id != null) targetIds.add(id) }; render() }),
-                navButton('Tümünü kaldır', { targetIds.clear(); render() }))
+                navButton(workshopText('script.ef0b6d89aaa3', 'Tümünü seç'), { others.each { e -> def id = e.getID()?.toString(); if (id != null) targetIds.add(id) }; render() }),
+                navButton(workshopText('script.77d4b2feec04', 'Tümünü kaldır'), { targetIds.clear(); render() }))
             tgtBtnRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
             center.getChildren().add(tgtBtnRow)
             center.getChildren().add(tgtScroll)
-            addGuidance('Warp yönü: ' + srcName + ' → ' + targetIds.size() + ' hedef seçili.\n' +
-                'Koordinat uzayı: taban (level-0) piksel, köşe sol-üst, yeniden ölçekleme yapılmaz.\n' +
-                'Seri kesitler AYNI hücreleri İÇERMEZ — bu bir YAKLAŞIK VEKİLDİR, hücre düzeyinde birebir eşleşme değildir; her hedefte GÖRSEL doğrulayın.')
-            addGuidance('"Komut üret" seçili modun (Docker/native/WSL) komutunu hazırlar; "Doğrudan çalıştır" QuPath içinden çalıştırır. Hedef işaretlenirse kaynağın anotasyonu o lamlara taşınır.')
+            addGuidance(workshopText('script.370463c8f70d', 'Warp yönü: ') + srcName + ' → ' + targetIds.size() + workshopText('script.b0e0baf01457', ' hedef seçili.\n') +
+                workshopText('script.8a91546e10c3', 'Koordinat uzayı: taban (level-0) piksel, köşe sol-üst, yeniden ölçekleme yapılmaz.\n') +
+                workshopText('script.122fae76401a', 'Seri kesitler AYNI hücreleri İÇERMEZ — bu bir YAKLAŞIK VEKİLDİR, hücre düzeyinde birebir eşleşme değildir; her hedefte GÖRSEL doğrulayın.'))
+            addGuidance(workshopText('script.110b35def237', '"Komut üret" seçili modun (Docker/native/WSL) komutunu hazırlar; "Doğrudan çalıştır" QuPath içinden çalıştırır. Hedef işaretlenirse kaynağın anotasyonu o lamlara taşınır.'))
             // Dış (CLI/WSL) sonuçlarını içe aktar — sihirbaz çalıştırması gerektirmez; herhangi bir dosyayı seçtirir.
             def impSep = new javafx.scene.control.Separator()
             center.getChildren().add(impSep)
-            addGuidance('Terminalde/WSL\'de üretilmiş sonuçlarınız varsa doğrudan içe aktarın (sihirbaz çalıştırması gerekmez): warp\'lı GeoJSON\'u AÇIK lama, birleşik/hizalanmış OME-TIFF\'i projeye ekler.')
+            addGuidance(workshopText('script.f502c4fc5e12', 'Terminalde/WSL\'de üretilmiş sonuçlarınız varsa doğrudan içe aktarın (sihirbaz çalıştırması gerekmez): warp\'lı GeoJSON\'u AÇIK lama, birleşik/hizalanmış OME-TIFF\'i projeye ekler.'))
             def impBox = new javafx.scene.layout.HBox(8,
-                navButton('Warp\'lı GeoJSON içe aktar (dosyadan)…', { doImportGeojsonFromFile() }, 'Bir GeoJSON dosyası seçip AÇIK (hedef) lama VALIS-adlı, kilitli anotasyon olarak ekler'),
-                navButton('OME-TIFF ekle (dosyadan)…', { doAddOmeFromFile() }, 'Birleşik/hizalanmış bir OME-TIFF dosyası seçip projeye ekler (çok kanallı ise "Fluorescence" seçin)'))
+                navButton(workshopText('script.8dd7ffa52555', 'Warp\'lı GeoJSON içe aktar (dosyadan)…'), { doImportGeojsonFromFile() }, workshopText('script.5214aa6d3cd8', 'Bir GeoJSON dosyası seçip AÇIK (hedef) lama VALIS-adlı, kilitli anotasyon olarak ekler')),
+                navButton(workshopText('script.81e740a638b2', 'OME-TIFF ekle (dosyadan)…'), { doAddOmeFromFile() }, workshopText('script.38d31daf0494', 'Birleşik/hizalanmış bir OME-TIFF dosyası seçip projeye ekler (çok kanallı ise "Fluorescence" seçin)')))
             impBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
             center.getChildren().add(impBox)
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('Model ağırlıklarını indir (~50 MB)', { doPrefetch(cfg) }, 'VALIS varsayılan modellerini (DISK + LightGlue) yerel önbelleğe indirir; ilk hizalamanın ortasında beklememek + çevrimdışı için (yalnız native mod)'))
-            actions.add(navButton('Komut üret ▶', {
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.b2bdfe0b9fed', 'Model ağırlıklarını indir (~50 MB)'), { doPrefetch(cfg) }, workshopText('script.a3db08c88d90', 'VALIS varsayılan modellerini (DISK + LightGlue) yerel önbelleğe indirir; ilk hizalamanın ortasında beklememek + çevrimdışı için (yalnız native mod)')))
+            actions.add(navButton(workshopText('script.a9907c8f2f7d', 'Komut üret ▶'), {
                 def plan = prepareRun(cfg)
                 if (!plan.ok) { errorTextRef.set(plan.error); step.set('ERROR'); render(); return }
                 nativeTextRef.set(cmdToText(plan.nativeCmd))
@@ -3351,22 +3351,22 @@ render = { ->
                 lastCmdRef.set(cfg.mode == 'wsl' ? plan.wslCmd : (cfg.mode == 'native' ? plan.nativeCmd : plan.dockerCmd))
                 step.set('CMD_READY'); render()
             }))
-            actions.add(navButton('Doğrudan çalıştır ▶', {
+            actions.add(navButton(workshopText('script.3ecd99c46bb6', 'Doğrudan çalıştır ▶'), {
                 def plan = prepareRun(cfg)
                 if (!plan.ok) { errorTextRef.set(plan.error); step.set('ERROR'); render(); return }
                 startDirectRun(cfg.mode == 'wsl' ? plan.wslCmd : (cfg.mode == 'native' ? plan.nativeCmd : plan.dockerCmd))
-            }, 'Yapılandırılmış modu (Docker/native/WSL) QuPath içinden çalıştırır — uzun sürebilir'))
+            }, workshopText('script.1b83b968f25c', 'Yapılandırılmış modu (Docker/native/WSL) QuPath içinden çalıştırır — uzun sürebilir')))
             actions.add(warpOnlyBtn)   // yukarıda (kontrol listesinden önce) yaratıldı — bkz. refreshWarpOnlyBtn
             addRemergeAction(cfg, actions)
-            actions.add(navButton('Toplu işlem (çoklu vaka) ▶', { step.set('BATCH_SETUP'); render() },
-                'Bir klasör kökü altındaki BİRDEN ÇOK vaka alt-klasörünü (her biri ≥2 lam) tek Python sürecinde SIRALI kayıt+birleştirir — kaynak/hedef anotasyon warp\'ı bu ekranda YOK, her vaka için ayrı çalıştırın.'))
+            actions.add(navButton(workshopText('script.a3e9d70d00a7', 'Toplu işlem (çoklu vaka) ▶'), { step.set('BATCH_SETUP'); render() },
+                workshopText('script.acd3072925e5', 'Bir klasör kökü altındaki BİRDEN ÇOK vaka alt-klasörünü (her biri ≥2 lam) tek Python sürecinde SIRALI kayıt+birleştirir — kaynak/hedef anotasyon warp\'ı bu ekranda YOK, her vaka için ayrı çalıştırın.')))
         }
     } else if (cur == 'CMD_READY') {
-        title.setText('VALIS komutları (kopyala-çalıştır)')
+        title.setText(workshopText('script.acfbcdbdf58d', 'VALIS komutları (kopyala-çalıştır)'))
         def dockerOk = dockerUsableRef.get()
-        addGuidance('Yapılandırılan mod: ' + cfg.mode + '. Bir terminalde ilgili komutu çalıştırın; bittiğinde "Sonuçları içe aktar". ' +
-            'WSL, Windows\'ta önerilen yoldur (yerel VALIS bu makinede 0xC0000005 ile çökebilir). ' +
-            (dockerOk ? '' : 'Docker BU konumda kullanılamaz (girdi/çıktı çalışma klasörü dışında → tek-kök mount\'a sığmıyor; ayrıntı aşağıda).'))
+        addGuidance(workshopText('script.22dfbc37174c', 'Yapılandırılan mod: ') + cfg.mode + workshopText('script.30c1e22d07a1', '. Bir terminalde ilgili komutu çalıştırın; bittiğinde "Sonuçları içe aktar". ') +
+            workshopText('script.7c4ec29e7764', 'WSL, Windows\'ta önerilen yoldur (yerel VALIS bu makinede 0xC0000005 ile çökebilir). ') +
+            (dockerOk ? '' : workshopText('script.e879c81182ee', 'Docker BU konumda kullanılamaz (girdi/çıktı çalışma klasörü dışında → tek-kök mount\'a sığmıyor; ayrıntı aşağıda).')))
         def parts = []
         def wslBlock    = '# WSL (Windows\'ta önerilen):\n' + wslTextRef.get()
         def nativeBlock = '# Native venv:\n' + nativeTextRef.get()
@@ -3376,15 +3376,15 @@ render = { ->
         else                          { parts << dockerBlock; parts << wslBlock; parts << nativeBlock }
         def ta = new javafx.scene.control.TextArea(parts.join('\n\n'))
         ta.setEditable(false); ta.setWrapText(true); ta.setStyle(MONO); javafx.scene.layout.VBox.setVgrow(ta, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(ta)
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
-        actions.add(navButton('Kopyala (WSL)', { copyToClipboard(wslTextRef.get()) }))
-        actions.add(navButton('Kopyala (native)', { copyToClipboard(nativeTextRef.get()) }))
-        if (dockerOk) actions.add(navButton('Kopyala (Docker)', { copyToClipboard(dockerTextRef.get()) }))
-        actions.add(navButton('Doğrudan çalıştır ▶', { def c = lastCmdRef.get(); if (c != null) startDirectRun(c) }))
-        actions.add(navButton('Sonuçları içe aktar', { doImportWarped(); doAddOme(); doAddMergeOut() }, 'Warp\'lı anotasyonu hedefe + OME-TIFF\'leri + birleşik multipleksi projeye ekler'))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7624254e6b17', 'Kopyala (WSL)'), { copyToClipboard(wslTextRef.get()) }))
+        actions.add(navButton(workshopText('script.a7ca83d7f1f5', 'Kopyala (native)'), { copyToClipboard(nativeTextRef.get()) }))
+        if (dockerOk) actions.add(navButton(workshopText('script.fe1561f4d1bb', 'Kopyala (Docker)'), { copyToClipboard(dockerTextRef.get()) }))
+        actions.add(navButton(workshopText('script.3ecd99c46bb6', 'Doğrudan çalıştır ▶'), { def c = lastCmdRef.get(); if (c != null) startDirectRun(c) }))
+        actions.add(navButton(workshopText('script.e3dc55321aaf', 'Sonuçları içe aktar'), { doImportWarped(); doAddOme(); doAddMergeOut() }, workshopText('script.98be18e15bc0', 'Warp\'lı anotasyonu hedefe + OME-TIFF\'leri + birleşik multipleksi projeye ekler')))
     } else if (cur == 'RUNNING') {
         title.setText(busyLabelRef.get() + '…')
-        addGuidance('VALIS çalışıyor (hizalama uzun sürebilir; günlük aşağıda akıyor). Zaman aşımı: ' + (activeTimeoutSecondsRef.get() / 3600.0d) + ' saat.')
+        addGuidance(workshopText('script.cc9bbd2a1212', 'VALIS çalışıyor (hizalama uzun sürebilir; günlük aşağıda akıyor). Zaman aşımı: ') + (activeTimeoutSecondsRef.get() / 3600.0d) + workshopText('script.5668cb265ad2', ' saat.'))
         center.getChildren().add(busyBar())
         def prog = progressLabelRef.get()
         if (prog != null) { prog.setStyle('-fx-font-weight: bold;'); center.getChildren().add(prog) }
@@ -3405,16 +3405,16 @@ render = { ->
             }
         }
         def la = logAreaRef.get(); if (la != null) { javafx.scene.layout.VBox.setVgrow(la, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(la) }
-        def cancelBtn = navButton('İptal et', { }, 'Süreci durdurur; docker modunda konteyneri de durdurur (docker stop/kill), WSL modunda iç süreç de PID ile sonlandırılır')
+        def cancelBtn = navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { }, workshopText('script.515c89e9a36e', 'Süreci durdurur; docker modunda konteyneri de durdurur (docker stop/kill), WSL modunda iç süreç de PID ile sonlandırılır'))
         cancelBtn.setOnAction({
-            cancelBtn.setText('İptal ediliyor…'); cancelBtn.setDisable(true)
+            cancelBtn.setText(workshopText('script.c6d7a0688a5d', 'İptal ediliyor…')); cancelBtn.setDisable(true)
             cancelledRef.set(true); new Thread({ killProc() } as Runnable).start()
         })
         actions.add(cancelBtn)
-        actions.add(navButton('Günlük klasörünü aç', { openLogFolder() }, 'Tam çalışma günlüğünün (UTF-8) bulunduğu klasörü açar'))
+        actions.add(navButton(workshopText('script.bdd77f258525', 'Günlük klasörünü aç'), { openLogFolder() }, workshopText('script.a5ee928ffe90', 'Tam çalışma günlüğünün (UTF-8) bulunduğu klasörü açar')))
     } else if (cur == 'RESULT') {
         def rkind = resultKindRef.get()
-        title.setText(rkind == 'prefetch' ? 'Model ağırlıkları hazır ✅' : 'Tamamlandı ✅')
+        title.setText(rkind == 'prefetch' ? workshopText('script.83feb3b12dba', 'Model ağırlıkları hazır ✅') : workshopText('script.92c17020894f', 'Tamamlandı ✅'))
         // Metin alanı burada YÜKSEKLİĞİ SINIRLANDIRILMIŞ (addMono'nun aksine Vgrow:ALWAYS DEĞİL) —
         // aşağıdaki QC önizleme görüntüsüne (varsa) 900×720 sahnede yer kalsın diye.
         def resultTa = new javafx.scene.control.TextArea(resultTextRef.get() ?: '')
@@ -3423,8 +3423,8 @@ render = { ->
         center.getChildren().add(resultTa)
         def qcImg = qcThumbRef.get()
         if (rkind != 'prefetch' && qcImg != null) {
-            def qcLbl = new javafx.scene.control.Label('Hizalama önizlemesi — yalnız Hematoksilen kanalları (her lamda AYNI renk): kontürler ' +
-                'ÇAKIŞIYOR mu? Bu bir kaba ÇAKIŞMA/koinsidans kontrolüdür — örtüşme/Dice DOĞRULUK ölçüsü DEĞİL; her zaman GÖRSEL doğrulayın.')
+            def qcLbl = new javafx.scene.control.Label(workshopText('script.ef89eec95fc7', 'Hizalama önizlemesi — yalnız Hematoksilen kanalları (her lamda AYNI renk): kontürler ' +
+                'ÇAKIŞIYOR mu? Bu bir kaba ÇAKIŞMA/koinsidans kontrolüdür — örtüşme/Dice DOĞRULUK ölçüsü DEĞİL; her zaman GÖRSEL doğrulayın.'))
             qcLbl.setWrapText(true); qcLbl.setMaxWidth(Double.MAX_VALUE)
             center.getChildren().add(qcLbl)
             def qcView = new javafx.scene.image.ImageView(qcImg)
@@ -3433,22 +3433,22 @@ render = { ->
             center.getChildren().add(qcView)
         }
         // Model indirmeden sonra ilk pencereye (READY) dönüp komut üret/çalıştır; hizalama sonrası içe-aktarma butonları.
-        actions.add(navButton('◀ Ana ekrana dön', { step.set('READY'); render() }, 'İlk pencereye döner — "Komut üret" / "Doğrudan çalıştır"'))
+        actions.add(navButton(workshopText('script.79fc0890e530', '◀ Ana ekrana dön'), { step.set('READY'); render() }, workshopText('script.d0f7ce4591cc', 'İlk pencereye döner — "Komut üret" / "Doğrudan çalıştır"')))
         if (rkind != 'prefetch') {
-            actions.add(navButton('Birleşik multipleksi ekle', { doAddMergeOut() }, 'Çok kanallı hizalı multipleksi (marker-DAB / -Hematoksilen) projeye ekler'))
-            actions.add(navButton('Warp\'lı anotasyonu içe aktar', { doImportWarped() }))
-            actions.add(navButton('Ayrı OME lamları ekle', { doAddOme() }, 'Varsa ayrı hizalanmış lamları ekler (yalnız "ayrı OME de üret" seçiliyse)'))
+            actions.add(navButton(workshopText('script.1dbe1a1bd418', 'Birleşik multipleksi ekle'), { doAddMergeOut() }, workshopText('script.da8bd2a75b9d', 'Çok kanallı hizalı multipleksi (marker-DAB / -Hematoksilen) projeye ekler')))
+            actions.add(navButton(workshopText('script.06e35369d241', 'Warp\'lı anotasyonu içe aktar'), { doImportWarped() }))
+            actions.add(navButton(workshopText('script.b7b93aae377e', 'Ayrı OME lamları ekle'), { doAddOme() }, workshopText('script.91e862492102', 'Varsa ayrı hizalanmış lamları ekler (yalnız "ayrı OME de üret" seçiliyse)')))
             addRemergeAction(cfg, actions)
         }
-        if (logFileRef.get() != null) actions.add(navButton('Günlük klasörünü aç', { openLogFolder() }, 'Bu çalıştırmanın tam günlüğünün (UTF-8) bulunduğu klasörü açar'))
-        actions.add(navButton('Kapat', { stage.close() }))
+        if (logFileRef.get() != null) actions.add(navButton(workshopText('script.bdd77f258525', 'Günlük klasörünü aç'), { openLogFolder() }, workshopText('script.57bb249cf58b', 'Bu çalıştırmanın tam günlüğünün (UTF-8) bulunduğu klasörü açar')))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     } else if (cur == 'BATCH_SETUP') {
-        title.setText('VALIS — toplu işlem (çoklu vaka)')
-        addGuidance('Bir "vaka klasörü kökü" seçin — kökün HEMEN ALTINDAKİ her alt-klasör (≥2 lam içerenler) bir "vaka" sayılır ' +
+        title.setText(workshopText('script.b4bf4dccc79e', 'VALIS — toplu işlem (çoklu vaka)'))
+        addGuidance(workshopText('script.b3bfe806fe5a', 'Bir "vaka klasörü kökü" seçin — kökün HEMEN ALTINDAKİ her alt-klasör (≥2 lam içerenler) bir "vaka" sayılır ' +
             '(ör. kök/hasta-01/{HE,MUC2,MUC5AC}.svs). Her vaka KENDİ kayıt+birleştirmesini alır; kayıt/birleştirme seçenekleri (hız, boya modu, seviye, composite, ' +
-            'ayrı OME) yukarıdaki READY ekranında ayarladıklarınızla AYNIDIR (tüm vakalara uygulanır). Vaka-başına anotasyon warp burada YOK.')
-        def rootBtn = navButton('Vaka klasörü kökü seç…', {
-            def d = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Vaka klasörü kökünü seçin', batchCasesRootRef.get())
+            'ayrı OME) yukarıdaki READY ekranında ayarladıklarınızla AYNIDIR (tüm vakalara uygulanır). Vaka-başına anotasyon warp burada YOK.'))
+        def rootBtn = navButton(workshopText('script.d393bc03f1b7', 'Vaka klasörü kökü seç…'), {
+            def d = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.ba2e08cd023a', 'Vaka klasörü kökünü seçin'), batchCasesRootRef.get())
             if (d != null) {
                 batchCasesRootRef.set(d)
                 def found = discoverBatchCases(d)
@@ -3465,7 +3465,7 @@ render = { ->
             addMono('Kök: ' + root.getAbsolutePath() + '\nBulunan vaka klasörü: ' + found.size())
         }
         if (root != null && found.isEmpty()) {
-            addGuidance('Bu kökün altında ≥2 lam içeren alt-klasör bulunamadı. Beklenen düzen: kök/vaka-adı/{lam1, lam2, ...}.')
+            addGuidance(workshopText('script.085009c4f3d7', 'Bu kökün altında ≥2 lam içeren alt-klasör bulunamadı. Beklenen düzen: kök/vaka-adı/{lam1, lam2, ...}.'))
         }
         def includeNames = batchIncludeNamesRef.get() ?: new java.util.LinkedHashSet()
         def caseRowsBox = new javafx.scene.layout.VBox(4)
@@ -3474,7 +3474,7 @@ render = { ->
             def cb = new javafx.scene.control.CheckBox()
             cb.setSelected(includeNames.contains(d.getName()))
             cb.selectedProperty().addListener({ o, ov, nv -> if (nv) includeNames.add(d.getName()) else includeNames.remove(d.getName()) } as javafx.beans.value.ChangeListener)
-            def lbl = new javafx.scene.control.Label(d.getName() + '  (' + n + ' lam)'); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE)
+            def lbl = new javafx.scene.control.Label(d.getName() + '  (' + n + workshopText('script.08ebd83ef511', ' lam)')); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE)
             def row = new javafx.scene.layout.HBox(8, cb, lbl); row.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
             caseRowsBox.getChildren().add(row)
         }
@@ -3482,37 +3482,37 @@ render = { ->
             def caseScroll = new javafx.scene.control.ScrollPane(caseRowsBox); caseScroll.setFitToWidth(true)
             caseScroll.setPrefHeight(Math.min(200, 30 + found.size() * 26) as double)
             def caseBtnRow = new javafx.scene.layout.HBox(8,
-                navButton('Tümünü seç', { found.each { includeNames.add(it.getName()) }; render() }),
-                navButton('Tümünü kaldır', { includeNames.clear(); render() }))
+                navButton(workshopText('script.ef0b6d89aaa3', 'Tümünü seç'), { found.each { includeNames.add(it.getName()) }; render() }),
+                navButton(workshopText('script.77d4b2feec04', 'Tümünü kaldır'), { includeNames.clear(); render() }))
             caseBtnRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
             center.getChildren().add(caseBtnRow)
             center.getChildren().add(caseScroll)
         }
         def refPatField = new javafx.scene.control.TextField(batchReferencePatternRef.get() ?: '')
-        refPatField.setPromptText('ör. HE'); refPatField.setPrefColumnCount(10)
+        refPatField.setPromptText(workshopText('script.8fd71b2994f8', 'ör. HE')); refPatField.setPrefColumnCount(10)
         refPatField.textProperty().addListener({ o, ov, nv -> batchReferencePatternRef.set(nv) } as javafx.beans.value.ChangeListener)
-        def skipCb = new javafx.scene.control.CheckBox('Tamamlanmış vakaları atla (kaldığı yerden sürdür)'); skipCb.setSelected(batchSkipExistingRef.get())
+        def skipCb = new javafx.scene.control.CheckBox(workshopText('script.06bf0a599e7f', 'Tamamlanmış vakaları atla (kaldığı yerden sürdür)')); skipCb.setSelected(batchSkipExistingRef.get())
         skipCb.selectedProperty().addListener({ o, ov, nv -> batchSkipExistingRef.set(nv) } as javafx.beans.value.ChangeListener)
         def toField = new javafx.scene.control.TextField(batchCaseTimeoutRef.get() ?: '7200'); toField.setPrefColumnCount(6)
         toField.textProperty().addListener({ o, ov, nv -> batchCaseTimeoutRef.set(nv) } as javafx.beans.value.ChangeListener)
-        def optRow1 = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Referans deseni (dosya adında geçen, ops.):'), refPatField)
+        def optRow1 = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label(workshopText('script.0612404ca688', 'Referans deseni (dosya adında geçen, ops.):')), refPatField)
         optRow1.setAlignment(javafx.geometry.Pos.CENTER_LEFT); center.getChildren().add(optRow1)
         center.getChildren().add(skipCb)
-        def optRow2 = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Vaka başına zaman aşımı (sn):'), toField)
+        def optRow2 = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label(workshopText('script.b77717f8cf9d', 'Vaka başına zaman aşımı (sn):')), toField)
         optRow2.setAlignment(javafx.geometry.Pos.CENTER_LEFT); center.getChildren().add(optRow2)
-        addGuidance('Referans deseni: bir vaka klasöründe adı bu deseni İÇEREN (küçük/büyük harf duyarsız) TAM OLARAK BİR lam varsa o, o vakanın referansı olur; ' +
+        addGuidance(workshopText('script.d0d19fefac9d', 'Referans deseni: bir vaka klasöründe adı bu deseni İÇEREN (küçük/büyük harf duyarsız) TAM OLARAK BİR lam varsa o, o vakanın referansı olur; ' +
             'yoksa/birden çoksa "Otomatik" (ölçüm-tabanlı) referans seçime düşer. "Tamamlanmış vakaları atla": önceki bir toplu çalıştırmada BAŞARIYLA biten vakalar ' +
-            '(<ad>.done.json işaretçisi) yeniden ÇALIŞTIRILMAZ — kesintiye uğrayan bir gece çalıştırmasını kaldığı yerden sürdürmek içindir.')
-        def startBtn = navButton('Başlat ▶', {
+            '(<ad>.done.json işaretçisi) yeniden ÇALIŞTIRILMAZ — kesintiye uğrayan bir gece çalıştırmasını kaldığı yerden sürdürmek içindir.'))
+        def startBtn = navButton(workshopText('script.b342aa42ccce', 'Başlat ▶'), {
             def sel = found.findAll { includeNames.contains(it.getName()) }
-            if (sel.isEmpty()) { Dialogs.showErrorMessage('Toplu işlem', 'En az bir vaka işaretleyin.'); return }
+            if (sel.isEmpty()) { Dialogs.showErrorMessage(workshopText('script.cc79a2869710', 'Toplu işlem'), workshopText('script.297ca80efef3', 'En az bir vaka işaretleyin.')); return }
             startBatch(cfg, sel, batchReuseRegistrarRef.get())
-        }, 'Manifest JSON yazar + tüm işaretli vakaları TEK Python sürecinde SIRALI çalıştırır')
+        }, workshopText('script.b8de74627aa3', 'Manifest JSON yazar + tüm işaretli vakaları TEK Python sürecinde SIRALI çalıştırır'))
         startBtn.setDisable(found.isEmpty() || includeNames.isEmpty())
         actions.add(startBtn)
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
     } else if (cur == 'BATCH_RESULT') {
-        title.setText('Toplu işlem tamamlandı')
+        title.setText(workshopText('script.73d14d37bb15', 'Toplu işlem tamamlandı'))
         def cases = batchCasesResultRef.get() ?: []
         int okN = cases.count { it?.ok }
         int totalN = cases.size()
@@ -3536,49 +3536,49 @@ render = { ->
         sb << '\nHer vaka klasörü kendi çıktısını taşır (çalışma kökü/batch/<vaka adı>/). ' +
             'Hizalamayı GÖRSEL doğrulayın.\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
         addMono(sb.toString())
-        actions.add(navButton('Tümünü projeye ekle', {
+        actions.add(navButton(workshopText('script.9ae04c1cb83b', 'Tümünü projeye ekle'), {
             def project = QP.getProject()
-            if (project == null) { Dialogs.showErrorMessage('Toplu işlem', 'Proje açık değil.'); return }
+            if (project == null) { Dialogs.showErrorMessage(workshopText('script.cc79a2869710', 'Toplu işlem'), workshopText('script.7dfc869848aa', 'Proje açık değil.')); return }
             def files = cases.findAll { it?.ok && it?.name }
                 .collect { batchCaseMergeOutFile(cfg, it.name.toString()) }
                 .findAll { it.isFile() }.collect { it.getAbsolutePath() }
-            if (files.isEmpty()) { Dialogs.showErrorMessage('Toplu işlem', 'Eklenecek birleşik çıktı yok.'); return }
+            if (files.isEmpty()) { Dialogs.showErrorMessage(workshopText('script.cc79a2869710', 'Toplu işlem'), workshopText('script.908613072a12', 'Eklenecek birleşik çıktı yok.')); return }
             def type = compositeRef.get() ? qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_OTHER : qupath.lib.images.ImageData.ImageType.FLUORESCENCE
             addOmeToProject(project, files, type, false, { res ->
-                Dialogs.showInfoNotification('Toplu işlem', String.format(java.util.Locale.US, 'Projeye eklendi: %d eklendi, %d zaten vardı, %d hata.', (res.added ?: 0), (res.skipped ?: 0), (res.failed ?: 0)))
+                Dialogs.showInfoNotification(workshopText('script.cc79a2869710', 'Toplu işlem'), String.format(java.util.Locale.US, workshopText('script.69b28144f786', 'Projeye eklendi: %d eklendi, %d zaten vardı, %d hata.'), (res.added ?: 0), (res.skipped ?: 0), (res.failed ?: 0)))
             })
-        }, 'Başarılı TÜM vakaların birleşik multipleks çıktısını tek seferde projeye ekler'))
+        }, workshopText('script.263117ec1cc5', 'Başarılı TÜM vakaların birleşik multipleks çıktısını tek seferde projeye ekler')))
         def failedNames = cases.findAll { !it?.ok && !it?.skipped }.collect { it?.name?.toString() }.findAll { it }
-        def retryBtn = navButton('Hatalı vakaları yeniden dene', {
+        def retryBtn = navButton(workshopText('script.89d9aa2d501f', 'Hatalı vakaları yeniden dene'), {
             def all = batchCaseDirsRef.get() ?: []
             def sel = all.findAll { failedNames.contains(it.getName()) }
             if (sel.isEmpty()) return
             startBatch(cfg, sel, batchReuseRegistrarRef.get())
-        }, 'Yalnız HATA veren vakaları (yukarıdaki AYNI seçeneklerle) yeniden çalıştırır')
+        }, workshopText('script.6f5c6063ba33', 'Yalnız HATA veren vakaları (yukarıdaki AYNI seçeneklerle) yeniden çalıştırır'))
         retryBtn.setDisable(failedNames.isEmpty())
         actions.add(retryBtn)
-        actions.add(navButton('↻ Toplu yeniden birleştir', {
+        actions.add(navButton(workshopText('script.ecac13e5d376', '↻ Toplu yeniden birleştir'), {
             def all = batchCaseDirsRef.get() ?: []
             def sel = all.findAll { (batchIncludeNamesRef.get() ?: new java.util.LinkedHashSet()).contains(it.getName()) }
             if (sel.isEmpty()) sel = all
             startBatch(cfg, sel, true)
-        }, 'AYNI vaka klasörleri için TÜM registrar\'ları yeniden kullanır (yeniden KAYIT yok) — boya/renk/seviye/composite değiştirdikten sonra hızlı toplu yeniden birleştirme'))
-        if (logFileRef.get() != null) actions.add(navButton('Günlük klasörünü aç', { openLogFolder() }))
-        actions.add(navButton('◀ Ana ekrana dön', { step.set('READY'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        }, workshopText('script.53a5562ac19a', 'AYNI vaka klasörleri için TÜM registrar\'ları yeniden kullanır (yeniden KAYIT yok) — boya/renk/seviye/composite değiştirdikten sonra hızlı toplu yeniden birleştirme')))
+        if (logFileRef.get() != null) actions.add(navButton(workshopText('script.bdd77f258525', 'Günlük klasörünü aç'), { openLogFolder() }))
+        actions.add(navButton(workshopText('script.79fc0890e530', '◀ Ana ekrana dön'), { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     } else { // ERROR
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         addMono(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
-        if (logFileRef.get() != null) actions.add(navButton('Günlük klasörünü aç', { openLogFolder() }, 'Tam çalışma günlüğünün (UTF-8) bulunduğu klasörü açar'))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
+        if (logFileRef.get() != null) actions.add(navButton(workshopText('script.bdd77f258525', 'Günlük klasörünü aç'), { openLogFolder() }, workshopText('script.a5ee928ffe90', 'Tam çalışma günlüğünün (UTF-8) bulunduğu klasörü açar')))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut'); topChk.setSelected(alwaysTop.get())
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut')); topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ o, ov, nv -> alwaysTop.set(nv); if (stage != null) stage.setAlwaysOnTop(nv) } as javafx.beans.value.ChangeListener)
     def spacer = new javafx.scene.layout.Region(); javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
     def bar = new javafx.scene.layout.HBox(8); bar.setAlignment(javafx.geometry.Pos.CENTER_LEFT); bar.getChildren().add(topChk); bar.getChildren().add(spacer); bar.getChildren().addAll(actions)
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlıdır; hizalamayı görsel doğrulayın. Klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.ce8752841c16', 'Yalnızca araştırma/eğitim amaçlıdır; hizalamayı görsel doğrulayın. Klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE); disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
     def bottom = new javafx.scene.layout.VBox(8, disclaimer, bar); bottom.setPadding(new javafx.geometry.Insets(10))
     // READY ekranı (çok-slayt listesi + merge + içe-aktarma) uzun → yalnız o ekranda merkezi kaydırılabilir yap
@@ -3598,12 +3598,23 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('VALIS hizalama sihirbazı')
+        stage.setTitle(workshopText('script.2c8fa302afe5', 'VALIS hizalama sihirbazı'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ VALIS hizalama sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

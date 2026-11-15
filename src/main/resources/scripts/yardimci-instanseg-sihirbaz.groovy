@@ -141,7 +141,7 @@ def copyToClipboard = { String txt ->
     cb.setContent(content)
 }
 def pickDir = {
-    try { return qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'InstanSeg model klasörünü seç', null) }
+    try { return qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.97b90d3618a9', 'InstanSeg model klasörünü seç'), null) }
     catch (Throwable t) {
         try { return qupath.fx.dialogs.FileChoosers.promptForDirectory('InstanSeg model klasörünü seç', (File) null) }
         catch (Throwable t2) { return null }
@@ -247,8 +247,8 @@ def addParamGrid = { center ->
         if (x != null) mdField.setText(x.getAbsolutePath())
     })
     int row = 0
-    qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model klasörü:'), mdField, browse)
-    qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Cihaz (cpu/gpu):'), devField)
+    qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.60ea5915dd92', 'Model klasörü:')), mdField, browse)
+    qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.517e74e48378', 'Cihaz (cpu/gpu):')), devField)
     center.getChildren().add(grid)
 }
 
@@ -299,9 +299,9 @@ def applyMenuHighlight = { String menuName ->
     }
 }
 def menuHighlightToggle = { String menuName ->
-    def tb = new javafx.scene.control.ToggleButton(menuName + ' menüsünü göster')
+    def tb = new javafx.scene.control.ToggleButton(menuName + workshopText('script.ef07407189c3', ' menüsünü göster'))
     tb.setTooltip(new javafx.scene.control.Tooltip(
-        'Üst menü çubuğunda "' + menuName + '" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).'))
+        workshopText('script.242839f75398', 'Üst menü çubuğunda "') + menuName + workshopText('script.f4d336f42a58', '" menüsünü turuncu çerçeveyle işaretler (menüyü açmaz, hiçbir şeyi değiştirmez).')))
     tb.setOnAction({ if (tb.isSelected()) applyMenuHighlight(menuName) else clearMenuHighlight() })
     return tb
 }
@@ -333,18 +333,18 @@ render = { ->
     }
 
     if (cur == 'NEED_INSTALL') {
-        title.setText('InstanSeg eklentisi gerekli')
-        addGuidance('Bu sihirbaz yerel QuPath **InstanSeg eklentisini** kullanır; şu anda yüklü değil.\n\n' +
+        title.setText(workshopText('script.f1ab5f1ba90e', 'InstanSeg eklentisi gerekli'))
+        addGuidance(workshopText('script.05de73d7717e', 'Bu sihirbaz yerel QuPath **InstanSeg eklentisini** kullanır; şu anda yüklü değil.\n\n' +
             'Kurulum:\n  1. [Extensions → Manage extensions] → InstanSeg → Install\n  2. QuPath\'i yeniden başlatın\n  3. Bu sihirbazı tekrar açın\n\n' +
             'Ayrıntılı kurulum + modeller: Ekler → InstanSeg.\n' +
-            'Not: InstanSeg DJL ile QuPath içinde çalışır — ayrı bir Python ortamı (venv) GEREKMEZ.')
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('⟳ Yeniden denetle', { step.set(instansegInstalled() ? 'READY' : 'NEED_INSTALL'); render() }))
+            'Not: InstanSeg DJL ile QuPath içinde çalışır — ayrı bir Python ortamı (venv) GEREKMEZ.'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.c5e461092367', '⟳ Yeniden denetle'), { step.set(instansegInstalled() ? 'READY' : 'NEED_INSTALL'); render() }))
         actions.add(menuHighlightToggle('Extensions'))   // #3: Extensions menüsünü göster
     } else if (cur == 'READY') {
-        title.setText('InstanSeg — çekirdek/hücre tespiti')
+        title.setText(workshopText('script.2a9242aca764', 'InstanSeg — çekirdek/hücre tespiti'))
         if (imageData == null) {
-            addGuidance('Önce bir lam açın ve ölçülecek bölge için bir alan anotasyonu çizip SEÇİN, sonra "⟳ Yenile".')
+            addGuidance(workshopText('script.51c53e08d9ec', 'Önce bir lam açın ve ölçülecek bölge için bir alan anotasyonu çizip SEÇİN, sonra "⟳ Yenile".'))
         } else {
             def selected = QP.getSelectedObject()
             boolean selOk = (selected != null && selected instanceof PathAnnotationObject && selected.hasROI() && selected.getROI().isArea())
@@ -356,36 +356,36 @@ render = { ->
             sb << "Model klasörü    : " << (modelOk ? 'geçerli ✓' : 'ayarlanmadı/geçersiz — aşağıdan seçin') << "\n"
             addMonoArea(sb.toString())
             addParamGrid(center)
-            addGuidance('Çıktı yalnız tespit SAYISI + alan + yoğunluktur; sınıflandırma/yorum üretmez. ' +
-                'Model görüntü tipine uymalı (ör. brightfield_nuclei = H&E parlak alan).')
+            addGuidance(workshopText('script.f882f9e32bc9', 'Çıktı yalnız tespit SAYISI + alan + yoğunluktur; sınıflandırma/yorum üretmez. ' +
+                'Model görüntü tipine uymalı (ör. brightfield_nuclei = H&E parlak alan).'))
         }
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('⟳ Yenile', { render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
         def selectedNow = (imageData != null) ? QP.getSelectedObject() : null
         boolean canRun = (imageData != null && selectedNow != null && selectedNow instanceof PathAnnotationObject && selectedNow.hasROI() && selectedNow.getROI().isArea())
-        def runBtn = navButton('Tespit ▶', { startDetection() }, 'Seçili ROI içinde InstanSeg tespiti çalıştırır')
+        def runBtn = navButton(workshopText('script.2fcaa983279f', 'Tespit ▶'), { startDetection() }, workshopText('script.9c6a301e09e2', 'Seçili ROI içinde InstanSeg tespiti çalıştırır'))
         runBtn.setDisable(!canRun)
         actions.add(runBtn)
     } else if (cur == 'RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('InstanSeg çalışıyor. İlerleme aşağıda. Büyük ROI\'lerde CPU\'da birkaç dakika sürebilir.')
+        addGuidance(workshopText('script.b5eb68f3822d', 'InstanSeg çalışıyor. İlerleme aşağıda. Büyük ROI\'lerde CPU\'da birkaç dakika sürebilir.'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true) }, 'İptal bir sonraki kontrol noktasında etkilidir'))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true) }, workshopText('script.4d7465e565c7', 'İptal bir sonraki kontrol noktasında etkilidir')))
     } else if (cur == 'RESULT') {
-        title.setText('Tamamlandı ✅')
+        title.setText(workshopText('script.92c17020894f', 'Tamamlandı ✅'))
         addMonoArea(resultTextRef.get())
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-        actions.add(navButton('↻ Yeniden çalıştır', { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.c94499b243e4', '↻ Yeniden çalıştır'), { step.set('READY'); render() }))
     } else { // ERROR
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set(instansegInstalled() ? 'READY' : 'NEED_INSTALL'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set(instansegInstalled() ? 'READY' : 'NEED_INSTALL'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
     // Alt çubuk: "Üstte tut" (sol) + disclaimer + eylem düğmeleri (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
@@ -398,7 +398,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -418,13 +418,24 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('InstanSeg çekirdek/hücre tespiti sihirbazı')
+        stage.setTitle(workshopText('script.8ea59e0bacfc', 'InstanSeg çekirdek/hücre tespiti sihirbazı'))
         stage.setAlwaysOnTop(alwaysTop.get())
         stage.setOnHidden({ clearMenuHighlight() })   // #3: pencere kapanınca menü vurgusunu kaldır
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ InstanSeg çekirdek/hücre tespiti sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

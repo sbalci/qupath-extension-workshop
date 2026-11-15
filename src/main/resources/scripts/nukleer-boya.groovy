@@ -80,8 +80,8 @@ def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class,
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     Dialogs.showErrorMessage(
-        "Görüntü açık değil",
-        "Önce bir Ki-67 İHK lamı açın, sonra bu betiği tekrar çalıştırın."
+        workshopText('script.b4c901dc184b', "Görüntü açık değil"),
+        workshopText('script.f5ece35a37a0', "Önce bir Ki-67 İHK lamı açın, sonra bu betiği tekrar çalıştırın.")
     )
     return
 }
@@ -162,11 +162,11 @@ def suggestStainVectors = { ->
         '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n' +
         '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et'
     if (isHeadless) { println svMsg; return }
-    if (!qupath.fx.dialogs.Dialogs.showConfirmDialog('Boya vektörleri — öneri', svMsg)) return
+    if (!qupath.fx.dialogs.Dialogs.showConfirmDialog(workshopText('script.cb5b26abe800', 'Boya vektörleri — öneri'), svMsg)) return
     def svSel = QP.getSelectedObjects().findAll { it.hasROI() && it.getROI().isArea() }
     if (svSel.isEmpty()) {
-        qupath.fx.dialogs.Dialogs.showWarningNotification('Boya vektörleri',
-            'Önce iki boya + biraz arka plan içeren temsilî bir alan anotasyonu çizip SEÇİN, sonra tekrar deneyin.')
+        qupath.fx.dialogs.Dialogs.showWarningNotification(workshopText('script.c1cc09de3ac8', 'Boya vektörleri'),
+            workshopText('script.525b4898d046', 'Önce iki boya + biraz arka plan içeren temsilî bir alan anotasyonu çizip SEÇİN, sonra tekrar deneyin.'))
         return
     }
     try {
@@ -183,11 +183,11 @@ def suggestStainVectors = { ->
         javafx.application.Platform.runLater {
             try { qupath.lib.gui.QuPathGUI.getInstance()?.getViewer()?.repaintEntireImage() } catch (Throwable svR) { }
         }
-        qupath.fx.dialogs.Dialogs.showMessageDialog('Boya vektörleri',
-            'Vektörler seçili bölgeden tahmin edilip uygulandı. Modülü şimdi çalıştırabilirsiniz.')
+        qupath.fx.dialogs.Dialogs.showMessageDialog(workshopText('script.c1cc09de3ac8', 'Boya vektörleri'),
+            workshopText('script.4e0fe0741a03', 'Vektörler seçili bölgeden tahmin edilip uygulandı. Modülü şimdi çalıştırabilirsiniz.'))
     } catch (Throwable svErr) {
-        qupath.fx.dialogs.Dialogs.showMessageDialog('Boya vektörleri',
-            'Tahmin yapılamadı: ' + (svErr.getMessage() ?: svErr.getClass().getSimpleName()))
+        qupath.fx.dialogs.Dialogs.showMessageDialog(workshopText('script.c1cc09de3ac8', 'Boya vektörleri'),
+            workshopText('script.c0b06389df5e', 'Tahmin yapılamadı: ') + (svErr.getMessage() ?: svErr.getClass().getSimpleName()))
     }
 }
 if (QP.getSelectedObject() instanceof PathAnnotationObject && QP.getSelectedObject().getROI()?.isArea()) {
@@ -416,14 +416,14 @@ javafx.application.Platform.runLater {
 
         def stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Nükleer Boya (Ki-67) - Ki-67 / Nükleer İHK kantifikasyonu')
+        stage.setTitle(workshopText('script.29f2743009bc', 'Nükleer Boya (Ki-67) - Ki-67 / Nükleer İHK kantifikasyonu'))
         stage.setAlwaysOnTop(true)
 
-        def title = new javafx.scene.control.Label('Ki-67 / Nükleer İHK kantifikasyonu')
+        def title = new javafx.scene.control.Label(workshopText('script.bff6719bd76a', 'Ki-67 / Nükleer İHK kantifikasyonu'))
         title.setStyle('-fx-font-size: 14px; -fx-font-weight: bold;')
         def info = new javafx.scene.control.Label(
-            'Bir dikdörtgen anotasyon (R) çizip SEÇİN (kenarı sarı), sonra "Çalıştır".\n' +
-            'Eşik değiştirince "Yeniden say (hızlı)" tespiti tekrarlamadan saniyeler içinde günceller.')
+            workshopText('script.9fd4af8ce38e', 'Bir dikdörtgen anotasyon (R) çizip SEÇİN (kenarı sarı), sonra "Çalıştır".\n' +
+            'Eşik değiştirince "Yeniden say (hızlı)" tespiti tekrarlamadan saniyeler içinde günceller.'))
         info.setWrapText(true)
 
         def commitSpinner = { javafx.scene.control.Spinner sp ->
@@ -448,51 +448,51 @@ javafx.application.Platform.runLater {
         }
         // Feature 2 — parametre açıklayıcısı: DAB optik yoğunluğu (OD) nedir, ne yapar.
         def thrTip = new javafx.scene.control.Tooltip(
-            'DAB optik yoğunluğu (OD) eşiği: bir çekirdeğin "Nucleus: DAB OD mean" değeri\n' +
+            workshopText('script.0fa1675afe6d', 'DAB optik yoğunluğu (OD) eşiği: bir çekirdeğin "Nucleus: DAB OD mean" değeri\n' +
             'bu eşiğin üzerindeyse o sınıfa (1+/2+/3+) atanır. Eşiği YÜKSELTMEK pozitif\n' +
-            'sayısını AZALTIR; düşürmek artırır. Sıra: 1+ < 2+ < 3+ olmalı.')
+            'sayısını AZALTIR; düşürmek artırır. Sıra: 1+ < 2+ < 3+ olmalı.'))
         [spThr1, spThr2, spThr3].each { it.setTooltip(thrTip) }
         def grid = new javafx.scene.layout.GridPane()
         grid.setHgap(8); grid.setVgap(6); grid.setPadding(new javafx.geometry.Insets(6))
-        grid.addRow(0, new javafx.scene.control.Label('1+ eşiği (zayıf, DAB OD)'), spThr1)
-        grid.addRow(1, new javafx.scene.control.Label('2+ eşiği (orta, DAB OD)'),  spThr2)
-        grid.addRow(2, new javafx.scene.control.Label('3+ eşiği (güçlü, DAB OD)'), spThr3)
+        grid.addRow(0, new javafx.scene.control.Label(workshopText('script.24c882487fa5', '1+ eşiği (zayıf, DAB OD)')), spThr1)
+        grid.addRow(1, new javafx.scene.control.Label(workshopText('script.27657aeeb615', '2+ eşiği (orta, DAB OD)')),  spThr2)
+        grid.addRow(2, new javafx.scene.control.Label(workshopText('script.f442dcf8feff', '3+ eşiği (güçlü, DAB OD)')), spThr3)
         def advHint = new javafx.scene.control.Label(
-            'DAB OD eşiği: çekirdeğin DAB sinyali bu değerin üzerindeyse pozitif sayılır. ' +
-            'Yükseltmek pozitif sayısını azaltır.')
+            workshopText('script.94ad5d1ee123', 'DAB OD eşiği: çekirdeğin DAB sinyali bu değerin üzerindeyse pozitif sayılır. ' +
+            'Yükseltmek pozitif sayısını azaltır.'))
         advHint.setWrapText(true)
         advHint.setStyle('-fx-font-style: italic; -fx-opacity: 0.7; -fx-font-size: 11px;')
         def advBox = new javafx.scene.layout.VBox(6, grid, advHint)
-        def adv = new javafx.scene.control.TitledPane('⚙ Gelişmiş ayarlar — eşikler', advBox)
+        def adv = new javafx.scene.control.TitledPane(workshopText('script.782a54764f62', '⚙ Gelişmiş ayarlar — eşikler'), advBox)
         adv.setExpanded(false); adv.setAnimated(false)
 
-        def teachChk = new javafx.scene.control.CheckBox('Öğretim modu (varsayılan ↔ sizin karşılaştırması)')
+        def teachChk = new javafx.scene.control.CheckBox(workshopText('script.e8258a4a26d9', 'Öğretim modu (varsayılan ↔ sizin karşılaştırması)'))
         teachChk.setSelected(true)
 
-        def status = new javafx.scene.control.Label('Hazır.')
+        def status = new javafx.scene.control.Label(workshopText('script.86bb45e59294', 'Hazır.'))
         def progress = new javafx.scene.control.ProgressBar()
         progress.setMaxWidth(Double.MAX_VALUE); progress.setVisible(false); progress.setManaged(false)
         def resultArea = new javafx.scene.control.TextArea()
         resultArea.setEditable(false); resultArea.setWrapText(false); resultArea.setPrefRowCount(10)
-        resultArea.setPromptText('Sonuçlar burada görünecek…')
+        resultArea.setPromptText(workshopText('script.4adde9b85aed', 'Sonuçlar burada görünecek…'))
         resultArea.setStyle("-fx-font-family: 'Consolas','Menlo','Courier New',monospace; -fx-font-size: 12px;")
 
-        def runBtn = new javafx.scene.control.Button('Çalıştır'); runBtn.setDefaultButton(true)
-        def recountBtn = new javafx.scene.control.Button('Yeniden say (hızlı)'); recountBtn.setDisable(!hasDetections.get())
-        def fixTypeBtn = new javafx.scene.control.Button("Görüntü tipini 'Brightfield (H-DAB)' olarak ayarla")
+        def runBtn = new javafx.scene.control.Button(workshopText('script.79ef801ff99f', 'Çalıştır')); runBtn.setDefaultButton(true)
+        def recountBtn = new javafx.scene.control.Button(workshopText('script.12c291ed7b57', 'Yeniden say (hızlı)')); recountBtn.setDisable(!hasDetections.get())
+        def fixTypeBtn = new javafx.scene.control.Button(workshopText('script.8a62116b4df8', "Görüntü tipini 'Brightfield (H-DAB)' olarak ayarla"))
         fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
         fixTypeBtn.setOnAction({
             imageData.setImageType(qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_H_DAB)
             QP.setImageType('BRIGHTFIELD_H_DAB')
             fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
-            status.setStyle(''); status.setText("✓ Görüntü tipi 'Brightfield (H-DAB)' olarak ayarlandı. Şimdi bir alan anotasyonu seçip 'Çalıştır'a basın.")
+            status.setStyle(''); status.setText(workshopText('script.1a0b412fdbec', "✓ Görüntü tipi 'Brightfield (H-DAB)' olarak ayarlandı. Şimdi bir alan anotasyonu seçip 'Çalıştır'a basın."))
             resultArea.setText('')
         })
 
         // İlk açılışta görüntü tipi yanlışsa kullanıcıyı pencere içinde yönlendir (modal yok).
         if (!imageTypeOk()) {
             status.setStyle('-fx-text-fill: -qp-script-error-color;')
-            status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz.")
+            status.setText(workshopText('script.d6e9c7dd78f5', "⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz."))
             resultArea.setText(imageTypeGuidance())
             fixTypeBtn.setVisible(true); fixTypeBtn.setManaged(true)
         }
@@ -504,11 +504,11 @@ javafx.application.Platform.runLater {
             if (res.ok) {
                 fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
                 hasDetections.set(true); recountBtn.setDisable(false)
-                status.setStyle(''); status.setText('Tamamlandı ✅ — eşikleri değiştirip "Yeniden say (hızlı)" deneyin.')
+                status.setStyle(''); status.setText(workshopText('script.0d10b0792204', 'Tamamlandı ✅ — eşikleri değiştirip "Yeniden say (hızlı)" deneyin.'))
                 resultArea.setText(res.text)
             } else if (res.imageTypeIssue) {
                 status.setStyle('-fx-text-fill: -qp-script-error-color;')
-                status.setText("⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz.")
+                status.setText(workshopText('script.d6e9c7dd78f5', "⚠ Görüntü tipi 'Brightfield (H-DAB)' değil — tek tıkla düzeltebilirsiniz."))
                 resultArea.setText(res.error)
                 fixTypeBtn.setVisible(true); fixTypeBtn.setManaged(true)
             } else {
@@ -519,7 +519,7 @@ javafx.application.Platform.runLater {
         runBtn.setOnAction({
             [spThr1, spThr2, spThr3].each { commitSpinner(it) }
             runBtn.setDisable(true); recountBtn.setDisable(true)
-            status.setStyle(''); status.setText('Çalışıyor… (hücre tespiti)')
+            status.setStyle(''); status.setText(workshopText('script.e6d86b4eba06', 'Çalışıyor… (hücre tespiti)'))
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             double thr1 = spThr1.getValue() as double
             double thr2 = spThr2.getValue() as double
@@ -535,7 +535,7 @@ javafx.application.Platform.runLater {
         recountBtn.setOnAction({
             [spThr1, spThr2, spThr3].each { commitSpinner(it) }
             runBtn.setDisable(true); recountBtn.setDisable(true)
-            status.setStyle(''); status.setText('Yeniden sayılıyor… (tespit yok, yalnızca sınıflandırma)')
+            status.setStyle(''); status.setText(workshopText('script.001dd7d79da4', 'Yeniden sayılıyor… (tespit yok, yalnızca sınıflandırma)'))
             progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             double thr1 = spThr1.getValue() as double
             double thr2 = spThr2.getValue() as double
@@ -548,17 +548,17 @@ javafx.application.Platform.runLater {
             worker.setDaemon(true); worker.start()
         })
 
-        def alwaysTop = new javafx.scene.control.CheckBox('Üstte tut'); alwaysTop.setSelected(true)
+        def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut')); alwaysTop.setSelected(true)
         alwaysTop.selectedProperty().addListener(
             { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
-        def copyBtn = new javafx.scene.control.Button('Kopyala')
+        def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', 'Kopyala'))
         copyBtn.setOnAction({
             def cb = javafx.scene.input.Clipboard.getSystemClipboard()
             def c = new javafx.scene.input.ClipboardContent(); c.putString(resultArea.getText()); cb.setContent(c)
         })
-        def closeBtn = new javafx.scene.control.Button('Kapat'); closeBtn.setOnAction({ stage.close() })
+        def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', 'Kapat')); closeBtn.setOnAction({ stage.close() })
 
-        def footer = new javafx.scene.control.Label('QuPath Atölye Betikleri · araştırma/eğitim amaçlı')
+        def footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', 'QuPath Atölye Betikleri · araştırma/eğitim amaçlı'))
         footer.setMaxWidth(Double.MAX_VALUE)
         footer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;')
 
@@ -577,6 +577,17 @@ javafx.application.Platform.runLater {
         stage.setScene(new javafx.scene.Scene(root, 580, 580))
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Nükleer boya modülü açılamadı', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+        Dialogs.showErrorMessage(workshopText('script.0a31f15d0375', 'Nükleer boya modülü açılamadı'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+    }
+}
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
     }
 }

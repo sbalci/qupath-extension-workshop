@@ -643,15 +643,15 @@ def launchBundledScript = { String resourceName ->
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + resourceName) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + resourceName)
             if (url == null) {
-                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
-                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.612821b4f218', 'Betik bulunamadı'),
+                    workshopText('script.9641266ba42d', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi')) }
                 return
             }
             def cl = this.getClass().getClassLoader()
             try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
             new GroovyShell(cl).evaluate(url.getText('UTF-8'), resourceName)
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage(workshopText('script.e83c5641f38e', 'Açılamadı'), (t.getMessage() ?: t.getClass().getSimpleName())) }
         }
     } as Runnable).start()
 }
@@ -679,7 +679,7 @@ def envReturnHook = [
                 if (!stage.isShowing()) stage.show()
                 stage.toFront(); stage.requestFocus()
             } catch (Throwable t) {
-                Dialogs.showErrorMessage('Sihirbaza dönüş', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+                Dialogs.showErrorMessage(workshopText('script.95854db5b310', 'Sihirbaza dönüş'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
             }
         }
     }
@@ -692,8 +692,8 @@ def launchEnvManager = { ->
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + res) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + res)
             if (url == null) {
-                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
-                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.612821b4f218', 'Betik bulunamadı'),
+                    workshopText('script.9641266ba42d', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi')) }
                 return
             }
             def cl = this.getClass().getClassLoader()
@@ -702,7 +702,7 @@ def launchEnvManager = { ->
             shellBinding.setVariable('atolyeReturnHook', envReturnHook)
             new GroovyShell(cl, shellBinding).evaluate(url.getText('UTF-8'), res)
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage(workshopText('script.e83c5641f38e', 'Açılamadı'), (t.getMessage() ?: t.getClass().getSimpleName())) }
         }
     } as Runnable).start()
 }
@@ -755,24 +755,24 @@ render = { ->
     }
 
     if (cur == 'CONFIG_INCOMPLETE') {
-        title.setText('TIA Toolbox yapılandırması gerekli')
+        title.setText(workshopText('script.2fbb28af23d9', 'TIA Toolbox yapılandırması gerekli'))
         def miss = configMissing(cfg)
-        addGuidance('Bu sihirbaz bir Python ortamı (TIA Toolbox) + bir köprü betiği gerektirir. Eksik/geçersiz:\n  • ' +
-            (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
-            '\n\nKOLAY KURULUM:\n' +
-            '  1) Python ortamı → [Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller →\n' +
-            '     Atölye Python ortam yöneticisi] penceresinde "TIA Toolbox — boyama normalizasyonu / doku maskesi"\n' +
-            '     ortamını tek tıkla kurun (hafif; torch gerekmez). Model ağırlıklarını TIA Toolbox ilk kullanımda kendi indirir.\n' +
-            '  2) Köprü betiği → tiatoolbox_bridge.py eklentiyle birlikte otomatik çıkarılır (veya depoda handson/python/tiatoolbox/).\n' +
-            'Özel python.exe ya da köprü yolu seçmek isterseniz "Yapılandır ▶" düğmesini kullanın.')
-        actions.add(navButton('▶ Python ortamını kur', { launchEnvManager() },
-            'Atölye Python ortam yöneticisini açar → "TIA Toolbox — boyama normalizasyonu / doku maskesi" ortamını tek tıkla kurun'))
-        actions.add(navButton('📄 Belge', { openUrl('https://atolye.patoloji.dev/ekler/tiatoolbox.html') },
-            'Ekler → TIA Toolbox kurulum sayfasını tarayıcıda açar'))
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
+        addGuidance(workshopText('script.9e829c833a27', 'Bu sihirbaz bir Python ortamı (TIA Toolbox) + bir köprü betiği gerektirir. Eksik/geçersiz:\n  • ') +
+            (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')) +
+            workshopText('script.23fdeaf486f7', '\n\nKOLAY KURULUM:\n') +
+            workshopText('script.0c7b436d79a1', '  1) Python ortamı → [Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller →\n') +
+            workshopText('script.81f631350f14', '     Atölye Python ortam yöneticisi] penceresinde "TIA Toolbox — boyama normalizasyonu / doku maskesi"\n') +
+            workshopText('script.4b67fa9b88b9', '     ortamını tek tıkla kurun (hafif; torch gerekmez). Model ağırlıklarını TIA Toolbox ilk kullanımda kendi indirir.\n') +
+            workshopText('script.c097ef700478', '  2) Köprü betiği → tiatoolbox_bridge.py eklentiyle birlikte otomatik çıkarılır (veya depoda handson/python/tiatoolbox/).\n') +
+            workshopText('script.de6cbb9f0ffb', 'Özel python.exe ya da köprü yolu seçmek isterseniz "Yapılandır ▶" düğmesini kullanın.'))
+        actions.add(navButton(workshopText('script.00be7965f362', '▶ Python ortamını kur'), { launchEnvManager() },
+            workshopText('script.45254b5ebe6f', 'Atölye Python ortam yöneticisini açar → "TIA Toolbox — boyama normalizasyonu / doku maskesi" ortamını tek tıkla kurun')))
+        actions.add(navButton(workshopText('script.5e2ce88d90d0', '📄 Belge'), { openUrl('https://atolye.patoloji.dev/ekler/tiatoolbox.html') },
+            workshopText('script.ab33c34f445e', 'Ekler → TIA Toolbox kurulum sayfasını tarayıcıda açar')))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
-        title.setText('TIA Toolbox yapılandırması')
+        title.setText(workshopText('script.a51a721e60bb', 'TIA Toolbox yapılandırması'))
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         def pyField = new javafx.scene.control.TextField(cfg.python ?: '')
         def brField = new javafx.scene.control.TextField(cfg.bridge ?: '')
@@ -784,54 +784,54 @@ render = { ->
         def mdsField = new javafx.scene.control.TextField(cfg.maskDownsample ?: '16.0')
         [pyField, brField, refField, wdField].each { it.setPrefColumnCount(34) }
         [dsField, tsField, mtField, mdsField].each { it.setPrefColumnCount(8) }
-        def builtinChk = new javafx.scene.control.CheckBox('TIA Toolbox yerleşik referansını kullan (önerilir)')
+        def builtinChk = new javafx.scene.control.CheckBox(workshopText('script.a72a0068ba1e', 'TIA Toolbox yerleşik referansını kullan (önerilir)'))
         builtinChk.setSelected(cfg.useBuiltin == 'true')
         def normChoice = makeNormChoice()
         def maskChoice = makeMaskChoice()
         pyFieldRef.set(pyField); bridgeFieldRef.set(brField); refFieldRef.set(refField); builtinChkRef.set(builtinChk)
         workFieldRef.set(wdField); normChoiceRef.set(normChoice); maskChoiceRef.set(maskChoice)
         dsFieldRef.set(dsField); tileFieldRef.set(tsField); maxTFieldRef.set(mtField); mdsFieldRef.set(mdsField)
-        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Dosya seç'); if (x != null) f.setText(x.getAbsolutePath()) }
-        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Dizin seç', null); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.8622b674942a', 'Dosya seç')); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.15f8cfe83dc9', 'Dizin seç'), null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (python.exe):'), pyField, navButton('…', { browseFile(pyField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Köprü (tiatoolbox_bridge.py):'), brField, navButton('…', { browseFile(brField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Referans PNG (ops.):'), refField, navButton('…', { browseFile(refField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.aecd3556bbae', 'Köprü (tiatoolbox_bridge.py):')), brField, navButton('…', { browseFile(brField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.16cc8c178df5', 'Referans PNG (ops.):')), refField, navButton('…', { browseFile(refField) }))
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(''), builtinChk)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Çalışma dizini (ops.):'), wdField, navButton('…', { browseDir(wdField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Normalize yöntemi:'), normChoice)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Doku maske yöntemi:'), maskChoice)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Normalize downsample (bölge/karo):'), dsField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Karo boyutu (px):'), tsField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Anotasyon başı maks. karo (0=tümü):'), mtField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Doku maske downsample (küçükresim):'), mdsField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.2719ca64ba94', 'Çalışma dizini (ops.):')), wdField, navButton('…', { browseDir(wdField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.f3786db770b8', 'Normalize yöntemi:')), normChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.14c487a33c12', 'Doku maske yöntemi:')), maskChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.d096ca3aa876', 'Normalize downsample (bölge/karo):')), dsField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.91c09ece8069', 'Karo boyutu (px):')), tsField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.385cd7498856', 'Anotasyon başı maks. karo (0=tümü):')), mtField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.0d041633bebe', 'Doku maske downsample (küçükresim):')), mdsField)
         center.getChildren().add(grid)
-        addGuidance('Referans: yerleşik kutu işaretliyse TIA Toolbox\'ın standart H&E referansı kullanılır; ' +
+        addGuidance(workshopText('script.577279cffd08', 'Referans: yerleşik kutu işaretliyse TIA Toolbox\'ın standart H&E referansı kullanılır; ' +
             'kendi referansınız için kutuyu kaldırıp bir PNG seçin. Normalize downsample: 0,25 µm/px tarayıcıda ' +
-            '2.0 (≈0,5 µm/px) önizlemeyi hızlandırır. Doku maske downsample: büyük = küçük küçükresim (16–32 önerilir).')
-        actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }, 'tiatoolbox_bridge.py selftest'))
-        actions.add(navButton('Kaydet ▶', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+            '2.0 (≈0,5 µm/px) önizlemeyi hızlandırır. Doku maske downsample: büyük = küçük küçükresim (16–32 önerilir).'))
+        actions.add(navButton(workshopText('script.72278748133a', 'İptal'), { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.8369fe631575', 'Bağımlılık kontrolü'), { startSelftest() }, 'tiatoolbox_bridge.py selftest'))
+        actions.add(navButton(workshopText('script.96f6bd4b06cc', 'Kaydet ▶'), { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
     } else if (cur == 'CHECK_RUNNING') {
-        title.setText('Bağımlılık kontrolü çalışıyor…')
+        title.setText(workshopText('script.8e84f306c3c6', 'Bağımlılık kontrolü çalışıyor…'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'CHECK_DONE') {
-        title.setText(selftestOkRef.get() ? 'Bağımlılık kontrolü tamam ✅'
-            : '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın (Python / bağımlılık)')
+        title.setText(selftestOkRef.get() ? workshopText('script.93f447fe25d4', 'Bağımlılık kontrolü tamam ✅')
+            : workshopText('script.228c923a71ee', '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın (Python / bağımlılık)'))
         addLiveLog()
-        actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
-        if (selftestOkRef.get()) actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, 'Kontrol tamam — çalıştırma ekranına döner'))
+        actions.add(navButton(workshopText('script.c8b5f18cded5', '◀ Yapılandırmaya dön'), { step.set('CONFIG'); render() }))
+        if (selftestOkRef.get()) actions.add(navButton(workshopText('script.2065029c612d', 'Çalıştırma ekranına dön ▶'), { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, workshopText('script.5a6064a7fae3', 'Kontrol tamam — çalıştırma ekranına döner')))
     } else if (cur == 'READY') {
         if (imageData == null) {
-            title.setText('Görüntü açık değil')
-            addGuidance('Önce bir lam açın (boyama normalizasyonu için bölge/alan anotasyonu çizin), sonra "⟳ Yenile".')
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
+            title.setText(workshopText('script.b4c901dc184b', 'Görüntü açık değil'))
+            addGuidance(workshopText('script.a57c8c6e1014', 'Önce bir lam açın (boyama normalizasyonu için bölge/alan anotasyonu çizin), sonra "⟳ Yenile".'))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
         } else {
             def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() }
-            title.setText('TIA Toolbox — hazır')
+            title.setText(workshopText('script.9de5db9b9e84', 'TIA Toolbox — hazır'))
             def sb = new StringBuilder()
             sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
@@ -845,7 +845,7 @@ render = { ->
             } as javafx.beans.value.ChangeListener)
             def modeRow = new javafx.scene.layout.HBox(8)
             modeRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
-            modeRow.getChildren().addAll(new javafx.scene.control.Label('Mod:'), modeChoice)
+            modeRow.getChildren().addAll(new javafx.scene.control.Label(workshopText('script.e79a63f3a487', 'Mod:')), modeChoice)
             center.getChildren().add(modeRow)
 
             boolean isTissue = (cfg.mode == 'tissue-mask')
@@ -855,60 +855,60 @@ render = { ->
                     if (n != null) { prefs.put(PREF_MASK, n.toString()); try { prefs.flush() } catch (Throwable ig) {} }
                 } as javafx.beans.value.ChangeListener)
                 def r = new javafx.scene.layout.HBox(8); r.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
-                r.getChildren().addAll(new javafx.scene.control.Label('Doku maske yöntemi:'), maskChoice,
+                r.getChildren().addAll(new javafx.scene.control.Label(workshopText('script.14c487a33c12', 'Doku maske yöntemi:')), maskChoice,
                     new javafx.scene.control.Label('   downsample: ' + (cfg.maskDownsample ?: '16.0')))
                 center.getChildren().add(r)
-                addGuidance('Doku maskesi açık lamın TAMAMINDAN üretilir ve hizalı "Doku" anotasyonu olarak içe aktarılır. Anotasyon gerekmez.')
+                addGuidance(workshopText('script.96fb214abb99', 'Doku maskesi açık lamın TAMAMINDAN üretilir ve hizalı "Doku" anotasyonu olarak içe aktarılır. Anotasyon gerekmez.'))
             } else {
                 def normChoice = makeNormChoice()
                 normChoice.valueProperty().addListener({ obs, o, n ->
                     if (n != null) { prefs.put(PREF_NORM, n.toString()); try { prefs.flush() } catch (Throwable ig) {} }
                 } as javafx.beans.value.ChangeListener)
                 def r = new javafx.scene.layout.HBox(8); r.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
-                r.getChildren().addAll(new javafx.scene.control.Label('Normalize yöntemi:'), normChoice,
-                    new javafx.scene.control.Label('   referans: ' + (cfg.useBuiltin == 'true' ? 'yerleşik' : (cfg.reference?.trim() ? 'özel PNG' : 'ilk dolu karo'))))
+                r.getChildren().addAll(new javafx.scene.control.Label(workshopText('script.f3786db770b8', 'Normalize yöntemi:')), normChoice,
+                    new javafx.scene.control.Label(workshopText('script.ed56ad815913', '   referans: ') + (cfg.useBuiltin == 'true' ? workshopText('script.d5d1339876e1', 'yerleşik') : (cfg.reference?.trim() ? workshopText('script.4a5f21e9b4b4', 'özel PNG') : workshopText('script.7af7f60ecdb0', 'ilk dolu karo')))))
                 center.getChildren().add(r)
                 if (cfg.mode == 'normalize-region')
-                    addGuidance('Seçili (yoksa ilk) alan anotasyonu normalize edilir; orijinal | normalize montajı açılır. Çıktı görüntüdür, QuPath nesnesi değil.')
+                    addGuidance(workshopText('script.d12cb0046791', 'Seçili (yoksa ilk) alan anotasyonu normalize edilir; orijinal | normalize montajı açılır. Çıktı görüntüdür, QuPath nesnesi değil.'))
                 else
-                    addGuidance('Alan anotasyonlarının karoları normalize edilir → <çalışma>/normalized/. Çıktı görüntüdür (downstream ML için).')
+                    addGuidance(workshopText('script.25acd54c358f', 'Alan anotasyonlarının karoları normalize edilir → <çalışma>/normalized/. Çıktı görüntüdür (downstream ML için).'))
             }
 
             boolean needAnn = !isTissue
             boolean canRun = configComplete(cfg) && (!needAnn || anns.size() >= 1)
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
             def runLabel = isTissue ? 'Doku maskesi çıkar ▶' : 'Normalize et ▶'
-            def runBtn = navButton(runLabel, { startRun() }, 'Seçili modu çalıştırır')
+            def runBtn = navButton(runLabel, { startRun() }, workshopText('script.0a69a82585f3', 'Seçili modu çalıştırır'))
             runBtn.setDisable(!canRun)
-            if (!canRun && needAnn && anns.size() < 1) addWarnLabel('⚠ Boyama normalizasyonu için en az 1 alan anotasyonu gerekir.')
+            if (!canRun && needAnn && anns.size() < 1) addWarnLabel(workshopText('script.ea3050ab4b08', '⚠ Boyama normalizasyonu için en az 1 alan anotasyonu gerekir.'))
             actions.add(runBtn)
         }
     } else if (cur == 'RUN_RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('Python köprüsü çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance(workshopText('script.74f34d4d16a3', 'Python köprüsü çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ') + PYTHON_TIMEOUT_SECONDS + workshopText('script.9d84a2f3efc0', ' sn.'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {
-        title.setText(busyLabelRef.get()); addGuidance('Lütfen bekleyin…'); center.getChildren().add(busyBar())
+        title.setText(busyLabelRef.get()); addGuidance(workshopText('script.245c572ec2ea', 'Lütfen bekleyin…')); center.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
-        title.setText('Tamamlandı ✅')
+        title.setText(workshopText('script.92c17020894f', 'Tamamlandı ✅'))
         addMonoArea(resultTextRef.get())
         def of = openFileRef.get()
-        if (of != null) actions.add(navButton('Montajı aç', { openFileExternally(of) }))
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-        actions.add(navButton('↻ Yeniden çalıştır', { step.set('READY'); render() }))
+        if (of != null) actions.add(navButton(workshopText('script.b8647bc18e03', 'Montajı aç'), { openFileExternally(of) }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.c94499b243e4', '↻ Yeniden çalıştır'), { step.set('READY'); render() }))
     } else { // ERROR
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
     // Alt çubuk: "Üstte tut" (sol) + disclaimer + eylem düğmeleri (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
@@ -921,7 +921,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı veri/ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.8a928510b211', 'Yalnızca araştırma/eğitim amaçlı veri/ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -941,12 +941,23 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('TIA Toolbox boyama normalizasyonu / doku maskesi sihirbazı')
+        stage.setTitle(workshopText('script.1d98a835d02d', 'TIA Toolbox boyama normalizasyonu / doku maskesi sihirbazı'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ TIA Toolbox boyama normalizasyonu / doku maskesi sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

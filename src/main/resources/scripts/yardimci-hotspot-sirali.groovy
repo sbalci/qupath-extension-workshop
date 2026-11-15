@@ -71,13 +71,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -85,7 +85,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -98,7 +98,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -122,7 +122,7 @@ String hotspotClass   = "Hotspot"
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     if (isHeadless) println "Görüntü açık değil."
-    else Dialogs.showErrorMessage("Görüntü açık değil", "Önce karo anotasyonları olan bir lam açın.")
+    else Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.c323a51a3390', "Önce karo anotasyonları olan bir lam açın."))
     return
 }
 def cal = imageData.getServer().getPixelCalibration()
@@ -143,7 +143,7 @@ def classNames = allAnnos.collect { classOf(it) }.findAll { it != null && it != 
 
 if (classNames.isEmpty()) {
     def msg = "Karo anotasyonu bulunamadı. Bir piksel sınıflandırıcı, ızgara betiği ya da Create tiles çalıştırın."
-    if (isHeadless) println msg else Dialogs.showErrorMessage("Karo yok", msg)
+    if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.ab46e48d894b', "Karo yok"), msg)
     return
 }
 
@@ -165,8 +165,8 @@ if (isHeadless) {
     assignHotspotClass = false
 } else {
     def defClass = classNames.contains(prefs.get('chosenClass', '')) ? prefs.get('chosenClass', '') : classNames[0]
-    chosenClass = Dialogs.showChoiceDialog("Yoğun odak (hotspot) sınıfı",
-        "Hangi sınıftaki karolar sıralansın?", classNames, defClass)
+    chosenClass = Dialogs.showChoiceDialog(workshopText('script.b86011fc7111', "Yoğun odak (hotspot) sınıfı"),
+        workshopText('script.aae4db5f454e', "Hangi sınıftaki karolar sıralansın?"), classNames, defClass)
     if (chosenClass == null) { println "İptal edildi."; return }
 
     def tiles0 = allAnnos.findAll { classOf(it) == chosenClass }
@@ -177,22 +177,22 @@ if (isHeadless) {
         .sort()
 
     if (measurementKeys.isEmpty()) {
-        Dialogs.showErrorMessage("Ölçüm yok",
-            "'${chosenClass}' sınıfındaki karolarda sayısal ölçüm bulunamadı.")
+        Dialogs.showErrorMessage(workshopText('script.e3dc9a444a25', "Ölçüm yok"),
+            "'${chosenClass}${workshopText('script.57e265c19627', '\' sınıfındaki karolarda sayısal ölçüm bulunamadı.')}")
         return
     }
     def defKey = measurementKeys.contains(prefs.get('chosenKey', '')) ? prefs.get('chosenKey', '') : measurementKeys[0]
-    chosenKey = Dialogs.showChoiceDialog("Sıralama ölçümü",
-        "Karolar hangi ölçüme göre sıralansın? (büyükten küçüğe)", measurementKeys, defKey)
+    chosenKey = Dialogs.showChoiceDialog(workshopText('script.59fee3f513c9', "Sıralama ölçümü"),
+        workshopText('script.b0a99e142359', "Karolar hangi ölçüme göre sıralansın? (büyükten küçüğe)"), measurementKeys, defKey)
     if (chosenKey == null) { println "İptal edildi."; return }
 
-    def nStr = Dialogs.showInputDialog("Top-N yoğun odak", "Kaç yoğun odak (hotspot) karosu seçilsin? (ör. 3)", prefs.get('topN', '3'))
+    def nStr = Dialogs.showInputDialog(workshopText('script.a2bf2fab9c5f', "Top-N yoğun odak"), workshopText('script.ddc76c5c8b33', "Kaç yoğun odak (hotspot) karosu seçilsin? (ör. 3)"), prefs.get('topN', '3'))
     if (nStr == null) { println "İptal edildi."; return }
     topN = nStr.trim().isInteger() ? nStr.trim().toInteger() : 3   // (eski .coerceToType(int) Integer'da yok → MissingMethodException)
     if (topN < 1) topN = 1
 
-    assignHotspotClass = Dialogs.showConfirmDialog("Sınıf ata",
-        "Top-${topN} karolara \"${hotspotClass}\" sınıfı atansın mı?")
+    assignHotspotClass = Dialogs.showConfirmDialog(workshopText('script.8c878a235031', "Sınıf ata"),
+        "${workshopText('script.a906a73ce2e7', 'Top-')}${topN}${workshopText('script.8eb5dea3ecbc', ' karolara "')}${hotspotClass}${workshopText('script.a6ce09fc47ec', '" sınıfı atansın mı?')}")
 
     prefs.put('chosenClass', chosenClass)
     prefs.put('chosenKey',   chosenKey)
@@ -212,7 +212,7 @@ if (assignHotspotClass) {
 def tiles = allAnnos.findAll { classOf(it) == chosenClass }
 if (tiles.isEmpty()) {
     def msg = "'${chosenClass}' sınıfında karo bulunamadı."
-    if (isHeadless) println msg else Dialogs.showErrorMessage("Karo yok", msg)
+    if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.ab46e48d894b', "Karo yok"), msg)
     return
 }
 // Seçili ölçümü TAŞIMAYAN karolar sıralamaya girmez: eskiden -Double.MAX_VALUE nöbetçi değeriyle
@@ -227,7 +227,7 @@ def scoredTiles = tiles.findAll { tile ->
 }.sort { -it.value }
 if (scoredTiles.isEmpty()) {
     def msg = "'${chosenClass}' sınıfındaki ${tiles.size()} karonun hiçbirinde '${chosenKey}' ölçümü yok."
-    if (isHeadless) println msg else Dialogs.showErrorMessage("Ölçüm yok", msg)
+    if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.e3dc9a444a25', "Ölçüm yok"), msg)
     return
 }
 if (scoredTiles.size() < tiles.size())
@@ -309,3 +309,14 @@ showResultWindow("Sıralı Yoğun Odak Seçici", body.toString())
 println String.format(java.util.Locale.US,
     "✓ Yoğun odak sıralama: sınıf='%s', ölçüm='%s', top-%d, ortalama=%s",
     chosenClass, chosenKey, actualN, fmt(topMean, "%.4f"))
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

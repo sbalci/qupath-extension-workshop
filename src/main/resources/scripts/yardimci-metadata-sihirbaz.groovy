@@ -743,7 +743,7 @@ render = { ->
             addMonoArea(rep)
         } else {
             reportRef.set('')
-            addGuidance('Tek lam raporu için bir lam açın. Tüm projeyi taramak için bir proje açıp aşağıdaki düğmeyi kullanın.')
+            addGuidance(workshopText('script.b11a71be91a2', 'Tek lam raporu için bir lam açın. Tüm projeyi taramak için bir proje açıp aşağıdaki düğmeyi kullanın.'))
         }
         def chk = new javafx.scene.control.CheckBox(workshopText('script.4a70604a5fba', 'Proje sütunlarına da yaz (sıralanabilir)'))
         chk.setSelected(writeColsRef.get())
@@ -759,7 +759,7 @@ render = { ->
         actions.add(scanBtn)
     } else if (cur == 'SCANNING') {
         title.setText(workshopText('script.ca10a4616efe', 'Proje taranıyor…'))
-        addGuidance('Her görüntü diskten okunuyor; büyük kohortlarda zaman alabilir. Çıktı aşağıda akıyor.')
+        addGuidance(workshopText('script.da5e78b15321', 'Her görüntü diskten okunuyor; büyük kohortlarda zaman alabilir. Çıktı aşağıda akıyor.'))
         center.getChildren().add(busyBar()); addLiveLog()
         actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true) }))
     } else if (cur == 'RESULT') {

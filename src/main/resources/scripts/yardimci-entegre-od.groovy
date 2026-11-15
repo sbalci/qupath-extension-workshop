@@ -71,13 +71,13 @@ def showResultWindow = { String windowTitle, String windowBody ->
             textArea.setWrapText(false)
             textArea.setStyle("-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;")
 
-            def alwaysTop = new javafx.scene.control.CheckBox("Üstte tut")
+            def alwaysTop = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', "Üstte tut"))
             alwaysTop.setSelected(true)
             alwaysTop.selectedProperty().addListener(
                 { obs, o, n -> stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener
             )
 
-            def copyBtn = new javafx.scene.control.Button("Kopyala")
+            def copyBtn = new javafx.scene.control.Button(workshopText('script.a8bcca42d9ce', "Kopyala"))
             copyBtn.setOnAction({
                 def cb = javafx.scene.input.Clipboard.getSystemClipboard()
                 def content = new javafx.scene.input.ClipboardContent()
@@ -85,7 +85,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
                 cb.setContent(content)
             })
 
-            def closeBtn = new javafx.scene.control.Button("Kapat")
+            def closeBtn = new javafx.scene.control.Button(workshopText('script.7b31a9fc4816', "Kapat"))
             closeBtn.setDefaultButton(true)
             closeBtn.setOnAction({ stage.close() })
 
@@ -98,7 +98,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 
             def root = new javafx.scene.layout.BorderPane()
             root.setCenter(textArea)
-            def __footer = new javafx.scene.control.Label("QuPath Atölye Betikleri · araştırma/eğitim amaçlı")
+            def __footer = new javafx.scene.control.Label(workshopText('script.be46103cef99', "QuPath Atölye Betikleri · araştırma/eğitim amaçlı"))
             __footer.setMaxWidth(Double.MAX_VALUE)
             __footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 4 2 4; -fx-font-size: 11px;")
             def __bottom = new javafx.scene.layout.VBox(8.0, __footer, buttons)
@@ -119,7 +119,7 @@ int DOWNSAMPLE = 2   // örnekleme için tam sayı ölçek düşürme (2x → ~%
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    if (isHeadless) println "HATA: Görüntü açık değil." else Dialogs.showErrorMessage("Görüntü açık değil", "Önce bir DAB-İHK lamı açın.")
+    if (isHeadless) println "HATA: Görüntü açık değil." else Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), workshopText('script.284651a2e0c4', "Önce bir DAB-İHK lamı açın."))
     return
 }
 
@@ -129,14 +129,14 @@ double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0) || !(ph > 0)) {
     def msg = "Lamda piksel boyutu (µm) tanımlı değil; alan µm² olarak hesaplanamaz.\n\nKalibrasyon için: Extensions → Atölye → Yardımcılar → Kalibrasyon."
-    if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage("Kalibrasyon yok", msg)
+    if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), msg)
     return
 }
 
 def stains = imageData.getColorDeconvolutionStains()
 if (stains == null) {
     def msg = "Renk ayrışma (color deconvolution) tanımlı değil.\nImage type → 'Brightfield (H-DAB)' olarak ayarlayın."
-    if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage("Renk ayrışma yok", msg)
+    if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage(workshopText('script.0bf34cab947d', "Renk ayrışma yok"), msg)
     return
 }
 
@@ -144,7 +144,7 @@ if (stains == null) {
 def selectedAnnotations = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getROI()?.isArea() }
 if (selectedAnnotations.isEmpty()) {
     def msg = "Ölçüm kapsamı olarak seçili bir ALAN anotasyonu yok.\n\nÖnce bölgeyi çizin, seçin, ardından tekrar çalıştırın."
-    if (isHeadless) println "UYARI: ${msg}" else Dialogs.showWarningNotification("Anotasyon seçili değil", msg)
+    if (isHeadless) println "UYARI: ${msg}" else Dialogs.showWarningNotification(workshopText('script.da079a56fe7d', "Anotasyon seçili değil"), msg)
     return
 }
 def scopeAnno = selectedAnnotations[0]
@@ -160,7 +160,7 @@ if (classNames.isEmpty()) {
     def msg = "Seçili anotasyon içinde sınıflandırılmış deteksiyon yok.\n\n" +
               "Önce Tümör/Stroma modülü piksel sınıflandırıcısını 'Seçili anotasyonda çalıştır' ile\n" +
               "çalıştırın (deteksiyonlar hiyerarşide bulunmalı)."
-    if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage("Deteksiyon/sınıf yok", msg)
+    if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage(workshopText('script.e2ee9332714f', "Deteksiyon/sınıf yok"), msg)
     return
 }
 
@@ -176,7 +176,7 @@ if (dabStain == null || !((dabStain.getName() ?: '').toLowerCase(java.util.Local
     def msg = "2. boya vektörü DAB değil (bulunan: '${dabStain?.getName() ?: '(yok)'}').\n\n" +
               "Image type → 'Brightfield (H-DAB)' olduğundan ve boya vektörlerinin doğru\n" +
               "ayarlandığından emin olun (Boyama normalizasyonu eki · boya vektörleri sihirbazı)."
-    if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage("DAB boyası bulunamadı", msg)
+    if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage(workshopText('script.b21715242e3e', "DAB boyası bulunamadı"), msg)
     return
 }
 
@@ -303,3 +303,14 @@ showResultWindow("Entegre DAB OD", body.toString())
 println String.format(java.util.Locale.US,
     "✓ Entegre DAB OD yazıldı: toplam IOD=%.2f, IOD/mm²=%.2f (%d sınıf).",
     totalIOD, iodPerMm2, classNames.size())
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

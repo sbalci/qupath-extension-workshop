@@ -449,8 +449,8 @@ def startConvert = { File dicomFile ->
     def existingAnns = imageData.getHierarchy().getAnnotationObjects()
     if (!existingAnns.isEmpty()) {
         int nSectra = existingAnns.count { try { it.getMeasurementList().getNames().contains(SECTRA_FLAG) } catch (Throwable t) { false } } as int
-        def pick = Dialogs.showChoiceDialog('Önceki anotasyonlar',
-            String.format(java.util.Locale.US, 'Bu görüntüde %,d anotasyon var (%,d tanesi daha önce Sectra\'dan içe aktarılmış).%n"Yalnız ekle", aynı .dcm daha önce aktarıldıysa ikinci kopya oluşturur.%n%nÖnceki anotasyonlar ne olsun?', existingAnns.size(), nSectra),
+        def pick = Dialogs.showChoiceDialog(workshopText('script.4374a936df93', 'Önceki anotasyonlar'),
+            String.format(java.util.Locale.US, workshopText('script.3987083d9b74', 'Bu görüntüde %,d anotasyon var (%,d tanesi daha önce Sectra\'dan içe aktarılmış).%n"Yalnız ekle", aynı .dcm daha önce aktarıldıysa ikinci kopya oluşturur.%n%nÖnceki anotasyonlar ne olsun?'), existingAnns.size(), nSectra),
             [SECTRA_KEEP, SECTRA_REPLACE], SECTRA_KEEP)
         if (pick == null) return
         replacePrevious = (pick == SECTRA_REPLACE)
@@ -571,8 +571,8 @@ def startBatch = {
         errorTextRef.set('Aynı .dcm birden çok görüntü için seçili; önizlemede düzeltin.'); step.set('ERROR'); render(); return
     }
     // Önceki anotasyonlar için SOR — varsayılan: hiçbir şey silme (kullanıcı kararı D5)
-    def pick = Dialogs.showChoiceDialog('Önceki anotasyonlar',
-        rows.size() + ' görüntüye Sectra anotasyonu aktarılacak.\n"Yalnız ekle", aynı .dcm daha önce aktarıldıysa ikinci kopya oluşturur.\n\nÖnceki anotasyonlar ne olsun?',
+    def pick = Dialogs.showChoiceDialog(workshopText('script.4374a936df93', 'Önceki anotasyonlar'),
+        rows.size() + workshopText('script.26912dc8ceb7', ' görüntüye Sectra anotasyonu aktarılacak.\n"Yalnız ekle", aynı .dcm daha önce aktarıldıysa ikinci kopya oluşturur.\n\nÖnceki anotasyonlar ne olsun?'),
         [SECTRA_KEEP, SECTRA_REPLACE], SECTRA_KEEP)
     if (pick == null) return
     boolean replacePrevious = (pick == SECTRA_REPLACE)
@@ -681,7 +681,7 @@ def startBatch = {
 }
 
 def openBatchPreview = {
-    def d = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Sectra .dcm klasörünü seçin', batchDirRef.get())
+    def d = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.c723649ff9f0', 'Sectra .dcm klasörünü seçin'), batchDirRef.get())
     if (d == null) return
     batchDirRef.set(d)
     def built = buildSectraRows(d)
@@ -717,58 +717,58 @@ render = { ->
     }
 
     if (cur == 'CONFIG_INCOMPLETE') {
-        title.setText('Sectra köprüsü yapılandırması gerekli')
+        title.setText(workshopText('script.952016bcc8b5', 'Sectra köprüsü yapılandırması gerekli'))
         def miss = configMissing(cfg)
-        addGuidance('Sectra köprüsü bir Python ortamı gerektirir. Aşağıdakiler eksik/geçersiz:\n  • ' +
-            (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
-            '\n\nKurulum: Ekler → Klinik PACS → QuPath Entegrasyonu (veya Kaynaklar → İleri kurulumlar H).')
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
+        addGuidance(workshopText('script.916209306aa9', 'Sectra köprüsü bir Python ortamı gerektirir. Aşağıdakiler eksik/geçersiz:\n  • ') +
+            (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')) +
+            workshopText('script.c55f1dc4c5ae', '\n\nKurulum: Ekler → Klinik PACS → QuPath Entegrasyonu (veya Kaynaklar → İleri kurulumlar H).'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
-        title.setText('Sectra köprüsü yapılandırması')
+        title.setText(workshopText('script.0cfa08bd433b', 'Sectra köprüsü yapılandırması'))
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         def pyField = new javafx.scene.control.TextField(cfg.python ?: '')
         def brField = new javafx.scene.control.TextField(cfg.bridge ?: '')
         def wdField = new javafx.scene.control.TextField(cfg.workDir ?: '')
         [pyField, brField, wdField].each { it.setPrefColumnCount(34) }
         pyFieldRef.set(pyField); bridgeFieldRef.set(brField); workFieldRef.set(wdField)
-        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Dosya seç'); if (x != null) f.setText(x.getAbsolutePath()) }
-        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Dizin seç', null); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.8622b674942a', 'Dosya seç')); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.15f8cfe83dc9', 'Dizin seç'), null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (python.exe):'), pyField, navButton('…', { browseFile(pyField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Sectra köprüsü (sectra_dicom_to_qupath.py):'), brField, navButton('…', { browseFile(brField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Çıktı dizini (ops.):'), wdField, navButton('…', { browseDir(wdField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.0fc5a46b3ff2', 'Sectra köprüsü (sectra_dicom_to_qupath.py):')), brField, navButton('…', { browseFile(brField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.8209ea0ff33f', 'Çıktı dizini (ops.):')), wdField, navButton('…', { browseDir(wdField) }))
         center.getChildren().add(grid)
-        addGuidance('Köprünün tek bağımlılığı pydicom\'dur. "Bağımlılık kontrolü" ile ortamı doğrulayın. ' +
-            'Çıktı dizini boşsa proje/slayt klasörü altında sectra_geojson kullanılır.')
-        actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }, 'sectra_dicom_to_qupath.py selftest — pydicom doğrular'))
-        actions.add(navButton('Kaydet ▶', { persistConfig(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        addGuidance(workshopText('script.fa678d652117', 'Köprünün tek bağımlılığı pydicom\'dur. "Bağımlılık kontrolü" ile ortamı doğrulayın. ' +
+            'Çıktı dizini boşsa proje/slayt klasörü altında sectra_geojson kullanılır.'))
+        actions.add(navButton(workshopText('script.72278748133a', 'İptal'), { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.8369fe631575', 'Bağımlılık kontrolü'), { startSelftest() }, workshopText('script.4ba3f4028bae', 'sectra_dicom_to_qupath.py selftest — pydicom doğrular')))
+        actions.add(navButton(workshopText('script.96f6bd4b06cc', 'Kaydet ▶'), { persistConfig(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
     } else if (cur == 'CHECK_RUNNING') {
-        title.setText('Bağımlılık kontrolü çalışıyor…')
+        title.setText(workshopText('script.8e84f306c3c6', 'Bağımlılık kontrolü çalışıyor…'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'CHECK_DONE') {
-        title.setText('Bağımlılık kontrolü tamam')
+        title.setText(workshopText('script.1a0affc7af74', 'Bağımlılık kontrolü tamam'))
         addLiveLog()
-        actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.c8b5f18cded5', '◀ Yapılandırmaya dön'), { step.set('CONFIG'); render() }))
     } else if (cur == 'READY') {
         if (imageData == null) {
-            title.setText('Görüntü açık değil')
-            addGuidance('Önce Sectra anotasyonlarının ait olduğu WSI\'ı açın, sonra "⟳ Yenile".')
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
+            title.setText(workshopText('script.b4c901dc184b', 'Görüntü açık değil'))
+            addGuidance(workshopText('script.3852233dd673', 'Önce Sectra anotasyonlarının ait olduğu WSI\'ı açın, sonra "⟳ Yenile".'))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
             if (QP.getProject() != null) {
-                addGuidance('Proje açık: "Tüm proje (klasörden)" ile bir klasördeki Sectra .dcm dosyalarını tüm proje görüntülerine aktarabilirsiniz.')
-                def batchBtn = navButton('Tüm proje (klasörden) ▶', { openBatchPreview() }, '<lam>.graphics.<tarih>.dcm dosyalarını proje görüntüleriyle eşler')
+                addGuidance(workshopText('script.5fe932b2cc84', 'Proje açık: "Tüm proje (klasörden)" ile bir klasördeki Sectra .dcm dosyalarını tüm proje görüntülerine aktarabilirsiniz.'))
+                def batchBtn = navButton(workshopText('script.8ef8cd01a812', 'Tüm proje (klasörden) ▶'), { openBatchPreview() }, workshopText('script.fc5fd06bab6c', '<lam>.graphics.<tarih>.dcm dosyalarını proje görüntüleriyle eşler'))
                 batchBtn.setDisable(!configComplete(cfg))
                 actions.add(batchBtn)
             }
         } else {
             def server = imageData.getServer()
             def workDir = resolveWorkDir(cfg, imageData)
-            title.setText('Sectra PACS anotasyon — hazır')
+            title.setText(workshopText('script.64ab3233a4af', 'Sectra PACS anotasyon — hazır'))
             def sb = new StringBuilder()
             sb << "Lam        : " << imageNameOf(imageData) << "\n"
             sb << "Boyut (px)   : " << server.getWidth() << " x " << server.getHeight() << "\n"
@@ -783,40 +783,40 @@ render = { ->
                 if (nv != null) persistScheme(SCHEME_LABELS[nv] ?: SCHEME_GEOMETRY)
             } as javafx.beans.value.ChangeListener)
             schemeChoiceRef.set(schemeChoice)
-            def schemeRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Renk şeması:'), schemeChoice)
+            def schemeRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label(workshopText('script.aa45365bb56f', 'Renk şeması:')), schemeChoice)
             schemeRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
             center.getChildren().add(schemeRow)
-            addGuidance('Geometri şeması klinik açıdan nötrdür (CIRCLE=altın, POLYLINE=mavi …). ' +
-                'Etiket şeması Sectra metnine göre renklendirir (tümör=kırmızı …); her iki şemada da etiket anotasyon adı olur.')
+            addGuidance(workshopText('script.3125ca466876', 'Geometri şeması klinik açıdan nötrdür (CIRCLE=altın, POLYLINE=mavi …). ' +
+                'Etiket şeması Sectra metnine göre renklendirir (tümör=kırmızı …); her iki şemada da etiket anotasyon adı olur.'))
             boolean canRun = configComplete(cfg)
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
-            def runBtn = navButton('.dcm seç ve Aktar ▶', {
-                def dcm = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Sectra DICOM (.dcm) dosyasını seçin',
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
+            def runBtn = navButton(workshopText('script.17261b0142ec', '.dcm seç ve Aktar ▶'), {
+                def dcm = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.b170cef0f995', 'Sectra DICOM (.dcm) dosyasını seçin'),
                     qupath.fx.dialogs.FileChoosers.createExtensionFilter('DICOM (*.dcm)', '*.dcm'),
                     qupath.fx.dialogs.FileChoosers.FILTER_ALL_FILES)
                 if (dcm != null) startConvert(dcm)
-            }, 'Sectra GSPS .dcm dosyasını GeoJSON\'a çevirir ve içe aktarır')
+            }, workshopText('script.517549d8ea39', 'Sectra GSPS .dcm dosyasını GeoJSON\'a çevirir ve içe aktarır'))
             runBtn.setDisable(!canRun)
             actions.add(runBtn)
             if (QP.getProject() != null) {
-                def batchBtn = navButton('Tüm proje (klasörden) ▶', { openBatchPreview() }, '<lam>.graphics.<tarih>.dcm dosyalarını proje görüntüleriyle eşler')
+                def batchBtn = navButton(workshopText('script.8ef8cd01a812', 'Tüm proje (klasörden) ▶'), { openBatchPreview() }, workshopText('script.fc5fd06bab6c', '<lam>.graphics.<tarih>.dcm dosyalarını proje görüntüleriyle eşler'))
                 batchBtn.setDisable(!canRun)
                 actions.add(batchBtn)
             }
         }
     } else if (cur == 'CONVERT_RUNNING') {
-        title.setText('Dönüştürülüyor (DICOM → GeoJSON)…')
-        addGuidance('Python köprüsü çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        title.setText(workshopText('script.036aadf2467a', 'Dönüştürülüyor (DICOM → GeoJSON)…'))
+        addGuidance(workshopText('script.74f34d4d16a3', 'Python köprüsü çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ') + PYTHON_TIMEOUT_SECONDS + workshopText('script.9d84a2f3efc0', ' sn.'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'BATCH_PREVIEW') {
         def pv = batchRowsRef.get()
         def rows = pv.rows
-        title.setText('Tüm proje — eşleştirme önizlemesi (henüz hiçbir şey yazılmadı)')
+        title.setText(workshopText('script.177e58a011ef', 'Tüm proje — eşleştirme önizlemesi (henüz hiçbir şey yazılmadı)'))
         int nOk = rows.count { it.file != null } as int
-        addGuidance(String.format(java.util.Locale.US, '%,d görüntü · .dcm eşleşen %,d · eşleşmeyen .dcm %,d — klasör: %s',
+        addGuidance(String.format(java.util.Locale.US, workshopText('script.20f1f59957bb', '%,d görüntü · .dcm eşleşen %,d · eşleşmeyen .dcm %,d — klasör: %s'),
             rows.size(), nOk, pv.unmatched.size(), batchDirRef.get()?.getAbsolutePath() ?: '-'))
         String NONE = '— dosya yok —'
         def refreshBatchBtn = { -> }
@@ -864,36 +864,36 @@ render = { ->
         def sp = new javafx.scene.control.ScrollPane(grid); sp.setFitToWidth(true)
         javafx.scene.layout.VBox.setVgrow(sp, javafx.scene.layout.Priority.ALWAYS)
         center.getChildren().add(sp)
-        addGuidance('Eşleşme yalnız tam ad önekiyle yapılır: <lam dosyası>.graphics.<tarih>.dcm. "İçe aktar" önce mevcut ' +
-            'anotasyonlar için ne yapılacağını sorar (varsayılan: dokunma).')
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
-        def runBatchBtn = navButton('İçe aktar ▶', { startBatch() }, 'İşaretli görüntüleri dönüştürür, içe aktarır ve kaydeder')
+        addGuidance(workshopText('script.8c987d6337e8', 'Eşleşme yalnız tam ad önekiyle yapılır: <lam dosyası>.graphics.<tarih>.dcm. "İçe aktar" önce mevcut ' +
+            'anotasyonlar için ne yapılacağını sorar (varsayılan: dokunma).'))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
+        def runBatchBtn = navButton(workshopText('script.39a1579f1e7c', 'İçe aktar ▶'), { startBatch() }, workshopText('script.b05916c308a5', 'İşaretli görüntüleri dönüştürür, içe aktarır ve kaydeder'))
         refreshBatchBtn = { -> runBatchBtn.setDisable(!rows.any { it.include && it.file != null }) }
         refreshBatchBtn()
         actions.add(runBatchBtn)
     } else if (cur == 'BATCH_RUNNING') {
-        title.setText('Tüm proje içe aktarılıyor (DICOM → GeoJSON → QuPath)…')
-        addGuidance('Her görüntü için Python köprüsü çalışır; iptal, sıradaki görüntüden önce durur. ' +
-            'Çalışma sürerken hedef lamları açıp kapatmayın; açık bir lam işlem sırasında değişirse o görüntü atlanır ya da hata olarak raporlanır.')
+        title.setText(workshopText('script.8b66ffd48af6', 'Tüm proje içe aktarılıyor (DICOM → GeoJSON → QuPath)…'))
+        addGuidance(workshopText('script.8cc2b95c0186', 'Her görüntü için Python köprüsü çalışır; iptal, sıradaki görüntüden önce durur. ' +
+            'Çalışma sürerken hedef lamları açıp kapatmayın; açık bir lam işlem sırasında değişirse o görüntü atlanır ya da hata olarak raporlanır.'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} }))
     } else if (cur == 'BUSY') {
-        title.setText(busyLabelRef.get()); addGuidance('Lütfen bekleyin…'); center.getChildren().add(busyBar())
+        title.setText(busyLabelRef.get()); addGuidance(workshopText('script.245c572ec2ea', 'Lütfen bekleyin…')); center.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
         title.setText(resultTitleRef.get())
         addMonoArea(resultTextRef.get())
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
         actions.add(navButton(resultBtnRef.get(), { step.set('READY'); render() }))
     } else { // ERROR
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
     // Alt çubuk: "Üstte tut" (sol) + disclaimer + eylem düğmeleri (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
@@ -906,7 +906,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.2a26394a7133', 'Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -926,14 +926,25 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Sectra PACS anotasyon sihirbazı')
+        stage.setTitle(workshopText('script.786ba71f4fdd', 'Sectra PACS anotasyon sihirbazı'))
         stage.setAlwaysOnTop(alwaysTop.get())
         // Pencere kapatılırsa çalışan dönüştürme/toplu işlem iptal edilir
         stage.setOnCloseRequest({ cancelledRef.set(true); try { processRef.get()?.destroyForcibly() } catch (Throwable ignore) {} } as javafx.event.EventHandler)
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ Sectra PACS anotasyon sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

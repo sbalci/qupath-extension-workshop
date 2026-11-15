@@ -632,7 +632,7 @@ def envReturnHook = [
                 if (!stage.isShowing()) stage.show()
                 stage.toFront(); stage.requestFocus()
             } catch (Throwable t) {
-                Dialogs.showErrorMessage('Sihirbaza dönüş', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+                Dialogs.showErrorMessage(workshopText('script.95854db5b310', 'Sihirbaza dönüş'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
             }
         }
     }
@@ -645,8 +645,8 @@ def launchEnvManager = { ->
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + res) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + res)
             if (url == null) {
-                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
-                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi ("histoart" kaydını kurun).') }
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.612821b4f218', 'Betik bulunamadı'),
+                    workshopText('script.afa546e7967e', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi ("histoart" kaydını kurun).')) }
                 return
             }
             def cl = this.getClass().getClassLoader()
@@ -655,7 +655,7 @@ def launchEnvManager = { ->
             shellBinding.setVariable('atolyeReturnHook', envReturnHook)
             new GroovyShell(cl, shellBinding).evaluate(url.getText('UTF-8'), res)
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage(workshopText('script.e83c5641f38e', 'Açılamadı'), (t.getMessage() ?: t.getClass().getSimpleName())) }
         }
     } as Runnable).start()
 }
@@ -703,9 +703,9 @@ def startRun = {
     if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
     def existingSentinel = imageData.getHierarchy().getAnnotationObjects().findAll { it.getName() == HISTOART_SENTINEL }
     if (!existingSentinel.isEmpty() && gui != null) {
-        boolean ok = Dialogs.showConfirmDialog('Önceki HistoART sonucu değiştirilecek',
-            'Bu lamda zaten bir "' + HISTOART_SENTINEL + '" anotasyonu ve karo tahminleri bulunuyor.\n' +
-            'Yeni çalıştırma tamamlandığında önceki HistoART sonucu değiştirilecek (kendi anotasyonlarınıza dokunulmaz).\n\nDevam edilsin mi?')
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.e66fc10d5440', 'Önceki HistoART sonucu değiştirilecek'),
+            workshopText('script.6b947e1bdb78', 'Bu lamda zaten bir "') + HISTOART_SENTINEL + workshopText('script.fb63e4c98117', '" anotasyonu ve karo tahminleri bulunuyor.\n') +
+            workshopText('script.e9fcc56e4d9c', 'Yeni çalıştırma tamamlandığında önceki HistoART sonucu değiştirilecek (kendi anotasyonlarınıza dokunulmaz).\n\nDevam edilsin mi?'))
         if (!ok) return
     }
     def cfg = loadConfig()
@@ -789,16 +789,16 @@ render = { ->
     }
 
     if (cur == 'CONFIG_INCOMPLETE') {
-        title.setText('HistoART yapılandırması gerekli')
+        title.setText(workshopText('script.789404d0b347', 'HistoART yapılandırması gerekli'))
         def miss = configMissing(cfg)
-        addGuidance('HistoART köprüsü bir Python ortamı gerektirir. Aşağıdakiler eksik/geçersiz:\n  • ' +
-            (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
-            '\n\n② ile "histoart" ortamını kurun (histoart_bridge.py eklentiyle birlikte gelir; özel yol için "Yapılandır ▶").')
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('② Ortamı kur', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar ve "histoart" kaydını vurgular'))
-        actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
+        addGuidance(workshopText('script.a6c7942b89a1', 'HistoART köprüsü bir Python ortamı gerektirir. Aşağıdakiler eksik/geçersiz:\n  • ') +
+            (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')) +
+            workshopText('script.e753639d185c', '\n\n② ile "histoart" ortamını kurun (histoart_bridge.py eklentiyle birlikte gelir; özel yol için "Yapılandır ▶").'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.56f53642a3b8', '② Ortamı kur'), { launchEnvManager() }, workshopText('script.e00287bd6757', 'Atölye Python ortam yöneticisini açar ve "histoart" kaydını vurgular')))
+        actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
-        title.setText('HistoART yapılandırması')
+        title.setText(workshopText('script.ee429840d307', 'HistoART yapılandırması'))
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         def pyField = new javafx.scene.control.TextField(cfg.python ?: '')
         def brField = new javafx.scene.control.TextField(cfg.bridge ?: '')
@@ -816,62 +816,62 @@ render = { ->
         pyFieldRef.set(pyField); bridgeFieldRef.set(brField); modelFieldRef.set(mdField); workFieldRef.set(wdField)
         dsFieldRef.set(dsField); maxTFieldRef.set(mtField); threshFieldRef.set(thField)
         variantChoiceRef.set(variantChoice); deviceChoiceRef.set(deviceChoice)
-        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Dosya seç'); if (x != null) f.setText(x.getAbsolutePath()) }
-        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Dizin seç', null); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.8622b674942a', 'Dosya seç')); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.15f8cfe83dc9', 'Dizin seç'), null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (python.exe):'), pyField, navButton('…', { browseFile(pyField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('HistoART köprüsü (histoart_bridge.py):'), brField, navButton('…', { browseFile(brField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model dizini:'), mdField, navButton('…', { browseDir(mdField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Çalışma dizini (ops.):'), wdField, navButton('…', { browseDir(wdField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Varyant:'), variantChoice)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Artefakt eşiği (0–1):'), thField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Downsample (boş = otomatik):'), dsField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Maks. karo (0=tümü):'), mtField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Aygıt:'), deviceChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.a63e6db9d553', 'HistoART köprüsü (histoart_bridge.py):')), brField, navButton('…', { browseFile(brField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.185fec14f2c5', 'Model dizini:')), mdField, navButton('…', { browseDir(mdField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.2719ca64ba94', 'Çalışma dizini (ops.):')), wdField, navButton('…', { browseDir(wdField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.2a09ca7d73d8', 'Varyant:')), variantChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.40620cad481b', 'Artefakt eşiği (0–1):')), thField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.998faaff6f85', 'Downsample (boş = otomatik):')), dsField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.c3ef62602b8e', 'Maks. karo (0=tümü):')), mtField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.72e0fecf25c7', 'Aygıt:')), deviceChoice)
         center.getChildren().add(grid)
-        addGuidance('Karo boyutu 224 px olarak SABİTTİR (HistoART eğitim yaması). Downsample boş bırakılırsa lamın µm/px değerinden ' +
+        addGuidance(workshopText('script.8f40f6043f81', 'Karo boyutu 224 px olarak SABİTTİR (HistoART eğitim yaması). Downsample boş bırakılırsa lamın µm/px değerinden ' +
             'hedef 0,25 µm/px (40×) için otomatik hesaplanır — GT450/AT2 gibi 40× tarayıcılarda bu ~1,0 olur. ' +
-            'Eşik yalnız ikili aşamayı etkiler; tür sınıflandırması yalnızca eşiği geçen karolara uygulanır.')
+            'Eşik yalnız ikili aşamayı etkiler; tür sınıflandırması yalnızca eşiği geçen karolara uygulanır.'))
         if (cfg.variant == 'fma')
-            addWarnLabel('⚠ FMA omurgası MahmoodLab/uni üzerinden kurulur ve bu depo KAPILIDIR (CC-BY-NC-ND 4.0). Erişim onayı + huggingface-cli login gerekir; yoksa 401/403 alırsınız. DLA açıktır ve erişim gerektirmez.')
-        actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('② Ortamı kur', { launchEnvManager() }))
-        actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }, 'histoart_bridge.py selftest'))
-        actions.add(navButton('③ Modeli indir', { startDownload() }, 'didsr/HistoArt ağırlıklarını model dizinine indirir'))
-        actions.add(navButton('Kaydet ▶', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+            addWarnLabel(workshopText('script.889db8f011a3', '⚠ FMA omurgası MahmoodLab/uni üzerinden kurulur ve bu depo KAPILIDIR (CC-BY-NC-ND 4.0). Erişim onayı + huggingface-cli login gerekir; yoksa 401/403 alırsınız. DLA açıktır ve erişim gerektirmez.'))
+        actions.add(navButton(workshopText('script.72278748133a', 'İptal'), { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.56f53642a3b8', '② Ortamı kur'), { launchEnvManager() }))
+        actions.add(navButton(workshopText('script.8369fe631575', 'Bağımlılık kontrolü'), { startSelftest() }, 'histoart_bridge.py selftest'))
+        actions.add(navButton(workshopText('script.8886a02a9943', '③ Modeli indir'), { startDownload() }, workshopText('script.1ec7047419e7', 'didsr/HistoArt ağırlıklarını model dizinine indirir')))
+        actions.add(navButton(workshopText('script.96f6bd4b06cc', 'Kaydet ▶'), { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
     } else if (cur == 'CHECK_RUNNING') {
-        title.setText('Bağımlılık kontrolü çalışıyor…')
+        title.setText(workshopText('script.8e84f306c3c6', 'Bağımlılık kontrolü çalışıyor…'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); killTree(processRef.get()) }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); killTree(processRef.get()) }))
     } else if (cur == 'CHECK_DONE') {
-        title.setText(selftestOkRef.get() ? 'Bağımlılık kontrolü tamam ✅'
-            : '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın')
+        title.setText(selftestOkRef.get() ? workshopText('script.93f447fe25d4', 'Bağımlılık kontrolü tamam ✅')
+            : workshopText('script.529165be55c6', '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın'))
         addLiveLog()
-        actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
-        actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.c8b5f18cded5', '◀ Yapılandırmaya dön'), { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.2065029c612d', 'Çalıştırma ekranına dön ▶'), { step.set('READY'); render() }))
     } else if (cur == 'DL_RUNNING') {
-        title.setText('Model ağırlıkları indiriliyor…')
-        addGuidance('DLA ~94 MB × 2; FMA ~1,2 GB × 2. İlk indirmede sabırlı olun.')
+        title.setText(workshopText('script.e73748a3b825', 'Model ağırlıkları indiriliyor…'))
+        addGuidance(workshopText('script.e01f00e71be7', 'DLA ~94 MB × 2; FMA ~1,2 GB × 2. İlk indirmede sabırlı olun.'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); killTree(processRef.get()) }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); killTree(processRef.get()) }))
     } else if (cur == 'DL_DONE') {
-        title.setText(downloadOkRef.get() ? 'Model ağırlıkları indirildi ✅' : '⚠ İndirme BAŞARISIZ — günlüğe bakın')
+        title.setText(downloadOkRef.get() ? workshopText('script.611c361ae95d', 'Model ağırlıkları indirildi ✅') : workshopText('script.2b55c29566f0', '⚠ İndirme BAŞARISIZ — günlüğe bakın'))
         addLiveLog()
-        actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
-        actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.c8b5f18cded5', '◀ Yapılandırmaya dön'), { step.set('CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.2065029c612d', 'Çalıştırma ekranına dön ▶'), { step.set('READY'); render() }))
     } else if (cur == 'READY') {
         if (imageData == null) {
-            title.setText('Görüntü açık değil')
-            addGuidance('Önce bir lam açın, sonra "⟳ Yenile". İsterseniz bölge anotasyonu çizin; çizmezseniz tüm lam örneklenir.')
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
+            title.setText(workshopText('script.b4c901dc184b', 'Görüntü açık değil'))
+            addGuidance(workshopText('script.dedda0c10bcf', 'Önce bir lam açın, sonra "⟳ Yenile". İsterseniz bölge anotasyonu çizin; çizmezseniz tüm lam örneklenir.'))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
         } else {
             def workDir = resolveWorkDir(cfg, imageData)
             def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() && it.getName() != HISTOART_SENTINEL }
             double ds = effectiveDownsample(cfg, imageData)
             double mpp = slideMpp(imageData)
-            title.setText('HistoART — hazır')
+            title.setText(workshopText('script.a4359ba88c20', 'HistoART — hazır'))
             def sb = new StringBuilder()
             sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Çalışma dizini : " << workDir.getAbsolutePath() << "\n"
@@ -887,40 +887,40 @@ render = { ->
             def sw = scaleWarning(cfg, imageData)
             if (sw) addWarnLabel(sw)
             def mdOk = new File(cfg.modelDir, (cfg.variant == 'fma') ? 'fma_binary.pth' : 'dla_binary.pth').isFile()
-            if (!mdOk) addWarnLabel('⚠ Model ağırlığı bulunamadı — ③ "Modeli indir" ile indirin (didsr/HistoArt).')
-            addGuidance('İki aşama: önce İKİLİ model artefaktlı karoları bulur, sonra tür sınıflandırması YALNIZCA o karolara uygulanır. ' +
-                'Çoklu modelin "temiz" sınıfı olmadığı için tek başına çalıştırılmaz.')
+            if (!mdOk) addWarnLabel(workshopText('script.9cc2afe856ae', '⚠ Model ağırlığı bulunamadı — ③ "Modeli indir" ile indirin (didsr/HistoArt).'))
+            addGuidance(workshopText('script.a419505caca2', 'İki aşama: önce İKİLİ model artefaktlı karoları bulur, sonra tür sınıflandırması YALNIZCA o karolara uygulanır. ' +
+                'Çoklu modelin "temiz" sınıfı olmadığı için tek başına çalıştırılmaz.'))
 
             boolean canRun = configComplete(cfg) && mdOk
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('③ Modeli indir', { startDownload() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
-            def runBtn = navButton('Çalıştır ▶', { startRun() }, 'Karoları dışa aktarır ve HistoART ile sınıflandırır')
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.8886a02a9943', '③ Modeli indir'), { startDownload() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
+            def runBtn = navButton(workshopText('script.355c72658e74', 'Çalıştır ▶'), { startRun() }, workshopText('script.279bdac20132', 'Karoları dışa aktarır ve HistoART ile sınıflandırır'))
             runBtn.setDisable(!canRun)
             actions.add(runBtn)
         }
     } else if (cur == 'RUN_RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('Python köprüsü çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance(workshopText('script.74f34d4d16a3', 'Python köprüsü çalışıyor. Çıktı aşağıda akıyor. Zaman aşımı: ') + PYTHON_TIMEOUT_SECONDS + workshopText('script.9d84a2f3efc0', ' sn.'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); killTree(processRef.get()) }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); killTree(processRef.get()) }))
     } else if (cur == 'BUSY') {
-        title.setText(busyLabelRef.get()); addGuidance('Lütfen bekleyin…'); center.getChildren().add(busyBar())
+        title.setText(busyLabelRef.get()); addGuidance(workshopText('script.245c572ec2ea', 'Lütfen bekleyin…')); center.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
-        title.setText('Tamamlandı ✅')
+        title.setText(workshopText('script.92c17020894f', 'Tamamlandı ✅'))
         addMonoArea(resultTextRef.get())
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-        actions.add(navButton('↻ Yeniden çalıştır', { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.c94499b243e4', '↻ Yeniden çalıştır'), { step.set('READY'); render() }))
     } else { // ERROR
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n ->
         alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n)
@@ -933,7 +933,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; ' +
         '-fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
@@ -953,12 +953,23 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('HistoART artefakt tespiti sihirbazı')
+        stage.setTitle(workshopText('script.672de7ef3e83', 'HistoART artefakt tespiti sihirbazı'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ HistoART artefakt tespiti sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

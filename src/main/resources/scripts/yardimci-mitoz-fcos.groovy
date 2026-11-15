@@ -576,15 +576,15 @@ def launchBundledScript = { String resourceName ->
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + resourceName) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + resourceName)
             if (url == null) {
-                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
-                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.612821b4f218', 'Betik bulunamadı'),
+                    workshopText('script.9641266ba42d', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi')) }
                 return
             }
             def cl = this.getClass().getClassLoader()
             try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}
             new GroovyShell(cl).evaluate(url.getText('UTF-8'), resourceName)
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage(workshopText('script.e83c5641f38e', 'Açılamadı'), (t.getMessage() ?: t.getClass().getSimpleName())) }
         }
     } as Runnable).start()
 }
@@ -605,13 +605,13 @@ def autoSaveLog = { File dir, String base ->
 }
 def saveLogInteractive = {
     def txt = logSnapshot()
-    if (!txt?.trim()) { Dialogs.showInfoNotification('Günlük', 'Kaydedilecek günlük yok.'); return }
+    if (!txt?.trim()) { Dialogs.showInfoNotification(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.6d25a44e68f7', 'Kaydedilecek günlük yok.')); return }
     try {
         def suggested = logFileRef.get() ?: new File(System.getProperty('user.home'), 'mitoz-fcos_run.log')
-        def f = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, 'Çalışma günlüğünü kaydet', suggested,
+        def f = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, workshopText('script.ae2303e91c93', 'Çalışma günlüğünü kaydet'), suggested,
             new javafx.stage.FileChooser.ExtensionFilter('Günlük (*.log, *.txt)', '*.log', '*.txt'))
-        if (f != null) { f.setText(txt, 'UTF-8'); Dialogs.showInfoNotification('Günlük', 'Kaydedildi: ' + f.getAbsolutePath()) }
-    } catch (Throwable t) { Dialogs.showErrorMessage('Günlük', 'Kaydedilemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName())) }
+        if (f != null) { f.setText(txt, 'UTF-8'); Dialogs.showInfoNotification(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.cbe9b591564d', 'Kaydedildi: ') + f.getAbsolutePath()) }
+    } catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.a0f73789f289', 'Kaydedilemedi: ') + (t.getMessage() ?: t.getClass().getSimpleName())) }
 }
 def textOf = { ref -> def f = ref.get(); return (f != null ? f.getText() : '').trim() }
 def persistFields = {
@@ -714,12 +714,12 @@ def startRun = {
             '"Ekle" seçilirse önceki işaretler korunur ve sonuç "%s (2)" gibi yeni bir özet olarak eklenir.\n' +
             '"Değiştir" seçilirse yalnız bu bölgedeki FCOS mitoz işaretleri ve özetleri yeni sonuçlarla değiştirilir (diğer bölgelere dokunulmaz).',
             nPrevSummaries, nPrevMitoses, SUMMARY_NAME)
-        def pick = Dialogs.showChoiceDialog('Önceki FCOS sonucu', msg, [MODE_ADD, MODE_REPLACE], MODE_ADD)
+        def pick = Dialogs.showChoiceDialog(workshopText('script.461ab063ac9c', 'Önceki FCOS sonucu'), msg, [MODE_ADD, MODE_REPLACE], MODE_ADD)
         if (pick == null) return
         replacePrev = (pick == MODE_REPLACE)
         if (replacePrev) {
-            boolean ok = Dialogs.showConfirmDialog('Önceki FCOS sonucu silinecek',
-                String.format(java.util.Locale.US, 'Bu bölgedeki %,d özet ve %,d FCOS mitoz işareti değiştirilecek.\n\nDevam edilsin mi?', nPrevSummaries, nPrevMitoses))
+            boolean ok = Dialogs.showConfirmDialog(workshopText('script.4b15612a3f07', 'Önceki FCOS sonucu silinecek'),
+                String.format(java.util.Locale.US, workshopText('script.31d82a82163f', 'Bu bölgedeki %,d özet ve %,d FCOS mitoz işareti değiştirilecek.\n\nDevam edilsin mi?'), nPrevSummaries, nPrevMitoses))
             if (!ok) return
         }
     }
@@ -813,7 +813,7 @@ def envReturnHook = [
                 if (!stage.isShowing()) stage.show()
                 stage.toFront(); stage.requestFocus()
             } catch (Throwable t) {
-                Dialogs.showErrorMessage('Sihirbaza dönüş', t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+                Dialogs.showErrorMessage(workshopText('script.95854db5b310', 'Sihirbaza dönüş'), t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
             }
         }
     }
@@ -826,8 +826,8 @@ def launchEnvManager = { ->
             try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + res) } catch (Throwable t) {}
             if (url == null) url = this.getClass().getResource('/scripts/' + res)
             if (url == null) {
-                javafx.application.Platform.runLater { Dialogs.showInfoNotification('Betik bulunamadı',
-                    'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi') }
+                javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.612821b4f218', 'Betik bulunamadı'),
+                    workshopText('script.9641266ba42d', 'Menüden açın: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi')) }
                 return
             }
             def cl = this.getClass().getClassLoader()
@@ -836,7 +836,7 @@ def launchEnvManager = { ->
             shellBinding.setVariable('atolyeReturnHook', envReturnHook)
             new GroovyShell(cl, shellBinding).evaluate(url.getText('UTF-8'), res)
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { Dialogs.showErrorMessage('Açılamadı', (t.getMessage() ?: t.getClass().getSimpleName())) }
+            javafx.application.Platform.runLater { Dialogs.showErrorMessage(workshopText('script.e83c5641f38e', 'Açılamadı'), (t.getMessage() ?: t.getClass().getSimpleName())) }
         }
     } as Runnable).start()
 }
@@ -849,7 +849,7 @@ def openMitosisHub = { ->
     try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/' + hubScript) } catch (Throwable t) {}
     if (url == null) url = this.getClass().getResource('/scripts/' + hubScript)
     if (url == null) {
-        Dialogs.showInfoNotification('Mitoz modelleri listesi', 'Menüden açın: Extensions → Atölye → Modüller → Mitoz tespiti → Mitoz modelleri listesi')
+        Dialogs.showInfoNotification(workshopText('script.f78f1962faba', 'Mitoz modelleri listesi'), workshopText('script.6c014450748f', 'Menüden açın: Extensions → Atölye → Modüller → Mitoz tespiti → Mitoz modelleri listesi'))
         return
     }
     launchBundledScript(hubScript)
@@ -887,86 +887,86 @@ render = { ->
     def addLiveLog = { -> def la = logAreaRef.get(); if (la != null) { javafx.scene.layout.VBox.setVgrow(la, javafx.scene.layout.Priority.ALWAYS); center.getChildren().add(la) } }
 
     if (cur == 'CONFIG_INCOMPLETE') {
-        title.setText('Mitoz tespiti (FCOS) — çalışma zamanı gerekli')
+        title.setText(workshopText('script.fe9f2369b18c', 'Mitoz tespiti (FCOS) — çalışma zamanı gerekli'))
         def miss = configMissing(cfg)
-        addGuidance('Bu modül torch + torchvision ortamını (env id: midog-fcos) gerektirir.\nEksik/geçersiz:\n  • ' +
-            (miss.isEmpty() ? '(yok)' : miss.join('\n  • ')) +
-            '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi → "MIDOG25 FCOS — mitoz dedektörü".\n' +
-            'Köprü betiği: handson/python/midog/fcos_runner.py')
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('⚙ Python ortamını kur/aç', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar → "MIDOG25 FCOS — mitoz dedektörü"yü kurun'))
-        actions.add(navButton('Yapılandır ▶', { step.set('CONFIG'); render() }))
+        addGuidance(workshopText('script.6eecd4353d78', 'Bu modül torch + torchvision ortamını (env id: midog-fcos) gerektirir.\nEksik/geçersiz:\n  • ') +
+            (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')) +
+            workshopText('script.697752520bcb', '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi → "MIDOG25 FCOS — mitoz dedektörü".\n') +
+            workshopText('script.8122fd5f6bea', 'Köprü betiği: handson/python/midog/fcos_runner.py'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.719f58ad7970', '⚙ Python ortamını kur/aç'), { launchEnvManager() }, workshopText('script.212a17d13d14', 'Atölye Python ortam yöneticisini açar → "MIDOG25 FCOS — mitoz dedektörü"yü kurun')))
+        actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
-        title.setText('Mitoz tespiti (FCOS) — yapılandırma')
+        title.setText(workshopText('script.ac9cd250f231', 'Mitoz tespiti (FCOS) — yapılandırma'))
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         def pyField = new javafx.scene.control.TextField(cfg.python ?: '')
         def rnField = new javafx.scene.control.TextField(cfg.runner ?: '')
         def wdField = new javafx.scene.control.TextField(cfg.workDir ?: '')
         def tmppField = new javafx.scene.control.TextField(cfg.targetMpp ?: '')
-        tmppField.setPromptText('boş = 0.25')
+        tmppField.setPromptText(workshopText('script.388c69411b39', 'boş = 0.25'))
         def batchField = new javafx.scene.control.TextField(cfg.batchSize ?: '8')
         def threshField = new javafx.scene.control.TextField(cfg.threshold ?: '')
-        threshField.setPromptText('boş = 0.548')
+        threshField.setPromptText(workshopText('script.24508cbf7ffd', 'boş = 0.548'))
         [pyField, rnField, wdField].each { it.setPrefColumnCount(36) }
         [tmppField, batchField, threshField].each { it.setPrefColumnCount(8) }
         def deviceChoice = new javafx.scene.control.ChoiceBox(); ['cuda', 'cpu'].each { deviceChoice.getItems().add(it) }
         deviceChoice.setValue((cfg.device == 'cpu') ? 'cpu' : 'cuda')
         pyFieldRef.set(pyField); runnerFieldRef.set(rnField); workFieldRef.set(wdField)
         deviceChoiceRef.set(deviceChoice); tmppFieldRef.set(tmppField); batchFieldRef.set(batchField); threshFieldRef.set(threshField)
-        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, 'Dosya seç'); if (x != null) f.setText(x.getAbsolutePath()) }
-        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, 'Dizin seç', null); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseFile = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.8622b674942a', 'Dosya seç')); if (x != null) f.setText(x.getAbsolutePath()) }
+        def browseDir  = { f -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.15f8cfe83dc9', 'Dizin seç'), null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model:'), new javafx.scene.control.Label(MODEL + ' (sabit)'))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model:'), new javafx.scene.control.Label(MODEL + workshopText('script.cb60f7ba43c4', ' (sabit)')))
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (.venv/python.exe):'), pyField, navButton('…', { browseFile(pyField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Köprü (fcos_runner.py):'), rnField, navButton('…', { browseFile(rnField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Çalışma dizini (ops.):'), wdField, navButton('…', { browseDir(wdField) }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Cihaz:'), deviceChoice)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Hedef çözünürlük (µm/px):'), tmppField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.93ca52fe869a', 'Köprü (fcos_runner.py):')), rnField, navButton('…', { browseFile(rnField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.2719ca64ba94', 'Çalışma dizini (ops.):')), wdField, navButton('…', { browseDir(wdField) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.d4336c3867bc', 'Cihaz:')), deviceChoice)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.c353a87a343a', 'Hedef çözünürlük (µm/px):')), tmppField)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Batch size:'), batchField)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Duyarlılık eşiği (det_thresh, 0–1):'), threshField)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.667f2e2701db', 'Duyarlılık eşiği (det_thresh, 0–1):')), threshField)
         center.getChildren().add(grid)
         def mcf = modelCacheFile()
         def missingLocal = [mcf.isFile() ? null : 'ağırlık (~1.1 GB, v1.0.0 yayını)', upstreamCodeReady() ? null : 'referans kod (sabit commit)'].findAll { it != null }
         def mcLbl = new javafx.scene.control.Label(missingLocal.isEmpty()
-            ? ('✓ Yerel model + referans kod VAR: ' + mcf.getParentFile().getAbsolutePath())
-            : ('○ Eksik: ' + missingLocal.join(' + ') + ' — "Modeli yerel indir" ile bir kez indirin.'))
+            ? (workshopText('script.de9d0a7a711c', '✓ Yerel model + referans kod VAR: ') + mcf.getParentFile().getAbsolutePath())
+            : (workshopText('script.edda40242580', '○ Eksik: ') + missingLocal.join(' + ') + workshopText('script.505a5586aa2b', ' — "Modeli yerel indir" ile bir kez indirin.')))
         mcLbl.setWrapText(true); mcLbl.setMaxWidth(Double.MAX_VALUE); mcLbl.setStyle('-fx-opacity: 0.85; -fx-font-size: 11px;')
         center.getChildren().add(mcLbl)
-        addGuidance('Model: MIDOG 2025 Görev 1 resmî referansı (FCOS-ResNeXt101), sabit. Ağırlık ve referans kodu paketlenmez; "Modeli yerel indir" ikisini de bir kez çeker (ağırlık: v1.0.0 yayını; kod: sabit commit — model kurulumu ve döşemeli çıkarım bu koddan değiştirilmeden çalıştırılır; LİSANS dosyası yok → araştırma/eğitim, kullanıcı sorumluluğunda). midog-fcos ortamını bu sürümden önce kurduysanız yeniden kurun (SimpleITK + pyyaml eklendi).\n' +
+        addGuidance(workshopText('script.959092fda2c3', 'Model: MIDOG 2025 Görev 1 resmî referansı (FCOS-ResNeXt101), sabit. Ağırlık ve referans kodu paketlenmez; "Modeli yerel indir" ikisini de bir kez çeker (ağırlık: v1.0.0 yayını; kod: sabit commit — model kurulumu ve döşemeli çıkarım bu koddan değiştirilmeden çalıştırılır; LİSANS dosyası yok → araştırma/eğitim, kullanıcı sorumluluğunda). midog-fcos ortamını bu sürümden önce kurduysanız yeniden kurun (SimpleITK + pyyaml eklendi).\n' +
             'Python + köprü otomatik bulunur (midog-fcos venv ve handson/python/midog/). Cihaz: GPU için cuda.\n' +
-            'Hedef çözünürlük: ROI bu µm/px değerine yeniden örneklenip FCOS\'a beslenir (varsayılan 0.25: model MIDOG görüntülerinin taban düzeyinde, ~40x, eğitildi; 0.5 girerseniz mitozlar modelin gördüğünün yarı boyutunda kalır). Duyarlılık eşiği: referans 0.548; daha çok tespit için düşürün (ör. 0.3) — daha çok yanlış-pozitif, görsel doğrulayın.')
-        actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
-        actions.add(navButton('⚙ Python ortamı', { launchEnvManager() }, 'Atölye Python ortam yöneticisini aç (midog-fcos kur)'))
-        actions.add(navButton('Modeli yerel indir', { startModelDownload() }, 'FCOS_x101.ckpt ağırlığını bir kez yerel indir'))
-        actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }, 'fcos_runner.py selftest'))
-        actions.add(navButton('Kaydet ▶', { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+            'Hedef çözünürlük: ROI bu µm/px değerine yeniden örneklenip FCOS\'a beslenir (varsayılan 0.25: model MIDOG görüntülerinin taban düzeyinde, ~40x, eğitildi; 0.5 girerseniz mitozlar modelin gördüğünün yarı boyutunda kalır). Duyarlılık eşiği: referans 0.548; daha çok tespit için düşürün (ör. 0.3) — daha çok yanlış-pozitif, görsel doğrulayın.'))
+        actions.add(navButton(workshopText('script.72278748133a', 'İptal'), { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
+        actions.add(navButton(workshopText('script.edfc11aab1a1', '⚙ Python ortamı'), { launchEnvManager() }, workshopText('script.dce45817e84b', 'Atölye Python ortam yöneticisini aç (midog-fcos kur)')))
+        actions.add(navButton(workshopText('script.3352626164a4', 'Modeli yerel indir'), { startModelDownload() }, workshopText('script.20f89edfb03c', 'FCOS_x101.ckpt ağırlığını bir kez yerel indir')))
+        actions.add(navButton(workshopText('script.8369fe631575', 'Bağımlılık kontrolü'), { startSelftest() }, 'fcos_runner.py selftest'))
+        actions.add(navButton(workshopText('script.96f6bd4b06cc', 'Kaydet ▶'), { persistFields(); step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
     } else if (cur == 'CHECK_RUNNING') {
-        title.setText('Bağımlılık kontrolü çalışıyor…')
+        title.setText(workshopText('script.8e84f306c3c6', 'Bağımlılık kontrolü çalışıyor…'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); killTree(processRef.get()) }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); killTree(processRef.get()) }))
     } else if (cur == 'CHECK_DONE') {
-        title.setText(selftestOkRef.get() ? 'Bağımlılık kontrolü tamam ✅'
-            : '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın (Python / bağımlılık)'); addLiveLog()
-        actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
-        if (logSnapshot()?.trim()) actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }, 'Bağımlılık kontrolü günlüğünü kaydet'))
-        if (selftestOkRef.get()) actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, 'Kontrol tamam — bölgede çalıştırma ekranına döner'))
+        title.setText(selftestOkRef.get() ? workshopText('script.93f447fe25d4', 'Bağımlılık kontrolü tamam ✅')
+            : workshopText('script.228c923a71ee', '⚠ Bağımlılık kontrolü BAŞARISIZ — yukarıdaki günlüğe bakın (Python / bağımlılık)')); addLiveLog()
+        actions.add(navButton(workshopText('script.c8b5f18cded5', '◀ Yapılandırmaya dön'), { step.set('CONFIG'); render() }))
+        if (logSnapshot()?.trim()) actions.add(navButton(workshopText('script.bba9c203d381', 'Günlüğü kaydet…'), { saveLogInteractive() }, workshopText('script.18951cd01740', 'Bağımlılık kontrolü günlüğünü kaydet')))
+        if (selftestOkRef.get()) actions.add(navButton(workshopText('script.2065029c612d', 'Çalıştırma ekranına dön ▶'), { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, workshopText('script.a61a0e32a390', 'Kontrol tamam — bölgede çalıştırma ekranına döner')))
     } else if (cur == 'DL_RUNNING') {
-        title.setText('Model indiriliyor (yerel)…')
-        addGuidance('FCOS_x101.ckpt (~1.1 GB, v1.0.0 yayını) + MIDOG25 T1 referans kodu (sabit commit) veri kökü altına indiriliyor (bir kerelik).')
+        title.setText(workshopText('script.741afd173b71', 'Model indiriliyor (yerel)…'))
+        addGuidance(workshopText('script.d2acf34c311d', 'FCOS_x101.ckpt (~1.1 GB, v1.0.0 yayını) + MIDOG25 T1 referans kodu (sabit commit) veri kökü altına indiriliyor (bir kerelik).'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); killTree(processRef.get()) }))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); killTree(processRef.get()) }))
     } else if (cur == 'DL_DONE') {
-        title.setText(dlOkRef.get() ? 'Model yerel olarak indirildi ✅' : '⚠ Model indirilemedi — yukarıdaki günlüğe bakın'); addLiveLog()
-        actions.add(navButton('◀ Yapılandırmaya dön', { step.set('CONFIG'); render() }))
-        if (logSnapshot()?.trim()) actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }, 'İndirme günlüğünü kaydet'))
-        if (dlOkRef.get()) actions.add(navButton('Çalıştırma ekranına dön ▶', { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, 'İndirme tamam — bölgede çalıştırma ekranına döner'))
+        title.setText(dlOkRef.get() ? workshopText('script.4dba7915531f', 'Model yerel olarak indirildi ✅') : workshopText('script.2fdab9a8a0e7', '⚠ Model indirilemedi — yukarıdaki günlüğe bakın')); addLiveLog()
+        actions.add(navButton(workshopText('script.c8b5f18cded5', '◀ Yapılandırmaya dön'), { step.set('CONFIG'); render() }))
+        if (logSnapshot()?.trim()) actions.add(navButton(workshopText('script.bba9c203d381', 'Günlüğü kaydet…'), { saveLogInteractive() }, workshopText('script.3806b2698de6', 'İndirme günlüğünü kaydet')))
+        if (dlOkRef.get()) actions.add(navButton(workshopText('script.2065029c612d', 'Çalıştırma ekranına dön ▶'), { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }, workshopText('script.760bddd41f88', 'İndirme tamam — bölgede çalıştırma ekranına döner')))
     } else if (cur == 'READY') {
         if (imageData == null) {
-            title.setText('Görüntü açık değil')
-            addGuidance('Önce bir H&E lamı açın, ilgi ALANINI çizip seçin, sonra "⟳ Yenile".')
-            actions.add(navButton('Kapat', { stage.close() }))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
+            title.setText(workshopText('script.b4c901dc184b', 'Görüntü açık değil'))
+            addGuidance(workshopText('script.8a12d6b747a3', 'Önce bir H&E lamı açın, ilgi ALANINI çizip seçin, sonra "⟳ Yenile".'))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
         } else {
             def targets = regionAnnotationsOf(imageData)
             def ci = calibrationInfo(imageData)
@@ -974,7 +974,7 @@ render = { ->
             double targetMpp = cfg.targetMpp?.trim() ? parseDoubleOr(cfg.targetMpp, TARGET_MPP) : TARGET_MPP
             def typeName = (imageData.getImageType()?.name() ?: '').toUpperCase(java.util.Locale.ROOT)
             boolean isHE = typeName.contains('BRIGHTFIELD_H_E')
-            title.setText('Mitoz tespiti — FCOS MIDOG25 (bölgede)')
+            title.setText(workshopText('script.4bcd388f027c', 'Mitoz tespiti — FCOS MIDOG25 (bölgede)'))
             def sb = new StringBuilder()
             sb << "Lam          : " << imageNameOf(imageData) << "\n"
             sb << "Model          : " << MODEL << "\n"
@@ -992,55 +992,55 @@ render = { ->
                 sb << "Piksel boyutu  : KALİBRE DEĞİL — yoğunluk hesaplanmaz, native çözünürlük beslenir\n"
             }
             addMonoArea(sb.toString())
-            addGuidance('FCOS YALNIZ seçili/çizili alan anotasyon(lar)ı içinde çalışır. Sonuç: "Mitosis" mavi nokta-anotasyonları (etiketli görüntü halkalarıyla) + her anotasyona mitoz sayısı ve yoğunluğu (mitoz/mm²); ROI ~2 mm² ise WHO birimi (mitoz/2 mm²).')
-            if (!isHE) addWarnLabel('⚠ Görüntü tipi H&E değil (' + typeName + '). FCOS H&E için tasarlanmıştır.')
-            if (ci.warn != null) addWarnLabel('⚠ Kalibrasyon: ' + ci.warn)
+            addGuidance(workshopText('script.e78bd00495a2', 'FCOS YALNIZ seçili/çizili alan anotasyon(lar)ı içinde çalışır. Sonuç: "Mitosis" mavi nokta-anotasyonları (etiketli görüntü halkalarıyla) + her anotasyona mitoz sayısı ve yoğunluğu (mitoz/mm²); ROI ~2 mm² ise WHO birimi (mitoz/2 mm²).'))
+            if (!isHE) addWarnLabel(workshopText('script.60b9e2285984', '⚠ Görüntü tipi H&E değil (') + typeName + workshopText('script.7dc22b3044e5', '). FCOS H&E için tasarlanmıştır.'))
+            if (ci.warn != null) addWarnLabel(workshopText('script.b3316a28e086', '⚠ Kalibrasyon: ') + ci.warn)
             boolean canRun = configComplete(cfg) && targets.size() >= 1
-            if (!configComplete(cfg)) addWarnLabel('⚠ Python ortamı (midog-fcos) kurulu değil — "⚙ Python ortamını kur/aç" ile kurun.')
-            actions.add(navButton('Kapat', { stage.close() }))
-            if (!configComplete(cfg)) actions.add(navButton('⚙ Python ortamını kur/aç', { launchEnvManager() }, 'Atölye Python ortam yöneticisini açar'))
-            actions.add(navButton('Yapılandır', { step.set('CONFIG'); render() }))
-            actions.add(navButton('⟳ Yenile', { render() }))
-            def runBtn = navButton('Bölgede çalıştır ▶', { startRun() }, 'FCOS mitoz dedektörünü seçili bölgede çalıştırır')
+            if (!configComplete(cfg)) addWarnLabel(workshopText('script.56396492e341', '⚠ Python ortamı (midog-fcos) kurulu değil — "⚙ Python ortamını kur/aç" ile kurun.'))
+            actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+            if (!configComplete(cfg)) actions.add(navButton(workshopText('script.719f58ad7970', '⚙ Python ortamını kur/aç'), { launchEnvManager() }, workshopText('script.b70b9a59c9eb', 'Atölye Python ortam yöneticisini açar')))
+            actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
+            actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
+            def runBtn = navButton(workshopText('script.8d97dafbbbd9', 'Bölgede çalıştır ▶'), { startRun() }, workshopText('script.73905e8239f2', 'FCOS mitoz dedektörünü seçili bölgede çalıştırır'))
             runBtn.setDisable(!canRun)
-            if (!canRun && targets.size() < 1) addWarnLabel('⚠ Önce en az 1 alan anotasyonu çizin/seçin.')
+            if (!canRun && targets.size() < 1) addWarnLabel(workshopText('script.dbe94663bb77', '⚠ Önce en az 1 alan anotasyonu çizin/seçin.'))
             actions.add(runBtn)
         }
     } else if (cur == 'RUN_RUNNING') {
         title.setText(runPhaseRef.get())
-        addGuidance('FCOS köprüsü çalışıyor (ilk çalıştırmada model ağırlığı indirilmiş olmalı). Zaman aşımı: ' + PYTHON_TIMEOUT_SECONDS + ' sn.')
+        addGuidance(workshopText('script.71d31ec554c6', 'FCOS köprüsü çalışıyor (ilk çalıştırmada model ağırlığı indirilmiş olmalı). Zaman aşımı: ') + PYTHON_TIMEOUT_SECONDS + workshopText('script.9d84a2f3efc0', ' sn.'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true); killTree(processRef.get()) }))
-        actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }, 'O ana kadarki çalışma günlüğünü dosyaya kaydet'))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true); killTree(processRef.get()) }))
+        actions.add(navButton(workshopText('script.bba9c203d381', 'Günlüğü kaydet…'), { saveLogInteractive() }, workshopText('script.bef82acf6750', 'O ana kadarki çalışma günlüğünü dosyaya kaydet')))
     } else if (cur == 'BUSY') {
-        title.setText(busyLabelRef.get()); addGuidance('Lütfen bekleyin…'); center.getChildren().add(busyBar())
+        title.setText(busyLabelRef.get()); addGuidance(workshopText('script.245c572ec2ea', 'Lütfen bekleyin…')); center.getChildren().add(busyBar())
     } else if (cur == 'RESULT') {
-        title.setText('Tamamlandı ✅'); addMonoArea(resultTextRef.get())
+        title.setText(workshopText('script.92c17020894f', 'Tamamlandı ✅')); addMonoArea(resultTextRef.get())
         int nMit = (mitosisCoordsRef.get()?.size() ?: 0)
-        if (nMit > 0) addGuidance('Tespitler "' + MITOSIS_CLASS + '" sınıflı MAVİ nokta-anotasyonları olarak eklendi. Her noktanın çevresinde, etiketi ("' + MITOSIS_PREFIX + ' #…") üstünde duran bir görüntü halkası var — mitoz ortada açık kalır. Halka yalnız görüntüdür: yanlış pozitifi silmek için ortadaki NOKTAYI silin (halka sonraki çalıştırmada kalkar). Düşük yakınlaştırmada halka küçük görünür — "Mitoza git" ile üstüne gidin.')
-        def lf = logFileRef.get(); if (lf != null) addGuidance('Çalışma günlüğü otomatik kaydedildi: ' + lf.getAbsolutePath())
-        actions.add(navButton('Kapat', { stage.close() }))
-        if (nMit > 0) actions.add(navButton('◀ Önceki', { goToMitosis(navIdxRef.get() - 1); render() }, 'Önceki mitoza git'))
-        if (nMit > 0) actions.add(navButton('Mitoza git ' + (navIdxRef.get() >= 0 ? ((navIdxRef.get() + 1) + '/' + nMit) : ('1/' + nMit)) + ' ▶', { goToMitosis(navIdxRef.get() + 1); render() }, 'Görüntüleyiciyi mitozun üstüne ortala + yakınlaştır'))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-        actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }, 'FCOS çalışma günlüğünü dosyaya kaydet'))
-        actions.add(navButton('↻ Yeniden çalıştır', { step.set('READY'); render() }))
+        if (nMit > 0) addGuidance(workshopText('script.e485c28a856d', 'Tespitler "') + MITOSIS_CLASS + workshopText('script.717e6b84a05f', '" sınıflı MAVİ nokta-anotasyonları olarak eklendi. Her noktanın çevresinde, etiketi ("') + MITOSIS_PREFIX + workshopText('script.23b9b3becc99', ' #…") üstünde duran bir görüntü halkası var — mitoz ortada açık kalır. Halka yalnız görüntüdür: yanlış pozitifi silmek için ortadaki NOKTAYI silin (halka sonraki çalıştırmada kalkar). Düşük yakınlaştırmada halka küçük görünür — "Mitoza git" ile üstüne gidin.'))
+        def lf = logFileRef.get(); if (lf != null) addGuidance(workshopText('script.31835c4b8d47', 'Çalışma günlüğü otomatik kaydedildi: ') + lf.getAbsolutePath())
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        if (nMit > 0) actions.add(navButton(workshopText('script.ec60d133c6c4', '◀ Önceki'), { goToMitosis(navIdxRef.get() - 1); render() }, workshopText('script.17c174001bde', 'Önceki mitoza git')))
+        if (nMit > 0) actions.add(navButton(workshopText('script.c6025130d0c3', 'Mitoza git ') + (navIdxRef.get() >= 0 ? ((navIdxRef.get() + 1) + '/' + nMit) : ('1/' + nMit)) + ' ▶', { goToMitosis(navIdxRef.get() + 1); render() }, workshopText('script.7131bfdd22e9', 'Görüntüleyiciyi mitozun üstüne ortala + yakınlaştır')))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.bba9c203d381', 'Günlüğü kaydet…'), { saveLogInteractive() }, workshopText('script.b225f5fb3e44', 'FCOS çalışma günlüğünü dosyaya kaydet')))
+        actions.add(navButton(workshopText('script.c94499b243e4', '↻ Yeniden çalıştır'), { step.set('READY'); render() }))
     } else { // ERROR
-        title.setText('Hata'); addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set('READY'); render() }))
-        if (logSnapshot()?.trim()) actions.add(navButton('Günlüğü kaydet…', { saveLogInteractive() }, 'Çalışma günlüğünü dosyaya kaydet'))
-        actions.add(navButton('Kapat', { stage.close() }))
+        title.setText(workshopText('script.307b9dc7912d', 'Hata')); addMonoArea(errorTextRef.get())
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('READY'); render() }))
+        if (logSnapshot()?.trim()) actions.add(navButton(workshopText('script.bba9c203d381', 'Günlüğü kaydet…'), { saveLogInteractive() }, workshopText('script.84e9e16575c2', 'Çalışma günlüğünü dosyaya kaydet')))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut'); topChk.setSelected(alwaysTop.get())
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut')); topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n -> alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
     def spacer = new javafx.scene.layout.Region(); javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
     def bar = new javafx.scene.layout.HBox(8); bar.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
     bar.getChildren().add(topChk)
     // Çalışan işlem yokken: bu pencereyi kapatıp mitoz modelleri listesine dön (başka bir model başlatmak için).
-    if (!['RUN_RUNNING', 'CHECK_RUNNING', 'DL_RUNNING', 'BUSY'].contains(cur)) bar.getChildren().add(navButton('◀ Mitoz listesi', { openMitosisHub() }, 'Bu pencereyi kapatıp mitoz modelleri listesini açar — başka bir model başlatmak için'))
+    if (!['RUN_RUNNING', 'CHECK_RUNNING', 'DL_RUNNING', 'BUSY'].contains(cur)) bar.getChildren().add(navButton(workshopText('script.b92ed056af0e', '◀ Mitoz listesi'), { openMitosisHub() }, workshopText('script.aa26895608db', 'Bu pencereyi kapatıp mitoz modelleri listesini açar — başka bir model başlatmak için')))
     bar.getChildren().add(spacer); bar.getChildren().addAll(actions)
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.04e70fc651a3', 'Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
     def bottom = new javafx.scene.layout.VBox(8, disclaimer, bar); bottom.setPadding(new javafx.geometry.Insets(10))
@@ -1054,11 +1054,22 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Mitoz tespiti — FCOS (MIDOG25 Track-1)')
+        stage.setTitle(workshopText('script.3d52b6a4de8d', 'Mitoz tespiti — FCOS (MIDOG25 Track-1)'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render(); stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ Mitoz tespiti (FCOS · MIDOG25 Track-1) sihirbazı açıldı."
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}

@@ -295,9 +295,9 @@ def startExport = {
         }
     }
     if (maxBytes > 1_073_741_824L) {
-        boolean ok = Dialogs.showConfirmDialog('Büyük çıkarım',
-            'En büyük bölge yaklaşık ' + humanBytes(maxBytes) + ' (sıkıştırılmamış).\n' +
-            'Büyük lamlarda dakikalar sürebilir ve diskte çok yer kaplayabilir.\n\nDevam edilsin mi?')
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.491613d74887', 'Büyük çıkarım'),
+            workshopText('script.ca5f7019200b', 'En büyük bölge yaklaşık ') + humanBytes(maxBytes) + workshopText('script.8949c53a08b8', ' (sıkıştırılmamış).\n') +
+            workshopText('script.445c3faa1146', 'Büyük lamlarda dakikalar sürebilir ve diskte çok yer kaplayabilir.\n\nDevam edilsin mi?'))
         if (!ok) { return }
     }
 
@@ -378,19 +378,19 @@ render = { ->
     boolean hasSel = (imageData != null) && !selectedAreaAnns().isEmpty()
 
     if (cur == 'READY' || (cur == 'CONFIG' && !hasSel)) {
-        title.setText('Görüntü alanı çıkart (Extract Region)')
+        title.setText(workshopText('script.34c89bb82b63', 'Görüntü alanı çıkart (Extract Region)'))
         if (imageData == null) {
-            addGuidance('Önce bir lam açın. Sonra Rectangle (R) ya da herhangi bir alan aracıyla ' +
-                'çıkarmak istediğiniz bölgeyi çizip SEÇİN ve "⟳ Yenile"ye basın.')
+            addGuidance(workshopText('script.ef6521d6c996', 'Önce bir lam açın. Sonra Rectangle (R) ya da herhangi bir alan aracıyla ' +
+                'çıkarmak istediğiniz bölgeyi çizip SEÇİN ve "⟳ Yenile"ye basın.'))
         } else {
-            addGuidance('Çıkarmak istediğiniz bölge için bir ALAN anotasyonu (dikdörtgen, poligon, fırça) ' +
+            addGuidance(workshopText('script.48b5dc1f9306', 'Çıkarmak istediğiniz bölge için bir ALAN anotasyonu (dikdörtgen, poligon, fırça) ' +
                 'çizip SEÇİN. Birden çok anotasyon seçiliyse her biri ayrı dosyaya çıkar. Sonra "⟳ Yenile".\n\n' +
-                'Aperio ImageScope\'un "Extract Region" aracının QuPath-yerel karşılığıdır.')
+                'Aperio ImageScope\'un "Extract Region" aracının QuPath-yerel karşılığıdır.'))
         }
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('⟳ Yenile', { step.set(selectedAreaAnns().isEmpty() ? 'READY' : 'CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { step.set(selectedAreaAnns().isEmpty() ? 'READY' : 'CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
-        title.setText('Görüntü alanı çıkart — ayarlar')
+        title.setText(workshopText('script.071b732a56c6', 'Görüntü alanı çıkart — ayarlar'))
         def server = imageData.getServer()
         def anns = selectedAreaAnns()
 
@@ -406,7 +406,7 @@ render = { ->
         def umpp = new javafx.scene.control.TextField(prefs.get('umpp', '')); umpp.setPrefColumnCount(6)
         def desc = new javafx.scene.control.TextField(''); desc.setPrefColumnCount(28)
         double nat = 0.0d; try { nat = server.getPixelCalibration().getAveragedPixelSizeMicrons() } catch (Throwable t) {}
-        if (!(nat > 0.0d)) { umpp.setDisable(true); umpp.setPromptText('kalibrasyon yok') }
+        if (!(nat > 0.0d)) { umpp.setDisable(true); umpp.setPromptText(workshopText('script.be794d6d6aa9', 'kalibrasyon yok')) }
         def outDir = outDirRef.get() ?: defaultOutDir(); outDirRef.set(outDir)
         def outLbl = new javafx.scene.control.Label(outDir.getAbsolutePath()); outLbl.setWrapText(true)
 
@@ -426,8 +426,8 @@ render = { ->
                 long ow = (long) (cb[2] / ds), oh = (long) (cb[3] / ds)
                 long bytes = ow * oh * server.nChannels() * bytesPerChannelOf(server)
                 estLbl.setText(String.format(java.util.Locale.US,
-                    'İlk bölge çıktısı: %,d × %,d px · ~%s sıkıştırılmamış (sıkıştırma sonrası daha küçük) · downsample %.3f',
-                    ow, oh, humanBytes((double) bytes), ds) + (anns.size() > 1 ? ('  ·  toplam ' + anns.size() + ' bölge') : ''))
+                    workshopText('script.ed7dd22aaa3e', 'İlk bölge çıktısı: %,d × %,d px · ~%s sıkıştırılmamış (sıkıştırma sonrası daha küçük) · downsample %.3f'),
+                    ow, oh, humanBytes((double) bytes), ds) + (anns.size() > 1 ? (workshopText('script.5057d2df92c5', '  ·  toplam ') + anns.size() + workshopText('script.daf138c7f44a', ' bölge')) : ''))
             }
         }
         fmtBox.valueProperty().addListener({ o, a, b -> refresh() } as javafx.beans.value.ChangeListener)
@@ -439,42 +439,42 @@ render = { ->
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         int row = 0
         def browse = navButton('…', { def d = FileChoosers.promptForDirectory('Çıktı klasörü seç', outDirRef.get()); if (d != null) { outDirRef.set(d); outLbl.setText(d.getAbsolutePath()) } })
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Biçim:'), fmtBox)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Sıkıştırma (OME-TIFF):'), compBox)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('JPEG kalitesi (1-100):'), qual)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Parça (tile) boyutu:'), tile)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Yeniden boyutlandır (%):'), resize)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Hedef µm/px (ops.):'), umpp)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Açıklama (ops.):'), desc)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Çıktı klasörü:'), outLbl, browse)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.071c30132baf', 'Biçim:')), fmtBox)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.3f68d88af08a', 'Sıkıştırma (OME-TIFF):')), compBox)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.f7ea86c4cbd2', 'JPEG kalitesi (1-100):')), qual)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.549b77bbd13b', 'Parça (tile) boyutu:')), tile)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.5edc6579849b', 'Yeniden boyutlandır (%):')), resize)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.499c5192f0d1', 'Hedef µm/px (ops.):')), umpp)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.9222911e858d', 'Açıklama (ops.):')), desc)
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.599185445cd3', 'Çıktı klasörü:')), outLbl, browse)
         center.getChildren().add(grid)
         center.getChildren().add(estLbl)
-        addGuidance('Seçili ' + anns.size() + ' alan anotasyonu → her biri ayrı dosya + .json künyesi. ' +
-            'Gerçek .svs üretilmez; piramidal OME-TIFF açık karşılığıdır.')
+        addGuidance(workshopText('script.7969b452b1a3', 'Seçili ') + anns.size() + workshopText('script.16ed2f254467', ' alan anotasyonu → her biri ayrı dosya + .json künyesi. ') +
+            workshopText('script.44ac165dc0ba', 'Gerçek .svs üretilmez; piramidal OME-TIFF açık karşılığıdır.'))
 
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('⟳ Yenile', { step.set(selectedAreaAnns().isEmpty() ? 'READY' : 'CONFIG'); render() }))
-        actions.add(navButton('Çıkart ▶', { startExport() }, 'Seçili bölge(ler)i görüntü dosyasına çıkarır'))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { step.set(selectedAreaAnns().isEmpty() ? 'READY' : 'CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.ffc0ea6aab71', 'Çıkart ▶'), { startExport() }, workshopText('script.0226f85842c6', 'Seçili bölge(ler)i görüntü dosyasına çıkarır')))
     } else if (cur == 'RUNNING') {
-        title.setText('Çıkarılıyor…')
-        addGuidance('Bölgeler yazılıyor. Büyük/tam çözünürlüklü bölgelerde birkaç dakika sürebilir.')
+        title.setText(workshopText('script.7c7b7570e3bd', 'Çıkarılıyor…'))
+        addGuidance(workshopText('script.0846afd2afa8', 'Bölgeler yazılıyor. Büyük/tam çözünürlüklü bölgelerde birkaç dakika sürebilir.'))
         center.getChildren().add(busyBar()); addLiveLog()
-        actions.add(navButton('İptal et', { cancelledRef.set(true) }, 'Sıradaki bölgeden önce durur; yazılmakta olan dosya tamamlanır'))
+        actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true) }, workshopText('script.bb0aef7c6369', 'Sıradaki bölgeden önce durur; yazılmakta olan dosya tamamlanır')))
     } else if (cur == 'RESULT') {
-        title.setText('Tamamlandı ✅')
+        title.setText(workshopText('script.92c17020894f', 'Tamamlandı ✅'))
         addMonoArea(resultTextRef.get())
-        actions.add(navButton('Kapat', { stage.close() }))
-        actions.add(navButton('Kopyala', { copyToClipboard(resultTextRef.get()) }))
-        actions.add(navButton('↻ Yeniden', { step.set(selectedAreaAnns().isEmpty() ? 'READY' : 'CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
+        actions.add(navButton(workshopText('script.a8bcca42d9ce', 'Kopyala'), { copyToClipboard(resultTextRef.get()) }))
+        actions.add(navButton(workshopText('script.171029fff08d', '↻ Yeniden'), { step.set(selectedAreaAnns().isEmpty() ? 'READY' : 'CONFIG'); render() }))
     } else { // ERROR
-        title.setText('Hata')
+        title.setText(workshopText('script.307b9dc7912d', 'Hata'))
         addMonoArea(errorTextRef.get())
-        actions.add(navButton('◀ Geri', { step.set(selectedAreaAnns().isEmpty() ? 'READY' : 'CONFIG'); render() }))
-        actions.add(navButton('Kapat', { stage.close() }))
+        actions.add(navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set(selectedAreaAnns().isEmpty() ? 'READY' : 'CONFIG'); render() }))
+        actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
     }
 
     // Alt çubuk: "Üstte tut" (sol) + disclaimer + eylem düğmeleri (sağ)
-    def topChk = new javafx.scene.control.CheckBox('Üstte tut')
+    def topChk = new javafx.scene.control.CheckBox(workshopText('script.70ca64c0c43a', 'Üstte tut'))
     topChk.setSelected(alwaysTop.get())
     topChk.selectedProperty().addListener({ obs, o, n -> alwaysTop.set(n); if (stage != null) stage.setAlwaysOnTop(n) } as javafx.beans.value.ChangeListener)
     def spacer = new javafx.scene.layout.Region()
@@ -485,7 +485,7 @@ render = { ->
     bar.getChildren().add(spacer)
     bar.getChildren().addAll(actions)
 
-    def disclaimer = new javafx.scene.control.Label('Yalnızca araştırma/eğitim amaçlıdır; klinik karar üretmez.')
+    def disclaimer = new javafx.scene.control.Label(workshopText('script.b82384fd9d01', 'Yalnızca araştırma/eğitim amaçlıdır; klinik karar üretmez.'))
     disclaimer.setWrapText(true); disclaimer.setMaxWidth(Double.MAX_VALUE)
     disclaimer.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.6; -fx-font-style: italic; -fx-padding: 4 2 4 2; -fx-font-size: 11px;')
     def bottom = new javafx.scene.layout.VBox(8, disclaimer, bar)
@@ -503,12 +503,23 @@ javafx.application.Platform.runLater {
     try {
         stage = new javafx.stage.Stage()
         stage.initModality(javafx.stage.Modality.NONE)
-        stage.setTitle('Görüntü alanı çıkart (Extract Region)')
+        stage.setTitle(workshopText('script.34c89bb82b63', 'Görüntü alanı çıkart (Extract Region)'))
         stage.setAlwaysOnTop(alwaysTop.get())
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage('Sihirbaz açılamadı', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println '✓ Görüntü alanı çıkart (Extract Region) sihirbazı açıldı.'
+
+// Resolve extension UI language; standalone scripts keep their Turkish fallback.
+private String workshopText(String key, String fallback) {
+    try {
+        def bundle = Class.forName('io.github.sbalci.qupath.workshop.WorkshopI18n')
+        String translated = bundle.getMethod('t', String.class).invoke(null, key) as String
+        return translated == key ? fallback : translated
+    } catch (Throwable ignored) {
+        return fallback
+    }
+}
