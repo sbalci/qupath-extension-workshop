@@ -1,5 +1,9 @@
 # Model sihirbazlarının pencere dili — 15 Kasım 2026
 
+Sonraki kontrol: aşağıda eski commit için bekleyen iki CytoFormer metni,
+[sabit revizyon metadata'sıyla doğrulandı](cytoformer-source-review-2026-11-15.md)
+ve `8ebd6e4` içinde çevrildi. Aşağıdaki 565 metin/test kaydı kendi eski kaynağına aittir.
+
 Yerel dal: `feat/course-audit-followup-20261114`. Kaynak commit: `0c0cd92`.
 Push, sürüm, dağıtım, GUI kurulumu ve model/ortam indirmesi yapılmadı.
 

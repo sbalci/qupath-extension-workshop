@@ -17,13 +17,17 @@ The fixed-text review on 14 November added four helpers to the eight core script
 | `yardimci-metadata-sihirbaz.groovy` | 25 | Project scan, cancellation, CSV action, folder and clipboard controls |
 | `yardimci-python-ortam-yoneticisi.groovy` | 46 | Install/repair/return controls, data-root guidance and fixed status text |
 
-The current catalog (15 November) has **565 paired strings across 15 scripts**,
+The current catalog (15 November) has **1,006 paired strings across 63 scripts**,
 plus the separate cell detection keys. The dynamic-text review added 188 display
 expressions: 151 fixed expressions and 37 GString occurrences (36 unique
 expressions). Checks, counts, classifier names, pixel size and execution scope
 can now appear inside translated UI sentences. A subsequent review added 312
 display lookups in the Classpose (105), CytoFormer (105) and GrandQC (102)
 wizards, including their local guidance/status helpers and file chooser titles.
+The utility review then adds 818 display expressions across 48 more scripts
+(809 fixed expressions and 9 GStrings). Annotation transfer, validation, charts,
+image capture, spatial measurements, threshold controls and export helpers share
+the same lookup, with original conditions and data identifiers preserved.
 Their commands, stored model/class names, consent state and overwrite decisions
 are unchanged. Quoted environment-entry names match the actual catalog labels;
 the English menu path retains the fixed `Atölye` menu name.
@@ -42,7 +46,7 @@ produced by their source. Model installation and GUI layout are not certified.
 
 ## Source preservation check
 
-The catalog records a source revision and SHA-256 for each of the 15 scripts.
+The catalog records a source revision and SHA-256 for each of the 63 scripts.
 `python tools/check-script-ui-contract.py` removes the exact reviewed language
 helper, restores recorded UI expressions, unwraps only known `workshopText` calls
 and compares the restored source with that fingerprint. Apart from line endings and trailing whitespace at EOF,
@@ -50,7 +54,9 @@ the original source must be recovered byte for byte. This protects commands,
 parameters, state identifiers, option identifiers, output columns and callbacks.
 The eight older scripts also recover their source from before the translation
 commit; four helpers recover their source at `6c648c9`, and the three model
-wizards recover their source at `a93a211`.
+wizards recover their source at `a93a211`. The 48 utility scripts recover their
+source at `7de156c`. Concurrent non-UI changes in the main working tree are
+excluded from this review; validation uses the committed source in a clean copy.
 
 An intentional non-UI edit needs its own review and a new source fingerprint;
 do not update the hash simply to silence the check. The check runs before
@@ -66,9 +72,11 @@ This check does not prove clinical performance, translation layout, GUI
 installation, cancellation, overwrite prompts or external model compatibility.
 QuPath CLI checks use synthetic data and explicitly load the test JAR.
 
-Two CytoFormer texts were excluded pending source reconciliation: the weights'
-`CC BY-NC 4.0` heading and the automatic-approval statement. The current
-[official model card](https://huggingface.co/zhihuanglab/CytoFormer) identifies
-the Penn licence; the pinned revision's gated README could not be verified.
-The new translations do not certify the older licence claim. See
-[the model wizard record](model-wizard-ui-validation-2026-11-15.md).
+Two CytoFormer texts excluded in the earlier model review are now translated.
+The [pinned revision metadata](https://huggingface.co/api/models/zhihuanglab/CytoFormer/revision/3e9691e)
+identifies `cc-by-nc-4.0` and `gated: auto`; the current main card concerns a
+different revision. No access request or licence acceptance was performed.
+See [the source review](cytoformer-source-review-2026-11-15.md) and
+[the utility validation](utility-ui-validation-2026-11-15.md). The earlier
+[model wizard record](model-wizard-ui-validation-2026-11-15.md) describes its
+own older source and test scope.

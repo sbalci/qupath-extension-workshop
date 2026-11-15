@@ -1,3 +1,15 @@
+# 15 Kasım 2026 — yardımcı pencereler ve sabit model kaynağı
+
+- 48 yeni yardımcıda 818 görüntüleme ifadesi çevrildi: 809 sabit ifade ve 9 GString. Ortak katalog 63 betik/1.006 TR/EN metindir; veri/rapor gövdeleri tamamen çevrilmiş sayılmaz.
+- Anotasyon aktarımı, F1 doğrulama, eşik, grafik, görüntü yakalama ve uzamsal araçlarda veri alanları, sayısal varsayılanlar ve onay/silme koşulları korundu. Dinamik veri ifadelerinin kaynakları ve değerlendirme sırası AST ile denetlendi.
+- CytoFormer'in bekleyen iki ifadesi, kullanılan `3e9691e` revizyonunun resmî metadata'sıyla doğrulandı ve çevrildi. Güncel `main` kartı yerine sabit revizyon kontrol edildi; kullanıcı adına koşul kabul edilmedi.
+- Eş zamanlı kaynak düzenlemeleri ayrı tutuldu. Ana ağacın genel ayna/lint kontrolü hata bildirdi; temiz commit kaynaklarıyla kurulan doğrulama kopyası kullanıldı. Hotspot betiğine dokunulmadı.
+- Son temiz derleme: 67 test. QuPath 0.6.0/0.7.0'ın her birinde 103 betik parse, 126.806 dil lookup'u ve 45 dinamik cümle için sentetik kontroller geçti. Temiz kaynak kopyasında betik aynaları/lint de geçti.
+
+Kaynak: `866a223` + `8ebd6e4` (eklenti). Yerel inceleme dalı; push, sürüm veya dağıtım yapılmadı. Bekleyen terim kararı yoktur. GUI köprüsü hâlâ erişilemiyor (`os error 2`); bu bir Windows onay reddi değildir. Ayrıntı: [yardımcı pencere doğrulaması](docs/utility-ui-validation-2026-11-15.md).
+
+---
+
 # 15 Kasım 2026 — üç model sihirbazının rehber metinleri
 
 - Classpose, CytoFormer ve GrandQC'de 312 görüntüleme çağrısı çevrildi; ortak katalog 15 betik/565 TR/EN metindir. Özel rehber/durum yardımcıları ve dosya seçici başlıkları envantere eklendi.
