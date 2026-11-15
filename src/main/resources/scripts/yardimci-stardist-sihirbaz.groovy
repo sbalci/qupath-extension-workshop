@@ -46,6 +46,21 @@ import java.io.File
 
 def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
+// Hücreleri değiştirme sorusu: varsayılan seçim "dokunma"dır — Enter/Tamam hiçbir şeyi değiştirmez.
+// (Evet/Hayır penceresinde Enter "Evet" anlamına gelir; bu yüzden seçim penceresi kullanılır.)
+def confirmReplaceCells = { String title, String body ->
+    String keepOpt = workshopText('script.665d4074c4fe', 'Mevcut hücrelere dokunma — tespiti çalıştırma (varsayılan)')
+    String replaceOpt = workshopText('script.6b4af35c53fe', 'Mevcut hücreleri değiştir — tespiti çalıştır')
+    def ask = { -> qupath.fx.dialogs.Dialogs.showChoiceDialog(title, body, [keepOpt, replaceOpt], keepOpt) }
+    if (javafx.application.Platform.isFxApplicationThread()) return ask() == replaceOpt
+    def picked = new java.util.concurrent.atomic.AtomicReference(null)
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    javafx.application.Platform.runLater {
+        try { picked.set(ask()) } finally { latch.countDown() }
+    }
+    latch.await()
+    return picked.get() == replaceOpt
+}
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
 
 // --- StarDist modeli: kamuya açık qupath/models'ten sabitlenmiş indirme ---
@@ -244,6 +259,11 @@ def copyToClipboard = { String txt ->
     cb.setContent(content)
 }
 
+// Tespit, seçili anotasyonun içindeki mevcut hücre tespitlerinin YERİNİ alır: yalnız bunlar sayılır.
+def redetectCount = { ann ->
+    ann == null ? 0 : ann.getChildObjects().findAll { it.isDetection() }.size()
+}
+
 // ── Tespit akışı (arka plan iş parçacığı) ───────────────────────────────────
 def startDetection = {
     if (!stardistInstalled()) { errorTextRef.set('StarDist eklentisi yüklü değil.\nExtensions → Manage extensions → StarDist (bkz. StarDist eki).'); step.set('ERROR'); render(); return }
@@ -263,6 +283,17 @@ def startDetection = {
     def mp = textOf(modelFieldRef)
     def clsName = textOf(clsFieldRef)
     def falseName = textOf(falseClsFieldRef)
+    // Mevcut hücre varsa tespitten ÖNCE sor (FX iş parçacığında, işçi iş parçacığı başlamadan; Hayır → hiçbir şey çalışmaz).
+    int redetectPrev = redetectCount(selected)
+    if (redetectPrev > 0) {
+        String redetectTitleText = workshopText('script.c8cded1ce05d', 'Önceki hücre tespitleri değiştirilecek')
+        if (stage != null) stage.setAlwaysOnTop(false)
+        boolean redetectOk = false
+        try { redetectOk = confirmReplaceCells(redetectTitleText, String.format(java.util.Locale.US, workshopText('script.df3a81761ec8', 'Seçili anotasyonda zaten %,d hücre var. Tespit bu hücrelerin yerini alacak; elle verdiğiniz sınıflar ve düzeltmeler de gider.\n\nDevam edilsin mi?\n\n"Hayır" derseniz hiçbir şey çalıştırılmaz ve hiçbir şey değişmez.'), redetectPrev)) }
+        finally { if (stage != null) stage.setAlwaysOnTop(alwaysTop.get()) }
+        if (!redetectOk) { Dialogs.showInfoNotification(redetectTitleText, workshopText('script.0187c58bc6df', 'İptal edildi — hiçbir şey çalıştırılmadı, hiçbir şey değişmedi.')); return }
+    }
+
     prefs.put(PREF_MODEL, mp); prefs.put(PREF_CLS, clsName); prefs.put(PREF_FALSE, falseName)
     try { prefs.flush() } catch (Throwable ig) {}
     saveParams(thr, px, exp)
@@ -393,7 +424,7 @@ def startDetection = {
 
         def slideName = imageNameOf(imageData)
         javafx.application.Platform.runLater {
-            resultTextRef.set(buildResultText(slideName, n, areaMm2, density, secs, thr, px, exp, calOk))
+            resultTextRef.set((redetectPrev > 0 ? String.format(java.util.Locale.US, workshopText('script.784fe373ea77', 'Önceki %,d hücre değiştirildi.'), redetectPrev) + '\n\n' : '') + buildResultText(slideName, n, areaMm2, density, secs, thr, px, exp, calOk))
             step.set('RESULT'); render()
         }
     }, 'AtolyeStarDist-Run')

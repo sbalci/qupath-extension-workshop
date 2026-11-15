@@ -15,6 +15,9 @@ The review record for the behaviour changes is `docs/ask-first-review-2026-11-15
 - "This tool's own result" is matched by exact name or `name (N)`, never by a prefix, so an annotation you renamed is not swept.
 - VALIS, Warpy and the affine transfer mark what they transfer; *Replace* removes the old transfer whole and keeps objects you added inside it afterwards.
 - Tumour budding no longer deletes the existing detections under the selected region.
+- Tools that run cell detection ask before replacing the cells already in the selected annotation, with "keep, do not run" preselected (cell detection, nuclear, ER/PR, cytoplasmic and membrane modules, QuANTUM, immune density, stromal TIL, StarDist, InstanSeg, Cellpose). Headless runs need `-a mevcut=degistir`.
+- In the Tümör/Stroma tools, *Replace* re-measures in place and never deletes a region you drew.
+- Measurement export and the two cohort summaries ask when a slide holds copies of the same result: all copies, or only the newest of each kind (headless: `kopyalar=hepsi` or `kopyalar=enyeni`). The GrandQC cohort summary now sees `GrandQC KK (N)` sets.
 - Cell detection and the four stain modules no longer change the image type or stain vectors with only a log line: they say what will change and ask. Headless runs need `-a tip=he` (cell detection) or `-a boya=varsayilan` (stain modules).
 
 ### Changed — menu

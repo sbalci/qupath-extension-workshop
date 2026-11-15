@@ -32,6 +32,21 @@ import qupath.lib.objects.PathAnnotationObject
 import qupath.lib.scripting.QP
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
+// Hücreleri değiştirme sorusu: varsayılan seçim "dokunma"dır — Enter/Tamam hiçbir şeyi değiştirmez.
+// (Evet/Hayır penceresinde Enter "Evet" anlamına gelir; bu yüzden seçim penceresi kullanılır.)
+def confirmReplaceCells = { String title, String body ->
+    String keepOpt = workshopText('script.665d4074c4fe', 'Mevcut hücrelere dokunma — tespiti çalıştırma (varsayılan)')
+    String replaceOpt = workshopText('script.6b4af35c53fe', 'Mevcut hücreleri değiştir — tespiti çalıştır')
+    def ask = { -> qupath.fx.dialogs.Dialogs.showChoiceDialog(title, body, [keepOpt, replaceOpt], keepOpt) }
+    if (javafx.application.Platform.isFxApplicationThread()) return ask() == replaceOpt
+    def picked = new java.util.concurrent.atomic.AtomicReference(null)
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    javafx.application.Platform.runLater {
+        try { picked.set(ask()) } finally { latch.countDown() }
+    }
+    latch.await()
+    return picked.get() == replaceOpt
+}
 
 // --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
 def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
@@ -172,6 +187,20 @@ def computeState = { ->
     return st
 }
 
+// Başsız kipte soru sorulamaz: açık bağımsız değişken gerekir (ör. -a mevcut=degistir).
+def headlessArg = { String key ->
+    def list = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) list = (a as List) } } catch (Throwable ignore) {}
+    def found = null
+    list.each { a -> def s = a?.toString() ?: ''; int i = s.indexOf('='); if (i > 0 && s.substring(0, i).trim() == key) found = s.substring(i + 1).trim().toLowerCase(java.util.Locale.ROOT) }
+    return found
+}
+// Tespit, hedef TCR'nin içindeki mevcut hücre tespitlerinin YERİNİ alır: yalnız bunlar sayılır.
+def redetectCount = { regionAnno ->
+    regionAnno == null ? 0 : regionAnno.getChildObjects().findAll { it.isDetection() }.size()
+}
+String redetectReplacedFmt = workshopText('script.784fe373ea77', 'Önceki %,d hücre değiştirildi.')
+
 // DETECT — TCR içinde StarDist çekirdek tespiti (StarDist yoksa Watershed yedeği).
 //   Dönüş: [ok:true, count:n] | [ok:false, error:…]
 def runStarDist = { regionAnno ->
@@ -180,7 +209,9 @@ def runStarDist = { regionAnno ->
         if (imageData == null) return [ok:false, error:'Görüntü açık değil.']
 
         // Önceki tespitleri temizle (yeniden çalıştırılabilirlik).
+        // Çağıranlar bu noktadan ÖNCE sordu (GUI: redetectConfirm, başsız: mevcut=degistir); buradaki silme onaylı yerine koymadır.
         def oldDet = regionAnno.getChildObjects().findAll { it.isDetection() }
+        int replacedCount = oldDet.size()
         if (!oldDet.isEmpty()) regionAnno.removePathObjects(oldDet)
 
         long t0 = System.currentTimeMillis()
@@ -264,7 +295,7 @@ def runStarDist = { regionAnno ->
         if (viewer != null) javafx.application.Platform.runLater { viewer.repaintEntireImage() }
         QP.fireHierarchyUpdate()
         println String.format(java.util.Locale.US, 'QuANTUM modülü StarDist: %,d çekirdek (%.1f sn)', cells.size(), elapsed)
-        return [ok:true, count:cells.size()]
+        return [ok:true, count:cells.size(), replaced:replacedCount]
     } catch (Throwable t) {
         return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '')]
     }
@@ -358,8 +389,19 @@ if (isHeadless) {
     if (imageData == null || !(sel instanceof PathAnnotationObject)) {
         println 'QuANTUM modülü (headless): bir görüntü ve seçili TCR anotasyonu gerekir.'; return
     }
+    String mevcut = headlessArg('mevcut')
+    if (mevcut != null && mevcut != 'degistir') {
+        println String.format(java.util.Locale.US, workshopText('script.5383f68a2a7d', 'HATA: mevcut yalnız \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), mevcut)
+        return
+    }
+    int redetectPrev = redetectCount(sel)
+    if (redetectPrev > 0 && mevcut != 'degistir') {
+        println String.format(java.util.Locale.US, workshopText('script.2c044d4d8901', 'Seçili TCR anotasyonunda zaten %,d hücre tespiti var. Hiçbir şey yazılmadı. Bu hücreleri değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.'), redetectPrev)
+        return
+    }
     def d = runStarDist(sel)
     if (!d.ok) { println 'QuANTUM modülü (headless) hata: ' + d.error; return }
+    if ((d.replaced ?: 0) > 0) println String.format(java.util.Locale.US, redetectReplacedFmt, d.replaced as int)
     def clf = 'he-tumor-nonneo'
     def names = QP.getProject()?.getObjectClassifiers()?.getNames() ?: []
     if (names.contains(clf)) {
@@ -400,6 +442,19 @@ def navButton = { String text, Closure action, String tooltip = null, String ico
 }
 def busyBar = { ->
     def pb = new javafx.scene.control.ProgressBar(); pb.setProgress(-1.0); pb.setMaxWidth(Double.MAX_VALUE); return pb
+}
+
+// Mevcut hücre varsa tespitten ÖNCE sor (FX iş parçacığında; Hayır → hiçbir şey çalışmaz, hiçbir şey yazılmaz).
+def redetectConfirm = { regionAnno ->
+    int n = redetectCount(regionAnno)
+    if (n == 0) return true
+    String ttl = workshopText('script.c8cded1ce05d', 'Önceki hücre tespitleri değiştirilecek')
+    if (stage != null) stage.setAlwaysOnTop(false)
+    boolean ok = false
+    try { ok = confirmReplaceCells(ttl, String.format(java.util.Locale.US, workshopText('script.e2b40df41cb4', 'Seçili TCR anotasyonunda zaten %,d hücre var. Tespit bu hücrelerin yerini alacak; elle verdiğiniz sınıflar ve düzeltmeler de gider.\n\nDevam edilsin mi?\n\n"Hayır" derseniz hiçbir şey çalıştırılmaz ve hiçbir şey değişmez.'), n)) }
+    finally { if (stage != null) stage.setAlwaysOnTop(true) }
+    if (!ok) Dialogs.showInfoNotification(ttl, workshopText('script.0187c58bc6df', 'İptal edildi — hiçbir şey çalıştırılmadı, hiçbir şey değişmedi.'))
+    return ok
 }
 
 // Arka plan: StarDist tespiti (DETECTING).
@@ -548,6 +603,7 @@ render = { ->
             navButton(workshopText('script.a6ba34fc5c67', 'Tespit et ▶'), {
                 def sel = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getROI()?.isArea() }
                 if (sel.isEmpty()) { Dialogs.showWarningNotification(workshopText('script.e894b6d0ac6e', 'Bölge seçili değil'), workshopText('script.bacd63d7fb6d', 'Önce bir alan (TCR) anotasyonu çizip SEÇİN.')); return }
+                if (!redetectConfirm(sel[0])) return
                 startStarDist(sel[0])
             }, workshopText('script.c08db097c1e1', 'Seçili TCR içinde StarDist çekirdek tespiti')))
     } else if (cur == 'DETECTING') {
@@ -560,6 +616,7 @@ render = { ->
         title.setText(workshopText('script.c7d32438535f', '2/5 — Tümör hücresi örnekleri'))
         bodyLbl.setText(
             ((d?.ok) ? "${workshopText('script.f089332eb95f', 'Tespit edilen çekirdek: ')}${d.count}\n\n" : '') +
+            ((d?.ok && (d.replaced ?: 0) > 0) ? String.format(java.util.Locale.US, redetectReplacedFmt, d.replaced as int) + '\n\n' : '') +
             workshopText('script.9b12e56cc20f', 'Birkaç TİPİK TÜMÖR HÜCRESİ bölgesini küçük anotasyonlarla çizin ve sınıfını tam olarak\n') +
             workshopText('script.58c36a1e98d7', '"Tumor" yapın (Annotations sekmesinde sınıfı seçip "Set selected" ya da sağ tık → Set classification).\n') +
             workshopText('script.7bec4bc81f61', 'Tümör epiteline ait çekirdekleri hedefleyin; lenfosit ve stromadan uzak durun. Bitince İleri.\n\n') +

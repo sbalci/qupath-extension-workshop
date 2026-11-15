@@ -11,6 +11,9 @@
  *     • doku parça (bağlı bileşen) sayısı
  *     • her artefakt sınıfı için alan (mm²) + anotasyon (bölge) sayısı
  *   GrandQC anotasyonu olmayan lamlar atlanır (hata değil).
+ *   Sihirbaz her çalıştırmada yeni bir set ekleyebilir ("GrandQC KK", "GrandQC KK (2)" …): bir lamda
+ *   birden çok set varsa araç ÖNCE SORAR — tüm setler (set başına bir satır) ya da yalnız en yeni set.
+ *   Başsız kipte: -a kopyalar=hepsi | enyeni.
  *
  *   GrandQC sihirbazının lam başına sonuç penceresini KOHORT düzeyine taşır:
  *   "tüm lam setimde kalite nasıldı?" sorusunu tek tabloda yanıtlar. Yerleşik
@@ -160,6 +163,63 @@ def intersectArea = { roiA, roiB, double pw, double ph, boolean cal ->
 def fmtArea = { double v -> Double.isNaN(v) ? '' : String.format(java.util.Locale.US, '%.4f', v) }
 def fmtPct  = { double v -> Double.isNaN(v) ? '' : String.format(java.util.Locale.US, '%.1f', v) }
 
+// ── Kopya grupları: bir lamda aynı sonucun "ad", "ad (2)", "ad (3)" … olarak yan yana durması ──
+// Kural (tam eşleşme, önek eşleşmesi YOK): "X (N)" (N tam sayı ≥ 2) "X" tabanına aittir. Bir grup,
+// o tabanın en az İKİ farklı numarası (taban = 1) aynı lamda varsa kopya grubudur; tek başına bir
+// "X (N)" (X silinmiş) grup değildir. "X (notlarım)" ve "X (1)" kopya değildir. Sondaki " (N)" yalnız
+// aynı tabanın bir kardeşi varsa kopya numarasıdır. Burada taban sabittir ("GrandQC KK"): "GrandQC KK",
+// "GrandQC KK (2)", "GrandQC KK (3)" … ayrı SETLERDİR (aynı adı taşıyan tüm anotasyonlar bir set);
+// en az iki set varsa kopya grubudur. En yeni = en yüksek numara (taban = 1).
+// Başsız kipte soru sorulamaz: açık bağımsız değişken gerekir (ör. -a kopyalar=hepsi).
+def headlessArg = { String key ->
+    def list = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) list = (a as List) } } catch (Throwable ignore) {}
+    def found = null
+    list.each { a -> def s = a?.toString() ?: ''; int i = s.indexOf('='); if (i > 0 && s.substring(0, i).trim() == key) found = s.substring(i + 1).trim().toLowerCase(java.util.Locale.ROOT) }
+    return found
+}
+def copiesParse = { String name ->
+    if (name == null) return null
+    def m = (name =~ '^(.+) \\((\\d{1,6})\\)$')
+    if (!m.matches()) return null
+    int n = Integer.parseInt(m.group(2))
+    return (n >= 2) ? [base: m.group(1), index: n] : null
+}
+def copiesSetsOf = { Collection annos, String base ->
+    def out = new TreeMap()
+    annos.each { a ->
+        String nm = a.getName()
+        if (nm == null) return
+        int idx = 0
+        if (nm == base) idx = 1
+        else { def p = copiesParse(nm); if (p != null && p.base == base) idx = p.index }
+        if (idx > 0) out.get(idx, []) << a
+    }
+    return out
+}
+def copiesPickSets = { List setRows, boolean newest ->
+    if (!newest) return setRows
+    def best = new LinkedHashMap()
+    setRows.each { r -> def cur = best[r.img]; if (cur == null || r.index > cur.index) best[r.img] = r }
+    return new ArrayList(best.values())
+}
+def copiesAskChoice = { String title, String body, List options, String dflt ->
+    if (javafx.application.Platform.isFxApplicationThread()) return Dialogs.showChoiceDialog(title, body, options, dflt)
+    def answer = new java.util.concurrent.atomic.AtomicReference(null)
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    javafx.application.Platform.runLater {
+        try { answer.set(Dialogs.showChoiceDialog(title, body, options, dflt)) } finally { latch.countDown() }
+    }
+    latch.await()
+    return answer.get()
+}
+// Bilinmeyen -a kopyalar=… değeri HER durumda durdurur (kopya olmasa da; fail closed).
+def copiesArg = headlessArg('kopyalar')
+if (copiesArg != null && copiesArg != 'hepsi' && copiesArg != 'enyeni') {
+    println String.format(java.util.Locale.US, workshopText('script.866c3e4341b8', 'DURDU: bilinmeyen kopyalar değeri "%s". Geçerli değerler: hepsi | enyeni. Hiçbir şey yazılmadı.'), copiesArg)
+    return
+}
+
 // ── 1) Ön kontrol: açık proje zorunlu ────────────────────────────────────────
 def project = QP.getProject()
 if (project == null) {
@@ -176,19 +236,52 @@ if (entries == null || entries.isEmpty()) {
     return
 }
 
-// ── 2) Çıktı dizini + sütun düzeni ───────────────────────────────────────────
+// ── 2) Çıktı dizini + sütun düzeni (klasör, soru yanıtlandıktan sonra, yazmadan hemen önce açılır) ──
 def projectDir = null
 try { projectDir = project.getPath()?.getParent()?.toFile() } catch (Throwable ignore) {}
 def outDir = (projectDir != null) ? new File(projectDir, "grandqc-kohort") : new File(System.getProperty("java.io.tmpdir"), "grandqc-kohort")
-outDir.mkdirs()
 long millis = System.currentTimeMillis()
 def tsvFile = new File(outDir, String.format(java.util.Locale.US, "grandqc_kohort_ozet_%d.tsv", millis))
 
 def columns = ["image_name", "doku_mm2", "temiz_doku_mm2", "artefakt_mm2", "artefakt_yuzde", "doku_parca_sayisi"]
 ARTIFACT_CLASSES.each { c -> columns << (c + " · alan_mm2"); columns << (c + " · n") }
 
-// ── 3) Tüm görüntüleri gez: GrandQC sentinel anotasyonlarını topla ───────────
-def rows        = []
+// Bir GrandQC setinin (aynı adı taşıyan anotasyonlar) lam başına özet satırı.
+def buildRow = { String imgName, List sentinels, double pw, double ph, boolean isCal ->
+    def byClass = sentinels.groupBy { it.getPathClass()?.getName() ?: 'Background' }
+    def roisOf  = { String cn -> (byClass[cn] ?: []).collect { it.getROI() } }
+
+    def tissueUnionRoi = unionRoi(roisOf(TISSUE_CLASS))
+    def tissue = areaAndFrags(tissueUnionRoi, pw, ph, isCal)
+    def clean  = areaAndFrags(unionRoi(roisOf(CLEAN_CLASS)), pw, ph, isCal)   // bilgi amaçlı (temiz_doku_mm2)
+    // Artefakt alanı = (tüm artefakt sınıflarının birleşimi) ∩ doku — "Temiz doku"dan bağımsız.
+    def artUnionRoi = unionRoi(ARTIFACT_CLASSES.collectMany { roisOf(it) })
+    double artMm2
+    if (tissueUnionRoi == null || !isCal)      artMm2 = Double.NaN         // doku yok / kalibre değil → boş
+    else if (artUnionRoi == null)              artMm2 = 0.0d               // artefakt anotasyonu yok → 0
+    else                                       artMm2 = intersectArea(artUnionRoi, tissueUnionRoi, pw, ph, isCal)
+    double artPct = (!Double.isNaN(tissue.mm2) && tissue.mm2 > 0 && !Double.isNaN(artMm2)) ? (artMm2 / tissue.mm2 * 100.0d) : Double.NaN
+
+    def row = new java.util.LinkedHashMap<String, String>()
+    row["image_name"]        = imgName
+    row["doku_mm2"]          = fmtArea(tissue.mm2)
+    row["temiz_doku_mm2"]    = fmtArea(clean.mm2)
+    row["artefakt_mm2"]      = fmtArea(artMm2)
+    row["artefakt_yuzde"]    = fmtPct(artPct)
+    row["doku_parca_sayisi"] = String.format(java.util.Locale.US, "%d", tissue.frags)
+    ARTIFACT_CLASSES.each { c ->
+        def rr = roisOf(c)
+        def ar = areaAndFrags(unionRoi(rr), pw, ph, isCal)
+        row[c + " · alan_mm2"] = fmtArea(ar.mm2)
+        row[c + " · n"]        = String.format(java.util.Locale.US, "%d", rr.size())
+    }
+    return row
+}
+
+// ── 3) Tüm görüntüleri gez: GrandQC sentinel anotasyonlarını (her seti) topla ─
+// setRows: set başına [img, name, index, setName, nAnn, row]. Bir lamda "GrandQC KK", "GrandQC KK (2)" …
+// ayrı setlerdir (sihirbaz her çalıştırmada yeni set ekler); eskiden yalnız tam "GrandQC KK" okunuyordu.
+def setRows     = []
 int totalImages = entries.size()
 int skipped     = 0   // GrandQC anotasyonu olmayan
 int failed      = 0   // okunamayan
@@ -200,8 +293,8 @@ entries.eachWithIndex { entry, idx ->
     try {
         imageData = entry.readImageData()
         def hierarchy = imageData.getHierarchy()
-        def sentinels = hierarchy.getAnnotationObjects().findAll { it.getName() == GRANDQC_SENTINEL }
-        if (sentinels.isEmpty()) {
+        def sets = copiesSetsOf(hierarchy.getAnnotationObjects() as List, GRANDQC_SENTINEL)
+        if (sets.isEmpty()) {
             skipped++
             println String.format(java.util.Locale.US, "  [%d/%d] %s — GrandQC anotasyonu yok, atlandı", idx + 1, totalImages, imgName)
             return
@@ -209,36 +302,13 @@ entries.eachWithIndex { entry, idx ->
         def cal = imageData.getServer().getPixelCalibration()
         double pw = cal.getPixelWidthMicrons(); double ph = cal.getPixelHeightMicrons()
         boolean isCal = (pw > 0 && ph > 0 && !Double.isNaN(pw) && !Double.isNaN(ph))
-
-        def byClass = sentinels.groupBy { it.getPathClass()?.getName() ?: 'Background' }
-        def roisOf  = { String cn -> (byClass[cn] ?: []).collect { it.getROI() } }
-
-        def tissueUnionRoi = unionRoi(roisOf(TISSUE_CLASS))
-        def tissue = areaAndFrags(tissueUnionRoi, pw, ph, isCal)
-        def clean  = areaAndFrags(unionRoi(roisOf(CLEAN_CLASS)), pw, ph, isCal)   // bilgi amaçlı (temiz_doku_mm2)
-        // Artefakt alanı = (tüm artefakt sınıflarının birleşimi) ∩ doku — "Temiz doku"dan bağımsız.
-        def artUnionRoi = unionRoi(ARTIFACT_CLASSES.collectMany { roisOf(it) })
-        double artMm2
-        if (tissueUnionRoi == null || !isCal)      artMm2 = Double.NaN         // doku yok / kalibre değil → boş
-        else if (artUnionRoi == null)              artMm2 = 0.0d               // artefakt anotasyonu yok → 0
-        else                                       artMm2 = intersectArea(artUnionRoi, tissueUnionRoi, pw, ph, isCal)
-        double artPct = (!Double.isNaN(tissue.mm2) && tissue.mm2 > 0 && !Double.isNaN(artMm2)) ? (artMm2 / tissue.mm2 * 100.0d) : Double.NaN
-
-        def row = new java.util.LinkedHashMap<String, String>()
-        row["image_name"]        = imgName
-        row["doku_mm2"]          = fmtArea(tissue.mm2)
-        row["temiz_doku_mm2"]    = fmtArea(clean.mm2)
-        row["artefakt_mm2"]      = fmtArea(artMm2)
-        row["artefakt_yuzde"]    = fmtPct(artPct)
-        row["doku_parca_sayisi"] = String.format(java.util.Locale.US, "%d", tissue.frags)
-        ARTIFACT_CLASSES.each { c ->
-            def rr = roisOf(c)
-            def ar = areaAndFrags(unionRoi(rr), pw, ph, isCal)
-            row[c + " · alan_mm2"] = fmtArea(ar.mm2)
-            row[c + " · n"]        = String.format(java.util.Locale.US, "%d", rr.size())
+        def built = []
+        sets.each { setIdx, sentinels ->
+            built << [img: idx, name: imgName, index: setIdx, setName: (setIdx == 1 ? GRANDQC_SENTINEL : (GRANDQC_SENTINEL + " (" + setIdx + ")")),
+                      nAnn: sentinels.size(), row: buildRow(imgName, sentinels as List, pw, ph, isCal)]
         }
-        rows << row
-        println String.format(java.util.Locale.US, "  [%d/%d] %s — %d GrandQC anotasyonu", idx + 1, totalImages, imgName, sentinels.size())
+        setRows.addAll(built)
+        println String.format(java.util.Locale.US, "  [%d/%d] %s — %d GrandQC anotasyonu", idx + 1, totalImages, imgName, sets.values().sum { it.size() })
     } catch (Throwable t) {
         failed++
         println String.format(java.util.Locale.US, "  [%d/%d] %s — HATA: %s", idx + 1, totalImages, imgName, (t.getMessage() ?: t.getClass().getSimpleName()))
@@ -249,7 +319,7 @@ entries.eachWithIndex { entry, idx ->
     }
 }
 
-if (rows.isEmpty()) {
+if (setRows.isEmpty()) {
     def msg = "Hiçbir görüntüde GrandQC anotasyonu (\"" + GRANDQC_SENTINEL + "\") bulunamadı.\n" +
               "Önce GrandQC sihirbazıyla lamları işleyip GeoJSON'u içe aktarın."
     if (isHeadless) { println msg; return }
@@ -257,8 +327,44 @@ if (rows.isEmpty()) {
     return
 }
 
+// ── 3b) Kopya sorusu — TSV yazılmadan ÖNCE. Tek setli lamlarda sorulmaz, çıktı eskisiyle aynıdır. ──
+def copiesByImage = setRows.groupBy { it.img }
+def copiesMulti   = copiesByImage.findAll { k, v -> v.size() >= 2 }
+def copiesLines   = copiesMulti.values().collect { v -> v[0].name + ' · ' + GRANDQC_SENTINEL + ': ' + v.collect { it.index }.join(', ') }
+def copiesChoice  = null     // null: kopya yok | 'all' | 'newest'
+if (!copiesMulti.isEmpty()) {
+    if (isHeadless) {
+        if (copiesArg == null) {
+            println String.format(java.util.Locale.US, workshopText('script.14de14c01439', 'DURDU: %,d görüntüde birden çok GrandQC seti var (ör. %s). Hiçbir şey yazılmadı. Tüm setler için -a kopyalar=hepsi, yalnız en yeni set için -a kopyalar=enyeni ile yeniden çalıştırın.'), copiesMulti.size(), copiesLines.take(5).join('; '))
+            return
+        }
+        copiesChoice = (copiesArg == 'enyeni') ? 'newest' : 'all'
+    } else {
+        String copiesOptAll = workshopText('script.23b429033e74', 'Tüm setler — set başına bir satır (varsayılan)')
+        String copiesOptNewest = workshopText('script.b6232cc62bb8', 'Yalnız en yeni set — lam başına bir satır')
+        def copiesPick = copiesAskChoice(workshopText('script.63ce111d915c', 'Birden çok GrandQC seti var'),
+            String.format(java.util.Locale.US, workshopText('script.21c3ca2ac0c8', '%,d lamda birden çok GrandQC seti var: sihirbaz her çalıştırmada lama yeni bir set ekleyebilir ("GrandQC KK", "GrandQC KK (2)", "GrandQC KK (3)"). Setler farklı sayılar içerebilir; hangisinin güncel olduğuna bu araç karar veremez.\n\nÖrnekler (lam · ad: set numaraları; 1 = numarasız ad):\n%s\n\n"Tüm setler": her set ayrı bir satır olur ve satıra setin adını yazan bir "set_adi" sütunu eklenir.\n\n"Yalnız en yeni set": her lamdan yalnız en yüksek numaralı set özetlenir; "set_adi" sütunu hangi setin kullanıldığını gösterir. Lamdaki hiçbir şey silinmez.\n\nİptal: hiçbir şey yazılmaz.\n\nHangisi yazılsın?'), copiesMulti.size(), copiesLines.take(5).collect { "  • " + it }.join("\n")),
+            [copiesOptAll, copiesOptNewest], copiesOptAll)
+        if (copiesPick == null) {
+            println workshopText('script.c2cdf009e404', 'İptal: hiçbir şey yazılmadı.')
+            return
+        }
+        copiesChoice = (copiesPick == copiesOptNewest) ? 'newest' : 'all'
+    }
+}
+def chosenRows = copiesPickSets(setRows, copiesChoice == 'newest')
+int leftSets = setRows.size() - chosenRows.size()
+int leftAnnotations = (setRows.sum { it.nAnn } as int) - (chosenRows.sum { it.nAnn } as int)
+def rows = chosenRows.collect { it.row }
+if (copiesChoice != null) {
+    columns << "set_adi"
+    chosenRows.each { it.row["set_adi"] = it.setName }
+}
+int imagesSummarized = chosenRows.collect { it.img }.unique().size()
+
 // ── 4) TSV yaz (sekme ayırıcı; eksik hücre = boş string) ────────────────────
 try {
+    outDir.mkdirs()
     tsvFile.withWriter("UTF-8") { w ->
         w.writeLine(columns.join("\t"))
         rows.each { r ->
@@ -276,7 +382,7 @@ def body = new StringBuilder()
 body << "GrandQC KOHORT KALİTE KONTROL ÖZETİ\n"
 body << "═══════════════════════════════════════════\n\n"
 body << String.format(java.util.Locale.US, "Görüntü sayısı        : %,d%n", totalImages)
-body << String.format(java.util.Locale.US, "Özetlenen (GrandQC'li): %,d%n", rows.size())
+body << String.format(java.util.Locale.US, "Özetlenen (GrandQC'li): %,d%n", imagesSummarized)
 body << String.format(java.util.Locale.US, "Atlanan (anotasyon yok): %,d%n", skipped)
 body << String.format(java.util.Locale.US, "Okunamayan            : %,d%n", failed)
 body << "\nTSV dosyası:\n  " + tsvFile.getAbsolutePath() + "\n"
@@ -284,12 +390,24 @@ body << "\nSütunlar: doku/temiz doku/artefakt alanı (mm²) + doku içi artefak
 body << "doku parça sayısı ve her artefakt sınıfı için alan (mm²) + bölge sayısı.\n"
 body << "Alanlar yalnız kalibre görüntülerde doldurulur; kalibre değilse hücre boş.\n"
 body << "Anotasyon üretmez, hiçbir lamı kaydetmez — salt okunur.\n\n"
+if (copiesChoice != null) {
+    body << "🗂 "
+    if (copiesChoice == 'newest') {
+        body << String.format(java.util.Locale.US, workshopText('script.a9f3bcb2d7f3', 'Birden çok set — seçim: yalnız en yeni set\n  %,d lamda birden çok set var. Dışarıda bırakılan: %,d eski set (%,d anotasyon).'), copiesMulti.size(), leftSets, leftAnnotations)
+    } else {
+        body << String.format(java.util.Locale.US, workshopText('script.edd54177c405', 'Birden çok set — seçim: tüm setler\n  %,d lamda birden çok set var; toplam %,d satır yazıldı. Her satırın kendi seti "set_adi" sütununda.'), copiesMulti.size(), chosenRows.size())
+    }
+    body << "\n" + workshopText('script.051b44368449', 'Son sütun "set_adi": satırın hangi GrandQC setinden geldiğini gösterir. Etkilenen lamlar (ad: set numaraları):') + "\n"
+    copiesLines.take(15).each { l -> body << "  • " + l + "\n" }
+    if (copiesLines.size() > 15) body << String.format(java.util.Locale.US, "  … +%,d%n", copiesLines.size() - 15)
+    body << "\n"
+}
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
 showResultWindow("GrandQC Kohort KK Özeti", body.toString())
 println String.format(java.util.Locale.US,
     "✓ TSV yazıldı: %d görüntü özetlendi (%d atlandı, %d hata) → %s",
-    rows.size(), skipped, failed, tsvFile.getAbsolutePath())
+    imagesSummarized, skipped, failed, tsvFile.getAbsolutePath())
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.
 private String workshopText(String key, String fallback) {

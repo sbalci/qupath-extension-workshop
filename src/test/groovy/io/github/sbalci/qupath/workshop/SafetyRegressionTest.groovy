@@ -3552,8 +3552,10 @@ assert nextOwnSetName(h, 'Ki-67 tespit alanı') == 'Ki-67 tespit alanı'
 def MODE_REPLACE = 'replace'
 def SUMMARY_BASE = 'Tümör-Stroma Özet'
 def OUTPUT_TAG = 'Tümör/Stroma ölçüm'
+def SUMMARY_SOURCE_KEY = 'atolye_ozet_kaynak'
 ''' + ownSetCode(TS_WIZARD_FILE) + '\n' +
-            ['isOwnSummaryName', 'prevSummaryObjects', 'isOwnOutputObject', 'prevOutputObjects'].collect { tsWizardClosure(it) }.join('\n') + '\n'
+            ['isOwnSummaryName', 'prevSummaryObjects', 'isOwnOutputObject', 'prevOutputObjects',
+             'summarySource', 'markSummary', 'isToolMadeSummary', 'isReplaceableOutput'].collect { tsWizardClosure(it) }.join('\n') + '\n'
     }
 
     static def tsWizardOutput(String cls, String name, String desc) {
@@ -3617,7 +3619,7 @@ assert nextOwnSetName(h, base) == base + ' (3)'
             def Dialogs = new Expando(
                 showChoiceDialog: { t, b, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
                 showConfirmDialog: { t, b -> calls << 'confirm'; dlg.confirm })
-            def QP = new Expando(getCurrentImageData: { -> new Expando(getHierarchy: { -> h }) })
+            def QP = new Expando(getCurrentImageData: { -> new Expando(getHierarchy: { -> h }) }, getSelectedObjects: { -> [] })
             def r = shell([Dialogs: Dialogs, QP: QP, stage: null, workshopText: { Object... a -> a[0] }]).evaluate(
                 tsWizardPrelude() + tsWizardClosure('askExisting') + '\naskExisting()')
             [r, calls]
@@ -3841,6 +3843,955 @@ def MODE_REPLACE = 'replace'
         assert hb.contains("['ekle', 'degistir'].contains(headlessMevcut)") && hb.contains('return')
         String block = s.substring(ask - 700, ask)
         assert block.contains('headlessMevcut == null') && block.contains('return')
+    }
+
+    // ---- Re-detection safety: detection tools ask before replacing the cells already in the annotation ----
+    static final String REDETECT_CELL = 'hucre-tespiti.groovy'
+    static final String REDETECT_NUC = 'nukleer-boya.groovy'
+    static final String REDETECT_ERPR = 'er-pr-hscore.groovy'
+    static final String REDETECT_CYTO = 'sitoplazmik-boya.groovy'
+
+    // The Run-button handler: from runBtn.setOnAction up to the next button/section.
+    static String redetectRunHandler(String s) {
+        int a = s.indexOf('runBtn.setOnAction({')
+        assert a >= 0 && s.indexOf('runBtn.setOnAction({', a + 1) < 0
+        int b = s.indexOf('recountBtn.setOnAction({', a)
+        if (b < 0) b = s.indexOf('def alwaysTop', a)
+        assert b > a
+        s.substring(a, b)
+    }
+
+    // The question precedes every side effect of the Run button, and Cancel returns before them.
+    static void redetectAssertAsksFirst(String file) {
+        String s = source(file)
+        String h = redetectRunHandler(s)
+        assert h.count('confirmReplaceCells(') == 1
+        int count = h.indexOf('countReplaceable(selNow)')
+        int ask = h.indexOf('confirmReplaceCells(')
+        assert count >= 0 && count < ask
+        int disable = h.indexOf('runBtn.setDisable(true)')
+        int worker = h.indexOf('new Thread({')
+        int detect = h.indexOf('runDetection(')
+        assert disable > ask && worker > ask && detect > ask
+        int cancel = h.indexOf('if (!okReplace) {', ask)
+        assert cancel > ask
+        int ret = h.indexOf('return', cancel)
+        assert ret > cancel && ret < disable && ret < worker && ret < detect
+        // the replaced-cell count reaches the detection call
+        assert h.substring(detect).startsWith('runDetection(') && h.substring(detect, h.indexOf('\n', detect)).contains('nPrev)')
+        // detection plugin is invoked once, inside runDetection, and nowhere before the question
+        assert s.count('QP.runPlugin(') == 1
+        int defAt = s.indexOf('def runDetection = {')
+        assert defAt >= 0 && s.indexOf('QP.runPlugin(') > defAt
+        // no direct deletion API anywhere in the script
+        ['removeObject', 'clearAllObjects', 'clearDetections', 'clearChildObjects', 'deleteObject', 'removeObjects'].each {
+            assert !s.contains(it) : file + ' contains ' + it
+        }
+        // the only way to count replaceable cells counts detections under the target
+        assert s.count('.getChildObjects()') == s.count('.getChildObjects().findAll { it.isDetection() }')
+    }
+
+    // The quick recount only reclassifies existing detections: nothing it calls creates or deletes objects.
+    static void redetectAssertRecountDeletesNothing(String file, List<String> closureNames) {
+        closureNames.each { n ->
+            String c = closure(file, n)
+            ['runPlugin', 'removeObject', 'clearAllObjects', 'clearDetections', 'clearChildObjects', 'addObject', 'deleteObject'].each {
+                assert !c.contains(it) : n + ' contains ' + it
+            }
+        }
+    }
+
+    static void redetectAssertCountsOnlyDetectionsUnderTarget(String file) {
+        def target = ann('target')
+        def other = ann('other', 500)
+        def nested = ann('nested')
+        target.addChildObject(det('A'))
+        target.addChildObject(det(null, 20))
+        target.addChildObject(PathObjects.createCellObject(
+            ROIs.createRectangleROI(30, 30, 6, 6, ImagePlane.getDefaultPlane()),
+            ROIs.createRectangleROI(31, 31, 2, 2, ImagePlane.getDefaultPlane()), null, null))
+        target.addChildObject(nested)            // a child annotation is not a detection
+        nested.addChildObject(det('B', 40))      // its detections are replaced by a run on `nested`, not on `target`
+        other.addChildObject(det('C', 510))
+        def empty = ann('empty')
+        empty.addChildObject(ann('only-annotation'))
+        def count = shell().evaluate('import qupath.lib.objects.PathAnnotationObject\n' + closure(file, 'countReplaceable') + '\ncountReplaceable')
+        assert count(target) == 3
+        assert count(nested) == 1
+        assert count(other) == 1
+        assert count(empty) == 0
+        assert count(null) == 0
+    }
+
+    // Headless: stops (writes nothing) when detections exist unless -a mevcut=degistir; any other value fails closed.
+    static Map redetectRunHeadless(String file, Object annotation, String mevcut) {
+        String s = source(file)
+        int mark = s.indexOf('// Tespit mevcut hücreleri DEĞİŞTİRİR: soru sorulamaz')
+        assert mark >= 0
+        int start = s.lastIndexOf('if (isHeadless) {', mark)
+        int end = s.indexOf('\n}\n', mark) + 3
+        assert start >= 0 && end > mark
+        String block = s.substring(start, end)
+        def calls = []
+        def sw = new StringWriter()
+        def vars = [
+            isHeadless: true, out: new PrintWriter(sw, true),
+            QP: new Expando(getSelectedObject: { annotation }),
+            imageTypeOk: { -> true },
+            resolveTarget: { -> [ok: annotation != null, ann: annotation] },
+            headlessArg: { String k -> mevcut },
+            workshopText: { Object... a -> a[-1] },
+            atolyeText: { String k, String fb -> fb },
+            atolyeD: { String k, double d -> d },
+            DEF1: 0.2d, DEF2: 0.4d, DEF3: 0.6d,
+            runDetection: { Object... a -> calls << a.toList(); [ok: true, text: 'RESULT'] }
+        ]
+        shell(vars).evaluate('import qupath.lib.objects.PathAnnotationObject\n' + closure(file, 'countReplaceable') + '\n' + block)
+        [calls: calls, out: sw.toString()]
+    }
+
+    static void redetectAssertHeadlessFailsClosed(String file) {
+        def withCells = ann('t'); withCells.addChildObject(det('A')); withCells.addChildObject(det(null, 20))
+        def noCells = ann('t2')
+        def r = redetectRunHeadless(file, withCells, null)
+        assert r.calls.isEmpty() && r.out.contains('2') && r.out.contains('mevcut=degistir')
+        r = redetectRunHeadless(file, withCells, 'ekle')
+        assert r.calls.isEmpty() && r.out.contains('ekle')
+        r = redetectRunHeadless(file, withCells, '')
+        assert r.calls.isEmpty()
+        r = redetectRunHeadless(file, withCells, 'degistir')
+        assert r.calls.size() == 1 && r.calls[0].last() == 2 && r.out.contains('RESULT')
+        r = redetectRunHeadless(file, noCells, null)
+        assert r.calls.size() == 1 && r.calls[0].last() == 0
+        r = redetectRunHeadless(file, noCells, 'degistir')
+        assert r.calls.size() == 1 && r.calls[0].last() == 0
+        r = redetectRunHeadless(file, noCells, 'bilinmeyen')
+        assert r.calls.isEmpty()
+        // no target at all: behaves as before (the detection call reports its own error)
+        r = redetectRunHeadless(file, null, null)
+        assert r.calls.size() == 1 && r.calls[0].last() == 0
+    }
+
+    void testRedetectCellAsksBeforeDetection() { redetectAssertAsksFirst(REDETECT_CELL) }
+    void testRedetectCellCountsOnlyDetectionsUnderTarget() { redetectAssertCountsOnlyDetectionsUnderTarget(REDETECT_CELL) }
+    void testRedetectCellHeadlessFailsClosed() { redetectAssertHeadlessFailsClosed(REDETECT_CELL) }
+
+    // Needs the shared redetect* helpers and REDETECT_* constants from test-redetect-hucre-tespiti.groovy
+    void testRedetectNuclearAsksBeforeDetection() { redetectAssertAsksFirst(REDETECT_NUC) }
+    void testRedetectNuclearCountsOnlyDetectionsUnderTarget() { redetectAssertCountsOnlyDetectionsUnderTarget(REDETECT_NUC) }
+    void testRedetectNuclearHeadlessFailsClosed() { redetectAssertHeadlessFailsClosed(REDETECT_NUC) }
+    void testRedetectNuclearRecountDeletesNothing() { redetectAssertRecountDeletesNothing(REDETECT_NUC, ['recount', 'finishWithMetrics', 'metricsAt']) }
+
+    // Needs the shared redetect* helpers and REDETECT_* constants from test-redetect-hucre-tespiti.groovy
+    void testRedetectErPrAsksBeforeDetection() { redetectAssertAsksFirst(REDETECT_ERPR) }
+    void testRedetectErPrCountsOnlyDetectionsUnderTarget() { redetectAssertCountsOnlyDetectionsUnderTarget(REDETECT_ERPR) }
+    void testRedetectErPrHeadlessFailsClosed() { redetectAssertHeadlessFailsClosed(REDETECT_ERPR) }
+    void testRedetectErPrRecountDeletesNothing() { redetectAssertRecountDeletesNothing(REDETECT_ERPR, ['recount', 'finishWithMetrics', 'metricsAt']) }
+
+    // Needs the shared redetect* helpers and REDETECT_* constants from test-redetect-hucre-tespiti.groovy
+    void testRedetectCytoAsksBeforeDetection() { redetectAssertAsksFirst(REDETECT_CYTO) }
+    void testRedetectCytoCountsOnlyDetectionsUnderTarget() { redetectAssertCountsOnlyDetectionsUnderTarget(REDETECT_CYTO) }
+    void testRedetectCytoHeadlessFailsClosed() { redetectAssertHeadlessFailsClosed(REDETECT_CYTO) }
+    void testRedetectCytoRecountDeletesNothing() { redetectAssertRecountDeletesNothing(REDETECT_CYTO, ['recount', 'finishCytoMetrics']) }
+
+
+    static final String REDETECT_QUANTUM_FILE = 'quantum-ctcf.groovy'
+
+    // The cell count is exactly the detections that are children of the target; other annotations' cells,
+    // child annotations and a missing target never count.
+    void testRedetectQuantumCountsOnlyDetectionsUnderTarget() {
+        def h = new PathObjectHierarchy()
+        def target = ann('TCR', 0)
+        def other = ann('Other', 500)
+        h.addObjects([target, other])
+        [det('Tumor', 10), det(null, 20), det('Stroma', 30)].each { target.addChildObject(it) }
+        [det('X', 510), det('Y', 520)].each { other.addChildObject(it) }
+        target.addChildObject(ann('Child annotation', 40))
+        def count = shell([:]).evaluate(closure(REDETECT_QUANTUM_FILE, 'redetectCount') + '\nredetectCount')
+        assert count(target) == 3
+        assert count(other) == 2
+        assert count(ann('Empty', 1000)) == 0
+        assert count(null) == 0
+    }
+
+    void testRedetectQuantumConfirmDecisions() {
+        def h = new PathObjectHierarchy()
+        def target = ann('TCR', 0)
+        def empty = ann('Empty', 500)
+        h.addObjects([target, empty])
+        [det('Tumor', 10), det(null, 20)].each { target.addChildObject(it) }
+        def asked = []; def notes = []
+        def answer = [value: false]
+        def dialogs = new Expando(
+            showConfirmDialog: { String t, String b -> asked << b; answer.value },
+            showInfoNotification: { String t, String b -> notes << b })
+        String code = closure(REDETECT_QUANTUM_FILE, 'redetectCount') + closure(REDETECT_QUANTUM_FILE, 'redetectConfirm') + '\nredetectConfirm'
+        def confirm = shell([Dialogs: dialogs, stage: null, workshopText: { Object... a -> a[0] },
+            confirmReplaceCells: { String t, String b -> asked << b; answer.value }]).evaluate(code)
+        // No detections under the target: no question, run proceeds.
+        assert confirm(empty) == true && asked.isEmpty()
+        // Cancel: false, one question carrying the count, a notice, nothing removed.
+        assert confirm(target) == false
+        assert asked.size() == 1 && asked[0].contains('2') && notes.size() == 1
+        assert target.getChildObjects().findAll { it.isDetection() }.size() == 2
+        answer.value = true
+        assert confirm(target) == true && asked.size() == 2
+    }
+
+    void testRedetectQuantumHeadlessArgParsing() {
+        def parse = { List a -> shell([args: a]).evaluate(closure(REDETECT_QUANTUM_FILE, 'headlessArg') + "\nheadlessArg('mevcut')") }
+        assert parse(['mevcut=Degistir']) == 'degistir'
+        assert parse(['mevcut = ekle']) == 'ekle'
+        assert parse([]) == null
+        assert parse(['x=y']) == null
+    }
+
+    // Source contract: the question precedes the detection; No returns before it; headless stops first;
+    // the only calls of the detection runner are the confirmed GUI start and the checked headless run.
+    void testRedetectQuantumAsksBeforeDetecting() {
+        String s = source(REDETECT_QUANTUM_FILE)
+        assert s.count('runStarDist(') == 2
+        assert s.count('startStarDist(') == 1
+        int ask = s.indexOf('if (!redetectConfirm(sel[0])) return')
+        int start = s.indexOf('startStarDist(sel[0])')
+        assert ask > 0 && ask < start
+        String confirmSrc = closure(REDETECT_QUANTUM_FILE, 'redetectConfirm')
+        assert confirmSrc.indexOf('if (n == 0) return true') > 0
+        assert confirmSrc.indexOf('confirmReplaceCells(') > confirmSrc.indexOf('if (n == 0) return true')
+        assert confirmSrc.contains('return ok')
+        int hl = s.indexOf("redetectPrev > 0 && mevcut != 'degistir'")
+        int hlReturn = s.indexOf('return', hl)
+        int run = s.indexOf('def d = runStarDist(sel)')
+        assert hl > 0 && hl < hlReturn && hlReturn < run
+        int bad = s.indexOf("mevcut != null && mevcut != 'degistir'")
+        assert bad > 0 && bad < hl
+        // The pre-detection removal is only reachable through the two guarded callers.
+        assert s.count('regionAnno.removePathObjects(oldDet)') == 1
+    }
+
+
+    static final String REDETECT_IMMUNE_FILE = 'yardimci-immun-yogunluk.groovy'
+
+    void testRedetectImmuneCountsOnlyDetectionsUnderTargets() {
+        def h = new PathObjectHierarchy()
+        def a = ann('A', 0); def b = ann('B', 500); def c = ann('C', 1000)
+        h.addObjects([a, b, c])
+        [det('Positive', 10), det(null, 20)].each { a.addChildObject(it) }
+        b.addChildObject(det('Negative', 510)); c.addChildObject(det('Z', 1010))
+        def count = shell([:]).evaluate(closure(REDETECT_IMMUNE_FILE, 'redetectCount') + '\nredetectCount')
+        assert count([a]) == 2
+        assert count([a, b]) == 3
+        assert count([c]) == 1
+        assert count([ann('Empty', 2000)]) == 0
+        assert count([]) == 0
+    }
+
+    // Source contract: summary question first (once), then the detection question (once); Cancel returns
+    // before anything is selected or run; headless stops unless mevcut=degistir; the summary is only
+    // changed after both answers.
+    void testRedetectImmuneAsksBeforeDetecting() {
+        String s = source(REDETECT_IMMUNE_FILE)
+        assert s.count('askExisting(imageData') == 1
+        assert s.count('confirmReplaceCells(redetectTitleText') == 1
+        int sum = s.indexOf('runMode = askExisting(imageData.getHierarchy())')
+        int cnt = s.indexOf('int redetectPrev = redetectCount(targets)')
+        int hl = s.indexOf("if (mevcut != 'degistir')", cnt)
+        int hlRet = s.indexOf('return', hl)
+        int ask = s.indexOf('if (!confirmReplaceCells(', cnt)
+        int cancelRet = s.indexOf('return', ask)
+        int select = s.indexOf('QP.selectObjects(targets)')
+        int plugin = s.indexOf('QP.runPlugin(')
+        int apply = s.indexOf('def appliedMode = applyMode(')
+        assert sum > 0 && sum < cnt && cnt < hl && hl < hlRet && hlRet < ask && ask < cancelRet
+        assert cancelRet < select && select < plugin && plugin < apply
+        assert s.count('QP.runPlugin(') == 1
+    }
+
+    void testRedetectImmuneHeadlessFailsClosed() {
+        String s = source(REDETECT_IMMUNE_FILE)
+        int bad = s.indexOf("!['ekle', 'degistir'].contains(mevcut)")
+        int cnt = s.indexOf('int redetectPrev = redetectCount(targets)')
+        assert bad > 0 && bad < cnt
+        String block = s.substring(cnt, s.indexOf('QP.selectObjects(targets)'))
+        assert block.contains("if (mevcut != 'degistir') {")
+        assert block.count('return') == 2   // headless stop + cancel
+    }
+
+
+    static final String REDETECT_STROMALTIL_FILE = 'yardimci-stromal-til.groovy'
+
+    void testRedetectStromalTilCountsOnlyDetectionsUnderStroma() {
+        def h = new PathObjectHierarchy()
+        def s1 = ann('S1', 0); def s2 = ann('S2', 500); def tumor = ann('T', 1000)
+        h.addObjects([s1, s2, tumor])
+        [det('Lenf', 10), det(null, 20)].each { s1.addChildObject(it) }
+        s2.addChildObject(det('X', 510)); tumor.addChildObject(det('Y', 1010))
+        def count = shell([:]).evaluate(closure(REDETECT_STROMALTIL_FILE, 'redetectCount') + '\nredetectCount')
+        assert count([s1]) == 2
+        assert count([s1, s2]) == 3
+        assert count([ann('Empty', 2000)]) == 0
+        assert count([]) == 0
+    }
+
+    void testRedetectStromalTilAsksBeforeDetecting() {
+        String s = source(REDETECT_STROMALTIL_FILE)
+        assert s.count('askExisting(imageData') == 1
+        assert s.count('confirmReplaceCells(redetectTitleText') == 1
+        int sum = s.indexOf('runMode = askExisting(imageData.getHierarchy())')
+        int cnt = s.indexOf('int redetectPrev = redetectCount(stromaAnnotations)')
+        int hl = s.indexOf("if (mevcut != 'degistir')", cnt)
+        int hlRet = s.indexOf('return', hl)
+        int ask = s.indexOf('if (!confirmReplaceCells(', cnt)
+        int cancelRet = s.indexOf('return', ask)
+        int select = s.indexOf('QP.selectObjects(stromaAnnotations)')
+        int plugin = s.indexOf('QP.runPlugin(')
+        int apply = s.indexOf('def appliedMode = applyMode(')
+        assert sum > 0 && sum < cnt && cnt < hl && hl < hlRet && hlRet < ask && ask < cancelRet
+        assert cancelRet < select && select < plugin && plugin < apply
+        assert s.count('QP.runPlugin(') == 1
+    }
+
+    void testRedetectStromalTilHeadlessFailsClosed() {
+        String s = source(REDETECT_STROMALTIL_FILE)
+        int bad = s.indexOf("!['ekle', 'degistir'].contains(mevcut)")
+        int cnt = s.indexOf('int redetectPrev = redetectCount(stromaAnnotations)')
+        assert bad > 0 && bad < cnt
+        String block = s.substring(cnt, s.indexOf('QP.selectObjects(stromaAnnotations)'))
+        assert block.contains("if (mevcut != 'degistir') {")
+        assert block.count('return') == 2
+    }
+
+
+    static final String REDETECT_STARDIST_FILE = 'yardimci-stardist-sihirbaz.groovy'
+
+    void testRedetectStarDistCountsOnlyDetectionsUnderSelected() {
+        def h = new PathObjectHierarchy()
+        def a = ann('A', 0); def b = ann('B', 500)
+        h.addObjects([a, b])
+        [det('Tumor', 10), det(null, 20)].each { a.addChildObject(it) }
+        b.addChildObject(det('Q', 510))
+        def count = shell([:]).evaluate(closure(REDETECT_STARDIST_FILE, 'redetectCount') + '\nredetectCount')
+        assert count(a) == 2
+        assert count(b) == 1
+        assert count(ann('Empty', 1000)) == 0
+        assert count(null) == 0
+    }
+
+    // Source contract: the question is asked on the button handler (before preferences are saved, before the
+    // worker thread starts); No returns before either; the removal of earlier cells exists only in the worker.
+    void testRedetectStarDistAsksBeforeDetecting() {
+        String s = source(REDETECT_STARDIST_FILE)
+        int count = s.indexOf('int redetectPrev = redetectCount(selected)')
+        int ask = s.indexOf('confirmReplaceCells(redetectTitleText', count)
+        int cancel = s.indexOf('if (!redetectOk) {', ask)
+        int cancelRet = s.indexOf('return', cancel)
+        int save = s.indexOf('prefs.put(PREF_MODEL, mp)')
+        int worker = s.indexOf('def worker = new Thread(')
+        int removal = s.indexOf('selected.removePathObjects(oldDetections)')
+        int detect = s.indexOf('.detectObjects(imageData, [selected])')
+        assert count > 0 && count < ask && ask < cancel && cancel < cancelRet
+        assert cancelRet < save && save < worker && worker < removal && removal < detect
+        assert s.count('redetectCount(selected)') == 1
+        assert s.count('.detectObjects(') == 1
+        assert s.count('selected.removePathObjects(oldDetections)') == 1
+    }
+
+
+    static final String REDETECT_INSTANSEG_FILE = 'yardimci-instanseg-sihirbaz.groovy'
+
+    void testRedetectInstanSegCountsOnlyDetectionsUnderSelected() {
+        def h = new PathObjectHierarchy()
+        def a = ann('A', 0); def b = ann('B', 500)
+        h.addObjects([a, b])
+        [det('Tumor', 10), det(null, 20)].each { a.addChildObject(it) }
+        b.addChildObject(det('Q', 510))
+        def count = shell([:]).evaluate(closure(REDETECT_INSTANSEG_FILE, 'redetectCount') + '\nredetectCount')
+        assert count(a) == 2
+        assert count(b) == 1
+        assert count(ann('Empty', 1000)) == 0
+        assert count(null) == 0
+    }
+
+    // Source contract: the question is asked on the button handler (before preferences are saved, before the
+    // worker thread starts); No returns before either; the removal of earlier cells exists only in the worker.
+    void testRedetectInstanSegAsksBeforeDetecting() {
+        String s = source(REDETECT_INSTANSEG_FILE)
+        int count = s.indexOf('int redetectPrev = redetectCount(selected)')
+        int ask = s.indexOf('confirmReplaceCells(redetectTitleText', count)
+        int cancel = s.indexOf('if (!redetectOk) {', ask)
+        int cancelRet = s.indexOf('return', cancel)
+        int save = s.indexOf('saveParams(modelDir, device)')
+        int worker = s.indexOf('def worker = new Thread(')
+        int removal = s.indexOf('selected.removePathObjects(oldDetections)')
+        int detect = s.indexOf('.detectObjects(imageData, [selected])')
+        assert count > 0 && count < ask && ask < cancel && cancel < cancelRet
+        assert cancelRet < save && save < worker && worker < removal && removal < detect
+        assert s.count('redetectCount(selected)') == 1
+        assert s.count('.detectObjects(') == 1
+        assert s.count('selected.removePathObjects(oldDetections)') == 1
+    }
+
+
+    static final String REDETECT_MEMBRANE_FILE = 'membran-boya.groovy'
+
+    void testRedetectMembraneHeadlessArgParsing() {
+        def parse = { List a -> shell([args: a]).evaluate(closure(REDETECT_MEMBRANE_FILE, 'headlessArg') + "\nheadlessArg('mevcut')") }
+        assert parse(['mevcut=DEGISTIR']) == 'degistir'
+        assert parse(['boya=varsayilan']) == null
+        assert parse(['boya=varsayilan', 'mevcut=sil']) == 'sil'
+    }
+
+    // Headless: the cell count reads only the detections under the selected annotation, and the run is
+    // stopped unless -a mevcut=degistir was given; any other mevcut value fails closed first.
+    void testRedetectMembraneHeadlessFailsClosed() {
+        String s = source(REDETECT_MEMBRANE_FILE)
+        int hl = s.indexOf('if (isHeadless) {\n    // Tespit hedef')
+        assert hl > 0
+        int bad = s.indexOf("if (mevcut != null && mevcut != 'degistir') {", hl)
+        int badRet = s.indexOf('return', bad)
+        int cnt = s.indexOf('int redetectPrev = ', badRet)
+        int stop = s.indexOf("if (redetectPrev > 0 && mevcut != 'degistir') {", cnt)
+        int stopRet = s.indexOf('return', stop)
+        int run = s.indexOf('def r = runDetection(', stopRet)
+        assert bad > hl && badRet > bad && cnt > badRet && stop > cnt && stopRet > stop && run > stopRet
+        int eol = s.indexOf('\n', cnt)
+        String expr = s.substring(s.indexOf('= ', cnt) + 2, eol)
+        def h = new PathObjectHierarchy()
+        def a = ann('A', 0); def other = ann('B', 500)
+        h.addObjects([a, other])
+        [det('Tumor', 10), det(null, 20)].each { a.addChildObject(it) }
+        other.addChildObject(det('Z', 510))
+        def n = { sel -> shell([QP: new Expando(getSelectedObject: { sel })]).evaluate('import qupath.lib.objects.PathAnnotationObject\n' + expr) }
+        assert n(a) == 2 && n(other) == 1 && n(null) == 0 && n(det('x')) == 0
+        // The GUI path already asks (existing behaviour); the headless path is the only one without a dialog.
+        assert s.count('runDetection(m1, m2, m3, pd1, pd2, pd3, ph, false)') == 1
+    }
+
+
+    static final String REDETECT_CELLPOSE_FILE = 'yardimci-cellpose-sihirbaz.groovy'
+
+    void testRedetectCellposeHeadlessArgParsing() {
+        def parse = { List a -> shell([args: a]).evaluate(closure(REDETECT_CELLPOSE_FILE, 'headlessArg') + "\nheadlessArg('mevcut')") }
+        assert parse(['mevcut=Degistir']) == 'degistir'
+        assert parse([]) == null
+        assert parse(['mevcut=ekle']) == 'ekle'
+    }
+
+    void testRedetectCellposeHeadlessFailsClosed() {
+        String s = source(REDETECT_CELLPOSE_FILE)
+        int hl = s.indexOf('if (isHeadless) {\n    // Tespit hedef')
+        assert hl > 0
+        int bad = s.indexOf("if (mevcut != null && mevcut != 'degistir') {", hl)
+        int badRet = s.indexOf('return', bad)
+        int cnt = s.indexOf('int redetectPrev = ', badRet)
+        int stop = s.indexOf("if (redetectPrev > 0 && mevcut != 'degistir') {", cnt)
+        int stopRet = s.indexOf('return', stop)
+        int run = s.indexOf('def r = runDetection(', stopRet)
+        assert bad > hl && badRet > bad && cnt > badRet && stop > cnt && stopRet > stop && run > stopRet
+        int eol = s.indexOf('\n', cnt)
+        String expr = s.substring(s.indexOf('= ', cnt) + 2, eol)
+        def h = new PathObjectHierarchy()
+        def a = ann('A', 0); def b = ann('B', 500); def c = ann('C', 1000)
+        h.addObjects([a, b, c])
+        [det('Tumor', 10), det(null, 20)].each { a.addChildObject(it) }
+        b.addChildObject(det('Z', 510))
+        def n = { List sel -> shell([QP: new Expando(getSelectedObjects: { sel })]).evaluate(expr) }
+        assert n([a]) == 2
+        assert n([a, b]) == 3
+        assert n([c]) == 0
+        assert n([]) == 0
+        // The GUI start still asks first (existing behaviour).
+        int gui = s.indexOf('boolean ok = confirmReplaceCells(')
+        int guiRun = s.indexOf('def res = runDetection(fam')
+        assert gui > 0 && gui < guiRun
+    }
+
+    // ===== (b) EXISTING tests of tumor-stroma.groovy that fail after this change =====
+    // None. (Checked by running all five testTumorStromaArea* methods against the new script: all pass.)
+    // New tests below.
+
+    // ---- tumor-stroma.groovy: a user's region is never deleted by Replace ----
+
+    // Evaluates the real Replace-bookkeeping source lines of the script against a hierarchy.
+    //   candidate: previously reused summary selected for in-place re-measure (or null)
+    //   summaryObj: the annotation that carries the new measurement
+    static Map tsAreaRunReplace(PathObjectHierarchy h, def candidate, def summaryObj) {
+        String s = source(TS_AREA_FILE)
+        int a = s.indexOf('def removableSummaries =')
+        int b = s.indexOf("String existingMode = MODE_ADD", a)
+        String sel = s.substring(a, b)
+        int r0 = s.indexOf('int removedSummaries = 0')
+        int r1 = s.indexOf('\n}\n', s.indexOf('if (replaceRun) {', r0)) + 3
+        String rem = s.substring(r0, r1)
+        def QP = new Expando(removeObjects: { list, keep -> h.removeObjects(list, keep) })
+        def sh = shell([QP: QP, h: h, candidate: candidate, summary: summaryObj, replaceRun: true,
+            prevSummaries: h.getAnnotationObjects().findAll { it.getName() != null && (it.getName() == 'TSR Özet' || it.getName().startsWith('Tümör-Stroma Özet')) && !it.getName().contains('düzeltmelerim') },
+            ])
+        String pre = tsAreaPrelude() + ['summarySource', 'markSummary', 'isToolMadeSummary'].collect { tsAreaClosure(it) }.join('\n') + '\n'
+        sh.evaluate("def SUMMARY_SOURCE_KEY = 'atolye_ozet_kaynak'\n" + pre + 'def prevInRegion = ownClassRegionsUnder(summary)\n' + sel + '\n' + rem +
+            '\n[removedSummaries: removedSummaries, removedRegions: removedRegions]')
+    }
+
+    static def tsAreaScene() {
+        def tag = ' — Tümör/Stroma modülü (m)'
+        def user = ann('Tümör-Stroma Özet'); user.getMetadata().put('atolye_ozet_kaynak', 'kullanici')
+        def userRegion = tsAreaClassRegion('Tumor', 'Tumor', 'Tumor' + tag)
+        def userInner = det('Tumor')
+        user.addChildObjects([userRegion, userInner])
+        def tool = ann('Tümör-Stroma Özet (2)', 300); tool.getMetadata().put('atolye_ozet_kaynak', 'arac')
+        def toolRegion = tsAreaClassRegion('Stroma', 'Stroma', 'Stroma' + tag)
+        def toolInner = det('Stroma', 320)
+        tool.addChildObjects([toolRegion, toolInner])
+        def legacy = ann('TSR Özet', 600)                                // no marker: possibly a user's region
+        def legacyRegion = tsAreaClassRegion('Tumor', 'Tumor', 'Tumor' + tag)
+        legacy.addChildObjects([legacyRegion])
+        def h = new PathObjectHierarchy()
+        h.addObjects([user, tool, legacy])
+        [h: h, user: user, userRegion: userRegion, userInner: userInner, tool: tool, toolRegion: toolRegion,
+         toolInner: toolInner, legacy: legacy, legacyRegion: legacyRegion]
+    }
+
+    void testTumorStromaAreaKeepsUserRegionMarkersDistinguishUserFromTool() {
+        def sc = tsAreaScene()
+        def got = shell([a: sc.user, b: sc.tool, c: sc.legacy]).evaluate("def SUMMARY_SOURCE_KEY = 'atolye_ozet_kaynak'\n" +
+            ['summarySource', 'markSummary', 'isToolMadeSummary'].collect { tsAreaClosure(it) }.join('\n') +
+            "\n[isToolMadeSummary(a), isToolMadeSummary(b), isToolMadeSummary(c), summarySource(c)]")
+        assert got == [false, true, false, null]
+        String s = source(TS_AREA_FILE)
+        assert s.contains("markSummary(summary, 'kullanici')") && s.contains("markSummary(summary, 'arac')")
+        assert s.indexOf("markSummary(summary, 'kullanici')") > s.indexOf('if (candidate == null) {')
+    }
+
+    // Replace with a previously reused user region selected: it is re-measured in place (stays), its own earlier class
+    // regions go, the tool-made summary and its regions go, objects inside are kept, the unmarked legacy summary stays.
+    void testTumorStromaAreaKeepsUserRegionReusedAndReMeasuredInPlace() {
+        def sc = tsAreaScene()
+        def r = tsAreaRunReplace(sc.h, sc.user, sc.user)
+        def left = sc.h.getAnnotationObjects()
+        assert left.contains(sc.user)                                   // user's region/summary is never deleted
+        assert left.contains(sc.legacy)                                 // unmarked summary kept
+        assert !left.contains(sc.tool)                                  // positively tool-made: removed
+        assert !left.contains(sc.userRegion) && !left.contains(sc.toolRegion)   // exact-tag own class regions removed
+        assert left.contains(sc.legacyRegion)                           // belongs to a kept summary
+        assert sc.h.getDetectionObjects().containsAll([sc.userInner, sc.toolInner])   // objects inside are kept
+        assert r.removedSummaries == 1 && r.removedRegions == 2
+        assert !left.isEmpty() && left.count { it.getName() == 'Tümör-Stroma Özet' } == 1
+    }
+
+    // Replace on a different region (the new summary is another annotation): earlier user/unmarked summaries stay.
+    void testTumorStromaAreaKeepsUserRegionWhenAnotherRegionIsMeasured() {
+        def sc = tsAreaScene()
+        def fresh = ann('Yeni bölge', 900)
+        sc.h.addObjects([fresh])
+        def r = tsAreaRunReplace(sc.h, null, fresh)
+        def left = sc.h.getAnnotationObjects()
+        assert left.containsAll([sc.user, sc.legacy, fresh, sc.userRegion, sc.legacyRegion])
+        assert !left.contains(sc.tool) && !left.contains(sc.toolRegion)
+        assert r.removedSummaries == 1 && r.removedRegions == 1
+    }
+
+    // Only unmarked summaries on the slide (all made before the marker existed): Replace deletes none of them.
+    void testTumorStromaAreaKeepsUserRegionUnmarkedLegacySummary() {
+        def legacy = ann('Tümör-Stroma Özet')
+        def lr = tsAreaClassRegion('Tumor', 'Tumor', 'Tumor — Tümör/Stroma modülü (m)')
+        legacy.addChildObjects([lr])
+        def h = new PathObjectHierarchy()
+        h.addObjects([legacy])
+        def r = tsAreaRunReplace(h, legacy, legacy)                      // in-place: its own class regions are replaced
+        assert h.getAnnotationObjects().contains(legacy) && r.removedSummaries == 0 && r.removedRegions == 1
+        def legacy2 = ann('TSR Özet', 400)
+        h.addObjects([legacy2])
+        def fresh = ann('Yeni', 700); h.addObjects([fresh])
+        def r2 = tsAreaRunReplace(h, null, fresh)
+        assert h.getAnnotationObjects().containsAll([legacy, legacy2, fresh]) && r2.removedSummaries == 0
+    }
+
+    // Source contract: Replace deletes only marked tool-made summaries; the question counts only what can be deleted.
+    void testTumorStromaAreaKeepsUserRegionSourceContract() {
+        String s = source(TS_AREA_FILE)
+        assert s.contains('def oldSummaries = removableSummaries.findAll { it != summary }')
+        assert s.contains('def removableSummaries = prevSummaries.findAll { it != candidate && isToolMadeSummary(it) }')
+        assert s.contains('existingMode = askExisting(prevSummaries.size(), replaceRegions.size())')
+        assert !s.contains('prevSummaries.findAll { it != summary }')
+        assert s.contains('if (!reuse && candidate == null) scopeRegions.each { sp ->')   // no overwrite of an earlier summary on Add
+        assert s.contains('summary.getMeasurementList().clear()')
+    }
+
+    // ===== (b) EXISTING tests of sihirbaz.groovy that fail after this change =====
+    // 1) testTumorStromaWizardAskExistingDecisions fails with MissingMethodException (QP.getSelectedObjects stub and the new
+    //    closures are missing). Patch two places:
+    //    (i) in tsWizardPrelude(): replace
+    //            ['isOwnSummaryName', 'prevSummaryObjects', 'isOwnOutputObject', 'prevOutputObjects'].collect { tsWizardClosure(it) }.join('\n') + '\n'
+    //        with
+    //            ['isOwnSummaryName', 'prevSummaryObjects', 'isOwnOutputObject', 'prevOutputObjects',
+    //             'summarySource', 'markSummary', 'isToolMadeSummary', 'isReplaceableOutput'].collect { tsWizardClosure(it) }.join('\n') + '\n'
+    //        and add the line   def SUMMARY_SOURCE_KEY = 'atolye_ozet_kaynak'   right after   def OUTPUT_TAG = 'Tümör/Stroma ölçüm'   in the same prelude string.
+    //    (ii) in that test replace
+    //            def QP = new Expando(getCurrentImageData: { -> new Expando(getHierarchy: { -> h }) })
+    //        with
+    //            def QP = new Expando(getCurrentImageData: { -> new Expando(getHierarchy: { -> h }) }, getSelectedObjects: { -> [] })
+    // 2) All other testTumorStromaWizard* methods pass unchanged (verified by running them).
+    // New tests below.
+
+    // ---- sihirbaz.groovy: a user's region is never deleted by Replace ----
+
+    // Evaluates the real Replace-bookkeeping source of runMeasure against a hierarchy.
+    static Map tsWizardRunReplace(PathObjectHierarchy h, def summaryObj) {
+        String s = source(TS_WIZARD_FILE)
+        int a = s.indexOf('int removedSummaries = 0')
+        int b = s.indexOf('\n        }\n', s.indexOf('if (replaceRun) {', a)) + '\n        }\n'.length()
+        String rem = s.substring(a, b)
+        def QP = new Expando(removeObjects: { list, keep -> h.removeObjects(list, keep) })
+        def sh = shell([QP: QP, summary: summaryObj, replaceRun: true,
+            prevSummaries: h.getAnnotationObjects().findAll { it.getName() == 'TSR Özet' || it.getName()?.startsWith('Tümör-Stroma Özet') },
+            prevOutputs: (h.getAnnotationObjects() + h.getDetectionObjects()).findAll { it.getName() != null && it.getPathClass() != null && it.getName() == it.getPathClass().getName() && it.isAnnotation() }])
+        sh.evaluate(tsWizardPrelude() + '\n' + rem + '\n[removedSummaries: removedSummaries, removedOutputs: removedOutputs]')
+    }
+
+    static def tsWizardScene() {
+        def tag = 'Tümör/Stroma ölçüm — '
+        def user = ann('Tümör-Stroma Özet'); user.getMetadata().put('atolye_ozet_kaynak', 'kullanici')
+        def userOut = tsWizardOutput('Tumor', 'Tumor', tag + 'Tumor (m)')
+        def userInner = det('Tumor')
+        user.addChildObjects([userOut, userInner])
+        def tool = ann('Tümör-Stroma Özet (2)', 300); tool.getMetadata().put('atolye_ozet_kaynak', 'arac')
+        def toolOut = tsWizardOutput('Stroma', 'Stroma', tag + 'Stroma (m)')
+        def toolInner = det('Stroma', 320)
+        tool.addChildObjects([toolOut, toolInner])
+        def legacy = ann('TSR Özet', 600)                                // unmarked: possibly a user's region
+        def legacyOut = tsWizardOutput('Tumor', 'Tumor', tag + 'Tumor (m)')
+        legacy.addChildObjects([legacyOut])
+        def top = tsWizardOutput('Stroma', 'Stroma', tag + 'Stroma (m)') // summary-less earlier result at top level
+        def h = new PathObjectHierarchy()
+        h.addObjects([user, tool, legacy, top])
+        [h: h, user: user, userOut: userOut, userInner: userInner, tool: tool, toolOut: toolOut, toolInner: toolInner,
+         legacy: legacy, legacyOut: legacyOut, top: top]
+    }
+
+    void testTumorStromaWizardKeepsUserRegionMarkersDistinguishUserFromTool() {
+        def sc = tsWizardScene()
+        def got = shell([a: sc.user, b: sc.tool, c: sc.legacy]).evaluate(tsWizardPrelude() +
+            "\n[isToolMadeSummary(a), isToolMadeSummary(b), isToolMadeSummary(c), summarySource(c)]")
+        assert got == [false, true, false, null]
+        // replaceable outputs: top-level, under a tool-made summary, or under the annotation being re-measured
+        def r = shell([o1: sc.userOut, o2: sc.toolOut, o3: sc.legacyOut, o4: sc.top, t: sc.user]).evaluate(tsWizardPrelude() +
+            "\n[isReplaceableOutput(o1, t), isReplaceableOutput(o2, t), isReplaceableOutput(o3, t), isReplaceableOutput(o4, t), isReplaceableOutput(o1, null)]")
+        assert r == [true, true, false, true, false]
+        String s = source(TS_WIZARD_FILE)
+        assert s.contains("markSummary(summary, 'kullanici')") && s.contains("markSummary(summary, 'arac')")
+    }
+
+    // Replace with a previously reused user region selected: re-measured in place, never deleted; the tool-made summary and
+    // the replaceable earlier class regions go; objects inside are kept; the unmarked legacy summary and its regions stay.
+    void testTumorStromaWizardKeepsUserRegionReusedAndReMeasuredInPlace() {
+        def sc = tsWizardScene()
+        def r = tsWizardRunReplace(sc.h, sc.user)
+        def left = sc.h.getAnnotationObjects()
+        assert left.containsAll([sc.user, sc.legacy, sc.legacyOut])
+        assert !left.contains(sc.tool)
+        assert !left.contains(sc.userOut) && !left.contains(sc.toolOut) && !left.contains(sc.top)
+        assert sc.h.getDetectionObjects().containsAll([sc.userInner, sc.toolInner])
+        assert r.removedSummaries == 1 && r.removedOutputs == 3
+        assert left.count { it.getName() == 'Tümör-Stroma Özet' } == 1
+    }
+
+    // Replace when the new summary is a different annotation: earlier user/unmarked summaries and their regions stay.
+    void testTumorStromaWizardKeepsUserRegionWhenAnotherSummaryIsWritten() {
+        def sc = tsWizardScene()
+        def fresh = ann('Yeni özet', 900)
+        sc.h.addObjects([fresh])
+        def r = tsWizardRunReplace(sc.h, fresh)
+        def left = sc.h.getAnnotationObjects()
+        assert left.containsAll([sc.user, sc.userOut, sc.legacy, sc.legacyOut, fresh])
+        assert !left.contains(sc.tool) && !left.contains(sc.toolOut) && !left.contains(sc.top)
+        assert r.removedSummaries == 1 && r.removedOutputs == 2
+    }
+
+    // Only unmarked summaries (all made before the marker existed): Replace deletes none of them.
+    void testTumorStromaWizardKeepsUserRegionUnmarkedLegacySummary() {
+        def legacy = ann('Tümör-Stroma Özet')
+        def lo = tsWizardOutput('Tumor', 'Tumor', 'Tümör/Stroma ölçüm — Tumor (m)')
+        legacy.addChildObjects([lo])
+        def other = ann('TSR Özet', 400)
+        def fresh = ann('Yeni', 700)
+        def h = new PathObjectHierarchy()
+        h.addObjects([legacy, other, fresh])
+        def r = tsWizardRunReplace(h, fresh)
+        assert h.getAnnotationObjects().containsAll([legacy, other, fresh, lo]) && r.removedSummaries == 0 && r.removedOutputs == 0
+        def r2 = tsWizardRunReplace(h, legacy)                           // in place: only its own regions are replaced
+        assert h.getAnnotationObjects().contains(legacy) && !h.getAnnotationObjects().contains(lo) && r2.removedSummaries == 0 && r2.removedOutputs == 1
+    }
+
+    // Source contract.
+    void testTumorStromaWizardKeepsUserRegionSourceContract() {
+        String s = source(TS_WIZARD_FILE)
+        assert s.contains('def oldSummaries = prevSummaries.findAll { it != summary && isToolMadeSummary(it) }')
+        assert s.contains('def oldOutputs = prevOutputs.findAll { it != summary && isReplaceableOutput(it, summary) }')
+        assert !s.contains('prevSummaries.findAll { it != summary }')
+    }
+
+    static final String COPIES_EXPORT_FILE = 'veri-aktarma.groovy'
+
+    static String copiesExportCode() {
+        'import qupath.lib.objects.PathObjects\n' +
+        ['headlessArg', 'copiesParse', 'copiesGroups', 'copiesOlder', 'copiesAncestorHit', 'copiesReportLines', 'copiesScanHierarchy']
+            .collect { closure(COPIES_EXPORT_FILE, it) }.join('\n')
+    }
+
+    static def copiesExportRun(List names, String tail) {
+        shell([anns: names.collect { ann(it) }]).evaluate(copiesExportCode() + '\n' + tail)
+    }
+
+    void testCopiesExportGroupRule() {
+        def r = copiesExportRun(['X', 'X (2)', 'X (3)', 'XY (2)', 'Y (2)', 'Z', 'Z (notlarım)', 'Z (1)',
+                'TIA bölge tespiti · Mitotic figure (12)', 'Merkez 1 (1/3)'], '''
+def g = copiesGroups(anns, { it.getName() })
+def r = [groups: g.keySet() as List, idx: g['X'].keySet() as List, older: copiesOlder(g).collect { it.getName() }.sort()]
+r
+''')
+        assert r.groups == ['X']          // exact match: XY (2), Y (2), Z (1), Z (notlarım) are not copies of anything
+        assert r.idx == [1, 2, 3]
+        assert r.older == ['X', 'X (2)']   // newest = highest number
+    }
+
+    void testCopiesExportPointCountNamesAreNotCopiesWithoutSibling() {
+        def r = copiesExportRun(['TIA bölge tespiti · Mitotic figure (12)', 'B (4)'], '''
+def g = copiesGroups(anns, { it.getName() })
+g.keySet() as List
+''')
+        assert r == []                     // a point count alone, or a base-less single "B (4)", asks nothing
+        def two = copiesExportRun(['TIA bölge tespiti · Mitotic figure (12)', 'TIA bölge tespiti · Mitotic figure (12) (2)'], '''
+def g = copiesGroups(anns, { it.getName() })
+def r = [keys: g.keySet() as List, idx: g.values().first().keySet() as List, older: copiesOlder(g).collect { it.getName() }]
+r
+''')
+        assert two.keys == ['TIA bölge tespiti · Mitotic figure (12)']
+        assert two.idx == [1, 2]
+        assert two.older == ['TIA bölge tespiti · Mitotic figure (12)']
+        def center = copiesExportRun(['Merkez 1 (1/3)', 'Merkez 1 (1/3) (2)'], '''
+copiesGroups(anns, { it.getName() }).keySet() as List
+''')
+        assert center == ['Merkez 1 (1/3)']
+    }
+
+    void testCopiesExportDocumentedLimitTwoNumberedNamesWithoutBase() {
+        def r = copiesExportRun(['A (12)', 'A (3)'], '''
+def g = copiesGroups(anns, { it.getName() })
+def r = [keys: g.keySet() as List, idx: g['A'].keySet() as List, older: copiesOlder(g).collect { it.getName() }]
+r
+''')
+        assert r.keys == ['A']             // limit: a name alone cannot tell a point count from a copy number
+        assert r.idx == [3, 12]
+        assert r.older == ['A (3)']
+    }
+
+    void testCopiesExportNewestExcludesOlderCopyAndObjectsInsideIt() {
+        def h = new PathObjectHierarchy()
+        def old = ann('Özet'), newest = ann('Özet (2)', 300)
+        def nested = PathObjects.createAnnotationObject(ROIs.createRectangleROI(20, 20, 10, 10, ImagePlane.getDefaultPlane()))
+        nested.setName('İç')
+        def dOld = det('c', 50), dNew = det('c', 310), dFree = det('c', 1000)
+        h.insertPathObjects([old, newest, nested, dOld, dNew, dFree])   // inserted by ROI containment: nested + detections get parents
+        assert nested.getParent().is(old) && dOld.getParent().is(old) && dNew.getParent().is(newest)
+        def sc = shell([h: h]).evaluate(copiesExportCode() + '\ncopiesScanHierarchy(h)')
+        assert sc.ids == [old.getID()] as Set
+        assert sc.leftAnn == 2             // the older copy and the annotation inside it
+        assert sc.leftDet == 1             // only the detection inside the older copy
+        def hit = shell([ids: sc.ids, objs: [old, nested, dOld, newest, dNew, dFree]]).evaluate(
+            copiesExportCode() + '\nobjs.collect { copiesAncestorHit(it, ids) }')
+        assert hit == [true, true, true, false, false, false]
+    }
+
+    void testCopiesExportWithoutCopyGroupAsksNothing() {
+        def h = new PathObjectHierarchy()
+        h.addObjects([ann('A'), ann('B', 300), ann('B (notlarım)', 600)])
+        assert shell([h: h]).evaluate(copiesExportCode() + '\ncopiesScanHierarchy(h)') == null
+    }
+
+    void testCopiesExportReportLinesAndHeadlessArgument() {
+        def sc = [name: 'S1', scan: [groups: [X: new TreeMap([1: [], 2: [], 3: []])]]]
+        def lines = shell([res: [k: sc]]).evaluate(copiesExportCode() + '\n[copiesReportLines(res, false), copiesReportLines(res, true)]')
+        assert lines[0] == ['S1 · X: 1, 2, 3']
+        assert lines[1] == ['S1 · X: 1, 2, 3 → 3']
+        def arg = { List a -> shell([args: a]).evaluate(copiesExportCode() + "\nheadlessArg('kopyalar')") }
+        assert arg(['kopyalar=ENYENI']) == 'enyeni'
+        assert arg(['x=1', ' kopyalar = hepsi ']) == 'hepsi'
+        assert arg([]) == null
+        assert arg(['kopyalar']) == null
+    }
+
+    void testCopiesExportQuestionBeforeAnyWriteAndFailClosed() {
+        String s = source(COPIES_EXPORT_FILE)
+        assert !s.contains('.getChildObjects()')
+        int bad = s.indexOf("copiesArg != 'hepsi' && copiesArg != 'enyeni'")
+        int opts = s.indexOf('def opt = showExportOptions(defaults)')
+        assert bad > 0 && bad < opts       // unknown value stops even when no copies exist
+        assert s.substring(bad, bad + 260).contains('return')
+        int ask = s.indexOf("copiesAskChoice(workshopText('script.2a83adf213c8'")
+        int cancel = s.indexOf('if (copiesPick == null)')
+        int stop = s.indexOf("workshopText('script.49a1c50ae61c'")
+        int save = s.indexOf('currentEntry.saveImageData(')
+        int mk = s.indexOf('outDir.mkdirs()')
+        int exp = s.indexOf('exportMeasurements(')
+        assert ask > 0 && stop > 0 && ask < cancel
+        assert s.substring(cancel, cancel + 260).contains('return')   // Cancel returns before anything is written
+        assert s.substring(stop, s.indexOf('\n', stop) + 120).contains('return')       // headless without the argument stops
+        assert cancel < save && cancel < mk && mk < exp && stop < mk
+        assert s.indexOf('Dialogs.showChoiceDialog(title, body, options, dflt)') > 0
+        assert s.indexOf('[copiesOptAll, copiesOptNewest], copiesOptAll)') > ask
+    }
+
+    void testCopiesExportNewestFilterWiringAndSidecar() {
+        String s = source(COPIES_EXPORT_FILE)
+        assert s.count('.filter(copiesPredicate(') >= 4          // detections + annotations, per image and combined
+        assert s.contains('(opt.det as boolean) && !copiesCombinedSkip')
+        assert s.contains('(opt.ann as boolean) && !copiesCombinedSkip')
+        assert s.contains('".kopyalar.txt"')
+        // data columns and file format untouched: no copy information is written into measurement files
+        assert !s.contains('includeOnlyColumns(copies')
+        assert s.indexOf('if (exIds != null) annos = annos.findAll') > 0   // GeoJSON follows the same rule
+    }
+
+    static final String COPIES_COHORT_FILE = 'yardimci-kohort-ozet-topla.groovy'
+
+    static String copiesCohortCode() {
+        ['headlessArg', 'copiesParse', 'copiesGroups', 'copiesOlder', 'copiesBuildRows']
+            .collect { closure(COPIES_COHORT_FILE, it) }.join('\n')
+    }
+
+    static def copiesCohortRecs() {
+        // S1: older locked "Özet" and newest locked "Özet (2)"; S2: a single "Özet" with no copy
+        [[name: 'S1', affected: [Özet: new TreeMap([1: [], 2: []])], items: [
+            [base: 'Özet', older: true, cells: [a: '1', b: '5']],
+            [base: 'Özet (2)', older: false, cells: [a: '2']]]],
+         [name: 'S2', affected: [:], items: [[base: 'Özet', older: false, cells: [a: '7']]]]]
+    }
+
+    void testCopiesCohortAllKeepsEveryCopyLabelled() {
+        def b = shell([recs: copiesCohortRecs()]).evaluate(copiesCohortCode() + "\ncopiesBuildRows(recs, 'all')")
+        assert b.columnOrder as List == ['Özet · a', 'Özet · b', 'Özet (2) · a']
+        assert b.rows[0]['Özet · a'] == '1' && b.rows[0]['Özet (2) · a'] == '2'
+        assert b.rows[0]['kopya_bilgisi'] == 'Özet: 1,2'
+        assert b.rows[1]['kopya_bilgisi'] == ''
+        assert b.leftAnnotations == 0 && b.leftColumns.isEmpty()
+    }
+
+    void testCopiesCohortNewestDropsOlderAndCountsColumns() {
+        def b = shell([recs: copiesCohortRecs()]).evaluate(copiesCohortCode() + "\ncopiesBuildRows(recs, 'newest')")
+        assert b.columnOrder as List == ['Özet (2) · a', 'Özet · a']   // 'Özet · a' still comes from S2
+        assert b.rows[0]['Özet · a'] == null
+        assert b.rows[0]['Özet (2) · a'] == '2'
+        assert b.rows[0]['kopya_bilgisi'] == 'Özet: 1,2 -> 2'
+        assert b.leftAnnotations == 1
+        assert b.leftColumns as List == ['Özet · b']                    // only columns that vanish from the table
+    }
+
+    void testCopiesCohortNoCopyBehaviourUnchanged() {
+        def recs = [[name: 'S1', affected: [:], items: [
+            [base: 'Özet', older: false, cells: [a: '1']], [base: 'Özet', older: false, cells: [a: '2']]]]]
+        def b = shell([recs: recs]).evaluate(copiesCohortCode() + "\ncopiesBuildRows(recs, null)")
+        assert b.columnOrder as List == ['Özet · a', 'Özet (2) · a']    // same-name ordinal columns, as before
+        assert !b.rows[0].containsKey('kopya_bilgisi')
+        assert b.duplicateImages as List == ['S1']
+    }
+
+    void testCopiesCohortOrdinalColumnNeverCollidesWithARealCopy() {
+        def recs = [[name: 'S1', affected: [Özet: new TreeMap([1: [], 2: []])], items: [
+            [base: 'Özet', older: false, cells: [a: '1']], [base: 'Özet', older: false, cells: [a: '2']],
+            [base: 'Özet (2)', older: false, cells: [a: '3']]]]]
+        def b = shell([recs: recs]).evaluate(copiesCohortCode() + "\ncopiesBuildRows(recs, 'all')")
+        assert b.rows[0]['Özet (2) · a'] == '3'
+        assert b.rows[0]['Özet [2] · a'] == '2'
+    }
+
+    void testCopiesCohortGroupDetectionAndHeadlessArgument() {
+        def anns = ['Özet', 'Özet (2)', 'Özet (notlarım)', 'Özet (1)', 'Başka (2)'].collect { ann(it) }
+        def r = shell([anns: anns]).evaluate(copiesCohortCode() + '''
+def g = copiesGroups(anns, { it.getName() })
+[g.keySet() as List, copiesOlder(g).collect { it.getName() }]
+''')
+        assert r[0] == ['Özet'] && r[1] == ['Özet']
+        def arg = { List a -> shell([args: a]).evaluate(copiesCohortCode() + "\nheadlessArg('kopyalar')") }
+        assert arg(['kopyalar=Enyeni']) == 'enyeni'
+        assert arg([]) == null
+    }
+
+    void testCopiesCohortQuestionBeforeWriteAndFailClosed() {
+        String s = source(COPIES_COHORT_FILE)
+        assert !s.contains('.getChildObjects()')
+        int bad = s.indexOf("copiesArg != 'hepsi' && copiesArg != 'enyeni'")
+        assert bad > 0 && bad < s.indexOf('def project = QP.getProject()')
+        assert s.substring(bad, bad + 260).contains('return')
+        int ask = s.indexOf("copiesAskChoice(workshopText('script.08096a5c93b4'")
+        int cancel = s.indexOf('if (copiesPick == null)')
+        int stop = s.indexOf("workshopText('script.81b5fc1eeb8b'")
+        int mk = s.indexOf('outDir.mkdirs()')
+        int write = s.indexOf('tsvFile.withWriter(')
+        assert ask > 0 && ask < cancel && cancel < mk && mk < write && stop < mk
+        assert s.substring(cancel, cancel + 260).contains('return')
+        assert s.substring(stop, s.indexOf('\n', stop) + 120).contains('return')
+        assert s.contains('ix.values().flatten().any { it.isLocked() }')   // only groups with a locked member are asked about
+        assert s.contains('if (copiesChoice != null) colList << "kopya_bilgisi"')
+    }
+
+    static final String COPIES_GQC_FILE = 'yardimci-grandqc-kohort-ozet.groovy'
+
+    static String copiesGrandQcCode() {
+        ['headlessArg', 'copiesParse', 'copiesSetsOf', 'copiesPickSets']
+            .collect { closure(COPIES_GQC_FILE, it) }.join('\n')
+    }
+
+    void testCopiesGrandQcSetsSeeNumberedSetsOnly() {
+        def anns = ['GrandQC KK', 'GrandQC KK', 'GrandQC KK (2)', 'GrandQC KK (3)', 'GrandQC KK (notlarım)',
+                    'GrandQC KK (1)', 'GrandQC KK extra', 'Başka (2)', 'GrandQC KK (2) (2)'].collect { ann(it) }
+        def r = shell([anns: anns]).evaluate(copiesGrandQcCode() + '''
+def s = copiesSetsOf(anns, 'GrandQC KK')
+[s.keySet() as List, s.values().collect { it.size() }]
+''')
+        assert r[0] == [1, 2, 3]
+        assert r[1] == [2, 1, 1]            // two same-named annotations are ONE set (index 1)
+        def lone = shell([anns: [ann('GrandQC KK (4)')]]).evaluate(copiesGrandQcCode() + "\ncopiesSetsOf(anns, 'GrandQC KK').keySet() as List")
+        assert lone == [4]                   // base deleted by hand: the only set, summarised, no question
+        assert shell([anns: [ann('Başka')]]).evaluate(copiesGrandQcCode() + "\ncopiesSetsOf(anns, 'GrandQC KK').isEmpty()")
+    }
+
+    void testCopiesGrandQcPickNewestPerImage() {
+        def rows = [[img: 0, index: 1, setName: 'GrandQC KK'], [img: 0, index: 3, setName: 'GrandQC KK (3)'],
+                    [img: 0, index: 2, setName: 'GrandQC KK (2)'], [img: 1, index: 1, setName: 'GrandQC KK'],
+                    [img: 2, index: 2, setName: 'GrandQC KK (2)']]
+        def all = shell([rows: rows]).evaluate(copiesGrandQcCode() + '\ncopiesPickSets(rows, false)')
+        assert all == rows                   // all copies: one row per set, nothing dropped
+        def newest = shell([rows: rows]).evaluate(copiesGrandQcCode() + '\ncopiesPickSets(rows, true)')
+        assert newest.collect { it.setName } == ['GrandQC KK (3)', 'GrandQC KK', 'GrandQC KK (2)']
+        assert newest.collect { it.img } == [0, 1, 2]    // one row per image, image order kept
+    }
+
+    void testCopiesGrandQcHeadlessArgument() {
+        def arg = { List a -> shell([args: a]).evaluate(copiesGrandQcCode() + "\nheadlessArg('kopyalar')") }
+        assert arg(['kopyalar=HEPSI']) == 'hepsi'
+        assert arg(['kopyalar=bilinmeyen']) == 'bilinmeyen'   // the script rejects it, see source contract
+        assert arg([]) == null
+    }
+
+    void testCopiesGrandQcQuestionBeforeWriteAndColumnsUnchanged() {
+        String s = source(COPIES_GQC_FILE)
+        assert !s.contains('.getChildObjects()')
+        int bad = s.indexOf("copiesArg != 'hepsi' && copiesArg != 'enyeni'")
+        assert bad > 0 && bad < s.indexOf('def project = QP.getProject()')
+        assert s.substring(bad, bad + 260).contains('return')
+        int ask = s.indexOf("copiesAskChoice(workshopText('script.63ce111d915c'")
+        int cancel = s.indexOf('if (copiesPick == null)')
+        int stop = s.indexOf("workshopText('script.14de14c01439'")
+        int mk = s.indexOf('outDir.mkdirs()')
+        int write = s.indexOf('tsvFile.withWriter(')
+        assert ask > 0 && ask < cancel && cancel < mk && mk < write && stop < mk
+        assert s.substring(cancel, cancel + 260).contains('return')
+        assert s.substring(stop, s.indexOf('\n', stop) + 120).contains('return')
+        // existing columns/order untouched; the set column exists only when copies were found
+        assert s.contains('def columns = ["image_name", "doku_mm2", "temiz_doku_mm2", "artefakt_mm2", "artefakt_yuzde", "doku_parca_sayisi"]')
+        int setCol = s.indexOf('columns << "set_adi"')
+        assert setCol > 0 && s.lastIndexOf('if (copiesChoice != null) {', setCol) > s.indexOf('def chosenRows')
+        assert !s.contains('it.getName() == GRANDQC_SENTINEL')   // no more exact-name-only read
     }
 
     // Source-order contract only: interactive dialog/cancellation acceptance remains manual.

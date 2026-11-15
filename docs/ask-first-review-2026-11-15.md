@@ -48,6 +48,10 @@ The preservation check itself is unchanged.
 | `tumor-ici-ki67.groovy` | Re-run removed the earlier summary with its detections; the second path removed all detections under the selected region. | Asks before the work. Add: new summary `(2)`, or (second path) detection in a new copy of the region so the original and its detections stay. Replace removes after the new run succeeded and restores if the new run finds nothing. | `testTumorKi67…` (4) |
 | `tumor-stroma.groovy`, `sihirbaz.groovy` | Removed old summaries with everything inside, earlier own regions, and generated objects. The wizard's sweep called `getDescription()` on detections, which do not have it. | Ask before measuring. Replace removes only own summaries and tagged class regions (exact tag) and keeps what is inside. This run's intermediate objects are removed by reference, never by name. | `testTumorStromaArea…` (5), `testTumorStromaWizard…` (5) |
 | `hucre-tespiti.groovy`; `nukleer-boya`, `er-pr-hscore`, `membran-boya`, `sitoplazmik-boya` | Changed the image type (and with it the stain vectors) with only a log line when no stain was named Hematoxylin. | Say what will change and ask. "No" changes nothing and explains what to set by hand. Headless needs `-a tip=he` or `-a boya=varsayilan`. | `testModulesAskBeforeChangingImageTypeOrStains` |
+| `hucre-tespiti`, `nukleer-boya`, `er-pr-hscore`, `sitoplazmik-boya`, `quantum-ctcf`, `yardimci-immun-yogunluk`, `yardimci-stromal-til`, `yardimci-stardist-sihirbaz`, `yardimci-instanseg-sihirbaz` | Running detection replaced the cells already inside the target annotation without a question. | When the target already holds cells the tool asks, with "keep, do not run" preselected. A choice dialog is used because a yes/no dialog makes Yes the Enter-key default. Headless stops unless `-a mevcut=degistir`. "Yeniden say (hızlı)" deletes nothing and needs no question. | `testRedetect…` (33 methods) |
+| `membran-boya`, `yardimci-cellpose-sihirbaz` | The GUI asked yes/no; headless replaced silently. | Same keep-by-default choice as the others; headless stops unless `-a mevcut=degistir`. | `testRedetectMembrane…`, `testRedetectCellpose…` |
+| `tumor-stroma.groovy`, `sihirbaz.groovy` (follow-up) | Replace removed the earlier summary, which could be a region the user drew (the tool renames a single selected region to the summary). | Summaries carry the metadata key `atolye_ozet_kaynak` (`arac` or `kullanici`). Only a summary marked `arac` can be deleted. A user region, and any unmarked summary from an older version, is re-measured in place. | `testTumorStromaAreaKeepsUserRegion…`, `testTumorStromaWizardKeepsUserRegion…` |
+| `veri-aktarma`, `yardimci-kohort-ozet-topla`, `yardimci-grandqc-kohort-ozet` | Exports included every copy of a result without saying so; the GrandQC cohort summary read only the first set. | When an image holds copies (`X` and `X (2)`) the tool asks: all copies, or only the newest of each kind. Both choices are reported; "all copies" labels them. Headless needs `kopyalar=hepsi` or `kopyalar=enyeni`. No copies: no question, output unchanged. | `testCopiesExport…`, `testCopiesCohort…`, `testCopiesGrandQc…` (18 methods) |
 
 ## Not covered by automated tests
 
@@ -84,10 +88,17 @@ says so.
 - Measurements a helper writes onto the user's own objects (per-cell distances,
   per-annotation counts) are still rewritten by a new run; after Add the result
   text says they describe the new run.
-- `yardimci-immun-yogunluk` and `yardimci-stromal-til` run QuPath's cell
-  detection on the selected annotations, which replaces the cells already in
-  them. This is not yet behind a question (follow-up: every script that runs
-  cell detection).
+- The re-detect question counts the cells that are direct children of the target
+  annotation; cells nested under an inner annotation are not counted.
+- A trailing ` (N)` is read as a copy number only when another member of the same
+  base name is on the same image. `A (12)` and `A (3)` without `A` are both read
+  as copies of `A`; a name alone cannot tell a point count from a copy number.
+- Other exporters still include copies without saying so:
+  `yardimci-anotasyon-disa-aktar`, `yardimci-karo-disa-aktarma`,
+  `yardimci-kohort-boya-qc`, `yardimci-kosu-manifesti`, `yardimci-wsinfer-ozet`,
+  `yardimci-tma-cekirdek-aktarim`, `yardimci-omezarr-disa-aktarma`.
+- The StarDist wizard's optional classifier filter still removes the
+  false-positive class after detection without a separate question.
 - In `tumor-ici-ki67` (second path) the detections under a region carry no
   marker, so Replace removes whatever detections are there; the confirmation
   says so.

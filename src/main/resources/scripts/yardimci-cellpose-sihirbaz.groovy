@@ -41,6 +41,21 @@ import qupath.lib.scripting.QP
 
 def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
+// Hücreleri değiştirme sorusu: varsayılan seçim "dokunma"dır — Enter/Tamam hiçbir şeyi değiştirmez.
+// (Evet/Hayır penceresinde Enter "Evet" anlamına gelir; bu yüzden seçim penceresi kullanılır.)
+def confirmReplaceCells = { String title, String body ->
+    String keepOpt = workshopText('script.665d4074c4fe', 'Mevcut hücrelere dokunma — tespiti çalıştırma (varsayılan)')
+    String replaceOpt = workshopText('script.6b4af35c53fe', 'Mevcut hücreleri değiştir — tespiti çalıştır')
+    def ask = { -> qupath.fx.dialogs.Dialogs.showChoiceDialog(title, body, [keepOpt, replaceOpt], keepOpt) }
+    if (javafx.application.Platform.isFxApplicationThread()) return ask() == replaceOpt
+    def picked = new java.util.concurrent.atomic.AtomicReference(null)
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    javafx.application.Platform.runLater {
+        try { picked.set(ask()) } finally { latch.countDown() }
+    }
+    latch.await()
+    return picked.get() == replaceOpt
+}
 
 // ── Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ──
 def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
@@ -238,14 +253,35 @@ def runDetection = { String family, String model, String channelMode,
     return [ok:true, text:sb.toString()]
 }
 
+// Başsız kipte soru sorulamaz: açık bağımsız değişken gerekir (ör. -a mevcut=degistir).
+def headlessArg = { String key ->
+    def list = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) list = (a as List) } } catch (Throwable ignore) {}
+    def found = null
+    list.each { a -> def s = a?.toString() ?: ''; int i = s.indexOf('='); if (i > 0 && s.substring(0, i).trim() == key) found = s.substring(i + 1).trim().toLowerCase(java.util.Locale.ROOT) }
+    return found
+}
+
 // ── Headless: seçili bölgede atölye varsayılanlarıyla tek sefer çalıştır + yazdır ──
 if (isHeadless) {
+    // Tespit hedef anotasyondaki mevcut hücrelerin YERİNİ alır; başsız kipte soru sorulamaz → açık mevcut=degistir gerekir.
+    String mevcut = headlessArg('mevcut')
+    if (mevcut != null && mevcut != 'degistir') {
+        println String.format(java.util.Locale.US, workshopText('script.5383f68a2a7d', 'HATA: mevcut yalnız \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), mevcut)
+        return
+    }
+    int redetectPrev = QP.getSelectedObjects().findAll { it.isAnnotation() }.collect { ann -> ann.getChildObjects().findAll { it.isDetection() }.size() }.sum(0) as int
+    if (redetectPrev > 0 && mevcut != 'degistir') {
+        println String.format(java.util.Locale.US, workshopText('script.24b91d6d005b', 'Seçili anotasyon(lar)da zaten %,d hücre tespiti var. Hiçbir şey yazılmadı. Bu hücreleri değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.'), redetectPrev)
+        return
+    }
     def r = runDetection(
         cfg.family, cfg.model, cfg.channelMode,
         parseIntOr(cfg.diameter, 25), parseDoubleOr(cfg.pixelSize, 0.5),
         parseDoubleOr(cfg.flow, 0.4), parseDoubleOr(cfg.cellprob, 0.0), parseDoubleOr(cfg.cellExpansion, 5.0),
         false, 0.15, 0.40, 0.70, cfg.compartment, 1, 2)   // cytoCh, nucCh — eksikken MissingMethodException
     println r.ok ? r.text : ("Hata: " + r.error)
+    if (redetectPrev > 0 && r.ok) println String.format(java.util.Locale.US, workshopText('script.784fe373ea77', 'Önceki %,d hücre değiştirildi.'), redetectPrev)
     return
 }
 
@@ -441,7 +477,7 @@ javafx.application.Platform.runLater {
             def selNow = QP.getSelectedObjects().findAll { it.isAnnotation() }
             int nPrev = selNow.collect { ann -> ann.getChildObjects().findAll { it.isDetection() }.size() }.sum(0) as int
             if (nPrev > 0) {
-                boolean ok = Dialogs.showConfirmDialog(workshopText('script.c8cded1ce05d', 'Önceki hücre tespitleri değiştirilecek'),
+                boolean ok = confirmReplaceCells(workshopText('script.c8cded1ce05d', 'Önceki hücre tespitleri değiştirilecek'),
                     String.format(java.util.Locale.US,
                         workshopText('script.5c13361d1b11', 'Seçili anotasyon(lar)da zaten %,d hücre tespiti bulunuyor.\n' +
                         'Yeniden çalıştırma bu anotasyonlardaki mevcut tespitleri yeni Cellpose çıktısıyla değiştirecek.\n\nDevam edilsin mi?'), nPrev))

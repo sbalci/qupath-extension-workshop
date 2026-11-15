@@ -55,6 +55,21 @@ import org.bytedeco.opencv.opencv_core.Mat
 import groovy.transform.CompileStatic
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
+// Hücreleri değiştirme sorusu: varsayılan seçim "dokunma"dır — Enter/Tamam hiçbir şeyi değiştirmez.
+// (Evet/Hayır penceresinde Enter "Evet" anlamına gelir; bu yüzden seçim penceresi kullanılır.)
+def confirmReplaceCells = { String title, String body ->
+    String keepOpt = workshopText('script.665d4074c4fe', 'Mevcut hücrelere dokunma — tespiti çalıştırma (varsayılan)')
+    String replaceOpt = workshopText('script.6b4af35c53fe', 'Mevcut hücreleri değiştir — tespiti çalıştır')
+    def ask = { -> qupath.fx.dialogs.Dialogs.showChoiceDialog(title, body, [keepOpt, replaceOpt], keepOpt) }
+    if (javafx.application.Platform.isFxApplicationThread()) return ask() == replaceOpt
+    def picked = new java.util.concurrent.atomic.AtomicReference(null)
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    javafx.application.Platform.runLater {
+        try { picked.set(ask()) } finally { latch.countDown() }
+    }
+    latch.await()
+    return picked.get() == replaceOpt
+}
 
 // --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
 def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
@@ -569,6 +584,17 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
 
 // Headless: tek sefer atölye varsayılanlarıyla çalıştır + yazdır.
 if (isHeadless) {
+    // Tespit hedef anotasyondaki mevcut hücrelerin YERİNİ alır; başsız kipte soru sorulamaz → açık mevcut=degistir gerekir.
+    String mevcut = headlessArg('mevcut')
+    if (mevcut != null && mevcut != 'degistir') {
+        println String.format(java.util.Locale.US, workshopText('script.5383f68a2a7d', 'HATA: mevcut yalnız \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), mevcut)
+        return
+    }
+    int redetectPrev = ((QP.getSelectedObject() instanceof PathAnnotationObject) ? QP.getSelectedObject().getChildObjects().findAll { it.isDetection() }.size() : 0)
+    if (redetectPrev > 0 && mevcut != 'degistir') {
+        println String.format(java.util.Locale.US, workshopText('script.60b4a54b41fb', 'Seçili anotasyonda zaten %,d hücre tespiti var. Hiçbir şey yazılmadı. Bu hücreleri değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.'), redetectPrev)
+        return
+    }
     def r = runDetection(
         atolyeD('atolye.membrane1', 0.15),
         atolyeD('atolye.membrane2', 0.40),
@@ -579,6 +605,7 @@ if (isHeadless) {
         atolyeD('atolye.pixHmask',  0.05)
     )
     println r.ok ? r.text : ("Hata: " + r.error)
+    if (redetectPrev > 0 && r.ok) println String.format(java.util.Locale.US, workshopText('script.784fe373ea77', 'Önceki %,d hücre değiştirildi.'), redetectPrev)
     return
 }
 
@@ -697,7 +724,7 @@ javafx.application.Platform.runLater {
             if (selNow instanceof PathAnnotationObject) {
                 int nPrev = selNow.getChildObjects().findAll { it.isDetection() }.size()
                 if (nPrev > 0) {
-                    boolean ok = Dialogs.showConfirmDialog(workshopText('script.c8cded1ce05d', 'Önceki hücre tespitleri değiştirilecek'),
+                    boolean ok = confirmReplaceCells(workshopText('script.c8cded1ce05d', 'Önceki hücre tespitleri değiştirilecek'),
                         String.format(java.util.Locale.US,
                             workshopText('script.6bdf43ba0bd6', 'Seçili anotasyonda zaten %,d hücre tespiti bulunuyor.\n' +
                             'Yalnız DAB eşiklerini değiştirmek istiyorsanız "İptal" deyip "Eşikleri yeniden uygula" düğmesini kullanın.\n\n' +

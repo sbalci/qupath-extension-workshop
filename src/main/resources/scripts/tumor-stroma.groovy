@@ -379,18 +379,32 @@ def isOwnClassRegion = { obj ->
 def ownClassRegionsUnder = { parentObj ->
     return (parentObj.getChildObjectsAsArray() as List).findAll { isOwnClassRegion(it) }
 }
+// Özet kaynağı işareti (meta veri `atolye_ozet_kaynak`): 'arac' = bu betiğin kendi oluşturduğu özet;
+// 'kullanici' = kullanıcının çizdiği tek bölge, özet olarak yeniden kullanıldığında ADI DEĞİŞTİRİLEN anotasyon.
+// İşaretsiz (bu değişiklikten önceki) özet kullanıcının bölgesi olabilir → ASLA silinmez, yerinde yeniden ölçülür.
+// Silme yalnız açıkça 'arac' işaretli özet için serbesttir.
+def SUMMARY_SOURCE_KEY = 'atolye_ozet_kaynak'
+def summarySource = { obj ->
+    try { return obj.getMetadata()?.get(SUMMARY_SOURCE_KEY) } catch (Throwable ignore) { return null }
+}
+def markSummary = { obj, String value ->
+    try { obj.getMetadata().put(SUMMARY_SOURCE_KEY, value) } catch (Throwable ignore) {}
+}
+def isToolMadeSummary = { obj ->
+    return summarySource(obj) == 'arac'
+}
 // Önceki sonuç için kullanıcıya SOR (işlemden ÖNCE çağrılır; betik iş parçacığında, yukarıdaki
 // Dialogs çağrıları gibi doğrudan). Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey çalışmaz/yazılmaz).
 def askExisting = { int nSummaries, int nRegions ->
     String optAdd = workshopText('script.1e749978a0e7', 'Ekle — öncekine dokunma, yeni bir özet olarak ekle (varsayılan)')
-    String optRep = workshopText('script.e29f8475f5a3', 'Değiştir — önceki özet ve bu modülün sınıf bölgeleri silinir')
+    String optRep = workshopText('script.320920522b08', 'Değiştir — önceki sınıf bölgeleri silinir; özet bölgeniz korunur ve aynı anotasyonda yeniden ölçülür')
     def pick = Dialogs.showChoiceDialog(workshopText('script.a43bd962f751', 'Önceki Tümör/Stroma sonucu'),
-        String.format(java.util.Locale.US, workshopText('script.ccef6d1d978e', 'Bu lamda zaten %,d Tümör-Stroma özeti ile %,d sınıf bölgesi (Tumor / Stroma) var.\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir özet olur ("Tümör-Stroma Özet (2)" gibi) ve kendi sınıf bölgelerini taşır. Lamda iki sonuç birlikte durur; seçili bölgelere yazılan ölçümler yeni çalıştırmayı gösterir.\n\n"Değiştir" seçilirse önceki özet anotasyonları ve bu modülün ürettiği sınıf bölgeleri silinir — sınıf bölgelerinde elle yaptığınız düzeltmeler de gider. Özetlerin ya da bölgelerin içindeki başka nesneler (hücre tespitleri, kendi anotasyonlarınız) silinmez.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki Tümör/Stroma sonucu ne olsun?'), nSummaries, nRegions),
+        String.format(java.util.Locale.US, workshopText('script.c30e648eac1e', 'Bu lamda zaten %,d Tümör-Stroma özeti var; Değiştir seçilirse silinebilecek sınıf bölgesi sayısı: %,d.\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir özet olur ("Tümör-Stroma Özet (2)" gibi) ve kendi sınıf bölgelerini taşır. Önceki özetler değişmeden kalır.\n\n"Değiştir" seçilirse bu modülün ürettiği önceki Tumor/Stroma sınıf bölgeleri silinir — onlarda elle yaptığınız düzeltmeler de gider. Özet olarak kullanılan bölgeniz ASLA silinmez: çizgisi, adı ve sınıfı korunur, yalnızca ölçümleri aynı anotasyonda yeniden hesaplanır. Yalnızca aracın kendi oluşturduğu eski özet anotasyonları silinir; bu araçla işaretlenmemiş (eski sürümden kalma) özetler olduğu gibi kalır. İçlerindeki diğer nesneler (hücre tespitleri, kendi anotasyonlarınız) silinmez.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki Tümör/Stroma sonucu ne olsun?'), nSummaries, nRegions),
         [optAdd, optRep], optAdd)
     if (pick == null) return null
     if (pick == optRep) {
-        boolean ok = Dialogs.showConfirmDialog(workshopText('script.307a95e3f6e5', 'Önceki Tümör/Stroma sonucu silinecek'),
-            String.format(java.util.Locale.US, workshopText('script.35922e90191c', '%,d özet anotasyonu ile %,d sınıf bölgesi silinecek. Tek bir bölge seçildiğinde bu modül o anotasyonun adını özet olarak değiştirir; önceki bir çalıştırmada sizin çizdiğiniz bir bölge böyle bir özete dönüşmüş olabilir — o durumda bölgenin çizgisi de silinir. Bu adı elle verdiğiniz bir anotasyon da, betiğin kendi özetinden ayırt edilemediği için silinir. Sınıf bölgelerinde elle yaptığınız düzeltmeler KAYBOLUR. Bunların içindeki diğer nesneler korunur.\n\nDevam edilsin mi?'), nSummaries, nRegions))
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.2c478add6c37', 'Önceki sınıf bölgeleri silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.f7a62bf61fe4', 'Bu lamda %,d Tümör-Stroma özeti var; %,d sınıf bölgesi silinecek. Sınıf bölgelerinde elle yaptığınız düzeltmeler KAYBOLUR. Özet olarak kullanılan bölgeniz silinmez: yerinde yeniden ölçülür. Yalnızca aracın kendi oluşturduğu eski özet anotasyonları silinir; sizin çizdiğiniz ya da işaretlenmemiş özetler korunur. İçlerindeki diğer nesneler de korunur.\n\nDevam edilsin mi?'), nSummaries, nRegions))
         return ok ? MODE_REPLACE : null
     }
     return MODE_ADD
@@ -402,6 +416,7 @@ def server = imageData.getServer()
 def scopeRoi
 def analysisObjects = []
 def scopeRegions = []
+def candidate = null   // yerinde yeniden ölçülecek önceki özet (tek seçili, bu betiğin özeti)
 // Kapsam dışı: özet anotasyonu, Tumor/Stroma (çıktı/eğitim sınıfları) ve
 // 'Ignore*' (boş cam/artefakt — ölçümden çıkarılacak alanlar).
 def isOwnOutput = { obj ->
@@ -415,8 +430,16 @@ if (wholeSlide) {
 } else {
     // Öncelik: patoloğun açıkça SEÇTİĞİ anotasyon(lar) — sınıf fark etmez.
     // Seçim yoksa QuPath varsayılan `Region` sınıfı anotasyonlarına düşülür.
-    scopeRegions = QP.getSelectedObjects().findAll {
-        it.isAnnotation() && it.getROI()?.isArea() && !isOwnOutput(it)
+    // Tek SEÇİLİ alan bu betiğin önceki özetiyse (ör. daha önce yeniden kullanılan kullanıcı bölgesi), o anotasyon
+    // YERİNDE yeniden ölçülür (candidate); aksi halde yukarıdaki kural.
+    def selAreas = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getROI()?.isArea() }
+    if (selAreas.size() == 1 && isOwnSummaryName(selAreas[0].getName())) {
+        candidate = selAreas[0]
+        scopeRegions = [candidate]
+    } else {
+        scopeRegions = QP.getSelectedObjects().findAll {
+            it.isAnnotation() && it.getROI()?.isArea() && !isOwnOutput(it)
+        }
     }
     if (scopeRegions.isEmpty()) {
         scopeRegions = annotations.findAll {
@@ -497,6 +520,12 @@ def prevSummaries = prevSummaryObjects(hier)
 def prevInRegion = reuse ? ownClassRegionsUnder(scopeRegions[0]) : []
 def prevRegions = (prevSummaries.collectMany { ownClassRegionsUnder(it) } + prevInRegion).unique()
 boolean hasPrev = !prevSummaries.isEmpty() || !prevInRegion.isEmpty()
+// Değiştir'in silebileceği: YALNIZ 'arac' işaretli (bu betiğin kendi oluşturduğu) özetler ve onların sınıf bölgeleri,
+// artı yerinde yeniden ölçülen özetin/bölgenin altındaki bu modülün sınıf bölgeleri. İşaretsiz ya da 'kullanici'
+// işaretli özet ASLA silinmez; yerinde yeniden ölçülmüyorsa olduğu gibi kalır.
+def removableSummaries = prevSummaries.findAll { it != candidate && isToolMadeSummary(it) }
+def keptSummaries = prevSummaries.findAll { it != candidate && !isToolMadeSummary(it) }
+def replaceRegions = (removableSummaries.collectMany { ownClassRegionsUnder(it) } + prevInRegion).unique()
 String existingMode = MODE_ADD
 if (hasPrev) {
     if (isHeadless) {
@@ -505,7 +534,7 @@ if (hasPrev) {
         }
         existingMode = (headlessMevcut == 'degistir') ? MODE_REPLACE : MODE_ADD
     } else {
-        existingMode = askExisting(prevSummaries.size(), prevRegions.size())
+        existingMode = askExisting(prevSummaries.size(), replaceRegions.size())
         if (existingMode == null) return
     }
 }
@@ -513,16 +542,23 @@ boolean addRun = hasPrev && existingMode == MODE_ADD
 boolean replaceRun = hasPrev && existingMode == MODE_REPLACE
 // Ekle: kullanıcının bölgesi yeniden adlandırılmaz/ölçümleri silinmez; yeni, ayrı bir özet kurulur.
 if (addRun) reuse = false
-String summaryName = addRun ? nextOwnSetName(hier, SUMMARY_BASE) : SUMMARY_BASE
+// Değiştir + yerinde yeniden ölçüm yok + silinmeyen önceki özet var: ad çakışmasın diye sıradaki ad.
+String summaryName = (addRun || (replaceRun && candidate == null && !keptSummaries.isEmpty())) ? nextOwnSetName(hier, SUMMARY_BASE) : SUMMARY_BASE
 def summary
 if (reuse) {
     summary = scopeRegions[0]
-    summary.setName(summaryName); summary.setPathClass(null)
-    // Önceki alt-bölgeler (varsa) "Değiştir" seçildiyse aşağıda kaldırılır; burada yalnız ölçümleri sıfırla.
+    if (candidate == null) {
+        // Kullanıcının kendi bölgesi özet olarak yeniden kullanılıyor: işaretle ('kullanici') → sonraki Değiştir silmez.
+        summary.setName(summaryName); summary.setPathClass(null)
+        markSummary(summary, 'kullanici')
+    }
+    // Yerinde yeniden ölçüm: aynı anotasyon (ad/sınıf/çizgi korunur); yalnız ölçümler sıfırlanır.
+    // Önceki sınıf bölgeleri "Değiştir" seçildiyse aşağıda kaldırılır.
     summary.getMeasurementList().clear()
 } else {
     summary = PathObjects.createAnnotationObject(scopeRoi)
     summary.setName(summaryName)
+    markSummary(summary, 'arac')   // bu betiğin kendi oluşturduğu özet: yalnız bu silinebilir
 }
 
 def perModel = []
@@ -553,7 +589,8 @@ selectedModelNames.each { modelName ->
     if (!wholeSlide) {
         // Tek bölge yeniden kullanıldığında o bölge zaten özet (toplam) ölçümünü taşır;
         // ayrıca per-bölge yazmaya gerek yok (çok bölge seçildiğinde her biri ayrı ölçülür).
-        if (!reuse) scopeRegions.each { sp ->
+        // (Ekle + yerinde ölçülebilir önceki özet seçili: o özetin eski değerleri YAZILMAZ, değişmeden kalır.)
+        if (!reuse && candidate == null) scopeRegions.each { sp ->
             def m = measureWith(manager, tumorAreaName, stromaAreaName, sp.getROI())
             sp.measurements["${p}ROI alanı (mm2)"] = m.roiArea
             sp.measurements["${p}Tümör alanı (mm2)"] = m.tumorArea
@@ -596,8 +633,9 @@ summary.setLocked(true)
 int removedSummaries = 0
 int removedRegions = 0
 if (replaceRun) {
-    def oldSummaries = prevSummaries.findAll { it != summary }
-    def oldRegions = prevRegions.findAll { it != summary }
+    // Özet (summary) hiçbir koşulda silinmez; kullanıcının bölgesi/işaretsiz özet de silinmez (yukarıya bak).
+    def oldSummaries = removableSummaries.findAll { it != summary }
+    def oldRegions = replaceRegions.findAll { it != summary }
     if (!oldRegions.isEmpty()) QP.removeObjects(oldRegions, true)
     if (!oldSummaries.isEmpty()) QP.removeObjects(oldSummaries, true)
     removedSummaries = oldSummaries.size()
@@ -697,7 +735,7 @@ if (addRun) {
     if (!prevInRegion.isEmpty()) prevNames << (scopeRegions[0].getName() ?: '-')
     body << '\n' << String.format(java.util.Locale.US, workshopText('script.eebc097a5825', 'ÖNCEKİ SONUÇ DURUYOR\nÖzet anotasyonu: %s. Bu lamda önceki Tümör/Stroma sonucu da duruyor: %s. Hiçbir şey silinmedi; eski sonucu kaldırmak için o özet anotasyonunu seçip silin ya da bir sonraki çalıştırmada "Değiştir"i seçin. Seçtiğiniz bölge anotasyonlarına ölçüm yazıldıysa o ölçümler BU çalıştırmayı gösterir; önceki özet anotasyonu eski değerleri göstermeye devam eder.'), summaryName, prevNames.join(', ')) << '\n'
 } else if (replaceRun) {
-    body << '\n' << String.format(java.util.Locale.US, workshopText('script.945861935208', 'ÖNCEKİ SONUÇ DEĞİŞTİRİLDİ\n%,d özet anotasyonu ve %,d sınıf bölgesi silindi (içlerindeki diğer nesneler korundu).'), removedSummaries, removedRegions) << '\n'
+    body << '\n' << String.format(java.util.Locale.US, workshopText('script.04273d6ac80a', 'ÖNCEKİ SONUÇ DEĞİŞTİRİLDİ\n%,d sınıf bölgesi ve aracın kendi oluşturduğu %,d eski özet anotasyonu silindi (içlerindeki diğer nesneler korundu). Sizin çizdiğiniz bölge ya da işaretlenmemiş özet silinmedi; özet bölgesi korundu ve ölçümler onda yeniden hesaplandı.'), removedRegions, removedSummaries) << '\n'
 }
 body << '\nQC NOTLARI\n'
 body << '────────────────────────────────────────\n'

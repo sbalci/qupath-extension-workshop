@@ -30,6 +30,21 @@ import qupath.lib.scripting.QP
 import qupath.lib.objects.PathAnnotationObject
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
+// Hücreleri değiştirme sorusu: varsayılan seçim "dokunma"dır — Enter/Tamam hiçbir şeyi değiştirmez.
+// (Evet/Hayır penceresinde Enter "Evet" anlamına gelir; bu yüzden seçim penceresi kullanılır.)
+def confirmReplaceCells = { String title, String body ->
+    String keepOpt = workshopText('script.665d4074c4fe', 'Mevcut hücrelere dokunma — tespiti çalıştırma (varsayılan)')
+    String replaceOpt = workshopText('script.6b4af35c53fe', 'Mevcut hücreleri değiştir — tespiti çalıştır')
+    def ask = { -> qupath.fx.dialogs.Dialogs.showChoiceDialog(title, body, [keepOpt, replaceOpt], keepOpt) }
+    if (javafx.application.Platform.isFxApplicationThread()) return ask() == replaceOpt
+    def picked = new java.util.concurrent.atomic.AtomicReference(null)
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    javafx.application.Platform.runLater {
+        try { picked.set(ask()) } finally { latch.countDown() }
+    }
+    latch.await()
+    return picked.get() == replaceOpt
+}
 // --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
 def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
 def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
@@ -317,7 +332,11 @@ def finishWithMetrics = { t, double thr1, double thr2, double thr3, boolean teac
     return [ok:true, text:text]
 }
 
-def runDetection = { double nuclear1, double nuclear2, double nuclear3, boolean teaching ->
+// QuPath'in hücre tespiti, çalıştığı anotasyonun içindeki MEVCUT tespitleri değiştirir;
+// yalnızca bunlar sayılır (anotasyonun alt nesnesi olan tespitler).
+def countReplaceable = { ann -> ann == null ? 0 : ann.getChildObjects().findAll { it.isDetection() }.size() }
+
+def runDetection = { double nuclear1, double nuclear2, double nuclear3, boolean teaching, int replaced = 0 ->
     if (!(nuclear1 < nuclear2 && nuclear2 < nuclear3))
         return [ok:false, error:'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.']
     def t = resolveTarget()
@@ -361,7 +380,10 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3, boolean 
         '}'
     )
     double detectElapsed = (System.currentTimeMillis() - t0) / 1000.0
-    return finishWithMetrics(t, nuclear1, nuclear2, nuclear3, teaching, detectElapsed)
+    def detRes = finishWithMetrics(t, nuclear1, nuclear2, nuclear3, teaching, detectElapsed)
+    if (detRes.ok && replaced > 0)
+        detRes.text = String.format(java.util.Locale.US, workshopText('script.d0c7ed3d2fd2', 'Not: önceki %,d hücre değiştirildi.'), replaced) + "\n" + detRes.text
+    return detRes
 }
 
 def recount = { double thr1, double thr2, double thr3, boolean teaching ->
@@ -377,7 +399,19 @@ def recount = { double thr1, double thr2, double thr3, boolean teaching ->
 
 // Headless: tek sefer atölye varsayılanlarıyla çalıştır + yazdır.
 if (isHeadless) {
-    def r = runDetection(DEF1, DEF2, DEF3, false)
+    // Tespit mevcut hücreleri DEĞİŞTİRİR: soru sorulamaz, açık onay (-a mevcut=degistir) gerekir.
+    def hlMode = headlessArg('mevcut')
+    if (hlMode != null && hlMode != 'degistir') {
+        println String.format(java.util.Locale.US, workshopText('script.25b257bce6d1', 'DURDU: -a mevcut için geçersiz değer "%s" (yalnızca degistir kabul edilir). Hiçbir şey değiştirilmedi.'), hlMode)
+        return
+    }
+    def hlTarget = resolveTarget()
+    int hlPrev = hlTarget.ok ? countReplaceable(hlTarget.ann) : 0
+    if (hlPrev > 0 && hlMode != 'degistir') {
+        println String.format(java.util.Locale.US, workshopText('script.b1cf692ac056', 'DURDU: hedef anotasyonda zaten %,d hücre tespiti var. Hiçbir şey değiştirilmedi. Bu hücrelerin (elle yapılmış sınıf ve düzeltmeler dahil) değiştirilmesini kabul ediyorsanız -a mevcut=degistir ile yeniden çalıştırın.'), hlPrev)
+        return
+    }
+    def r = runDetection(DEF1, DEF2, DEF3, false, hlPrev)
     println r.ok ? r.text : ("Hata: " + r.error)
     return
 }
@@ -496,15 +530,26 @@ javafx.application.Platform.runLater {
 
         runBtn.setOnAction({
             [spT1, spT2, spT3].each { commitSpinner(it) }
-            runBtn.setDisable(true); recountBtn.setDisable(true)
-            status.setStyle(''); status.setText(workshopText('script.e6d86b4eba06', 'Çalışıyor… (hücre tespiti)'))
-            progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             double t1 = spT1.getValue() as double
             double t2 = spT2.getValue() as double
             double t3 = spT3.getValue() as double
             boolean teaching = teachChk.isSelected()
+            // Tespit, seçili anotasyondaki mevcut hücreleri DEĞİŞTİRİR: tespitten ÖNCE sorulur.
+            def selNow = QP.getSelectedObject()
+            int nPrev = (selNow instanceof PathAnnotationObject && imageTypeOk() && t1 < t2 && t2 < t3) ? countReplaceable(selNow) : 0
+            if (nPrev > 0) {
+                boolean okReplace = confirmReplaceCells(workshopText('script.c8cded1ce05d', 'Önceki hücre tespitleri değiştirilecek'),
+                    String.format(java.util.Locale.US, workshopText('script.461bbed70a95', 'Seçili anotasyonda zaten %,d hücre bulunuyor; tespit bunları, elle yapılmış sınıf ve düzeltmeler dahil, değiştirecek.\n\nYalnız eşikleri değiştirmek istiyorsanız "İptal" deyip "Yeniden say (hızlı)" düğmesini kullanın; bu düğme hücreleri silmez.\n\nDevam edilsin mi? ("Tamam" = değiştir, "İptal" = hiçbir şey çalıştırılmaz)'), nPrev))
+                if (!okReplace) {
+                    status.setStyle(''); status.setText(workshopText('script.0bce6aa77f6b', 'İptal edildi — hiçbir şey çalıştırılmadı, mevcut hücreler korundu.'))
+                    return
+                }
+            }
+            runBtn.setDisable(true); recountBtn.setDisable(true)
+            status.setStyle(''); status.setText(workshopText('script.e6d86b4eba06', 'Çalışıyor… (hücre tespiti)'))
+            progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             def worker = new Thread({
-                def res = runDetection(t1, t2, t3, teaching)
+                def res = runDetection(t1, t2, t3, teaching, nPrev)
                 javafx.application.Platform.runLater { handleResult(res) }
             }, 'Modul3bHScore')
             worker.setDaemon(true); worker.start()

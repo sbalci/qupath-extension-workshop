@@ -36,6 +36,21 @@ import qupath.fx.dialogs.Dialogs
 import qupath.lib.scripting.QP
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
+// Hücreleri değiştirme sorusu: varsayılan seçim "dokunma"dır — Enter/Tamam hiçbir şeyi değiştirmez.
+// (Evet/Hayır penceresinde Enter "Evet" anlamına gelir; bu yüzden seçim penceresi kullanılır.)
+def confirmReplaceCells = { String title, String body ->
+    String keepOpt = workshopText('script.665d4074c4fe', 'Mevcut hücrelere dokunma — tespiti çalıştırma (varsayılan)')
+    String replaceOpt = workshopText('script.6b4af35c53fe', 'Mevcut hücreleri değiştir — tespiti çalıştır')
+    def ask = { -> qupath.fx.dialogs.Dialogs.showChoiceDialog(title, body, [keepOpt, replaceOpt], keepOpt) }
+    if (javafx.application.Platform.isFxApplicationThread()) return ask() == replaceOpt
+    def picked = new java.util.concurrent.atomic.AtomicReference(null)
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    javafx.application.Platform.runLater {
+        try { picked.set(ask()) } finally { latch.countDown() }
+    }
+    latch.await()
+    return picked.get() == replaceOpt
+}
 
 def showResultWindow = { String windowTitle, String windowBody ->
     if (isHeadless) {
@@ -218,6 +233,44 @@ if (!prevOwnNow.isEmpty()) {
     runMode = MODE_REPLACE
 }
 
+
+// ── Mevcut hücre tespitleri ─────────────────────────────────────────
+// PositiveCellDetection, çalıştığı anotasyonların içindeki mevcut hücre tespitlerinin YERİNİ alır
+// (elle verilen sınıflar/düzeltmeler dahil). Bu yüzden tespitten ÖNCE sorulur; İptal: hiçbir şey çalışmaz.
+// Özet sorusu (yukarıda) ayrı bir şeydir: o yalnız önceki ÖZET anotasyonları içindir.
+def askYesNo = { String title, String body ->
+    if (javafx.application.Platform.isFxApplicationThread()) return Dialogs.showConfirmDialog(title, body)
+    def answer = new java.util.concurrent.atomic.AtomicBoolean(false)
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    javafx.application.Platform.runLater {
+        try { answer.set(Dialogs.showConfirmDialog(title, body)) } finally { latch.countDown() }
+    }
+    latch.await()
+    return answer.get()
+}
+def redetectCount = { anns ->
+    int n = 0
+    anns.each { a -> n += a.getChildObjects().findAll { it.isDetection() }.size() }
+    return n
+}
+int redetectPrev = redetectCount(stromaAnnotations)
+if (redetectPrev > 0) {
+    if (isHeadless) {
+        if (mevcut != 'degistir') {
+            println String.format(java.util.Locale.US, workshopText('script.917f37316768', 'Stroma anotasyonlarında zaten %,d hücre tespiti var. Hiçbir şey yazılmadı. Bu hücreleri değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.'), redetectPrev)
+            return
+        }
+    } else {
+        String redetectTitleText = workshopText('script.c8cded1ce05d', 'Önceki hücre tespitleri değiştirilecek')
+        String redetectCancelledText = workshopText('script.0187c58bc6df', 'İptal edildi — hiçbir şey çalıştırılmadı, hiçbir şey değişmedi.')
+        if (!confirmReplaceCells(redetectTitleText, String.format(java.util.Locale.US, workshopText('script.d500c84220ca', 'Stroma anotasyonlarında zaten %,d hücre var. Tespit bu hücrelerin yerini alacak; elle verdiğiniz sınıflar ve düzeltmeler de gider.\n\nDevam edilsin mi?\n\n"Hayır" derseniz hiçbir şey çalıştırılmaz ve hiçbir şey değişmez.'), redetectPrev))) {
+            Dialogs.showInfoNotification(redetectTitleText, redetectCancelledText)
+            println redetectCancelledText
+            return
+        }
+    }
+}
+
 // ── 2) Stroma içinde çekirdek tespiti ──────────────────────────────
 println "Stroma alanında çekirdek tespiti..."
 QP.selectObjects(stromaAnnotations)
@@ -315,6 +368,9 @@ def areaNote = areaKnown == 0
 
 // ── 5) Sonucu sun ───────────────────────────────────────────────────
 def modeNotes = new StringBuilder()
+if (redetectPrev > 0) {
+    modeNotes << "\n" << String.format(java.util.Locale.US, workshopText('script.784fe373ea77', 'Önceki %,d hücre değiştirildi.'), redetectPrev) << "\n"
+}
 if (!appliedMode.prevNames.isEmpty()) {
     modeNotes << "\n" << String.format(java.util.Locale.US, workshopText('script.7577a3bac9a2', 'DİKKAT — bu lamda önceki sonuç da duruyor: %s\nYeni özet şu adla eklendi: %s\nHiçbir şey silinmedi. Eski özeti kaldırmak için o addaki anotasyonu seçip silin ya da yeniden çalıştırırken "Değiştir"i seçin. Dışa aktarma ve kohort özetleri iki özeti de görür.'), appliedMode.prevNames.join(', '), appliedMode.setName) << "\n"
     modeNotes << workshopText('script.46fd40a69eb4', 'Seçili anotasyonların üzerindeki ölçümler bu YENİ çalıştırmayı gösterir; önceki özet nesnesi eski değerleri göstermeye devam eder.') << "\n"

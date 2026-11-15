@@ -109,6 +109,116 @@ def showResultWindow = { String windowTitle, String windowBody ->
     }
 }
 
+// ── Kopya grupları: bir lamda aynı sonucun "ad", "ad (2)", "ad (3)" … olarak yan yana durması ──
+// Kural (tam eşleşme, önek eşleşmesi YOK): "X (N)" (N tam sayı ≥ 2) "X" tabanına aittir. Bir grup,
+// o tabanın en az İKİ farklı numarası (taban = 1) aynı lamda varsa kopya grubudur; tek başına bir
+// "X (N)" (X silinmiş) grup değildir. "X (notlarım)" ve "X (1)" kopya değildir. Sondaki " (N)" yalnız
+// aynı tabanın bir kardeşi varsa kopya numarasıdır ("… Mitotic figure (12)" tek başına kopya değil;
+// "… (12) (2)" ile birlikte "… (12)" tabanının 1. ve 2. kopyası). Sınır: aynı lamda "X (12)" ve
+// "X (3)" varsa (X yok) ikisi kopya sayılır. En yeni = en yüksek numara.
+// Başsız kipte soru sorulamaz: açık bağımsız değişken gerekir (ör. -a kopyalar=hepsi).
+def headlessArg = { String key ->
+    def list = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) list = (a as List) } } catch (Throwable ignore) {}
+    def found = null
+    list.each { a -> def s = a?.toString() ?: ''; int i = s.indexOf('='); if (i > 0 && s.substring(0, i).trim() == key) found = s.substring(i + 1).trim().toLowerCase(java.util.Locale.ROOT) }
+    return found
+}
+def copiesParse = { String name ->
+    if (name == null) return null
+    def m = (name =~ '^(.+) \\((\\d{1,6})\\)$')
+    if (!m.matches()) return null
+    int n = Integer.parseInt(m.group(2))
+    return (n >= 2) ? [base: m.group(1), index: n] : null
+}
+def copiesGroups = { Collection items, Closure nameOf ->
+    def all = new LinkedHashMap()
+    def bases = new HashSet()
+    items.each { a -> def p = copiesParse(nameOf(a)); if (p != null) bases << p.base }
+    items.each { a ->
+        String nm = nameOf(a)
+        if (nm == null) return
+        def p = copiesParse(nm)
+        if (p != null) all.get(p.base, new TreeMap()).get(p.index, []) << a
+        if (p == null || bases.contains(nm)) all.get(nm, new TreeMap()).get(1, []) << a
+    }
+    def out = new LinkedHashMap()
+    all.each { b, idx -> if (idx.size() >= 2) out[b] = idx }
+    return out
+}
+def copiesOlder = { Map groups ->
+    def older = Collections.newSetFromMap(new IdentityHashMap())
+    groups.each { b, idx ->
+        def mx = idx.keySet().max()
+        idx.each { i, objs -> if (i != mx) older.addAll(objs) }
+    }
+    return older
+}
+def copiesAskChoice = { String title, String body, List options, String dflt ->
+    if (javafx.application.Platform.isFxApplicationThread()) return Dialogs.showChoiceDialog(title, body, options, dflt)
+    def answer = new java.util.concurrent.atomic.AtomicReference(null)
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    javafx.application.Platform.runLater {
+        try { answer.set(Dialogs.showChoiceDialog(title, body, options, dflt)) } finally { latch.countDown() }
+    }
+    latch.await()
+    return answer.get()
+}
+// Soru yanıtlandıktan sonra satırları kurar. choice: null | 'all' | 'newest'.
+// rows: image_name + "<ad·sınıf> · <ölçüm>" → değer; columnOrder: ilk görülen sıra korunur.
+def copiesBuildRows = { List recs, String choice ->
+    def rows            = []
+    def columnOrder     = new java.util.LinkedHashSet<String>()
+    def duplicateImages = new java.util.LinkedHashSet<String>()
+    def leftColumns     = new java.util.LinkedHashSet<String>()
+    int leftAnnotations = 0
+    boolean newestOnly  = (choice == 'newest')
+    recs.each { rec ->
+        def row = new java.util.LinkedHashMap<String, String>()
+        row["image_name"] = rec.name
+        def kept = rec.items.findAll { !(newestOnly && it.older) }
+        leftAnnotations += rec.items.size() - kept.size()
+        rec.items.each { dropped ->
+            if (newestOnly && dropped.older) dropped.cells.keySet().each { mKey -> leftColumns << (dropped.base + " · " + mKey) }
+        }
+        def labelsHere = new HashSet(kept.collect { it.base })
+        // Aynı lamda aynı adı taşıyan birden çok kilitli anotasyon varsa hiçbiri atılmaz: ikincisi
+        // "<ad> (2)", üçüncüsü "<ad> (3)" sütunlarına yazılır (eskiden yalnız ilki kalıyordu).
+        def seenLabels = [:]
+        kept.each { item ->
+            def baseLabel = item.base
+            int ordinal = ((seenLabels[baseLabel] ?: 0) as int) + 1
+            seenLabels[baseLabel] = ordinal
+            if (ordinal == 2) duplicateImages << rec.name
+            def label = (ordinal == 1) ? baseLabel : (baseLabel + " (" + ordinal + ")")
+            // "<ad> (2)" adlı gerçek bir anotasyon da varsa (kopya), sıra numarası sütunu onunkiyle çakışmasın.
+            if (ordinal > 1 && labelsHere.contains(label)) label = baseLabel + " [" + ordinal + "]"
+            item.cells.each { mKey, cellVal ->
+                def colName = label + " · " + mKey   // middot (·) ayırıcı
+                columnOrder.add(colName)
+                // İlk kilitli anotasyon kazanır; birden fazla aynı sütunu varsa birleştir
+                if (!row.containsKey(colName) || row[colName].isEmpty()) {
+                    row[colName] = cellVal
+                }
+            }
+        }
+        if (choice != null) {
+            row["kopya_bilgisi"] = rec.affected.collect { b, ix ->
+                b + ': ' + ix.keySet().join(',') + (newestOnly ? ' -> ' + ix.keySet().max() : '')
+            }.join('; ')
+        }
+        rows << row
+    }
+    leftColumns.removeAll(columnOrder)
+    return [rows: rows, columnOrder: columnOrder, duplicateImages: duplicateImages, leftColumns: leftColumns, leftAnnotations: leftAnnotations]
+}
+// Bilinmeyen -a kopyalar=… değeri HER durumda durdurur (kopya olmasa da; fail closed).
+def copiesArg = headlessArg('kopyalar')
+if (copiesArg != null && copiesArg != 'hepsi' && copiesArg != 'enyeni') {
+    println String.format(java.util.Locale.US, workshopText('script.866c3e4341b8', 'DURDU: bilinmeyen kopyalar değeri "%s". Geçerli değerler: hepsi | enyeni. Hiçbir şey yazılmadı.'), copiesArg)
+    return
+}
+
 // ── 1) Ön kontrol: açık proje zorunlu ────────────────────────────────────────
 def project = QP.getProject()
 if (project == null) {
@@ -126,62 +236,52 @@ if (entries == null || entries.isEmpty()) {
     return
 }
 
-// ── 2) Çıktı dizinini hazırla ────────────────────────────────────────────────
+// ── 2) Çıktı dizinini hazırla (klasör, soru yanıtlandıktan sonra, yazmadan hemen önce açılır) ──
 def projectDir = null
 try { projectDir = project.getPath()?.getParent()?.toFile() } catch (Throwable ignore) {}
 def outDir = (projectDir != null) ? new File(projectDir, "kohort-ozet") : new File(System.getProperty("java.io.tmpdir"), "kohort-ozet")
-outDir.mkdirs()
 long millis = System.currentTimeMillis()
 def tsvFile = new File(outDir, String.format(java.util.Locale.US, "kohort_ozet_%d.tsv", millis))
 
 // ── 3) Tüm görüntüleri gez: kilitli anotasyonların ölçümlerini topla ─────────
-// rows: List<Map<String,String>>  (image_name + "<ad·sınıf> · <ölçüm>" → değer)
-// columnOrder: ilk görülen sırası korunur (image_name hariç)
-def rows         = []
-def columnOrder  = new java.util.LinkedHashSet<String>()
+// recs: lam başına [name, items: [[base, older, cells]], affected: kopya grupları]
+// Satırlar soru yanıtlandıktan sonra buildRows ile kurulur.
+def recs         = []
 int totalImages  = entries.size()
 int skipped      = 0
-def duplicateImages = new java.util.LinkedHashSet<String>()
 println String.format(java.util.Locale.US, "Kohort özet toplayıcı başladı: %d görüntü", totalImages)
 
 entries.eachWithIndex { entry, idx ->
     def imgName = entry.getImageName()
-    def row = new java.util.LinkedHashMap<String, String>()
-    row["image_name"] = imgName
     def imageData = null
     try {
         imageData = entry.readImageData()
         def hierarchy = imageData.getHierarchy()
         // Kilitli anotasyonları al (QP statik API'si burada entry kapsamında değil;
         // doğrudan hierarchy üzerinden çalışıyoruz)
-        def lockedAnnos = hierarchy.getAnnotationObjects().findAll { it.isLocked() }
-        // Aynı lamda aynı adı taşıyan birden çok kilitli anotasyon varsa hiçbiri atılmaz: ikincisi
-        // "<ad> (2)", üçüncüsü "<ad> (3)" sütunlarına yazılır (eskiden yalnız ilki kalıyordu).
-        def seenLabels = [:]
+        def allAnnos = hierarchy.getAnnotationObjects() as List
+        def lockedAnnos = allAnnos.findAll { it.isLocked() }
+        // Kopya grupları TÜM anotasyonlar üzerinden bulunur: en yeni kopya kilitli değilse, kilitli eski
+        // kopya "en yeni" sayılıp sessizce tabloya girmesin. Soru yalnız kilitli üyesi olan grupları sayar.
+        def groups = copiesGroups(allAnnos, { it.getName() })
+        def olderSet = copiesOlder(groups)
+        def affected = groups.findAll { b, ix -> ix.values().flatten().any { it.isLocked() } }
+        def items = []
         lockedAnnos.each { anno ->
             // Sütun ön eki: ad varsa adı, yoksa sınıf adını kullan
             def baseLabel = (anno.getName() ?: anno.getPathClass()?.toString() ?: "Anotasyon").trim()
-            int ordinal = ((seenLabels[baseLabel] ?: 0) as int) + 1
-            seenLabels[baseLabel] = ordinal
-            if (ordinal == 2) duplicateImages << imgName
-            def label = (ordinal == 1) ? baseLabel : (baseLabel + " (" + ordinal + ")")
             def ml = anno.getMeasurementList()
-            def names = ml.getMeasurementNames()
-            names.each { mKey ->
+            def cells = new java.util.LinkedHashMap<String, String>()
+            ml.getMeasurementNames().each { mKey ->
                 double val = ml.getMeasurementValue(mKey)
-                def colName = label + " · " + mKey   // middot (·) ayırıcı
-                columnOrder.add(colName)
                 // NaN → boş; sayısal değer → tam ya da ondalık
-                String cellVal = Double.isNaN(val) ? "" : (val == Math.floor(val) && !Double.isInfinite(val)
+                cells[mKey] = Double.isNaN(val) ? "" : (val == Math.floor(val) && !Double.isInfinite(val)
                     ? String.format(java.util.Locale.US, "%.0f", val)
                     : String.format(java.util.Locale.US, "%.6g", val))
-                // İlk kilitli anotasyon kazanır; birden fazla aynı sütunu varsa birleştir
-                if (!row.containsKey(colName) || row[colName].isEmpty()) {
-                    row[colName] = cellVal
-                }
             }
+            items << [base: baseLabel, older: olderSet.contains(anno), cells: cells]
         }
-        rows << row
+        recs << [name: imgName, items: items, affected: affected]
         println String.format(java.util.Locale.US, "  [%d/%d] %s — %d kilitli anotasyon", idx + 1, totalImages, imgName, lockedAnnos.size())
     } catch (Throwable t) {
         skipped++
@@ -193,16 +293,53 @@ entries.eachWithIndex { entry, idx ->
     }
 }
 
-if (rows.isEmpty()) {
+if (recs.isEmpty()) {
     def msg = "Hiçbir görüntüden kilitli anotasyon okunamadı.\nÖnce Tümör/Stroma modülünün piksel sınıflandırıcısını çalıştırıp sonuç anotasyonunu kilitleyin."
     if (isHeadless) { println msg; return }
     Dialogs.showWarningNotification(workshopText('script.527be9b53936', "Kohort özet toplayıcı"), msg)
     return
 }
 
+// ── 3b) Kopya sorusu — TSV yazılmadan ÖNCE. Kopya grubu yoksa sorulmaz, çıktı eskisiyle aynıdır. ──
+def copiesChoice = null     // null: kopya yok | 'all' | 'newest'
+def copiesAffectedRecs = recs.findAll { !it.affected.isEmpty() }
+def copiesLines = []
+copiesAffectedRecs.each { rc -> rc.affected.each { b, ix -> copiesLines << (rc.name + ' · ' + b + ': ' + ix.keySet().join(', ')) } }
+if (!copiesAffectedRecs.isEmpty()) {
+    if (isHeadless) {
+        if (copiesArg == null) {
+            println String.format(java.util.Locale.US, workshopText('script.81b5fc1eeb8b', 'DURDU: %,d görüntüde kilitli özetin birden çok kopyası var (ör. %s). Hiçbir şey yazılmadı. Tüm kopyalar için -a kopyalar=hepsi, yalnız en yeni kopyalar için -a kopyalar=enyeni ile yeniden çalıştırın.'), copiesAffectedRecs.size(), copiesLines.take(5).join('; '))
+            return
+        }
+        copiesChoice = (copiesArg == 'enyeni') ? 'newest' : 'all'
+    } else {
+        String copiesOptAll = workshopText('script.664b17ebb1d0', 'Tüm kopyalar — her kopya kendi sütunlarında (varsayılan)')
+        String copiesOptNewest = workshopText('script.f82a1fd783d2', 'Yalnız en yenisi — eski kopyalar tabloya girmez')
+        def copiesPick = copiesAskChoice(workshopText('script.08096a5c93b4', 'Aynı özetin birden çok kopyası var'),
+            String.format(java.util.Locale.US, workshopText('script.1a1597c219e8', '%,d görüntüde toplam %,d kopya grubu var: aynı özet lamda "ad", "ad (2)", "ad (3)" biçiminde yan yana duruyor. Kopyalar farklı sayılar içerebilir; hangisinin güncel olduğuna bu araç karar veremez.\n\nÖrnekler (lam · ad: kopya numaraları; 1 = numarasız ad):\n%s\n\n"Tüm kopyalar": her kopya kendi adıyla ayrı sütunlara yazılır ("ad · ölçüm", "ad (2) · ölçüm"); tabloya kopya bilgisi sütunu eklenir.\n\n"Yalnız en yenisi": her grupta yalnız en yüksek numaralı kopya tabloya girer. En yeni kopya kilitli değilse o grup tabloda hiç yer almaz. Lamdaki hiçbir şey silinmez.\n\nİptal: hiçbir şey yazılmaz.\n\nHangisi yazılsın?'), copiesAffectedRecs.size(), copiesLines.size(), copiesLines.take(5).collect { "  • " + it }.join("\n")),
+            [copiesOptAll, copiesOptNewest], copiesOptAll)
+        if (copiesPick == null) {
+            println workshopText('script.c2cdf009e404', 'İptal: hiçbir şey yazılmadı.')
+            return
+        }
+        copiesChoice = (copiesPick == copiesOptNewest) ? 'newest' : 'all'
+    }
+}
+
+// ── 3c) Satırları kur ─────────────────────────────────────────────────────────
+boolean newestOnly  = (copiesChoice == 'newest')
+def builtRows       = copiesBuildRows(recs, copiesChoice)
+def rows            = builtRows.rows
+def columnOrder     = builtRows.columnOrder
+def duplicateImages = builtRows.duplicateImages
+def leftColumns     = builtRows.leftColumns
+int leftAnnotations = builtRows.leftAnnotations
+
 // ── 4) TSV yaz (sekme ayırıcı; eksik hücre = boş string) ────────────────────
 def colList = new ArrayList<String>(["image_name"] + new ArrayList<String>(columnOrder))
+if (copiesChoice != null) colList << "kopya_bilgisi"
 try {
+    outDir.mkdirs()
     tsvFile.withWriter("UTF-8") { w ->
         w.writeLine(colList.join("\t"))
         rows.each { r ->
@@ -217,7 +354,7 @@ try {
 }
 
 // ── 5) Sonucu sun ─────────────────────────────────────────────────────────────
-int colCount = colList.size() - 1   // image_name hariç
+int colCount = colList.size() - 1 - (copiesChoice != null ? 1 : 0)   // image_name (ve kopya_bilgisi) hariç
 def previewCols = colList.drop(1).take(15)
 
 def body = new StringBuilder()
@@ -228,10 +365,21 @@ body << String.format(java.util.Locale.US, "Ölçüm sütunu     : %,d%n", colCo
 body << "\nTSV dosyası:\n  " + tsvFile.getAbsolutePath() + "\n"
 body << "\nİlk " + previewCols.size() + " sütun:\n"
 previewCols.each { c -> body << "  • " + c + "\n" }
-if (colCount > 15) body << String.format(java.util.Locale.US, "  … ve %,d sütun daha%n", colCount - 15)
+if (colList.size() - 1 > 15) body << String.format(java.util.Locale.US, "  … ve %,d sütun daha%n", colList.size() - 1 - 15)
 if (!duplicateImages.isEmpty()) {
     body << String.format(java.util.Locale.US, "\nAynı adlı birden çok kilitli anotasyon: %,d görüntü. İkinci ve sonrakiler \"<ad> (2)\", \"<ad> (3)\" sütunlarında.%n", duplicateImages.size())
     duplicateImages.take(5).each { n -> body << "  • " + n + "\n" }
+}
+if (copiesChoice != null) {
+    body << "\n🗂 "
+    if (newestOnly) {
+        body << String.format(java.util.Locale.US, workshopText('script.fee4550c8637', 'Kopya grupları — seçim: yalnız en yenisi\n  %,d görüntüde %,d grup. Dışarıda bırakılan: %,d kilitli anotasyon, %,d sütun (yalnız eski kopyalarda bulunan).'), copiesAffectedRecs.size(), copiesLines.size(), leftAnnotations, leftColumns.size())
+    } else {
+        body << String.format(java.util.Locale.US, workshopText('script.5934930c5034', 'Kopya grupları — seçim: tüm kopyalar\n  %,d görüntüde %,d grup. Her kopya kendi sütunlarında; hangi kopyanın güncel olduğunu aşağıdaki listeden kontrol edin.'), copiesAffectedRecs.size(), copiesLines.size())
+    }
+    body << "\n" + workshopText('script.87fb0f304dc9', 'Son sütun "kopya_bilgisi": lam başına kopya grupları (ad: numaralar, 1 = numarasız ad; en yeniyse "-> numara").') + "\n"
+    copiesLines.take(15).each { l -> body << "  • " + l + "\n" }
+    if (copiesLines.size() > 15) body << String.format(java.util.Locale.US, "  … +%,d%n", copiesLines.size() - 15)
 }
 body << "\nSütun adı formatı: \"<anotasyon adı veya sınıfı> · <ölçüm adı>\"\n"
 body << "Eksik değerler TSV'de boş hücre olarak bırakıldı (Excel/R doğrudan okur).\n"

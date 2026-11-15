@@ -289,6 +289,28 @@ def prevOutputObjects = { hierarchy ->
     if (hierarchy == null) return []
     return (hierarchy.getAnnotationObjects() + hierarchy.getDetectionObjects()).findAll { isOwnOutputObject(it) }
 }
+// Özet kaynağı işareti (meta veri `atolye_ozet_kaynak`): 'arac' = bu sihirbazın kendi oluşturduğu özet;
+// 'kullanici' = kullanıcının çizdiği tek bölge, özet olarak yeniden kullanıldığında ADI DEĞİŞTİRİLEN anotasyon.
+// İşaretsiz (bu değişiklikten önceki) özet kullanıcının bölgesi olabilir → ASLA silinmez, yerinde yeniden ölçülür.
+// Silme yalnız açıkça 'arac' işaretli özet için serbesttir.
+def SUMMARY_SOURCE_KEY = 'atolye_ozet_kaynak'
+def summarySource = { obj ->
+    try { return obj.getMetadata()?.get(SUMMARY_SOURCE_KEY) } catch (Throwable ignore) { return null }
+}
+def markSummary = { obj, String value ->
+    try { obj.getMetadata().put(SUMMARY_SOURCE_KEY, value) } catch (Throwable ignore) {}
+}
+def isToolMadeSummary = { obj ->
+    return summarySource(obj) == 'arac'
+}
+// Değiştir'in silebileceği sınıf bölgesi: üst düzeydeki (özetsiz sonuç), 'arac' işaretli bir özetin altındaki, ya da
+// yerinde yeniden ölçülen `target` anotasyonunun altındaki. İşaretsiz/'kullanici' özetin altındakilere dokunulmaz.
+def isReplaceableOutput = { obj, target ->
+    def p = obj.getParent()
+    if (p == null || p.isRootObject()) return true
+    if (p == target) return true
+    return isOwnSummaryName(p.getName()) && isToolMadeSummary(p)
+}
 
 // ── Yerinde ölçüm (çekirdek API; eklenti yansıması gerektirmez) ─────
 def classifierAreaToMm2 ={ Number value, String measurementName ->
@@ -397,11 +419,16 @@ def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = 
         // yeni, ayrı bir özet kurulur ("Tümör-Stroma Özet (2)" …).
         def summary
         boolean reuse = false
-        String summaryName = addRun ? nextOwnSetName(hierM, SUMMARY_BASE) : SUMMARY_BASE
+        // Değiştir + yerinde yeniden ölçüm yok + silinmeyen önceki özet var: ad çakışmasın diye sıradaki ad.
+        boolean keptSummaryExists = prevSummaries.any { it != reuseCandidate && !isToolMadeSummary(it) }
+        String summaryName = (addRun || (replaceRun && reuseCandidate == null && keptSummaryExists)) ? nextOwnSetName(hierM, SUMMARY_BASE) : SUMMARY_BASE
         if (createSummary) {
-            if (reuseCandidate != null && !addRun) { summary = reuseCandidate; reuse = true }
-            else if (!addRun && !wholeSlide && regions.size() == 1) { summary = regions[0]; summary.setName(SUMMARY_BASE); reuse = true }
-            else { summary = PathObjects.createAnnotationObject(scopeRoi); summary.setName(summaryName) }
+            if (reuseCandidate != null && !addRun) { summary = reuseCandidate; reuse = true }   // yerinde yeniden ölçüm: ad/çizgi korunur
+            else if (!addRun && !wholeSlide && regions.size() == 1) {
+                // Kullanıcının kendi bölgesi özet olarak yeniden kullanılıyor: işaretle ('kullanici') → sonraki Değiştir silmez.
+                summary = regions[0]; summary.setName(summaryName); markSummary(summary, 'kullanici'); reuse = true
+            }
+            else { summary = PathObjects.createAnnotationObject(scopeRoi); summary.setName(summaryName); markSummary(summary, 'arac') }
         } else {
             summary = PathObjects.createAnnotationObject(scopeRoi); summary.setName('__atolye_m6_tmp__')
         }
@@ -413,8 +440,9 @@ def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = 
         int removedSummaries = 0
         int removedOutputs = 0
         if (replaceRun) {
-            def oldOutputs = prevOutputs.findAll { it != summary }
-            def oldSummaries = prevSummaries.findAll { it != summary }
+            // Özet (summary) hiçbir koşulda silinmez; kullanıcının bölgesi/işaretsiz özet de silinmez, yerinde yeniden ölçülür.
+            def oldOutputs = prevOutputs.findAll { it != summary && isReplaceableOutput(it, summary) }
+            def oldSummaries = prevSummaries.findAll { it != summary && isToolMadeSummary(it) }
             if (!oldOutputs.isEmpty()) QP.removeObjects(oldOutputs, true)
             if (!oldSummaries.isEmpty()) QP.removeObjects(oldSummaries, true)
             removedSummaries = oldSummaries.size()
@@ -523,7 +551,7 @@ def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = 
             String newSet = createSummary ? summaryName : ('… (' + outputSet + ')')
             text = text + '\n\n' + String.format(java.util.Locale.US, workshopText('script.98b0476bc643', 'ÖNCEKİ SONUÇ DURUYOR\nYeni sonuç: %s. Bu lamda önceki Tümör/Stroma sonucu da duruyor: %s. Hiçbir şey silinmedi; eski sonucu kaldırmak için o özet anotasyonunu (ve sınıf bölgelerini) seçip silin ya da bir sonraki çalıştırmada "Değiştir"i seçin. Yukarıdaki sayılar yalnız yeni çalıştırmayı gösterir; önceki özet anotasyonu eski değerleri göstermeye devam eder.'), newSet, prevNames.join(', '))
         } else if (replaceRun) {
-            text = text + '\n\n' + String.format(java.util.Locale.US, workshopText('script.945861935208', 'ÖNCEKİ SONUÇ DEĞİŞTİRİLDİ\n%,d özet anotasyonu ve %,d sınıf bölgesi silindi (içlerindeki diğer nesneler korundu).'), removedSummaries, removedOutputs)
+            text = text + '\n\n' + String.format(java.util.Locale.US, workshopText('script.04273d6ac80a', 'ÖNCEKİ SONUÇ DEĞİŞTİRİLDİ\n%,d sınıf bölgesi ve aracın kendi oluşturduğu %,d eski özet anotasyonu silindi (içlerindeki diğer nesneler korundu). Sizin çizdiğiniz bölge ya da işaretlenmemiş özet silinmedi; özet bölgesi korundu ve ölçümler onda yeniden hesaplandı.'), removedOutputs, removedSummaries)
         }
         return [ok:true, text:text]
     } catch (Throwable t) {
@@ -625,19 +653,22 @@ def startInstall = {
 def askExisting = { ->
     def hierQ = QP.getCurrentImageData()?.getHierarchy()
     def prevS = prevSummaryObjects(hierQ)
-    def prevO = prevOutputObjects(hierQ)
-    if (prevS.isEmpty() && prevO.isEmpty()) return MODE_ADD
+    def prevAll = prevOutputObjects(hierQ)
+    if (prevS.isEmpty() && prevAll.isEmpty()) return MODE_ADD
+    // Sayı: Değiştir'in silebileceği sınıf bölgeleri (tek seçili anotasyon yerinde yeniden ölçülecekse onun altındakiler dahil).
+    def selOne = QP.getSelectedObjects().findAll { it.isAnnotation() }
+    def prevO = prevAll.findAll { isReplaceableOutput(it, selOne.size() == 1 ? selOne[0] : null) }
     String optAdd = workshopText('script.c926444eface', 'Ekle — öncekine dokunma, yeni bir sonuç olarak ekle (varsayılan)')
-    String optRep = workshopText('script.a0ffcd6a36db', 'Değiştir — önceki özet ve bu sihirbazın sınıf bölgeleri silinir')
+    String optRep = workshopText('script.320920522b08', 'Değiştir — önceki sınıf bölgeleri silinir; özet bölgeniz korunur ve aynı anotasyonda yeniden ölçülür')
     if (stage != null) stage.setAlwaysOnTop(false)
     try {
         def pick = Dialogs.showChoiceDialog(workshopText('script.a43bd962f751', 'Önceki Tümör/Stroma sonucu'),
-            String.format(java.util.Locale.US, workshopText('script.454e3d81949a', 'Bu lamda zaten %,d Tümör-Stroma özeti ile %,d sınıf bölgesi (Tumor / Stroma) var.\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir özet olur ("Tümör-Stroma Özet (2)" gibi) ve kendi sınıf bölgelerini taşır (özet kapalıysa yeni bölgeler "Tumor (2)" gibi adlanır). Lamda iki sonuç birlikte durur.\n\n"Değiştir" seçilirse önceki özet anotasyonları ve bu sihirbazın ürettiği sınıf bölgeleri silinir — sınıf bölgelerinde elle yaptığınız düzeltmeler de gider. Özetlerin ya da bölgelerin içindeki başka nesneler (hücre tespitleri, kendi anotasyonlarınız) silinmez.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki Tümör/Stroma sonucu ne olsun?'), prevS.size(), prevO.size()),
+            String.format(java.util.Locale.US, workshopText('script.a2c2f2d27f11', 'Bu lamda zaten %,d Tümör-Stroma özeti var; Değiştir seçilirse silinebilecek sınıf bölgesi sayısı: %,d.\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir özet olur ("Tümör-Stroma Özet (2)" gibi) ve kendi sınıf bölgelerini taşır (özet kapalıysa yeni bölgeler "Tumor (2)" gibi adlanır). Önceki özetler değişmeden kalır.\n\n"Değiştir" seçilirse bu sihirbazın ürettiği önceki Tumor/Stroma sınıf bölgeleri silinir — onlarda elle yaptığınız düzeltmeler de gider. Özet olarak kullanılan bölgeniz ASLA silinmez: çizgisi, adı ve sınıfı korunur, yalnızca ölçümleri aynı anotasyonda yeniden hesaplanır. Yalnızca aracın kendi oluşturduğu eski özet anotasyonları silinir; bu araçla işaretlenmemiş (eski sürümden kalma) özetler olduğu gibi kalır. İçlerindeki diğer nesneler (hücre tespitleri, kendi anotasyonlarınız) silinmez.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki Tümör/Stroma sonucu ne olsun?'), prevS.size(), prevO.size()),
             [optAdd, optRep], optAdd)
         if (pick == null) return null
         if (pick == optRep) {
-            boolean ok = Dialogs.showConfirmDialog(workshopText('script.307a95e3f6e5', 'Önceki Tümör/Stroma sonucu silinecek'),
-                String.format(java.util.Locale.US, workshopText('script.69eb8fc193dc', '%,d özet anotasyonu ile %,d sınıf bölgesi silinecek. Tek bir bölge seçildiğinde bu sihirbaz o anotasyonun adını özet olarak değiştirir; önceki bir çalıştırmada sizin çizdiğiniz bir bölge böyle bir özete dönüşmüş olabilir — o durumda bölgenin çizgisi de silinir. Bu adı elle verdiğiniz bir anotasyon da, sihirbazın kendi özetinden ayırt edilemediği için silinir. Sınıf bölgelerinde elle yaptığınız düzeltmeler KAYBOLUR. Bunların içindeki diğer nesneler korunur.\n\nDevam edilsin mi?'), prevS.size(), prevO.size()))
+            boolean ok = Dialogs.showConfirmDialog(workshopText('script.2c478add6c37', 'Önceki sınıf bölgeleri silinecek'),
+                String.format(java.util.Locale.US, workshopText('script.f7a62bf61fe4', 'Bu lamda %,d Tümör-Stroma özeti var; %,d sınıf bölgesi silinecek. Sınıf bölgelerinde elle yaptığınız düzeltmeler KAYBOLUR. Özet olarak kullanılan bölgeniz silinmez: yerinde yeniden ölçülür. Yalnızca aracın kendi oluşturduğu eski özet anotasyonları silinir; sizin çizdiğiniz ya da işaretlenmemiş özetler korunur. İçlerindeki diğer nesneler de korunur.\n\nDevam edilsin mi?'), prevS.size(), prevO.size()))
             return ok ? MODE_REPLACE : null
         }
         return MODE_ADD

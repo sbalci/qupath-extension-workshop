@@ -11799,6 +11799,291 @@
       "key": "script.eebc097a5825",
       "tr": "ÖNCEKİ SONUÇ DURUYOR\nÖzet anotasyonu: %s. Bu lamda önceki Tümör/Stroma sonucu da duruyor: %s. Hiçbir şey silinmedi; eski sonucu kaldırmak için o özet anotasyonunu seçip silin ya da bir sonraki çalıştırmada \"Değiştir\"i seçin. Seçtiğiniz bölge anotasyonlarına ölçüm yazıldıysa o ölçümler BU çalıştırmayı gösterir; önceki özet anotasyonu eski değerleri göstermeye devam eder.",
       "en": "EARLIER RESULT IS STILL ON THE SLIDE\nSummary annotation: %s. The earlier tumor/stroma result is still on this slide: %s. Nothing was deleted; to remove the old result, select that summary annotation and delete it, or choose \"Replace\" the next time you run this. If measurements were written to your selected region annotations, they describe THIS run; the earlier summary annotation still shows the earlier values."
+    },
+    {
+      "key": "script.665d4074c4fe",
+      "tr": "Mevcut hücrelere dokunma — tespiti çalıştırma (varsayılan)",
+      "en": "Keep the existing cells — do not run detection (default)"
+    },
+    {
+      "key": "script.6b4af35c53fe",
+      "tr": "Mevcut hücreleri değiştir — tespiti çalıştır",
+      "en": "Replace the existing cells — run detection"
+    },
+    {
+      "key": "script.d0c7ed3d2fd2",
+      "tr": "Not: önceki %,d hücre değiştirildi.",
+      "en": "Note: %,d earlier cells were replaced."
+    },
+    {
+      "key": "script.25b257bce6d1",
+      "tr": "DURDU: -a mevcut için geçersiz değer \"%s\" (yalnızca degistir kabul edilir). Hiçbir şey değiştirilmedi.",
+      "en": "STOPPED: invalid value \"%s\" for -a mevcut (only degistir is accepted). Nothing was changed."
+    },
+    {
+      "key": "script.b1cf692ac056",
+      "tr": "DURDU: hedef anotasyonda zaten %,d hücre tespiti var. Hiçbir şey değiştirilmedi. Bu hücrelerin (elle yapılmış sınıf ve düzeltmeler dahil) değiştirilmesini kabul ediyorsanız -a mevcut=degistir ile yeniden çalıştırın.",
+      "en": "STOPPED: the target annotation already holds %,d cell detections. Nothing was changed. If you accept replacing these cells (including classes or corrections made by hand), re-run with -a mevcut=degistir."
+    },
+    {
+      "key": "script.461bbed70a95",
+      "tr": "Seçili anotasyonda zaten %,d hücre bulunuyor; tespit bunları, elle yapılmış sınıf ve düzeltmeler dahil, değiştirecek.\n\nYalnız eşikleri değiştirmek istiyorsanız \"İptal\" deyip \"Yeniden say (hızlı)\" düğmesini kullanın; bu düğme hücreleri silmez.\n\nDevam edilsin mi? (\"Tamam\" = değiştir, \"İptal\" = hiçbir şey çalıştırılmaz)",
+      "en": "The selected annotation already holds %,d cells; detection will replace them, including classes or corrections made by hand.\n\nIf you only want to change the thresholds, choose \"Cancel\" and use the \"Yeniden say (hızlı)\" button instead; it does not delete cells.\n\nContinue? (\"OK\" = replace, \"Cancel\" = nothing is run)"
+    },
+    {
+      "key": "script.0bce6aa77f6b",
+      "tr": "İptal edildi — hiçbir şey çalıştırılmadı, mevcut hücreler korundu.",
+      "en": "Cancelled — nothing was run and the existing cells were kept."
+    },
+    {
+      "key": "script.24b91d6d005b",
+      "tr": "Seçili anotasyon(lar)da zaten %,d hücre tespiti var. Hiçbir şey yazılmadı. Bu hücreleri değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.",
+      "en": "The selected annotation(s) already hold(s) %,d cell detections. Nothing was written. To replace them, run again with -a mevcut=degistir."
+    },
+    {
+      "key": "script.0187c58bc6df",
+      "tr": "İptal edildi — hiçbir şey çalıştırılmadı, hiçbir şey değişmedi.",
+      "en": "Cancelled — nothing was run and nothing was changed."
+    },
+    {
+      "key": "script.cb7f8ecd03c8",
+      "tr": "Seçili anotasyon(lar)da zaten %,d hücre var. Tespit bu hücrelerin yerini alacak; elle verdiğiniz sınıflar ve düzeltmeler de gider.\n\nDevam edilsin mi?\n\n\"Hayır\" derseniz hiçbir şey çalıştırılmaz ve hiçbir şey değişmez.",
+      "en": "The selected annotation(s) already hold(s) %,d cells. Detection will replace them, including classes or corrections you made by hand.\n\nContinue?\n\nIf you choose \"No\", nothing is run and nothing is changed."
+    },
+    {
+      "key": "script.784fe373ea77",
+      "tr": "Önceki %,d hücre değiştirildi.",
+      "en": "%,d earlier cells were replaced."
+    },
+    {
+      "key": "script.917f37316768",
+      "tr": "Stroma anotasyonlarında zaten %,d hücre tespiti var. Hiçbir şey yazılmadı. Bu hücreleri değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.",
+      "en": "The Stroma annotations already hold(s) %,d cell detections. Nothing was written. To replace them, run again with -a mevcut=degistir."
+    },
+    {
+      "key": "script.d500c84220ca",
+      "tr": "Stroma anotasyonlarında zaten %,d hücre var. Tespit bu hücrelerin yerini alacak; elle verdiğiniz sınıflar ve düzeltmeler de gider.\n\nDevam edilsin mi?\n\n\"Hayır\" derseniz hiçbir şey çalıştırılmaz ve hiçbir şey değişmez.",
+      "en": "The Stroma annotations already hold(s) %,d cells. Detection will replace them, including classes or corrections you made by hand.\n\nContinue?\n\nIf you choose \"No\", nothing is run and nothing is changed."
+    },
+    {
+      "key": "script.df3a81761ec8",
+      "tr": "Seçili anotasyonda zaten %,d hücre var. Tespit bu hücrelerin yerini alacak; elle verdiğiniz sınıflar ve düzeltmeler de gider.\n\nDevam edilsin mi?\n\n\"Hayır\" derseniz hiçbir şey çalıştırılmaz ve hiçbir şey değişmez.",
+      "en": "The selected annotation already hold(s) %,d cells. Detection will replace them, including classes or corrections you made by hand.\n\nContinue?\n\nIf you choose \"No\", nothing is run and nothing is changed."
+    },
+    {
+      "key": "script.5383f68a2a7d",
+      "tr": "HATA: mevcut yalnız 'degistir' olabilir (verilen: %s). Hiçbir şey yazılmadı.",
+      "en": "ERROR: mevcut can only be 'degistir' (given: %s). Nothing was written."
+    },
+    {
+      "key": "script.60b4a54b41fb",
+      "tr": "Seçili anotasyonda zaten %,d hücre tespiti var. Hiçbir şey yazılmadı. Bu hücreleri değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.",
+      "en": "The selected annotation already hold(s) %,d cell detections. Nothing was written. To replace them, run again with -a mevcut=degistir."
+    },
+    {
+      "key": "script.e2b40df41cb4",
+      "tr": "Seçili TCR anotasyonunda zaten %,d hücre var. Tespit bu hücrelerin yerini alacak; elle verdiğiniz sınıflar ve düzeltmeler de gider.\n\nDevam edilsin mi?\n\n\"Hayır\" derseniz hiçbir şey çalıştırılmaz ve hiçbir şey değişmez.",
+      "en": "The selected TCR annotation already hold(s) %,d cells. Detection will replace them, including classes or corrections you made by hand.\n\nContinue?\n\nIf you choose \"No\", nothing is run and nothing is changed."
+    },
+    {
+      "key": "script.2c044d4d8901",
+      "tr": "Seçili TCR anotasyonunda zaten %,d hücre tespiti var. Hiçbir şey yazılmadı. Bu hücreleri değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.",
+      "en": "The selected TCR annotation already hold(s) %,d cell detections. Nothing was written. To replace them, run again with -a mevcut=degistir."
+    },
+    {
+      "key": "script.320920522b08",
+      "tr": "Değiştir — önceki sınıf bölgeleri silinir; özet bölgeniz korunur ve aynı anotasyonda yeniden ölçülür",
+      "en": "Replace — the earlier class regions are deleted; your summary region is kept and re-measured in the same annotation"
+    },
+    {
+      "key": "script.c30e648eac1e",
+      "tr": "Bu lamda zaten %,d Tümör-Stroma özeti var; Değiştir seçilirse silinebilecek sınıf bölgesi sayısı: %,d.\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir özet olur (\"Tümör-Stroma Özet (2)\" gibi) ve kendi sınıf bölgelerini taşır. Önceki özetler değişmeden kalır.\n\n\"Değiştir\" seçilirse bu modülün ürettiği önceki Tumor/Stroma sınıf bölgeleri silinir — onlarda elle yaptığınız düzeltmeler de gider. Özet olarak kullanılan bölgeniz ASLA silinmez: çizgisi, adı ve sınıfı korunur, yalnızca ölçümleri aynı anotasyonda yeniden hesaplanır. Yalnızca aracın kendi oluşturduğu eski özet anotasyonları silinir; bu araçla işaretlenmemiş (eski sürümden kalma) özetler olduğu gibi kalır. İçlerindeki diğer nesneler (hücre tespitleri, kendi anotasyonlarınız) silinmez.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki Tümör/Stroma sonucu ne olsun?",
+      "en": "This slide already has %,d tumor/stroma summary annotation(s); the number of class regions that Replace could delete is %,d.\n\n\"Add\" deletes nothing; the new result becomes a separate summary (such as \"Tümör-Stroma Özet (2)\") with its own class regions. The earlier summaries stay as they are.\n\n\"Replace\" deletes the earlier Tumor/Stroma class regions this module produced — corrections you made by hand to them go too. The region you used as the summary is NEVER deleted: its outline, name and class are kept and only its measurements are recalculated in the same annotation. Only old summary annotations that the tool itself created are deleted; summaries that are not marked by the tool (left over from an older version) stay as they are. Other objects inside (cell detections, your own annotations) are not deleted.\n\nCancel: nothing is run and nothing is written.\n\nWhat should happen to the earlier tumor/stroma result?"
+    },
+    {
+      "key": "script.2c478add6c37",
+      "tr": "Önceki sınıf bölgeleri silinecek",
+      "en": "The earlier class regions will be deleted"
+    },
+    {
+      "key": "script.f7a62bf61fe4",
+      "tr": "Bu lamda %,d Tümör-Stroma özeti var; %,d sınıf bölgesi silinecek. Sınıf bölgelerinde elle yaptığınız düzeltmeler KAYBOLUR. Özet olarak kullanılan bölgeniz silinmez: yerinde yeniden ölçülür. Yalnızca aracın kendi oluşturduğu eski özet anotasyonları silinir; sizin çizdiğiniz ya da işaretlenmemiş özetler korunur. İçlerindeki diğer nesneler de korunur.\n\nDevam edilsin mi?",
+      "en": "This slide has %,d tumor/stroma summary annotation(s); %,d class region(s) will be deleted. Corrections you made by hand to the class regions are LOST. The region you used as the summary is not deleted: it is re-measured in place. Only old summary annotations that the tool itself created are deleted; summaries you drew yourself or that are not marked are kept. Other objects inside them are kept too.\n\nContinue?"
+    },
+    {
+      "key": "script.04273d6ac80a",
+      "tr": "ÖNCEKİ SONUÇ DEĞİŞTİRİLDİ\n%,d sınıf bölgesi ve aracın kendi oluşturduğu %,d eski özet anotasyonu silindi (içlerindeki diğer nesneler korundu). Sizin çizdiğiniz bölge ya da işaretlenmemiş özet silinmedi; özet bölgesi korundu ve ölçümler onda yeniden hesaplandı.",
+      "en": "EARLIER RESULT REPLACED\n%,d class region(s) and %,d old summary annotation(s) created by the tool itself were deleted (other objects inside them were kept). No region you drew and no unmarked summary was deleted; the summary region was kept and the measurements were recalculated in it."
+    },
+    {
+      "key": "script.a2c2f2d27f11",
+      "tr": "Bu lamda zaten %,d Tümör-Stroma özeti var; Değiştir seçilirse silinebilecek sınıf bölgesi sayısı: %,d.\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir özet olur (\"Tümör-Stroma Özet (2)\" gibi) ve kendi sınıf bölgelerini taşır (özet kapalıysa yeni bölgeler \"Tumor (2)\" gibi adlanır). Önceki özetler değişmeden kalır.\n\n\"Değiştir\" seçilirse bu sihirbazın ürettiği önceki Tumor/Stroma sınıf bölgeleri silinir — onlarda elle yaptığınız düzeltmeler de gider. Özet olarak kullanılan bölgeniz ASLA silinmez: çizgisi, adı ve sınıfı korunur, yalnızca ölçümleri aynı anotasyonda yeniden hesaplanır. Yalnızca aracın kendi oluşturduğu eski özet anotasyonları silinir; bu araçla işaretlenmemiş (eski sürümden kalma) özetler olduğu gibi kalır. İçlerindeki diğer nesneler (hücre tespitleri, kendi anotasyonlarınız) silinmez.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki Tümör/Stroma sonucu ne olsun?",
+      "en": "This slide already has %,d tumor/stroma summary annotation(s); the number of class regions that Replace could delete is %,d.\n\n\"Add\" deletes nothing; the new result becomes a separate summary (such as \"Tümör-Stroma Özet (2)\") with its own class regions (if the summary is switched off, the new regions are named like \"Tumor (2)\"). The earlier summaries stay as they are.\n\n\"Replace\" deletes the earlier Tumor/Stroma class regions this wizard produced — corrections you made by hand to them go too. The region you used as the summary is NEVER deleted: its outline, name and class are kept and only its measurements are recalculated in the same annotation. Only old summary annotations that the tool itself created are deleted; summaries that are not marked by the tool (left over from an older version) stay as they are. Other objects inside (cell detections, your own annotations) are not deleted.\n\nCancel: nothing is run and nothing is written.\n\nWhat should happen to the earlier tumor/stroma result?"
+    },
+    {
+      "key": "script.96d140502a36",
+      "tr": "DURDU: bilinmeyen kopyalar değeri \"%s\". Geçerli değerler: hepsi | enyeni. Hiçbir şey dışa aktarılmadı.",
+      "en": "STOPPED: unknown copies value \"%s\". Valid values: hepsi (all) | enyeni (newest). Nothing was exported."
+    },
+    {
+      "key": "script.340a03244053",
+      "tr": "%s → kopya taraması: %s",
+      "en": "%s → copy scan: %s"
+    },
+    {
+      "key": "script.49a1c50ae61c",
+      "tr": "DURDU: %,d görüntüde aynı sonucun birden çok kopyası var (ör. %s). Hiçbir şey dışa aktarılmadı. Tüm kopyalar için -a kopyalar=hepsi, yalnız en yeni kopyalar için -a kopyalar=enyeni ile yeniden çalıştırın.",
+      "en": "STOPPED: %,d images hold more than one copy of the same result (e.g. %s). Nothing was exported. Run again with -a kopyalar=hepsi for all copies or -a kopyalar=enyeni for the newest copies only."
+    },
+    {
+      "key": "script.d3e7f99b619b",
+      "tr": "Tüm kopyalar — hepsi dışa aktarılır (varsayılan)",
+      "en": "All copies — export everything (default)"
+    },
+    {
+      "key": "script.7e68f1304c36",
+      "tr": "Yalnız en yenisi — eski kopyalar ve içlerindeki nesneler dışa aktarılmaz",
+      "en": "Newest only — older copies and the objects inside them are not exported"
+    },
+    {
+      "key": "script.2a83adf213c8",
+      "tr": "Aynı sonucun birden çok kopyası var",
+      "en": "More than one copy of the same result"
+    },
+    {
+      "key": "script.a6d0de40a16d",
+      "tr": "%,d görüntüde toplam %,d kopya grubu var: aynı sonuç lamda \"ad\", \"ad (2)\", \"ad (3)\" biçiminde yan yana duruyor. Kopyalar farklı sayılar içerebilir; hangisinin güncel olduğuna dışa aktarma karar veremez.\n\nÖrnekler (lam · ad: kopya numaraları; 1 = numarasız ad):\n%s\n\n\"Tüm kopyalar\": her şey dışa aktarılır. Veri dosyalarının biçimi değişmez; kopyalar sonuç penceresinde ve dışa aktarma klasöründeki \".kopyalar.txt\" dosyasında listelenir.\n\n\"Yalnız en yenisi\": her grupta yalnız en yüksek numaralı kopya kalır; eski kopyalar ve içlerindeki nesneler (anotasyonlar, tespitler) dışa aktarılmaz. Lamdaki hiçbir şey silinmez.\n\nİptal: hiçbir şey dışa aktarılmaz.\n\nHangisi dışa aktarılsın?",
+      "en": "%,d images hold %,d copy groups in total: the same result sits on the slide as \"name\", \"name (2)\", \"name (3)\". The copies can hold different numbers, and the export cannot decide which one is current.\n\nExamples (slide · name: copy numbers; 1 = the name without a number):\n%s\n\n\"All copies\": everything is exported. The data files keep their format; the copies are listed in the result window and in the \".kopyalar.txt\" file in the export folder.\n\n\"Newest only\": in each group only the highest-numbered copy stays; older copies and the objects inside them (annotations, detections) are not exported. Nothing is deleted from the slide.\n\nCancel: nothing is exported.\n\nWhich should be exported?"
+    },
+    {
+      "key": "script.977448c268af",
+      "tr": "İptal: hiçbir şey dışa aktarılmadı.",
+      "en": "Cancelled: nothing was exported."
+    },
+    {
+      "key": "script.e5d7e6223d81",
+      "tr": "Kopya grupları — seçim: %s",
+      "en": "Copy groups — choice: %s"
+    },
+    {
+      "key": "script.3b5c8754d6fc",
+      "tr": "yalnız en yenisi",
+      "en": "newest only"
+    },
+    {
+      "key": "script.b353e57316fe",
+      "tr": "tüm kopyalar",
+      "en": "all copies"
+    },
+    {
+      "key": "script.120555c8d702",
+      "tr": "Kopya grupları — seçim: yalnız en yenisi\n  %,d görüntüde %,d grup. Dışarıda bırakılan: %,d anotasyon ve %,d tespit (eski kopyalar ve içlerindekiler).",
+      "en": "Copy groups — choice: newest only\n  %,d images, %,d groups. Left out: %,d annotations and %,d detections (older copies and what is inside them)."
+    },
+    {
+      "key": "script.8f8300c4bcaf",
+      "tr": "Kopya grupları — seçim: tüm kopyalar\n  %,d görüntüde %,d grup. Kopyalar veri dosyalarında işaretli DEĞİLDİR; hangi sonucun güncel olduğunu aşağıdaki listeden kontrol edin.",
+      "en": "Copy groups — choice: all copies\n  %,d images, %,d groups. The copies are NOT marked in the data files; check the list below to see which result is current."
+    },
+    {
+      "key": "script.64fb4051b58b",
+      "tr": "Birleşik (_all_) dosyalar yazılmadı: bir lamdaki eski kopyanın kimliği başka bir lamdaki bir anotasyonla aynı olduğundan tek süzgeç doğru nesneleri ayıramaz. Lam başına dosyalar yazıldı.",
+      "en": "The combined (_all_) files were not written: an older copy on one slide shares its identifier with an annotation on another slide, so a single filter cannot pick the right objects. The per-slide files were written."
+    },
+    {
+      "key": "script.34c095b0b6b2",
+      "tr": "Kopya listesi dosyası: %s",
+      "en": "Copy list file: %s"
+    },
+    {
+      "key": "script.866c3e4341b8",
+      "tr": "DURDU: bilinmeyen kopyalar değeri \"%s\". Geçerli değerler: hepsi | enyeni. Hiçbir şey yazılmadı.",
+      "en": "STOPPED: unknown copies value \"%s\". Valid values: hepsi (all) | enyeni (newest). Nothing was written."
+    },
+    {
+      "key": "script.81b5fc1eeb8b",
+      "tr": "DURDU: %,d görüntüde kilitli özetin birden çok kopyası var (ör. %s). Hiçbir şey yazılmadı. Tüm kopyalar için -a kopyalar=hepsi, yalnız en yeni kopyalar için -a kopyalar=enyeni ile yeniden çalıştırın.",
+      "en": "STOPPED: %,d images hold more than one copy of a locked summary (e.g. %s). Nothing was written. Run again with -a kopyalar=hepsi for all copies or -a kopyalar=enyeni for the newest copies only."
+    },
+    {
+      "key": "script.664b17ebb1d0",
+      "tr": "Tüm kopyalar — her kopya kendi sütunlarında (varsayılan)",
+      "en": "All copies — each copy in its own columns (default)"
+    },
+    {
+      "key": "script.f82a1fd783d2",
+      "tr": "Yalnız en yenisi — eski kopyalar tabloya girmez",
+      "en": "Newest only — older copies stay out of the table"
+    },
+    {
+      "key": "script.08096a5c93b4",
+      "tr": "Aynı özetin birden çok kopyası var",
+      "en": "More than one copy of the same summary"
+    },
+    {
+      "key": "script.1a1597c219e8",
+      "tr": "%,d görüntüde toplam %,d kopya grubu var: aynı özet lamda \"ad\", \"ad (2)\", \"ad (3)\" biçiminde yan yana duruyor. Kopyalar farklı sayılar içerebilir; hangisinin güncel olduğuna bu araç karar veremez.\n\nÖrnekler (lam · ad: kopya numaraları; 1 = numarasız ad):\n%s\n\n\"Tüm kopyalar\": her kopya kendi adıyla ayrı sütunlara yazılır (\"ad · ölçüm\", \"ad (2) · ölçüm\"); tabloya kopya bilgisi sütunu eklenir.\n\n\"Yalnız en yenisi\": her grupta yalnız en yüksek numaralı kopya tabloya girer. En yeni kopya kilitli değilse o grup tabloda hiç yer almaz. Lamdaki hiçbir şey silinmez.\n\nİptal: hiçbir şey yazılmaz.\n\nHangisi yazılsın?",
+      "en": "%,d images hold %,d copy groups in total: the same summary sits on the slide as \"name\", \"name (2)\", \"name (3)\". The copies can hold different numbers, and this tool cannot decide which one is current.\n\nExamples (slide · name: copy numbers; 1 = the name without a number):\n%s\n\n\"All copies\": each copy is written to its own columns under its own name (\"name · measurement\", \"name (2) · measurement\"); a copy information column is added to the table.\n\n\"Newest only\": in each group only the highest-numbered copy enters the table. If the newest copy is not locked, that group does not appear in the table at all. Nothing is deleted from the slide.\n\nCancel: nothing is written.\n\nWhich should be written?"
+    },
+    {
+      "key": "script.c2cdf009e404",
+      "tr": "İptal: hiçbir şey yazılmadı.",
+      "en": "Cancelled: nothing was written."
+    },
+    {
+      "key": "script.fee4550c8637",
+      "tr": "Kopya grupları — seçim: yalnız en yenisi\n  %,d görüntüde %,d grup. Dışarıda bırakılan: %,d kilitli anotasyon, %,d sütun (yalnız eski kopyalarda bulunan).",
+      "en": "Copy groups — choice: newest only\n  %,d images, %,d groups. Left out: %,d locked annotations, %,d columns (found only in older copies)."
+    },
+    {
+      "key": "script.5934930c5034",
+      "tr": "Kopya grupları — seçim: tüm kopyalar\n  %,d görüntüde %,d grup. Her kopya kendi sütunlarında; hangi kopyanın güncel olduğunu aşağıdaki listeden kontrol edin.",
+      "en": "Copy groups — choice: all copies\n  %,d images, %,d groups. Each copy is in its own columns; check the list below to see which copy is current."
+    },
+    {
+      "key": "script.87fb0f304dc9",
+      "tr": "Son sütun \"kopya_bilgisi\": lam başına kopya grupları (ad: numaralar, 1 = numarasız ad; en yeniyse \"-> numara\").",
+      "en": "The last column \"kopya_bilgisi\" lists the copy groups per slide (name: numbers, 1 = the name without a number; with newest only \"-> number\")."
+    },
+    {
+      "key": "script.14de14c01439",
+      "tr": "DURDU: %,d görüntüde birden çok GrandQC seti var (ör. %s). Hiçbir şey yazılmadı. Tüm setler için -a kopyalar=hepsi, yalnız en yeni set için -a kopyalar=enyeni ile yeniden çalıştırın.",
+      "en": "STOPPED: %,d images hold more than one GrandQC set (e.g. %s). Nothing was written. Run again with -a kopyalar=hepsi for all sets or -a kopyalar=enyeni for the newest set only."
+    },
+    {
+      "key": "script.23b429033e74",
+      "tr": "Tüm setler — set başına bir satır (varsayılan)",
+      "en": "All sets — one row per set (default)"
+    },
+    {
+      "key": "script.b6232cc62bb8",
+      "tr": "Yalnız en yeni set — lam başına bir satır",
+      "en": "Newest set only — one row per slide"
+    },
+    {
+      "key": "script.63ce111d915c",
+      "tr": "Birden çok GrandQC seti var",
+      "en": "More than one GrandQC set"
+    },
+    {
+      "key": "script.21c3ca2ac0c8",
+      "tr": "%,d lamda birden çok GrandQC seti var: sihirbaz her çalıştırmada lama yeni bir set ekleyebilir (\"GrandQC KK\", \"GrandQC KK (2)\", \"GrandQC KK (3)\"). Setler farklı sayılar içerebilir; hangisinin güncel olduğuna bu araç karar veremez.\n\nÖrnekler (lam · ad: set numaraları; 1 = numarasız ad):\n%s\n\n\"Tüm setler\": her set ayrı bir satır olur ve satıra setin adını yazan bir \"set_adi\" sütunu eklenir.\n\n\"Yalnız en yeni set\": her lamdan yalnız en yüksek numaralı set özetlenir; \"set_adi\" sütunu hangi setin kullanıldığını gösterir. Lamdaki hiçbir şey silinmez.\n\nİptal: hiçbir şey yazılmaz.\n\nHangisi yazılsın?",
+      "en": "%,d slides hold more than one GrandQC set: the wizard can add a new set to the slide on each run (\"GrandQC KK\", \"GrandQC KK (2)\", \"GrandQC KK (3)\"). The sets can hold different numbers, and this tool cannot decide which one is current.\n\nExamples (slide · name: set numbers; 1 = the name without a number):\n%s\n\n\"All sets\": each set becomes its own row, and a \"set_adi\" column gives the set's name.\n\n\"Newest set only\": from each slide only the highest-numbered set is summarised; the \"set_adi\" column shows which set was used. Nothing is deleted from the slide.\n\nCancel: nothing is written.\n\nWhich should be written?"
+    },
+    {
+      "key": "script.a9f3bcb2d7f3",
+      "tr": "Birden çok set — seçim: yalnız en yeni set\n  %,d lamda birden çok set var. Dışarıda bırakılan: %,d eski set (%,d anotasyon).",
+      "en": "Several sets — choice: newest set only\n  %,d slides hold more than one set. Left out: %,d older sets (%,d annotations)."
+    },
+    {
+      "key": "script.edd54177c405",
+      "tr": "Birden çok set — seçim: tüm setler\n  %,d lamda birden çok set var; toplam %,d satır yazıldı. Her satırın kendi seti \"set_adi\" sütununda.",
+      "en": "Several sets — choice: all sets\n  %,d slides hold more than one set; %,d rows were written in total. Each row's own set is in the \"set_adi\" column."
+    },
+    {
+      "key": "script.051b44368449",
+      "tr": "Son sütun \"set_adi\": satırın hangi GrandQC setinden geldiğini gösterir. Etkilenen lamlar (ad: set numaraları):",
+      "en": "The last column \"set_adi\" shows which GrandQC set the row came from. Affected slides (name: set numbers):"
     }
   ],
   "source_contracts": {
@@ -11808,7 +12093,7 @@
     },
     "sihirbaz.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "2f847f85e50e235f42df0d27e7fe8fb6ed87a9aa9da2615b56847e905ed3b301",
+      "sha256": "8513ee70fe2a8e9a2e2a090ee471d6febff28943580cfb2ff484eefffc4a8059",
       "expressions": [
         {
           "original": "\"Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\\n${where}\"",
@@ -11882,6 +12167,12 @@
           "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
           "previous_sha256": "3e03bf399f76c86db9bea2ee8cf8e2de23171818183e1dba8cb43ff50c968659",
           "sha256": "2f847f85e50e235f42df0d27e7fe8fb6ed87a9aa9da2615b56847e905ed3b301",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
+          "previous_sha256": "2f847f85e50e235f42df0d27e7fe8fb6ed87a9aa9da2615b56847e905ed3b301",
+          "sha256": "8513ee70fe2a8e9a2e2a090ee471d6febff28943580cfb2ff484eefffc4a8059",
           "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
@@ -11968,7 +12259,7 @@
     },
     "tumor-stroma.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "3e546adde16b6fe02105d697ba1eedbe45dd342feede8673fb6f9b056612e080",
+      "sha256": "f4e4c57c175499827f53d70246bb7fc37bc9c82b0ffab603cae2639d76737e0f",
       "expressions": [
         {
           "original": "\"Tümör/stroma sınıflandırıcısı Brightfield (H&E) görüntü bekler. Şu anki: ${imageTypeName}\"",
@@ -11983,16 +12274,30 @@
           "previous_sha256": "5f6a6e76a122e0752f795d48de454640fe5d6b2ba13e200b7001d52bb74c6907",
           "sha256": "3e546adde16b6fe02105d697ba1eedbe45dd342feede8673fb6f9b056612e080",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
+          "previous_sha256": "3e546adde16b6fe02105d697ba1eedbe45dd342feede8673fb6f9b056612e080",
+          "sha256": "f4e4c57c175499827f53d70246bb7fc37bc9c82b0ffab603cae2639d76737e0f",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
     "veri-aktarma.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "3a3cc3a6ad10b1f762806f1bed48f36d68a3c30462fb929f3857fb7c75d6621f"
+      "sha256": "a206a221a31ffb4a6d159e2e0dde6963f1038b1ff8abaa3a7a50ea1fffcf3c8e",
+      "baseline_reviews": [
+        {
+          "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
+          "previous_sha256": "3a3cc3a6ad10b1f762806f1bed48f36d68a3c30462fb929f3857fb7c75d6621f",
+          "sha256": "a206a221a31ffb4a6d159e2e0dde6963f1038b1ff8abaa3a7a50ea1fffcf3c8e",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "quantum-ctcf.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "f5859abcdf08b45d872b7913217dfee5aa854952c24d8553bef40ec714beada8",
+      "sha256": "e4a0412fec0e802b499d0ef8534c76e216adf807849ec3922746e149e4a6af7b",
       "expressions": [
         {
           "original": "\"Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\\n${where}\"",
@@ -12060,23 +12365,37 @@
           "count": 1,
           "context": "setText"
         }
+      ],
+      "baseline_reviews": [
+        {
+          "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
+          "previous_sha256": "f5859abcdf08b45d872b7913217dfee5aa854952c24d8553bef40ec714beada8",
+          "sha256": "e4a0412fec0e802b499d0ef8534c76e216adf807849ec3922746e149e4a6af7b",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
       ]
     },
     "membran-boya.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "933aa4fe0a08b47f1bfd02522b1d05a095281cbe6c29cba89701cfebbec99006",
+      "sha256": "2dda0eb7fbc90d70f257b654e779b355437f4fb040df45d1e8424f84c41e0098",
       "baseline_reviews": [
         {
           "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
           "previous_sha256": "fa23765c702a7e2f73058b698978f733b6056f9a7abef90c28d463354ea0f116",
           "sha256": "933aa4fe0a08b47f1bfd02522b1d05a095281cbe6c29cba89701cfebbec99006",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
+          "previous_sha256": "933aa4fe0a08b47f1bfd02522b1d05a095281cbe6c29cba89701cfebbec99006",
+          "sha256": "2dda0eb7fbc90d70f257b654e779b355437f4fb040df45d1e8424f84c41e0098",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
     "sitoplazmik-boya.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "8298d90d09176191788b94650e480bf019b07fe222fd0cee264f5411a725912a",
+      "sha256": "19183cb811ad309d4ee4a368cbb3172441fc2abc5a2682056bb6443a56689e9b",
       "baseline_reviews": [
         {
           "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
@@ -12088,6 +12407,12 @@
           "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
           "previous_sha256": "b7276f1721bab640e1b30d425042b220c5294b32908d25b72611dbfeecaf0660",
           "sha256": "8298d90d09176191788b94650e480bf019b07fe222fd0cee264f5411a725912a",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
+          "previous_sha256": "8298d90d09176191788b94650e480bf019b07fe222fd0cee264f5411a725912a",
+          "sha256": "19183cb811ad309d4ee4a368cbb3172441fc2abc5a2682056bb6443a56689e9b",
           "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
@@ -12310,7 +12635,15 @@
     },
     "yardimci-grandqc-kohort-ozet.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "e342bc1dba6830969741b39088a5b05a1e2a90507834fa057d7718af467eba05"
+      "sha256": "b51008bc9f53e6ea042e3127f28530d31d5976be52feb3d2115fc3226f73fa68",
+      "baseline_reviews": [
+        {
+          "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
+          "previous_sha256": "e342bc1dba6830969741b39088a5b05a1e2a90507834fa057d7718af467eba05",
+          "sha256": "b51008bc9f53e6ea042e3127f28530d31d5976be52feb3d2115fc3226f73fa68",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-image-type.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
@@ -12334,12 +12667,18 @@
     },
     "yardimci-immun-yogunluk.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "ee8986f537388c262ff892c90dfa3a40999b5771d223378e82873d026bd12d70",
+      "sha256": "bb18aafafdd3f3a112d90b4406d03ca016a3e74d4ec4db1a976e6099d3ec1772",
       "baseline_reviews": [
         {
           "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
           "previous_sha256": "11b77eb586ac1b2c8d1e0647f9164a16015868699f0722bfa87853e6ac8b325a",
           "sha256": "ee8986f537388c262ff892c90dfa3a40999b5771d223378e82873d026bd12d70",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
+          "previous_sha256": "ee8986f537388c262ff892c90dfa3a40999b5771d223378e82873d026bd12d70",
+          "sha256": "bb18aafafdd3f3a112d90b4406d03ca016a3e74d4ec4db1a976e6099d3ec1772",
           "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
@@ -12358,13 +12697,19 @@
     },
     "yardimci-kohort-ozet-topla.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "15213babd7c9895f14af80cff65457beec24f9ee85182c64ca185604d8770f83",
+      "sha256": "f24bb3ff4111de64c624d2a0572d7c4313427f0fb45e4fea0b2ff2c8f2f26595",
       "baseline_reviews": [
         {
           "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
           "previous_sha256": "399daef39a175c590c13b9745b9a74b700d0e930e6373e569ede848a9d7d234b",
           "sha256": "15213babd7c9895f14af80cff65457beec24f9ee85182c64ca185604d8770f83",
           "record": "docs/source-baseline-review-2026-11-15.md"
+        },
+        {
+          "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
+          "previous_sha256": "15213babd7c9895f14af80cff65457beec24f9ee85182c64ca185604d8770f83",
+          "sha256": "f24bb3ff4111de64c624d2a0572d7c4313427f0fb45e4fea0b2ff2c8f2f26595",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
@@ -12518,12 +12863,18 @@
     },
     "yardimci-stromal-til.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "fef0a3bfffec3b646966b503f73690abeb465b83f64d4952b555a0f2997f7fc6",
+      "sha256": "60b518b46ae04ca1606c49f7a61354cafd59b90b317da37959842dc23b296f60",
       "baseline_reviews": [
         {
           "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
           "previous_sha256": "ebf3162e23251970e280bd08d2aaaf19409ae45de50abdf9374cc159c2522bf0",
           "sha256": "fef0a3bfffec3b646966b503f73690abeb465b83f64d4952b555a0f2997f7fc6",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
+          "previous_sha256": "fef0a3bfffec3b646966b503f73690abeb465b83f64d4952b555a0f2997f7fc6",
+          "sha256": "60b518b46ae04ca1606c49f7a61354cafd59b90b317da37959842dc23b296f60",
           "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
@@ -12606,12 +12957,18 @@
     },
     "er-pr-hscore.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "5e2317763ed44d6a2c93150996021dae1766a7c64974b893dd89a86f43a865b4",
+      "sha256": "da2d17e3912d1b648794b21867027653a8cd28b19c1baa31ad6020f18c6f831b",
       "baseline_reviews": [
         {
           "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
           "previous_sha256": "0d43e6177a9ba3f99717c1062ac92b69fdf0af95c682795924aa7590828889ff",
           "sha256": "5e2317763ed44d6a2c93150996021dae1766a7c64974b893dd89a86f43a865b4",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
+          "previous_sha256": "5e2317763ed44d6a2c93150996021dae1766a7c64974b893dd89a86f43a865b4",
+          "sha256": "da2d17e3912d1b648794b21867027653a8cd28b19c1baa31ad6020f18c6f831b",
           "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
@@ -12666,12 +13023,18 @@
     },
     "nukleer-boya.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "77a19963fec5220cdbb95f7735b23364efa486be6fcecf4a180a930b9bccab62",
+      "sha256": "ee5ff6ef4e489c757d18a5a10ef7489095dbbefcb1e3408f6230c2c58bb488aa",
       "baseline_reviews": [
         {
           "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
           "previous_sha256": "d784ab37fc656b84715b95a4b4ce5d87253c4dbb31587930e09a41f2b0732bba",
           "sha256": "77a19963fec5220cdbb95f7735b23364efa486be6fcecf4a180a930b9bccab62",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
+          "previous_sha256": "77a19963fec5220cdbb95f7735b23364efa486be6fcecf4a180a930b9bccab62",
+          "sha256": "ee5ff6ef4e489c757d18a5a10ef7489095dbbefcb1e3408f6230c2c58bb488aa",
           "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
@@ -12686,7 +13049,15 @@
     },
     "yardimci-cellpose-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "ad7944c10c6c6f80a32b33edc9ff020c28fa39c5c4e239af132a2bc0c6e6b16f"
+      "sha256": "e22cf71fdab864a52e49f7461665cb13fc37990995dfaa4a4a53792595b841f2",
+      "baseline_reviews": [
+        {
+          "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
+          "previous_sha256": "ad7944c10c6c6f80a32b33edc9ff020c28fa39c5c4e239af132a2bc0c6e6b16f",
+          "sha256": "e22cf71fdab864a52e49f7461665cb13fc37990995dfaa4a4a53792595b841f2",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-dicom-svs-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
@@ -12808,7 +13179,15 @@
     },
     "yardimci-instanseg-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "938ca7f58e80dc732a4cceb69faaadd62890a326e563330b571a7c63cafdde4e"
+      "sha256": "0ac85208e1ef3ef306e9139b44a689e3e3405082dc5af6848c359f8ea3fd2711",
+      "baseline_reviews": [
+        {
+          "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
+          "previous_sha256": "938ca7f58e80dc732a4cceb69faaadd62890a326e563330b571a7c63cafdde4e",
+          "sha256": "0ac85208e1ef3ef306e9139b44a689e3e3405082dc5af6848c359f8ea3fd2711",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-kaiko-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
@@ -12926,7 +13305,15 @@
     },
     "yardimci-stardist-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "74a801fafc3d48c03396d7e01c05cdd6c37d0fd397489147b3fb0ad2120a1998"
+      "sha256": "f19af5ba7e4bfbc4f36137b87c7137a9ee283a82a4d197fcff571d9dab90e11b",
+      "baseline_reviews": [
+        {
+          "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
+          "previous_sha256": "74a801fafc3d48c03396d7e01c05cdd6c37d0fd397489147b3fb0ad2120a1998",
+          "sha256": "f19af5ba7e4bfbc4f36137b87c7137a9ee283a82a4d197fcff571d9dab90e11b",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-tiatoolbox-bolge-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",

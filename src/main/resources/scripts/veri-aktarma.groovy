@@ -369,6 +369,92 @@ def toSlug = { String s ->
 }
 
 // ──────────────────────────────────────────────────────────────
+// Kopya grupları: bir lamda aynı sonucun "ad", "ad (2)", "ad (3)" … olarak yan yana durması.
+// Kural (tam eşleşme, önek eşleşmesi YOK): "X (N)" (N tam sayı ≥ 2) "X" tabanına aittir. Bir grup,
+// o tabanın en az İKİ farklı numarası (taban = 1) aynı lamda varsa kopya grubudur; tek başına bir
+// "X (N)" (X silinmiş) grup değildir. "X (notlarım)" ve "X (1)" kopya değildir. Sondaki " (N)" yalnız
+// aynı tabanın bir kardeşi varsa kopya numarasıdır: "… Mitotic figure (12)" (nokta sayısı) tek başına
+// bir şey ifade etmez, "… (12) (2)" ile birlikte "… (12)" tabanının 1. ve 2. kopyasıdır.
+// Sınır: aynı lamda "X (12)" ve "X (3)" varsa (X yok) ikisi kopya sayılır; ad tek başına nokta
+// sayısı ile kopya numarasını ayıramaz. En yeni = en yüksek numara.
+// ──────────────────────────────────────────────────────────────
+// Başsız kipte soru sorulamaz: açık bağımsız değişken gerekir (ör. -a kopyalar=hepsi).
+def headlessArg = { String key ->
+    def list = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) list = (a as List) } } catch (Throwable ignore) {}
+    def found = null
+    list.each { a -> def s = a?.toString() ?: ''; int i = s.indexOf('='); if (i > 0 && s.substring(0, i).trim() == key) found = s.substring(i + 1).trim().toLowerCase(java.util.Locale.ROOT) }
+    return found
+}
+def copiesParse = { String name ->
+    if (name == null) return null
+    def m = (name =~ '^(.+) \\((\\d{1,6})\\)$')
+    if (!m.matches()) return null
+    int n = Integer.parseInt(m.group(2))
+    return (n >= 2) ? [base: m.group(1), index: n] : null
+}
+def copiesGroups = { Collection items, Closure nameOf ->
+    def all = new LinkedHashMap()
+    def bases = new HashSet()
+    items.each { a -> def p = copiesParse(nameOf(a)); if (p != null) bases << p.base }
+    items.each { a ->
+        String nm = nameOf(a)
+        if (nm == null) return
+        def p = copiesParse(nm)
+        if (p != null) all.get(p.base, new TreeMap()).get(p.index, []) << a
+        if (p == null || bases.contains(nm)) all.get(nm, new TreeMap()).get(1, []) << a
+    }
+    def out = new LinkedHashMap()
+    all.each { b, idx -> if (idx.size() >= 2) out[b] = idx }
+    return out
+}
+def copiesOlder = { Map groups ->
+    def older = Collections.newSetFromMap(new IdentityHashMap())
+    groups.each { b, idx ->
+        def mx = idx.keySet().max()
+        idx.each { i, objs -> if (i != mx) older.addAll(objs) }
+    }
+    return older
+}
+def copiesAncestorHit = { obj, Set ids ->
+    def o = obj
+    while (o != null) {
+        if (ids.contains(o.getID())) return true
+        o = o.getParent()
+    }
+    return false
+}
+def copiesReportLines = { Map results, boolean newest ->
+    def lines = []
+    results.each { k, v ->
+        v.scan.groups.each { b, idx ->
+            lines << (v.name + ' · ' + b + ': ' + idx.keySet().join(', ') + (newest ? ' → ' + idx.keySet().max() : ''))
+        }
+    }
+    return lines
+}
+def copiesScanHierarchy = { hierarchy ->
+    def annos = hierarchy.getAnnotationObjects() as List
+    def groups = copiesGroups(annos, { it.getName() })
+    if (groups.isEmpty()) return null
+    def ids = new HashSet(copiesOlder(groups).collect { it.getID() })
+    int leftAnn = annos.count { copiesAncestorHit(it, ids) }
+    int leftDet = hierarchy.getDetectionObjects().count { copiesAncestorHit(it, ids) }
+    return [groups: groups, ids: ids, leftAnn: leftAnn, leftDet: leftDet]
+}
+def copiesEntryKey = { entry -> try { entry.getID() } catch (Throwable t) { entry.getImageName() } }
+def copiesAskChoice = { String title, String body, List options, String dflt ->
+    if (javafx.application.Platform.isFxApplicationThread()) return Dialogs.showChoiceDialog(title, body, options, dflt)
+    def answer = new java.util.concurrent.atomic.AtomicReference(null)
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    javafx.application.Platform.runLater {
+        try { answer.set(Dialogs.showChoiceDialog(title, body, options, dflt)) } finally { latch.countDown() }
+    }
+    latch.await()
+    return answer.get()
+}
+
+// ──────────────────────────────────────────────────────────────
 // 1) Ön kontroller
 // ──────────────────────────────────────────────────────────────
 def project = QP.getProject()
@@ -378,6 +464,13 @@ if (project == null) {
         workshopText('script.8f09552c4053', "Bu betik bir QuPath projesinin açık olmasını gerektirir.\n" +
         "Önce bir proje açın, sonra tekrar deneyin.")
     )
+    return
+}
+
+// Bilinmeyen -a kopyalar=… değeri HER durumda durdurur (kopya olmasa da; fail closed).
+def copiesArg = headlessArg('kopyalar')
+if (copiesArg != null && copiesArg != 'hepsi' && copiesArg != 'enyeni') {
+    println String.format(java.util.Locale.US, workshopText('script.96d140502a36', 'DURDU: bilinmeyen kopyalar değeri "%s". Geçerli değerler: hepsi | enyeni. Hiçbir şey dışa aktarılmadı.'), copiesArg)
     return
 }
 
@@ -444,6 +537,77 @@ if (!projectMode && currentEntry == null) {
     )
     return
 }
+
+// ──────────────────────────────────────────────────────────────
+// 2.4) Kopya kontrolü — SORU, hiçbir dosya yazılmadan ve açık lam kaydedilmeden ÖNCE.
+// Kopya grubu yoksa hiçbir şey sorulmaz, çıktı eskisiyle aynıdır.
+// ──────────────────────────────────────────────────────────────
+def copiesScanResults = [:]          // girdi kimliği -> [name, scan]
+def copiesKeptIds = new HashSet()     // her lamda dışarıda BIRAKILMAYAN anotasyonların kimlikleri
+def copiesScanErrors = []
+def copiesTargets = projectMode ? project.getImageList() : [currentEntry]
+copiesTargets.each { entry ->
+    String key = copiesEntryKey(entry)
+    def toClose = null
+    try {
+        def hier
+        if (currentImageData != null && currentEntry != null && key == copiesEntryKey(currentEntry)) {
+            hier = currentImageData.getHierarchy()      // açık lam: bellekteki hali (birazdan kaydedilir)
+        } else {
+            toClose = entry.readImageData()
+            hier = toClose.getHierarchy()
+        }
+        def sc = copiesScanHierarchy(hier)
+        hier.getAnnotationObjects().each { a -> if (sc == null || !copiesAncestorHit(a, sc.ids)) copiesKeptIds << a.getID() }
+        if (sc != null) copiesScanResults[key] = [name: entry.getImageName(), scan: sc]
+    } catch (Throwable t) {
+        copiesScanErrors << String.format(java.util.Locale.US, workshopText('script.340a03244053', '%s → kopya taraması: %s'), entry.getImageName(), (t.getMessage() ?: t.getClass().getSimpleName()))
+    } finally {
+        try { toClose?.close() } catch (Throwable ignore) {}
+    }
+}
+def copiesChoice = null     // null: kopya grubu yok | 'all' | 'newest'
+if (!copiesScanResults.isEmpty()) {
+    int copiesImgCount = copiesScanResults.size()
+    int copiesGrpCount = copiesScanResults.values().sum { it.scan.groups.size() } as int
+    def copiesExamples = copiesReportLines(copiesScanResults, false).take(5)
+    if (isHeadless) {
+        if (copiesArg == null) {
+            println String.format(java.util.Locale.US, workshopText('script.49a1c50ae61c', 'DURDU: %,d görüntüde aynı sonucun birden çok kopyası var (ör. %s). Hiçbir şey dışa aktarılmadı. Tüm kopyalar için -a kopyalar=hepsi, yalnız en yeni kopyalar için -a kopyalar=enyeni ile yeniden çalıştırın.'), copiesImgCount, copiesExamples.join('; '))
+            return
+        }
+        copiesChoice = (copiesArg == 'enyeni') ? 'newest' : 'all'
+    } else {
+        String copiesOptAll = workshopText('script.d3e7f99b619b', 'Tüm kopyalar — hepsi dışa aktarılır (varsayılan)')
+        String copiesOptNewest = workshopText('script.7e68f1304c36', 'Yalnız en yenisi — eski kopyalar ve içlerindeki nesneler dışa aktarılmaz')
+        def copiesPick = copiesAskChoice(workshopText('script.2a83adf213c8', 'Aynı sonucun birden çok kopyası var'),
+            String.format(java.util.Locale.US, workshopText('script.a6d0de40a16d', '%,d görüntüde toplam %,d kopya grubu var: aynı sonuç lamda "ad", "ad (2)", "ad (3)" biçiminde yan yana duruyor. Kopyalar farklı sayılar içerebilir; hangisinin güncel olduğuna dışa aktarma karar veremez.\n\nÖrnekler (lam · ad: kopya numaraları; 1 = numarasız ad):\n%s\n\n"Tüm kopyalar": her şey dışa aktarılır. Veri dosyalarının biçimi değişmez; kopyalar sonuç penceresinde ve dışa aktarma klasöründeki ".kopyalar.txt" dosyasında listelenir.\n\n"Yalnız en yenisi": her grupta yalnız en yüksek numaralı kopya kalır; eski kopyalar ve içlerindeki nesneler (anotasyonlar, tespitler) dışa aktarılmaz. Lamdaki hiçbir şey silinmez.\n\nİptal: hiçbir şey dışa aktarılmaz.\n\nHangisi dışa aktarılsın?'), copiesImgCount, copiesGrpCount, copiesExamples.collect { "  • " + it }.join("\n")),
+            [copiesOptAll, copiesOptNewest], copiesOptAll)
+        if (copiesPick == null) {
+            println workshopText('script.977448c268af', 'İptal: hiçbir şey dışa aktarılmadı.')
+            return
+        }
+        copiesChoice = (copiesPick == copiesOptNewest) ? 'newest' : 'all'
+    }
+}
+def copiesExcludedByKey = [:]
+def copiesUnionIds = new HashSet()
+def copiesLeftAnn = 0
+def copiesLeftDet = 0
+if (copiesChoice == 'newest') {
+    copiesScanResults.each { k, v ->
+        copiesExcludedByKey[k] = v.scan.ids
+        copiesUnionIds.addAll(v.scan.ids)
+        copiesLeftAnn += v.scan.leftAnn
+        copiesLeftDet += v.scan.leftDet
+    }
+}
+// Birleşik (_all_) dosyalar tek bir süzgeç kullanır. Süzgeç nesne kimliğine bakar; başka bir lamda
+// dışarıda bırakılmayan bir anotasyon aynı kimliği taşıyorsa (anotasyon başka lama aynı kimlikle
+// içe aktarılmış olabilir) süzgeç yanlış nesneyi atabilir — o durumda birleşik dosya YAZILMAZ.
+def copiesCombinedSkip = (copiesChoice == 'newest') && !copiesUnionIds.intersect(copiesKeptIds).isEmpty()
+def copiesPredicate = { Set ids -> ({ o -> !copiesAncestorHit(o, ids) } as java.util.function.Predicate) }
+def copiesExcludedFor = { entry -> (copiesChoice == 'newest') ? copiesExcludedByKey[copiesEntryKey(entry)] : null }
 
 // ──────────────────────────────────────────────────────────────
 // 2.5) Açık lamı diske kaydet — kritik
@@ -531,6 +695,7 @@ def exportEntry = { entry, imageDataForGeo ->
                 .separator(exportSeparatorChar)
                 .exportType(PathDetectionObject.class)
             if (useSubset) me = me.includeOnlyColumns(subsetCols)
+            if (copiesExcludedFor(entry) != null) me = me.filter(copiesPredicate(copiesExcludedFor(entry)))
             me.exportMeasurements(detFile)
             if (detFile.length() > 0) filesWritten << detFile.getName()
         } catch (Throwable t) {
@@ -547,6 +712,7 @@ def exportEntry = { entry, imageDataForGeo ->
                 .separator(exportSeparatorChar)
                 .exportType(PathAnnotationObject.class)
             if (useSubset) me = me.includeOnlyColumns(subsetCols)
+            if (copiesExcludedFor(entry) != null) me = me.filter(copiesPredicate(copiesExcludedFor(entry)))
             me.exportMeasurements(annFile)
             if (annFile.length() > 0) filesWritten << annFile.getName()
         } catch (Throwable t) {
@@ -557,6 +723,8 @@ def exportEntry = { entry, imageDataForGeo ->
     // Anotasyon GeoJSON + sayım
     try {
         def annos = imageDataForGeo?.getHierarchy()?.getAnnotationObjects() ?: []
+        def exIds = copiesExcludedFor(entry)
+        if (exIds != null) annos = annos.findAll { !copiesAncestorHit(it, exIds) }
         if ((opt.geo as boolean) && !annos.isEmpty()) {
             def geoFile = new File(outDir, "${pfx}${slug}__annotations.geojson")
             geoFile.write(gson.toJson(annos), "UTF-8")
@@ -564,6 +732,7 @@ def exportEntry = { entry, imageDataForGeo ->
         }
         annotationsTotal += annos.size()
         def dets = imageDataForGeo?.getHierarchy()?.getDetectionObjects() ?: []
+        if (exIds != null) dets = dets.findAll { !copiesAncestorHit(it, exIds) }
         detectionsTotal += dets.size()
     } catch (Throwable t) {
         errors << "${entry.getImageName()} → geojson: ${t.getMessage()}"
@@ -592,7 +761,7 @@ if (projectMode) {
     }
 
     // Birleştirilmiş dosyalar — tek dosyada tüm projenin tespitler / anotasyonlar
-    if (opt.det as boolean) {
+    if ((opt.det as boolean) && !copiesCombinedSkip) {
         try {
             def allDet = new File(outDir, "${pfx}_all_detections.${ext}")
             def me = new MeasurementExporter()
@@ -600,6 +769,7 @@ if (projectMode) {
                 .separator(exportSeparatorChar)
                 .exportType(PathDetectionObject.class)
             if (useSubset) me = me.includeOnlyColumns(subsetCols)
+            if (!copiesUnionIds.isEmpty() && copiesChoice == 'newest') me = me.filter(copiesPredicate(copiesUnionIds))
             me.exportMeasurements(allDet)
             if (allDet.length() > 0) filesWritten << allDet.getName()
         } catch (Throwable t) {
@@ -607,7 +777,7 @@ if (projectMode) {
         }
     }
 
-    if (opt.ann as boolean) {
+    if ((opt.ann as boolean) && !copiesCombinedSkip) {
         try {
             def allAnn = new File(outDir, "${pfx}_all_annotations.${ext}")
             def me = new MeasurementExporter()
@@ -615,6 +785,7 @@ if (projectMode) {
                 .separator(exportSeparatorChar)
                 .exportType(PathAnnotationObject.class)
             if (useSubset) me = me.includeOnlyColumns(subsetCols)
+            if (!copiesUnionIds.isEmpty() && copiesChoice == 'newest') me = me.filter(copiesPredicate(copiesUnionIds))
             me.exportMeasurements(allAnn)
             if (allAnn.length() > 0) filesWritten << allAnn.getName()
         } catch (Throwable t) {
@@ -626,6 +797,24 @@ if (projectMode) {
     // Sadece açık lam
     exportEntry(currentEntry, currentImageData)
     imagesProcessed = 1
+}
+
+// Kopya grubu varsa: seçimi ve etkilenen lamları yan dosyaya yaz (veri sütunlarına HİÇBİR şey eklenmez).
+def copiesSidecarName = null
+if (copiesChoice != null) {
+    try {
+        copiesSidecarName = pfx + outDir.getName() + ".kopyalar.txt"
+        def sideFile = new File(outDir, copiesSidecarName)
+        def sideLines = [String.format(java.util.Locale.US, workshopText('script.e5d7e6223d81', 'Kopya grupları — seçim: %s'),
+            (copiesChoice == 'newest') ? workshopText('script.3b5c8754d6fc', 'yalnız en yenisi') : workshopText('script.b353e57316fe', 'tüm kopyalar')), ""]
+        sideLines.addAll(copiesReportLines(copiesScanResults, copiesChoice == 'newest'))
+        sideFile.write(sideLines.join("\n") + "\n", "UTF-8")
+        filesWritten << sideFile.getName()
+    } catch (Throwable t) {
+        copiesSidecarName = null
+        errors << "kopyalar.txt: ${t.getMessage()}"
+    }
+    errors.addAll(copiesScanErrors)
 }
 
 def elapsed = (System.currentTimeMillis() - t0) / 1000.0
@@ -674,6 +863,18 @@ def typesSummary = [
 def colsSummary = useSubset ? "seçili ${subsetCols.length} sütun" : "tüm sütunlar"
 def elapsedStr = String.format(java.util.Locale.US, "%.1f", elapsed)
 
+def copiesBlock = ""
+if (copiesChoice != null) {
+    def lines = copiesReportLines(copiesScanResults, copiesChoice == 'newest')
+    def listed = lines.take(20).collect { "    • " + it }.join("\n") + (lines.size() > 20 ? "\n    …" : "")
+    copiesBlock = "🗂 " + ((copiesChoice == 'newest')
+        ? String.format(java.util.Locale.US, workshopText('script.120555c8d702', 'Kopya grupları — seçim: yalnız en yenisi\n  %,d görüntüde %,d grup. Dışarıda bırakılan: %,d anotasyon ve %,d tespit (eski kopyalar ve içlerindekiler).'), copiesScanResults.size(), lines.size(), copiesLeftAnn, copiesLeftDet)
+        : String.format(java.util.Locale.US, workshopText('script.8f8300c4bcaf', 'Kopya grupları — seçim: tüm kopyalar\n  %,d görüntüde %,d grup. Kopyalar veri dosyalarında işaretli DEĞİLDİR; hangi sonucun güncel olduğunu aşağıdaki listeden kontrol edin.'), copiesScanResults.size(), lines.size())) + "\n" +
+        (copiesCombinedSkip ? "  " + workshopText('script.64fb4051b58b', 'Birleşik (_all_) dosyalar yazılmadı: bir lamdaki eski kopyanın kimliği başka bir lamdaki bir anotasyonla aynı olduğundan tek süzgeç doğru nesneleri ayıramaz. Lam başına dosyalar yazıldı.') + "\n" : "") +
+        (copiesSidecarName != null ? "  " + String.format(java.util.Locale.US, workshopText('script.34c095b0b6b2', 'Kopya listesi dosyası: %s'), copiesSidecarName) + "\n" : "") +
+        listed + "\n\n"
+}
+
 def resultBody =
     "Kapsam: ${projectMode ? 'Tüm proje' : 'Sadece bu görüntü'}\n" +
     "Çıktı stili: ${fmtName} · ${colsSummary}\n" +
@@ -690,6 +891,7 @@ def resultBody =
     "  Toplam tespit        : ${detectionsTotal}\n" +
     "  Yazılan dosya sayısı : ${filesWritten.size()}\n" +
     "  Süre                 : ${elapsedStr} sn\n\n" +
+    copiesBlock +
     "📁 Yazılan dosyalar:\n${fileList}${errSection}${emptyHint}\n\n" +
     "📝 Sonraki adım:\n" +
     "  • R / Python / Excel ile yukarıdaki klasördeki ${fmtName} dosyalarını okuyun.\n" +

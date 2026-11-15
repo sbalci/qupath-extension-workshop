@@ -36,6 +36,21 @@ def atolyeText = { String key, String fallback ->
         return translated == key ? fallback : translated
     } catch (Throwable ignored) { return fallback }
 }
+// Hücreleri değiştirme sorusu: varsayılan seçim "dokunma"dır — Enter/Tamam hiçbir şeyi değiştirmez.
+// (Evet/Hayır penceresinde Enter "Evet" anlamına gelir; bu yüzden seçim penceresi kullanılır.)
+def confirmReplaceCells = { String title, String body ->
+    String keepOpt = atolyeText('cell.redetect.optKeep', 'Mevcut hücrelere dokunma — tespiti çalıştırma (varsayılan)')
+    String replaceOpt = atolyeText('cell.redetect.optReplace', 'Mevcut hücreleri değiştir — tespiti çalıştır')
+    def ask = { -> qupath.fx.dialogs.Dialogs.showChoiceDialog(title, body, [keepOpt, replaceOpt], keepOpt) }
+    if (javafx.application.Platform.isFxApplicationThread()) return ask() == replaceOpt
+    def picked = new java.util.concurrent.atomic.AtomicReference(null)
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    javafx.application.Platform.runLater {
+        try { picked.set(ask()) } finally { latch.countDown() }
+    }
+    latch.await()
+    return picked.get() == replaceOpt
+}
 // --- Atölye ayarları: eklenti yüklüyse oku, yoksa atölye varsayılanı kullanılır ---
 def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
 def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
@@ -116,7 +131,11 @@ if (curImageType == qupath.lib.images.ImageData.ImageType.FLUORESCENCE) {
 // 2) Tespit + sonuç toplama tek yerde — pencere kapanmadan tekrar
 //    (eşikleri değiştirip) çağrılabilir. Dönüş: [ok, text] | [ok:false, error].
 // ──────────────────────────────────────────────────────────────
-def runDetection = { double thr, double sig, double exp ->
+// QuPath'in hücre tespiti, çalıştığı anotasyonun içindeki MEVCUT tespitleri değiştirir;
+// yalnızca bunlar sayılır (anotasyonun alt nesnesi olan tespitler).
+def countReplaceable = { ann -> ann == null ? 0 : ann.getChildObjects().findAll { it.isDetection() }.size() }
+
+def runDetection = { double thr, double sig, double exp, int replaced = 0 ->
     def selected = QP.getSelectedObject()
     if (selected == null || !(selected instanceof PathAnnotationObject))
         return [ok:false, error:atolyeText('cell.noRoi', 'Önce ölçmek istediğiniz alan anotasyonunu seçin (üst araç çubuğundan Dikdörtgen [R], Çokgen [P] veya Fırça [B] ile çizip üzerine tıklayın; seçili anotasyonun kenarı SARI görünür).')]
@@ -166,12 +185,26 @@ def runDetection = { double thr, double sig, double exp ->
         "  Süre                : %.1f sn\n\n" +
         "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."),
         thr, sig, exp, totalCells, areaMm2, density, elapsed)
+    if (replaced > 0)
+        text = String.format(java.util.Locale.US, atolyeText('cell.redetect.replacedLine', 'Not: önceki %,d hücre değiştirildi.'), replaced) + "\n" + text
     return [ok:true, text:text]
 }
 
 // Headless: tek sefer atölye varsayılanlarıyla çalıştır + yazdır.
 if (isHeadless) {
-    def r = runDetection(atolyeD('atolye.detectionThreshold', 0.1), atolyeD('atolye.sigma', 1.5), atolyeD('atolye.cellExpansionNuclear', 5.0))
+    // Tespit mevcut hücreleri DEĞİŞTİRİR: soru sorulamaz, açık onay (-a mevcut=degistir) gerekir.
+    def hlMode = headlessArg('mevcut')
+    if (hlMode != null && hlMode != 'degistir') {
+        println String.format(java.util.Locale.US, atolyeText('cell.redetect.headlessBadValue', 'DURDU: -a mevcut için geçersiz değer "%s" (yalnızca degistir kabul edilir). Hiçbir şey değiştirilmedi.'), hlMode)
+        return
+    }
+    def hlSel = QP.getSelectedObject()
+    int hlPrev = (hlSel instanceof PathAnnotationObject) ? countReplaceable(hlSel) : 0
+    if (hlPrev > 0 && hlMode != 'degistir') {
+        println String.format(java.util.Locale.US, atolyeText('cell.redetect.headlessStop', 'DURDU: hedef anotasyonda zaten %,d hücre tespiti var. Hiçbir şey değiştirilmedi. Bu hücrelerin (elle yapılmış sınıf ve düzeltmeler dahil) değiştirilmesini kabul ediyorsanız -a mevcut=degistir ile yeniden çalıştırın.'), hlPrev)
+        return
+    }
+    def r = runDetection(atolyeD('atolye.detectionThreshold', 0.1), atolyeD('atolye.sigma', 1.5), atolyeD('atolye.cellExpansionNuclear', 5.0), hlPrev)
     println r.ok ? r.text : ("Hata: " + r.error)
     return
 }
@@ -249,14 +282,26 @@ javafx.application.Platform.runLater {
         def runBtn = new javafx.scene.control.Button(atolyeText('cell.run', 'Çalıştır')); runBtn.setDefaultButton(true)
         runBtn.setOnAction({
             [spThr, spSig, spExp].each { commitSpinner(it) }
-            runBtn.setDisable(true)
-            status.setStyle(''); status.setText(atolyeText('cell.running', 'Hücreler tespit ediliyor…'))
-            progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             double thr = spThr.getValue() as double
             double sig = spSig.getValue() as double
             double exp = spExp.getValue() as double
+            // Tespit, seçili anotasyondaki mevcut hücreleri DEĞİŞTİRİR: tespitten ÖNCE sorulur.
+            def selNow = QP.getSelectedObject()
+            def calNow = imageData.getServer().getPixelCalibration()
+            int nPrev = (selNow instanceof PathAnnotationObject && calNow.getPixelWidthMicrons() > 0 && calNow.getPixelHeightMicrons() > 0) ? countReplaceable(selNow) : 0
+            if (nPrev > 0) {
+                boolean okReplace = confirmReplaceCells(atolyeText('cell.redetect.askTitle', 'Önceki hücre tespitleri değiştirilecek'),
+                    String.format(java.util.Locale.US, atolyeText('cell.redetect.askBody', 'Seçili anotasyonda zaten %,d hücre bulunuyor; tespit bunları, elle yapılmış sınıf ve düzeltmeler dahil, değiştirecek.\n\nDevam edilsin mi? ("Tamam" = değiştir, "İptal" = hiçbir şey çalıştırılmaz)'), nPrev))
+                if (!okReplace) {
+                    status.setStyle(''); status.setText(atolyeText('cell.redetect.cancelled', 'İptal edildi — hiçbir şey çalıştırılmadı, mevcut hücreler korundu.'))
+                    return
+                }
+            }
+            runBtn.setDisable(true)
+            status.setStyle(''); status.setText(atolyeText('cell.running', 'Hücreler tespit ediliyor…'))
+            progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
             def worker = new Thread({
-                def res = runDetection(thr, sig, exp)
+                def res = runDetection(thr, sig, exp, nPrev)
                 javafx.application.Platform.runLater {
                     progress.setVisible(false); progress.setManaged(false); runBtn.setDisable(false)
                     if (res.ok) {
