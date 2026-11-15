@@ -29,7 +29,7 @@
  *      veya Kaynaklar → § İleri kurulumlar F.
  *   2. Bir lam açın; en az 2 sınıf için sınıflı anotasyonlar + en az 1 sınıfsız
  *      anotasyon çizin.
- *   3. [Extensions → Atölye → Yardımcılar → Kaiko Midnight sınıflandırıcı sihirbazı]
+ *   3. [Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Kaiko Midnight sınıflandırıcı sihirbazı]
  *   4. İlk açılışta yapılandırın: python.exe, kaiko_bridge.py, (ops.) model dizini.
  *   5. "Eğit ve Tahmin Et" → çıktı otomatik içe aktarılır.
  *   6. (Ops.) "Kalıcı çalışan (hızlı)" işaretliyse model bellekte tutulur; eğit→tahmin

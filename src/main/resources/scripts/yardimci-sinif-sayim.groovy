@@ -26,7 +26,7 @@
  *   1. Sınıflandırılmış tespitler içeren bir lam açın
  *   2. Saymak istediğiniz bölgeyi anotasyon olarak çizin ve SEÇİN
  *      (ölçülecek anotasyonlar açıkça seçilmelidir)
- *   3. [Extensions → Atölye → Yardımcılar → Sınıf bazlı hücre sayımı (% dağılım)]
+ *   3. [Extensions → Atölye → Yardımcılar → Skorlama ve ölçüm → Sınıf bazlı hücre sayımı (% dağılım)]
  *      (ya da [Automate → Project scripts → bu betik])
  *
  * ÇIKTI:

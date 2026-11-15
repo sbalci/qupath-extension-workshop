@@ -203,8 +203,7 @@ double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 double avgUm = cal.getAveragedPixelSizeMicrons()
 if (!(pw > 0) || !(ph > 0) || !(avgUm > 0)) {
-    Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), workshopText('script.42db62f0c526', "Lamda piksel boyutu (µm) tanımlı değil; bant µm cinsinden üretilemez." +
-        "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu)."))
+    Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), workshopText('script.53c041a466c1', 'Lamda piksel boyutu (µm) tanımlı değil; bant µm cinsinden üretilemez.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).'))
     return
 }
 

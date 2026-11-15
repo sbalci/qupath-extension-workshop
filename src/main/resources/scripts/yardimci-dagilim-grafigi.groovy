@@ -23,7 +23,7 @@
  *   1. Ölçümlü tespitler içeren bir lam açın (örn. Hücre tespiti / Nükleer boya /
  *      Sitoplazmik boya / Tümör içi Ki-67 modüllerinden sonra,
  *      ya da fenotip/UMAP etiketleri içe aktarıldıktan sonra).
- *   2. [Extensions → Atölye → İleri analiz → Dağılım grafiği (scatter chart)]
+ *   2. [Extensions → Atölye → Yardımcılar → Eğitim, sunum ve ImageJ → Dağılım grafiği (scatter chart)]
  *   3. X ve Y ölçümlerini seçip "Grafiği aç".
  *
  * KAYNAK / İLHAM:
@@ -122,11 +122,7 @@ render = { ->
 
     if (dets.isEmpty() || names.isEmpty()) {
         def lbl = new javafx.scene.control.Label(
-            workshopText('script.a84140786522', "Çizilebilir ölçüm bulunamadı.\n\n" +
-            "Önce ölçümlü tespitler oluşturun (Hücre tespiti / Nükleer boya / Sitoplazmik boya /\n" +
-            "Tümör içi Ki-67 modülleri), ya da fenotip/UMAP\n" +
-            "etiketlerini içe aktarın (Yardımcılar → Kümeleme/fenotip etiketlerini içe aktar).\n" +
-            "Sonra '⟳ Yenile'."))
+            workshopText('script.61a716f3975b', 'Çizilebilir ölçüm bulunamadı.\n\nÖnce ölçümlü tespitler oluşturun (Hücre tespiti / Nükleer boya / Sitoplazmik boya /\nTümör içi Ki-67 modülleri), ya da fenotip/UMAP\netiketlerini içe aktarın (Extensions → Atölye → Yardımcılar → İçe ve dışa aktarma / veri →\nKümeleme/fenotip etiketlerini içe aktar (TSV)).\nSonra \'⟳ Yenile\'.'))
         lbl.setWrapText(true)
         center.getChildren().add(lbl)
         xComboRef.set(null); yComboRef.set(null)

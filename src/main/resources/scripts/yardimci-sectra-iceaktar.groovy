@@ -33,7 +33,7 @@
  *      Entegrasyonu, ya da Kaynaklar → İleri kurulumlar § H.
  *   2. Sectra'da bir lamda anotasyon çizip DICOM grafik (.dcm) dışa aktarın.
  *   3. Aynı WSI'yi QuPath'te açın.
- *   4. [Extensions → Atölye → Yardımcılar → Sectra PACS anotasyon sihirbazı]
+ *   4. [Extensions → Atölye → Yardımcılar → Klinik ve kohort → Sectra PACS anotasyon sihirbazı]
  *   5. İlk açılışta yapılandırın: python.exe + sectra_dicom_to_qupath.py yolu.
  *   6. Renk şemasını seçin → ".dcm seç ve Aktar" → anotasyonlar otomatik içe aktarılır.
  *   7. (Tüm proje) Bir proje açıkken "Tüm proje (klasörden) ▶" → .dcm klasörünü seçin → önizlemeyi

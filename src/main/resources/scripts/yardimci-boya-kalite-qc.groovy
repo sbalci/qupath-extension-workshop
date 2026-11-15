@@ -23,7 +23,7 @@
  *   1. Parlak-alan bir H&E (ya da İHK) lamı açın; boya vektörleri tanımlı olmalı
  *      (Image type = Brightfield H&E/H-DAB; gerekirse Boya vektörleri sihirbazı).
  *   2. (Önerilir) temsilî bir doku bölgesini anote edip SEÇİN; yoksa tüm lam kullanılır.
- *   3. [Extensions → Atölye → Yardımcılar → Boya kalitesi QC ölçümü]
+ *   3. [Extensions → Atölye → Yardımcılar → Boya ve renk → Boya kalitesi QC ölçümü]
  *
  * YÖNTEM / KAYNAK:
  *   Dunn C, Brettle D, Hodgson C, Hughes R, Treanor D (2025) "An international study of

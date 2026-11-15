@@ -298,7 +298,7 @@ def runBudding = { String mode, double budMin, double budMax, double frontMargin
         def cal = imageData.getServer().getPixelCalibration()
         double pw = cal.getPixelWidthMicrons(), ph = cal.getPixelHeightMicrons()
         if (!(pw > 0) || !(ph > 0))
-            return [ok:false, error:'Piksel kalibrasyonu yok (µm/px). Önce [Yardımcılar → Kalibrasyon] ile ayarlayın.']
+            return [ok:false, error:'Piksel kalibrasyonu yok (µm/px). Önce [Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)] ile ayarlayın.']
         if (budMax <= budMin) return [ok:false, error:'Üst boyut eşiği alt eşikten büyük olmalı.']
 
         def classifier = buildClassifier()

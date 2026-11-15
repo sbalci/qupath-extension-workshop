@@ -26,7 +26,7 @@
  *
  * ÇALIŞMA ZAMANI:
  *   Her dedektör kendi ortamını (env) + köprüsünü kullanır. Kurulu OLMAYAN dedektör gri
- *   görünür. Kurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python
+ *   görünür. Kurulum: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python
  *   ortam yöneticisi ("TIA Toolbox — bölge modelleri" ve "MIDOG25 FCOS — mitoz dedektörü").
  *
  * KULLANIM:

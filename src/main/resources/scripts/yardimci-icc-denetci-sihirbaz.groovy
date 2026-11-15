@@ -26,12 +26,12 @@
  *     olarak UYGULAR, QuPath UYGULAMAZ → aynı lam iki yazılımda farklı renkte görünür.
  *   • H-DAB / Ki-67 / H-score gibi OPTİK YOĞUNLUK (OD) tabanlı ölçümlerde doğru
  *     yaklaşım renk eşleme değil, boya vektörlerini HER LAM için yeniden tahmin
- *     etmektir (Yardımcılar → Boya vektörleri sihirbazı). Renk yönetimi çoğunlukla
+ *     etmektir (Yardımcılar → Boya ve renk → Boya vektörleri sihirbazı). Renk yönetimi çoğunlukla
  *     GÖRÜNÜMÜ etkiler, OD ölçümünü değil.
  *
  * KULLANIM:
  *   1. Bir lam açın (yerel TIFF/SVS dosyası).
- *   2. [Extensions → Atölye → Yardımcılar → ICC renk profili denetçisi]
+ *   2. [Extensions → Atölye → Yardımcılar → Boya ve renk → ICC renk profili denetçisi]
  *   3. "Bu lamı denetle" → raporu inceleyin / panoya kopyalayın.
  *
  * AYRINTI:
@@ -284,7 +284,7 @@ def buildReport = { String imageName, String path, Map g ->
 
     sb << '\nÖLÇÜME ETKİSİ\n─────────────\n'
     sb << '  • OD tabanlı ölçümde (Ki-67, H-score, HER2) doğru yaklaşım: boya\n'
-    sb << '    vektörlerini HER LAM için yeniden tahmin etmek (Yardımcılar →\n'
+    sb << '    vektörlerini HER LAM için yeniden tahmin etmek (Yardımcılar → Boya ve renk →\n'
     sb << '    Boya vektörleri sihirbazı).\n'
     sb << '  • QuPath 0.7+ ICC profilini uygulayabilir (yalnız OpenSlide ile açılan\n'
     sb << '    lamlarda, isteğe bağlı). Açıkken yalnız görünüm değil ANALİZ pikselleri\n'

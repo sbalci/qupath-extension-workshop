@@ -32,7 +32,7 @@
  *
  * KULLANIM:
  *   1. Bir lam açın; isterseniz çekirdek içeren KÜÇÜK bir bölge çizip SEÇİN.
- *   2. [Extensions → Atölye → Yardımcılar → Görüntü işleme kavramları]
+ *   2. [Extensions → Atölye → Yardımcılar → Eğitim, sunum ve ImageJ → Görüntü işleme kavramları]
  *   3. İleri / Geri ile gezinin; bölgeyi değiştirince "↻ Bölgeyi yeniden oku".
  *
  * KAYNAK / İLHAM:
@@ -82,7 +82,7 @@ def pages = [
             '(Ruifrok–Johnston). Solda hematoksilen, sağda ikinci boya (DAB/Eozin) yoğunluğu — koyu = çok boya.\n\n' +
             'Sınırlar (Bankhead): yöntem "imkânsız" sonuç verebilir (negatif boya değerleri); kuvvetli ' +
             'DAB-pozitif (kahverengi) pikseller genelde yüksek hematoksilen değeri de taşır. Doğru boya ' +
-            'vektörü için: Yardımcılar → Boya vektörleri sihirbazı.'],
+            'vektörü için: Yardımcılar → Boya ve renk → Boya vektörleri sihirbazı.'],
 
     [id: 'gaussian', onizleme: 'GAUSSIAN',
      baslik: '4 · Gaussian filtre (σ)',
@@ -387,9 +387,7 @@ def buildPreview = { String kind, cache ->
                 thumb((java.awt.image.BufferedImage) cache.stain2, (cache.name2 ?: 'Boya 2') + ' (yoğunluk)', 170.0d))
         } else {
             def lbl = new javafx.scene.control.Label(
-                workshopText('script.9bcabe556ddc', 'Bu görüntüde renk dekonvolüsyonu (boya vektörü) tanımlı değil — büyük olasılıkla brightfield ' +
-                'değil. Görüntü tipini ayarlayın (Yardımcılar → Görüntü tipi ayarla). Aşağıdaki Gaussian/eşik ' +
-                'sayfaları gri (yoğunluk) kanalı üzerinden çalışır.'))
+                workshopText('script.016778e1c1dd', 'Bu görüntüde renk dekonvolüsyonu (boya vektörü) tanımlı değil — büyük olasılıkla brightfield değil. Görüntü tipini ayarlayın (Yardımcılar → Temel araçlar → Görüntü tipi ayarla). Aşağıdaki Gaussian/eşik sayfaları gri (yoğunluk) kanalı üzerinden çalışır.'))
             lbl.setWrapText(true)
             row.getChildren().add(lbl)
         }

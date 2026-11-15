@@ -34,8 +34,8 @@
  *
  * KULLANIM:
  *   1. İHK/H&E lamını açın; Image type'ı brightfield yapın
- *      (gerekirse: Yardımcılar → Görüntü tipi ayarla)
- *   2. [Extensions → Atölye → Yardımcılar → Boya vektörleri sihirbazı]
+ *      (gerekirse: Yardımcılar → Temel araçlar → Görüntü tipi ayarla)
+ *   2. [Extensions → Atölye → Yardımcılar → Boya ve renk → Boya vektörleri sihirbazı]
  *      → açılışta mevcut vektörleri raporlar.
  *   3. Tahmin için: küçük ve temsilî bir bölge ÇİZİN ve SEÇİN (iki boya + biraz
  *      arka plan), sonra "Seçili bölgeden tahmin et" → eski/yeni inceleyin → Uygula.
@@ -428,13 +428,7 @@ render = { ->
         } else if (r.state == 'NO_STAINS') {
             title.setText(workshopText('script.cfec911aa7bc', 'Boya vektörü tanımlı değil'))
             addGuidance(
-                workshopText('script.94f0d15b2170', 'Bu görüntüde renk-dekonvolüsyon (boya) vektörleri yok.\n\n' +
-                'Olası neden: görüntü tipi brightfield değil (örn. floresan/diğer).\n\n' +
-                'Çözüm:\n' +
-                '  • [Extensions → Atölye → Yardımcılar → Görüntü tipi ayarla] ile tipi\n' +
-                '    Brightfield (H&E) ya da Brightfield (H-DAB) yapın.\n' +
-                '  • QuPath\'in kendi komutu: Analyze → Preprocessing → Estimate stain vectors\n' +
-                '  • Ayrıntı: ') + DOCS_URL + '\n\n' +
+                workshopText('script.764b3ea6a979', 'Bu görüntüde renk-dekonvolüsyon (boya) vektörleri yok.\n\nOlası neden: görüntü tipi brightfield değil (örn. floresan/diğer).\n\nÇözüm:\n  • [Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla] ile tipi\n    Brightfield (H&E) ya da Brightfield (H-DAB) yapın.\n  • QuPath\'in kendi komutu: Analyze → Preprocessing → Estimate stain vectors\n  • Ayrıntı: ') + DOCS_URL + '\n\n' +
                 'Sonra "⟳ Yenile".')
             actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
             actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))

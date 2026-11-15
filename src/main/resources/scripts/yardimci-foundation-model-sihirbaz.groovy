@@ -28,7 +28,7 @@
  *
  * KULLANIM:
  *   1. Bir lam açın.
- *   2. [Extensions → Atölye → Yardımcılar → Foundation model hazırlık ve sağlamlık sihirbazı]
+ *   2. [Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Temel model hazırlık ve sağlamlık sihirbazı]
  *   3. Raporu inceleyin; "Kopyala" ile panoya alıp not/protokolünüze ekleyin.
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
@@ -127,7 +127,7 @@ def buildReport = { m ->
 
     // Kalibrasyon
     if (m.calibrated) item('✓', 'Kalibrasyon var — karo ölçeği (µm/px) güvenilir.')
-    else              item('⚠', 'Kalibre DEĞİL — önce piksel boyutunu ayarlayın (Yardımcılar → Kalibrasyon); aksi halde FM karo ölçeği belirsizdir.')
+    else              item('⚠', 'Kalibre DEĞİL — önce piksel boyutunu ayarlayın (Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)); aksi halde FM karo ölçeği belirsizdir.')
 
     // Piramit
     if (m.large_no_pyramid) item('⚠', 'Büyük görüntü piramitsiz — karo dışa aktarımı yavaş/bellek-yoğun olabilir.')

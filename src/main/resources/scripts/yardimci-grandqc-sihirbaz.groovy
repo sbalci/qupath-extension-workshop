@@ -26,7 +26,7 @@
  * KULLANIM:
  *   1. GrandQC Python ortamını kurun (venv + modeller). Bkz. Ekler → Kalite Kontrol § GrandQC.
  *   2. Bir H&E lamını açın (yerel diskte).
- *   3. [Extensions → Atölye → Modüller → Doku tespiti → GrandQC modeli (doku & artefakt, Python)]
+ *   3. [Extensions → Atölye → Modüller → Doku tespiti → GrandQC modeli (doku ve artefakt, Python)]
  *   4. İlk açılışta yapılandırın: python.exe, GrandQC betik dizini, model dizini, MPP.
  *   5. "Komut üret" (kopyala-çalıştır) ya da "Doğrudan çalıştır"; sonra otomatik içe aktarım.
  *

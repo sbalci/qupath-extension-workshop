@@ -12084,6 +12084,106 @@
       "key": "script.051b44368449",
       "tr": "Son sütun \"set_adi\": satırın hangi GrandQC setinden geldiğini gösterir. Etkilenen lamlar (ad: set numaraları):",
       "en": "The last column \"set_adi\" shows which GrandQC set the row came from. Affected slides (name: set numbers):"
+    },
+    {
+      "key": "script.69a14deb3fc8",
+      "tr": "Bu betik Hematoxylin/Eosin renk ayrıştırma kanallarını kullanır; bunun için\ngörüntü tipi Brightfield (H&E) olmalı ve boya vektörleri tanımlı olmalı.\n\nÇözüm: Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla ile tipi\nBrightfield (H&E) yapın, sonra bu betiği tekrar çalıştırın.",
+      "en": "This script uses the Hematoxylin/Eosin colour deconvolution channels;\nthe image type must be Brightfield (H&E) and stain vectors must be defined.\n\nNext step: use Extensions → Atölye → Utilities → Basic tools → Set image type to select\nBrightfield (H&E), then run this script again."
+    },
+    {
+      "key": "script.32246b235c40",
+      "tr": "Lamda piksel boyutu (µm/px) tanımlı değil; sınıflandırıcı çözünürlüğü hesaplanamaz.\n\nÇözüm: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).\nSonra bu betiği tekrar çalıştırın.",
+      "en": "No pixel size (µm/px) is defined for this slide; classifier resolution cannot be calculated.\n\nNext step: Extensions → Atölye → Utilities → Basic tools → Calibration (pixel size).\nThen run this script again."
+    },
+    {
+      "key": "script.036f0e16fc4a",
+      "tr": "Örnek modeli kurmak için: Extensions → Atölye → Yardımcılar → İçe ve dışa aktarma / veri →\n\"Örnek tümör/stroma sınıflandırıcısını projeye kaydet\".",
+      "en": "To install the example model: Extensions → Atölye → Utilities → Import, export & data →\n\"Save sample tumor/stroma classifier to project\"."
+    },
+    {
+      "key": "script.65eb635495c1",
+      "tr": "Sihirbaz için: Extensions → Atölye → Modüller → Tümör/Stroma →\n\"Tümör/Stroma sihirbazı\".",
+      "en": "For the wizard: Extensions → Atölye → Modules → Tumor/Stroma →\n\"Tumor/Stroma wizard\"."
+    },
+    {
+      "key": "script.764b3ea6a979",
+      "tr": "Bu görüntüde renk-dekonvolüsyon (boya) vektörleri yok.\n\nOlası neden: görüntü tipi brightfield değil (örn. floresan/diğer).\n\nÇözüm:\n  • [Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla] ile tipi\n    Brightfield (H&E) ya da Brightfield (H-DAB) yapın.\n  • QuPath'in kendi komutu: Analyze → Preprocessing → Estimate stain vectors\n  • Ayrıntı: ",
+      "en": "This image has no colour deconvolution (stain) vectors.\n\nPossible cause: the image type is not brightfield (e.g. fluorescence/other).\n\nNext steps:\n  • Use [Extensions → Atölye → Utilities → Basic tools → Set image type] to select\n    Brightfield (H&E) or Brightfield (H-DAB).\n  • Native QuPath command: Analyze → Preprocessing → Estimate stain vectors\n  • Details: "
+    },
+    {
+      "key": "script.f65782dc5773",
+      "tr": "Lamda piksel boyutu (µm) tanımlı değil.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).",
+      "en": "No pixel size (µm) is defined for this slide.\n\nSet it with: Extensions → Atölye → Utilities → Basic tools → Calibration (pixel size)."
+    },
+    {
+      "key": "script.61a716f3975b",
+      "tr": "Çizilebilir ölçüm bulunamadı.\n\nÖnce ölçümlü tespitler oluşturun (Hücre tespiti / Nükleer boya / Sitoplazmik boya /\nTümör içi Ki-67 modülleri), ya da fenotip/UMAP\netiketlerini içe aktarın (Extensions → Atölye → Yardımcılar → İçe ve dışa aktarma / veri →\nKümeleme/fenotip etiketlerini içe aktar (TSV)).\nSonra '⟳ Yenile'.",
+      "en": "No measurements to plot.\n\nCreate detections with measurements first (Cell detection / Nuclear stain / Cytoplasmic stain /\nIntra-tumoral Ki-67 modules), or import phenotype/UMAP\nlabels (Extensions → Atölye → Utilities → Import, export & data →\nImport cluster/phenotype labels (TSV)).\nThen choose '⟳ Refresh'."
+    },
+    {
+      "key": "script.016778e1c1dd",
+      "tr": "Bu görüntüde renk dekonvolüsyonu (boya vektörü) tanımlı değil — büyük olasılıkla brightfield değil. Görüntü tipini ayarlayın (Yardımcılar → Temel araçlar → Görüntü tipi ayarla). Aşağıdaki Gaussian/eşik sayfaları gri (yoğunluk) kanalı üzerinden çalışır.",
+      "en": "No colour deconvolution (stain vectors) is defined for this image — it is probably not brightfield. Set the image type (Utilities → Basic tools → Set image type). The Gaussian/threshold pages below use the grey (intensity) channel."
+    },
+    {
+      "key": "script.f385733c06d7",
+      "tr": "\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi → \"HoVer-NeXt — çekirdek segmentasyon + 7 sınıf\".\n",
+      "en": "\n\nSetup: Extensions → Atölye → Utilities → Python bridges & foundation models → Workshop Python environment manager → \"HoVer-NeXt — çekirdek segmentasyon + 7 sınıf\".\n"
+    },
+    {
+      "key": "script.81fd41da95a2",
+      "tr": "Lamda piksel boyutu (µm) tanımlı değil; alan µm² olarak hesaplanamaz.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).",
+      "en": "No pixel size (µm) is defined for this slide; area cannot be calculated in µm².\n\nSet it with: Extensions → Atölye → Utilities → Basic tools → Calibration (pixel size)."
+    },
+    {
+      "key": "script.4b0f699b35dd",
+      "tr": "Lamda piksel boyutu (µm) tanımlı değil; alan µm² olarak üretilemez.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).",
+      "en": "No pixel size (µm) is defined for this slide; area cannot be produced in µm².\n\nSet it with: Extensions → Atölye → Utilities → Basic tools → Calibration (pixel size)."
+    },
+    {
+      "key": "script.a446e942c76e",
+      "tr": "\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi → \"MIDOG25 EffNetV2 — atipik sınıflandırıcı\".\nKöprü: handson/python/midog/atypical_effnet.py",
+      "en": "\n\nSetup: Extensions → Atölye → Utilities → Python bridges & foundation models → Workshop Python environment manager → \"MIDOG25 EffNetV2 — atipik sınıflandırıcı\".\nBridge: handson/python/midog/atypical_effnet.py"
+    },
+    {
+      "key": "script.937dd59f4e8c",
+      "tr": "\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi → \"Sanofi EFTD — atipik sınıflandırıcı\".\nKöprü: handson/python/sanofi/eftd_runner.py",
+      "en": "\n\nSetup: Extensions → Atölye → Utilities → Python bridges & foundation models → Workshop Python environment manager → \"Sanofi EFTD — atipik sınıflandırıcı\".\nBridge: handson/python/sanofi/eftd_runner.py"
+    },
+    {
+      "key": "script.e8904d5e394e",
+      "tr": "\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi → \"MIDOG25 FCOS — mitoz dedektörü\".\n",
+      "en": "\n\nSetup: Extensions → Atölye → Utilities → Python bridges & foundation models → Workshop Python environment manager → \"MIDOG25 FCOS — mitoz dedektörü\".\n"
+    },
+    {
+      "key": "script.3243671b1541",
+      "tr": "\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi → \"MIDOG DA-RetinaNet (eski, CPU)\".\n",
+      "en": "\n\nSetup: Extensions → Atölye → Utilities → Python bridges & foundation models → Workshop Python environment manager → \"MIDOG DA-RetinaNet (eski, CPU)\".\n"
+    },
+    {
+      "key": "script.5e383b8c6c80",
+      "tr": "\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi → \"TIA Toolbox — bölge modelleri\".\n",
+      "en": "\n\nSetup: Extensions → Atölye → Utilities → Python bridges & foundation models → Workshop Python environment manager → \"TIA Toolbox — bölge modelleri\".\n"
+    },
+    {
+      "key": "script.30860311b886",
+      "tr": "Model: Bu modül H&E mitoz için sabit \"KongNet MIDOG\" (MIDOG 2025 birincisi) kullanır — TIA Toolbox'ta mitoza uygun TEK model. Çekirdek/hücre dedektörleriyle (PanNuke/CoNIC/MONKEY/MapDe) deney için → Yardımcılar → Python köprüleri ve temel modeller → \"TIA Toolbox bölgede çekirdek/mitoz tespiti\" (hepsini sınıf-başına içe alımla çalıştırır). Model listesi ve lisanslar: modül sayfası \"Mitoz modelleri\".\nPython + köprü otomatik bulunur (tiatoolbox-runtime/.venv ve handson/python/tiatoolbox/). Cihaz: GPU için cuda.\nDuyarlılık eşiği: KongNet varsayılanı 0.99 (çok tutucu — az/hiç tespit). Daha çok mitoz için düşürün (ör. 0.5); boş = model varsayılanı. Düşük eşik daha çok tespit ama daha çok yanlış-pozitif demektir — tahminleri görsel doğrulayın.\nYerel model: \"Modeli yerel indir\" ağırlıkları BİR KEZ veri kökü altına indirir; ardından \"Çevrimdışı çalış\"ı işaretleyin → çalıştırmalarda ağa hiç çıkılmaz (GrandQC gibi).",
+      "en": "Model: fixed \"KongNet MIDOG\" for H&E mitoses (MIDOG 2025 winner), the only TIA Toolbox model suited to mitosis here. To experiment with nucleus/cell detectors (PanNuke/CoNIC/MONKEY/MapDe), use Utilities → Python bridges & foundation models → \"TIA Toolbox regional nucleus/mitosis detection\" (imports every class). Model list/licences: module page \"Mitosis models\".\nPython + bridge are detected automatically (tiatoolbox-runtime/.venv and handson/python/tiatoolbox/). Device: cuda for GPU.\nSensitivity threshold: KongNet default 0.99 (very conservative — few/no detections). Lower for more mitoses (e.g. 0.5); blank = model default. Lower thresholds produce more detections and more false positives — verify predictions visually.\nLocal model: \"Download model locally\" downloads weights under the data root ONCE; then check \"Work offline\" to run without network access (like GrandQC)."
+    },
+    {
+      "key": "script.53c041a466c1",
+      "tr": "Lamda piksel boyutu (µm) tanımlı değil; bant µm cinsinden üretilemez.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).",
+      "en": "No pixel size (µm) is defined for this slide; the band cannot be produced in µm.\n\nSet it with: Extensions → Atölye → Utilities → Basic tools → Calibration (pixel size)."
+    },
+    {
+      "key": "script.d333d0105aa6",
+      "tr": "Menüden açın: Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi",
+      "en": "Open from the menu: Utilities → Python bridges & foundation models → Workshop Python environment manager"
+    },
+    {
+      "key": "script.13fdf447446f",
+      "tr": "Lamda piksel boyutu (µm) tanımlı değil; mesafe µm olarak hesaplanamaz.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).",
+      "en": "No pixel size (µm) is defined for this slide; distances cannot be calculated in µm.\n\nSet it with: Extensions → Atölye → Utilities → Basic tools → Calibration (pixel size)."
     }
   ],
   "source_contracts": {
@@ -12179,7 +12279,7 @@
     },
     "tumor-ici-ki67.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "b949df75e3621d4344fe99faff6d7596445af5d6456cd5970ddc8279a9374629",
+      "sha256": "083ca07dc8894737f6751e4539838921b7fd99432a66b873e9393794eee67491",
       "expressions": [
         {
           "original": "\"Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\\n${where}\"",
@@ -12254,12 +12354,18 @@
           "previous_sha256": "e23f28dba6870ad369320e7e3fd1d50ccabfe2c6ddfb5fe0bd00f0a54d9bfaad",
           "sha256": "b949df75e3621d4344fe99faff6d7596445af5d6456cd5970ddc8279a9374629",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "b949df75e3621d4344fe99faff6d7596445af5d6456cd5970ddc8279a9374629",
+          "sha256": "083ca07dc8894737f6751e4539838921b7fd99432a66b873e9393794eee67491",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "tumor-stroma.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "f4e4c57c175499827f53d70246bb7fc37bc9c82b0ffab603cae2639d76737e0f",
+      "sha256": "f061929353ef2ca26348e03a1179556c2495d60ff0e52fcb40ce183ef5fb0f08",
       "expressions": [
         {
           "original": "\"Tümör/stroma sınıflandırıcısı Brightfield (H&E) görüntü bekler. Şu anki: ${imageTypeName}\"",
@@ -12280,6 +12386,12 @@
           "previous_sha256": "3e546adde16b6fe02105d697ba1eedbe45dd342feede8673fb6f9b056612e080",
           "sha256": "f4e4c57c175499827f53d70246bb7fc37bc9c82b0ffab603cae2639d76737e0f",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "f4e4c57c175499827f53d70246bb7fc37bc9c82b0ffab603cae2639d76737e0f",
+          "sha256": "f061929353ef2ca26348e03a1179556c2495d60ff0e52fcb40ce183ef5fb0f08",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
@@ -12437,7 +12549,15 @@
     },
     "yardimci-boya-vektor-sihirbaz.groovy": {
       "revision": "6c648c9c95b7d3cefe35588d2420554dcf87ddc3",
-      "sha256": "6cedac3e6297373bce25005fe691bd9897afadb0908ddb8272a4e7dfcffd1c81"
+      "sha256": "9525845f32723a28f4236bf79de33f446bb5bbe80630fce41f922104840d5f31",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "6cedac3e6297373bce25005fe691bd9897afadb0908ddb8272a4e7dfcffd1c81",
+          "sha256": "9525845f32723a28f4236bf79de33f446bb5bbe80630fce41f922104840d5f31",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-metadata-sihirbaz.groovy": {
       "revision": "6c648c9c95b7d3cefe35588d2420554dcf87ddc3",
@@ -12453,7 +12573,15 @@
     },
     "yardimci-python-ortam-yoneticisi.groovy": {
       "revision": "6c648c9c95b7d3cefe35588d2420554dcf87ddc3",
-      "sha256": "c1654ab1b7798c0558dd827978b58b514516910ebafe654a774834c78cb6038e"
+      "sha256": "f60d4312a4cf09eb83ff9162789f2c6a80fc3236f2a505dd00c165dbc4aac481",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "c1654ab1b7798c0558dd827978b58b514516910ebafe654a774834c78cb6038e",
+          "sha256": "f60d4312a4cf09eb83ff9162789f2c6a80fc3236f2a505dd00c165dbc4aac481",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-classpose-sihirbaz.groovy": {
       "revision": "a93a2117daf270c8a867eeb39575850c771c9fd2",
@@ -12473,13 +12601,19 @@
     },
     "yardimci-grandqc-sihirbaz.groovy": {
       "revision": "a93a2117daf270c8a867eeb39575850c771c9fd2",
-      "sha256": "eb3e667a3f3f4b94e171e3f4203786a6fdd551cd5c6b5071fb54b95d23212474",
+      "sha256": "b35ff32b18770c18fb7f2c43be6b57dec8d61bd39aba9c41c92a53e038c171f1",
       "baseline_reviews": [
         {
           "revision": "95ea34af49aa4ab2f08b6884be22bad2e13fbfd9",
           "previous_sha256": "c66a490440658650695f8a8499c5d7d07aee3fc43fd6b03159b4600b7174be2a",
           "sha256": "eb3e667a3f3f4b94e171e3f4203786a6fdd551cd5c6b5071fb54b95d23212474",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "eb3e667a3f3f4b94e171e3f4203786a6fdd551cd5c6b5071fb54b95d23212474",
+          "sha256": "b35ff32b18770c18fb7f2c43be6b57dec8d61bd39aba9c41c92a53e038c171f1",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
@@ -12513,19 +12647,25 @@
     },
     "yardimci-boya-kalite-qc.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "8265b75e4122e260aa7f5e41dea724e71f88ee4827a063dfdb2ac02ca743d0b5",
+      "sha256": "aa3bac743f63f2ff1a300e1fb2c353794cb338cf0bda3b1ed68a7cf5e35f79d1",
       "baseline_reviews": [
         {
           "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
           "previous_sha256": "7c3553547140b2e874cc65eda1f45eefbab21a21dc4b92da92e8e42b776df021",
           "sha256": "8265b75e4122e260aa7f5e41dea724e71f88ee4827a063dfdb2ac02ca743d0b5",
           "record": "docs/source-baseline-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "8265b75e4122e260aa7f5e41dea724e71f88ee4827a063dfdb2ac02ca743d0b5",
+          "sha256": "aa3bac743f63f2ff1a300e1fb2c353794cb338cf0bda3b1ed68a7cf5e35f79d1",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "yardimci-capraz-nn-mesafe.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "85d323cf0e92ef3baa9a799762ce9e6b7f60cb92794ce790694b6da898629f93",
+      "sha256": "32b538c7475d6ee9c9c688abd150d0a3fa3d41ff6ed05d144b7ae9f13d4efbf0",
       "expressions": [
         {
           "original": "\"Yarıçap bir sayı olmalı (ör. 50 ya da 75.5). Girilen: '${radStr}'.\"",
@@ -12540,18 +12680,32 @@
           "previous_sha256": "915f88909b56fcaa1ae446a4daa3ff10ce1b184ae986d65fd321e07f4e596bb4",
           "sha256": "85d323cf0e92ef3baa9a799762ce9e6b7f60cb92794ce790694b6da898629f93",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "85d323cf0e92ef3baa9a799762ce9e6b7f60cb92794ce790694b6da898629f93",
+          "sha256": "32b538c7475d6ee9c9c688abd150d0a3fa3d41ff6ed05d144b7ae9f13d4efbf0",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "yardimci-dagilim-grafigi.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "aaad79cb53460a2b4be5d9a364c8554f1ce032ca0a371af3f554b3b5811ccfef",
+      "sha256": "15e412b8712d29fcba8dfc90061f8403bc6cc32e1098668ae38505a474422400",
       "expressions": [
         {
           "original": "\"${dets.size()} tespit · ${names.size()} ölçüm. Noktalar lamdaki sınıf renkleriyle gösterilir.\"",
           "replacement": "\"${dets.size()}${workshopText('script.0b3dffaa7a47', ' tespit · ')}${names.size()}${workshopText('script.41fd26a07624', ' ölçüm. Noktalar lamdaki sınıf renkleriyle gösterilir.')}\"",
           "count": 1,
           "context": "new Label"
+        }
+      ],
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "aaad79cb53460a2b4be5d9a364c8554f1ce032ca0a371af3f554b3b5811ccfef",
+          "sha256": "15e412b8712d29fcba8dfc90061f8403bc6cc32e1098668ae38505a474422400",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
@@ -12569,7 +12723,7 @@
     },
     "yardimci-dogrulama-f1.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "380dea7c32841113eef37de5d80a7ab96c81bd744f092a2881ebbed909dc3184",
+      "sha256": "b28c15dfc4280da2c061f3e3774a697992b5990f3246afa3343905030a30876b",
       "baseline_reviews": [
         {
           "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
@@ -12582,34 +12736,78 @@
           "previous_sha256": "4b2c4fef43f37c42488cbe6b7d2917c46a92b0b949adac430ef3ec00f57b5bf9",
           "sha256": "380dea7c32841113eef37de5d80a7ab96c81bd744f092a2881ebbed909dc3184",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "380dea7c32841113eef37de5d80a7ab96c81bd744f092a2881ebbed909dc3184",
+          "sha256": "b28c15dfc4280da2c061f3e3774a697992b5990f3246afa3343905030a30876b",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "yardimci-esik-alan.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "2ae95b9237a7002ab9b5d5d7b52cbc15113abded2972757d6bf88a22c05c883f"
+      "sha256": "8bb8c0c7bc730d90c8e10892546bd2c5889ea7fddf367a95d77b794faebd4c9b",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "2ae95b9237a7002ab9b5d5d7b52cbc15113abded2972757d6bf88a22c05c883f",
+          "sha256": "8bb8c0c7bc730d90c8e10892546bd2c5889ea7fddf367a95d77b794faebd4c9b",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-esik-ayarla.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "e1146f135d2cfe2350cde6a5ed80ce12cdfcfe17954710401fcf0b06219c198b"
+      "sha256": "537bfa7dc8600279cd2ae5e61450f8fd04cfceedd583ced44bc0437247fb7dd5",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "e1146f135d2cfe2350cde6a5ed80ce12cdfcfe17954710401fcf0b06219c198b",
+          "sha256": "537bfa7dc8600279cd2ae5e61450f8fd04cfceedd583ced44bc0437247fb7dd5",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-esik-siniflandirici.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "5d6aaac7707df24c8c97d82980a96080df6c97bd34f8c6e3396449d40a9107ac"
+      "sha256": "ac635c8e53899d098300ebe1298e9f1a45ca8bc1dd368b5f58bfa7ebc3627c0b",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "5d6aaac7707df24c8c97d82980a96080df6c97bd34f8c6e3396449d40a9107ac",
+          "sha256": "ac635c8e53899d098300ebe1298e9f1a45ca8bc1dd368b5f58bfa7ebc3627c0b",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-goruntu-isleme-turu.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "a7fd16f6847a27272dd127e5d341efda79d401c20b83bc1d05c9b5b3062032ed"
+      "sha256": "2610795a77b6bdf035622c68cd6725d42b4f722599de6bfa396e08c73d030477",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "a7fd16f6847a27272dd127e5d341efda79d401c20b83bc1d05c9b5b3062032ed",
+          "sha256": "2610795a77b6bdf035622c68cd6725d42b4f722599de6bfa396e08c73d030477",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-goruntu-kunye.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "d4c68761140d5bec32940632c62bbc11ece04a2892f2d22c6eebc4b7e904dd18",
+      "sha256": "586ace0f19f680cb5b5630be22d2341b6eeed919b235b882bf5e3e2a176177e6",
       "baseline_reviews": [
         {
           "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
           "previous_sha256": "efc53775963b44d20bd54a55d6d6e29d4ee9cd60462be8916c4ea6bb6678e21a",
           "sha256": "d4c68761140d5bec32940632c62bbc11ece04a2892f2d22c6eebc4b7e904dd18",
           "record": "docs/source-baseline-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "d4c68761140d5bec32940632c62bbc11ece04a2892f2d22c6eebc4b7e904dd18",
+          "sha256": "586ace0f19f680cb5b5630be22d2341b6eeed919b235b882bf5e3e2a176177e6",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
@@ -12619,7 +12817,15 @@
     },
     "yardimci-goruntuden-alan-cikart.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "6f30e1b557b7dce63aad8a09b65eaa48d7b50ff56f2c88410952387a15a7eb5a"
+      "sha256": "681d7d0b2614bb374ab38758ec5e2553cb72f1ad2966a43130fa297f020cf3f4",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "6f30e1b557b7dce63aad8a09b65eaa48d7b50ff56f2c88410952387a15a7eb5a",
+          "sha256": "681d7d0b2614bb374ab38758ec5e2553cb72f1ad2966a43130fa297f020cf3f4",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-goz-karari-kalibrasyon.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
@@ -12659,11 +12865,27 @@
     },
     "yardimci-imagej-otsu-anotasyon.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "53b3029eebb80acd5c94f08980cdd8d14c1e5fee153c1f13a400e87327feb74e"
+      "sha256": "b1285a571c4355058fdd47bb2861986c7e96dea2a8f5ef09a8ade5051073b6ea",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "53b3029eebb80acd5c94f08980cdd8d14c1e5fee153c1f13a400e87327feb74e",
+          "sha256": "b1285a571c4355058fdd47bb2861986c7e96dea2a8f5ef09a8ade5051073b6ea",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-imagej-spline-duzeltme.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "4923ece1da0744b6197202ba37bd3eea5d9a0136b346811c100ce561217bc9c0"
+      "sha256": "ad73937ed48f3daa7d5d0d97a593cda95124e5ca60cd895e31c9dde3c64a3afa",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "4923ece1da0744b6197202ba37bd3eea5d9a0136b346811c100ce561217bc9c0",
+          "sha256": "ad73937ed48f3daa7d5d0d97a593cda95124e5ca60cd895e31c9dde3c64a3afa",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-immun-yogunluk.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
@@ -12685,19 +12907,25 @@
     },
     "yardimci-kesisim-alani.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "aa79dc1a24e57b7af93bb80e6747488e33ad1589dca23abd320b8176a35a0539",
+      "sha256": "9b196d5b3edae91fcff724631ffa410f4067730e46da4bd077b137fb54ce3b7b",
       "baseline_reviews": [
         {
           "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
           "previous_sha256": "8eafb373891cca91eab5e52c13e997c577ff99084c04b01f759e18fe9b54426c",
           "sha256": "aa79dc1a24e57b7af93bb80e6747488e33ad1589dca23abd320b8176a35a0539",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "aa79dc1a24e57b7af93bb80e6747488e33ad1589dca23abd320b8176a35a0539",
+          "sha256": "9b196d5b3edae91fcff724631ffa410f4067730e46da4bd077b137fb54ce3b7b",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "yardimci-kohort-ozet-topla.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "f24bb3ff4111de64c624d2a0572d7c4313427f0fb45e4fea0b2ff2c8f2f26595",
+      "sha256": "43c9d4f2c2f05a3d619553fbf0bd8ffb3d0d22194809c6e3acbcde5713f56eeb",
       "baseline_reviews": [
         {
           "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
@@ -12710,6 +12938,12 @@
           "previous_sha256": "15213babd7c9895f14af80cff65457beec24f9ee85182c64ca185604d8770f83",
           "sha256": "f24bb3ff4111de64c624d2a0572d7c4313427f0fb45e4fea0b2ff2c8f2f26595",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "f24bb3ff4111de64c624d2a0572d7c4313427f0fb45e4fea0b2ff2c8f2f26595",
+          "sha256": "43c9d4f2c2f05a3d619553fbf0bd8ffb3d0d22194809c6e3acbcde5713f56eeb",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
@@ -12735,7 +12969,7 @@
     },
     "yardimci-merkez-cevre.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "6b6599c809cef52840c6c6367f70f160a21f9dbe997f5d2002622581378a8392",
+      "sha256": "9938909f5a8984ac771cce95644a1b4b8690cc1af592aa3828a30cb85a24c582",
       "expressions": [
         {
           "original": "\"Kaç eşit alanlı bölge? (2 = merkez + çevre; en çok ${MAX_REGIONS})\"",
@@ -12756,12 +12990,18 @@
           "previous_sha256": "c54b9abaed069521c919994c9613f5cd80034ecb4dd06f545704228ce7919747",
           "sha256": "6b6599c809cef52840c6c6367f70f160a21f9dbe997f5d2002622581378a8392",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "6b6599c809cef52840c6c6367f70f160a21f9dbe997f5d2002622581378a8392",
+          "sha256": "9938909f5a8984ac771cce95644a1b4b8690cc1af592aa3828a30cb85a24c582",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "yardimci-mitoz-karsilastir.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "a1eafe6b64d10dfaa36656e3638eeb7d5aa5cf929e8be8c650100d0792289fe1",
+      "sha256": "5df972eaa34d22c673e98cb147a26870d82a280aaf059aca99bbdd68dfbdc0a4",
       "baseline_reviews": [
         {
           "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
@@ -12774,6 +13014,12 @@
           "previous_sha256": "970c3b1918bdeb5b22307d06693a8fe7e58437aa6f4b831279831b82824e4e0f",
           "sha256": "a1eafe6b64d10dfaa36656e3638eeb7d5aa5cf929e8be8c650100d0792289fe1",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "a1eafe6b64d10dfaa36656e3638eeb7d5aa5cf929e8be8c650100d0792289fe1",
+          "sha256": "5df972eaa34d22c673e98cb147a26870d82a280aaf059aca99bbdd68dfbdc0a4",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
@@ -12783,19 +13029,33 @@
     },
     "yardimci-nn-mesafe.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "29bc0855165663ee54c8e311ee4bdecebaf327a3ce68f77154d727dfd627ae5d",
+      "sha256": "99780658fe6d9ccbc9cfd95c68b933d3c569a3b7009d65090ae208962f1d1b98",
       "baseline_reviews": [
         {
           "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
           "previous_sha256": "f17d4e36af5c5b3fe7cf0cbd8859ca833808b194731a796a792dfe22f84b8a17",
           "sha256": "29bc0855165663ee54c8e311ee4bdecebaf327a3ce68f77154d727dfd627ae5d",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "29bc0855165663ee54c8e311ee4bdecebaf327a3ce68f77154d727dfd627ae5d",
+          "sha256": "99780658fe6d9ccbc9cfd95c68b933d3c569a3b7009d65090ae208962f1d1b98",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "yardimci-omezarr-disa-aktarma.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "f94f7141fe74b3e2421686f8abdd85c3b119d95e73ffe7a8fb6a818ae1f391d1"
+      "sha256": "a54036c169e9a79b548cc34375cbe72d8ccb859d189da648876e19e5646c1f79",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "f94f7141fe74b3e2421686f8abdd85c3b119d95e73ffe7a8fb6a818ae1f391d1",
+          "sha256": "a54036c169e9a79b548cc34375cbe72d8ccb859d189da648876e19e5646c1f79",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-ornek-siniflandirici.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
@@ -12817,7 +13077,7 @@
     },
     "yardimci-ozellik-matrisi.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "ab742adfc258fd68522d001d16f73b050167f2cd1c0c5a96e6e512c247745678",
+      "sha256": "19f8f2d4ae6aa915a8b8ecaaab84f215d89c7f12f5feebda632135e613558b18",
       "expressions": [
         {
           "original": "\"${windowBody}\\n\\nEvet: ${optionB}\\nHayır: ${optionA}\"",
@@ -12825,11 +13085,19 @@
           "count": 1,
           "context": "showConfirmDialog"
         }
+      ],
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "ab742adfc258fd68522d001d16f73b050167f2cd1c0c5a96e6e512c247745678",
+          "sha256": "19f8f2d4ae6aa915a8b8ecaaab84f215d89c7f12f5feebda632135e613558b18",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
       ]
     },
     "yardimci-peritumoral-bant.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "4013320b18d0795abb339c80ab8f4ed82e16c478f954d15c3f84afb51f1ac8de",
+      "sha256": "354fc84ef7e37670813f779f6dc93e08373f35e215e62459d3a153f929b08361",
       "baseline_reviews": [
         {
           "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
@@ -12842,6 +13110,12 @@
           "previous_sha256": "299b9a1df93b2e0e9e45331e167258a95e7cae46f9ba903dc111d400d7074457",
           "sha256": "4013320b18d0795abb339c80ab8f4ed82e16c478f954d15c3f84afb51f1ac8de",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "4013320b18d0795abb339c80ab8f4ed82e16c478f954d15c3f84afb51f1ac8de",
+          "sha256": "354fc84ef7e37670813f779f6dc93e08373f35e215e62459d3a153f929b08361",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
@@ -12851,13 +13125,19 @@
     },
     "yardimci-sinif-sayim.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "57249b61c0da887237723245bd0b0ece1283082ca49214f8ddec48966ebb016e",
+      "sha256": "3c6f03340e693586c826941aef69eb8a5ecaec9784ac4dc06d432dc37eb88b40",
       "baseline_reviews": [
         {
           "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
           "previous_sha256": "febd33468c447b86e5024d3a9c7f3d3a8ffa9d086110f3efa93c7bb92e1d0116",
           "sha256": "57249b61c0da887237723245bd0b0ece1283082ca49214f8ddec48966ebb016e",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "57249b61c0da887237723245bd0b0ece1283082ca49214f8ddec48966ebb016e",
+          "sha256": "3c6f03340e693586c826941aef69eb8a5ecaec9784ac4dc06d432dc37eb88b40",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
@@ -12893,11 +13173,27 @@
     },
     "yardimci-tespitleri-sil.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "67abe5f45fade4a452d17fb39f586f9c45b31c8ec9d65bc95caacaf5aa64626c"
+      "sha256": "a00d6387dfc19a3b574b693e8314f356717364391c6cef6ae85b4fa1e9dc11da",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "67abe5f45fade4a452d17fb39f586f9c45b31c8ec9d65bc95caacaf5aa64626c",
+          "sha256": "a00d6387dfc19a3b574b693e8314f356717364391c6cef6ae85b4fa1e9dc11da",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-tiatoolbox-maske.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "0b1f2053d4e71023390172d970c4096d7e0a6b4301ca8c41d8b1b56f5d33cb18"
+      "sha256": "537069c18e90124eae14435dbfd9a240fea7c381c360a261b11b967593a566b0",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "0b1f2053d4e71023390172d970c4096d7e0a6b4301ca8c41d8b1b56f5d33cb18",
+          "sha256": "537069c18e90124eae14435dbfd9a240fea7c381c360a261b11b967593a566b0",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-tma-cekirdek-aktarim.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
@@ -12917,29 +13213,49 @@
     },
     "yardimci-wsinfer-denetim.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "42b4f4b2f3724d4d56341cbc280d149cb29d7d1c9be44dfe0e8851076adf6d1b"
+      "sha256": "8cd609b592568ea99009166e40c5a1ff817c4b0e46c11e57706950bc58f0298e",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "42b4f4b2f3724d4d56341cbc280d149cb29d7d1c9be44dfe0e8851076adf6d1b",
+          "sha256": "8cd609b592568ea99009166e40c5a1ff817c4b0e46c11e57706950bc58f0298e",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-wsinfer-ozet.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "45c455e15186f4d26bea350f83cddc71eaef63dc49e5adba7a43e7129da6d1e6",
+      "sha256": "1d165a4be1dff65b60010957efb0ddac241ed8347de8010a5066b7a4c61fa375",
       "baseline_reviews": [
         {
           "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
           "previous_sha256": "38d8f2140564e0bb33bc67206a69980da93acfc05dc5f44edca84c22ebc3b0d8",
           "sha256": "45c455e15186f4d26bea350f83cddc71eaef63dc49e5adba7a43e7129da6d1e6",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "45c455e15186f4d26bea350f83cddc71eaef63dc49e5adba7a43e7129da6d1e6",
+          "sha256": "1d165a4be1dff65b60010957efb0ddac241ed8347de8010a5066b7a4c61fa375",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "yardimci-yapi-uzaklik.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "9b0618baad1e2496a890fafdfa5d6f0c205bf31743bda7399319e70322239f0a",
+      "sha256": "9cac410e5b5e110eb7cdd1f0f9e0d49a73cc8d8bfc21860344fb2620f8b6b8e4",
       "baseline_reviews": [
         {
           "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
           "previous_sha256": "fea7af442d9101273554b8f66aebadf2643af6909b39c6d372a14964ad9c2398",
           "sha256": "9b0618baad1e2496a890fafdfa5d6f0c205bf31743bda7399319e70322239f0a",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "9b0618baad1e2496a890fafdfa5d6f0c205bf31743bda7399319e70322239f0a",
+          "sha256": "9cac410e5b5e110eb7cdd1f0f9e0d49a73cc8d8bfc21860344fb2620f8b6b8e4",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
@@ -12957,7 +13273,7 @@
     },
     "er-pr-hscore.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "da2d17e3912d1b648794b21867027653a8cd28b19c1baa31ad6020f18c6f831b",
+      "sha256": "07f4912aab161d6d4ba7eef8508908bac253347016b86b799bafa60f981819c5",
       "baseline_reviews": [
         {
           "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
@@ -12970,12 +13286,18 @@
           "previous_sha256": "5e2317763ed44d6a2c93150996021dae1766a7c64974b893dd89a86f43a865b4",
           "sha256": "da2d17e3912d1b648794b21867027653a8cd28b19c1baa31ad6020f18c6f831b",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "da2d17e3912d1b648794b21867027653a8cd28b19c1baa31ad6020f18c6f831b",
+          "sha256": "07f4912aab161d6d4ba7eef8508908bac253347016b86b799bafa60f981819c5",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "model-egit.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "f387e4f0c8294aecaa2e00d7ee667a22f7c81a96af7b84d3bce9be15c8d14812",
+      "sha256": "b5ca8f3f618440c62906aaa7e340270af804dfbe89b88e3463e0a745a48f6726",
       "expressions": [
         {
           "original": "\"Projede '${existingName}' adlı bir piksel sınıflandırıcı zaten var.\\n\\n\"",
@@ -13019,11 +13341,19 @@
           "count": 1,
           "context": "showErrorMessage"
         }
+      ],
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "f387e4f0c8294aecaa2e00d7ee667a22f7c81a96af7b84d3bce9be15c8d14812",
+          "sha256": "b5ca8f3f618440c62906aaa7e340270af804dfbe89b88e3463e0a745a48f6726",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
       ]
     },
     "nukleer-boya.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "ee5ff6ef4e489c757d18a5a10ef7489095dbbefcb1e3408f6230c2c58bb488aa",
+      "sha256": "f098cef313f71195cfb3da9d457ded98bdb64a7a1923a27ccd0f442f93c1d5e3",
       "baseline_reviews": [
         {
           "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
@@ -13036,6 +13366,12 @@
           "previous_sha256": "77a19963fec5220cdbb95f7735b23364efa486be6fcecf4a180a930b9bccab62",
           "sha256": "ee5ff6ef4e489c757d18a5a10ef7489095dbbefcb1e3408f6230c2c58bb488aa",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "ee5ff6ef4e489c757d18a5a10ef7489095dbbefcb1e3408f6230c2c58bb488aa",
+          "sha256": "f098cef313f71195cfb3da9d457ded98bdb64a7a1923a27ccd0f442f93c1d5e3",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
@@ -13049,13 +13385,19 @@
     },
     "yardimci-cellpose-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "e22cf71fdab864a52e49f7461665cb13fc37990995dfaa4a4a53792595b841f2",
+      "sha256": "65dbc2559e4a913170d01fdbd403d3567e4f115b54cbb70eb900e6b13e1b7df4",
       "baseline_reviews": [
         {
           "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
           "previous_sha256": "ad7944c10c6c6f80a32b33edc9ff020c28fa39c5c4e239af132a2bc0c6e6b16f",
           "sha256": "e22cf71fdab864a52e49f7461665cb13fc37990995dfaa4a4a53792595b841f2",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "e22cf71fdab864a52e49f7461665cb13fc37990995dfaa4a4a53792595b841f2",
+          "sha256": "65dbc2559e4a913170d01fdbd403d3567e4f115b54cbb70eb900e6b13e1b7df4",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
@@ -13065,7 +13407,7 @@
     },
     "yardimci-doku-tespiti-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "4d61a88598d902f412cd1e07b8a41ff2d53d787ff10f23f8e5b67f08764e98d4",
+      "sha256": "6bbd6336893bdb46448eb168b4017c73860c285a5dbb07a387aadd5e196514ba",
       "expressions": [
         {
           "original": "\"Hata: ${result.error}\"",
@@ -13086,20 +13428,50 @@
           "previous_sha256": "3b0b1deb66ec302df15c1759adb63501b40fa1c2518712ac4ca2bf114e9a9692",
           "sha256": "4d61a88598d902f412cd1e07b8a41ff2d53d787ff10f23f8e5b67f08764e98d4",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "4d61a88598d902f412cd1e07b8a41ff2d53d787ff10f23f8e5b67f08764e98d4",
+          "sha256": "6bbd6336893bdb46448eb168b4017c73860c285a5dbb07a387aadd5e196514ba",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "yardimci-entegre-od.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "f5d35dd9287409eae4486c7d61ba601d7a2f7a0bcea94c1ce6fc953b921dfa7f"
+      "sha256": "8b4aed5b05b52aef1f59cead3d801511e45c95409d475d3a6fb5b4f9baee36ca",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "f5d35dd9287409eae4486c7d61ba601d7a2f7a0bcea94c1ce6fc953b921dfa7f",
+          "sha256": "8b4aed5b05b52aef1f59cead3d801511e45c95409d475d3a6fb5b4f9baee36ca",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-foundation-model-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "0ec002d602bf49d083dbb4a571aa89f9878a143e20c307074097d492f2091417"
+      "sha256": "70fa32dac48fd86cdbf500ebd1cc980a4508aea696c6955d2732e31d8197c928",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "0ec002d602bf49d083dbb4a571aa89f9878a143e20c307074097d492f2091417",
+          "sha256": "70fa32dac48fd86cdbf500ebd1cc980a4508aea696c6955d2732e31d8197c928",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-hepatosit-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "058ca07874bcdbdae6ef6c2e358f7652de07e97a0f10764d7c394fccb09dcd7e"
+      "sha256": "d520ae6b7a2553400359db5e2077146e82f43b5f952e935ba437d63b21e75a85",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "058ca07874bcdbdae6ef6c2e358f7652de07e97a0f10764d7c394fccb09dcd7e",
+          "sha256": "d520ae6b7a2553400359db5e2077146e82f43b5f952e935ba437d63b21e75a85",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-histoart-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
@@ -13131,7 +13503,7 @@
     },
     "yardimci-hotspot-sirali.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "72d498892bf28733efb178daab7ff779820de7c09dc5bb5bfa3ab06e4c62355a",
+      "sha256": "08b249d2b089ed1ae49f91863e996cfe9287c725b1fa67bd4d7ca6295678e033",
       "expressions": [
         {
           "original": "\"'${chosenClass}' sınıfındaki karolarda sayısal ölçüm bulunamadı.\"",
@@ -13158,44 +13530,86 @@
           "previous_sha256": "45d21797c25864f010d4795d94edc9fdfe089562dc91dfb175b874b591670964",
           "sha256": "72d498892bf28733efb178daab7ff779820de7c09dc5bb5bfa3ab06e4c62355a",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "72d498892bf28733efb178daab7ff779820de7c09dc5bb5bfa3ab06e4c62355a",
+          "sha256": "08b249d2b089ed1ae49f91863e996cfe9287c725b1fa67bd4d7ca6295678e033",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "yardimci-hovernext-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "df07231a096871bf71d58705241d7bf7cf57feb160a53d6605c0caa11dba6a1e",
+      "sha256": "3e4c4fef0b7487810f78b04195060abeb8900b06a1cd5dfaa2d58dd9326c1566",
       "baseline_reviews": [
         {
           "revision": "cc8d89ad314f4d22d1de3f78d0467d0ca662fc89",
           "previous_sha256": "e45d954bde7a4a4f557d7d181aa8bd606d17e69344b7208331ae28037e432a3e",
           "sha256": "df07231a096871bf71d58705241d7bf7cf57feb160a53d6605c0caa11dba6a1e",
           "record": "docs/source-baseline-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "df07231a096871bf71d58705241d7bf7cf57feb160a53d6605c0caa11dba6a1e",
+          "sha256": "3e4c4fef0b7487810f78b04195060abeb8900b06a1cd5dfaa2d58dd9326c1566",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "yardimci-icc-denetci-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "1046eb8ce0a2f8c949d03c16e5c42aabb5a97f40773859df5be49e8d7733da11"
+      "sha256": "c9666a32804b7c5dc8bfa4a17e08173384aa9497d7d1680c13b7bf9f677fa09a",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "1046eb8ce0a2f8c949d03c16e5c42aabb5a97f40773859df5be49e8d7733da11",
+          "sha256": "c9666a32804b7c5dc8bfa4a17e08173384aa9497d7d1680c13b7bf9f677fa09a",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-instanseg-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "0ac85208e1ef3ef306e9139b44a689e3e3405082dc5af6848c359f8ea3fd2711",
+      "sha256": "784c6977e32308c71fc425d77865221bcaec4b642e38a6d9b4cbc4274b788462",
       "baseline_reviews": [
         {
           "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
           "previous_sha256": "938ca7f58e80dc732a4cceb69faaadd62890a326e563330b571a7c63cafdde4e",
           "sha256": "0ac85208e1ef3ef306e9139b44a689e3e3405082dc5af6848c359f8ea3fd2711",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "0ac85208e1ef3ef306e9139b44a689e3e3405082dc5af6848c359f8ea3fd2711",
+          "sha256": "784c6977e32308c71fc425d77865221bcaec4b642e38a6d9b4cbc4274b788462",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "yardimci-kaiko-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "ca9991e05a1e8dda86fbd010c5982c8a9fc0b99e63d13c344ca7373843aa176b"
+      "sha256": "60d3080f1f80fb311d29d0b182343717f175c28817d893c6da8ae485535f2558",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "ca9991e05a1e8dda86fbd010c5982c8a9fc0b99e63d13c344ca7373843aa176b",
+          "sha256": "60d3080f1f80fb311d29d0b182343717f175c28817d893c6da8ae485535f2558",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-karo-disa-aktarma.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "1d56c6fc5ae21f1a1d8fe73002da2d5740f43d68a30fd213463ec05971a55d6f"
+      "sha256": "bcdf1b33d8de510b0385bf96cf00afcfeadf1988a7b42c0b0965af3ac90c1ff8",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "1d56c6fc5ae21f1a1d8fe73002da2d5740f43d68a30fd213463ec05971a55d6f",
+          "sha256": "bcdf1b33d8de510b0385bf96cf00afcfeadf1988a7b42c0b0965af3ac90c1ff8",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-ki67-heterojenlik.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
@@ -13217,31 +13631,69 @@
     },
     "yardimci-kohort-boya-qc.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "9ba910d65bb9d8357631a6b7ef68c2ddae2a6161aef6c50d954f15983f9f3025"
+      "sha256": "90d59bf94d2b22ba54af9f50c6d2b4bba06fb6ce7786ceccce8b6ce12182f2eb",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "9ba910d65bb9d8357631a6b7ef68c2ddae2a6161aef6c50d954f15983f9f3025",
+          "sha256": "90d59bf94d2b22ba54af9f50c6d2b4bba06fb6ce7786ceccce8b6ce12182f2eb",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-maske-iceaktar.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "19b77d950adf95979bbb4055dbb82b82ce4cbafccafd72a73b40124a18dc298c"
+      "sha256": "7041b2c5d1545861979299ff85bd77bfbf2a31303e0a0d164c8eb1bf6e37e6ab",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "19b77d950adf95979bbb4055dbb82b82ce4cbafccafd72a73b40124a18dc298c",
+          "sha256": "7041b2c5d1545861979299ff85bd77bfbf2a31303e0a0d164c8eb1bf6e37e6ab",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-mitoz-atipik-effnet.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "bb7efc2b2ca5163e0bb9c70969f8bf6ccf178fe13149359ae407f15e08a1e35f"
+      "sha256": "dd9e4e191ba0a9b96463d822044e9d0ef7dfa78706547faa1ebb95bf9061885e",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "bb7efc2b2ca5163e0bb9c70969f8bf6ccf178fe13149359ae407f15e08a1e35f",
+          "sha256": "dd9e4e191ba0a9b96463d822044e9d0ef7dfa78706547faa1ebb95bf9061885e",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-mitoz-atipik-sanofi.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "9b6ee01ad38f7a2d0370f76e98432be63daf8348f3d34ae31b1f98c0958ce309",
+      "sha256": "1ac88f4fb2403f880dad6ffd0854dba22f4bbdf716712e5b2afcf746ce3a75a7",
       "baseline_reviews": [
         {
           "revision": "b511ba2803a1727cccafdbbdda96fa0c524d4ca0",
           "previous_sha256": "a6a0dfb4c7a5cf517cc2066621f6ab08aca42cab6b9a38e07bbe9884c0f29c38",
           "sha256": "9b6ee01ad38f7a2d0370f76e98432be63daf8348f3d34ae31b1f98c0958ce309",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "9b6ee01ad38f7a2d0370f76e98432be63daf8348f3d34ae31b1f98c0958ce309",
+          "sha256": "1ac88f4fb2403f880dad6ffd0854dba22f4bbdf716712e5b2afcf746ce3a75a7",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "yardimci-mitoz-fcos.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "be7da70da725ea986a6aab91ed03827f3e833f5069f9a8b560f967f94bbdb310"
+      "sha256": "9be7a0bf3832e3e0f3d2428326ec9fe158a12dbc40cc24ca28c8391af91f2506",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "be7da70da725ea986a6aab91ed03827f3e833f5069f9a8b560f967f94bbdb310",
+          "sha256": "9be7a0bf3832e3e0f3d2428326ec9fe158a12dbc40cc24ca28c8391af91f2506",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-mitoz-kongnet.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
@@ -13285,11 +13737,27 @@
     },
     "yardimci-mitoz-retinanet.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "198831cb9c9f236fe5518235d83eda6773cb05c41fd5b642c1be135e826e616c"
+      "sha256": "d42b989174683a7bee34953c516f86d5370f8b271884762b762ce5ff89ab8478",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "198831cb9c9f236fe5518235d83eda6773cb05c41fd5b642c1be135e826e616c",
+          "sha256": "d42b989174683a7bee34953c516f86d5370f8b271884762b762ce5ff89ab8478",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-mitoz-tiatoolbox.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "4ae00ba64968bbe61a99aa510931c3819892d3178a934a7c112a82e362de0ffe"
+      "sha256": "95b1d6a839ad6fb6090bbfea1351631f60dc0e22a7372b3eb1b609a848070367",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "4ae00ba64968bbe61a99aa510931c3819892d3178a934a7c112a82e362de0ffe",
+          "sha256": "95b1d6a839ad6fb6090bbfea1351631f60dc0e22a7372b3eb1b609a848070367",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-nuclick-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
@@ -13297,51 +13765,85 @@
     },
     "yardimci-sectra-iceaktar.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "cb02863cd355d72d52fcd9e97aecc6de4a9593b7c00742e9d5e59f8ae5fd2be0"
+      "sha256": "3aab4b4f8b8a50f7166267e44ba8937f55b706ff0b1a2d376b9b9fc2111079f7",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "cb02863cd355d72d52fcd9e97aecc6de4a9593b7c00742e9d5e59f8ae5fd2be0",
+          "sha256": "3aab4b4f8b8a50f7166267e44ba8937f55b706ff0b1a2d376b9b9fc2111079f7",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-spider-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "f3ee8bdd0e4d4698caf78aa7e68c140243fca79936aa7fb254b2df11403efce8"
+      "sha256": "354dc4abfe26d4e7600627c37561bea05fbafbec89aaffcb3be8e858df288dae",
+      "baseline_reviews": [
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "f3ee8bdd0e4d4698caf78aa7e68c140243fca79936aa7fb254b2df11403efce8",
+          "sha256": "354dc4abfe26d4e7600627c37561bea05fbafbec89aaffcb3be8e858df288dae",
+          "record": "docs/menu-path-hints-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-stardist-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "f19af5ba7e4bfbc4f36137b87c7137a9ee283a82a4d197fcff571d9dab90e11b",
+      "sha256": "ab8955e4792c244c8a230dd2d8d1a6edf1d9910e52177baa585d98845b934e53",
       "baseline_reviews": [
         {
           "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
           "previous_sha256": "74a801fafc3d48c03396d7e01c05cdd6c37d0fd397489147b3fb0ad2120a1998",
           "sha256": "f19af5ba7e4bfbc4f36137b87c7137a9ee283a82a4d197fcff571d9dab90e11b",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "f19af5ba7e4bfbc4f36137b87c7137a9ee283a82a4d197fcff571d9dab90e11b",
+          "sha256": "ab8955e4792c244c8a230dd2d8d1a6edf1d9910e52177baa585d98845b934e53",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "yardimci-tiatoolbox-bolge-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "1ed5408039b8b17a3330ebce2650a3fd3e28ee0fd4330cac201d36a0cdcd1bba",
+      "sha256": "0b5c3b63dc083209df8446ad175a3459e7f03b655a8d6619167d433a42138d61",
       "baseline_reviews": [
         {
           "revision": "b511ba2803a1727cccafdbbdda96fa0c524d4ca0",
           "previous_sha256": "70f0e6b8d45ab02cf2f520e386b5c71dfea1dcb7dfee98c60dd2949c02844740",
           "sha256": "1ed5408039b8b17a3330ebce2650a3fd3e28ee0fd4330cac201d36a0cdcd1bba",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "1ed5408039b8b17a3330ebce2650a3fd3e28ee0fd4330cac201d36a0cdcd1bba",
+          "sha256": "0b5c3b63dc083209df8446ad175a3459e7f03b655a8d6619167d433a42138d61",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "yardimci-tiatoolbox-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "4ab9dd49cda556e30e6c58078c9bc3a511d7bcbddb8cac9ce504a47479cb05e9",
+      "sha256": "33a3bb9e3fb28ff528b64936580f972600cdf0484300a37544e2e4ae38d8f2d3",
       "baseline_reviews": [
         {
           "revision": "b511ba2803a1727cccafdbbdda96fa0c524d4ca0",
           "previous_sha256": "78d4037040f5b13640f8fd9a731ae163c4ba991f699f73ef117cdc9f8275dbd1",
           "sha256": "4ab9dd49cda556e30e6c58078c9bc3a511d7bcbddb8cac9ce504a47479cb05e9",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "4ab9dd49cda556e30e6c58078c9bc3a511d7bcbddb8cac9ce504a47479cb05e9",
+          "sha256": "33a3bb9e3fb28ff528b64936580f972600cdf0484300a37544e2e4ae38d8f2d3",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "yardimci-tumor-tomurcuklanma.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "b5a081195ef386a185538448796ec2e3d6a82a0e39bb28fdc5057a2ef9356dbe",
+      "sha256": "a96f3de910b7de12bd65941fb595e83c879cabe3fe84546158d70c2b27d80564",
       "expressions": [
         {
           "original": "\"  ${s.image ? '✓' : '✗'} Görüntü açık\\n\"",
@@ -13374,18 +13876,30 @@
           "previous_sha256": "0d69ab05ee5b26957c156850fdf2daa892baba66cfb147754fb09d8b211edfc4",
           "sha256": "b5a081195ef386a185538448796ec2e3d6a82a0e39bb28fdc5057a2ef9356dbe",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "b5a081195ef386a185538448796ec2e3d6a82a0e39bb28fdc5057a2ef9356dbe",
+          "sha256": "a96f3de910b7de12bd65941fb595e83c879cabe3fe84546158d70c2b27d80564",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },
     "yardimci-valis-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "3765d1802d1561724c87661e1113e5a8e5a3e0a08b3cd8bf3802ed5962e5038b",
+      "sha256": "ffb4210edb124d29e38890eb62c5992da88861007943af8913e5a2fa904a3ba3",
       "baseline_reviews": [
         {
           "revision": "b511ba2803a1727cccafdbbdda96fa0c524d4ca0",
           "previous_sha256": "933f9bc4449ad85f07c1bcded840d9916cd55b2fccc46bdc04a08e46fbf475cf",
           "sha256": "3765d1802d1561724c87661e1113e5a8e5a3e0a08b3cd8bf3802ed5962e5038b",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
+          "previous_sha256": "3765d1802d1561724c87661e1113e5a8e5a3e0a08b3cd8bf3802ed5962e5038b",
+          "sha256": "ffb4210edb124d29e38890eb62c5992da88861007943af8913e5a2fa904a3ba3",
+          "record": "docs/menu-path-hints-2026-11-15.md"
         }
       ]
     },

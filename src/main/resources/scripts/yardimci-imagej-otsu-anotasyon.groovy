@@ -23,7 +23,7 @@
  * KULLANIM:
  *   1. Bir görüntü açın. (İsteğe bağlı) yalnız bir bölgeyi eşiklemek için bir
  *      ALAN anotasyonu çizip SEÇİN; seçmezseniz tüm görüntü kullanılır.
- *   2. [Extensions → Atölye → İleri analiz → ImageJ ile otomatik eşik → anotasyon]
+ *   2. [Extensions → Atölye → Yardımcılar → Eğitim, sunum ve ImageJ → ImageJ ile otomatik eşik → anotasyon]
  *      (ya da [Automate → Project scripts → bu betik]).
  *
  * KAYNAK / İLHAM:
@@ -151,7 +151,7 @@ def roi = SimpleThresholding.thresholdToROI(ip, request)
 if (roi == null) {
     def msg = "Otsu eşiği bu bölgede hiç piksel seçmedi.\n" +
               "Farklı bir bölge deneyin ya da görüntü tipini doğrulayın\n" +
-              "(Atölye → Yardımcılar → Görüntü tipi ayarla)."
+              "(Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla)."
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.31c96e8d3208', "Eşik boş"), msg)
     return
 }

@@ -531,7 +531,7 @@ render = { ->
         title.setText(workshopText('script.6a2788fed365', 'Atipik sınıflama — çalışma zamanı gerekli'))
         def miss = configMissing(cfg)
         addGuidance(workshopText('script.ba7604659db5', 'Bu modül torch + transformers + peft ortamını (env id: sanofi-eftd) gerektirir.\nEksik/geçersiz:\n  • ') + (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')) +
-            workshopText('script.3046d905f7be', '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi → "Sanofi EFTD — atipik sınıflandırıcı".\nKöprü: handson/python/sanofi/eftd_runner.py'))
+            workshopText('script.937dd59f4e8c', '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi → "Sanofi EFTD — atipik sınıflandırıcı".\nKöprü: handson/python/sanofi/eftd_runner.py'))
         actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() })); actions.add(navButton(workshopText('script.719f58ad7970', '⚙ Python ortamını kur/aç'), { launchEnvManager() }, workshopText('script.0dd82a5367e8', 'Atölye Python ortam yöneticisini açar → "Sanofi EFTD"yi kurun (omurga ayrıca kapılı)'))); actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
         title.setText(workshopText('script.327f4ae1f23a', 'Atipik sınıflama — yapılandırma'))

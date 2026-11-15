@@ -28,7 +28,7 @@
  *
  * ÇALIŞMA ZAMANI:
  *   torch + torchvision + SimpleITK + pyyaml ortamı (env id: midog-fcos) + midog/fcos_runner.py köprüsü.
- *   Yoksa: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam
+ *   Yoksa: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam
  *   yöneticisi → "MIDOG25 FCOS — mitoz dedektörü".
  *
  * KULLANIM:
@@ -482,7 +482,7 @@ def resultText = { imageData, cfg, imp, dens, cal ->
         else
             sb << String.format(java.util.Locale.US, "Mitoz / %.0f mm²: hesaplanmadı (alan %.3f mm²; ROI'yi ~2 mm² yapın)%n", WHO_AREA_MM2, a)
     } else {
-        sb << "Yoğunluk     : hesaplanmadı — piksel boyutu (µm/px) kalibre değil (Yardımcılar → Kalibrasyon).\n"
+        sb << "Yoğunluk     : hesaplanmadı — piksel boyutu (µm/px) kalibre değil (Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)).\n"
     }
     if ((int)(imp?.inside ?: 0) == 0) {
         sb << "\n⚠ Bölgede 0 mitoz — model çalıştı ama eşiği geçen tespit yok.\n"
@@ -891,7 +891,7 @@ render = { ->
         def miss = configMissing(cfg)
         addGuidance(workshopText('script.6eecd4353d78', 'Bu modül torch + torchvision ortamını (env id: midog-fcos) gerektirir.\nEksik/geçersiz:\n  • ') +
             (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')) +
-            workshopText('script.697752520bcb', '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi → "MIDOG25 FCOS — mitoz dedektörü".\n') +
+            workshopText('script.e8904d5e394e', '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi → "MIDOG25 FCOS — mitoz dedektörü".\n') +
             workshopText('script.8122fd5f6bea', 'Köprü betiği: handson/python/midog/fcos_runner.py'))
         actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
         actions.add(navButton(workshopText('script.719f58ad7970', '⚙ Python ortamını kur/aç'), { launchEnvManager() }, workshopText('script.212a17d13d14', 'Atölye Python ortam yöneticisini açar → "MIDOG25 FCOS — mitoz dedektörü"yü kurun')))

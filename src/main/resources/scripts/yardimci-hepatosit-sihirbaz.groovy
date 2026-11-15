@@ -34,7 +34,7 @@
  *   1. Hepatocyte Python ortamını kurun (①), depoyu indirin (②), modeli seçin (③).
  *   2. Yerel diskteki bir karaciğer H&E lamı açın; segmentlemek istediğiniz bölge(ler)
  *      için alan anotasyonu çizin.
- *   3. [Extensions → Atölye → Yardımcılar → Hücre/çekirdek tespiti → Hepatosit segmentasyonu sihirbazı]
+ *   3. [Extensions → Atölye → Yardımcılar → Hücre ve çekirdek tespiti → Hepatosit bölütleme sihirbazı (Python)]
  *   4. "Bağımlılık kontrolü" ile ortamı doğrulayın; "Segmentle" ile çalıştırın.
  *
  * YÖNTEM / KAYNAK REFERANSLARI:

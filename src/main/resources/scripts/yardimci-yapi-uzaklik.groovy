@@ -31,7 +31,7 @@
  * KULLANIM:
  *   1. Hücre tespiti yapılmış, kalibre (µm/px) bir lam açın
  *   2. Yapıyı anotasyon olarak çizin ve SEÇİN (birden çok da olabilir)
- *   3. [Extensions → Atölye → Yardımcılar → Yapıya uzaklık (sınıra mesafe)]
+ *   3. [Extensions → Atölye → Yardımcılar → Uzamsal analiz → Yapıya uzaklık (sınıra mesafe)]
  *      (ya da [Automate → Project scripts → bu betik])
  *
  * ÇIKTI:
@@ -197,8 +197,7 @@ def cal = imageData.getServer().getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0) || !(ph > 0)) {
-    Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), workshopText('script.f515091dc00d', "Lamda piksel boyutu (µm) tanımlı değil; mesafe µm olarak hesaplanamaz." +
-        "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu)."))
+    Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), workshopText('script.13fdf447446f', 'Lamda piksel boyutu (µm) tanımlı değil; mesafe µm olarak hesaplanamaz.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).'))
     return
 }
 

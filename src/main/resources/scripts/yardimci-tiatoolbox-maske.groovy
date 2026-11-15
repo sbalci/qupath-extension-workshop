@@ -27,7 +27,7 @@
  * KULLANIM:
  *   1. Bir lam açın; ilgi bölgesini anote edip SINIFLANDIRIN (ör. Tumor / Stroma
  *      — bkz. Tümör/Stroma modülü). Sınıfsız anotasyonlar maskeye dâhil edilmez.
- *   2. [Extensions → Atölye → Yardımcılar → TIA Toolbox için bölge maskesi]
+ *   2. [Extensions → Atölye → Yardımcılar → İçe ve dışa aktarma / veri → TIA Toolbox için bölge maskesi]
  *   3. Maske çözünürlüğünü (µm/px) girin (düşük çözünürlük = küçük dosya).
  *
  * ÇIKTI:

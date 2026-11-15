@@ -11,6 +11,24 @@ fingerprint in `script-core.json` (`baseline_reviews`, with the previous hash).
 The `revision` recorded there is the commit the diff was reviewed against.
 The preservation check itself is unchanged.
 
+## Review status — read this first
+
+The fingerprint updates in `script-core.json` that point to this note record changes
+that were **written and reviewed by automated agents**. Each change was compiled in
+QuPath 0.6.0 and 0.7.0 (all 103 scripts parse) and is covered by unit tests of its
+naming, matching and decision logic and by source-order checks. **None of the dialogs
+was run in the QuPath GUI, and no change was run against a real slide or model.**
+
+A passing preservation check therefore means "the source matches what is described
+here", not "a person reviewed this". The owner's GUI pass before `v0.2.2-rc9` is the
+review. The tables below are the list to go through.
+
+Owner decisions recorded here (15 November 2026): default is Add and nothing is deleted;
+headless stops when an earlier result exists; transfer wizards remove the old transfer
+whole on Replace; detection tools offer Replace or keep (keep preselected); Tümör/Stroma
+Replace re-measures in place; exports ask about copies; **Tümör içi Ki-67 keeps its
+"Add as a copy" option, because different models may keep their own annotations.**
+
 ## The pattern
 
 | Situation | Behaviour |

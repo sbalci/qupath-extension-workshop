@@ -23,7 +23,7 @@
  *   1. WSInfer çıkarımını çalıştırmış bir lam açın (karolar sınıflı olmalı)
  *   2. (İsteğe bağlı) özetlenecek bölgeyi anotasyon olarak çizip SEÇİN
  *      (seçim yoksa tüm görüntüdeki karolar özetlenir)
- *   3. [Extensions → Atölye → Yardımcılar → WSInfer karo özeti (sınıf alanı / %)]
+ *   3. [Extensions → Atölye → Yardımcılar → Skorlama ve ölçüm → WSInfer karo özeti (sınıf alanı / %)]
  *      (ya da [Automate → Project scripts → bu betik])
  *
  * ÇIKTI:

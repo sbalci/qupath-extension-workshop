@@ -19,7 +19,7 @@
  *                              remove_impossible_nuclei.groovy deseni; MIT).
  *
  * KULLANIM:
- *   1. [Extensions → Atölye → Yardımcılar → Tespitleri sil]
+ *   1. [Extensions → Atölye → Yardımcılar → Temel araçlar → Tespitleri sil]
  *   2. Sayım önizlemesi görünür → istediğiniz butona tıklayın
  *   3. Sonuç penceresi kaç nesnenin silindiğini gösterir
  *

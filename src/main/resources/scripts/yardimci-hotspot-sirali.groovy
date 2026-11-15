@@ -28,7 +28,7 @@
  * KULLANIM:
  *   1. Karo anotasyonları olan (ör. piksel sınıflandırıcı çıktısı,
  *      Ki-67 heterojenlik ızgarası) bir lam açın.
- *   2. [Extensions → Atölye → Yardımcılar → Uzamsal analiz → Sıralı Hotspot Seçici]
+ *   2. [Extensions → Atölye → Yardımcılar → Skorlama ve ölçüm → Sıralı yoğun odak seçici (top-N)]
  *      (ya da [Automate → Project scripts → bu betik])
  *   3. Sınıf → ölçüm → N iletişimlerini yanıtlayın.
  *

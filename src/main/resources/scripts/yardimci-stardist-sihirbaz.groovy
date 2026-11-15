@@ -27,7 +27,7 @@
  *   1. StarDist eklentisini kurun: [Extensions → Manage extensions] → StarDist.
  *      Ayrıntılı kurulum: Ekler → StarDist (StarDist Eklentisi).
  *   2. Bir H&E lamı açın; ölçülecek bölge için bir ALAN anotasyonu çizin ve SEÇİN.
- *   3. [Extensions → Atölye → Yardımcılar → StarDist çekirdek tespiti sihirbazı]
+ *   3. [Extensions → Atölye → Yardımcılar → Hücre ve çekirdek tespiti → StarDist çekirdek tespiti sihirbazı]
  *   4. (Ops.) eşik / piksel boyutu / hücre genişletmeyi ayarlayın → "Çekirdek tespiti".
  *
  * YÖNTEM / KAYNAK REFERANSLARI:

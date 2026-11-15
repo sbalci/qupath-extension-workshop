@@ -12,8 +12,8 @@
  *
  * ÖN KOŞUL — anotasyonlar:
  *   1. H&E lamı açık ve görüntü tipi Brightfield (H&E) olmalı (boya
- *      vektörleri tanımlı). Değilse: Yardımcılar → Görüntü tipi ayarla.
- *   2. Piksel boyutu (µm/px) kalibre olmalı. Değilse: Yardımcılar → Kalibrasyon.
+ *      vektörleri tanımlı). Değilse: Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla.
+ *   2. Piksel boyutu (µm/px) kalibre olmalı. Değilse: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).
  *   3. Lamda en az birer **Tumor** ve **Stroma** sınıflı anotasyon olmalı
  *      (Tümör/Stroma modülü §2'deki gibi 3-5 küçük temsili bölge). İsterseniz Background* /
  *      Necrosis* gibi ek sınıflar da çizebilirsiniz; sona eklenen * o sınıfı hem
@@ -296,10 +296,7 @@ def stains = imageData.getColorDeconvolutionStains()
 if (stains == null || !normalizedImageType.contains('BRIGHTFIELD_H_E')) {
     Dialogs.showErrorMessage(
         workshopText('script.762ff995cda6', "Görüntü tipi uygun değil"),
-        workshopText('script.1fae35d24240', "Bu betik Hematoxylin/Eosin renk ayrıştırma kanallarını kullanır; bunun için\n" +
-        "görüntü tipi Brightfield (H&E) olmalı ve boya vektörleri tanımlı olmalı.\n\n" +
-        "Çözüm: Extensions → Atölye → Yardımcılar → Görüntü tipi ayarla ile tipi\n" +
-        "Brightfield (H&E) yapın, sonra bu betiği tekrar çalıştırın.")
+        workshopText('script.69a14deb3fc8', 'Bu betik Hematoxylin/Eosin renk ayrıştırma kanallarını kullanır; bunun için\ngörüntü tipi Brightfield (H&E) olmalı ve boya vektörleri tanımlı olmalı.\n\nÇözüm: Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla ile tipi\nBrightfield (H&E) yapın, sonra bu betiği tekrar çalıştırın.')
     )
     return
 }
@@ -310,9 +307,7 @@ def basePixelMicrons = cal.getAveragedPixelSizeMicrons()
 if (!(basePixelMicrons > 0)) {
     Dialogs.showErrorMessage(
         workshopText('script.a5a01874aff2', "Kalibrasyon yok"),
-        workshopText('script.bff255079a29', "Lamda piksel boyutu (µm/px) tanımlı değil; sınıflandırıcı çözünürlüğü hesaplanamaz.\n\n" +
-        "Çözüm: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu).\n" +
-        "Sonra bu betiği tekrar çalıştırın.")
+        workshopText('script.32246b235c40', 'Lamda piksel boyutu (µm/px) tanımlı değil; sınıflandırıcı çözünürlüğü hesaplanamaz.\n\nÇözüm: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).\nSonra bu betiği tekrar çalıştırın.')
     )
     return
 }

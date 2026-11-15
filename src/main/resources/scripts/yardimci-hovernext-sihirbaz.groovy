@@ -27,7 +27,7 @@
  * ÇALIŞMA ZAMANI:
  *   NVIDIA CUDA GPU ZORUNLU. Python ortamı (env id: hovernext; torch 2.1.1 + CUDA 12.1) +
  *   hovernext/hovernext_runner.py köprüsü. Kurulum: Extensions → Atölye → Yardımcılar →
- *   Python köprüleri → Atölye Python ortam yöneticisi → "HoVer-NeXt — çekirdek segmentasyon + 7 sınıf".
+ *   Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi → "HoVer-NeXt — çekirdek segmentasyon + 7 sınıf".
  *
  * KULLANIM:
  *   1. H&E lamını açın; piksel boyutu (µm/px) KALİBRE olmalı (kalibrasyonsuz çalıştırılmaz).
@@ -252,7 +252,7 @@ def calibrationInfo = { imageData ->
     String warn = null
     double mpp = (cal != null) ? (cal.pw + cal.ph) / 2.0d : Double.NaN
     if (cal == null) {
-        block = 'Piksel boyutu tanımlı DEĞİL. HoVer-NeXt 0.5 µm/px için eğitildi; kalibrasyonsuz görüntüde sessizce yanlış ölçekte çalışır. Yardımcılar → Temel araçlar → Kalibrasyon ile piksel boyutunu girin.'
+        block = 'Piksel boyutu tanımlı DEĞİL. HoVer-NeXt 0.5 µm/px için eğitildi; kalibrasyonsuz görüntüde sessizce yanlış ölçekte çalışır. Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu) ile piksel boyutunu girin.'
     } else if (!(mpp > 0.0d)) {
         block = 'Piksel boyutu geçersiz (≤ 0).'
     } else if (Math.abs(mpp - 1.0d) < 1e-6) {
@@ -875,7 +875,7 @@ render = { ->
         def miss = configMissing(cfg)
         addGuidance(workshopText('script.49179a6aafd5', 'Bu sihirbaz HoVer-NeXt Python ortamını (env id: hovernext) ve bir NVIDIA CUDA GPU gerektirir.\nEksik/geçersiz:\n  • ') +
             (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')) +
-            workshopText('script.3ae42d7aeda3', '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi → "HoVer-NeXt — çekirdek segmentasyon + 7 sınıf".\n') +
+            workshopText('script.f385733c06d7', '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi → "HoVer-NeXt — çekirdek segmentasyon + 7 sınıf".\n') +
             workshopText('script.3eabf20be640', 'Köprü betiği: handson/python/hovernext/hovernext_runner.py'))
         actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
         actions.add(navButton(workshopText('script.719f58ad7970', '⚙ Python ortamını kur/aç'), { launchEnvManager() }, workshopText('script.32e30c0973d9', 'Atölye Python ortam yöneticisini açar → "HoVer-NeXt"i kurun')))

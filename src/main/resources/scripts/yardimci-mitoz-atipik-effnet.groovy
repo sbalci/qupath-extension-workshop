@@ -29,7 +29,7 @@
  *
  * ÇALIŞMA ZAMANI:
  *   torch + timm ortamı (env id: midog-atypical) + midog/atypical_effnet.py köprüsü.
- *   Kurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam
+ *   Kurulum: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam
  *   yöneticisi → "MIDOG25 EffNetV2 — atipik sınıflandırıcı".
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.
@@ -516,7 +516,7 @@ render = { ->
         title.setText(workshopText('script.6a2788fed365', 'Atipik sınıflama — çalışma zamanı gerekli'))
         def miss = configMissing(cfg)
         addGuidance(workshopText('script.d339d2a46b88', 'Bu modül torch + timm ortamını (env id: midog-atypical) gerektirir.\nEksik/geçersiz:\n  • ') + (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')) +
-            workshopText('script.713f4ab40a33', '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi → "MIDOG25 EffNetV2 — atipik sınıflandırıcı".\nKöprü: handson/python/midog/atypical_effnet.py'))
+            workshopText('script.a446e942c76e', '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi → "MIDOG25 EffNetV2 — atipik sınıflandırıcı".\nKöprü: handson/python/midog/atypical_effnet.py'))
         actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() })); actions.add(navButton(workshopText('script.719f58ad7970', '⚙ Python ortamını kur/aç'), { launchEnvManager() }, workshopText('script.d48b765b668a', 'Atölye Python ortam yöneticisini açar → "MIDOG25 EffNetV2"yi kurun'))); actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {
         title.setText(workshopText('script.327f4ae1f23a', 'Atipik sınıflama — yapılandırma'))

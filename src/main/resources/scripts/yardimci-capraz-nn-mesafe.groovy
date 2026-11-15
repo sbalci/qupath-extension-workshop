@@ -20,7 +20,7 @@
  * KULLANIM:
  *   1. Sınıflı hücre tespitleri olan, kalibre (µm) bir lam açın.
  *   2. [Extensions → Atölye → Yardımcılar → Uzamsal analiz →
- *      Çapraz-tip En Yakın Komşu]
+ *      Türler arası en yakın komşu (A→B)]
  *   3. Açılan iletişimlerde A ve B sınıflarını seçin; yarıçap girin.
  *
  * ÇIKTI:
@@ -223,8 +223,7 @@ double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0)) {
     Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"),
-        workshopText('script.5dad5b2ba71a', "Lamda piksel boyutu (µm) tanımlı değil.\n\n" +
-        "Piksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu)."))
+        workshopText('script.f65782dc5773', 'Lamda piksel boyutu (µm) tanımlı değil.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).'))
     return
 }
 // Anizotropik piksellerde (pw ≠ ph) Y ekseni ayrı ölçeklenmeli; yükseklik tanımsızsa genişliği kullan.

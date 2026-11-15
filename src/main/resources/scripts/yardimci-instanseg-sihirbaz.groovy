@@ -17,7 +17,7 @@
  *   • Yalnız sayım / alan / yoğunluk üretir; sınıflandırma, grade, alt-tip veya
  *     klinik yorum YAPMAZ.
  *   • InstanSeg çıktısı bir DERİN ÖĞRENME TAHMİNİDİR; görsel doğrulama gerekir (Yapay Zekâ Araçlarını Değerlendirme eki).
- *   • StarDist sihirbazına kardeş bir araçtır (bkz. Yardımcılar → StarDist
+ *   • StarDist sihirbazına kardeş bir araçtır (bkz. Yardımcılar → Hücre ve çekirdek tespiti → StarDist
  *     çekirdek tespiti sihirbazı; ayrıntı: Ekler → InstanSeg).
  *
  * KULLANIM:
@@ -25,7 +25,7 @@
  *   2. Bir model indirin: InstanSeg arayüzünden (ör. "brightfield_nuclei") ya da
  *      instanseg.pt + rdf.yaml içeren bir model klasörünü hazır bulundurun.
  *   3. Bir lam açın; ölçülecek bölge için bir ALAN anotasyonu çizip SEÇİN.
- *   4. [Extensions → Atölye → Yardımcılar → InstanSeg çekirdek/hücre tespiti sihirbazı]
+ *   4. [Extensions → Atölye → Yardımcılar → Hücre ve çekirdek tespiti → InstanSeg çekirdek/hücre tespiti sihirbazı]
  *   5. Model klasörü + cihazı (cpu/gpu) ayarlayın → "Tespit".
  *
  * YÖNTEM / KAYNAK REFERANSLARI:

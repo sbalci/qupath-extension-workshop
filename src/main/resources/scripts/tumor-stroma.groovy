@@ -185,8 +185,7 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
             installBtn.setOnAction({
                 if (!launch('yardimci-ornek-siniflandirici.groovy')) {
                     qupath.fx.dialogs.Dialogs.showMessageDialog('Eklenti gerekli',
-                        workshopText('script.c6967ae055af', 'Örnek modeli kurmak için: Extensions → Atölye → Yardımcılar →\n' +
-                        '"Örnek tümör/stroma sınıflandırıcısını projeye kaydet".'))
+                        workshopText('script.036f0e16fc4a', 'Örnek modeli kurmak için: Extensions → Atölye → Yardımcılar → İçe ve dışa aktarma / veri →\n"Örnek tümör/stroma sınıflandırıcısını projeye kaydet".'))
                 }
                 result.set([action: 'CANCEL']); stage.close()
             })
@@ -194,8 +193,7 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
             wizardBtn.setOnAction({
                 if (!launch('sihirbaz.groovy')) {
                     qupath.fx.dialogs.Dialogs.showMessageDialog('Eklenti gerekli',
-                        workshopText('script.3389ec6facef', 'Sihirbaz için: Extensions → Atölye → Modüller →\n' +
-                        '"Tümör/Stroma sihirbazı (model kur/eğit)".'))
+                        workshopText('script.65eb635495c1', 'Sihirbaz için: Extensions → Atölye → Modüller → Tümör/Stroma →\n"Tümör/Stroma sihirbazı".'))
                 }
                 result.set([action: 'CANCEL']); stage.close()
             })

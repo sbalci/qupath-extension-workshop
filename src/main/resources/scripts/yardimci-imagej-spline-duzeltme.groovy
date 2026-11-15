@@ -19,7 +19,7 @@
  *
  * KULLANIM:
  *   1. Bir veya daha çok poligon/poliline anotasyonu çizin ve SEÇİN.
- *   2. [Extensions → Atölye → İleri analiz → ImageJ ile sınır yumuşat (spline)]
+ *   2. [Extensions → Atölye → Yardımcılar → Eğitim, sunum ve ImageJ → ImageJ ile sınır yumuşat (spline)]
  *      (ya da [Automate → Project scripts → bu betik]).
  *   3. Beğenirseniz orijinalleri silin; beğenmezseniz "Smoothed" kopyaları silin.
  *

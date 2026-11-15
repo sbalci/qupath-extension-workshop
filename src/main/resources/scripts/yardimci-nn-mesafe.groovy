@@ -210,8 +210,7 @@ def cal = imageData.getServer().getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0)) {
-    Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), workshopText('script.5dad5b2ba71a', "Lamda piksel boyutu (µm) tanımlı değil." +
-        "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu)."))
+    Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), workshopText('script.f65782dc5773', 'Lamda piksel boyutu (µm) tanımlı değil.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).'))
     return
 }
 // Anizotropik piksellerde (pw ≠ ph) düşey mesafeler ayrı ölçeklenmeli;

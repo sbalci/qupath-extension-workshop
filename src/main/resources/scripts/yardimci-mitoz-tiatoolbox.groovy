@@ -22,7 +22,7 @@
  * ÇALIŞMA ZAMANI:
  *   TIA Toolbox ortamını (tiatoolbox + torch) ve region_runner.py köprüsünü, TIA Toolbox
  *   bölge sihirbazıyla AYNI şekilde kullanır (paylaşılan `tiatoolbox-region` venv'i). Ortam
- *   yoksa: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam
+ *   yoksa: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam
  *   yöneticisi → "TIA Toolbox — bölge modelleri".
  *
  * KULLANIM:
@@ -910,7 +910,7 @@ render = { ->
         def miss = configMissing(cfg)
         addGuidance(workshopText('script.5e75435af31c', 'Bu modül TIA Toolbox çalışma zamanını (tiatoolbox + torch) gerektirir — TIA Toolbox bölge sihirbazıyla AYNI ortam.\nEksik/geçersiz:\n  • ') +
             (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')) +
-            workshopText('script.06d8204c0ed6', '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi → "TIA Toolbox — bölge modelleri".\n') +
+            workshopText('script.5e383b8c6c80', '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi → "TIA Toolbox — bölge modelleri".\n') +
             workshopText('script.a8291bc65bb3', 'Köprü betiği: handson/python/tiatoolbox/region_runner.py'))
         actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
         actions.add(navButton(workshopText('script.719f58ad7970', '⚙ Python ortamını kur/aç'), { launchEnvManager() }, workshopText('script.a4f2ccada0db', 'Atölye Python ortam yöneticisini açar → "TIA Toolbox — bölge modelleri"ni kurun')))
@@ -952,11 +952,7 @@ render = { ->
             : workshopText('script.f5b1246e9d93', '○ Yerel model yok — "Modeli yerel indir" ile bir kez indirin (sonra çevrimdışı çalışabilirsiniz).'))
         mcLbl.setWrapText(true); mcLbl.setMaxWidth(Double.MAX_VALUE); mcLbl.setStyle('-fx-opacity: 0.85; -fx-font-size: 11px;')
         center.getChildren().add(mcLbl)
-        addGuidance(workshopText('script.6542cc6fbe0a', 'Model: Bu modül H&E mitoz için sabit "KongNet MIDOG" (MIDOG 2025 birincisi) kullanır — TIA Toolbox\'ta mitoza uygun TEK model. Çekirdek/hücre dedektörleriyle (PanNuke/CoNIC/MONKEY/MapDe) deney için → Yardımcılar → Python köprüleri ve temel modeller → "TIA Toolbox — bölge modelleri" (hepsini sınıf-başına içe alımla çalıştırır). Model listesi ve lisanslar: modül sayfası "Mitoz modelleri".\n' +
-            'Python + köprü otomatik bulunur (tiatoolbox-runtime/.venv ve handson/python/tiatoolbox/). Cihaz: GPU için cuda.\n' +
-            'Duyarlılık eşiği: KongNet varsayılanı 0.99 (çok tutucu — az/hiç tespit). Daha çok mitoz için düşürün (ör. 0.5); boş = model varsayılanı. ' +
-            'Düşük eşik daha çok tespit ama daha çok yanlış-pozitif demektir — tahminleri görsel doğrulayın.\n' +
-            'Yerel model: "Modeli yerel indir" ağırlıkları BİR KEZ veri kökü altına indirir; ardından "Çevrimdışı çalış"ı işaretleyin → çalıştırmalarda ağa hiç çıkılmaz (GrandQC gibi).'))
+        addGuidance(workshopText('script.30860311b886', 'Model: Bu modül H&E mitoz için sabit "KongNet MIDOG" (MIDOG 2025 birincisi) kullanır — TIA Toolbox\'ta mitoza uygun TEK model. Çekirdek/hücre dedektörleriyle (PanNuke/CoNIC/MONKEY/MapDe) deney için → Yardımcılar → Python köprüleri ve temel modeller → "TIA Toolbox bölgede çekirdek/mitoz tespiti" (hepsini sınıf-başına içe alımla çalıştırır). Model listesi ve lisanslar: modül sayfası "Mitoz modelleri".\nPython + köprü otomatik bulunur (tiatoolbox-runtime/.venv ve handson/python/tiatoolbox/). Cihaz: GPU için cuda.\nDuyarlılık eşiği: KongNet varsayılanı 0.99 (çok tutucu — az/hiç tespit). Daha çok mitoz için düşürün (ör. 0.5); boş = model varsayılanı. Düşük eşik daha çok tespit ama daha çok yanlış-pozitif demektir — tahminleri görsel doğrulayın.\nYerel model: "Modeli yerel indir" ağırlıkları BİR KEZ veri kökü altına indirir; ardından "Çevrimdışı çalış"ı işaretleyin → çalıştırmalarda ağa hiç çıkılmaz (GrandQC gibi).'))
         actions.add(navButton(workshopText('script.72278748133a', 'İptal'), { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
         actions.add(navButton(workshopText('script.edfc11aab1a1', '⚙ Python ortamı'), { launchEnvManager() }, workshopText('script.9569e7820482', 'Atölye Python ortam yöneticisini aç')))
         actions.add(navButton(workshopText('script.3352626164a4', 'Modeli yerel indir'), { startModelDownload() }, workshopText('script.f3e50ffe75ff', 'KongNet ağırlıklarını bir kez yerel indir (sonra çevrimdışı çalışılabilir)')))

@@ -22,7 +22,7 @@
  * KULLANIM:
  *   1. Önce hücre tespiti + (isteğe bağlı) sınıflandırma üretin
  *      (örn. Hücre tespiti modülü + Tümör/Stroma modülü; ya da Nükleer boya (Ki-67) modülü).
- *   2. [Extensions → Atölye → Yardımcılar → Makine öğrenmesi için özellik matrisi]
+ *   2. [Extensions → Atölye → Yardımcılar → İçe ve dışa aktarma / veri → Makine öğrenmesi için öznitelik matrisi]
  *      ya da [Automate → Project scripts → yardimci-ozellik-matrisi]
  *   3. Diyalogdan mod seçin → Çalıştır
  *

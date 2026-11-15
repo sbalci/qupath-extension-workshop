@@ -34,7 +34,7 @@
  *      SPIDER Doku Sınıflandırıcı § kurulum veya Kaynaklar → § İleri kurulumlar G.
  *   2. Bir lam açın; sınıflandırmak istediğiniz bölge(ler) için alan anotasyonu
  *      çizin (PathClass atamaya gerek yok — model sınıfı kendisi verir).
- *   3. [Extensions → Atölye → Yardımcılar → SPIDER doku sınıflandırıcı sihirbazı]
+ *   3. [Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → SPIDER doku sınıflandırıcı sihirbazı]
  *   4. İlk açılışta yapılandırın: python.exe, spider_bridge.py, (ops.) model dizini.
  *   5. Organ + granülarite seçip "Sınıflandır" → çıktı otomatik içe aktarılır.
  *

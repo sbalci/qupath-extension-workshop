@@ -267,7 +267,7 @@ def resolveTarget = { ->
     def pw = cal.getPixelWidthMicrons()
     def ph = cal.getPixelHeightMicrons()
     if (!(pw > 0) || !(ph > 0))
-        return [ok:false, error:'Piksel kalibrasyonu yok; mm² hesaplanamaz (Yardımcılar → Kalibrasyon).']
+        return [ok:false, error:'Piksel kalibrasyonu yok; mm² hesaplanamaz (Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)).']
     return [ok:true, ann:selected, pw:pw, ph:ph]
 }
 

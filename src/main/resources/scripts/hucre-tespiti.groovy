@@ -143,7 +143,7 @@ def runDetection = { double thr, double sig, double exp, int replaced = 0 ->
     def cal = imageData.getServer().getPixelCalibration()
     double pw = cal.getPixelWidthMicrons(), ph = cal.getPixelHeightMicrons()
     if (!(pw > 0) || !(ph > 0))
-        return [ok:false, error:atolyeText('cell.noScale', 'Piksel kalibrasyonu yok; mm² hesaplanamaz (Yardımcılar → Kalibrasyon).')]
+        return [ok:false, error:atolyeText('cell.noScale', 'Piksel kalibrasyonu yok; mm² hesaplanamaz (Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)).')]
     double pixelSize       = atolyeD('atolye.pixelSize', 0.5)
     double backgroundRadius = atolyeD('atolye.backgroundRadius', 8.0)
     double medianRadius    = atolyeD('atolye.medianRadius', 0.0)
@@ -226,7 +226,7 @@ javafx.application.Platform.runLater {
             'Eşikleri değiştirip yeniden çalıştırabilirsiniz; sonuç aşağıda güncellenir.\n' +
             'Perde arkası: dekonvolüsyon → Gaussian (σ) yumuşatma → eşik (ikili maske) → ' +
             'mesafe dönüşümü + watershed (bitişik çekirdekleri ayır). Bu adımları kendi ' +
-            'lamınızda görmek için: Yardımcılar → Görüntü işleme kavramları.'))
+            'lamınızda görmek için: Extensions → Atölye → Yardımcılar → Eğitim, sunum ve ImageJ → Görüntü işleme kavramları.'))
         info.setWrapText(true)
 
         def commitSpinner = { javafx.scene.control.Spinner sp ->

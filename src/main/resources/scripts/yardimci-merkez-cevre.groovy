@@ -38,7 +38,7 @@
  * KULLANIM:
  *   1. Kalibre (µm/px) bir lam açın; kaynak alanı anotasyon olarak çizip SEÇİN
  *      (birden çok da olabilir — her biri ayrı bölünür)
- *   2. [Extensions → Atölye → Yardımcılar → Uzamsal analiz → Eşit-alan merkez/çevre]
+ *   2. [Extensions → Atölye → Yardımcılar → Uzamsal analiz → Eşit alanlı merkez/çevre]
  *      (ya da [Automate → Project scripts → bu betik])
  *   3. Bölge sayısını girin (varsayılan 2 = merkez + çevre)
  *
@@ -201,8 +201,7 @@ def cal = imageData.getServer().getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0) || !(ph > 0)) {
-    Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), workshopText('script.821202426064', "Lamda piksel boyutu (µm) tanımlı değil; alan µm² olarak üretilemez." +
-        "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu)."))
+    Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), workshopText('script.4b0f699b35dd', 'Lamda piksel boyutu (µm) tanımlı değil; alan µm² olarak üretilemez.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).'))
     return
 }
 

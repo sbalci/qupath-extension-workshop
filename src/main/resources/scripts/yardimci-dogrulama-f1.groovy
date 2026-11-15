@@ -35,7 +35,7 @@
  *   3. O bölgenin içindeki gerçek çekirdekleri ELLE işaretleyin: ayrı bir sınıf
  *      verin (ör. "Altın standart"). Nokta aracı ya da küçük poligon kullanın.
  *   4. Doğrulama bölgesi anotasyonunu SEÇİN
- *   5. [Extensions → Atölye → Yardımcılar → Tespit doğrulama (F1 / IoU)]
+ *   5. [Extensions → Atölye → Yardımcılar → Hücre ve çekirdek tespiti → Tespit doğrulama (F1 / IoU)]
  *      (ya da [Automate → Project scripts → bu betik])
  *   6. Açılan pencerede altın standart sınıfını, tahmin kümesini, modu ve eşiği
  *      seçip "Hesapla".

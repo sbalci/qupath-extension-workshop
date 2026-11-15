@@ -57,7 +57,7 @@
  *   1. Bir lam açın; en az bir anotasyon çizin (maske modu için sınıflı
  *      anotasyon gerekir — bkz. Tümör/Stroma modülü).
  *   2. "Seçili" kapsam için anotasyon(lar)ı seçili tutun.
- *   3. [Extensions → Atölye → Yardımcılar → Karo (tile) dışa aktarma]
+ *   3. [Extensions → Atölye → Yardımcılar → İçe ve dışa aktarma / veri → Karo (tile) dışa aktarma]
  *   4. Formdan seçenekleri ayarlayıp "Dışa aktar".
  *
  * ÇIKTI:

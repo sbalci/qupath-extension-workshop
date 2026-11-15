@@ -109,7 +109,7 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3, String m
     def imageData = QP.getCurrentImageData()
     if (imageData == null) return [ok:false, error:'Görüntü açık değil.']
     String typeName = (imageData.getImageType()?.toString() ?: '').toUpperCase(java.util.Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
-    if (!typeName.contains('H_DAB')) return [ok:false, error:'Image type Brightfield (H-DAB) olmalı (Yardımcılar → Görüntü tipi ayarla).']
+    if (!typeName.contains('H_DAB')) return [ok:false, error:'Image type Brightfield (H-DAB) olmalı (Yardımcılar → Temel araçlar → Görüntü tipi ayarla).']
     def calibration = imageData.getServer().getPixelCalibration()
     double pixelWidth  = calibration.getPixelWidthMicrons()
     double pixelHeight = calibration.getPixelHeightMicrons()
@@ -885,11 +885,11 @@ render = { ->
             workshopText('script.ff94ab283b7b', "\nEksikleri düzeltip 'Yenile'."))
         def fixType = navButton(workshopText('script.bbf6fba1e891', 'Görüntü tipini ayarla'), {
             if (stage != null) stage.setAlwaysOnTop(false)
-            if (!launchBundled('yardimci-image-type.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Görüntü tipi ayarla')
+            if (!launchBundled('yardimci-image-type.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla')
         })
         def fixCal = navButton('Kalibrasyonu ayarla', {
             if (stage != null) stage.setAlwaysOnTop(false)
-            if (!launchBundled('yardimci-kalibrasyon.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu)')
+            if (!launchBundled('yardimci-kalibrasyon.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)')
         })
         content.getChildren().add(new javafx.scene.layout.HBox(8, fixType, fixCal))
         boolean ready = s.image && s.hDab && s.calib && (!needProject || s.project)

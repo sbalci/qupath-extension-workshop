@@ -35,7 +35,7 @@
  *
  * KULLANIM:
  *   1. Maskenin türetildiği lamı QuPath'te açın.
- *   2. [Extensions → Atölye → Yardımcılar → Maske görüntüsünü içe aktar]
+ *   2. [Extensions → Atölye → Yardımcılar → İçe ve dışa aktarma / veri → Maske görüntüsünü içe aktar]
  *   3. Maske dosyasını seçin; (yan dosya yoksa) downsample ve ön plan sınıf adını girin.
  *
  * ÇIKTI:

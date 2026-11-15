@@ -36,7 +36,7 @@
  *
  * KULLANIM:
  *   1. Bir skorlama modülünü çalıştırın (hücre tespiti + OD ölçümleri oluşur).
- *   2. [Extensions → Atölye → Yardımcılar → Eşikleri ayarla]
+ *   2. [Extensions → Atölye → Yardımcılar → Temel araçlar → Eşikleri ayarla]
  *   3. Kapsamı seçin, çizgileri sürükleyin ya da alanlara değer yazın; "Uygula" ile
  *      özet penceresini alın. Pencere açık kalır — istediğiniz kadar deneyin.
  *

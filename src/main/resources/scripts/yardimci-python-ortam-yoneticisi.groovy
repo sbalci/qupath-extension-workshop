@@ -33,7 +33,7 @@
  *   ortamları (.venv*) BIOP eklentisiyle yönetilir — bu yönetici kapsamı dışındadır.
  *
  * KULLANIM:
- *   [Extensions → Atölye → Yardımcılar → Atölye Python ortam yöneticisi]
+ *   [Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi]
  *   İlgili ortamın yanındaki "Kur" düğmesine basın; log akar, durum güncellenir.
  *   Bir sihirbazın "Python ortamı" düğmesiyle açıldıysa: gereken ortam satırı vurgulanır ve kurulum
  *   bitince "Sihirbaza dön ▶" o sihirbazın çalıştırma ekranına döndürür (pencereyi kapatmak da döndürür).

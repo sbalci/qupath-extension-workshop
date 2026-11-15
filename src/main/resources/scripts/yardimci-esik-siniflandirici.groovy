@@ -17,7 +17,7 @@
  *
  * KULLANIM:
  *   1. Bir lam açın (ideali bir ROI de seçin).
- *   2. [Extensions → Atölye → Yardımcılar → Doku tespiti → Piksel eşikleyici]
+ *   2. [Extensions → Atölye → Modüller → Doku tespiti → Piksel eşikleyici (Create thresholder)]
  *   3. Açılan pencerede ölçümü (ör. Hematoksilen OD) ve eşiği seçin; önizleyin;
  *      "Create objects" ile doku bölgelerini anotasyona çevirin.
  *   Aynı araç menüden de açılır: [Classify → Pixel classification → Create thresholder].

@@ -36,7 +36,7 @@
  * KULLANIM:
  *   1. Lamı açın; görüntü kalibre (µm/px) olmalı (yoksa "Kalibrasyon" yardımcısı)
  *   2. Ölçülecek bölgeyi anotasyon olarak çizin ve SEÇİN
- *   3. [Extensions → Atölye → Yardımcılar → Eşik ile alan ölçümü]
+ *   3. [Extensions → Atölye → Yardımcılar → Skorlama ve ölçüm → Eşik ile alan ölçümü]
  *      (ya da [Automate → Project scripts → bu betik])
  *
  * ÇIKTI:
@@ -138,7 +138,7 @@ def cal = server.getPixelCalibration()
 if (cal == null || !cal.hasPixelSizeMicrons()) {
     def msg = "Görüntü kalibrasyonu (µm/px) yok; alanlar µm²/mm² olarak ölçülemez.\n\n" +
               "Önce piksel boyutunu ayarlayın:\n" +
-              "  [Extensions → Atölye → Yardımcılar → Kalibrasyon (piksel boyutu)]"
+              "  [Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)]"
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), msg)
     return
 }

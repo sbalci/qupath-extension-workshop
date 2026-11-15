@@ -38,7 +38,7 @@
  *   1. Resmî TIA Toolbox eklentisini bir kez kurup çalışma zamanını yükleyin
  *      (Extensions → TIAToolbox → Install Python runtime…) — venv'i paylaşırız.
  *   2. Bir lam açın (tercihen OpenSlide ile); ilgi BÖLGESİNİ çizip seçin.
- *   3. [Extensions → Atölye → Yardımcılar → TIA Toolbox bölgede çekirdek/mitoz tespiti]
+ *   3. [Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → TIA Toolbox bölgede çekirdek/mitoz tespiti]
  *   4. İlk açılışta python.exe + region_runner.py otomatik bulunur (gerekirse Gözat).
  *   5. Model seçip "Çalıştır" → bölge maskesi yazılır, çıkarım çalışır, sonuç içe alınır.
  *

@@ -34,7 +34,7 @@
  *   1. TIA Toolbox Python ortamını kurun (venv) — Ek → TIA Toolbox § Kurulum ya da
  *      handson/python/tiatoolbox/README.md. (pip install tiatoolbox numpy pillow)
  *   2. Bir lam açın; (normalize için) bölge/alan anotasyonu çizin/seçin.
- *   3. [Extensions → Atölye → Yardımcılar → TIA Toolbox boyama normalizasyonu / doku maskesi sihirbazı]
+ *   3. [Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → TIA Toolbox boyama normalizasyonu / doku maskesi sihirbazı]
  *   4. İlk açılışta yapılandırın: python.exe, tiatoolbox_bridge.py, (ops.) referans PNG.
  *   5. Mod + yöntem seçip "Çalıştır" → çıktı üretilir / içe aktarılır.
  *

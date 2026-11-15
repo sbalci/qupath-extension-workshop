@@ -19,7 +19,7 @@
  *
  * KULLANIM:
  *   1. Bir lam açın. "Seçili" kapsam için bir anotasyon çizip seçili tutun.
- *   2. [Extensions → Atölye → Yardımcılar → OME-Zarr dışa aktarma]
+ *   2. [Extensions → Atölye → Yardımcılar → İçe ve dışa aktarma / veri → OME-Zarr dışa aktarma]
  *   3. Formdan seçenekleri ayarlayıp "Dışa aktar".
  *   4. Çıkan `.ome.zarr` deposunu QuPath'e geri sürükleyebilir ya da Python'da
  *      inceleyebilirsiniz (handson/python/omezarr/inspect_omezarr.py).

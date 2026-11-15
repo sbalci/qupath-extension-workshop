@@ -420,7 +420,7 @@ if (!skipped.isEmpty()) {
 }
 body << "\nPiksel verisi KOPYALANMADI: yeni girdiler orijinal dosyaya başvurur\n"
 body << "(CroppedImageServer). Kaynak dosyayı taşır/silerseniz girdiler açılamaz.\n"
-body << "Bağımsız bir dosya gerekiyorsa: Yardımcılar → Görüntü alanı çıkart.\n\n"
+body << "Bağımsız bir dosya gerekiyorsa: Yardımcılar → İçe ve dışa aktarma / veri → Görüntü alanı çıkart (Extract Region).\n\n"
 body << "Kaynak: Egor Zindy (image.sc #109554); kırpma deseni ym.lim (#66681).\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 

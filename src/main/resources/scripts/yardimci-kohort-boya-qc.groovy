@@ -25,7 +25,7 @@
  *
  * KULLANIM:
  *   1. Bir QuPath projesi açın (her görüntüde boya vektörleri tanımlı olsun).
- *   2. [Extensions → Atölye → Yardımcılar → Kohort Boya OD Drift]
+ *   2. [Extensions → Atölye → Yardımcılar → Boya ve renk → Kohort boya OD sürüklenme raporu]
  *      (ya da [Automate → Project scripts → bu betik])
  *   3. Sonuç penceresini inceleyin; CSV'yi R/Python'da açın.
  *

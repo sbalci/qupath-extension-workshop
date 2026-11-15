@@ -31,7 +31,7 @@
  *      yerel venv (Python 3.10 + libvips + Java). Bkz. Kaynaklar → İleri kurulumlar § VALIS.
  *   2. Kaynak (anotasyonlu) ve hedef lamları AYNI QuPath projesine ekleyin ve
  *      lam DOSYALARINI ortak bir "çalışma klasörü" altına koyun (Docker tek-kök şartı).
- *   3. [Extensions → Atölye → Modüller → Görüntü Hizalama → VALIS (Docker/native)]
+ *   3. [Extensions → Atölye → Modüller → Görüntü Hizalama → VALIS (Docker/yerel)]
  *   4. Yapılandırın, kaynak/hedef lamı ve warp'lanacak anotasyonu seçin,
  *      "Komut üret" (kopyala-çalıştır) ya da "Doğrudan çalıştır"; sonra sonuçları içe aktarın.
  *
@@ -3148,7 +3148,7 @@ render = { ->
                 try { url = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getResource('/scripts/yardimci-python-ortam-yoneticisi.groovy') } catch (Throwable t) {}
                 if (url == null) url = this.getClass().getResource('/scripts/yardimci-python-ortam-yoneticisi.groovy')
                 if (url != null) { def cl = this.getClass().getClassLoader(); try { cl = Class.forName('io.github.sbalci.qupath.workshop.WorkshopExtension').getClassLoader() } catch (Throwable t) {}; new GroovyShell(cl).evaluate(url.getText('UTF-8'), 'env.groovy') }
-                else javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.3f463eb7fb9f', 'Ortam yöneticisi'), workshopText('script.efa21cc956ea', 'Menüden açın: Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi')) }
+                else javafx.application.Platform.runLater { Dialogs.showInfoNotification(workshopText('script.3f463eb7fb9f', 'Ortam yöneticisi'), workshopText('script.d333d0105aa6', 'Menüden açın: Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi')) }
             } catch (Throwable t) {} } as Runnable).start()
         }, workshopText('script.a2148440eb93', 'Native mod için VALIS venv\'ini (Python 3.10) kurar; libvips + Java\'yı ayrıca kurun')))
         actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))

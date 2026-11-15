@@ -31,7 +31,7 @@
  * ÇALIŞMA ZAMANI:
  *   fastai 1.0.61 (+ eski torch, CPU) ortamı (env id: midog-retinanet-legacy) +
  *   midog/retinanet_runner.py köprüsü. Kurulum: Extensions → Atölye → Yardımcılar → Python
- *   köprüleri → Atölye Python ortam yöneticisi → "MIDOG DA-RetinaNet (eski, CPU)".
+ *   köprüleri ve temel modeller → Atölye Python ortam yöneticisi → "MIDOG DA-RetinaNet (eski, CPU)".
  *
  * ÇIKTI:
  *   • Her mitoz için "Mitosis" sınıflı nokta-anotasyonu (tespitin kendisi) + çevresinde,
@@ -738,7 +738,7 @@ render = { ->
         title.setText(workshopText('script.e7f4060e44d0', 'Mitoz tespiti (RetinaNet) — çalışma zamanı gerekli'))
         def miss = configMissing(cfg)
         addGuidance(workshopText('script.5dccec73804b', 'Bu modül ESKİ fastai 1.0.61 ortamını (env id: midog-retinanet-legacy, CPU) gerektirir.\nEksik/geçersiz:\n  • ') + (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')) +
-            workshopText('script.d0048b8429e8', '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri → Atölye Python ortam yöneticisi → "MIDOG DA-RetinaNet (eski, CPU)".\n') +
+            workshopText('script.3243671b1541', '\n\nKurulum: Extensions → Atölye → Yardımcılar → Python köprüleri ve temel modeller → Atölye Python ortam yöneticisi → "MIDOG DA-RetinaNet (eski, CPU)".\n') +
             workshopText('script.47f2f057c13f', 'Köprü betiği: handson/python/midog/retinanet_runner.py\n\n⚠ Bu eski model FCOS ile AŞILMIŞTIR; modern GPU\'lu tespit için MIDOG25 FCOS sihirbazını kullanın.'))
         actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() })); actions.add(navButton(workshopText('script.719f58ad7970', '⚙ Python ortamını kur/aç'), { launchEnvManager() }, workshopText('script.590aba71c893', 'Atölye Python ortam yöneticisini açar → "MIDOG DA-RetinaNet"i kurun'))); actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
     } else if (cur == 'CONFIG') {

@@ -24,7 +24,7 @@
  *
  * KULLANIM:
  *   1. Bir lam açın (WSInfer öncesi ya da sonrası — her ikisinde de çalışır).
- *   2. [Extensions → Atölye → Yardımcılar → Skorlama ve ölçüm → WSInfer çıkarım denetimi]
+ *   2. [Extensions → Atölye → Yardımcılar → Skorlama ve ölçüm → WSInfer çıkarım denetimi (kurulum · kalibrasyon · sınıf adları)]
  *      (ya da [Automate → Project scripts → bu betik])
  *
  * ÇIKTI:

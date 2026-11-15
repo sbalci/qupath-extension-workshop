@@ -22,7 +22,7 @@
  * KULLANIM:
  *   1. Kilitli özet anotasyonları (Tümör/Stroma modülü piksel sınıflandırıcı, intersect, vb.)
  *      içeren bir QuPath projesi açın.
- *   2. [Extensions → Atölye → Yardımcılar → Kohort → Kohort özet toplayıcı]
+ *   2. [Extensions → Atölye → Yardımcılar → Klinik ve kohort → Kohort özet toplayıcı (proje tablosu)]
  *      (ya da [Automate → Project scripts → bu betik])
  *   3. TSV dosyası <proje>/kohort-ozet/ altında oluşur; sonuç penceresinde yol
  *      ve sütun listesi gösterilir.

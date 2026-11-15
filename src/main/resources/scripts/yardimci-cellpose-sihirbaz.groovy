@@ -24,7 +24,7 @@
  *      altında en az "Cellpose 'python.exe' location" alanını doldurun.
  *      Bkz. Ekler → Cellpose § kurulum.
  *   2. Bir lam açın; tümör (epitel) içeren bir anotasyon çizip SEÇİN (sarı kenar).
- *   3. [Extensions → Atölye → Yardımcılar → Cellpose hücre/çekirdek tespiti sihirbazı]
+ *   3. [Extensions → Atölye → Yardımcılar → Hücre ve çekirdek tespiti → Cellpose hücre/çekirdek tespiti sihirbazı]
  *   4. Parametreleri seçip "Çalıştır" → sonuç aynı pencerede güncellenir.
  *
  * YÖNTEM / KAYNAK REFERANSLARI:
@@ -237,7 +237,7 @@ def runDetection = { String family, String model, String channelMode,
     if (calibrated && areaMm2 > 0)
         sb << "  Alan / yoğunluk  : ${String.format(java.util.Locale.US, '%.3f', areaMm2)} mm² · ${String.format(java.util.Locale.US, '%,.0f', densityPerMm2)} hücre/mm²\n"
     else
-        sb << "  Alan / yoğunluk  : kalibre değil (piksel boyutu ayarlı değil → Yardımcılar → Kalibrasyon)\n"
+        sb << "  Alan / yoğunluk  : kalibre değil (piksel boyutu ayarlı değil → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu))\n"
     if (ihcBin) {
         def pct = { int cnt -> total > 0 ? 100.0 * cnt / total : 0.0 }
         sb << "  İHK binning (${compartment}):\n"

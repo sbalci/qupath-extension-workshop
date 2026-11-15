@@ -22,7 +22,7 @@
  *
  * KULLANIM:
  *   1. Kalibre (µm/px) bir lam açın.
- *   2. [Extensions → Atölye → Yardımcılar → Doku Tespiti (native)]
+ *   2. [Extensions → Atölye → Modüller → Doku tespiti → Yerleşik (Otsu / ContourTracing)]
  *   3. Eşik tabanını seçin; downsample / eşik / minimum alan kaydırıcılarını oynatın;
  *      önizleme yeterli görününce "Uygula".
  *
