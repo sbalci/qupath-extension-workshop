@@ -13,6 +13,7 @@ söyleniyor; denetçi etkin dönüşümü ölçmüş gibi sunulmuyor.
 Değişiklik yalnız pencere rehberi ve raporun açıklama satırlarıdır. TIFF okuma,
 profil çözümleme, IFD/etiket tespiti, görüntü sunucusu, piksel değerleri, renk
 tercihleri ve ölçümler değiştirilmedi. Bu yazılım sürümü açıklamasıdır; yeni
-klinik eşik veya değerlendirme kuralı eklenmedi. İngilizce karşılığı aynı dil
-kataloğunda üretilecektir. Kaynaklar okunurken hesapla giriş veya yazılım
+klinik eşik veya değerlendirme kuralı eklenmedi. İngilizce pencere karşılığı aynı
+dil kataloğunda üretildi (`6a245aa`); diske yazılan rapor gövdesi kaynak dilinde
+korundu. Kaynaklar okunurken hesapla giriş veya yazılım
 kurulumu yapılmadı.

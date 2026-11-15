@@ -1,3 +1,15 @@
+# 15 Kasım 2026 — kalan betik pencerelerinin TR/EN metinleri
+
+- 39 betik ve önceki üç yardımcının dokuz sabit rehber/seçici metni ortak dil kaynağına bağlandı. Katalog 102 betik/2.096 TR/EN metindir; hücre tespiti ayrıca 25 ortak anahtar kullanır. Her rapor/veri gövdesinin çevrildiği iddia edilmez.
+- Komutlar, veri/tercih kimlikleri, sayısal varsayılanlar ve onay/silme koşulları korundu. Toplam 62 kullanım/61 benzersiz dinamik cümlede veri ifadeleri ve ertelenen metne çevirme davranışı denetlendi.
+- Önceden commit edilmiş 11 kaynak farkı ayrı incelenip kaynak sözleşmesine köken kaydıyla işlendi (`8766c31`). ICC açıklaması resmî QuPath 0.7 OpenSlide kaynağıyla düzeltildi (`53c98af`), ardından pencere metni çevrildi; görüntü/ölçüm kodu değiştirilmedi.
+- Temiz `6a245aa` derlemesinde 67 test geçti. QuPath 0.6.0/0.7.0'ın her birinde 103 betik derleme, 427.634 TR/EN lookup ve eklentisiz Türkçe fallback geçti. Aynalar/lint ve 328 dosyalık Türkçe terim kontrolü geçti.
+- Eş zamanlı doku tespiti, hotspot, HoVer-NeXt ve Ki-67 düzenlemeleri korunup bu commit'lerden ayrı tutuldu. Test JAR'ı temiz commit kaynağına aittir. GUI native pipe hâlâ erişilemiyor (`os error 2`); bu bir Windows onay reddi değildir.
+
+Yerel inceleme; push, sürüm veya dağıtım yapılmadı. Bekleyen terim kararı yoktur. Ayrıntı: [kalan betik doğrulaması](docs/remaining-script-ui-validation-2026-11-15.md).
+
+---
+
 # 15 Kasım 2026 — yardımcı pencereler ve sabit model kaynağı
 
 - 48 yeni yardımcıda 818 görüntüleme ifadesi çevrildi: 809 sabit ifade ve 9 GString. Ortak katalog 63 betik/1.006 TR/EN metindir; veri/rapor gövdeleri tamamen çevrilmiş sayılmaz.

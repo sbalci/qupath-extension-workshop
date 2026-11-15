@@ -17,7 +17,7 @@ The fixed-text review on 14 November added four helpers to the eight core script
 | `yardimci-metadata-sihirbaz.groovy` | 25 | Project scan, cancellation, CSV action, folder and clipboard controls |
 | `yardimci-python-ortam-yoneticisi.groovy` | 46 | Install/repair/return controls, data-root guidance and fixed status text |
 
-The current catalog (15 November) has **1,006 paired strings across 63 scripts**,
+The current catalog (15 November) has **2,096 paired strings across 102 scripts**,
 plus the separate cell detection keys. The dynamic-text review added 188 display
 expressions: 151 fixed expressions and 37 GString occurrences (36 unique
 expressions). Checks, counts, classifier names, pixel size and execution scope
@@ -32,6 +32,12 @@ Their commands, stored model/class names, consent state and overwrite decisions
 are unchanged. Quoted environment-entry names match the actual catalog labels;
 the English menu path retains the fixed `Atölye` menu name.
 
+The remaining-script review adds 39 scripts and nine fixed guidance/chooser
+labels in three previously reviewed helpers. There are now 62 GString
+occurrences (61 distinct expressions) overall. Cell detection uses its separate
+25 common keys, so all 103 packaged scripts have a language path. This does
+not mean that every report or data-derived message is translated.
+
 Only literal text becomes a lookup. Original values retain their source code
 and order, and the result remains a GString. Lazy closure values are coerced
 when the consumer needs text; they are not flattened into a String early.
@@ -40,13 +46,14 @@ The compiler and real-host tests cover this distinction, described in the
 The two scope labels and missing-classifier fallback are translated only in
 conditional result arms; the conditions and classifier identifiers stay exact.
 
-File-backed summaries, logs, environment-catalog descriptions and other helpers
+File-backed summaries, logs, environment-catalog descriptions and some messages
+assembled in variables
 remain outside this display-only change. Diagnostic/data values keep the text
 produced by their source. Model installation and GUI layout are not certified.
 
 ## Source preservation check
 
-The catalog records a source revision and SHA-256 for each of the 63 scripts.
+The catalog records a source revision and SHA-256 for each of the 102 scripts.
 `python tools/check-script-ui-contract.py` removes the exact reviewed language
 helper, restores recorded UI expressions, unwraps only known `workshopText` calls
 and compares the restored source with that fingerprint. Apart from line endings and trailing whitespace at EOF,
@@ -57,6 +64,15 @@ commit; four helpers recover their source at `6c648c9`, and the three model
 wizards recover their source at `a93a211`. The 48 utility scripts recover their
 source at `7de156c`. Concurrent non-UI changes in the main working tree are
 excluded from this review; validation uses the committed source in a clean copy.
+
+The 39 remaining scripts recover their source at `53c98af`. Eleven previously
+committed source changes were separately reviewed before this translation:
+the original revision and old/new hashes remain in `baseline_reviews`, with
+[the source review](source-baseline-review-2026-11-15.md). The preservation
+check was not relaxed. The ICC inspector's display explanation was corrected
+against official QuPath 0.7 OpenSlide sources before translation; its image,
+preference and measurement code is unchanged. See
+[the ICC review](icc-ui-source-review-2026-11-15.md).
 
 An intentional non-UI edit needs its own review and a new source fingerprint;
 do not update the hash simply to silence the check. The check runs before
@@ -80,3 +96,9 @@ See [the source review](cytoformer-source-review-2026-11-15.md) and
 [the utility validation](utility-ui-validation-2026-11-15.md). The earlier
 [model wizard record](model-wizard-ui-validation-2026-11-15.md) describes its
 own older source and test scope.
+
+Current validation is recorded in
+[the remaining-script validation](remaining-script-ui-validation-2026-11-15.md):
+67 tests, full compilation of 103 packaged scripts in each of QuPath 0.6/0.7,
+427,634 lookups per host, and the real language-helper expression probes.
+GUI layout remains unverified because the Windows native pipe is unavailable.
