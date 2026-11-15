@@ -288,7 +288,18 @@ projectClassifierNames.each { selectable << [name: it, source: 'PROJECT'] }
 if (bundledAvailable) selectable << [name: classifierName, source: 'BUNDLED']
 
 def choice
+String headlessMevcut = null
 if (isHeadless) {
+    // Önceki sonuç: başsız modda diyalog yok — `-a mevcut=ekle|degistir`. Belirtilmezse (ve önceki sonuç
+    // varsa) hiçbir şey yazılmaz. Bilinmeyen değer HER durumda durdurur (fail closed).
+    def scriptArgs = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+    def argMap = [:]
+    scriptArgs.each { a -> def sa = a?.toString() ?: ''; int ia = sa.indexOf('='); if (ia > 0) argMap[sa.substring(0, ia).trim()] = sa.substring(ia + 1).trim() }
+    headlessMevcut = argMap.mevcut == null ? null : argMap.mevcut.toLowerCase(java.util.Locale.ROOT)
+    if (headlessMevcut != null && !['ekle', 'degistir'].contains(headlessMevcut)) {
+        println String.format(java.util.Locale.US, workshopText('script.768b9abc88f3', 'HATA: mevcut yalnız \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut); return
+    }
     def headlessModels = []
     if (projectClassifierNames.contains(classifierName)) headlessModels << classifierName
     else if (bundledAvailable) headlessModels << classifierName
@@ -317,6 +328,74 @@ def resolveClassifier = { String name ->
     return null
 }
 
+// ── Önceki sonuç: SORULMADAN silinmez (ev kuralı: sonuç yazan her betik önce sorar) ──
+// Ekle (varsayılan): hiçbir şey silinmez; yeni özet "Tümör-Stroma Özet (2)", "(3)" … adını alır.
+// Değiştir: yalnız bu betiğin özetleri (TAM ad ya da "ad (N)", önek eşleşmesi YOK; eski adı "TSR Özet" de)
+// ve bu modülün ürettiği sınıf bölgeleri silinir; içlerindeki başka nesneler KORUNUR (keepChildren = true).
+def SUMMARY_BASE = 'Tümör-Stroma Özet'
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+// Bu betiğin seti mi? Yalnız TAM ad ya da "ad (N)" — önek eşleşmesi YOK:
+// kullanıcının "Tümör-Stroma Özet düzeltmelerim" diye adlandırdığı anotasyon süpürülmez.
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
+// Özet adı: bu betiğin adı (ya da eski adı "TSR Özet") — tam ad ya da "(N)".
+def isOwnSummaryName = { String name ->
+    return name != null && (name == 'TSR Özet' || isOwnSetName(name, SUMMARY_BASE))
+}
+def prevSummaryObjects = { hierarchy ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSummaryName(it.getName()) }
+}
+// Bu modülün ürettiği sınıf bölgesi: ad = sınıf adı ve sınıf boş değil; anotasyonlarda ayrıca açıklama
+// "<sınıf> — Tümör/Stroma modülü (<model>)" biçiminde. Tespit olarak üretilen bölgelerde açıklama YOKTUR
+// (PathDetectionObject'te getDescription/setDescription yok) → orada ad = sınıf adı ölçütü yeter (kullanıcının
+// hücre tespitleri adsızdır). Yeniden sınıflandırılmış ya da yeniden adlandırılmış nesne eşleşmez.
+def isOwnClassRegion = { obj ->
+    String cn = obj.getPathClass()?.getName()
+    if (cn == null || obj.getName() != cn) return false
+    if (!(obj instanceof qupath.lib.objects.PathAnnotationObject)) return obj.isDetection()
+    String d = obj.getDescription() ?: ''
+    return d.startsWith(cn + ' — Tümör/Stroma modülü (') && d.endsWith(')')
+}
+// Bir nesnenin DOĞRUDAN çocukları arasındaki, bu modülün sınıf bölgeleri (tespit olarak üretilenler dahil).
+def ownClassRegionsUnder = { parentObj ->
+    return (parentObj.getChildObjectsAsArray() as List).findAll { isOwnClassRegion(it) }
+}
+// Önceki sonuç için kullanıcıya SOR (işlemden ÖNCE çağrılır; betik iş parçacığında, yukarıdaki
+// Dialogs çağrıları gibi doğrudan). Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey çalışmaz/yazılmaz).
+def askExisting = { int nSummaries, int nRegions ->
+    String optAdd = workshopText('script.1e749978a0e7', 'Ekle — öncekine dokunma, yeni bir özet olarak ekle (varsayılan)')
+    String optRep = workshopText('script.e29f8475f5a3', 'Değiştir — önceki özet ve bu modülün sınıf bölgeleri silinir')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.a43bd962f751', 'Önceki Tümör/Stroma sonucu'),
+        String.format(java.util.Locale.US, workshopText('script.ccef6d1d978e', 'Bu lamda zaten %,d Tümör-Stroma özeti ile %,d sınıf bölgesi (Tumor / Stroma) var.\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir özet olur ("Tümör-Stroma Özet (2)" gibi) ve kendi sınıf bölgelerini taşır. Lamda iki sonuç birlikte durur; seçili bölgelere yazılan ölçümler yeni çalıştırmayı gösterir.\n\n"Değiştir" seçilirse önceki özet anotasyonları ve bu modülün ürettiği sınıf bölgeleri silinir — sınıf bölgelerinde elle yaptığınız düzeltmeler de gider. Özetlerin ya da bölgelerin içindeki başka nesneler (hücre tespitleri, kendi anotasyonlarınız) silinmez.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki Tümör/Stroma sonucu ne olsun?'), nSummaries, nRegions),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.307a95e3f6e5', 'Önceki Tümör/Stroma sonucu silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.35922e90191c', '%,d özet anotasyonu ile %,d sınıf bölgesi silinecek. Tek bir bölge seçildiğinde bu modül o anotasyonun adını özet olarak değiştirir; önceki bir çalıştırmada sizin çizdiğiniz bir bölge böyle bir özete dönüşmüş olabilir — o durumda bölgenin çizgisi de silinir. Bu adı elle verdiğiniz bir anotasyon da, betiğin kendi özetinden ayırt edilemediği için silinir. Sınıf bölgelerinde elle yaptığınız düzeltmeler KAYBOLUR. Bunların içindeki diğer nesneler korunur.\n\nDevam edilsin mi?'), nSummaries, nRegions))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
 // ── Kapsam ROI'leri ────────────────────────────────────────────────
 def annotations = QP.getAnnotationObjects()
 def server = imageData.getServer()
@@ -328,7 +407,7 @@ def scopeRegions = []
 def isOwnOutput = { obj ->
     String nm = obj.getName()
     def cn = obj.getPathClass()?.getName()
-    (nm != null && nm in ['Tümör-Stroma Özet', 'TSR Özet']) || cn in ['Tumor', 'Stroma', 'Ignore*']
+    isOwnSummaryName(nm) || cn in ['Tumor', 'Stroma', 'Ignore*']
 }
 if (wholeSlide) {
     scopeRoi = ROIs.createRectangleROI(0, 0, server.getWidth(), server.getHeight(),
@@ -409,15 +488,41 @@ def keyPrefix = { String model -> multi ? "[${model}] " : '' }
 // Özet anotasyonu: tek bir bölge seçiliyse o anotasyon YENİDEN KULLANILIR (kopya
 // üretilmez); çok bölge/tüm lamda yeni bir birleşim özeti yaratılır.
 boolean reuse = (!wholeSlide && scopeRegions.size() == 1)
+
+// Önceki sonuç var mı? (1) lamdaki bu betiğin özetleri (tam ad ya da "(N)", eski ad "TSR Özet");
+// (2) yeniden kullanılacak bölgenin altında önceki çalıştırmadan kalan sınıf bölgeleri.
+// SORU, ölçüm ve özet nesnesine yapılan HERHANGİ bir değişiklikten ÖNCE sorulur.
+def hier = imageData.getHierarchy()
+def prevSummaries = prevSummaryObjects(hier)
+def prevInRegion = reuse ? ownClassRegionsUnder(scopeRegions[0]) : []
+def prevRegions = (prevSummaries.collectMany { ownClassRegionsUnder(it) } + prevInRegion).unique()
+boolean hasPrev = !prevSummaries.isEmpty() || !prevInRegion.isEmpty()
+String existingMode = MODE_ADD
+if (hasPrev) {
+    if (isHeadless) {
+        if (headlessMevcut == null) {
+            println String.format(java.util.Locale.US, workshopText('script.f5c14d171336', 'Bu lamda bu betiğin oluşturduğu önceki bir Tümör/Stroma sonucu zaten var (%,d). Hiçbir şey yazılmadı. Yeni bir özet eklemek için -a mevcut=ekle, önceki sonucu değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.'), prevSummaries.size() + prevInRegion.size()); return
+        }
+        existingMode = (headlessMevcut == 'degistir') ? MODE_REPLACE : MODE_ADD
+    } else {
+        existingMode = askExisting(prevSummaries.size(), prevRegions.size())
+        if (existingMode == null) return
+    }
+}
+boolean addRun = hasPrev && existingMode == MODE_ADD
+boolean replaceRun = hasPrev && existingMode == MODE_REPLACE
+// Ekle: kullanıcının bölgesi yeniden adlandırılmaz/ölçümleri silinmez; yeni, ayrı bir özet kurulur.
+if (addRun) reuse = false
+String summaryName = addRun ? nextOwnSetName(hier, SUMMARY_BASE) : SUMMARY_BASE
 def summary
 if (reuse) {
     summary = scopeRegions[0]
-    summary.setName('Tümör-Stroma Özet'); summary.setPathClass(null)
-    // Önceki alt-bölgeler aşağıda DELETE_EXISTING ile temizlenir; burada yalnız ölçümleri sıfırla.
+    summary.setName(summaryName); summary.setPathClass(null)
+    // Önceki alt-bölgeler (varsa) "Değiştir" seçildiyse aşağıda kaldırılır; burada yalnız ölçümleri sıfırla.
     summary.getMeasurementList().clear()
 } else {
     summary = PathObjects.createAnnotationObject(scopeRoi)
-    summary.setName('Tümör-Stroma Özet')
+    summary.setName(summaryName)
 }
 
 def perModel = []
@@ -485,9 +590,19 @@ summary.measurements['Seçilen model sayısı'] = perModel.size() as double
 summary.measurements['Ölçülen bölge sayısı'] = (wholeSlide ? 0 : scopeRegions.size()) as double
 summary.measurements['Analysis ROI sayısı'] = (wholeSlide ? 0 : analysisObjects.size()) as double
 summary.setLocked(true)
-// Eski özetleri temizle (yeniden kullanılan özet HARİÇ).
-def oldSummaries = QP.getAnnotationObjects().findAll { it.getName() in ['Tümör-Stroma Özet', 'TSR Özet'] && it != summary }
-if (!oldSummaries.isEmpty()) QP.removeObjectsAndDescendants(oldSummaries)
+// Değiştir (kullanıcı seçti ve onayladı): bu betiğin ÖNCEKİ özetleri ve sınıf bölgeleri silinir. Hepsi
+// yukarıda (yeni özet eklenmeden önce) alındı. İçlerindeki başka nesneler (hücre tespitleri, kullanıcının
+// anotasyonları) keepChildren = true ile KORUNUR — önceki removeObjectsAndDescendants onları da silerdi.
+int removedSummaries = 0
+int removedRegions = 0
+if (replaceRun) {
+    def oldSummaries = prevSummaries.findAll { it != summary }
+    def oldRegions = prevRegions.findAll { it != summary }
+    if (!oldRegions.isEmpty()) QP.removeObjects(oldRegions, true)
+    if (!oldSummaries.isEmpty()) QP.removeObjects(oldSummaries, true)
+    removedSummaries = oldSummaries.size()
+    removedRegions = oldRegions.size()
+}
 if (!reuse) QP.addObjects([summary])
 
 // Görsel kontrol için sınıf bölgeleri (yalnız birincil model): piksel sınıflandırıcının
@@ -500,13 +615,8 @@ def before = QP.getAnnotationObjects() as Set
 QP.selectObjects(summary)
 if (reuse) {
     // Yeniden kullanılan özet KULLANICININ KENDİ anotasyonudur. DELETE_EXISTING onun TÜM alt
-    // nesnelerini siler — aynı dikdörtgende daha önce çalıştırılmış hücre tespitleri (Ki-67,
-    // ER/PR…) sessizce yok olurdu. Bu yüzden yalnız bu modülün ÖNCEKİ sınıf bölgeleri
-    // (açıklama etiketiyle tanınır) kaldırılır; başka hiçbir alt nesneye dokunulmaz.
-    def priorOwn = imageData.getHierarchy().getObjects(null, null).findAll {
-        it.getParent() == summary && (it.getDescription() ?: '').contains('— Tümör/Stroma modülü (')
-    }
-    if (!priorOwn.isEmpty()) QP.removeObjects(priorOwn, false)
+    // ER/PR…) sessizce yok olurdu; bu yüzden burada KULLANILMAZ. Bu modülün önceki sınıf bölgeleri
+    // yalnız kullanıcı "Değiştir"i seçip onayladıysa, yukarıda kaldırıldı; başka alt nesneye dokunulmaz.
     QP.createAnnotationsFromPixelClassifier(primary.classifier, minObjectArea, minHoleArea)
 } else {
     QP.createAnnotationsFromPixelClassifier(primary.classifier, minObjectArea, minHoleArea,
@@ -514,7 +624,11 @@ if (reuse) {
 }
 def generated = QP.getAnnotationObjects().findAll { !before.contains(it) && it.getPathClass() != null }
 def byClass = generated.groupBy { it.getPathClass().getName() }
-if (!generated.isEmpty()) QP.removeObjectsAndDescendants(generated)
+// `generated` = bu çalıştırmanın GEÇİCİ ara nesneleri. Referansla ayrılır: `before` (sınıflandırıcı çağrısından
+// hemen önce hiyerarşideki tüm anotasyonlar, kimlik tabanlı küme) içinde OLMAYAN anotasyonlar — ad ya da
+// sınıfla aranmaz. Çıktı, birleştirilmiş bölgelere aşağıda dönüştürülür; ara nesneler silinir. keepChildren = true:
+// içlerine yerleşmiş başka nesne olsaydı bile silinmez.
+if (!generated.isEmpty()) QP.removeObjects(generated, true)
 double smoothPx = (pixelWidth > 0 ? 3.0 / pixelWidth : 6.0)
 def plane = scopeRoi.getImagePlane()
 def outputs = []
@@ -577,6 +691,14 @@ if (perModel.size() == 1) {
     }
 }
 
+if (addRun) {
+    // Ekle: önceki sonuç duruyor; seçili bölgelere yazılan ölçümler BU çalıştırmayı gösterir.
+    def prevNames = prevSummaries.collect { it.getName() }.unique().sort()
+    if (!prevInRegion.isEmpty()) prevNames << (scopeRegions[0].getName() ?: '-')
+    body << '\n' << String.format(java.util.Locale.US, workshopText('script.eebc097a5825', 'ÖNCEKİ SONUÇ DURUYOR\nÖzet anotasyonu: %s. Bu lamda önceki Tümör/Stroma sonucu da duruyor: %s. Hiçbir şey silinmedi; eski sonucu kaldırmak için o özet anotasyonunu seçip silin ya da bir sonraki çalıştırmada "Değiştir"i seçin. Seçtiğiniz bölge anotasyonlarına ölçüm yazıldıysa o ölçümler BU çalıştırmayı gösterir; önceki özet anotasyonu eski değerleri göstermeye devam eder.'), summaryName, prevNames.join(', ')) << '\n'
+} else if (replaceRun) {
+    body << '\n' << String.format(java.util.Locale.US, workshopText('script.945861935208', 'ÖNCEKİ SONUÇ DEĞİŞTİRİLDİ\n%,d özet anotasyonu ve %,d sınıf bölgesi silindi (içlerindeki diğer nesneler korundu).'), removedSummaries, removedRegions) << '\n'
+}
 body << '\nQC NOTLARI\n'
 body << '────────────────────────────────────────\n'
 body << '• Payda yalnız Tumor + Stroma olarak sınıflandırılan alandır.\n'

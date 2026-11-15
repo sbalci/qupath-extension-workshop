@@ -41,7 +41,9 @@
  *   • Her kaynak için bir "Peritümöral bant" sınıfı halka anotasyonu
  *     ("Bant alanı (µm²)" + "Bant genişliği (µm)" ölçümleriyle)
  *   • Sonuç penceresinde özet tablo
- *   • Her çalıştırma önceki "Peritümöral bant" anotasyonlarını YENİLER
+ *   • Önceki bant varsa SORAR: "Ekle" (varsayılan) hiçbir şey silmez, yeni bantlar adlarının
+ *     sonuna " (2)" gibi bir ek alır; "Değiştir" yalnız bu yardımcının bantlarını siler (tüm kaynaklar).
+ *     Başsız kip: -a mevcut=ekle | -a mevcut=degistir (belirtilmezse durur, hiçbir şey yazmaz).
  *     (istediğiniz tüm kaynakları birlikte seçip tek seferde çalıştırın)
  *
  * YÖNTEM / KAYNAK:
@@ -128,6 +130,68 @@ String DIR_BOTH   = "Her iki yön (invazif kenar bandı)"
 def dirOpts = [DIR_OUT, DIR_IN, DIR_BOTH]
 double defWidth = 50.0
 
+// ── Önceki sonuç: SORULMADAN silinmez (ev kuralı) ────────────────────
+// Önceki sonuç = bu yardımcının ürettiği bant: sınıf "Peritümöral bant" + bu yardımcının ad biçimi
+// ("<kaynak> · dış bant 50µm", isteğe bağlı " (N)", N >= 2) + yardımcının yazdığı iki ölçüm.
+// Yalnız sınıfa bakılmaz: kullanıcının aynı sınıfta elle çizdiği ya da adını değiştirdiği anotasyon süpürülmez.
+// Varsayılan kip HİÇBİR ŞEY SİLMEZ: Ekle → yeni bant seti adlarının sonuna " (2)", " (3)" … alır.
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+def bandSetIndex = { String name ->
+    if (name == null) return 0
+    def m = java.util.regex.Pattern.compile('^.+ · (?:iç bant|kenar bandı|dış bant) \\d+µm(?: \\((\\d{1,6})\\))?$').matcher(name)
+    if (!m.matches()) return 0
+    if (m.group(1) == null) return 1
+    int n = Integer.parseInt(m.group(1))
+    return n >= 2 ? n : 0
+}
+def prevOwnBands = { hierarchy ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll {
+        it.getPathClass()?.toString() == BAND_CLASS && bandSetIndex(it.getName()) >= 1 &&
+            it.getMeasurements().containsKey('Bant alanı (µm²)') && it.getMeasurements().containsKey('Bant genişliği (µm)')
+    }
+}
+def nextBandRunIndex = { hierarchy ->
+    def used = prevOwnBands(hierarchy).collect { bandSetIndex(it.getName()) }
+    return used.isEmpty() ? 1 : ((used.max() as int) + 1)
+}
+
+// Başsız kip: -a mevcut=ekle | -a mevcut=degistir. Bilinmeyen değer HER durumda durdurur (fail closed).
+String mevcutArg = null
+if (isHeadless) {
+    def scriptArgs = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+    def argMap = [:]
+    scriptArgs.each { a -> def sa = a?.toString() ?: ''; int ia = sa.indexOf('='); if (ia > 0) argMap[sa.substring(0, ia).trim()] = sa.substring(ia + 1).trim() }
+    if (argMap.mevcut != null) {
+        mevcutArg = argMap.mevcut.toLowerCase(java.util.Locale.ROOT)
+        if (!['ekle', 'degistir'].contains(mevcutArg)) {
+            println String.format(java.util.Locale.US, workshopText('script.768b9abc88f3', 'HATA: mevcut yalnız \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut); return
+        }
+    }
+}
+
+// Önceki bantlar için kullanıcıya SOR (bant üretiminden ÖNCE çağrılır).
+//   Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey üretilmez, hiçbir şey yazılmaz).
+def askExisting = { hierarchy ->
+    def prev = prevOwnBands(hierarchy)
+    if (prev.isEmpty()) return MODE_ADD
+    int nextIdx = nextBandRunIndex(hierarchy)
+    String optAdd = workshopText('script.dc75389b188e', 'Öncekilere dokunma — yeni bantları ayrı bir set olarak ekle (varsayılan)')
+    String optRep = workshopText('script.f7fed54b4e97', 'Öncekileri değiştir (bu yardımcının bantlarının tümü silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.15ecc8735fb2', 'Önceki peritümöral bantlar'),
+        String.format(java.util.Locale.US, workshopText('script.1ef4a0b87c6e', 'Bu lamda bu yardımcının ürettiği %,d "%s" sınıflı bant anotasyonu zaten var (tüm kaynak yapılar için).\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni bantların adlarının sonuna "(%d)" eklenir ve ayrı bir set olurlar. Lamda iki set birlikte durur; bantlar örtüşebilir.\n\n"Değiştir" seçilirse önceki bantların TÜMÜ silinir — onlarda elle yaptığınız düzeltmeler de gider; bantların içindeki hücre tespitleri ve diğer nesneler korunur. Elle çizdiğiniz ya da adını değiştirdiğiniz anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey üretilmez, hiçbir şey yazılmaz.\n\nÖnceki bantlar ne olsun?'), prev.size(), BAND_CLASS, nextIdx),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.20d04e185edd', 'Önceki bantlar silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.63aae63cc86b', '%,d "%s" sınıflı bant anotasyonu (tüm kaynak yapılar için) silinecek; bantlarda elle yaptığınız düzeltmeler KAYBOLUR. İçlerindeki nesneler korunur.\n\nDevam edilsin mi?'), prev.size(), BAND_CLASS))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
@@ -182,9 +246,25 @@ try { prefs.flush() } catch (Throwable ig) {}
 double rPx = widthUm / avgUm     // µm → piksel (buffer piksel koordinatında çalışır)
 String dirShort = (direction == DIR_IN) ? "iç bant" : ((direction == DIR_BOTH) ? "kenar bandı" : "dış bant")
 
-// ── 3) Önceki bantları temizle (idempotent) ────────────────────────
-def stale = QP.getAnnotationObjects().findAll { it.getPathClass()?.toString() == BAND_CLASS }
-if (!stale.isEmpty()) QP.removeObjects(stale, false)
+// ── 3) Önceki bant var mı? Üretimden ÖNCE sor ───────────────────────
+def imgHierarchy = imageData.getHierarchy()
+def prevOwn = prevOwnBands(imgHierarchy)
+def prevNames = prevOwn.collect { it.getName() }.unique().sort()
+String writeMode = MODE_ADD
+if (!prevOwn.isEmpty()) {
+    if (isHeadless) {
+        if (mevcutArg == null) {
+            println String.format(java.util.Locale.US, workshopText('script.91a4b2a08092', 'Bu lamda bu yardımcının ürettiği %,d "%s" sınıflı bant anotasyonu zaten var. Hiçbir şey yazılmadı. Yeni bir set eklemek için -a mevcut=ekle, önceki bantları değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.'), prevOwn.size(), BAND_CLASS); return
+        }
+        writeMode = (mevcutArg == 'degistir') ? MODE_REPLACE : MODE_ADD
+    } else {
+        writeMode = askExisting(imgHierarchy)
+        if (writeMode == null) { println "İptal edildi."; return }
+    }
+}
+// Ekle kipinde yeni bantlar sıradaki set numarasını alır; Değiştir / ilk çalıştırmada ek yok.
+int runIdx = (writeMode == MODE_ADD && !prevOwn.isEmpty()) ? nextBandRunIndex(imgHierarchy) : 1
+String runSuffix = (runIdx > 1) ? (' (' + runIdx + ')') : ''
 
 // ── 4) Her kaynak için halka üret ───────────────────────────────────
 def bandClass = QP.getPathClass(BAND_CLASS)
@@ -244,7 +324,7 @@ targets.eachWithIndex { t, i ->
     if (ringROI == null || ringROI.isEmpty() || !ringROI.isArea()) { skipped++; return }
 
     def ringAnno = qupath.lib.objects.PathObjects.createAnnotationObject(ringROI, bandClass)
-    ringAnno.setName(String.format(java.util.Locale.US, "%s · %s %.0fµm", srcName, dirShort, widthUm))
+    ringAnno.setName(String.format(java.util.Locale.US, "%s · %s %.0fµm", srcName, dirShort, widthUm) + runSuffix)
     // JTS getArea() piksel² döner → µm² için pw·ph ile çarpılır (piksel→µm² birim tuzağı).
     double bandUm2 = ring.getArea() * pw * ph
     ringAnno.measurements['Bant alanı (µm²)']    = bandUm2
@@ -260,6 +340,15 @@ if (created.isEmpty()) {
     return
 }
 
+// Önceki bantlar: kip çağırandan gelir. Ekle → hiçbir şey silinmez; Değiştir → yalnız bu yardımcının
+// bantları (yukarıdaki tanım) silinir, içlerindeki nesneler korunur. Üretim başarısız olsaydı
+// buraya gelinmez: önceki bantlar yerinde kalır.
+int removedPrev = 0
+if (writeMode == MODE_REPLACE) {
+    def prevNow = prevOwnBands(imgHierarchy)
+    removedPrev = prevNow.size()
+    if (removedPrev > 0) QP.removeObjects(prevNow, true)
+}
 QP.addObjects(created)
 QP.fireHierarchyUpdate()
 
@@ -282,6 +371,14 @@ if (ringGeoms.size() > 1) {
 }
 if (trimmed > 0)
     body << String.format(java.util.Locale.US, "Kırpılan bant      : %,d  (komşu kaynak yapının içi ya da görüntü dışı çıkarıldı)%n", trimmed)
+if (runIdx > 1)
+    body << String.format(java.util.Locale.US, workshopText('script.500fc52c8b85', 'Bant seti          : %d  (önceki set duruyor)'), runIdx) << "\n"
+if (writeMode == MODE_ADD && !prevNames.isEmpty()) {
+    body << "\n" << String.format(java.util.Locale.US, workshopText('script.c7b3b9d01938', 'DİKKAT — bu lamda önceki bant seti de duruyor (%,d anotasyon: %s).\nHiçbir şey silinmedi. Eskisini kaldırmak için o bantları seçip silin ya da yardımcıyı yeniden çalıştırırken "Öncekileri değiştir"i seçin. İki set örtüşebilir; ikisinin içinde de çalışan bir analiz aynı bölgeyi iki kez sayabilir.'), prevOwn.size(),
+        prevNames.take(5).join(', ') + (prevNames.size() > 5 ? ', …' : '')) << "\n\n"
+} else if (removedPrev > 0) {
+    body << "\n" << String.format(java.util.Locale.US, workshopText('script.eaf4bd61041f', 'Önceki bantlar değiştirildi: %,d anotasyon silindi (içlerindeki nesneler korundu).'), removedPrev) << "\n\n"
+}
 body << "──────────────────────────────────────────────\n"
 rows.each { r ->
     body << String.format(java.util.Locale.US, "  %-28s %,.0f µm²%n",

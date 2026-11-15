@@ -11064,6 +11064,741 @@
       "key": "script.53ec67e56b06",
       "tr": "Model omurgasına erişim izniniz yok gibi görünüyor. Bu model Hugging Face'te kapılıdır; erişim otomatik verilmez.\n\nYapılacaklar:\n  1. huggingface.co/facebook/dinov3-vith16plus-pretrain-lvd1689m sayfasını açın, oturum açın ve lisans koşullarını kabul edin.\n  2. Erişim onayını bekleyin (süresi Meta'ya bağlıdır).\n  3. Hugging Face hesabınızda Settings → Access Tokens bölümünden \"read\" türünde bir jeton oluşturun.\n  4. Bir komut penceresi açın (Windows: Başlat → \"cmd\"), şu komutu çalıştırın ve jetonu yapıştırın:\n       %s\n  5. Sihirbazı yeniden çalıştırın.\n\nErişim gelene kadar \"Atipik sınıflandırma — MIDOG25 EffNetV2\" girişini kullanabilirsiniz; o model kapılı değildir.",
       "en": "You do not seem to have access to the model backbone. This model is gated on Hugging Face; access is not granted automatically.\n\nWhat to do:\n  1. Open huggingface.co/facebook/dinov3-vith16plus-pretrain-lvd1689m, sign in and accept the licence terms.\n  2. Wait for access approval (the time depends on Meta).\n  3. In your Hugging Face account, under Settings → Access Tokens, create a token of type \"read\".\n  4. Open a command window (Windows: Start → \"cmd\"), run this command and paste the token:\n       %s\n  5. Run the wizard again.\n\nUntil access arrives you can use the \"Atypical subtyping — MIDOG25 EffNetV2\" entry; that model is not gated."
+    },
+    {
+      "key": "script.edd17dfa3e74",
+      "tr": "(tanımlı boya yok)",
+      "en": "(no stains defined)"
+    },
+    {
+      "key": "script.e7502113ef47",
+      "tr": "DURDU: görüntü tipi H-DAB ama \"Hematoxylin\" adlı boya yok (tanımlı boyalar: %s). Hiçbir şey değiştirilmedi. Varsayılan H-DAB boya vektörlerinin uygulanmasını (mevcut vektörlerin değişmesini) kabul ediyorsanız -a boya=varsayilan ile yeniden çalıştırın.",
+      "en": "STOPPED: the image type is H-DAB but no stain is named \"Hematoxylin\" (defined stains: %s). Nothing was changed. If you accept that the default H-DAB stain vectors are applied (the current vectors change), re-run with -a boya=varsayilan."
+    },
+    {
+      "key": "script.9d995633289c",
+      "tr": "Boya vektörleri değişecek",
+      "en": "Stain vectors will change"
+    },
+    {
+      "key": "script.fcd4e17529fd",
+      "tr": "Bu lamın görüntü tipi Brightfield (H-DAB), ancak \"Hematoxylin\" adlı bir boya tanımlı değil.\nTanımlı boyalar: %s\n\nBu araç Hematoxylin ve DAB kanallarına ihtiyaç duyar. Devam etmek için QuPath'in varsayılan H-DAB boya vektörleri uygulanmalıdır. Bu işlem lamın MEVCUT boya vektörlerini DEĞİŞTİRİR; kendiniz tahmin ettiğiniz vektörler varsa kaybolur.\n\nVarsayılan H-DAB boya vektörleri uygulansın mı?\n\n\"Hayır\" derseniz hiçbir şey değiştirilmez ve araç açılmaz.",
+      "en": "This slide's image type is Brightfield (H-DAB), but no stain named \"Hematoxylin\" is defined.\nDefined stains: %s\n\nThis tool needs the Hematoxylin and DAB channels. To continue, QuPath's default H-DAB stain vectors must be applied. This CHANGES the slide's CURRENT stain vectors; vectors you estimated yourself will be lost.\n\nApply the default H-DAB stain vectors?\n\nIf you answer \"No\", nothing is changed and the tool does not open."
+    },
+    {
+      "key": "script.e9d070cff4f1",
+      "tr": "Hiçbir şey değiştirilmedi. Aracı kullanmak için boya vektörlerini kendiniz ayarlayın: Extensions → Atölye → Yardımcılar → Boya ve renk → Boya vektörleri sihirbazı. Boyalardan birinin adı \"Hematoxylin\" olmalıdır. Sonra bu aracı yeniden çalıştırın.",
+      "en": "Nothing was changed. To use the tool, set the stain vectors yourself: Extensions → Atölye → Utilities → Stain & color → Stain vectors wizard. One of the stains must be named \"Hematoxylin\". Then run this tool again."
+    },
+    {
+      "key": "script.e6b0dca2f71e",
+      "tr": "Öncekine dokunma — yeni bir özet olarak ekle (varsayılan)",
+      "en": "Leave the earlier one alone — add a new summary (default)"
+    },
+    {
+      "key": "script.58a389002eb4",
+      "tr": "Öncekini değiştir (bu betiğin önceki özet anotasyonları silinir)",
+      "en": "Replace the earlier one (this script's earlier summary annotations are removed)"
+    },
+    {
+      "key": "script.5237b5cec33c",
+      "tr": "Önceki sonuç",
+      "en": "Earlier result"
+    },
+    {
+      "key": "script.b86513216eaf",
+      "tr": "Bu lamda bu betiğin önceki çalıştırmasından kalan %,d özet anotasyonu var (\"%s\").\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni özet ayrı bir anotasyon olur (\"%s\" gibi) ve lamda iki özet birlikte durur.\n\n\"Değiştir\" seçilirse önceki özet anotasyonları silinir. Kendi anotasyonlarınıza dokunulmaz.\n\nHer iki seçenekte de karolardaki \"Hotspot sırası\" ölçümü yeni çalıştırmaya göre güncellenir.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?",
+      "en": "This slide already has %,d summary annotation(s) left by an earlier run of this script (\"%s\").\n\n\"Add\" deletes nothing; the new summary becomes a separate annotation (such as \"%s\") and both summaries stay on the slide.\n\n\"Replace\" deletes the earlier summary annotations. Your own annotations are not touched.\n\nWith either choice, the \"Hotspot sırası\" measurement on the tiles is updated to this run.\n\nCancel: nothing is computed and nothing is written.\n\nWhat should happen to the earlier result?"
+    },
+    {
+      "key": "script.89a856ac207d",
+      "tr": "Önceki özet silinecek",
+      "en": "Earlier summary will be removed"
+    },
+    {
+      "key": "script.4ea846e9c562",
+      "tr": "%,d özet anotasyonu silinecek: %s.\n\nYalnızca bu betiğin önceki özet anotasyonları silinir (adı tam ya da \"ad (N)\" biçiminde olan ve betiğin ölçümlerini taşıyanlar). Kendi anotasyonlarınıza ve içlerindeki nesnelere dokunulmaz. Bu işlem geri alınamaz.\n\nDevam edilsin mi?",
+      "en": "%,d summary annotation(s) will be removed: %s.\n\nOnly this script's own earlier summary annotations are removed (exact name or \"name (N)\", carrying this script's measurements). Your own annotations and the objects inside them are not touched. This cannot be undone.\n\nContinue?"
+    },
+    {
+      "key": "script.da8de65c00dc",
+      "tr": "Bu lamda bu betiğin önceki sonucu zaten var (%,d özet anotasyonu: %s). Hiçbir şey yazılmadı. Yeni bir kopya eklemek için -a mevcut=ekle, önceki sonucu değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.",
+      "en": "An earlier result of this script is already on this slide (%,d summary annotation(s): %s). Nothing was written. Re-run with -a mevcut=ekle to add a copy, or -a mevcut=degistir to replace the earlier result."
+    },
+    {
+      "key": "script.9cf501b5b9fc",
+      "tr": "DİKKAT — bu lamda önceki sonuç da duruyor: %s\nHiçbir şey silinmedi. Bu çalıştırmanın özeti \"%s\" adını aldı. Karolardaki \"Hotspot sırası\" ölçümü YENİ çalıştırmayı yansıtır; önceki özet anotasyonu ise önceki değerleri gösterir. Eskisini kaldırmak için o anotasyonu seçip silin ya da betiği yeniden çalıştırırken \"Öncekini değiştir\"i seçin.",
+      "en": "NOTE — an earlier result is still on this slide: %s\nNothing was deleted. This run's summary is named \"%s\". The \"Hotspot sırası\" measurement on the tiles reflect the NEW run, while the earlier summary annotation still shows the earlier values. To remove the earlier one, select that annotation and delete it, or choose \"Replace\" the next time you run the script."
+    },
+    {
+      "key": "script.d495b71072f5",
+      "tr": "Önceki sonuç değiştirildi: %,d özet anotasyonu silindi.",
+      "en": "Earlier result replaced: %,d summary annotation(s) removed."
+    },
+    {
+      "key": "script.ce3bec237956",
+      "tr": "Bu lamda bu betiğin önceki çalıştırmasından kalan %,d özet anotasyonu var (\"%s\").\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni özet ayrı bir anotasyon olur (\"%s\" gibi) ve lamda iki özet birlikte durur.\n\n\"Değiştir\" seçilirse önceki özet anotasyonları silinir. Kendi anotasyonlarınıza dokunulmaz.\n\nHer iki seçenekte de hücrelerdeki \"En yakın komşu (µm)\" ölçümü yeni değerle üzerine yazılır.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?",
+      "en": "This slide already has %,d summary annotation(s) left by an earlier run of this script (\"%s\").\n\n\"Add\" deletes nothing; the new summary becomes a separate annotation (such as \"%s\") and both summaries stay on the slide.\n\n\"Replace\" deletes the earlier summary annotations. Your own annotations are not touched.\n\nWith either choice, the \"En yakın komşu (µm)\" measurement on the cells is overwritten with the new values.\n\nCancel: nothing is computed and nothing is written.\n\nWhat should happen to the earlier result?"
+    },
+    {
+      "key": "script.b73539319fd1",
+      "tr": "DİKKAT — bu lamda önceki sonuç da duruyor: %s\nHiçbir şey silinmedi. Bu çalıştırmanın özeti \"%s\" adını aldı. Hücrelerdeki \"En yakın komşu (µm)\" ölçümü YENİ çalıştırmayı yansıtır; önceki özet anotasyonu ise önceki değerleri gösterir. Eskisini kaldırmak için o anotasyonu seçip silin ya da betiği yeniden çalıştırırken \"Öncekini değiştir\"i seçin.",
+      "en": "NOTE — an earlier result is still on this slide: %s\nNothing was deleted. This run's summary is named \"%s\". The \"En yakın komşu (µm)\" measurement on the cells reflect the NEW run, while the earlier summary annotation still shows the earlier values. To remove the earlier one, select that annotation and delete it, or choose \"Replace\" the next time you run the script."
+    },
+    {
+      "key": "script.53bd9d440cf6",
+      "tr": "Bu lamda bu betiğin önceki çalıştırmasından kalan %,d özet anotasyonu var (\"%s\").\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni özet ayrı bir anotasyon olur (\"%s\" gibi) ve lamda iki özet birlikte durur.\n\n\"Değiştir\" seçilirse önceki özet anotasyonları silinir. Kendi anotasyonlarınıza dokunulmaz.\n\nHer iki seçenekte de A hücrelerindeki \"%s\" ölçümü yeni değerle üzerine yazılır.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?",
+      "en": "This slide already has %,d summary annotation(s) left by an earlier run of this script (\"%s\").\n\n\"Add\" deletes nothing; the new summary becomes a separate annotation (such as \"%s\") and both summaries stay on the slide.\n\n\"Replace\" deletes the earlier summary annotations. Your own annotations are not touched.\n\nWith either choice, the \"%s\" measurement on the A cells is overwritten with the new values.\n\nCancel: nothing is computed and nothing is written.\n\nWhat should happen to the earlier result?"
+    },
+    {
+      "key": "script.21087de35ce6",
+      "tr": "DİKKAT — bu lamda önceki sonuç da duruyor: %s\nHiçbir şey silinmedi. Bu çalıştırmanın özeti \"%s\" adını aldı. A hücrelerindeki \"%s\" ölçümü YENİ çalıştırmayı yansıtır; önceki özet anotasyonu ise önceki değerleri gösterir. Eskisini kaldırmak için o anotasyonu seçip silin ya da betiği yeniden çalıştırırken \"Öncekini değiştir\"i seçin.",
+      "en": "NOTE — an earlier result is still on this slide: %s\nNothing was deleted. This run's summary is named \"%s\". The \"%s\" measurement on the A cells reflect the NEW run, while the earlier summary annotation still shows the earlier values. To remove the earlier one, select that annotation and delete it, or choose \"Replace\" the next time you run the script."
+    },
+    {
+      "key": "script.3e13de12fd69",
+      "tr": "Bu lamda bu betiğin önceki çalıştırmasından kalan %,d özet anotasyonu var (\"%s\").\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni özet ayrı bir anotasyon olur (\"%s\" gibi) ve lamda iki özet birlikte durur.\n\n\"Değiştir\" seçilirse önceki özet anotasyonları silinir. Kendi anotasyonlarınıza dokunulmaz.\n\nHer iki seçenekte de seçili anotasyonlardaki \"Sınıf sayım: …\" ölçümleri yeni değerlerle değiştirilir.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?",
+      "en": "This slide already has %,d summary annotation(s) left by an earlier run of this script (\"%s\").\n\n\"Add\" deletes nothing; the new summary becomes a separate annotation (such as \"%s\") and both summaries stay on the slide.\n\n\"Replace\" deletes the earlier summary annotations. Your own annotations are not touched.\n\nWith either choice, the \"Sınıf sayım: …\" measurements on the selected annotations are replaced with the new values.\n\nCancel: nothing is computed and nothing is written.\n\nWhat should happen to the earlier result?"
+    },
+    {
+      "key": "script.f7b3ab6e6a20",
+      "tr": "DİKKAT — bu lamda önceki sonuç da duruyor: %s\nHiçbir şey silinmedi. Bu çalıştırmanın özeti \"%s\" adını aldı. Seçili anotasyonlardaki \"Sınıf sayım: …\" ölçümleri YENİ çalıştırmayı yansıtır; önceki özet anotasyonu ise önceki değerleri gösterir. Eskisini kaldırmak için o anotasyonu seçip silin ya da betiği yeniden çalıştırırken \"Öncekini değiştir\"i seçin.",
+      "en": "NOTE — an earlier result is still on this slide: %s\nNothing was deleted. This run's summary is named \"%s\". The \"Sınıf sayım: …\" measurements on the selected annotations reflect the NEW run, while the earlier summary annotation still shows the earlier values. To remove the earlier one, select that annotation and delete it, or choose \"Replace\" the next time you run the script."
+    },
+    {
+      "key": "script.f784569d8add",
+      "tr": "Bu lamda bu betiğin önceki çalıştırmasından kalan %,d özet anotasyonu var (\"%s\").\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni özet ayrı bir anotasyon olur (\"%s\" gibi) ve lamda iki özet birlikte durur.\n\n\"Değiştir\" seçilirse önceki özet anotasyonları silinir. Kendi anotasyonlarınıza dokunulmaz.\n\nHer iki seçenekte de hücrelerdeki \"Delaunay: …\" ölçümleri yeni değerle üzerine yazılır.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?",
+      "en": "This slide already has %,d summary annotation(s) left by an earlier run of this script (\"%s\").\n\n\"Add\" deletes nothing; the new summary becomes a separate annotation (such as \"%s\") and both summaries stay on the slide.\n\n\"Replace\" deletes the earlier summary annotations. Your own annotations are not touched.\n\nWith either choice, the \"Delaunay: …\" measurements on the cells are overwritten with the new values.\n\nCancel: nothing is computed and nothing is written.\n\nWhat should happen to the earlier result?"
+    },
+    {
+      "key": "script.ae22ca275c23",
+      "tr": "DİKKAT — bu lamda önceki sonuç da duruyor: %s\nHiçbir şey silinmedi. Bu çalıştırmanın özeti \"%s\" adını aldı. Hücrelerdeki \"Delaunay: …\" ölçümleri YENİ çalıştırmayı yansıtır; önceki özet anotasyonu ise önceki değerleri gösterir. Eskisini kaldırmak için o anotasyonu seçip silin ya da betiği yeniden çalıştırırken \"Öncekini değiştir\"i seçin.",
+      "en": "NOTE — an earlier result is still on this slide: %s\nNothing was deleted. This run's summary is named \"%s\". The \"Delaunay: …\" measurements on the cells reflect the NEW run, while the earlier summary annotation still shows the earlier values. To remove the earlier one, select that annotation and delete it, or choose \"Replace\" the next time you run the script."
+    },
+    {
+      "key": "script.1e749978a0e7",
+      "tr": "Ekle — öncekine dokunma, yeni bir özet olarak ekle (varsayılan)",
+      "en": "Add — leave the earlier one alone and add a new summary (default)"
+    },
+    {
+      "key": "script.3bb827725a09",
+      "tr": "Değiştir — önceki özet anotasyonları silinir",
+      "en": "Replace — the earlier summary annotations are deleted"
+    },
+    {
+      "key": "script.13a4f879225a",
+      "tr": "Önceki sonuç — Doğrulama özeti",
+      "en": "Earlier result — validation summary"
+    },
+    {
+      "key": "script.cd67e670f8e3",
+      "tr": "Bu lamda bu yardımcının yazdığı %,d özet anotasyonu zaten var (\"Doğrulama Özet\").\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni özet \"Doğrulama Özet (2)\" gibi ayrı bir ad alır ve iki özet birlikte durur.\n\n\"Değiştir\" seçilirse önceki özet anotasyonları silinir. Aynı adı kendiniz verdiyseniz o anotasyon da silinir. Diğer anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?",
+      "en": "This slide already has %,d summary annotation(s) written by this helper (\"Doğrulama Özet\").\n\n\"Add\" deletes nothing; the new summary gets a separate name such as \"Doğrulama Özet (2)\" and both summaries stay on the slide.\n\n\"Replace\" deletes the earlier summary annotations. If you gave an annotation that same name yourself, it is deleted too. Other annotations are not touched.\n\nCancel: nothing is computed and nothing is written.\n\nWhat should happen to the earlier result?"
+    },
+    {
+      "key": "script.d9ffa820dc55",
+      "tr": "%,d özet anotasyonu silinecek. Bunlar üzerinde elle yaptığınız değişiklikler ve aynı adı kendiniz verdiğiniz anotasyonlar da gider; içlerindeki diğer nesneler korunur.\n\nDevam edilsin mi?",
+      "en": "%,d summary annotation(s) will be deleted. Any edits you made to them, and any annotation you named the same yourself, go too; other objects inside them are kept.\n\nContinue?"
+    },
+    {
+      "key": "script.7577a3bac9a2",
+      "tr": "DİKKAT — bu lamda önceki sonuç da duruyor: %s\nYeni özet şu adla eklendi: %s\nHiçbir şey silinmedi. Eski özeti kaldırmak için o addaki anotasyonu seçip silin ya da yeniden çalıştırırken \"Değiştir\"i seçin. Dışa aktarma ve kohort özetleri iki özeti de görür.",
+      "en": "NOTE — an earlier result is still on this slide: %s\nThe new summary was added as: %s\nNothing was deleted. To remove the old summary, select the annotation with that name and delete it, or choose \"Replace\" the next time you run this. Exports and cohort summaries see both summaries."
+    },
+    {
+      "key": "script.bc31ff876c31",
+      "tr": "Önceki sonuç değiştirildi: %,d özet anotasyonu silindi (içlerindeki diğer nesneler korundu).",
+      "en": "Earlier result replaced: %,d summary annotation(s) were deleted (other objects inside them were kept)."
+    },
+    {
+      "key": "script.24a442295e5a",
+      "tr": "Bu lamda bu yardımcının yazdığı %,d özet anotasyonu (\"%s\") zaten var. Hiçbir şey yazılmadı. Yeni bir kopya eklemek için mevcut=ekle, önceki sonucu değiştirmek için mevcut=degistir ile yeniden çalıştırın.",
+      "en": "This slide already has %,d summary annotation(s) written by this helper (\"%s\"). Nothing was written. Run again with mevcut=ekle to add a new copy, or mevcut=degistir to replace the earlier result."
+    },
+    {
+      "key": "script.bce7a8193d8d",
+      "tr": "Önceki sonuç — İmmün yoğunluk",
+      "en": "Earlier result — immune density"
+    },
+    {
+      "key": "script.cd7dc9909880",
+      "tr": "Bu lamda bu yardımcının yazdığı %,d özet anotasyonu zaten var (\"İmmün Yoğunluk Özet\").\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni özet \"İmmün Yoğunluk Özet (2)\" gibi ayrı bir ad alır ve iki özet birlikte durur.\n\n\"Değiştir\" seçilirse önceki özet anotasyonları silinir. Aynı adı kendiniz verdiyseniz o anotasyon da silinir. Diğer anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?",
+      "en": "This slide already has %,d summary annotation(s) written by this helper (\"İmmün Yoğunluk Özet\").\n\n\"Add\" deletes nothing; the new summary gets a separate name such as \"İmmün Yoğunluk Özet (2)\" and both summaries stay on the slide.\n\n\"Replace\" deletes the earlier summary annotations. If you gave an annotation that same name yourself, it is deleted too. Other annotations are not touched.\n\nCancel: nothing is computed and nothing is written.\n\nWhat should happen to the earlier result?"
+    },
+    {
+      "key": "script.46fd40a69eb4",
+      "tr": "Seçili anotasyonların üzerindeki ölçümler bu YENİ çalıştırmayı gösterir; önceki özet nesnesi eski değerleri göstermeye devam eder.",
+      "en": "The measurements on the selected annotations describe this NEW run; the earlier summary object still shows the earlier values."
+    },
+    {
+      "key": "script.7206cf547d44",
+      "tr": "Önceki sonuç — Stromal TIL",
+      "en": "Earlier result — stromal TIL"
+    },
+    {
+      "key": "script.72caa7fba38b",
+      "tr": "Bu lamda bu yardımcının yazdığı %,d özet anotasyonu zaten var (\"Stromal TIL Özet\").\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni özet \"Stromal TIL Özet (2)\" gibi ayrı bir ad alır ve iki özet birlikte durur.\n\n\"Değiştir\" seçilirse önceki özet anotasyonları silinir. Aynı adı kendiniz verdiyseniz o anotasyon da silinir. Diğer anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?",
+      "en": "This slide already has %,d summary annotation(s) written by this helper (\"Stromal TIL Özet\").\n\n\"Add\" deletes nothing; the new summary gets a separate name such as \"Stromal TIL Özet (2)\" and both summaries stay on the slide.\n\n\"Replace\" deletes the earlier summary annotations. If you gave an annotation that same name yourself, it is deleted too. Other annotations are not touched.\n\nCancel: nothing is computed and nothing is written.\n\nWhat should happen to the earlier result?"
+    },
+    {
+      "key": "script.9cfd3f82ba32",
+      "tr": "Önceki sonuç — WSInfer alan özeti",
+      "en": "Earlier result — WSInfer area summary"
+    },
+    {
+      "key": "script.f6a8fb9ad34d",
+      "tr": "Bu lamda bu yardımcının yazdığı %,d özet anotasyonu zaten var (\"WSInfer Alan Özet\").\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni özet \"WSInfer Alan Özet (2)\" gibi ayrı bir ad alır ve iki özet birlikte durur.\n\n\"Değiştir\" seçilirse önceki özet anotasyonları silinir. Aynı adı kendiniz verdiyseniz o anotasyon da silinir. Diğer anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?",
+      "en": "This slide already has %,d summary annotation(s) written by this helper (\"WSInfer Alan Özet\").\n\n\"Add\" deletes nothing; the new summary gets a separate name such as \"WSInfer Alan Özet (2)\" and both summaries stay on the slide.\n\n\"Replace\" deletes the earlier summary annotations. If you gave an annotation that same name yourself, it is deleted too. Other annotations are not touched.\n\nCancel: nothing is computed and nothing is written.\n\nWhat should happen to the earlier result?"
+    },
+    {
+      "key": "script.1f1df7a6f658",
+      "tr": "Değiştir — önceki özet anotasyonları ve altlarındaki PHH3 tespitleri silinir",
+      "en": "Replace — the earlier summary annotations and the PHH3 detections under them are deleted"
+    },
+    {
+      "key": "script.6e02090f1c95",
+      "tr": "Önceki sonuç — PHH3 mitoz özeti",
+      "en": "Earlier result — PHH3 mitosis summary"
+    },
+    {
+      "key": "script.c83d76cfbf6d",
+      "tr": "Bu lamda bu yardımcının yazdığı %,d özet anotasyonu zaten var (\"Mitoz Özet\").\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni özet \"Mitoz Özet (2)\" gibi ayrı bir ad alır ve iki özet birlikte durur.\n\n\"Değiştir\" seçilirse önceki özet anotasyonları silinir (altlarındaki PHH3 tespitleri de). Aynı adı kendiniz verdiyseniz o anotasyon da silinir. Diğer anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?",
+      "en": "This slide already has %,d summary annotation(s) written by this helper (\"Mitoz Özet\").\n\n\"Add\" deletes nothing; the new summary gets a separate name such as \"Mitoz Özet (2)\" and both summaries stay on the slide.\n\n\"Replace\" deletes the earlier summary annotations (and the PHH3 detections under them). If you gave an annotation that same name yourself, it is deleted too. Other annotations are not touched.\n\nCancel: nothing is computed and nothing is written.\n\nWhat should happen to the earlier result?"
+    },
+    {
+      "key": "script.e80719a11971",
+      "tr": "%,d özet anotasyonu ve altlarındaki PHH3 tespitleri silinecek. Bunlar üzerinde elle yaptığınız değişiklikler ve aynı adı kendiniz verdiğiniz anotasyonlar da gider; özetlerin altındaki başka anotasyonlar korunur.\n\nDevam edilsin mi?",
+      "en": "%,d summary annotation(s) and the PHH3 detections under them will be deleted. Any edits you made to them, and any annotation you named the same yourself, go too; other annotations under the summaries are kept.\n\nContinue?"
+    },
+    {
+      "key": "script.4c0b2cedea6d",
+      "tr": "Önceki sonuç değiştirildi: %,d özet anotasyonu ve altlarındaki %,d PHH3 tespiti silindi.",
+      "en": "Earlier result replaced: %,d summary annotation(s) and the %,d PHH3 detection(s) under them were deleted."
+    },
+    {
+      "key": "script.84d3e02923f2",
+      "tr": "Öncekini değiştir (bu yardımcının özeti silinir)",
+      "en": "Replace the earlier summary (this helper's summary is removed)"
+    },
+    {
+      "key": "script.f00b78a85792",
+      "tr": "Önceki yapıya uzaklık özeti",
+      "en": "Earlier structure-distance summary"
+    },
+    {
+      "key": "script.bfafd5a844f3",
+      "tr": "Bu lamda bu yardımcının yazdığı %,d özet anotasyonu zaten var.\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni özet ayrı bir anotasyon olur (\"%s (2)\" gibi).\n\n\"Değiştir\" seçilirse önceki özet anotasyonları silinir. Kendi anotasyonlarınıza dokunulmaz.\n\nHer iki durumda da hücrelerdeki \"%s\" ölçümü bu çalıştırmanın değeriyle yeniden yazılır.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki özet ne olsun?",
+      "en": "This slide already has %,d summary annotation(s) written by this helper.\n\nChoosing \"Add\" deletes nothing; the new summary becomes a separate annotation (such as \"%s (2)\").\n\nChoosing \"Replace\" deletes the earlier summary annotations. Your own annotations are not touched.\n\nEither way, the \"%s\" measurement on the cells is rewritten with this run's values.\n\nCancel: nothing is computed and nothing is written.\n\nWhat should happen to the earlier summary?"
+    },
+    {
+      "key": "script.5ad805a3ff2a",
+      "tr": "%,d özet anotasyonu silinecek; bunlardaki ölçümler kaybolur. Kendi anotasyonlarınıza dokunulmaz. Hücrelerdeki \"%s\" ölçümü bu çalıştırmanın değeriyle yazılır.\n\nDevam edilsin mi?",
+      "en": "%,d summary annotation(s) will be removed and the measurements stored on them are lost. Your own annotations are not touched. The \"%s\" measurement on the cells is written with this run's values.\n\nContinue?"
+    },
+    {
+      "key": "script.9ff4de821d21",
+      "tr": "Bu lamda bu yardımcının yazdığı %,d özet anotasyonu (\"%s\") zaten var. Hiçbir şey yazılmadı. Yeni bir kopya eklemek için -a mevcut=ekle, önceki sonucu değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.",
+      "en": "This slide already has %,d summary annotation(s) (\"%s\") written by this helper. Nothing was written. To add a new copy, run again with -a mevcut=ekle; to replace the earlier result, run again with -a mevcut=degistir."
+    },
+    {
+      "key": "script.a9b6daa16201",
+      "tr": "Özet adı           : %s",
+      "en": "Summary name       : %s"
+    },
+    {
+      "key": "script.34266a313dd6",
+      "tr": "DİKKAT — bu lamda önceki özet de duruyor: %s\nHiçbir şey silinmedi. Eskisini kaldırmak için o addaki anotasyonu seçip silin ya da yardımcıyı yeniden çalıştırırken \"Öncekini değiştir\"i seçin.\nHer hücredeki \"%s\" ölçümü bu çalıştırmanın değerini gösterir; önceki özet anotasyonu ise önceki çalıştırmanın değerlerini gösterir.",
+      "en": "NOTE — the earlier summary is still on this slide: %s\nNothing was deleted. To remove the old one, select the annotation with that name and delete it, or run the helper again and choose \"Replace the earlier summary\".\nThe \"%s\" measurement on each cell shows this run's value; the earlier summary annotation still shows the values of the earlier run."
+    },
+    {
+      "key": "script.be27a1bc19b6",
+      "tr": "Önceki özet değiştirildi: %,d anotasyon silindi.",
+      "en": "Earlier summary replaced: %,d annotation(s) removed."
+    },
+    {
+      "key": "script.16e598cbc210",
+      "tr": "Önceki kesişim alanı özeti",
+      "en": "Earlier intersection-area summary"
+    },
+    {
+      "key": "script.de2339c36248",
+      "tr": "Bu lamda bu yardımcının yazdığı %,d özet anotasyonu zaten var.\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni özet ayrı bir anotasyon olur (\"%s (2)\" gibi).\n\n\"Değiştir\" seçilirse önceki özet anotasyonları silinir. Kendi anotasyonlarınıza dokunulmaz.\n\nHer iki durumda da A anotasyonlarındaki \"%s\" ve \"%s\" ölçümleri bu çalıştırmanın değeriyle yeniden yazılır.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki özet ne olsun?",
+      "en": "This slide already has %,d summary annotation(s) written by this helper.\n\nChoosing \"Add\" deletes nothing; the new summary becomes a separate annotation (such as \"%s (2)\").\n\nChoosing \"Replace\" deletes the earlier summary annotations. Your own annotations are not touched.\n\nEither way, the \"%s\" and \"%s\" measurements on the A annotations are rewritten with this run's values.\n\nCancel: nothing is computed and nothing is written.\n\nWhat should happen to the earlier summary?"
+    },
+    {
+      "key": "script.78d2e9b841ed",
+      "tr": "%,d özet anotasyonu silinecek; bunlardaki ölçümler kaybolur. Kendi anotasyonlarınıza dokunulmaz. A anotasyonlarındaki \"%s\" ve \"%s\" ölçümleri bu çalıştırmanın değeriyle yazılır.\n\nDevam edilsin mi?",
+      "en": "%,d summary annotation(s) will be removed and the measurements stored on them are lost. Your own annotations are not touched. The \"%s\" and \"%s\" measurements on the A annotations are written with this run's values.\n\nContinue?"
+    },
+    {
+      "key": "script.64c8beb1374c",
+      "tr": "DİKKAT — bu lamda önceki özet de duruyor: %s\nHiçbir şey silinmedi. Eskisini kaldırmak için o addaki anotasyonu seçip silin ya da yardımcıyı yeniden çalıştırırken \"Öncekini değiştir\"i seçin.\nA anotasyonlarındaki \"%s\" ve \"%s\" ölçümleri bu çalıştırmanın değerlerini gösterir; önceki özet anotasyonu ise önceki çalıştırmanın değerlerini gösterir.",
+      "en": "NOTE — the earlier summary is still on this slide: %s\nNothing was deleted. To remove the old one, select the annotation with that name and delete it, or run the helper again and choose \"Replace the earlier summary\".\nThe \"%s\" and \"%s\" measurements on the A annotations show this run's values; the earlier summary annotation still shows the values of the earlier run."
+    },
+    {
+      "key": "script.dc75389b188e",
+      "tr": "Öncekilere dokunma — yeni bantları ayrı bir set olarak ekle (varsayılan)",
+      "en": "Leave the earlier bands alone — add the new bands as a separate set (default)"
+    },
+    {
+      "key": "script.f7fed54b4e97",
+      "tr": "Öncekileri değiştir (bu yardımcının bantlarının tümü silinir)",
+      "en": "Replace the earlier bands (all bands made by this helper are removed)"
+    },
+    {
+      "key": "script.15ecc8735fb2",
+      "tr": "Önceki peritümöral bantlar",
+      "en": "Earlier peritumoral bands"
+    },
+    {
+      "key": "script.1ef4a0b87c6e",
+      "tr": "Bu lamda bu yardımcının ürettiği %,d \"%s\" sınıflı bant anotasyonu zaten var (tüm kaynak yapılar için).\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni bantların adlarının sonuna \"(%d)\" eklenir ve ayrı bir set olurlar. Lamda iki set birlikte durur; bantlar örtüşebilir.\n\n\"Değiştir\" seçilirse önceki bantların TÜMÜ silinir — onlarda elle yaptığınız düzeltmeler de gider; bantların içindeki hücre tespitleri ve diğer nesneler korunur. Elle çizdiğiniz ya da adını değiştirdiğiniz anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey üretilmez, hiçbir şey yazılmaz.\n\nÖnceki bantlar ne olsun?",
+      "en": "This slide already has %,d band annotation(s) of class \"%s\" made by this helper (for all source structures).\n\nChoosing \"Add\" deletes nothing; the new bands get \"(%d)\" at the end of their names and form a separate set. Both sets stay on the slide, and the bands may overlap.\n\nChoosing \"Replace\" deletes ALL earlier bands, including any manual edits you made to them; cell detections and other objects inside the bands are kept. Annotations you drew by hand or renamed are not touched.\n\nCancel: nothing is created and nothing is written.\n\nWhat should happen to the earlier bands?"
+    },
+    {
+      "key": "script.20d04e185edd",
+      "tr": "Önceki bantlar silinecek",
+      "en": "Earlier bands will be removed"
+    },
+    {
+      "key": "script.63aae63cc86b",
+      "tr": "%,d \"%s\" sınıflı bant anotasyonu (tüm kaynak yapılar için) silinecek; bantlarda elle yaptığınız düzeltmeler KAYBOLUR. İçlerindeki nesneler korunur.\n\nDevam edilsin mi?",
+      "en": "%,d band annotation(s) of class \"%s\" (for all source structures) will be removed; manual edits made to the bands are LOST. Objects inside them are kept.\n\nContinue?"
+    },
+    {
+      "key": "script.91a4b2a08092",
+      "tr": "Bu lamda bu yardımcının ürettiği %,d \"%s\" sınıflı bant anotasyonu zaten var. Hiçbir şey yazılmadı. Yeni bir set eklemek için -a mevcut=ekle, önceki bantları değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.",
+      "en": "This slide already has %,d band annotation(s) of class \"%s\" made by this helper. Nothing was written. To add a new set, run again with -a mevcut=ekle; to replace the earlier bands, run again with -a mevcut=degistir."
+    },
+    {
+      "key": "script.500fc52c8b85",
+      "tr": "Bant seti          : %d  (önceki set duruyor)",
+      "en": "Band set           : %d  (the earlier set is still there)"
+    },
+    {
+      "key": "script.c7b3b9d01938",
+      "tr": "DİKKAT — bu lamda önceki bant seti de duruyor (%,d anotasyon: %s).\nHiçbir şey silinmedi. Eskisini kaldırmak için o bantları seçip silin ya da yardımcıyı yeniden çalıştırırken \"Öncekileri değiştir\"i seçin. İki set örtüşebilir; ikisinin içinde de çalışan bir analiz aynı bölgeyi iki kez sayabilir.",
+      "en": "NOTE — the earlier band set is still on this slide (%,d annotation(s): %s).\nNothing was deleted. To remove the old bands, select and delete them, or run the helper again and choose \"Replace the earlier bands\". The two sets may overlap; an analysis run inside both could count the same region twice."
+    },
+    {
+      "key": "script.eaf4bd61041f",
+      "tr": "Önceki bantlar değiştirildi: %,d anotasyon silindi (içlerindeki nesneler korundu).",
+      "en": "Earlier bands replaced: %,d annotation(s) removed (objects inside were kept)."
+    },
+    {
+      "key": "script.e91e1fb24ec7",
+      "tr": "Öncekine dokunma — yeni bir zarf olarak ekle (varsayılan)",
+      "en": "Leave the earlier hull alone — add a new one (default)"
+    },
+    {
+      "key": "script.86a92c953153",
+      "tr": "Öncekini değiştir (bu yardımcının zarfı silinir)",
+      "en": "Replace the earlier hull (this helper's hull is removed)"
+    },
+    {
+      "key": "script.ed8dc2180552",
+      "tr": "Önceki dış bükey zarf",
+      "en": "Earlier convex hull"
+    },
+    {
+      "key": "script.a6b16dda5235",
+      "tr": "Bu lamda bu yardımcının \"%s\" adıyla ürettiği %,d zarf anotasyonu zaten var.\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni zarf ayrı bir anotasyon olur (\"%s (2)\" gibi). Lamda iki zarf birlikte durur.\n\n\"Değiştir\" seçilirse önceki zarf anotasyonu silinir; içindeki nesneler korunur. Kendi anotasyonlarınıza ve adını değiştirdiklerinize dokunulmaz.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki zarf ne olsun?",
+      "en": "Under the name \"%s\", this helper has already made %,d hull annotation(s) on this slide.\n\nChoosing \"Add\" deletes nothing; the new hull becomes a separate annotation (such as \"%s (2)\"). Both hulls stay on the slide.\n\nChoosing \"Replace\" deletes the earlier hull annotation; the objects inside it are kept. Your own annotations, and ones you renamed, are not touched.\n\nCancel: nothing is computed and nothing is written.\n\nWhat should happen to the earlier hull?"
+    },
+    {
+      "key": "script.a0f7fb3f1d46",
+      "tr": "Önceki zarf silinecek",
+      "en": "Earlier hull will be removed"
+    },
+    {
+      "key": "script.f961df8c3556",
+      "tr": "%,d zarf anotasyonu (\"%s\") silinecek; bunda elle yaptığınız düzeltmeler kaybolur. İçindeki nesneler korunur.\n\nDevam edilsin mi?",
+      "en": "%,d hull annotation(s) (\"%s\") will be removed; any manual edits made to them are lost. The objects inside are kept.\n\nContinue?"
+    },
+    {
+      "key": "script.3eb0835f5507",
+      "tr": "Bu lamda bu yardımcının aynı kaynak için ürettiği %,d zarf anotasyonu (\"%s\") zaten var. Hiçbir şey yazılmadı. Yeni bir kopya eklemek için -a mevcut=ekle, önceki sonucu değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.",
+      "en": "This slide already has %,d hull annotation(s) (\"%s\") made by this helper for the same source. Nothing was written. To add a new copy, run again with -a mevcut=ekle; to replace the earlier result, run again with -a mevcut=degistir."
+    },
+    {
+      "key": "script.eacfcadb7333",
+      "tr": "Zarf adı          : %s",
+      "en": "Hull name         : %s"
+    },
+    {
+      "key": "script.2e6a78aa3dfd",
+      "tr": "DİKKAT — bu lamda önceki zarf da duruyor: %s\nHiçbir şey silinmedi. Eskisini kaldırmak için o addaki anotasyonu seçip silin ya da yardımcıyı yeniden çalıştırırken \"Öncekini değiştir\"i seçin.",
+      "en": "NOTE — the earlier hull is still on this slide: %s\nNothing was deleted. To remove the old one, select the annotation with that name and delete it, or run the helper again and choose \"Replace the earlier hull\"."
+    },
+    {
+      "key": "script.6c1a190e218d",
+      "tr": "Önceki zarf değiştirildi: %,d anotasyon silindi (içindeki nesneler korundu).",
+      "en": "Earlier hull replaced: %,d annotation(s) removed (objects inside were kept)."
+    },
+    {
+      "key": "script.6d37bf757141",
+      "tr": "Öncekilere dokunma — yeni bölgeleri ayrı bir set olarak ekle (varsayılan)",
+      "en": "Leave the earlier regions alone — add the new regions as a separate set (default)"
+    },
+    {
+      "key": "script.b48dce23d678",
+      "tr": "Öncekileri değiştir (bu yardımcının bölgelerinin tümü silinir)",
+      "en": "Replace the earlier regions (all regions made by this helper are removed)"
+    },
+    {
+      "key": "script.2cef9c21c618",
+      "tr": "Önceki eşit alanlı bölgeler",
+      "en": "Earlier equal-area regions"
+    },
+    {
+      "key": "script.345d108b15b1",
+      "tr": "Bu lamda bu yardımcının ürettiği %,d eşit alanlı bölge anotasyonu zaten var (sınıflar: %s; tüm kaynak alanlar için).\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni bölgelerin adlarının sonuna \"(%d)\" eklenir ve ayrı bir set olurlar. Lamda iki set birlikte durur; bölgeler üst üste biner.\n\n\"Değiştir\" seçilirse önceki bölgelerin TÜMÜ silinir — onlarda elle yaptığınız düzeltmeler de gider; bölgelerin içindeki hücre tespitleri ve diğer nesneler korunur. Elle çizdiğiniz ya da adını değiştirdiğiniz anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey üretilmez, hiçbir şey yazılmaz.\n\nÖnceki bölgeler ne olsun?",
+      "en": "This slide already has %,d equal-area region annotation(s) made by this helper (classes: %s; for all source areas).\n\nChoosing \"Add\" deletes nothing; the new regions get \"(%d)\" at the end of their names and form a separate set. Both sets stay on the slide, and the regions overlap.\n\nChoosing \"Replace\" deletes ALL earlier regions, including any manual edits you made to them; cell detections and other objects inside the regions are kept. Annotations you drew by hand or renamed are not touched.\n\nCancel: nothing is created and nothing is written.\n\nWhat should happen to the earlier regions?"
+    },
+    {
+      "key": "script.4514d3b5f1bd",
+      "tr": "Önceki bölgeler silinecek",
+      "en": "Earlier regions will be removed"
+    },
+    {
+      "key": "script.44bc4ade563e",
+      "tr": "%,d eşit alanlı bölge anotasyonu (%s; tüm kaynak alanlar için) silinecek; bölgelerde elle yaptığınız düzeltmeler KAYBOLUR. İçlerindeki nesneler korunur.\n\nDevam edilsin mi?",
+      "en": "%,d equal-area region annotation(s) (%s; for all source areas) will be removed; manual edits made to the regions are LOST. Objects inside them are kept.\n\nContinue?"
+    },
+    {
+      "key": "script.05748f3441b3",
+      "tr": "Bu lamda bu yardımcının ürettiği %,d eşit alanlı bölge anotasyonu (%s) zaten var. Hiçbir şey yazılmadı. Yeni bir set eklemek için -a mevcut=ekle, önceki bölgeleri değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.",
+      "en": "This slide already has %,d equal-area region annotation(s) (%s) made by this helper. Nothing was written. To add a new set, run again with -a mevcut=ekle; to replace the earlier regions, run again with -a mevcut=degistir."
+    },
+    {
+      "key": "script.6d16aa739502",
+      "tr": "Bölge seti         : %d  (önceki set duruyor)",
+      "en": "Region set         : %d  (the earlier set is still there)"
+    },
+    {
+      "key": "script.1167d104b3b2",
+      "tr": "DİKKAT — bu lamda önceki bölge seti de duruyor (%,d anotasyon: %s).\nHiçbir şey silinmedi. Eskisini kaldırmak için o bölgeleri seçip silin ya da yardımcıyı yeniden çalıştırırken \"Öncekileri değiştir\"i seçin. İki set üst üste biner; ikisinin içinde de çalışan bir analiz aynı bölgeyi iki kez sayabilir.",
+      "en": "NOTE — the earlier region set is still on this slide (%,d annotation(s): %s).\nNothing was deleted. To remove the old regions, select and delete them, or run the helper again and choose \"Replace the earlier regions\". The two sets overlap; an analysis run inside both could count the same region twice."
+    },
+    {
+      "key": "script.85eecb52630b",
+      "tr": "Önceki bölgeler değiştirildi: %,d anotasyon silindi (içlerindeki nesneler korundu).",
+      "en": "Earlier regions replaced: %,d annotation(s) removed (objects inside were kept)."
+    },
+    {
+      "key": "script.a2d620f13645",
+      "tr": "Öncekini değiştir (bu betiğin ızgara kareleri ve özet anotasyonu silinir)",
+      "en": "Replace the earlier result (this script's grid tiles and summary annotation are removed)"
+    },
+    {
+      "key": "script.483dcf5a0d31",
+      "tr": "Önceki Ki-67 heterojenlik sonucu",
+      "en": "Earlier Ki-67 heterogeneity result"
+    },
+    {
+      "key": "script.fc0022c3c70a",
+      "tr": "Bu lamda bu betiğin ürettiği %,d anotasyon zaten var (ızgara kareleri ve özet).\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir set olur (\"Ki-67 grid (2) 0,0\" ve \"Ki-67 Heterojenlik Özet (2)\" gibi). Lamda iki set birlikte durur; dışa aktarım ve özetler ikisini de görür.\n\n\"Değiştir\" seçilirse önceki ızgara kareleri ve özet anotasyonu silinir. Kendi anotasyonlarınıza dokunulmaz; silinen karelerin içindeki nesneler korunur.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?",
+      "en": "This slide already has %,d annotations produced by this script (grid tiles and summary).\n\n\"Add\" deletes nothing; the new result becomes a separate set (named like \"Ki-67 grid (2) 0,0\" and \"Ki-67 Heterojenlik Özet (2)\"). Both sets stay on the slide, and exports and summaries see both.\n\n\"Replace\" removes the earlier grid tiles and summary annotation. Your own annotations are not touched; objects inside the removed tiles are kept.\n\nCancel: nothing is computed and nothing is written.\n\nWhat should happen to the earlier result?"
+    },
+    {
+      "key": "script.fa2d2d520f90",
+      "tr": "Önceki Ki-67 heterojenlik sonucu silinecek",
+      "en": "The earlier Ki-67 heterogeneity result will be removed"
+    },
+    {
+      "key": "script.04bb9562edac",
+      "tr": "%,d anotasyon silinecek: bu betiğin önceki ızgara kareleri ve özet anotasyonu (adı \"Ki-67 grid …\" ya da \"Ki-67 Heterojenlik Özet\" olanlar). Bu adlardan birini kendiniz verdiyseniz o anotasyon da silinir; karelerde elle yaptığınız değişiklikler kaybolur. Karelerin içindeki nesneler korunur.\n\nDevam edilsin mi?",
+      "en": "%,d annotations will be removed: this script's earlier grid tiles and summary annotation (those named \"Ki-67 grid …\" or \"Ki-67 Heterojenlik Özet\"). If you gave one of these names to an annotation yourself, it is removed too; manual edits to the tiles are lost. Objects inside the tiles are kept.\n\nContinue?"
+    },
+    {
+      "key": "script.54ea69e92480",
+      "tr": "Bu lamda bu betiğin önceki sonucu zaten var (%,d anotasyon). Hiçbir şey yazılmadı. Yeni bir set eklemek için mevcut=ekle, önceki sonucu değiştirmek için mevcut=degistir ile yeniden çalıştırın.",
+      "en": "An earlier result of this script is already on this slide (%,d annotations). Nothing was written. Re-run with mevcut=ekle to add a new set, or mevcut=degistir to replace the earlier result."
+    },
+    {
+      "key": "script.b880deb01e0a",
+      "tr": "DİKKAT — önceki sonuç hâlâ lamda duruyor: %s. Hiçbir şey silinmedi. Eski seti kaldırmak için o addaki anotasyonları seçip silin ya da betiği yeniden çalıştırıp \"Öncekini değiştir\"i seçin. Dışa aktarım ve özetler iki seti de görür.\nBu çalıştırmanın özeti: %s",
+      "en": "NOTE — the earlier result is still on the slide: %s. Nothing was deleted. To remove the old set, select the annotations with those names and delete them, or re-run the script and choose \"Replace the earlier result\". Exports and summaries see both sets.\nSummary of this run: %s"
+    },
+    {
+      "key": "script.d0cc14f27b20",
+      "tr": "Önceki sonuç değiştirildi: %,d anotasyon silindi (içlerindeki nesneler korundu).",
+      "en": "The earlier result was replaced: %,d annotations were removed (objects inside them were kept)."
+    },
+    {
+      "key": "script.6c29143b08ce",
+      "tr": "Önceki yoğunluk haritası sonucu",
+      "en": "Earlier density map result"
+    },
+    {
+      "key": "script.e087287a1920",
+      "tr": "Bu lamda bu betiğin ürettiği %,d anotasyon zaten var (ızgara kareleri ve özet).\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir set olur (\"Yoğunluk grid (2) 0,0\" ve \"Yoğunluk Özet (2)\" gibi). Lamda iki set birlikte durur; dışa aktarım ve özetler ikisini de görür.\n\n\"Değiştir\" seçilirse önceki ızgara kareleri ve özet anotasyonu silinir. Kendi anotasyonlarınıza dokunulmaz; silinen karelerin içindeki nesneler korunur.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?",
+      "en": "This slide already has %,d annotations produced by this script (grid tiles and summary).\n\n\"Add\" deletes nothing; the new result becomes a separate set (named like \"Yoğunluk grid (2) 0,0\" and \"Yoğunluk Özet (2)\"). Both sets stay on the slide, and exports and summaries see both.\n\n\"Replace\" removes the earlier grid tiles and summary annotation. Your own annotations are not touched; objects inside the removed tiles are kept.\n\nCancel: nothing is computed and nothing is written.\n\nWhat should happen to the earlier result?"
+    },
+    {
+      "key": "script.7ac01d7e1a49",
+      "tr": "Önceki yoğunluk haritası sonucu silinecek",
+      "en": "The earlier density map result will be removed"
+    },
+    {
+      "key": "script.89d4eec58021",
+      "tr": "%,d anotasyon silinecek: bu betiğin önceki ızgara kareleri ve özet anotasyonu (adı \"Yoğunluk grid …\" ya da \"Yoğunluk Özet\" olanlar). Bu adlardan birini kendiniz verdiyseniz o anotasyon da silinir; karelerde elle yaptığınız değişiklikler kaybolur. Karelerin içindeki nesneler korunur.\n\nDevam edilsin mi?",
+      "en": "%,d annotations will be removed: this script's earlier grid tiles and summary annotation (those named \"Yoğunluk grid …\" or \"Yoğunluk Özet\"). If you gave one of these names to an annotation yourself, it is removed too; manual edits to the tiles are lost. Objects inside the tiles are kept.\n\nContinue?"
+    },
+    {
+      "key": "script.bdcd95fa9aa5",
+      "tr": "Öncekine dokunma — yeni ızgarayı ayrı bir set olarak ekle (varsayılan)",
+      "en": "Leave the earlier grid alone — add the new grid as a separate set (default)"
+    },
+    {
+      "key": "script.ade103dec9d5",
+      "tr": "Öncekini değiştir (başka oturumdan kalan kalibrasyon ızgarası kareleri silinir)",
+      "en": "Replace the earlier grid (calibration grid tiles left from another session are removed)"
+    },
+    {
+      "key": "script.c77c2e120b24",
+      "tr": "Lamda önceki kalibrasyon ızgarası var",
+      "en": "An earlier calibration grid is on the slide"
+    },
+    {
+      "key": "script.a29b2b6957f7",
+      "tr": "Bu lamda, bu pencerenin koymadığı %,d kalibrasyon ızgarası karesi duruyor (başka bir pencereden ya da yarım kalmış bir oturumdan).\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni ızgara ayrı bir set olarak (adının sonunda \"(2)\" ile) üstüne konur ve iki ızgara üst üste görünür.\n\n\"Değiştir\" seçilirse o kareler silinir. Kendi anotasyonlarınıza dokunulmaz; karelerin içindeki nesneler korunur.\n\nİptal: ızgara konmaz, hiçbir şey yazılmaz.\n\nÖnceki ızgara ne olsun?",
+      "en": "This slide has %,d calibration grid tiles that this window did not place (from another window or an interrupted session).\n\n\"Add\" deletes nothing; the new grid is placed on top as a separate set (with \"(2)\" at the end of its name), so two grids are visible on top of each other.\n\n\"Replace\" removes those tiles. Your own annotations are not touched; objects inside the tiles are kept.\n\nCancel: no grid is placed and nothing is written.\n\nWhat should happen to the earlier grid?"
+    },
+    {
+      "key": "script.22f589664598",
+      "tr": "Önceki kalibrasyon ızgarası silinecek",
+      "en": "The earlier calibration grid will be removed"
+    },
+    {
+      "key": "script.e53de638f38c",
+      "tr": "%,d kalibrasyon ızgarası karesi silinecek: adı \"__GozKarariKalibrasyonIzgarasi__\" olan (ya da sonunda \"(2)\", \"(3)\" … bulunan) anotasyonlar. Bu adı kendiniz verdiyseniz o anotasyon da silinir. Karelerin içindeki nesneler korunur.\n\nDevam edilsin mi?",
+      "en": "%,d calibration grid tiles will be removed: annotations named \"__GozKarariKalibrasyonIzgarasi__\" (or with \"(2)\", \"(3)\" … at the end). If you gave this name to an annotation yourself, it is removed too. Objects inside the tiles are kept.\n\nContinue?"
+    },
+    {
+      "key": "script.70c393244c98",
+      "tr": "Önceki kalibrasyon ızgarası değiştirildi: %,d kare silindi (içlerindeki nesneler korundu).",
+      "en": "The earlier calibration grid was replaced: %,d tiles were removed (objects inside them were kept)."
+    },
+    {
+      "key": "script.83a780dc32ca",
+      "tr": "DİKKAT — önceki kalibrasyon ızgarası hâlâ lamda duruyor: %s. Hiçbir şey silinmedi; yeni ızgara şu adı taşıyor: %s. Eskisini kaldırmak için o addaki anotasyonları seçip silin.",
+      "en": "NOTE — the earlier calibration grid is still on the slide: %s. Nothing was deleted; the new grid is named: %s. To remove the old one, select the annotations with that name and delete them."
+    },
+    {
+      "key": "script.8a4dae7d669e",
+      "tr": "Her karo, sınıfına göre renkli ve kilitli bir ALT-TESPİT olarak, tek bir '%s' anotasyonunun altına yazıldı. '%s' ve tür olasılıkları Measurements panelinde.",
+      "en": "Each tile was written as a coloured, locked SUB-DETECTION under a single '%s' annotation. '%s' and the type probabilities are in the Measurements panel."
+    },
+    {
+      "key": "script.cf2b125acbd1",
+      "tr": "DİKKAT — bu lamda önceki HistoART sonucu da duruyor: %s. Hiçbir şey silinmedi. Eski seti kaldırmak için o addaki anotasyonu (alt tespitleriyle birlikte) seçip silin ya da sihirbazı yeniden çalıştırıp \"Öncekini değiştir\"i seçin. Dışa aktarım ve kohort özetleri iki seti de görür.",
+      "en": "NOTE — the earlier HistoART result is still on this slide: %s. Nothing was deleted. To remove the old set, select the annotation with that name (together with its sub-detections) and delete it, or re-run the wizard and choose \"Replace the earlier result\". Exports and cohort summaries see both sets."
+    },
+    {
+      "key": "script.efe4b0cffe78",
+      "tr": "Önceki HistoART sonucu değiştirildi: %,d set ve %,d karo tespiti silindi (setlerin altındaki başka nesneler korundu).",
+      "en": "The earlier HistoART result was replaced: %,d sets and %,d tile detections were removed (other objects under the sets were kept)."
+    },
+    {
+      "key": "script.c2802cff0e95",
+      "tr": "Bu lamda önceki HistoART sonucu var (%,d set). Sihirbaz başsız kipte çalışmaz ve hiçbir şey yazmaz; QuPath arayüzünde çalıştırırsanız önceki sonuç için Ekle, Değiştir ya da İptal sorulur.",
+      "en": "An earlier HistoART result is on this slide (%,d sets). The wizard does not run headless and writes nothing; in the QuPath window you are asked to Add, Replace or Cancel for the earlier result."
+    },
+    {
+      "key": "script.29368035df4e",
+      "tr": "Öncekini değiştir (bu sihirbazın HistoART setleri ve karo tespitleri silinir)",
+      "en": "Replace the earlier result (this wizard's HistoART sets and tile detections are removed)"
+    },
+    {
+      "key": "script.888850ebecac",
+      "tr": "Önceki HistoART sonucu",
+      "en": "Earlier HistoART result"
+    },
+    {
+      "key": "script.396142d67414",
+      "tr": "Bu lamda zaten %,d HistoART sonuç seti var (toplam %,d karo tespiti).\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir set olur (\"HistoART KK (2)\" gibi). Lamda iki set birlikte durur; dışa aktarım ve özetler ikisini de görür.\n\n\"Değiştir\" seçilirse önceki HistoART setleri ve altındaki karo tespitleri silinir. Kendi anotasyonlarınıza dokunulmaz; setlerin altına kendiniz koyduğunuz başka nesneler korunur.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?",
+      "en": "This slide already has %,d HistoART result sets (%,d tile detections in total).\n\n\"Add\" deletes nothing; the new result becomes a separate set (named like \"HistoART KK (2)\"). Both sets stay on the slide, and exports and summaries see both.\n\n\"Replace\" removes the earlier HistoART sets and the tile detections under them. Your own annotations are not touched; other objects you put under the sets yourself are kept.\n\nCancel: nothing is run and nothing is written.\n\nWhat should happen to the earlier result?"
+    },
+    {
+      "key": "script.ab565bd39998",
+      "tr": "Önceki HistoART sonucu silinecek",
+      "en": "The earlier HistoART result will be removed"
+    },
+    {
+      "key": "script.c8ad460799f4",
+      "tr": "%,d HistoART seti ve altındaki %,d karo tespiti silinecek (adı \"HistoART KK\" ya da \"HistoART KK (2)\", \"(3)\" … olan anotasyonlar). Bu adı kendiniz verdiyseniz o anotasyon da silinir; karo tespitlerinde elle yaptığınız sınıf düzeltmeleri kaybolur. Setlerin altındaki başka nesneler korunur.\n\nDevam edilsin mi?",
+      "en": "%,d HistoART sets and the %,d tile detections under them will be removed (annotations named \"HistoART KK\" or \"HistoART KK (2)\", \"(3)\" …). If you gave one of these names to an annotation yourself, it is removed too; manual class corrections on the tile detections are lost. Other objects under the sets are kept.\n\nContinue?"
+    },
+    {
+      "key": "script.0f11d2259312",
+      "tr": "Bu lamda önceki bir Ki-67 sonucu var ve ne yapılacağı belirtilmedi. Hiçbir şey yazılmadı.",
+      "en": "This slide already has an earlier Ki-67 result and no choice was given. Nothing was written."
+    },
+    {
+      "key": "script.c4402f967aba",
+      "tr": "Özet anotasyonu: %s. Bu lamda önceki Ki-67 sonucu da duruyor: %s. Hiçbir şey silinmedi; eski özeti kaldırmak için o addaki anotasyonu seçip silin ya da bir sonraki çalıştırmada \"Değiştir\"i seçin. Tumor anotasyonlarınıza yazılan ölçümler (ROI alanı, çekirdek sayıları, Ki-67 pozitif yüzdesi ve yoğunluk) BU çalıştırmayı gösterir; önceki özet anotasyonu eski değerleri göstermeye devam eder.",
+      "en": "Summary annotation: %s. The earlier Ki-67 result is still on this slide: %s. Nothing was deleted; to remove the old summary, select the annotation with that name and delete it, or choose \"Replace\" the next time you run this. The measurements written to your Tumor annotations (ROI area, nucleus counts, Ki-67 positive percentage and density) describe THIS run; the earlier summary annotation still shows the earlier values."
+    },
+    {
+      "key": "script.46f3c5cb9752",
+      "tr": "Önceki sonuç değiştirildi: %,d özet anotasyonu ve doğrudan içlerindeki %,d hücre tespiti silindi (özetlerin içindeki anotasyonlar korundu).",
+      "en": "Earlier result replaced: %,d summary annotation(s) and the %,d cell detections directly inside them were deleted (annotations inside the summaries were kept)."
+    },
+    {
+      "key": "script.37eb5f471b98",
+      "tr": "Bu bölgenin altında önceki tespitler var ve ne yapılacağı belirtilmedi. Hiçbir şey silinmedi.",
+      "en": "There are earlier detections under this region and no choice was given. Nothing was deleted."
+    },
+    {
+      "key": "script.6ed907313908",
+      "tr": "Bu ölçümler \"%s\" anotasyonuna yazıldı. Özgün bölgedeki önceki tespitler ve ölçümler değişmedi; bu sayılar yalnız bu çalıştırmayı gösterir.",
+      "en": "These measurements were written to the annotation \"%s\". The earlier detections and measurements in the original region are unchanged; these numbers describe this run only."
+    },
+    {
+      "key": "script.02e697219cf5",
+      "tr": "Bu lamda bu betiğin oluşturduğu %,d \"Ki-67 Tümör Özet\" anotasyonu zaten var. Hiçbir şey yazılmadı. Yeni bir özet eklemek için -a mevcut=ekle, önceki sonucu değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.",
+      "en": "This slide already has %,d \"Ki-67 Tümör Özet\" annotation(s) from this script. Nothing was written. Run again with -a mevcut=ekle to add a new summary, or -a mevcut=degistir to replace the earlier result."
+    },
+    {
+      "key": "script.718cddc070e2",
+      "tr": "Değiştir — önceki özet ve doğrudan içindeki hücre tespitleri silinir",
+      "en": "Replace — the earlier summary and the cell detections directly inside it are deleted"
+    },
+    {
+      "key": "script.430d53352d5b",
+      "tr": "Önceki Ki-67 sonucu",
+      "en": "Earlier Ki-67 result"
+    },
+    {
+      "key": "script.f6ee0826b713",
+      "tr": "Bu lamda zaten %,d \"Ki-67 Tümör Özet\" anotasyonu var (doğrudan içlerinde toplam %,d hücre tespiti).\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir özet olur (\"Ki-67 Tümör Özet (2)\" gibi). Lamda iki sonuç birlikte durur.\n\n\"Değiştir\" seçilirse yeni ölçüm başarıyla bittikten sonra önceki özet anotasyonları ve doğrudan içlerindeki hücre tespitleri silinir — bu tespitlerde elle yaptığınız düzeltmeler de gider. Özetlerin içine çizdiğiniz diğer anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki Ki-67 sonucu ne olsun?",
+      "en": "This slide already has %,d \"Ki-67 Tümör Özet\" annotation(s) (%,d cell detections directly inside them in total).\n\n\"Add\" deletes nothing; the new result becomes a separate summary (such as \"Ki-67 Tümör Özet (2)\"). Both results stay on the slide.\n\n\"Replace\" deletes the earlier summary annotations and the cell detections directly inside them once the new measurement has finished successfully — any corrections you made by hand to those detections go too. Other annotations you drew inside the summaries are not touched.\n\nCancel: nothing is run and nothing is written.\n\nWhat should happen to the earlier Ki-67 result?"
+    },
+    {
+      "key": "script.fff8bd9bffe0",
+      "tr": "Önceki Ki-67 sonucu silinecek",
+      "en": "The earlier Ki-67 result will be deleted"
+    },
+    {
+      "key": "script.327217399e62",
+      "tr": "%,d \"Ki-67 Tümör Özet\" anotasyonu ile doğrudan içlerindeki %,d hücre tespiti silinecek. Bu tespitlerde elle yaptığınız düzeltmeler KAYBOLUR. Bu adı elle verdiğiniz bir anotasyon da, betiğin kendi özetinden ayırt edilemediği için silinir. Özetlerin içindeki diğer anotasyonlar korunur.\n\nDevam edilsin mi?",
+      "en": "%,d \"Ki-67 Tümör Özet\" annotation(s) and the %,d cell detections directly inside them will be deleted. Corrections you made by hand to those detections are LOST. An annotation you gave this name yourself is also deleted, because it cannot be told apart from the script's own summary. Other annotations inside the summaries are kept.\n\nContinue?"
+    },
+    {
+      "key": "script.c13fa0d17d1c",
+      "tr": "Ekle — öncekine dokunma, tespiti alanın yeni bir kopyasında yap (varsayılan)",
+      "en": "Add — leave the earlier detections alone and detect in a new copy of the region (default)"
+    },
+    {
+      "key": "script.7bdb766199cb",
+      "tr": "Değiştir — bu bölgenin altındaki önceki tespitler silinir",
+      "en": "Replace — the earlier detections under this region are deleted"
+    },
+    {
+      "key": "script.33c0a605d048",
+      "tr": "Bölgede önceki tespitler var",
+      "en": "Earlier detections in this region"
+    },
+    {
+      "key": "script.8a73b3757999",
+      "tr": "Seçili bölgenin altında zaten %,d hücre tespiti var.\n\n\"Ekle\" seçilirse hiçbir şey silinmez; tespit, aynı alanın yeni bir kopyasında (\"Ki-67 tespit alanı\" adlı anotasyon) yapılır ve sonraki adımlar o kopya üzerinde çalışır. Özgün bölge ve altındaki tespitler olduğu gibi kalır.\n\n\"Değiştir\" seçilirse bu bölgenin altındaki tespitler silinip yeniden üretilir. Tespitlerin nereden geldiği ayırt edilemez; başka bir modülle ya da elle eklenenler de silinir. Başka anotasyonların altındaki tespitlere dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nBölgedeki önceki tespitler ne olsun?",
+      "en": "The selected region already has %,d cell detections under it.\n\n\"Add\" deletes nothing; detection is done in a new copy of the same area (an annotation named \"Ki-67 tespit alanı\") and the following steps work on that copy. The original region and the detections under it stay as they are.\n\n\"Replace\" deletes the detections under this region and generates them again. Where the detections came from cannot be told apart, so ones added by another module or by hand are deleted too. Detections under other annotations are not touched.\n\nCancel: nothing is run and nothing is written.\n\nWhat should happen to the earlier detections in this region?"
+    },
+    {
+      "key": "script.633240bd9ac7",
+      "tr": "Bölgedeki önceki tespitler silinecek",
+      "en": "The earlier detections in this region will be deleted"
+    },
+    {
+      "key": "script.1dbc7aae12f6",
+      "tr": "Seçili bölgenin altındaki %,d hücre tespiti silinecek. Başka bir modülle ya da elle eklenenler ve elle yaptığınız düzeltmeler dahil KAYBOLUR. Yeni tespit hiç hücre bulamazsa silinenler geri konur.\n\nDevam edilsin mi?",
+      "en": "The %,d cell detections under the selected region will be deleted. Ones added by another module or by hand, and corrections you made by hand, are LOST. If the new detection finds no cells, the deleted ones are put back.\n\nContinue?"
+    },
+    {
+      "key": "script.c48f60adadd6",
+      "tr": "Bu lamda önceki bir \"Ki-67 Tümör Özet\" varsa, çalıştırmadan önce ne yapılacağı sorulur (varsayılan: hiçbir şey silinmez). Eşikleri değiştirip tekrar çalıştırabilirsiniz.",
+      "en": "If this slide already has a \"Ki-67 Tümör Özet\", you are asked what to do before it runs (default: nothing is deleted). You can change the thresholds and run again."
+    },
+    {
+      "key": "script.b88983480b0a",
+      "tr": "Bu bölgede önceki tespitler vardı ve hiçbirine dokunulmadı: yeni tespit \"%s\" anotasyonunda yapıldı. Sonraki adımlar (sınıflandırıcı ve yoğunluk) yalnız bu kopyada çalışır; önceki tespitler özgün bölgede duruyor. Eski olanı kaldırmak için o anotasyonu ya da altındaki tespitleri kendiniz silin.",
+      "en": "This region already had detections and none were touched: the new detection was made in the annotation \"%s\". The following steps (classifier and intensity) work on that copy only; the earlier detections remain in the original region. To remove the old ones, delete that annotation or the detections under it yourself."
+    },
+    {
+      "key": "script.c9e2eebbf5ad",
+      "tr": "Önceki sonuç değiştirildi: bölgenin altındaki %,d hücre tespiti silindi.",
+      "en": "Earlier result replaced: %,d cell detections under the region were deleted."
+    },
+    {
+      "key": "script.d1e6a0b30433",
+      "tr": "Bu lamda önceki bir Tümör/Stroma sonucu var ve ne yapılacağı belirtilmedi. Hiçbir şey yazılmadı.",
+      "en": "This slide already has an earlier tumor/stroma result and no choice was given. Nothing was written."
+    },
+    {
+      "key": "script.98b0476bc643",
+      "tr": "ÖNCEKİ SONUÇ DURUYOR\nYeni sonuç: %s. Bu lamda önceki Tümör/Stroma sonucu da duruyor: %s. Hiçbir şey silinmedi; eski sonucu kaldırmak için o özet anotasyonunu (ve sınıf bölgelerini) seçip silin ya da bir sonraki çalıştırmada \"Değiştir\"i seçin. Yukarıdaki sayılar yalnız yeni çalıştırmayı gösterir; önceki özet anotasyonu eski değerleri göstermeye devam eder.",
+      "en": "EARLIER RESULT IS STILL ON THE SLIDE\nNew result: %s. The earlier tumor/stroma result is still on this slide: %s. Nothing was deleted; to remove the old result, select that summary annotation (and its class regions) and delete them, or choose \"Replace\" the next time you run this. The numbers above describe the new run only; the earlier summary annotation still shows the earlier values."
+    },
+    {
+      "key": "script.945861935208",
+      "tr": "ÖNCEKİ SONUÇ DEĞİŞTİRİLDİ\n%,d özet anotasyonu ve %,d sınıf bölgesi silindi (içlerindeki diğer nesneler korundu).",
+      "en": "EARLIER RESULT REPLACED\n%,d summary annotation(s) and %,d class region(s) were deleted (other objects inside them were kept)."
+    },
+    {
+      "key": "script.c926444eface",
+      "tr": "Ekle — öncekine dokunma, yeni bir sonuç olarak ekle (varsayılan)",
+      "en": "Add — leave the earlier result alone and add a new result (default)"
+    },
+    {
+      "key": "script.a0ffcd6a36db",
+      "tr": "Değiştir — önceki özet ve bu sihirbazın sınıf bölgeleri silinir",
+      "en": "Replace — the earlier summary and this wizard's class regions are deleted"
+    },
+    {
+      "key": "script.a43bd962f751",
+      "tr": "Önceki Tümör/Stroma sonucu",
+      "en": "Earlier tumor/stroma result"
+    },
+    {
+      "key": "script.454e3d81949a",
+      "tr": "Bu lamda zaten %,d Tümör-Stroma özeti ile %,d sınıf bölgesi (Tumor / Stroma) var.\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir özet olur (\"Tümör-Stroma Özet (2)\" gibi) ve kendi sınıf bölgelerini taşır (özet kapalıysa yeni bölgeler \"Tumor (2)\" gibi adlanır). Lamda iki sonuç birlikte durur.\n\n\"Değiştir\" seçilirse önceki özet anotasyonları ve bu sihirbazın ürettiği sınıf bölgeleri silinir — sınıf bölgelerinde elle yaptığınız düzeltmeler de gider. Özetlerin ya da bölgelerin içindeki başka nesneler (hücre tespitleri, kendi anotasyonlarınız) silinmez.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki Tümör/Stroma sonucu ne olsun?",
+      "en": "This slide already has %,d tumor/stroma summary annotation(s) and %,d class region(s) (Tumor / Stroma).\n\n\"Add\" deletes nothing; the new result becomes a separate summary (such as \"Tümör-Stroma Özet (2)\") with its own class regions (if the summary is switched off, the new regions are named like \"Tumor (2)\"). Both results stay on the slide.\n\n\"Replace\" deletes the earlier summary annotations and the class regions this wizard produced — corrections you made by hand to those class regions go too. Other objects inside the summaries or regions (cell detections, your own annotations) are not deleted.\n\nCancel: nothing is run and nothing is written.\n\nWhat should happen to the earlier tumor/stroma result?"
+    },
+    {
+      "key": "script.307a95e3f6e5",
+      "tr": "Önceki Tümör/Stroma sonucu silinecek",
+      "en": "The earlier tumor/stroma result will be deleted"
+    },
+    {
+      "key": "script.69eb8fc193dc",
+      "tr": "%,d özet anotasyonu ile %,d sınıf bölgesi silinecek. Tek bir bölge seçildiğinde bu sihirbaz o anotasyonun adını özet olarak değiştirir; önceki bir çalıştırmada sizin çizdiğiniz bir bölge böyle bir özete dönüşmüş olabilir — o durumda bölgenin çizgisi de silinir. Bu adı elle verdiğiniz bir anotasyon da, sihirbazın kendi özetinden ayırt edilemediği için silinir. Sınıf bölgelerinde elle yaptığınız düzeltmeler KAYBOLUR. Bunların içindeki diğer nesneler korunur.\n\nDevam edilsin mi?",
+      "en": "%,d summary annotation(s) and %,d class region(s) will be deleted. When a single region is selected, this wizard renames that annotation to the summary; a region you drew in an earlier run may have become such a summary — in that case its outline is deleted too. An annotation you gave this name yourself is also deleted, because it cannot be told apart from the wizard's own summary. Corrections you made by hand to the class regions are LOST. Other objects inside them are kept.\n\nContinue?"
+    },
+    {
+      "key": "script.e29f8475f5a3",
+      "tr": "Değiştir — önceki özet ve bu modülün sınıf bölgeleri silinir",
+      "en": "Replace — the earlier summary and this module's class regions are deleted"
+    },
+    {
+      "key": "script.ccef6d1d978e",
+      "tr": "Bu lamda zaten %,d Tümör-Stroma özeti ile %,d sınıf bölgesi (Tumor / Stroma) var.\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir özet olur (\"Tümör-Stroma Özet (2)\" gibi) ve kendi sınıf bölgelerini taşır. Lamda iki sonuç birlikte durur; seçili bölgelere yazılan ölçümler yeni çalıştırmayı gösterir.\n\n\"Değiştir\" seçilirse önceki özet anotasyonları ve bu modülün ürettiği sınıf bölgeleri silinir — sınıf bölgelerinde elle yaptığınız düzeltmeler de gider. Özetlerin ya da bölgelerin içindeki başka nesneler (hücre tespitleri, kendi anotasyonlarınız) silinmez.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki Tümör/Stroma sonucu ne olsun?",
+      "en": "This slide already has %,d tumor/stroma summary annotation(s) and %,d class region(s) (Tumor / Stroma).\n\n\"Add\" deletes nothing; the new result becomes a separate summary (such as \"Tümör-Stroma Özet (2)\") with its own class regions. Both results stay on the slide; measurements written to the selected regions describe the new run.\n\n\"Replace\" deletes the earlier summary annotations and the class regions this module produced — corrections you made by hand to those class regions go too. Other objects inside the summaries or regions (cell detections, your own annotations) are not deleted.\n\nCancel: nothing is run and nothing is written.\n\nWhat should happen to the earlier tumor/stroma result?"
+    },
+    {
+      "key": "script.35922e90191c",
+      "tr": "%,d özet anotasyonu ile %,d sınıf bölgesi silinecek. Tek bir bölge seçildiğinde bu modül o anotasyonun adını özet olarak değiştirir; önceki bir çalıştırmada sizin çizdiğiniz bir bölge böyle bir özete dönüşmüş olabilir — o durumda bölgenin çizgisi de silinir. Bu adı elle verdiğiniz bir anotasyon da, betiğin kendi özetinden ayırt edilemediği için silinir. Sınıf bölgelerinde elle yaptığınız düzeltmeler KAYBOLUR. Bunların içindeki diğer nesneler korunur.\n\nDevam edilsin mi?",
+      "en": "%,d summary annotation(s) and %,d class region(s) will be deleted. When a single region is selected, this module renames that annotation to the summary; a region you drew in an earlier run may have become such a summary — in that case its outline is deleted too. An annotation you gave this name yourself is also deleted, because it cannot be told apart from the script's own summary. Corrections you made by hand to the class regions are LOST. Other objects inside them are kept.\n\nContinue?"
+    },
+    {
+      "key": "script.f5c14d171336",
+      "tr": "Bu lamda bu betiğin oluşturduğu önceki bir Tümör/Stroma sonucu zaten var (%,d). Hiçbir şey yazılmadı. Yeni bir özet eklemek için -a mevcut=ekle, önceki sonucu değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.",
+      "en": "This slide already has an earlier tumor/stroma result from this script (%,d). Nothing was written. Run again with -a mevcut=ekle to add a new summary, or -a mevcut=degistir to replace the earlier result."
+    },
+    {
+      "key": "script.eebc097a5825",
+      "tr": "ÖNCEKİ SONUÇ DURUYOR\nÖzet anotasyonu: %s. Bu lamda önceki Tümör/Stroma sonucu da duruyor: %s. Hiçbir şey silinmedi; eski sonucu kaldırmak için o özet anotasyonunu seçip silin ya da bir sonraki çalıştırmada \"Değiştir\"i seçin. Seçtiğiniz bölge anotasyonlarına ölçüm yazıldıysa o ölçümler BU çalıştırmayı gösterir; önceki özet anotasyonu eski değerleri göstermeye devam eder.",
+      "en": "EARLIER RESULT IS STILL ON THE SLIDE\nSummary annotation: %s. The earlier tumor/stroma result is still on this slide: %s. Nothing was deleted; to remove the old result, select that summary annotation and delete it, or choose \"Replace\" the next time you run this. If measurements were written to your selected region annotations, they describe THIS run; the earlier summary annotation still shows the earlier values."
     }
   ],
   "source_contracts": {
@@ -11073,7 +11808,7 @@
     },
     "sihirbaz.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "3e03bf399f76c86db9bea2ee8cf8e2de23171818183e1dba8cb43ff50c968659",
+      "sha256": "2f847f85e50e235f42df0d27e7fe8fb6ed87a9aa9da2615b56847e905ed3b301",
       "expressions": [
         {
           "original": "\"Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\\n${where}\"",
@@ -11141,11 +11876,19 @@
           "count": 1,
           "context": "setText"
         }
+      ],
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "3e03bf399f76c86db9bea2ee8cf8e2de23171818183e1dba8cb43ff50c968659",
+          "sha256": "2f847f85e50e235f42df0d27e7fe8fb6ed87a9aa9da2615b56847e905ed3b301",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
       ]
     },
     "tumor-ici-ki67.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "e23f28dba6870ad369320e7e3fd1d50ccabfe2c6ddfb5fe0bd00f0a54d9bfaad",
+      "sha256": "b949df75e3621d4344fe99faff6d7596445af5d6456cd5970ddc8279a9374629",
       "expressions": [
         {
           "original": "\"Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\\n${where}\"",
@@ -11213,17 +11956,33 @@
           "count": 1,
           "context": "setText"
         }
+      ],
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "e23f28dba6870ad369320e7e3fd1d50ccabfe2c6ddfb5fe0bd00f0a54d9bfaad",
+          "sha256": "b949df75e3621d4344fe99faff6d7596445af5d6456cd5970ddc8279a9374629",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
       ]
     },
     "tumor-stroma.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "5f6a6e76a122e0752f795d48de454640fe5d6b2ba13e200b7001d52bb74c6907",
+      "sha256": "3e546adde16b6fe02105d697ba1eedbe45dd342feede8673fb6f9b056612e080",
       "expressions": [
         {
           "original": "\"Tümör/stroma sınıflandırıcısı Brightfield (H&E) görüntü bekler. Şu anki: ${imageTypeName}\"",
           "replacement": "\"${workshopText('script.b89ccd4c78ba', 'Tümör/stroma sınıflandırıcısı Brightfield (H&E) görüntü bekler. Şu anki: ')}${imageTypeName}\"",
           "count": 1,
           "context": "showErrorMessage"
+        }
+      ],
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "5f6a6e76a122e0752f795d48de454640fe5d6b2ba13e200b7001d52bb74c6907",
+          "sha256": "3e546adde16b6fe02105d697ba1eedbe45dd342feede8673fb6f9b056612e080",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
@@ -11305,17 +12064,31 @@
     },
     "membran-boya.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "fa23765c702a7e2f73058b698978f733b6056f9a7abef90c28d463354ea0f116"
+      "sha256": "933aa4fe0a08b47f1bfd02522b1d05a095281cbe6c29cba89701cfebbec99006",
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "fa23765c702a7e2f73058b698978f733b6056f9a7abef90c28d463354ea0f116",
+          "sha256": "933aa4fe0a08b47f1bfd02522b1d05a095281cbe6c29cba89701cfebbec99006",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "sitoplazmik-boya.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "b7276f1721bab640e1b30d425042b220c5294b32908d25b72611dbfeecaf0660",
+      "sha256": "8298d90d09176191788b94650e480bf019b07fe222fd0cee264f5411a725912a",
       "baseline_reviews": [
         {
           "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
           "previous_sha256": "ece4b7a4861d9b1a990d6282a27a67c5980848c053f489c2fc0c87b5ae6cfa39",
           "sha256": "b7276f1721bab640e1b30d425042b220c5294b32908d25b72611dbfeecaf0660",
           "record": "docs/source-baseline-review-2026-11-15.md"
+        },
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "b7276f1721bab640e1b30d425042b220c5294b32908d25b72611dbfeecaf0660",
+          "sha256": "8298d90d09176191788b94650e480bf019b07fe222fd0cee264f5411a725912a",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
@@ -11427,13 +12200,21 @@
     },
     "yardimci-capraz-nn-mesafe.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "915f88909b56fcaa1ae446a4daa3ff10ce1b184ae986d65fd321e07f4e596bb4",
+      "sha256": "85d323cf0e92ef3baa9a799762ce9e6b7f60cb92794ce790694b6da898629f93",
       "expressions": [
         {
           "original": "\"Yarıçap bir sayı olmalı (ör. 50 ya da 75.5). Girilen: '${radStr}'.\"",
           "replacement": "\"${workshopText('script.eb63d123cb3f', 'Yarıçap bir sayı olmalı (ör. 50 ya da 75.5). Girilen: \\'')}${radStr}'.\"",
           "count": 1,
           "context": "showErrorMessage"
+        }
+      ],
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "915f88909b56fcaa1ae446a4daa3ff10ce1b184ae986d65fd321e07f4e596bb4",
+          "sha256": "85d323cf0e92ef3baa9a799762ce9e6b7f60cb92794ce790694b6da898629f93",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
@@ -11451,17 +12232,31 @@
     },
     "yardimci-delaunay-komsuluk.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "739e7cf689b2ba70c3f2c71ac166ffe36553d1f90f845aa105a9c5c73bc62dca"
+      "sha256": "322144fae731938c0f6740c7dc55415125f59eb166f192ae84542b6b0d37de5d",
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "739e7cf689b2ba70c3f2c71ac166ffe36553d1f90f845aa105a9c5c73bc62dca",
+          "sha256": "322144fae731938c0f6740c7dc55415125f59eb166f192ae84542b6b0d37de5d",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-dogrulama-f1.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "4b2c4fef43f37c42488cbe6b7d2917c46a92b0b949adac430ef3ec00f57b5bf9",
+      "sha256": "380dea7c32841113eef37de5d80a7ab96c81bd744f092a2881ebbed909dc3184",
       "baseline_reviews": [
         {
           "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
           "previous_sha256": "5cd88ceffe30474a023c62175aed10d8f43a40da0ff70e601f8506038cfd5740",
           "sha256": "4b2c4fef43f37c42488cbe6b7d2917c46a92b0b949adac430ef3ec00f57b5bf9",
           "record": "docs/source-baseline-review-2026-11-15.md"
+        },
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "4b2c4fef43f37c42488cbe6b7d2917c46a92b0b949adac430ef3ec00f57b5bf9",
+          "sha256": "380dea7c32841113eef37de5d80a7ab96c81bd744f092a2881ebbed909dc3184",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
@@ -11503,7 +12298,15 @@
     },
     "yardimci-goz-karari-kalibrasyon.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "ea2f6dc65c2ad0068fce3245894499bcb76bbb4e61701e81789b12da2dd5aa67"
+      "sha256": "3c99995047aecc77465b68998fc3a844fce1500117ca8faed68427f772d4a4aa",
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "ea2f6dc65c2ad0068fce3245894499bcb76bbb4e61701e81789b12da2dd5aa67",
+          "sha256": "3c99995047aecc77465b68998fc3a844fce1500117ca8faed68427f772d4a4aa",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-grandqc-kohort-ozet.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
@@ -11531,11 +12334,27 @@
     },
     "yardimci-immun-yogunluk.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "11b77eb586ac1b2c8d1e0647f9164a16015868699f0722bfa87853e6ac8b325a"
+      "sha256": "ee8986f537388c262ff892c90dfa3a40999b5771d223378e82873d026bd12d70",
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "11b77eb586ac1b2c8d1e0647f9164a16015868699f0722bfa87853e6ac8b325a",
+          "sha256": "ee8986f537388c262ff892c90dfa3a40999b5771d223378e82873d026bd12d70",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-kesisim-alani.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "8eafb373891cca91eab5e52c13e997c577ff99084c04b01f759e18fe9b54426c"
+      "sha256": "aa79dc1a24e57b7af93bb80e6747488e33ad1589dca23abd320b8176a35a0539",
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "8eafb373891cca91eab5e52c13e997c577ff99084c04b01f759e18fe9b54426c",
+          "sha256": "aa79dc1a24e57b7af93bb80e6747488e33ad1589dca23abd320b8176a35a0539",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-kohort-ozet-topla.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
@@ -11551,7 +12370,15 @@
     },
     "yardimci-konveks-zarf.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "7b81da302c5a7409d6a8f995a86625d0b21c7fe6a4a7fd866ddc7ee73693fba8"
+      "sha256": "31196029480738d208a2cf8d4262e61e2eab6181d9c8d7f03a25b00d86372c6d",
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "7b81da302c5a7409d6a8f995a86625d0b21c7fe6a4a7fd866ddc7ee73693fba8",
+          "sha256": "31196029480738d208a2cf8d4262e61e2eab6181d9c8d7f03a25b00d86372c6d",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-kosu-manifesti.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
@@ -11563,7 +12390,7 @@
     },
     "yardimci-merkez-cevre.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "c54b9abaed069521c919994c9613f5cd80034ecb4dd06f545704228ce7919747",
+      "sha256": "6b6599c809cef52840c6c6367f70f160a21f9dbe997f5d2002622581378a8392",
       "expressions": [
         {
           "original": "\"Kaç eşit alanlı bölge? (2 = merkez + çevre; en çok ${MAX_REGIONS})\"",
@@ -11576,6 +12403,14 @@
           "replacement": "\"${workshopText('script.cd8581a452e1', 'Bölge sayısı bir tam sayı olmalı (2–')}${MAX_REGIONS}).\"",
           "count": 1,
           "context": "showErrorMessage"
+        }
+      ],
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "c54b9abaed069521c919994c9613f5cd80034ecb4dd06f545704228ce7919747",
+          "sha256": "6b6599c809cef52840c6c6367f70f160a21f9dbe997f5d2002622581378a8392",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
@@ -11603,7 +12438,15 @@
     },
     "yardimci-nn-mesafe.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "f17d4e36af5c5b3fe7cf0cbd8859ca833808b194731a796a792dfe22f84b8a17"
+      "sha256": "29bc0855165663ee54c8e311ee4bdecebaf327a3ce68f77154d727dfd627ae5d",
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "f17d4e36af5c5b3fe7cf0cbd8859ca833808b194731a796a792dfe22f84b8a17",
+          "sha256": "29bc0855165663ee54c8e311ee4bdecebaf327a3ce68f77154d727dfd627ae5d",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-omezarr-disa-aktarma.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
@@ -11641,13 +12484,19 @@
     },
     "yardimci-peritumoral-bant.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "299b9a1df93b2e0e9e45331e167258a95e7cae46f9ba903dc111d400d7074457",
+      "sha256": "4013320b18d0795abb339c80ab8f4ed82e16c478f954d15c3f84afb51f1ac8de",
       "baseline_reviews": [
         {
           "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
           "previous_sha256": "e3fc661fe7af3ac18555db8e9c41215618b794b9e354e88cf6dde0799e4e3d0c",
           "sha256": "299b9a1df93b2e0e9e45331e167258a95e7cae46f9ba903dc111d400d7074457",
           "record": "docs/source-baseline-review-2026-11-15.md"
+        },
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "299b9a1df93b2e0e9e45331e167258a95e7cae46f9ba903dc111d400d7074457",
+          "sha256": "4013320b18d0795abb339c80ab8f4ed82e16c478f954d15c3f84afb51f1ac8de",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
@@ -11657,11 +12506,27 @@
     },
     "yardimci-sinif-sayim.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "febd33468c447b86e5024d3a9c7f3d3a8ffa9d086110f3efa93c7bb92e1d0116"
+      "sha256": "57249b61c0da887237723245bd0b0ece1283082ca49214f8ddec48966ebb016e",
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "febd33468c447b86e5024d3a9c7f3d3a8ffa9d086110f3efa93c7bb92e1d0116",
+          "sha256": "57249b61c0da887237723245bd0b0ece1283082ca49214f8ddec48966ebb016e",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-stromal-til.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "ebf3162e23251970e280bd08d2aaaf19409ae45de50abdf9374cc159c2522bf0"
+      "sha256": "fef0a3bfffec3b646966b503f73690abeb465b83f64d4952b555a0f2997f7fc6",
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "ebf3162e23251970e280bd08d2aaaf19409ae45de50abdf9374cc159c2522bf0",
+          "sha256": "fef0a3bfffec3b646966b503f73690abeb465b83f64d4952b555a0f2997f7fc6",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-tahmin-iceaktar.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
@@ -11705,19 +12570,51 @@
     },
     "yardimci-wsinfer-ozet.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "38d8f2140564e0bb33bc67206a69980da93acfc05dc5f44edca84c22ebc3b0d8"
+      "sha256": "45c455e15186f4d26bea350f83cddc71eaef63dc49e5adba7a43e7129da6d1e6",
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "38d8f2140564e0bb33bc67206a69980da93acfc05dc5f44edca84c22ebc3b0d8",
+          "sha256": "45c455e15186f4d26bea350f83cddc71eaef63dc49e5adba7a43e7129da6d1e6",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-yapi-uzaklik.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "fea7af442d9101273554b8f66aebadf2643af6909b39c6d372a14964ad9c2398"
+      "sha256": "9b0618baad1e2496a890fafdfa5d6f0c205bf31743bda7399319e70322239f0a",
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "fea7af442d9101273554b8f66aebadf2643af6909b39c6d372a14964ad9c2398",
+          "sha256": "9b0618baad1e2496a890fafdfa5d6f0c205bf31743bda7399319e70322239f0a",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-yogunluk-haritasi.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "a7ae72d49f4adddbe655654873e48bc48b1a5a5c4b297d9a0731a19f75dc6c8f"
+      "sha256": "1e48c0ea6851a6dcfbe150586aabcfbf160ab448ff77ffaa5cd959e6aa44ba0f",
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "a7ae72d49f4adddbe655654873e48bc48b1a5a5c4b297d9a0731a19f75dc6c8f",
+          "sha256": "1e48c0ea6851a6dcfbe150586aabcfbf160ab448ff77ffaa5cd959e6aa44ba0f",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "er-pr-hscore.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "0d43e6177a9ba3f99717c1062ac92b69fdf0af95c682795924aa7590828889ff"
+      "sha256": "5e2317763ed44d6a2c93150996021dae1766a7c64974b893dd89a86f43a865b4",
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "0d43e6177a9ba3f99717c1062ac92b69fdf0af95c682795924aa7590828889ff",
+          "sha256": "5e2317763ed44d6a2c93150996021dae1766a7c64974b893dd89a86f43a865b4",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "model-egit.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
@@ -11769,7 +12666,15 @@
     },
     "nukleer-boya.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "d784ab37fc656b84715b95a4b4ce5d87253c4dbb31587930e09a41f2b0732bba"
+      "sha256": "77a19963fec5220cdbb95f7735b23364efa486be6fcecf4a180a930b9bccab62",
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "d784ab37fc656b84715b95a4b4ce5d87253c4dbb31587930e09a41f2b0732bba",
+          "sha256": "77a19963fec5220cdbb95f7735b23364efa486be6fcecf4a180a930b9bccab62",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-anonim-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
@@ -11827,7 +12732,15 @@
     },
     "yardimci-histoart-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "ca0b76d0fd1d94020c3ec1a5c3e36c21d101b7c260b300614a1a83637f1e9f65"
+      "sha256": "60be96f73d5c8ca9f2b021172f16a7fbf91cd077546ed1b280bb174a0056d9ac",
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "ca0b76d0fd1d94020c3ec1a5c3e36c21d101b7c260b300614a1a83637f1e9f65",
+          "sha256": "60be96f73d5c8ca9f2b021172f16a7fbf91cd077546ed1b280bb174a0056d9ac",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-histoplus-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
@@ -11847,7 +12760,7 @@
     },
     "yardimci-hotspot-sirali.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "45d21797c25864f010d4795d94edc9fdfe089562dc91dfb175b874b591670964",
+      "sha256": "72d498892bf28733efb178daab7ff779820de7c09dc5bb5bfa3ab06e4c62355a",
       "expressions": [
         {
           "original": "\"'${chosenClass}' sınıfındaki karolarda sayısal ölçüm bulunamadı.\"",
@@ -11868,6 +12781,12 @@
           "previous_sha256": "fc043667ce98a651fad005c915c4d20a9ba42d63c91fad02d01de6ce673f9930",
           "sha256": "45d21797c25864f010d4795d94edc9fdfe089562dc91dfb175b874b591670964",
           "record": "docs/source-baseline-review-2026-11-15.md"
+        },
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "45d21797c25864f010d4795d94edc9fdfe089562dc91dfb175b874b591670964",
+          "sha256": "72d498892bf28733efb178daab7ff779820de7c09dc5bb5bfa3ab06e4c62355a",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
@@ -11901,13 +12820,19 @@
     },
     "yardimci-ki67-heterojenlik.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "77cb51ad5f6a150dc66c9b06c9f49f9bc665d640d2102241dc6aab622427feaf",
+      "sha256": "4a4611f8ba362a9a04a04dc4adf2445025209a31e6e8e38a212ea40cd83c89a8",
       "baseline_reviews": [
         {
           "revision": "cc8d89ad314f4d22d1de3f78d0467d0ca662fc89",
           "previous_sha256": "82253fcf716977e16139292177589671e5d31881c4e511bbf70cdf8e554a36e9",
           "sha256": "77cb51ad5f6a150dc66c9b06c9f49f9bc665d640d2102241dc6aab622427feaf",
           "record": "docs/source-baseline-review-2026-11-15.md"
+        },
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "77cb51ad5f6a150dc66c9b06c9f49f9bc665d640d2102241dc6aab622427feaf",
+          "sha256": "4a4611f8ba362a9a04a04dc4adf2445025209a31e6e8e38a212ea40cd83c89a8",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
@@ -11961,13 +12886,21 @@
     },
     "yardimci-mitoz-phh3.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "213c98868b83b21d896c902e8f9042c9bf3be88cc8b8fce900b39989c58ded19",
+      "sha256": "1f35f1a7dbc72f61ea589ec63c90f4fb19a19748852d8b6b5365bb2803738536",
       "expressions": [
         {
           "original": "\"Image type Brightfield (H-DAB) olmalı. Şu anki: ${imageTypeName}\"",
           "replacement": "\"${workshopText('script.2d940df6729d', 'Image type Brightfield (H-DAB) olmalı. Şu anki: ')}${imageTypeName}\"",
           "count": 1,
           "context": "showErrorMessage"
+        }
+      ],
+      "baseline_reviews": [
+        {
+          "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
+          "previous_sha256": "213c98868b83b21d896c902e8f9042c9bf3be88cc8b8fce900b39989c58ded19",
+          "sha256": "1f35f1a7dbc72f61ea589ec63c90f4fb19a19748852d8b6b5365bb2803738536",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },

@@ -7,7 +7,7 @@ class CellScriptLanguageTest {
     @Test
     void cellWindowHasBothLanguagesAndStableNumericResults() {
         def keys = WorkshopI18n.trKeys().findAll { it.startsWith('cell.') }
-        assertEquals(25, keys.size())
+        assertEquals(30, keys.size())   // 25 window strings + 5 for the image-type question
         keys.each { key ->
             assertNotEquals(key, WorkshopI18n.t(key, false))
             assertNotEquals(key, WorkshopI18n.t(key, true))

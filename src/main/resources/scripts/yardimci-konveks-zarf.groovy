@@ -30,7 +30,9 @@
  * ÇIKTI:
  *   • "Konveks Zarf" sınıflı bir anotasyon ("Zarf alanı (µm²)" + "Kapsanan nesne (N)")
  *   • Sonuç penceresinde özet (nesne sayısı, zarf alanı)
- *   • Her çalıştırma aynı kaynağın önceki zarfını YENİLER
+ *   • Aynı kaynağın önceki zarfı varsa SORAR: "Ekle" (varsayılan) hiçbir şey silmez, yeni zarf
+ *     "Konveks Zarf · <kaynak> (2)" gibi adlanır; "Değiştir" yalnız bu yardımcının zarfını siler.
+ *     Başsız kip: -a mevcut=ekle | -a mevcut=degistir (belirtilmezse durur, hiçbir şey yazmaz).
  *
  * YÖNTEM / KAYNAK:
  *   • JTS `Geometry.convexHull()` (nesne geometrilerinin birleşiminden). Dikkat:
@@ -111,6 +113,71 @@ def showResultWindow = { String windowTitle, String windowBody ->
 String HULL_CLASS = "Konveks Zarf"
 String SEL_OPT    = "▸ Seçili nesneler"
 
+// ── Önceki sonuç: SORULMADAN silinmez (ev kuralı) ────────────────────
+// Önceki sonuç = bu yardımcının aynı kaynak için ürettiği zarf: sınıf "Konveks Zarf" + TAM ad
+// ("Konveks Zarf · <kaynak>") ya da "ad (N)" (N >= 2) — önek eşleşmesi YOK; kullanıcının adını
+// değiştirdiği ya da sınıfsız aynı adı verdiği anotasyon süpürülmez.
+// Varsayılan kip HİÇBİR ŞEY SİLMEZ: Ekle → yeni zarf "Konveks Zarf · <kaynak> (2)", "(3)" … adını alır.
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
+// Bu yardımcının zarfı = ad eşleşmesi + "Konveks Zarf" sınıfı (sınıfsız aynı adlı anotasyon sayılmaz).
+def prevHullObjects = { hierarchy, String base ->
+    return prevOwnObjects(hierarchy, base).findAll { it.getPathClass()?.toString() == HULL_CLASS }
+}
+
+// Başsız kip: -a mevcut=ekle | -a mevcut=degistir. Bilinmeyen değer HER durumda durdurur (fail closed).
+String mevcutArg = null
+if (isHeadless) {
+    def scriptArgs = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+    def argMap = [:]
+    scriptArgs.each { a -> def sa = a?.toString() ?: ''; int ia = sa.indexOf('='); if (ia > 0) argMap[sa.substring(0, ia).trim()] = sa.substring(ia + 1).trim() }
+    if (argMap.mevcut != null) {
+        mevcutArg = argMap.mevcut.toLowerCase(java.util.Locale.ROOT)
+        if (!['ekle', 'degistir'].contains(mevcutArg)) {
+            println String.format(java.util.Locale.US, workshopText('script.768b9abc88f3', 'HATA: mevcut yalnız \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut); return
+        }
+    }
+}
+
+// Önceki zarf için kullanıcıya SOR (zarf hesaplanmadan ÖNCE çağrılır).
+//   Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey hesaplanmaz, hiçbir şey yazılmaz).
+def askExisting = { hierarchy, String base ->
+    def prev = prevHullObjects(hierarchy, base)
+    if (prev.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.e91e1fb24ec7', 'Öncekine dokunma — yeni bir zarf olarak ekle (varsayılan)')
+    String optRep = workshopText('script.86a92c953153', 'Öncekini değiştir (bu yardımcının zarfı silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.ed8dc2180552', 'Önceki dış bükey zarf'),
+        String.format(java.util.Locale.US, workshopText('script.a6b16dda5235', 'Bu lamda bu yardımcının "%s" adıyla ürettiği %,d zarf anotasyonu zaten var.\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni zarf ayrı bir anotasyon olur ("%s (2)" gibi). Lamda iki zarf birlikte durur.\n\n"Değiştir" seçilirse önceki zarf anotasyonu silinir; içindeki nesneler korunur. Kendi anotasyonlarınıza ve adını değiştirdiklerinize dokunulmaz.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki zarf ne olsun?'), base, prev.size(), base),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.a0f7fb3f1d46', 'Önceki zarf silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.f961df8c3556', '%,d zarf anotasyonu ("%s") silinecek; bunda elle yaptığınız düzeltmeler kaybolur. İçindeki nesneler korunur.\n\nDevam edilsin mi?'), prev.size(), base))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
@@ -165,6 +232,24 @@ if (objs.size() < 3) {
     return
 }
 
+// ── 3b) Önceki zarf var mı? HESAPLAMADAN ÖNCE sor ─────────────────────
+String hullName = "${HULL_CLASS} · ${srcLabel}"
+def imgHierarchy = imageData.getHierarchy()
+def prevOwn = prevHullObjects(imgHierarchy, hullName)
+def prevNames = prevOwn.collect { it.getName() }.unique().sort()
+String writeMode = MODE_ADD
+if (!prevOwn.isEmpty()) {
+    if (isHeadless) {
+        if (mevcutArg == null) {
+            println String.format(java.util.Locale.US, workshopText('script.3eb0835f5507', 'Bu lamda bu yardımcının aynı kaynak için ürettiği %,d zarf anotasyonu ("%s") zaten var. Hiçbir şey yazılmadı. Yeni bir kopya eklemek için -a mevcut=ekle, önceki sonucu değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.'), prevOwn.size(), hullName); return
+        }
+        writeMode = (mevcutArg == 'degistir') ? MODE_REPLACE : MODE_ADD
+    } else {
+        writeMode = askExisting(imgHierarchy, hullName)
+        if (writeMode == null) { println "İptal edildi."; return }
+    }
+}
+
 // ── 4) Zarfı hesapla (nesne geometrilerinin birleşimi → convexHull) ─
 def plane = objs[0].getROI().getImagePlane()
 def geoms = objs.collect { it.getROI().getGeometry() }.findAll { it != null && !it.isEmpty() }
@@ -185,14 +270,22 @@ if (hullRoi == null || hullRoi.isEmpty() || !hullRoi.isArea()) {
 // JTS getArea() piksel² döner → µm² için pw·ph ile çarpılır (piksel→µm² birim tuzağı).
 double hullAreaUm2 = hasMicrons ? (hull.getArea() * pw * ph) : Double.NaN
 
-// ── 5) Önceki zarfı yenile + yeni zarfı ekle ────────────────────────
-String hullName = "${HULL_CLASS} · ${srcLabel}"
-def stale = QP.getAnnotationObjects().findAll { it.getPathClass()?.toString() == HULL_CLASS && (it.getName() ?: '') == hullName }
-if (!stale.isEmpty()) QP.removeObjects(stale, false)
+// ── 5) Önceki zarf: kip çağırandan gelir + yeni zarfı ekle ──────────
+// Ekle → hiçbir şey silinmez, yeni zarf sıradaki adı alır; Değiştir → yalnız bu yardımcının aynı
+// kaynak için ürettiği zarflar (tam ad ya da "(N)" + sınıf) silinir, içlerindeki nesneler korunur.
+int removedPrev = 0
+String thisHullName = hullName
+if (writeMode == MODE_REPLACE) {
+    def prevNow = prevHullObjects(imgHierarchy, hullName)
+    removedPrev = prevNow.size()
+    if (removedPrev > 0) QP.removeObjects(prevNow, true)
+} else if (!prevOwn.isEmpty()) {
+    thisHullName = nextOwnSetName(imgHierarchy, hullName)
+}
 
 def hullClass = QP.getPathClass(HULL_CLASS)
 def hullAnno = qupath.lib.objects.PathObjects.createAnnotationObject(hullRoi, hullClass)
-hullAnno.setName(hullName)
+hullAnno.setName(thisHullName)
 hullAnno.measurements['Kapsanan nesne (N)'] = objs.size() as double
 if (!Double.isNaN(hullAreaUm2)) hullAnno.measurements['Zarf alanı (µm²)'] = hullAreaUm2
 QP.addObjects([hullAnno])
@@ -208,6 +301,12 @@ if (!Double.isNaN(hullAreaUm2))
     body << String.format(java.util.Locale.US, "Zarf alanı        : %,.0f µm²%n", hullAreaUm2)
 else
     body << "Zarf alanı        : (kalibrasyon yok — µm² hesaplanamadı)\n"
+body << String.format(java.util.Locale.US, workshopText('script.eacfcadb7333', 'Zarf adı          : %s'), thisHullName) << "\n"
+if (writeMode == MODE_ADD && !prevNames.isEmpty()) {
+    body << "\n" << String.format(java.util.Locale.US, workshopText('script.2e6a78aa3dfd', 'DİKKAT — bu lamda önceki zarf da duruyor: %s\nHiçbir şey silinmedi. Eskisini kaldırmak için o addaki anotasyonu seçip silin ya da yardımcıyı yeniden çalıştırırken "Öncekini değiştir"i seçin.'), prevNames.join(', ')) << "\n"
+} else if (removedPrev > 0) {
+    body << "\n" << String.format(java.util.Locale.US, workshopText('script.6c1a190e218d', 'Önceki zarf değiştirildi: %,d anotasyon silindi (içindeki nesneler korundu).'), removedPrev) << "\n"
+}
 body << "\n"
 body << "'${HULL_CLASS}' sınıflı bir anotasyon eklendi. İçinde hücre tespiti/piksel\n"
 body << "sınıflandırıcı çalıştırabilir, uzamsal yardımcılarla (Uzamsal Komşuluk Analizi eki) birlikte kullanabilirsiniz.\n\n"

@@ -47,7 +47,9 @@
  *     sınıflı bölge anotasyonları (alan + % + tespit ölçümleriyle)
  *   • Sonuç penceresinde bölge alanları ve bölgeler-arası maks. % fark
  *     (eşit alanlı doğruluğu — makalede 48 WSI'de <%0,4)
- *   • Her çalıştırma önceki eşit alanlı bölgelerini YENİLER
+ *   • Önceki bölgeler varsa SORAR: "Ekle" (varsayılan) hiçbir şey silmez, yeni bölgeler adlarının
+ *     sonuna " (2)" gibi bir ek alır; "Değiştir" yalnız bu yardımcının bölgelerini siler (tüm kaynaklar).
+ *     Başsız kip: -a mevcut=ekle | -a mevcut=degistir (belirtilmezse durur, hiçbir şey yazmaz).
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı geometri/ölçüm üretir.
  */
@@ -126,6 +128,69 @@ int DEF_REGIONS = 2
 int MAX_REGIONS = 6
 int DET_CAP = 200000        // bu sayıdan çok tespit varsa bölge-başı sayım atlanır
 
+// ── Önceki sonuç: SORULMADAN silinmez (ev kuralı) ────────────────────
+// Önceki sonuç = bu yardımcının ürettiği bölge: üç sınıftan biri + bu yardımcının ad biçimi
+// ("<kaynak> · Merkez (2/2)", isteğe bağlı " (N)", N >= 2) + yardımcının yazdığı iki ölçüm.
+// Yalnız sınıfa bakılmaz: kullanıcının aynı sınıfta elle çizdiği ya da adını değiştirdiği anotasyon süpürülmez.
+// Varsayılan kip HİÇBİR ŞEY SİLMEZ: Ekle → yeni bölge seti adlarının sonuna " (2)", " (3)" … alır.
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+def regionSetIndex = { String name ->
+    if (name == null) return 0
+    def m = java.util.regex.Pattern.compile('^.+ · (?:Çevre|Merkez|Ara \\d+) \\(\\d+/\\d+\\)(?: \\((\\d{1,6})\\))?$').matcher(name)
+    if (!m.matches()) return 0
+    if (m.group(1) == null) return 1
+    int n = Integer.parseInt(m.group(1))
+    return n >= 2 ? n : 0
+}
+def prevOwnRegions = { hierarchy ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll {
+        REGION_CLASSES.contains(it.getPathClass()?.toString()) && regionSetIndex(it.getName()) >= 1 &&
+            it.getMeasurements().containsKey('Bölge alanı (µm²)') && it.getMeasurements().containsKey('Bölge sırası (dıştan)')
+    }
+}
+def nextRegionRunIndex = { hierarchy ->
+    def used = prevOwnRegions(hierarchy).collect { regionSetIndex(it.getName()) }
+    return used.isEmpty() ? 1 : ((used.max() as int) + 1)
+}
+
+// Başsız kip: -a mevcut=ekle | -a mevcut=degistir. Bilinmeyen değer HER durumda durdurur (fail closed).
+String mevcutArg = null
+if (isHeadless) {
+    def scriptArgs = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+    def argMap = [:]
+    scriptArgs.each { a -> def sa = a?.toString() ?: ''; int ia = sa.indexOf('='); if (ia > 0) argMap[sa.substring(0, ia).trim()] = sa.substring(ia + 1).trim() }
+    if (argMap.mevcut != null) {
+        mevcutArg = argMap.mevcut.toLowerCase(java.util.Locale.ROOT)
+        if (!['ekle', 'degistir'].contains(mevcutArg)) {
+            println String.format(java.util.Locale.US, workshopText('script.768b9abc88f3', 'HATA: mevcut yalnız \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut); return
+        }
+    }
+}
+
+// Önceki bölgeler için kullanıcıya SOR (bölge üretiminden ÖNCE çağrılır).
+//   Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey üretilmez, hiçbir şey yazılmaz).
+def askExisting = { hierarchy ->
+    def prev = prevOwnRegions(hierarchy)
+    if (prev.isEmpty()) return MODE_ADD
+    int nextIdx = nextRegionRunIndex(hierarchy)
+    String classList = REGION_CLASSES.join(' / ')
+    String optAdd = workshopText('script.6d37bf757141', 'Öncekilere dokunma — yeni bölgeleri ayrı bir set olarak ekle (varsayılan)')
+    String optRep = workshopText('script.b48dce23d678', 'Öncekileri değiştir (bu yardımcının bölgelerinin tümü silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.2cef9c21c618', 'Önceki eşit alanlı bölgeler'),
+        String.format(java.util.Locale.US, workshopText('script.345d108b15b1', 'Bu lamda bu yardımcının ürettiği %,d eşit alanlı bölge anotasyonu zaten var (sınıflar: %s; tüm kaynak alanlar için).\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni bölgelerin adlarının sonuna "(%d)" eklenir ve ayrı bir set olurlar. Lamda iki set birlikte durur; bölgeler üst üste biner.\n\n"Değiştir" seçilirse önceki bölgelerin TÜMÜ silinir — onlarda elle yaptığınız düzeltmeler de gider; bölgelerin içindeki hücre tespitleri ve diğer nesneler korunur. Elle çizdiğiniz ya da adını değiştirdiğiniz anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey üretilmez, hiçbir şey yazılmaz.\n\nÖnceki bölgeler ne olsun?'), prev.size(), classList, nextIdx),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.4514d3b5f1bd', 'Önceki bölgeler silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.44bc4ade563e', '%,d eşit alanlı bölge anotasyonu (%s; tüm kaynak alanlar için) silinecek; bölgelerde elle yaptığınız düzeltmeler KAYBOLUR. İçlerindeki nesneler korunur.\n\nDevam edilsin mi?'), prev.size(), classList))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
@@ -197,9 +262,25 @@ def classNameFor = { int idx, int n ->
     return CLS_MIDDLE
 }
 
-// ── 3) Önceki eşit alanlı bölgelerini temizle (idempotent) ────────────
-def stale = QP.getAnnotationObjects().findAll { REGION_CLASSES.contains(it.getPathClass()?.toString()) }
-if (!stale.isEmpty()) QP.removeObjects(stale, false)
+// ── 3) Önceki bölgeler var mı? Üretimden ÖNCE sor ────────────────────
+def imgHierarchy = imageData.getHierarchy()
+def prevOwn = prevOwnRegions(imgHierarchy)
+def prevNames = prevOwn.collect { it.getName() }.unique().sort()
+String writeMode = MODE_ADD
+if (!prevOwn.isEmpty()) {
+    if (isHeadless) {
+        if (mevcutArg == null) {
+            println String.format(java.util.Locale.US, workshopText('script.05748f3441b3', 'Bu lamda bu yardımcının ürettiği %,d eşit alanlı bölge anotasyonu (%s) zaten var. Hiçbir şey yazılmadı. Yeni bir set eklemek için -a mevcut=ekle, önceki bölgeleri değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.'), prevOwn.size(), REGION_CLASSES.join(' / ')); return
+        }
+        writeMode = (mevcutArg == 'degistir') ? MODE_REPLACE : MODE_ADD
+    } else {
+        writeMode = askExisting(imgHierarchy)
+        if (writeMode == null) { println "İptal edildi."; return }
+    }
+}
+// Ekle kipinde yeni bölgeler sıradaki set numarasını alır; Değiştir / ilk çalıştırmada ek yok.
+int runIdx = (writeMode == MODE_ADD && !prevOwn.isEmpty()) ? nextRegionRunIndex(imgHierarchy) : 1
+String runSuffix = (runIdx > 1) ? (' (' + runIdx + ')') : ''
 
 // ── 4) Tespitleri (varsa) hazırlığa al ──────────────────────────────
 def allDets = QP.getDetectionObjects().findAll { it.getROI() != null }
@@ -257,7 +338,7 @@ targets.eachWithIndex { t, si ->
         String label = labelFor(idx, numRegions)
         String cls = classNameFor(idx, numRegions)
         def anno = qupath.lib.objects.PathObjects.createAnnotationObject(rROI, QP.getPathClass(cls))
-        anno.setName(String.format(java.util.Locale.US, "%s · %s (%d/%d)", srcName, label, idx + 1, numRegions))
+        anno.setName(String.format(java.util.Locale.US, "%s · %s (%d/%d)", srcName, label, idx + 1, numRegions) + runSuffix)
         double areaUm2 = g.getArea() * pw * ph
         double pct = 100.0d * g.getArea() / totalPx
         anno.measurements['Bölge alanı (µm²)']   = areaUm2
@@ -288,6 +369,15 @@ if (created.isEmpty()) {
     return
 }
 
+// Önceki bölgeler: kip çağırandan gelir. Ekle → hiçbir şey silinmez; Değiştir → yalnız bu yardımcının
+// bölgeleri (yukarıdaki tanım) silinir, içlerindeki nesneler (ör. hücre tespitleri) korunur. Üretim
+// başarısız olsaydı buraya gelinmez: önceki bölgeler yerinde kalır.
+int removedPrev = 0
+if (writeMode == MODE_REPLACE) {
+    def prevNow = prevOwnRegions(imgHierarchy)
+    removedPrev = prevNow.size()
+    if (removedPrev > 0) QP.removeObjects(prevNow, true)
+}
 QP.addObjects(created)
 QP.fireHierarchyUpdate()
 
@@ -299,6 +389,14 @@ body << String.format(java.util.Locale.US, "Kaynak alan sayısı : %,d  (atlanan
 body << String.format(java.util.Locale.US, "Bölge / kaynak     : %d%n", numRegions)
 body << String.format(java.util.Locale.US, "Üretilen bölge     : %,d%n", created.size())
 body << (countDets ? "Tespit sayımı      : açık\n" : "Tespit sayımı      : kapalı (tespit yok veya >${String.format(java.util.Locale.US, "%,d", DET_CAP)})\n")
+if (runIdx > 1)
+    body << String.format(java.util.Locale.US, workshopText('script.6d16aa739502', 'Bölge seti         : %d  (önceki set duruyor)'), runIdx) << "\n"
+if (writeMode == MODE_ADD && !prevNames.isEmpty()) {
+    body << "\n" << String.format(java.util.Locale.US, workshopText('script.1167d104b3b2', 'DİKKAT — bu lamda önceki bölge seti de duruyor (%,d anotasyon: %s).\nHiçbir şey silinmedi. Eskisini kaldırmak için o bölgeleri seçip silin ya da yardımcıyı yeniden çalıştırırken "Öncekileri değiştir"i seçin. İki set üst üste biner; ikisinin içinde de çalışan bir analiz aynı bölgeyi iki kez sayabilir.'), prevOwn.size(),
+        prevNames.take(5).join(', ') + (prevNames.size() > 5 ? ', …' : '')) << "\n\n"
+} else if (removedPrev > 0) {
+    body << "\n" << String.format(java.util.Locale.US, workshopText('script.85eecb52630b', 'Önceki bölgeler değiştirildi: %,d anotasyon silindi (içlerindeki nesneler korundu).'), removedPrev) << "\n\n"
+}
 body << "──────────────────────────────────────────────\n"
 def bySrc = rows.groupBy { it.src }
 bySrc.each { src, rs ->

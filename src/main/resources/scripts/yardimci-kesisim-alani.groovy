@@ -36,6 +36,9 @@
  *   • Kilitli "Kesişim Alanı Özet": A/B adet, toplam A alanı, toplam kesişim, genel
  *     ve ortalama örtüşme %, örtüşen A adedi
  *   • Sonuç penceresinde özet tablo
+ *   • Önceki özet varsa SORAR: "Ekle" (varsayılan) hiçbir şey silmez, yeni özet
+ *     "Kesişim Alanı Özet (2)" gibi adlanır; "Değiştir" yalnız bu yardımcının özetlerini siler.
+ *     Başsız kip: -a mevcut=ekle | -a mevcut=degistir (belirtilmezse durur, hiçbir şey yazmaz).
  *
  * YÖNTEM / KAYNAK:
  *   • JTS (Java Topology Suite) geometri kesişimi — QuPath içinde. Dikkat: JTS'in
@@ -116,6 +119,66 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ── Sabitler ────────────────────────────────────────────────────────
 String summaryName = "Kesişim Alanı Özet"
 
+// ── Önceki sonuç: SORULMADAN silinmez (ev kuralı) ────────────────────
+// Önceki sonuç = bu yardımcının yazdığı özet anotasyonu: TAM ad ya da "ad (N)" (N >= 2) — önek
+// eşleşmesi YOK; kullanıcının "… notlarım" diye adlandırdığı anotasyon süpürülmez.
+// Varsayılan kip HİÇBİR ŞEY SİLMEZ: Ekle → yeni özet "Kesişim Alanı Özet (2)", "(3)" … adını alır.
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
+
+// Başsız kip: -a mevcut=ekle | -a mevcut=degistir. Bilinmeyen değer HER durumda durdurur (fail closed).
+String mevcutArg = null
+if (isHeadless) {
+    def scriptArgs = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+    def argMap = [:]
+    scriptArgs.each { a -> def sa = a?.toString() ?: ''; int ia = sa.indexOf('='); if (ia > 0) argMap[sa.substring(0, ia).trim()] = sa.substring(ia + 1).trim() }
+    if (argMap.mevcut != null) {
+        mevcutArg = argMap.mevcut.toLowerCase(java.util.Locale.ROOT)
+        if (!['ekle', 'degistir'].contains(mevcutArg)) {
+            println String.format(java.util.Locale.US, workshopText('script.768b9abc88f3', 'HATA: mevcut yalnız \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut); return
+        }
+    }
+}
+
+// Önceki sonuç için kullanıcıya SOR (HESAPLAMADAN önce çağrılır).
+//   Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey hesaplanmaz, hiçbir şey yazılmaz).
+def askExisting = { hierarchy, String measAreaName, String measPctName ->
+    def prev = prevOwnObjects(hierarchy, summaryName)
+    if (prev.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.e6b0dca2f71e', 'Öncekine dokunma — yeni bir özet olarak ekle (varsayılan)')
+    String optRep = workshopText('script.84d3e02923f2', 'Öncekini değiştir (bu yardımcının özeti silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.16e598cbc210', 'Önceki kesişim alanı özeti'),
+        String.format(java.util.Locale.US, workshopText('script.de2339c36248', 'Bu lamda bu yardımcının yazdığı %,d özet anotasyonu zaten var.\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni özet ayrı bir anotasyon olur ("%s (2)" gibi).\n\n"Değiştir" seçilirse önceki özet anotasyonları silinir. Kendi anotasyonlarınıza dokunulmaz.\n\nHer iki durumda da A anotasyonlarındaki "%s" ve "%s" ölçümleri bu çalıştırmanın değeriyle yeniden yazılır.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki özet ne olsun?'), prev.size(), summaryName, measAreaName, measPctName),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.89a856ac207d', 'Önceki özet silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.78d2e9b841ed', '%,d özet anotasyonu silinecek; bunlardaki ölçümler kaybolur. Kendi anotasyonlarınıza dokunulmaz. A anotasyonlarındaki "%s" ve "%s" ölçümleri bu çalıştırmanın değeriyle yazılır.\n\nDevam edilsin mi?'), prev.size(), measAreaName, measPctName))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
 // ── 1) Ön kontroller ────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
@@ -133,7 +196,7 @@ if (!(pw > 0) || !(ph > 0)) {
 
 // Görüntüdeki, SINIFI olan alan anotasyonlarının sınıf adları (özet hariç)
 def classNames = QP.getAnnotationObjects()
-    .findAll { it.getROI()?.isArea() && it.getPathClass() != null && it.getName() != summaryName }
+    .findAll { it.getROI()?.isArea() && it.getPathClass() != null && !isOwnSetName(it.getName(), summaryName) }
     .collect { it.getPathClass().toString() }
     .unique()
     .sort()
@@ -184,6 +247,25 @@ if (aAnnos.isEmpty() || bAnnos.isEmpty()) {
     return
 }
 
+// ── 3b) Önceki özet var mı? HESAPLAMADAN ÖNCE sor ─────────────────────
+String measArea = "Kesişen ${classB} alanı (µm²)"
+String measPct  = "Kesişen ${classB} oranı (%)"
+def imgHierarchy = imageData.getHierarchy()
+def prevOwn = prevOwnObjects(imgHierarchy, summaryName)
+def prevNames = prevOwn.collect { it.getName() }.unique().sort()
+String writeMode = MODE_ADD
+if (!prevOwn.isEmpty()) {
+    if (isHeadless) {
+        if (mevcutArg == null) {
+            println String.format(java.util.Locale.US, workshopText('script.9ff4de821d21', 'Bu lamda bu yardımcının yazdığı %,d özet anotasyonu ("%s") zaten var. Hiçbir şey yazılmadı. Yeni bir kopya eklemek için -a mevcut=ekle, önceki sonucu değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.'), prevOwn.size(), summaryName); return
+        }
+        writeMode = (mevcutArg == 'degistir') ? MODE_REPLACE : MODE_ADD
+    } else {
+        writeMode = askExisting(imgHierarchy, measArea, measPct)
+        if (writeMode == null) { println "İptal edildi."; return }
+    }
+}
+
 // B anotasyonlarının BİRLEŞİK geometrisi (üst üste binenleri iki kez saymamak için)
 def bUnion = null
 bAnnos.each { b ->
@@ -198,8 +280,6 @@ println String.format(java.util.Locale.US,
     "Kesişim alanı hesaplanıyor: A='%s' (%d anot.) ∩ B='%s' (%d anot.)...",
     classA, aAnnos.size(), classB, bAnnos.size())
 
-String measArea = "Kesişen ${classB} alanı (µm²)"
-String measPct  = "Kesişen ${classB} oranı (%)"
 double totalAreaA = 0.0
 double totalInter = 0.0
 int overlapCount = 0
@@ -236,12 +316,23 @@ double overallPct = (totalAreaA > 0) ? 100.0 * totalInter / totalAreaA : 0.0
 double meanPct    = pctList.isEmpty() ? 0.0 : (pctList.sum() as double) / pctList.size()
 
 // ── 5) Kilitli özet anotasyonu ──────────────────────────────────────
-QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() == summaryName }, false)
+// Önceki özet: kip çağırandan gelir. Ekle → hiçbir şey silinmez; Değiştir → yalnız bu yardımcının
+// özetleri (tam ad ya da "(N)") silinir, içlerindeki nesneler korunur.
+int removedPrev = 0
+String thisSummaryName
+if (writeMode == MODE_REPLACE) {
+    def prevNow = prevOwnObjects(imgHierarchy, summaryName)
+    removedPrev = prevNow.size()
+    if (removedPrev > 0) QP.removeObjects(prevNow, true)
+    thisSummaryName = summaryName
+} else {
+    thisSummaryName = nextOwnSetName(imgHierarchy, summaryName)
+}
 def srv = imageData.getServer()
 def summary = qupath.lib.objects.PathObjects.createAnnotationObject(
     qupath.lib.roi.ROIs.createRectangleROI(0, 0, srv.getWidth(), srv.getHeight(),
         qupath.lib.regions.ImagePlane.getDefaultPlane()))
-summary.setName(summaryName)
+summary.setName(thisSummaryName)
 summary.measurements['A anotasyon sayısı']        = aAnnos.size() as double
 summary.measurements['B anotasyon sayısı']        = bAnnos.size() as double
 summary.measurements['Toplam A alanı (µm²)']      = totalAreaA
@@ -269,6 +360,13 @@ body << String.format(java.util.Locale.US, "Ortalama örtüşme   : %.1f %%  (A 
 body << String.format(java.util.Locale.US, "Örtüşen A adedi    : %,d / %,d%n", overlapCount, aAnnos.size())
 if (errCount > 0)
     body << String.format(java.util.Locale.US, "Atlanan (geçersiz) : %,d%n", errCount)
+body << "\n"
+body << String.format(java.util.Locale.US, workshopText('script.a9b6daa16201', 'Özet adı           : %s'), thisSummaryName) << "\n"
+if (writeMode == MODE_ADD && !prevNames.isEmpty()) {
+    body << "\n" << String.format(java.util.Locale.US, workshopText('script.64c8beb1374c', 'DİKKAT — bu lamda önceki özet de duruyor: %s\nHiçbir şey silinmedi. Eskisini kaldırmak için o addaki anotasyonu seçip silin ya da yardımcıyı yeniden çalıştırırken "Öncekini değiştir"i seçin.\nA anotasyonlarındaki "%s" ve "%s" ölçümleri bu çalıştırmanın değerlerini gösterir; önceki özet anotasyonu ise önceki çalıştırmanın değerlerini gösterir.'), prevNames.join(', '), measArea, measPct) << "\n"
+} else if (removedPrev > 0) {
+    body << "\n" << String.format(java.util.Locale.US, workshopText('script.be27a1bc19b6', 'Önceki özet değiştirildi: %,d anotasyon silindi.'), removedPrev) << "\n"
+}
 body << "\n"
 body << "Her A anotasyonuna '${measArea}' ve\n"
 body << "'${measPct}' ölçümleri yazıldı (Veri dışa aktarma modülü ile dışa aktarılır).\n"

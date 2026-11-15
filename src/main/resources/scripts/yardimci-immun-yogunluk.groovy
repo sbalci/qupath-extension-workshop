@@ -179,6 +179,75 @@ double cellExpansionUm         = 2.0
 String detectionChannel        = "Hematoxylin OD"
 String summaryName             = "İmmün Yoğunluk Özet"
 
+// ── Önceki sonuç kipi (ev kuralı: hiçbir şey sorulmadan silinmez) ───────────
+//   ekle     → hiçbir şey silinmez; yeni özet sıradaki adı alır ("<ad> (2)" …).
+//   değiştir → yalnız bu yardımcının özet anotasyonları (tam ad ya da "ad (N)") silinir;
+//              içlerindeki nesneler korunur (keepChildren = true).
+//   Başsız kip: `-a mevcut=ekle` | `-a mevcut=degistir`; önceki sonuç varken belirtilmezse durur.
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+// Bu yardımcının özeti mi? Yalnız TAM ad ya da "ad (N)" — önek eşleşmesi YOK:
+// kullanıcının "İmmün Yoğunluk Özet notlarım" diye adlandırdığı anotasyon süpürülmez.
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
+def askExisting = { hierarchy ->
+    def prev = prevOwnObjects(hierarchy, summaryName)
+    if (prev.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.1e749978a0e7', 'Ekle — öncekine dokunma, yeni bir özet olarak ekle (varsayılan)')
+    String optRep = workshopText('script.3bb827725a09', 'Değiştir — önceki özet anotasyonları silinir')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.bce7a8193d8d', 'Önceki sonuç — İmmün yoğunluk'),
+        String.format(java.util.Locale.US, workshopText('script.cd7dc9909880', 'Bu lamda bu yardımcının yazdığı %,d özet anotasyonu zaten var ("İmmün Yoğunluk Özet").\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni özet "İmmün Yoğunluk Özet (2)" gibi ayrı bir ad alır ve iki özet birlikte durur.\n\n"Değiştir" seçilirse önceki özet anotasyonları silinir. Aynı adı kendiniz verdiyseniz o anotasyon da silinir. Diğer anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?'), prev.size()),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.89a856ac207d', 'Önceki özet silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.d9ffa820dc55', '%,d özet anotasyonu silinecek. Bunlar üzerinde elle yaptığınız değişiklikler ve aynı adı kendiniz verdiğiniz anotasyonlar da gider; içlerindeki diğer nesneler korunur.\n\nDevam edilsin mi?'), prev.size()))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+def applyMode = { hierarchy, String mode ->
+    def prev = prevOwnObjects(hierarchy, summaryName)
+    def prevNames = prev.collect { it.getName() }.unique().sort()
+    int removed = 0
+    String setName
+    if (mode == MODE_REPLACE) {
+        removed = prev.size()
+        if (removed > 0) hierarchy.removeObjects(prev, true)
+        setName = summaryName
+    } else {
+        setName = nextOwnSetName(hierarchy, summaryName)
+    }
+    return [setName: setName, removed: removed, prevNames: (mode == MODE_REPLACE ? [] : prevNames)]
+}
+
+def scriptArgs = []
+try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+def argMap = [:]
+scriptArgs.each { a -> def sa = a?.toString() ?: ''; int ia = sa.indexOf('='); if (ia > 0) argMap[sa.substring(0, ia).trim()] = sa.substring(ia + 1).trim() }
+String mevcut = argMap.mevcut == null ? null : argMap.mevcut.toLowerCase(java.util.Locale.ROOT)
+if (isHeadless && mevcut != null && !['ekle', 'degistir'].contains(mevcut)) {
+    println String.format(java.util.Locale.US, workshopText('script.768b9abc88f3', 'HATA: mevcut yalnız \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut)
+    return
+}
+
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
@@ -195,12 +264,30 @@ if (!(pw > 0) || !(ph > 0)) {
     return
 }
 
-def selected = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getName() != summaryName }
+def selected = QP.getSelectedObjects().findAll { it.isAnnotation() && !isOwnSetName(it.getName(), summaryName) }
 def targets = selected
 if (targets.isEmpty()) {
     def msg = "Ölçülecek anotasyon yok.\n\nÖnce ilgilendiğiniz bölgeyi anotasyon olarak çizin (ve seçin)."
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.469472ee53f3', "Anotasyon yok"), msg)
     return
+}
+
+// Önceki sonuç varsa HESAPLAMADAN ÖNCE sor (İptal: hiçbir şey çalışmaz, hiçbir şey yazılmaz).
+String runMode = MODE_ADD
+def prevOwnNow = prevOwnObjects(imageData.getHierarchy(), summaryName)
+if (!prevOwnNow.isEmpty()) {
+    if (isHeadless) {
+        if (mevcut == null) {
+            println String.format(java.util.Locale.US, workshopText('script.24a442295e5a', 'Bu lamda bu yardımcının yazdığı %,d özet anotasyonu ("%s") zaten var. Hiçbir şey yazılmadı. Yeni bir kopya eklemek için mevcut=ekle, önceki sonucu değiştirmek için mevcut=degistir ile yeniden çalıştırın.'), prevOwnNow.size(), summaryName)
+            return
+        }
+        runMode = (mevcut == 'degistir') ? MODE_REPLACE : MODE_ADD
+    } else {
+        runMode = askExisting(imageData.getHierarchy())
+        if (runMode == null) return
+    }
+} else if (isHeadless && mevcut == 'degistir') {
+    runMode = MODE_REPLACE
 }
 
 // ── 2) Pozitif hücre tespiti (DAB tek eşik) ─────────────────────────
@@ -260,12 +347,13 @@ double overallDensity = totalAreaMm2 > 0 ? totalPos / totalAreaMm2 : 0.0
 double overallPct = totalCells > 0 ? (100.0 * totalPos / totalCells) : 0.0
 
 // ── 4) Kilitli özet anotasyonu ──────────────────────────────────────
-QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() == summaryName }, false)
+// Önceki özet SORULMADAN silinmez: kip yukarıda seçildi (ekle: sıradaki ad; değiştir: yalnız kendi özetleri).
+def appliedMode = applyMode(imageData.getHierarchy(), runMode)
 def srv = imageData.getServer()
 def summary = qupath.lib.objects.PathObjects.createAnnotationObject(
     qupath.lib.roi.ROIs.createRectangleROI(0, 0, srv.getWidth(), srv.getHeight(),
         qupath.lib.regions.ImagePlane.getDefaultPlane()))
-summary.setName(summaryName)
+summary.setName(appliedMode.setName)
 summary.measurements['Ölçülen alan (mm2)']                      = totalAreaMm2
 summary.measurements['Toplam hücre']                            = totalCells as double
 summary.measurements['Pozitif hücre']                          = totalPos as double
@@ -276,6 +364,13 @@ QP.addObjects([summary])
 QP.fireHierarchyUpdate()
 
 // ── 5) Sonucu sun ───────────────────────────────────────────────────
+def modeNotes = new StringBuilder()
+if (!appliedMode.prevNames.isEmpty()) {
+    modeNotes << "\n" << String.format(java.util.Locale.US, workshopText('script.7577a3bac9a2', 'DİKKAT — bu lamda önceki sonuç da duruyor: %s\nYeni özet şu adla eklendi: %s\nHiçbir şey silinmedi. Eski özeti kaldırmak için o addaki anotasyonu seçip silin ya da yeniden çalıştırırken "Değiştir"i seçin. Dışa aktarma ve kohort özetleri iki özeti de görür.'), appliedMode.prevNames.join(', '), appliedMode.setName) << "\n"
+    modeNotes << workshopText('script.46fd40a69eb4', 'Seçili anotasyonların üzerindeki ölçümler bu YENİ çalıştırmayı gösterir; önceki özet nesnesi eski değerleri göstermeye devam eder.') << "\n"
+} else if (appliedMode.removed > 0) {
+    modeNotes << "\n" << String.format(java.util.Locale.US, workshopText('script.bc31ff876c31', 'Önceki sonuç değiştirildi: %,d özet anotasyonu silindi (içlerindeki diğer nesneler korundu).'), appliedMode.removed) << "\n"
+}
 def body = new StringBuilder()
 body << "İMMÜN HÜCRE YOĞUNLUĞU (DAB)\n"
 body << "════════════════════════════\n\n"
@@ -285,13 +380,14 @@ body << String.format(java.util.Locale.US, "Pozitif hücre         : %,d  (%.1f 
 body << String.format(java.util.Locale.US, "Pozitif yoğunluk      : %.0f hücre/mm²%n", overallDensity)
 body << "\n"
 body << String.format(java.util.Locale.US, "DAB eşiği: %.2f (kalibre edilebilir başlangıç değeri)%n", dabThreshold)
+body << modeNotes.toString()
 body << "\n"
 body << "Bu bir SAYIM/YOĞUNLUKtur — klinik immün skor, eşik veya yorum DEĞİL.\n"
 body << "Belirteç kimliği ve eşik kalibrasyonu kullanıcıya aittir (de Ruiter 2022; Russell 2023).\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
 showResultWindow("İmmün hücre yoğunluğu (DAB)", body.toString())
-println "✓ İmmün hücre yoğunluğu yazıldı (her anotasyon + '${summaryName}')."
+println "✓ İmmün hücre yoğunluğu yazıldı (her anotasyon + '${appliedMode.setName}')."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.
 private String workshopText(String key, String fallback) {

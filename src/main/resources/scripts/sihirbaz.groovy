@@ -236,8 +236,62 @@ def trainAndSave = { String targetName, java.util.List selectedNames ->
     }
 }
 
+// ── Önceki sonuç: SORULMADAN silinmez (ev kuralı: sonuç yazan her sihirbaz önce sorar) ──
+// Ekle (varsayılan): hiçbir şey silinmez; yeni özet "Tümör-Stroma Özet (2)", "(3)" … adını alır
+// (özet kapalıysa yeni sınıf bölgeleri "Tumor (2)" … adını alır).
+// Değiştir: yalnız bu sihirbazın özetleri (TAM ad ya da "ad (N)", önek eşleşmesi YOK; eski adı "TSR Özet" de)
+// ve ürettiği etiketli sınıf bölgeleri silinir; içlerindeki başka nesneler KORUNUR (keepChildren = true).
+def SUMMARY_BASE = 'Tümör-Stroma Özet'
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+// Bu sihirbazın seti mi? Yalnız TAM ad ya da "ad (N)" — önek eşleşmesi YOK:
+// kullanıcının "Tümör-Stroma Özet düzeltmelerim" diye adlandırdığı anotasyon süpürülmez.
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
+// Özet adı: bu sihirbazın adı (ya da eski adı "TSR Özet") — tam ad ya da "(N)".
+def isOwnSummaryName = { String name ->
+    return name != null && (name == 'TSR Özet' || isOwnSetName(name, SUMMARY_BASE))
+}
+def prevSummaryObjects = { hierarchy ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSummaryName(it.getName()) }
+}
+// Bu sihirbazın ürettiği sınıf bölgesi (anotasyon ya da tespit): ad = sınıf adı ("Tumor") ya da "sınıf (N)" ve
+// sınıf boş değil; anotasyonlarda ayrıca açıklama "<etiket> — <sınıf> (<model>)" biçiminde. Tespit olarak üretilen
+// bölgelerde açıklama YOKTUR (PathDetectionObject'te getDescription/setDescription yok) → orada ad ölçütü yeter
+// (kullanıcının hücre tespitleri adsızdır). Yeniden sınıflandırılmış ya da yeniden adlandırılmış nesne eşleşmez.
+// (Eski kural açıklamanın önekiydi ve tespit nesnelerinde getDescription çağırıyordu.)
+def isOwnOutputObject = { obj ->
+    String cn = obj.getPathClass()?.getName()
+    if (cn == null || !isOwnSetName(obj.getName(), cn)) return false
+    if (!(obj instanceof qupath.lib.objects.PathAnnotationObject)) return obj.isDetection()
+    String d = obj.getDescription() ?: ''
+    return d.startsWith(OUTPUT_TAG + ' — ' + cn + ' (') && d.endsWith(')')
+}
+def prevOutputObjects = { hierarchy ->
+    if (hierarchy == null) return []
+    return (hierarchy.getAnnotationObjects() + hierarchy.getDetectionObjects()).findAll { isOwnOutputObject(it) }
+}
+
 // ── Yerinde ölçüm (çekirdek API; eklenti yansıması gerektirmez) ─────
-def classifierAreaToMm2 = { Number value, String measurementName ->
+def classifierAreaToMm2 ={ Number value, String measurementName ->
     if (value == null) return Double.NaN
     double numeric = value.doubleValue()
     String lower = measurementName.toLowerCase(java.util.Locale.ROOT)
@@ -246,7 +300,7 @@ def classifierAreaToMm2 = { Number value, String measurementName ->
     return Double.NaN
 }
 // Dönüş: [ok:true, text] | [ok:false, error:'NO_REGION'|<mesaj>]
-def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = false, boolean createSummary = true ->
+def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = false, boolean createSummary = true, String mode = 'add' ->
     try {
         def imageData = QP.getCurrentImageData()
         if (imageData == null) return [ok:false, error:'Görüntü açık değil.']
@@ -258,15 +312,26 @@ def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = 
         double pw = cal.getPixelWidthMicrons(), ph = cal.getPixelHeightMicrons()
         if (!(pw > 0) || !(ph > 0)) return [ok:false, error:'Piksel kalibrasyonu yok (mm² hesaplanamaz).']
 
+        // Önceki sonuç (bu sihirbazın özetleri + etiketli sınıf bölgeleri) SORULMADAN silinmez. Kip çağırandan
+        // gelir (startMeasure, FX iş parçacığında, işlemden ÖNCE sordu). Önceki sonuç varken kip belirtilmediyse
+        // hiçbir şey yazılmadan durulur (fail closed). Hepsi yeni nesne eklenmeden ÖNCE alınır.
+        def hierM = imageData.getHierarchy()
+        def prevSummaries = prevSummaryObjects(hierM)
+        def prevOutputs = prevOutputObjects(hierM)
+        boolean hasPrev = !prevSummaries.isEmpty() || !prevOutputs.isEmpty()
+        if (hasPrev && mode != MODE_ADD && mode != MODE_REPLACE)
+            return [ok:false, error:workshopText('script.d1e6a0b30433', 'Bu lamda önceki bir Tümör/Stroma sonucu var ve ne yapılacağı belirtilmedi. Hiçbir şey yazılmadı.')]
+        boolean addRun = hasPrev && mode == MODE_ADD
+        boolean replaceRun = hasPrev && mode == MODE_REPLACE
+
         // Kapsam: tüm lam VEYA seçili anotasyon(lar). Kapsam dışı tutulanlar:
         // özet anotasyonu, Tumor/Stroma (çıktı/eğitim sınıfları) ve 'Ignore*'
         // (boş cam/artefakt — ölçümden çıkarılacak alanlar).
-        def summaryNames = ['Tümör-Stroma Özet', 'TSR Özet']
         def outputClasses = ['Tumor', 'Stroma', 'Ignore*', 'Muscle', 'Fat', 'Immune cells', SUMMARY_CLASS]
         def isOwnOutput = { obj ->
             String nm = obj.getName()
             def cn = obj.getPathClass()?.getName()
-            (nm != null && nm in summaryNames) || cn in outputClasses
+            isOwnSummaryName(nm) || cn in outputClasses
         }
         // Kapsam ROI'si salt-okunur belirlenir; özet/geçici nesne ölçümden SONRA kurulur.
         def regions = []
@@ -278,7 +343,7 @@ def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = 
                 qupath.lib.regions.ImagePlane.getDefaultPlane())
         } else {
             def selectedAreas = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getROI()?.isArea() }
-            if (selectedAreas.size() == 1 && selectedAreas[0].getName() in summaryNames) {
+            if (selectedAreas.size() == 1 && isOwnSummaryName(selectedAreas[0].getName())) {
                 reuseCandidate = selectedAreas[0]
                 scopeRoi = reuseCandidate.getROI()
             } else {
@@ -328,30 +393,39 @@ def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = 
         // ── Çıktı taşıyıcısını belirle: kalıcı özet (createSummary) ya da geçici nesne ──
         // createSummary=false ise kalıcı özet yazılmaz; sınıf bölgeleri üst düzeyde üretilir
         // ve kullanıcı anotasyonu yeniden kullanılmaz/silinmez (yalnız sonuç penceresi).
+        // Ekle: kullanıcının bölgesi yeniden adlandırılmaz/ölçümleri silinmez, önceki özet yerinde yeniden ölçülmez;
+        // yeni, ayrı bir özet kurulur ("Tümör-Stroma Özet (2)" …).
         def summary
         boolean reuse = false
+        String summaryName = addRun ? nextOwnSetName(hierM, SUMMARY_BASE) : SUMMARY_BASE
         if (createSummary) {
-            if (reuseCandidate != null) { summary = reuseCandidate; reuse = true }
-            else if (!wholeSlide && regions.size() == 1) { summary = regions[0]; summary.setName('Tümör-Stroma Özet'); reuse = true }
-            else { summary = PathObjects.createAnnotationObject(scopeRoi); summary.setName('Tümör-Stroma Özet') }
+            if (reuseCandidate != null && !addRun) { summary = reuseCandidate; reuse = true }
+            else if (!addRun && !wholeSlide && regions.size() == 1) { summary = regions[0]; summary.setName(SUMMARY_BASE); reuse = true }
+            else { summary = PathObjects.createAnnotationObject(scopeRoi); summary.setName(summaryName) }
         } else {
             summary = PathObjects.createAnnotationObject(scopeRoi); summary.setName('__atolye_m6_tmp__')
         }
-        int regionCount = reuse ? 1 : regions.size()
+        int regionCount = (reuse || (addRun && reuseCandidate != null)) ? 1 : regions.size()
 
-        // Eski çıktıları temizle (korunan 'summary' HARİÇ): adlı özetler + etiketli ölçüm çıktıları
-        // (önceki çalıştırmalardan kalan üst-düzey sınıf bölgeleri dahil) → tekrar çalıştırma idempotent.
-        def oldSummaries = QP.getAnnotationObjects().findAll { it.getName() in summaryNames && it != summary }
-        if (!oldSummaries.isEmpty()) QP.removeObjectsAndDescendants(oldSummaries)
-        def priorOutputs = (QP.getAnnotationObjects() + QP.getDetectionObjects()).findAll {
-            it != summary && (it.getDescription() ?: '').startsWith(OUTPUT_TAG) }
-        if (!priorOutputs.isEmpty()) QP.removeObjects(priorOutputs, false)
+        // Değiştir (kullanıcı seçti ve onayladı): bu sihirbazın ÖNCEKİ özetleri ve etiketli sınıf bölgeleri silinir
+        // (yeniden ölçülen özet 'summary' HARİÇ). İçlerindeki başka nesneler (hücre tespitleri, kullanıcının
+        // anotasyonları) keepChildren = true ile KORUNUR — önceki removeObjectsAndDescendants onları da silerdi.
+        int removedSummaries = 0
+        int removedOutputs = 0
+        if (replaceRun) {
+            def oldOutputs = prevOutputs.findAll { it != summary }
+            def oldSummaries = prevSummaries.findAll { it != summary }
+            if (!oldOutputs.isEmpty()) QP.removeObjects(oldOutputs, true)
+            if (!oldSummaries.isEmpty()) QP.removeObjects(oldSummaries, true)
+            removedSummaries = oldSummaries.size()
+            removedOutputs = oldOutputs.size()
+        }
 
         if (createSummary) {
             // Dışa aktarılabilir, kilitli özet anotasyonu (8 ölçüm + sayaçlar). Gizlenebilir
             // 'TSR Özet' sınıfı → Anotasyonlar sekmesindeki göz simgesiyle tek tıkla kapatılır.
             summary.setPathClass(pathClassFor(SUMMARY_CLASS))
-            if (reuse) summary.getMeasurementList().clear()   // önceki alt-bölgeler aşağıda DELETE_EXISTING ile gider
+            if (reuse) summary.getMeasurementList().clear()   // yalnız ölçümler sıfırlanır; önceki sınıf bölgeleri "Değiştir" ile (onaylıysa) yukarıda kaldırıldı
             summary.measurements['ROI alanı (mm2)'] = roiMm2
             summary.measurements['Tümör alanı (mm2)'] = tumorMm2
             summary.measurements['Stroma alanı (mm2)'] = stromaMm2
@@ -384,10 +458,19 @@ def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = 
         else QP.createAnnotationsFromPixelClassifier(classifier, minObj, minHole, 'DELETE_EXISTING')
         def generated = QP.getAnnotationObjects().findAll { !before.contains(it) && it.getPathClass() != null }
         def byClass = generated.groupBy { it.getPathClass().getName() }
-        if (!generated.isEmpty()) QP.removeObjectsAndDescendants(generated)
+        // `generated` = bu çalıştırmanın GEÇİCİ ara nesneleri. Referansla ayrılır: `before` (sınıflandırıcı çağrısından
+        // hemen önce hiyerarşideki tüm anotasyonlar, kimlik tabanlı küme) içinde OLMAYAN anotasyonlar — ad ya da
+        // sınıfla aranmaz. Çıktı, birleştirilmiş bölgelere aşağıda dönüştürülür; ara nesneler silinir. keepChildren = true:
+        // içlerine yerleşmiş başka nesne olsaydı bile silinmez.
+        if (!generated.isEmpty()) QP.removeObjects(generated, true)
         double smoothPx = (pw > 0 ? 3.0 / pw : 6.0)   // ~3 µm topolojik sadeleştirme (yalnız görsel)
         def plane = scopeRoi.getImagePlane()
         def outputs = []
+        // Ekle + özet kapalı: yeni sınıf bölgeleri üst düzeyde durur → önceki "Tumor"/"Stroma" ile karışmasın diye
+        // "Tumor (2)" … adını alır. (Özet açıkken bölgeler yeni özetin altındadır; ad düz sınıf adıdır.)
+        int outputSet = 1
+        if (addRun && !createSummary)
+            outputSet = ((prevOutputs.collect { ownSetIndex(it.getName(), it.getPathClass().getName()) }.max() ?: 0) as int) + 1
         byClass.each { className, objs ->
             try {
                 def geom = objs.collect { it.getROI().getGeometry() }.inject { a, b -> a.union(b) }
@@ -402,7 +485,7 @@ def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = 
                 def obj = asDetections
                     ? PathObjects.createDetectionObject(roi, objs[0].getPathClass())
                     : PathObjects.createAnnotationObject(roi, objs[0].getPathClass())
-                obj.setName(className)   // 'Show names' sınıf adını yazar (Tumor / Stroma / …)
+                obj.setName(outputSet > 1 ? (className + ' (' + outputSet + ')') : className)   // 'Show names' sınıf adını yazar (Tumor / Stroma / …)
                 try { obj.setDescription("${OUTPUT_TAG} — ${className} (${modelName})") } catch (Throwable ignored) { }
                 if (!asDetections) obj.setLocked(true)
                 outputs << obj
@@ -413,7 +496,8 @@ def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = 
         } else {
             // Özet atlandı: sınıf bölgeleri üst düzeyde dursun; geçici nesneyi kaldır.
             if (!outputs.isEmpty()) QP.addObjects(outputs)
-            QP.removeObject(summary, false)
+            // Bu çalıştırmanın KENDİ geçici nesnesi (yukarıda referansla oluşturuldu); çocuğu yok, keepChildren = true.
+            QP.removeObject(summary, true)
         }
         imageData.getHierarchy().getSelectionModel().clearSelection()
         QP.fireHierarchyUpdate()
@@ -433,6 +517,14 @@ def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = 
             "Stroma alanı (%)     : ${fmt(stromaPct, '%.2f%%')}\n" +
             "Tümör/Stroma oranı   : ${fmt(ratio, '%.4f')}\n" +
             "Sınıflandırılmış kapsam: ${fmt(coverage, '%.2f%%')}"
+        if (addRun) {
+            // Ekle: önceki sonuç duruyor; yeni sonucun adı ve eskilerin adı açıkça yazılır.
+            def prevNames = (prevSummaries.collect { it.getName() } + prevOutputs.collect { it.getName() }).unique().sort()
+            String newSet = createSummary ? summaryName : ('… (' + outputSet + ')')
+            text = text + '\n\n' + String.format(java.util.Locale.US, workshopText('script.98b0476bc643', 'ÖNCEKİ SONUÇ DURUYOR\nYeni sonuç: %s. Bu lamda önceki Tümör/Stroma sonucu da duruyor: %s. Hiçbir şey silinmedi; eski sonucu kaldırmak için o özet anotasyonunu (ve sınıf bölgelerini) seçip silin ya da bir sonraki çalıştırmada "Değiştir"i seçin. Yukarıdaki sayılar yalnız yeni çalıştırmayı gösterir; önceki özet anotasyonu eski değerleri göstermeye devam eder.'), newSet, prevNames.join(', '))
+        } else if (replaceRun) {
+            text = text + '\n\n' + String.format(java.util.Locale.US, workshopText('script.945861935208', 'ÖNCEKİ SONUÇ DEĞİŞTİRİLDİ\n%,d özet anotasyonu ve %,d sınıf bölgesi silindi (içlerindeki diğer nesneler korundu).'), removedSummaries, removedOutputs)
+        }
         return [ok:true, text:text]
     } catch (Throwable t) {
         return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(mesaj yok)')]
@@ -527,12 +619,42 @@ def startInstall = {
     worker.setDaemon(true); worker.start()
 }
 
+// Önceki sonuç için kullanıcıya SOR (FX iş parçacığında, ölçümden ÖNCE çağrılır — düğme işleyicileri FX'te).
+//   Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz).
+//   Önceki sonuç yoksa sormadan 'add' döner. Pencere üstte-kal iken diyalog arkada kalmasın diye geçici kapatılır.
+def askExisting = { ->
+    def hierQ = QP.getCurrentImageData()?.getHierarchy()
+    def prevS = prevSummaryObjects(hierQ)
+    def prevO = prevOutputObjects(hierQ)
+    if (prevS.isEmpty() && prevO.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.c926444eface', 'Ekle — öncekine dokunma, yeni bir sonuç olarak ekle (varsayılan)')
+    String optRep = workshopText('script.a0ffcd6a36db', 'Değiştir — önceki özet ve bu sihirbazın sınıf bölgeleri silinir')
+    if (stage != null) stage.setAlwaysOnTop(false)
+    try {
+        def pick = Dialogs.showChoiceDialog(workshopText('script.a43bd962f751', 'Önceki Tümör/Stroma sonucu'),
+            String.format(java.util.Locale.US, workshopText('script.454e3d81949a', 'Bu lamda zaten %,d Tümör-Stroma özeti ile %,d sınıf bölgesi (Tumor / Stroma) var.\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir özet olur ("Tümör-Stroma Özet (2)" gibi) ve kendi sınıf bölgelerini taşır (özet kapalıysa yeni bölgeler "Tumor (2)" gibi adlanır). Lamda iki sonuç birlikte durur.\n\n"Değiştir" seçilirse önceki özet anotasyonları ve bu sihirbazın ürettiği sınıf bölgeleri silinir — sınıf bölgelerinde elle yaptığınız düzeltmeler de gider. Özetlerin ya da bölgelerin içindeki başka nesneler (hücre tespitleri, kendi anotasyonlarınız) silinmez.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki Tümör/Stroma sonucu ne olsun?'), prevS.size(), prevO.size()),
+            [optAdd, optRep], optAdd)
+        if (pick == null) return null
+        if (pick == optRep) {
+            boolean ok = Dialogs.showConfirmDialog(workshopText('script.307a95e3f6e5', 'Önceki Tümör/Stroma sonucu silinecek'),
+                String.format(java.util.Locale.US, workshopText('script.69eb8fc193dc', '%,d özet anotasyonu ile %,d sınıf bölgesi silinecek. Tek bir bölge seçildiğinde bu sihirbaz o anotasyonun adını özet olarak değiştirir; önceki bir çalıştırmada sizin çizdiğiniz bir bölge böyle bir özete dönüşmüş olabilir — o durumda bölgenin çizgisi de silinir. Bu adı elle verdiğiniz bir anotasyon da, sihirbazın kendi özetinden ayırt edilemediği için silinir. Sınıf bölgelerinde elle yaptığınız düzeltmeler KAYBOLUR. Bunların içindeki diğer nesneler korunur.\n\nDevam edilsin mi?'), prevS.size(), prevO.size()))
+            return ok ? MODE_REPLACE : null
+        }
+        return MODE_ADD
+    } finally {
+        if (stage != null) stage.setAlwaysOnTop(true)
+    }
+}
+
 // Arka planda ölçüm (sınıflandırıcı + poligon üretimi yavaş olabilir).
 def startMeasure = { String modelName, boolean wholeSlide = false ->
+    // Önceki sonuç varsa İŞLEMDEN ÖNCE sor; İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz.
+    String measureMode = askExisting()
+    if (measureMode == null) return
     activeModel.set(modelName); activeWholeSlide.set(wholeSlide)
     step.set('MEASURING'); render()
     def worker = new Thread({
-        def res = runMeasure(modelName, wholeSlide, asDetections.get(), createSummary.get())
+        def res = runMeasure(modelName, wholeSlide, asDetections.get(), createSummary.get(), measureMode)
         javafx.application.Platform.runLater { measureResult.set(res); step.set('RESULT'); render() }
     }, 'AtolyeWizardMeasure')
     worker.setDaemon(true); worker.start()

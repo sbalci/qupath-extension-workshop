@@ -90,7 +90,32 @@ def TYPE_TR = ['blood':'Kan', 'blur':'Odak dışı', 'bubble':'Hava kabarcığı
                'damage':'Doku hasarı', 'fold':'Doku katlanması', 'marker':'Kalem işareti']
 def CLEAN_TR = 'Temiz'
 def PROB_MEAS = 'HistoART: Artefakt olasılığı'
-def HISTOART_SENTINEL = 'HistoART KK'   // yeniden çalıştırmada idempotent temizlik adı
+def HISTOART_SENTINEL = 'HistoART KK'   // bu sihirbazın tam-görüntü özet anotasyonunun adı (ilk set)
+// "Önceki sonuç ne olsun?" kipleri — varsayılan HİÇBİR ŞEY SİLMEZ (ev kuralı: sonuç yazan her
+// sihirbaz önce sorar). Ekle: yeni set "HistoART KK (2)", "(3)" … adını alır.
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+// Bu sihirbazın seti mi? Yalnız TAM ad ya da "ad (N)" — önek eşleşmesi YOK:
+// kullanıcının "HistoART KK düzeltmelerim" diye adlandırdığı anotasyon süpürülmez.
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
 
 // Sınıf renkleri — GrandQC ekindeki (§7.3) karşılıklarla uyumlu tutulur.
 def CLASS_COLOR = [
@@ -102,6 +127,15 @@ def CLASS_COLOR = [
     'Doku katlanması'   : ColorTools.makeRGB(145,  30, 180),
     'Kalem işareti'     : ColorTools.makeRGB(240,  50, 230)
 ]
+
+// Bir özet anotasyonunun altındaki, BU sihirbazın yazdığı karo tespitleri: olasılık ölçümünü taşıyan
+// ya da sınıfı sihirbazın sınıf kümesinden olan tespitler. Başka çocuk nesneler (ör. kullanıcının içine
+// taşıdığı anotasyon) sayılmaz; Replace bunları silmez.
+def ownTileDetections = { sentinelAnn ->
+    return sentinelAnn.getChildObjects().findAll { it.isDetection() }.findAll { d ->
+        d.getMeasurements().containsKey(PROB_MEAS) || CLASS_COLOR.containsKey(d.getPathClass()?.getName())
+    }
+}
 
 // ── Kalıcı yapılandırma: java.util.prefs (eklenti JAR'ı olmadan da çalışır) ──
 def prefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/histoart')
@@ -317,7 +351,7 @@ def exportTiles = { imageData, File workDir, cfg, Closure appendLine ->
 
     // Sihirbazın KENDİ tam-görüntü özet anotasyonu bölge sayılmaz: sayılırsa yeniden çalıştırmada
     // tüm lam + seçilen bölge birlikte karolanır ve örtüşen karolar çift sayılır.
-    def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() && it.getName() != HISTOART_SENTINEL }
+    def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() && !isOwnSetName(it.getName(), HISTOART_SENTINEL) }
     def manifest = []
     int total = 0
     boolean wholeSlide = anns.isEmpty()
@@ -416,7 +450,7 @@ def copyToClipboard = { String txt ->
 }
 
 // ── Tahminleri içe aktar (karo başına renkli alt-tespit) ────────────────────
-def importPredictions = { File workDir, imageData, exp ->
+def importPredictions = { File workDir, imageData, exp, String mode = 'add' ->
     def predsFile = new File(workDir, 'predictions.json')
     if (!predsFile.isFile())
         return [ok: false, error: 'predictions.json bulunamadı:\n' + predsFile.getAbsolutePath()]
@@ -488,23 +522,41 @@ def importPredictions = { File workDir, imageData, exp ->
         if (r.artifact) nArt++ else nClean++
     }
 
-    // Yıkıcı olmayan sıra: önce tüm yeni karo tespitleri doğrulandı ve oluşturuldu;
-    // şimdi önceki çalıştırmanın sentinel anotasyonu (varsa) alt tespitleriyle değiştirilir.
-    hierarchy.removeObjects(hierarchy.getAnnotationObjects().findAll { it.getName() == HISTOART_SENTINEL }, false)
+    // Önceki sonuç: SORULMADAN silinmez. Kip çağırandan gelir (varsayılan: ekle).
+    //   ekle     → hiçbir şey silinmez; yeni set sıradaki adı alır ("HistoART KK (2)" …).
+    //   değiştir → yalnız bu sihirbazın setleri (tam ad ya da "(N)") ve altındaki KENDİ karo
+    //              tespitleri silinir; setlerin altındaki başka nesneler KORUNUR (keepChildren = true).
+    // Tüm yeni karo tespitleri önce doğrulandı ve oluşturuldu; silme (varsa) en sonda, yazmadan hemen önce.
+    def prevSets = prevOwnObjects(hierarchy, HISTOART_SENTINEL)
+    def prevNames = prevSets.collect { it.getName() }.unique().sort()
+    int removed = 0
+    int removedTiles = 0
+    String setName
+    if (mode == MODE_REPLACE) {
+        def prevTiles = prevSets.collectMany { ownTileDetections(it) }
+        removed = prevSets.size()
+        removedTiles = prevTiles.size()
+        if (!prevTiles.isEmpty()) hierarchy.removeObjects(prevTiles, true)
+        if (removed > 0) hierarchy.removeObjects(prevSets, true)
+        setName = HISTOART_SENTINEL
+    } else {
+        setName = nextOwnSetName(hierarchy, HISTOART_SENTINEL)
+    }
 
     // Tüm karo tespitleri tek bir kilitli "HistoART KK" anotasyonunun altına yazılır:
-    // tek tıkla seçilir, tek adımda silinir, yeniden çalıştırmada temiz biçimde değişir.
+    // tek tıkla seçilir, tek adımda silinir.
     def srv = imageData.getServer()
     def sentinelRoi = qupath.lib.roi.ROIs.createRectangleROI(0, 0, srv.getWidth(), srv.getHeight(), plane)
     def sentinel = qupath.lib.objects.PathObjects.createAnnotationObject(sentinelRoi)
-    sentinel.setName(HISTOART_SENTINEL)
+    sentinel.setName(setName)
     if (!allDets.isEmpty()) sentinel.addChildObjects(allDets)
     sentinel.setLocked(true)
     hierarchy.addObjects([sentinel])
     QP.fireHierarchyUpdate()
     javafx.application.Platform.runLater { try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {} }
     int scored = nClean + nArt
-    return [ok: true, nClean: nClean, nArtifact: nArt, nScored: scored, nSkipped: nSkipped, dist: dist]
+    return [ok: true, nClean: nClean, nArtifact: nArt, nScored: scored, nSkipped: nSkipped, dist: dist,
+            setName: setName, prevNames: (mode == MODE_REPLACE ? [] : prevNames), removed: removed, removedTiles: removedTiles]
 }
 
 // ── Özet metni (kalite karnesi) ─────────────────────────────────────────────
@@ -536,11 +588,14 @@ def buildResultText = { File workDir, exp, imp, cfg, imageData ->
     } else {
         sb << "  (sonuç yok)\n"
     }
-    sb << "\nHer karo, sınıfına göre renkli ve kilitli bir ALT-TESPİT olarak, tek bir\n"
-    sb << "'" << HISTOART_SENTINEL << "' anotasyonunun altına yazıldı — yeniden çalıştırırsanız bu\n"
-    sb << "anotasyon alt tespitleriyle birlikte silinip yenilenir (birikme olmaz); kendi\n"
-    sb << "anotasyonlarınıza dokunulmaz. '" << PROB_MEAS << "' ve tür olasılıkları\n"
-    sb << "Measurements panelinde.\n"
+    sb << "\n" << String.format(java.util.Locale.US, workshopText('script.8a4dae7d669e', 'Her karo, sınıfına göre renkli ve kilitli bir ALT-TESPİT olarak, tek bir \'%s\' anotasyonunun altına yazıldı. \'%s\' ve tür olasılıkları Measurements panelinde.'), (imp?.setName ?: HISTOART_SENTINEL), PROB_MEAS) << "\n"
+    if (imp != null && imp.ok) {
+        if (imp.prevNames) {
+            sb << "\n" << String.format(java.util.Locale.US, workshopText('script.cf2b125acbd1', 'DİKKAT — bu lamda önceki HistoART sonucu da duruyor: %s. Hiçbir şey silinmedi. Eski seti kaldırmak için o addaki anotasyonu (alt tespitleriyle birlikte) seçip silin ya da sihirbazı yeniden çalıştırıp "Öncekini değiştir"i seçin. Dışa aktarım ve kohort özetleri iki seti de görür.'), imp.prevNames.join(', ')) << "\n"
+        } else if ((imp.removed ?: 0) > 0) {
+            sb << "\n" << String.format(java.util.Locale.US, workshopText('script.efe4b0cffe78', 'Önceki HistoART sonucu değiştirildi: %,d set ve %,d karo tespiti silindi (setlerin altındaki başka nesneler korundu).'), (int) imp.removed, (int) (imp.removedTiles ?: 0)) << "\n"
+        }
+    }
     sb << "\nKabul/ret KARARI üretilmez — eşiği lab protokolünüze göre siz seçersiniz\n"
     sb << "(Ek → WSI Kalite Kontrol Metrikleri § 4).\n"
     sb << "HistoART FDA'nın RST kataloğunda yer almaz ve piksel maskesi ÜRETMEZ — 'temiz doku' zinciri için\n"
@@ -551,8 +606,21 @@ def buildResultText = { File workDir, exp, imp, cfg, imageData ->
 
 // ── Headless: yapılandırmayı raporla, etkileşim yok ─────────────────────────
 if (isHeadless) {
+    // Başsız kip hiçbir şey yazmaz. Önceki sonuç varsa sihirbazın arayüzde Ekle/Değiştir/İptal soracağı
+    // söylenir; `mevcut` değeri yalnız `ekle` ya da `degistir` olabilir, bilinmeyen değer HER durumda durdurur.
+    def scriptArgs = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+    def argMap = [:]
+    scriptArgs.each { a -> def sa = a?.toString() ?: ''; int ia = sa.indexOf('='); if (ia > 0) argMap[sa.substring(0, ia).trim()] = sa.substring(ia + 1).trim() }
+    String mevcutArg = argMap.mevcut == null ? null : argMap.mevcut.toLowerCase(java.util.Locale.ROOT)
+    if (mevcutArg != null && !['ekle', 'degistir'].contains(mevcutArg)) {
+        println String.format(java.util.Locale.US, workshopText('script.37ab92155fc9', 'HATA: mevcut yalnızca \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut)
+        return
+    }
     def imageData = QP.getCurrentImageData()
     if (imageData == null) { println "Önce bir lam açın."; return }
+    def prevHeadless = prevOwnObjects(imageData.getHierarchy(), HISTOART_SENTINEL)
+    if (!prevHeadless.isEmpty()) println String.format(java.util.Locale.US, workshopText('script.c2802cff0e95', 'Bu lamda önceki HistoART sonucu var (%,d set). Sihirbaz başsız kipte çalışmaz ve hiçbir şey yazmaz; QuPath arayüzünde çalıştırırsanız önceki sonuç için Ekle, Değiştir ya da İptal sorulur.'), prevHeadless.size())
     def cfg = loadConfig()
     def miss = configMissing(cfg)
     println "HistoART yapılandırması: python=${cfg.python ?: '(ayarsız)'} köprü=${cfg.bridge ?: '(ayarsız)'} model=${cfg.modelDir} varyant=${cfg.variant} eşik=${cfg.threshold} aygıt=${cfg.device}"
@@ -697,17 +765,37 @@ def startDownload = {
     worker.setDaemon(true); worker.start()
 }
 
+// ── Önceki sonuç için kullanıcıya SOR (FX iş parçacığında, işlemden ÖNCE çağrılır) ─────────
+//   Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz).
+//   Önceki sonuç yoksa sormadan 'add' döner.
+def askExisting = { hierarchy ->
+    def prev = prevOwnObjects(hierarchy, HISTOART_SENTINEL)
+    if (prev.isEmpty()) return MODE_ADD
+    int prevTileCount = prev.sum { ownTileDetections(it).size() } as int
+    String optAdd = workshopText('script.5fcbb9588b11', 'Öncekine dokunma — yeni bir set olarak ekle (varsayılan)')
+    String optRep = workshopText('script.29368035df4e', 'Öncekini değiştir (bu sihirbazın HistoART setleri ve karo tespitleri silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.888850ebecac', 'Önceki HistoART sonucu'),
+        String.format(java.util.Locale.US, workshopText('script.396142d67414', 'Bu lamda zaten %,d HistoART sonuç seti var (toplam %,d karo tespiti).\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir set olur ("HistoART KK (2)" gibi). Lamda iki set birlikte durur; dışa aktarım ve özetler ikisini de görür.\n\n"Değiştir" seçilirse önceki HistoART setleri ve altındaki karo tespitleri silinir. Kendi anotasyonlarınıza dokunulmaz; setlerin altına kendiniz koyduğunuz başka nesneler korunur.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?'), prev.size(), prevTileCount),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.ab565bd39998', 'Önceki HistoART sonucu silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.c8ad460799f4', '%,d HistoART seti ve altındaki %,d karo tespiti silinecek (adı "HistoART KK" ya da "HistoART KK (2)", "(3)" … olan anotasyonlar). Bu adı kendiniz verdiyseniz o anotasyon da silinir; karo tespitlerinde elle yaptığınız sınıf düzeltmeleri kaybolur. Setlerin altındaki başka nesneler korunur.\n\nDevam edilsin mi?'), prev.size(), prevTileCount))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
 // ── Çalıştırma akışı ────────────────────────────────────────────────────────
 def startRun = {
     def imageData = QP.getCurrentImageData()
     if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
-    def existingSentinel = imageData.getHierarchy().getAnnotationObjects().findAll { it.getName() == HISTOART_SENTINEL }
-    if (!existingSentinel.isEmpty() && gui != null) {
-        boolean ok = Dialogs.showConfirmDialog(workshopText('script.e66fc10d5440', 'Önceki HistoART sonucu değiştirilecek'),
-            workshopText('script.6b947e1bdb78', 'Bu lamda zaten bir "') + HISTOART_SENTINEL + workshopText('script.fb63e4c98117', '" anotasyonu ve karo tahminleri bulunuyor.\n') +
-            workshopText('script.e9fcc56e4d9c', 'Yeni çalıştırma tamamlandığında önceki HistoART sonucu değiştirilecek (kendi anotasyonlarınıza dokunulmaz).\n\nDevam edilsin mi?'))
-        if (!ok) return
-    }
+    // Başsız kipte sihirbaz hiç çalışmaz (yukarıdaki başsız blok döner); yine de pencere yoksa
+    // soru sorulamaz → hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.
+    if (isHeadless) return
+    // Önceki sonuç için hesaptan (karo dışa aktarma + Python) ÖNCE sor: İptal'de hiçbir şey çalışmaz.
+    final String runMode = askExisting(imageData.getHierarchy())
+    if (runMode == null) return
     def cfg = loadConfig()
     def workDir = resolveWorkDir(cfg, imageData)
     cancelledRef.set(false)
@@ -735,7 +823,7 @@ def startRun = {
         // Sonuçlar, çalıştırma BAŞLARKEN yakalanan görüntüye yazılır: dakikalar süren tahmin
         // sırasında başka bir lam açılırsa A'nın karoları B'ye yazılmasın. Hata BUSY'de takılı bırakmaz.
         def imp
-        try { imp = importPredictions(workDir, imageData, exp) }
+        try { imp = importPredictions(workDir, imageData, exp, runMode) }
         catch (Throwable t) { imp = [ok: false, error: 'İçe aktarma hatası:\n' + (t.getMessage() ?: t.getClass().getSimpleName())] }
         javafx.application.Platform.runLater {
             if (!imp.ok) { errorTextRef.set(imp.error); step.set('ERROR'); render() }
@@ -868,7 +956,7 @@ render = { ->
             actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
         } else {
             def workDir = resolveWorkDir(cfg, imageData)
-            def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() && it.getName() != HISTOART_SENTINEL }
+            def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() && !isOwnSetName(it.getName(), HISTOART_SENTINEL) }
             double ds = effectiveDownsample(cfg, imageData)
             double mpp = slideMpp(imageData)
             title.setText(workshopText('script.a4359ba88c20', 'HistoART — hazır'))

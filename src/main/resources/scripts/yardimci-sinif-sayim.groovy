@@ -35,6 +35,13 @@
  *   • Kilitli "Sınıf Sayım Özet" anotasyonu (Veri Dışa Aktarma modülü ile dışa aktarılır)
  *   • Sonuç penceresinde sınıf bazlı dağılım tablosu
  *
+ * YENİDEN ÇALIŞTIRMA:
+ *   Lamda bu betiğin önceki "Sınıf Sayım Özet" anotasyonu varsa betik saymadan önce SORAR:
+ *   Ekle (varsayılan; hiçbir şey silinmez, yeni özet "Sınıf Sayım Özet (2)" olur) / Değiştir
+ *   (yalnız bu betiğin önceki özetleri silinir) / İptal (hiçbir şey yazılmaz). Başsız kipte
+ *   önceki özet varsa betik durur: `-a mevcut=ekle` ya da `-a mevcut=degistir` verin.
+ *   Seçili anotasyonlardaki "Sınıf sayım: …" ölçümleri her durumda yeni değerlerle değiştirilir.
+ *
  * YÖNTEM REFERANSLARI:
  *   • Bankhead P et al. (2017), Sci Rep — QuPath. doi:10.1038/s41598-017-17204-5
  *   • From Samples to Knowledge 2025 (FS2K), Session 6–8 — hücre sınıflandırma
@@ -111,6 +118,101 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ── Parametreler ────────────────────────────────────────────────────
 String summaryName = "Sınıf Sayım Özet"
 
+// ── Önceki sonuç: SORULMADAN SİLİNMEZ (ev kuralı) ───────────────────────────
+// Bu betik her çalıştırmada kilitli bir özet anotasyonu yazar. Eskiden aynı adlı özeti sessizce siliyordu.
+//   Ekle (varsayılan) → hiçbir şey silinmez; yeni özet "ad (2)", "ad (3)" … adını alır.
+//   Değiştir          → yalnız bu betiğin önceki özetleri silinir (tam ad ya da "ad (N)" VE betiğin imza ölçümü).
+//   Hücrelere / karolara / anotasyonlara yazılan ölçümler her iki durumda da yeni çalıştırmanın değerini alır.
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+String summarySigKey = 'Toplam hücre'     // yalnız bu betiğin özetinde bulunan ölçüm adı (imza)
+// Bu betiğin seti mi? Yalnız TAM ad ya da "ad (N)" — önek eşleşmesi YOK:
+// kullanıcının kendi adlandırdığı bir anotasyon süpürülmez.
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
+// Silinebilecek "kendi" özetler: ad eşleşmesi + betiğin imza ölçümü. Kullanıcının aynı adı verdiği
+// bir anotasyon imza ölçümünü taşımaz → sorulmaz, silinmez (yalnız adı atlanır).
+def prevOwnSummaries = { hierarchy, String base, String sigKey ->
+    return prevOwnObjects(hierarchy, base).findAll { it.getMeasurements().containsKey(sigKey) }
+}
+// Önceki özet için kullanıcıya SOR (ağır işten ÖNCE çağrılır).
+//   Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey hesaplanmaz, hiçbir şey yazılmaz).
+//   Önceki özet yoksa sormadan 'add' döner.
+def askExisting = { hierarchy, String base, String sigKey ->
+    def prev = prevOwnSummaries(hierarchy, base, sigKey)
+    if (prev.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.e6b0dca2f71e', 'Öncekine dokunma — yeni bir özet olarak ekle (varsayılan)')
+    String optRep = workshopText('script.58a389002eb4', 'Öncekini değiştir (bu betiğin önceki özet anotasyonları silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.5237b5cec33c', 'Önceki sonuç'),
+        String.format(java.util.Locale.US, workshopText('script.3e13de12fd69', 'Bu lamda bu betiğin önceki çalıştırmasından kalan %,d özet anotasyonu var ("%s").\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni özet ayrı bir anotasyon olur ("%s" gibi) ve lamda iki özet birlikte durur.\n\n"Değiştir" seçilirse önceki özet anotasyonları silinir. Kendi anotasyonlarınıza dokunulmaz.\n\nHer iki seçenekte de seçili anotasyonlardaki "Sınıf sayım: …" ölçümleri yeni değerlerle değiştirilir.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?'), prev.size(), base, nextOwnSetName(hierarchy, base)),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.89a856ac207d', 'Önceki özet silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.4ea846e9c562', '%,d özet anotasyonu silinecek: %s.\n\nYalnızca bu betiğin önceki özet anotasyonları silinir (adı tam ya da "ad (N)" biçiminde olan ve betiğin ölçümlerini taşıyanlar). Kendi anotasyonlarınıza ve içlerindeki nesnelere dokunulmaz. Bu işlem geri alınamaz.\n\nDevam edilsin mi?'), prev.size(), prev.collect { it.getName() }.unique().sort().join(', ')))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+// Başsız karar: iletişim yok. -a mevcut=ekle | degistir. Önceki özet varsa ve değer verilmediyse DUR.
+// Bilinmeyen değer HER durumda durdurur (fail closed). Dönüş: [mode: 'add'|'replace'|null, error: String|null]
+def headlessDecision = { hierarchy, String base, String sigKey, String mevcut ->
+    if (mevcut != null && !['ekle', 'degistir'].contains(mevcut))
+        return [mode: null, error: String.format(java.util.Locale.US, workshopText('script.768b9abc88f3', 'HATA: mevcut yalnız \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), mevcut)]
+    def prev = prevOwnSummaries(hierarchy, base, sigKey)
+    if (!prev.isEmpty() && mevcut == null)
+        return [mode: null, error: String.format(java.util.Locale.US, workshopText('script.da8de65c00dc', 'Bu lamda bu betiğin önceki sonucu zaten var (%,d özet anotasyonu: %s). Hiçbir şey yazılmadı. Yeni bir kopya eklemek için -a mevcut=ekle, önceki sonucu değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.'), prev.size(), prev.collect { it.getName() }.unique().sort().join(', '))]
+    return [mode: (mevcut == 'degistir') ? MODE_REPLACE : MODE_ADD, error: null]
+}
+// Özeti hiyerarşiye yazar. Ekle: silme yok, sıradaki ad. Değiştir: yalnız kendi (imzalı) özetler silinir,
+// içlerindeki nesneler korunur (keepChildren = true). Her iki durumda ad, var olan bir ada çarpmaz.
+def commitSummary = { hierarchy, String base, String sigKey, String mode, summary ->
+    def prevNames = prevOwnObjects(hierarchy, base).collect { it.getName() }.unique().sort()
+    int removed = 0
+    if (mode == MODE_REPLACE) {
+        def prev = prevOwnSummaries(hierarchy, base, sigKey)
+        removed = prev.size()
+        if (removed > 0) hierarchy.removeObjects(prev, true)
+        prevNames = []
+    }
+    String setName = nextOwnSetName(hierarchy, base)
+    summary.setName(setName)
+    hierarchy.addObjects([summary])
+    return [setName: setName, removed: removed, prevNames: prevNames]
+}
+// Sonuç penceresi notu: Ekle sonrası önceki özetin durduğu, Değiştir sonrası kaç nesnenin silindiği.
+def modeNote = { res ->
+    if (res.prevNames) return String.format(java.util.Locale.US, workshopText('script.f7b3ab6e6a20', 'DİKKAT — bu lamda önceki sonuç da duruyor: %s\nHiçbir şey silinmedi. Bu çalıştırmanın özeti "%s" adını aldı. Seçili anotasyonlardaki "Sınıf sayım: …" ölçümleri YENİ çalıştırmayı yansıtır; önceki özet anotasyonu ise önceki değerleri gösterir. Eskisini kaldırmak için o anotasyonu seçip silin ya da betiği yeniden çalıştırırken "Öncekini değiştir"i seçin.'), res.prevNames.join(', '), res.setName)
+    if ((res.removed ?: 0) > 0) return String.format(java.util.Locale.US, workshopText('script.d495b71072f5', 'Önceki sonuç değiştirildi: %,d özet anotasyonu silindi.'), res.removed)
+    return ''
+}
+// Başsız argüman: -a mevcut=ekle | degistir (iletişim yok).
+String mevcutArg = null
+if (isHeadless) {
+    def scriptArgs = []
+    try { if (binding.hasVariable('args')) { def av = binding.getVariable('args'); if (av != null) scriptArgs = (av as List) } } catch (Throwable ignore) {}
+    def argMap = [:]
+    scriptArgs.each { sa0 -> def sa = sa0?.toString() ?: ''; int ia = sa.indexOf('='); if (ia > 0) argMap[sa.substring(0, ia).trim()] = sa.substring(ia + 1).trim() }
+    mevcutArg = argMap.mevcut == null ? null : argMap.mevcut.toLowerCase(java.util.Locale.ROOT)
+}
+
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
@@ -123,11 +225,22 @@ double pw = cal != null ? cal.getPixelWidthMicrons() : Double.NaN
 double ph = cal != null ? cal.getPixelHeightMicrons() : Double.NaN
 boolean hasMicrons = (cal != null && cal.hasPixelSizeMicrons() && pw > 0 && ph > 0)
 
-def targets = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getName() != summaryName }
+def targets = QP.getSelectedObjects().findAll { it.isAnnotation() && !isOwnSetName(it.getName(), summaryName) }   // özet anotasyonları ("… (N)" dahil) sayılmaz
 if (targets.isEmpty()) {
     def msg = "Sayılacak anotasyon yok.\n\nÖnce bölgeyi anotasyon olarak çizin ve SEÇİN."
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.469472ee53f3', "Anotasyon yok"), msg)
     return
+}
+
+// ── 1b) Önceki özet var mı? SOR (GUI) ya da -a mevcut=… (başsız) — sayımdan ve yazmadan ÖNCE ─
+String writeMode
+if (isHeadless) {
+    def hd = headlessDecision(imageData.getHierarchy(), summaryName, summarySigKey, mevcutArg)
+    if (hd.mode == null) { println hd.error; return }
+    writeMode = hd.mode
+} else {
+    writeMode = askExisting(imageData.getHierarchy(), summaryName, summarySigKey)
+    if (writeMode == null) { println "İptal edildi."; return }
 }
 
 // ── 2) Bölge içi tespitleri sınıfa göre say ─────────────────────────
@@ -197,13 +310,12 @@ if (overallTotal == 0) {
 }
 
 // ── 3) Kilitli özet anotasyonu ──────────────────────────────────────
-QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() == summaryName }, false)
 def srv = imageData.getServer()
 def summary = qupath.lib.objects.PathObjects.createAnnotationObject(
     qupath.lib.roi.ROIs.createRectangleROI(0, 0, srv.getWidth(), srv.getHeight(),
         qupath.lib.regions.ImagePlane.getDefaultPlane()))
-summary.setName(summaryName)
-summary.measurements['Ölçülen anotasyon'] = measured as double
+// Ad commitSummary'de verilir: Ekle → "Sınıf Sayım Özet (2)" …; hiçbir şey sorulmadan silinmez.
+summary.measurements['Ölçülen anotasyon']= measured as double
 summary.measurements['Toplam hücre']      = overallTotal as double
 if (hasMicrons) summary.measurements['Ölçülen alan (mm2)'] = overallAreaMm2
 overallCounts.each { cls, cnt ->
@@ -214,7 +326,7 @@ overallCounts.each { cls, cnt ->
     }
 }
 summary.setLocked(true)
-QP.addObjects([summary])
+def sumRes = commitSummary(imageData.getHierarchy(), summaryName, summarySigKey, writeMode, summary)
 QP.fireHierarchyUpdate()
 
 // ── 4) Sonucu sun ───────────────────────────────────────────────────
@@ -254,6 +366,8 @@ body << "\n"
 body << "Bu bir SAYIM/DAĞILIMdır — klinik skor, eşik veya yorum DEĞİL.\n"
 body << "Sınıflandırma kullanıcının tespit/sınıflandırma adımından gelir.\n"
 body << "(FS2K Session 6–8 / CellClassPct — Sara McArdle; Bankhead 2017)\n\n"
+def noteText = modeNote(sumRes)
+if (noteText) body << noteText << "\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
 showResultWindow("Sınıf bazlı hücre sayımı", body.toString())

@@ -69,6 +69,75 @@ def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
 
 String summaryName = "Doğrulama Özet"
+
+// ── Önceki sonuç kipi (ev kuralı: hiçbir şey sorulmadan silinmez) ───────────
+//   ekle     → hiçbir şey silinmez; yeni özet sıradaki adı alır ("<ad> (2)" …).
+//   değiştir → yalnız bu yardımcının özet anotasyonları (tam ad ya da "ad (N)") silinir;
+//              içlerindeki nesneler korunur (keepChildren = true).
+//   Başsız kip: `-a mevcut=ekle` | `-a mevcut=degistir`; önceki sonuç varken belirtilmezse durur.
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+// Bu yardımcının özeti mi? Yalnız TAM ad ya da "ad (N)" — önek eşleşmesi YOK:
+// kullanıcının "Doğrulama Özet notlarım" diye adlandırdığı anotasyon süpürülmez.
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
+def askExisting = { hierarchy ->
+    def prev = prevOwnObjects(hierarchy, summaryName)
+    if (prev.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.1e749978a0e7', 'Ekle — öncekine dokunma, yeni bir özet olarak ekle (varsayılan)')
+    String optRep = workshopText('script.3bb827725a09', 'Değiştir — önceki özet anotasyonları silinir')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.13a4f879225a', 'Önceki sonuç — Doğrulama özeti'),
+        String.format(java.util.Locale.US, workshopText('script.cd67e670f8e3', 'Bu lamda bu yardımcının yazdığı %,d özet anotasyonu zaten var ("Doğrulama Özet").\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni özet "Doğrulama Özet (2)" gibi ayrı bir ad alır ve iki özet birlikte durur.\n\n"Değiştir" seçilirse önceki özet anotasyonları silinir. Aynı adı kendiniz verdiyseniz o anotasyon da silinir. Diğer anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?'), prev.size()),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.89a856ac207d', 'Önceki özet silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.d9ffa820dc55', '%,d özet anotasyonu silinecek. Bunlar üzerinde elle yaptığınız değişiklikler ve aynı adı kendiniz verdiğiniz anotasyonlar da gider; içlerindeki diğer nesneler korunur.\n\nDevam edilsin mi?'), prev.size()))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+def applyMode = { hierarchy, String mode ->
+    def prev = prevOwnObjects(hierarchy, summaryName)
+    def prevNames = prev.collect { it.getName() }.unique().sort()
+    int removed = 0
+    String setName
+    if (mode == MODE_REPLACE) {
+        removed = prev.size()
+        if (removed > 0) hierarchy.removeObjects(prev, true)
+        setName = summaryName
+    } else {
+        setName = nextOwnSetName(hierarchy, summaryName)
+    }
+    return [setName: setName, removed: removed, prevNames: (mode == MODE_REPLACE ? [] : prevNames)]
+}
+
+def scriptArgs = []
+try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+def argMap = [:]
+scriptArgs.each { a -> def sa = a?.toString() ?: ''; int ia = sa.indexOf('='); if (ia > 0) argMap[sa.substring(0, ia).trim()] = sa.substring(ia + 1).trim() }
+String mevcut = argMap.mevcut == null ? null : argMap.mevcut.toLowerCase(java.util.Locale.ROOT)
+if (isHeadless && mevcut != null && !['ekle', 'degistir'].contains(mevcut)) {
+    println String.format(java.util.Locale.US, workshopText('script.768b9abc88f3', 'HATA: mevcut yalnız \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut)
+    return
+}
 String ALL_DET = "▸ Tüm tespitler (sınıf fark etmez)"
 double DEFAULT_IOU = 0.50d
 double DEFAULT_CENTROID_UM = 5.0d   // ~ bir çekirdek yarıçapı (µm)
@@ -87,7 +156,7 @@ def gatherContext = { ->
     if (imageData == null) return [ok: false, reason: 'NO_IMAGE']
 
     def patches = QP.getSelectedObjects().findAll {
-        it.isAnnotation() && it.hasROI() && it.getROI().isArea() && it.getName() != summaryName
+        it.isAnnotation() && it.hasROI() && it.getROI().isArea() && !isOwnSetName(it.getName(), summaryName)
     }
     if (patches.isEmpty()) return [ok: false, reason: 'NO_SELECTION']
     def patch = patches[0]
@@ -103,7 +172,7 @@ def gatherContext = { ->
     def all = QP.getAnnotationObjects() + QP.getDetectionObjects()
     def inPatch = all.findAll { o ->
         if (o == patch) return false
-        if (o.getName() == summaryName) return false
+        if (isOwnSetName(o.getName(), summaryName)) return false
         def r = o.getROI()
         r != null && patchRoi.contains(r.getCentroidX(), r.getCentroidY())
     }
@@ -240,7 +309,7 @@ def computeMatch = { gtUnits, predUnits, mode, double thr, boolean hasMicrons, d
 // Dönüş: [ok:true, text, tp, fp, fn, precision, recall, f1, ...]
 //      | [ok:false, reason, ...]
 def runValidation = { String gtLabel, String predLabel, String mode, double thr,
-                      boolean recolor, boolean recolorFN, ctx ->
+                      boolean recolor, boolean recolorFN, ctx, String existingMode = 'add' ->
     def inPatch = ctx.inPatch
     boolean predAll = (predLabel == ALL_DET)
 
@@ -260,6 +329,10 @@ def runValidation = { String gtLabel, String predLabel, String mode, double thr,
 
     def m = computeMatch(gtUnits, predUnits, mode, thr, ctx.hasMicrons, ctx.avgUm)
     if (m.error == 'IOU_NEEDS_AREA') return [ok: false, reason: 'IOU_NEEDS_AREA']
+
+    // Önceki özet SORULMADAN silinmez: kip çağıran tarafından seçildi (GUI: soru, hesaplamadan ÖNCE;
+    // başsız: -a mevcut=…). Her doğrulama hatası yukarıda döndü; buradan sonra yazma başarısız olamaz.
+    def appliedMode = applyMode(ctx.imageData.getHierarchy(), existingMode)
 
     int tp = m.tp; int fp = m.fp; int fn = m.fn
     double precision = (tp + fp) > 0 ? (tp / (double) (tp + fp)) : Double.NaN
@@ -306,6 +379,11 @@ def runValidation = { String gtLabel, String predLabel, String mode, double thr,
         b << String.format(java.util.Locale.US, "Yetersiz bölütleme (N): %d   (1 tahmin ↔ >1 GT)%n", m.underSeg)
     }
     b << "\n"
+    if (!appliedMode.prevNames.isEmpty()) {
+        b << String.format(java.util.Locale.US, workshopText('script.7577a3bac9a2', 'DİKKAT — bu lamda önceki sonuç da duruyor: %s\nYeni özet şu adla eklendi: %s\nHiçbir şey silinmedi. Eski özeti kaldırmak için o addaki anotasyonu seçip silin ya da yeniden çalıştırırken "Değiştir"i seçin. Dışa aktarma ve kohort özetleri iki özeti de görür.'), appliedMode.prevNames.join(', '), appliedMode.setName) << "\n\n"
+    } else if (appliedMode.removed > 0) {
+        b << String.format(java.util.Locale.US, workshopText('script.bc31ff876c31', 'Önceki sonuç değiştirildi: %,d özet anotasyonu silindi (içlerindeki diğer nesneler korundu).'), appliedMode.removed) << "\n\n"
+    }
     b << "Eşleştirme açgözlü bire-bir; skorlar 0–1 arası (yüzde değil).\n"
     b << "Bu bir ÖLÇÜM kalite göstergesidir (örneklenen bölgede otomatik tespit ile\n"
     b << "referans anotasyon UYUMU) — klinik doğruluk iddiası ya da validasyon\n"
@@ -313,12 +391,11 @@ def runValidation = { String gtLabel, String predLabel, String mode, double thr,
     b << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
     // ── Kilitli özet anotasyonu (Veri dışa aktarma modülü ile dışa aktarılır) ───────────
-    QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() == summaryName }, false)
     def srv = ctx.imageData.getServer()
     def summary = qupath.lib.objects.PathObjects.createAnnotationObject(
         qupath.lib.roi.ROIs.createRectangleROI(0, 0, srv.getWidth(), srv.getHeight(),
             qupath.lib.regions.ImagePlane.getDefaultPlane()))
-    summary.setName(summaryName)
+    summary.setName(appliedMode.setName)
     summary.measurements["Doğrulama: TP"] = tp as double
     summary.measurements["Doğrulama: FP"] = fp as double
     summary.measurements["Doğrulama: FN"] = fn as double
@@ -408,10 +485,17 @@ if (isHeadless) {
         else println "Önce bir doğrulama bölgesi anotasyonu çizip SEÇİN."
         return
     }
+    // Önceki özet varken kip belirtilmediyse hiçbir şey yazılmaz (ev kuralı).
+    def prevHeadless = prevOwnObjects(ctx.imageData.getHierarchy(), summaryName)
+    if (!prevHeadless.isEmpty() && mevcut == null) {
+        println String.format(java.util.Locale.US, workshopText('script.24a442295e5a', 'Bu lamda bu yardımcının yazdığı %,d özet anotasyonu ("%s") zaten var. Hiçbir şey yazılmadı. Yeni bir kopya eklemek için mevcut=ekle, önceki sonucu değiştirmek için mevcut=degistir ile yeniden çalıştırın.'), prevHeadless.size(), summaryName)
+        return
+    }
+    String headlessMode = (mevcut == 'degistir') ? MODE_REPLACE : MODE_ADD
     def opt = buildOptions(ctx.inPatch)
     if (opt.gtDefault == null) { println "Bölge içinde altın standart adayı nesne yok."; return }
     double thr = (opt.modeDefault == 'IOU') ? DEFAULT_IOU : DEFAULT_CENTROID_UM
-    def res = runValidation(opt.gtDefault, ALL_DET, opt.modeDefault, thr, false, false, ctx)
+    def res = runValidation(opt.gtDefault, ALL_DET, opt.modeDefault, thr, false, false, ctx, headlessMode)
     if (!res.ok) {
         def msg = [NO_GT: "Altın standart sınıfında nesne yok.",
                    NO_PRED: "Tahmin (tespit) bulunamadı.",
@@ -469,6 +553,9 @@ def startCompute = {
     if (!ctx.ok) {
         step.set(ctx.reason == 'NO_IMAGE' ? 'NO_IMAGE' : 'NO_SELECTION'); render(); return
     }
+    // Önceki özet varsa HESAPLAMADAN ÖNCE sor: İptal formda kalır, hiçbir şey hesaplanmaz/yazılmaz.
+    final String existingMode = askExisting(ctx.imageData.getHierarchy())
+    if (existingMode == null) return
     ctxRef.set(ctx)
     step.set('COMPUTING'); render()
     String gtL = gtChoice.get()
@@ -478,7 +565,7 @@ def startCompute = {
     boolean rc = recolor.get()
     boolean rcFn = recolorFN.get()
     def worker = new Thread({
-        def res = runValidation(gtL, predL, mode, thr, rc, rcFn, ctx)
+        def res = runValidation(gtL, predL, mode, thr, rc, rcFn, ctx, existingMode)
         javafx.application.Platform.runLater {
             if (res.ok) {
                 resultRef.set(res)

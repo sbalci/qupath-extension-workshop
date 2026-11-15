@@ -45,6 +45,85 @@ import qupath.lib.roi.RoiTools
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
+// ── Önceki sonuç: SORULMADAN silinmez (ev kuralı) ───────────────────
+// Bu betiğin çıktısı: "Ki-67 grid r,c" kareleri + "Ki-67 Heterojenlik Özet". Yalnız TAM ad ya da
+// "ad (N)" (N >= 2) eşleşir — önek eşleşmesi YOK; kullanıcının verdiği başka adlara dokunulmaz.
+def GRID_BASE    = 'Ki-67 grid'
+def SUMMARY_BASE = 'Ki-67 Heterojenlik Özet'
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
+// Izgara karesi adı: "<base> r,c" (ilk set) ya da "<base> (N) r,c" (N >= 2).
+def isOwnTileName = { String name, String base ->
+    if (name == null) return false
+    return name ==~ (java.util.regex.Pattern.quote(base) + ' (\\((?:[2-9]|[1-9][0-9]+)\\) )?[0-9]+,[0-9]+')
+}
+def tileSetIndex = { String name, String base ->
+    def m = (name =~ ('^' + java.util.regex.Pattern.quote(base) + ' \\(([0-9]+)\\) [0-9]+,[0-9]+$'))
+    return m.find() ? (m.group(1) as int) : 1
+}
+def prevOwnGridObjects = { hierarchy, String gridBase, String summaryBase ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnTileName(it.getName(), gridBase) || isOwnSetName(it.getName(), summaryBase) }
+}
+def gridSetIndexes = { hierarchy, String gridBase, String summaryBase ->
+    return prevOwnGridObjects(hierarchy, gridBase, summaryBase).collect {
+        isOwnSetName(it.getName(), summaryBase) ? ownSetIndex(it.getName(), summaryBase) : tileSetIndex(it.getName(), gridBase)
+    }.unique().sort()
+}
+def nextGridSetIndex = { hierarchy, String gridBase, String summaryBase ->
+    def used = gridSetIndexes(hierarchy, gridBase, summaryBase)
+    return used.isEmpty() ? 1 : ((used.max() as int) + 1)
+}
+def setSuffix = { int index -> index > 1 ? (' (' + index + ')') : '' }
+
+// Önceki sonuç için kullanıcıya SOR (hesaptan ÖNCE). Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey yazılmaz).
+def askExisting = { hierarchy ->
+    def prev = prevOwnGridObjects(hierarchy, GRID_BASE, SUMMARY_BASE)
+    if (prev.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.5fcbb9588b11', 'Öncekine dokunma — yeni bir set olarak ekle (varsayılan)')
+    String optRep = workshopText('script.a2d620f13645', 'Öncekini değiştir (bu betiğin ızgara kareleri ve özet anotasyonu silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.483dcf5a0d31', 'Önceki Ki-67 heterojenlik sonucu'),
+        String.format(java.util.Locale.US, workshopText('script.fc0022c3c70a', 'Bu lamda bu betiğin ürettiği %,d anotasyon zaten var (ızgara kareleri ve özet).\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir set olur ("Ki-67 grid (2) 0,0" ve "Ki-67 Heterojenlik Özet (2)" gibi). Lamda iki set birlikte durur; dışa aktarım ve özetler ikisini de görür.\n\n"Değiştir" seçilirse önceki ızgara kareleri ve özet anotasyonu silinir. Kendi anotasyonlarınıza dokunulmaz; silinen karelerin içindeki nesneler korunur.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?'), prev.size()),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.fa2d2d520f90', 'Önceki Ki-67 heterojenlik sonucu silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.04bb9562edac', '%,d anotasyon silinecek: bu betiğin önceki ızgara kareleri ve özet anotasyonu (adı "Ki-67 grid …" ya da "Ki-67 Heterojenlik Özet" olanlar). Bu adlardan birini kendiniz verdiyseniz o anotasyon da silinir; karelerde elle yaptığınız değişiklikler kaybolur. Karelerin içindeki nesneler korunur.\n\nDevam edilsin mi?'), prev.size()))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
+// Başsız kip: önceki sonuç varsa `mevcut=ekle` (kopya ekle) ya da `mevcut=degistir` olmadan hiçbir şey yazılmaz.
+def scriptArgs = []
+try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+def argMap = [:]
+scriptArgs.each { a -> def sa = a?.toString() ?: ''; int ia = sa.indexOf('='); if (ia > 0) argMap[sa.substring(0, ia).trim()] = sa.substring(ia + 1).trim() }
+String mevcutArg = argMap.mevcut == null ? null : argMap.mevcut.toLowerCase(java.util.Locale.ROOT)
+if (isHeadless && mevcutArg != null && !['ekle', 'degistir'].contains(mevcutArg)) {
+    println String.format(java.util.Locale.US, workshopText('script.37ab92155fc9', 'HATA: mevcut yalnızca \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut)
+    return
+}
+
 def showResultWindow = { String windowTitle, String windowBody ->
     if (isHeadless) {
         println "=== ${windowTitle} ===\n${windowBody}\n=================="
@@ -152,6 +231,26 @@ if (cells.isEmpty()) {
     return
 }
 
+// Önceki sonuç varsa hesaptan ÖNCE sor; İptal'de hiçbir şey yazılmaz.
+def hierarchy = imageData.getHierarchy()
+String writeMode = MODE_ADD
+def prevAtStart = prevOwnGridObjects(hierarchy, GRID_BASE, SUMMARY_BASE)
+if (!prevAtStart.isEmpty()) {
+    if (isHeadless) {
+        if (mevcutArg == null) {
+            println String.format(java.util.Locale.US, workshopText('script.54ea69e92480', 'Bu lamda bu betiğin önceki sonucu zaten var (%,d anotasyon). Hiçbir şey yazılmadı. Yeni bir set eklemek için mevcut=ekle, önceki sonucu değiştirmek için mevcut=degistir ile yeniden çalıştırın.'), prevAtStart.size())
+            return
+        }
+        writeMode = (mevcutArg == 'degistir') ? MODE_REPLACE : MODE_ADD
+    } else {
+        writeMode = askExisting(hierarchy)
+        if (writeMode == null) return
+    }
+}
+// Replace: yeni set ilk setin adlarını alır; Add: sıradaki set numarası.
+int setIndex = (writeMode == MODE_REPLACE) ? 1 : nextGridSetIndex(hierarchy, GRID_BASE, SUMMARY_BASE)
+def keptSetNames = (writeMode == MODE_REPLACE) ? [] : gridSetIndexes(hierarchy, GRID_BASE, SUMMARY_BASE).collect { SUMMARY_BASE + setSuffix(it as int) }
+
 def isPositive = { detection ->
     String className = detection.getPathClass()?.getName() ?: ''
     if (className.equalsIgnoreCase('Positive') || className.endsWith('+')) return true
@@ -190,10 +289,7 @@ cells.each { cell ->
 }
 
 // ── 3) ROI-kesişimli tüm kareleri oluştur; sıfır quadratları koru ──
-QP.removeObjects(QP.getAnnotationObjects().findAll {
-    it.getName() != null && (it.getName().startsWith('Ki-67 grid') || it.getName() == 'Ki-67 Heterojenlik Özet')
-}, false)
-
+// (Önceki sonuç burada SİLİNMEZ: yalnız Replace kolu, yeni nesneler hazır olunca siler.)
 def plane = analysisROI.getImagePlane()
 def newTiles = []
 def validTileLI = []
@@ -222,7 +318,7 @@ for (int row = 0; row < nRows; row++) {
         if (Double.isFinite(li)) validTileLI << li
 
         def tile = PathObjects.createAnnotationObject(clipped)
-        tile.setName(String.format(java.util.Locale.US, 'Ki-67 grid %d,%d', row, col))
+        tile.setName(String.format(java.util.Locale.US, '%s %d,%d', GRID_BASE + setSuffix(setIndex), row, col))
         tile.measurements['Kare kapsamı (%)'] = 100.0 * coverage
         tile.measurements['Hücre sayısı'] = total as double
         tile.measurements['Pozitif hücre'] = positive as double
@@ -257,7 +353,7 @@ double morisita = totalMorisitaPositive > 1 && quadrats > 1
     : Double.NaN
 
 def summary = PathObjects.createAnnotationObject(analysisROI)
-summary.setName('Ki-67 Heterojenlik Özet')
+summary.setName(SUMMARY_BASE + setSuffix(setIndex))
 summary.measurements['Ağırlıklı genel LI (%)'] = overallLI
 summary.measurements['Karo LI ortalaması (%)'] = meanTileLI
 // Adlar "n-1" taşır: eski sürüm aynı değerleri n böleniyle ('Karo LI SD (%)', 'Karo LI CV (%)') yazıyordu;
@@ -272,14 +368,27 @@ summary.measurements['Kısmi kenar karosu'] = partialTiles as double
 summary.measurements['Karo boyutu (µm)'] = tilePxX * pw
 summary.setLocked(true)
 
-QP.addObjects(newTiles)
-QP.addObjects([summary])
-QP.fireHierarchyUpdate()
+// Replace: yalnız bu betiğin önceki ızgara/özet anotasyonları (tam ad ya da "ad (N)") silinir;
+// içlerindeki nesneler KORUNUR (keepChildren = true). Yeni nesneler hazır olduktan SONRA silinir.
+int removedCount = 0
+if (writeMode == MODE_REPLACE) {
+    def prevNow = prevOwnGridObjects(hierarchy, GRID_BASE, SUMMARY_BASE)
+    removedCount = prevNow.size()
+    if (removedCount > 0) hierarchy.removeObjects(prevNow, true)
+}
+hierarchy.addObjects(newTiles)
+hierarchy.addObjects([summary])
+QP.fireHierarchyUpdate(hierarchy)
 
 def fmt = { double value, String pattern -> Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : 'hesaplanamadı' }
 def body = new StringBuilder()
 body << 'Kİ-67 HETEROJENLİK IZGARASI\n'
 body << '════════════════════════════════\n\n'
+if (!keptSetNames.isEmpty()) {
+    body << String.format(java.util.Locale.US, workshopText('script.b880deb01e0a', 'DİKKAT — önceki sonuç hâlâ lamda duruyor: %s. Hiçbir şey silinmedi. Eski seti kaldırmak için o addaki anotasyonları seçip silin ya da betiği yeniden çalıştırıp "Öncekini değiştir"i seçin. Dışa aktarım ve özetler iki seti de görür.\nBu çalıştırmanın özeti: %s'), keptSetNames.join(', '), summary.getName()) << '\n\n'
+} else if (removedCount > 0) {
+    body << String.format(java.util.Locale.US, workshopText('script.d0cc14f27b20', 'Önceki sonuç değiştirildi: %,d anotasyon silindi (içlerindeki nesneler korundu).'), removedCount) << '\n\n'
+}
 body << String.format(java.util.Locale.US, 'Tumor ROI sayısı       : %,d%n', tumorObjects.size())
 body << String.format(java.util.Locale.US, 'Toplam hücre           : %,d%n', totalCells)
 body << String.format(java.util.Locale.US, 'Pozitif hücre          : %,d%n', totalPositive)

@@ -2,29 +2,73 @@
 
 All notable changes to `qupath-extension-workshop` are documented in this file.
 Versions follow `X.Y.Z` or `X.Y.Z-rcN` (the pre-release format supported by QuPath's extension manager).
+Dates are tag dates. Entries before `0.2.2-rc9` were reconstructed from the git history on 15 November 2026.
 
-## [Unreleased] — `feat/bilingual-pedagogy-audit` (targeting `0.2.2-rc8+`)
+## [Unreleased] — branch `fix/ask-first-and-rc9` (next test build: `0.2.2-rc9`)
 
-### Added
-- **Bilingual UI (`TR` default / `EN`):** Added `WorkshopI18n` with UTF-8 resource bundles (`strings_tr.properties`, `strings_en.properties`), live menu/dialog language toggle (`Extensions → Atölye → 🌐 Dil / Language`), and language selector inside `WorkshopSettingsDialog` (persisted as key `language` in Java Preferences node `/qupath/atolye/i18n`, without requiring a QuPath restart). Individual Groovy windows still need their own translation coverage; bilingual menus do not imply that every script is translated.
-- **Self-extracting Python bridges:** Packaged all 15 external Python bridge folders (`/python/<tool>/*`, 31 files) inside the extension JAR and added SHA-256-verified extraction to `~/.atolye/bridges/<version>/` via `WorkshopResources.extractBundledPythonBridge(...)` so JAR-only installs run without a cloned workshop repository.
-- **Guided 5-tab Tile Exporter & Read-Only TIFF Metadata Scanner:** Enhanced `yardimci-karo-disa-aktarma.groovy` with presets, grid preview, stain normalization hooks, and dataset splits; enhanced `yardimci-metadata-sihirbaz.groovy` with read-only TIFF header inspection.
-- **Copyable, privacy-redacted error dialog:** Added `WorkshopErrors.redactSensitiveText` and `formatCopyableReport` (`<HOME>` and `<SLIDE_FILE>` masking) with one-click clipboard copy on script exceptions.
-- **Canonical HistoPLUS cell-type mapping:** Added `CANONICAL_ALIASES` + `canonicalKeyOf` normalization in `yardimci-histoplus-sihirbaz.groovy` so `cancer cell` / `Epithelial` / `Endothelial` variants resolve deterministically across upstream checkpoints.
-- **Expanded JUnit regression suite:** Added `SafetyRegressionTest` and `WorkshopI18nAndCatalogTest` covering non-destructive overwrite prompts, `killTree` cleanup, HistoPLUS alias resolution, diagnostic path redaction, TR/EN bundle key parity, classpath presence of all registered scripts, and `catalog.json` integrity.
+The review record for the behaviour changes is `docs/ask-first-review-2026-11-15.md`.
 
-### Changed & Fixed
-- Added a single bilingual catalog for 143 display strings across eight core Groovy workflows; standalone execution retains Turkish fallbacks. This extends label coverage; dynamic results and some helper windows still need translation.
-- Localised the cell-detection window's controls, tooltips, validation and result summary through the existing TR/EN bundles. Standalone Groovy use retains Turkish fallback text. Window-opening failures now include the existing actionable error guidance; detection settings and public APIs are unchanged.
-- **Non-destructive detection/annotation safety:** Added `Ekle / Değiştir` (`Add / Replace`) mode selection and overwrite confirmations across `yardimci-classpose-sihirbaz.groovy`, `yardimci-hovernext-sihirbaz.groovy`, `yardimci-mitoz-fcos.groovy`, `yardimci-mitoz-retinanet.groovy`, `yardimci-mitoz-tiatoolbox.groovy`, `yardimci-histoart-sihirbaz.groovy`, `membran-boya.groovy`, and `yardimci-cellpose-sihirbaz.groovy`, plus subprocess `killTree(proc)` cleanup on cancel/timeout.
-- **Unified Turkish terminology (`GLOSSARY.md`):** Applied approved `OB-1..OB-14` terms (`yoğun odak (hotspot)`, `tümörü infiltre eden lenfositler (TİL)`, `bölütleme`, `öznitelik`, `sanal lam`, `immünohistokimya (İHK)`).
-- **Settings badge & CI workflow fixes:** Fixed validation error badge overwrite in `WorkshopSettingsDialog` (accepting both `0,25` and `0.25`) and updated `.github/workflows/candidate-acceptance.yml` test-count assertion.
+### Changed — nothing is deleted or replaced without asking
+- **Every wizard and helper asks before it removes or replaces an earlier result.** *Add* is the default and deletes nothing; the new result is named `… (2)`, `… (3)`. *Replace* needs a second confirmation that says what is removed. *Cancel* runs nothing and writes nothing. Without a window (headless), a script that finds an earlier result stops and names the arguments `mevcut=ekle` and `mevcut=degistir`.
+- Covered: GrandQC import (single slide, direct run, project-wide), VALIS, Warpy, affine transfer, KongNet import, mitosis model comparison, both TIA Toolbox wizards, native tissue detection, tumour budding, HistoART, the Tümör/Stroma wizard and area script, tumour-internal Ki-67, and the measurement helpers that write a summary, grid, band or region (hotspot, nearest neighbour, cross-type nearest neighbour, class count, Delaunay, validation F1, immune density, stromal TIL, WSInfer summary, PHH3, structure distance, intersection area, peritumoural band, convex hull, centre/periphery, Ki-67 heterogeneity, density map, eyeball calibration).
+- The peritumoural-band and centre/periphery helpers no longer remove hand-drawn annotations that merely share their output class.
+- "This tool's own result" is matched by exact name or `name (N)`, never by a prefix, so an annotation you renamed is not swept.
+- VALIS, Warpy and the affine transfer mark what they transfer; *Replace* removes the old transfer whole and keeps objects you added inside it afterwards.
+- Tumour budding no longer deletes the existing detections under the selected region.
+- Cell detection and the four stain modules no longer change the image type or stain vectors with only a log line: they say what will change and ask. Headless runs need `-a tip=he` (cell detection) or `-a boya=varsayilan` (stain modules).
 
-## [0.2.2-rc8] — 2026
-- Bundled 103 workshop Groovy scripts across 13 module entries/submenus, 9 utility topic groups, and top-level `Senkron Izgara`, targeting QuPath `0.6.0+` (Java 21).
+### Changed — menu
+- **Tümör/Stroma** is a submenu: the wizard, *Adım 1 — Model eğit* and *Adım 2 — Alan ölçümü*. The two step scripts were bundled before but had no menu entry.
+- *Atipik sınıflandırma — Sanofi EFTD (kapılı)* is no longer permanently greyed out. When access to the gated model is missing the wizard shows the steps to obtain it; a Hugging Face login done in an ordinary command window is now picked up.
 
-## [0.2.1] — 2026
-- Added persistent `WorkshopPrefs` + `WorkshopSettingsDialog`, Okabe–Ito color-blind-safe palette toggle, and environment check dialog.
+### Fixed
+- Error guidance: a mistyped number says how to type it instead of reporting an unreadable image; internal faults no longer tell you to open a slide; `NaN` is matched as a word.
+- The error dialog no longer calls the diagnostic summary anonymised. Home-folder paths and slide file names are masked; other names may remain.
+- `tools/verify-candidate.py` runs on Windows.
 
-## [0.1.0] — 2026-05
-- Initial release bundling core IHC, cell detection, tumor/stroma, and export workshop modules.
+### Documentation
+- README install steps follow the workshop site (drag-and-drop first) and use the button names of QuPath 0.6.0's extension manager. English paths name the `Atölye` menu.
+
+## [0.2.2-rc8] — 2026-11-13
+- Turkish/English interface: menu, settings, error dialogs and a first set of script windows; language switch without restart.
+- Python bridges are packed in the JAR and extracted on first use.
+- Settings window with validation, colour-blind-safe palette option, environment check.
+- Two-audience tooltips (clinical / computational), eyeball-calibration wizard, guided tile exporter, read-only TIFF metadata scanner.
+- Copyable error report with path masking.
+- Note: the `main` branch moved on after this tag under the same version string; the published JAR is the tagged build.
+
+## [0.2.2-rc7] — 2026-10-25
+- Anonymisation wizard rewritten: read-only audit mode and a pure-Java TIFF engine, with regression tests.
+- Packaged-script audit and JAR verification tooling.
+
+## [0.2.2-rc6] — 2026-10-24
+- Batch annotation export and import (GeoJSON, ImageScope XML, ASAP XML, COCO), asking before existing annotations are touched.
+- Sectra import gains a project-wide mode.
+- Atypical mitosis classifiers and the model-comparison wizard.
+
+## [0.2.2-rc5] — 2026-08-30
+- Python environment manager and wizards for the Python bridges.
+- Image registration wizards (VALIS, Warpy, affine transfer).
+- GrandQC wizard and cohort summary; WSInfer audit helper; DICOM → SVS conversion wizard; region extraction; threshold-adjustment rework.
+- Mitosis detection wizards.
+
+## [0.2.2-rc4] — 2026-06-27
+- TIA Toolbox, Kaiko and SPIDER wizards; tumour budding; Sectra import; cohort metadata wizard; anonymisation wizard (first version); StarDist workflow helpers; image-processing tutorial.
+
+## [0.2.2-rc3] — 2026-06-22
+- Packaging fixes for the module scripts and the classifier helper.
+
+## [0.2.2-rc2] — 2026-06-22
+- Tümör/Stroma wizard: model choice, region or whole-slide scope, multi-model comparison; example classifier download.
+
+## [0.2.2-rc1] — 2026-06-21
+- Bundled example tumour/stroma classifier; tile export; feature-matrix helper; StarDist model download with checksum.
+
+## [0.2.1] — 2026-06-16
+- Calibration helper; KongNet mitosis import and PHH3 helper; update check and environment check; pre-release tags marked as such.
+
+## [0.2.0] — 2026-06-05
+- Persistent workshop settings read by the module scripts; pixel-wise H-score in the membrane module; module scripts warn before removing annotations; number formatting fixed for Turkish-locale systems.
+
+## [0.1.0] — 2026-05-25
+- Initial release: IHC modules, cell detection, tumour/stroma and export.

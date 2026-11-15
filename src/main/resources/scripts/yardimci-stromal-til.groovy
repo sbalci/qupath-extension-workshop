@@ -103,6 +103,76 @@ double minNucleusAreaUm2   = 5.0     // çok küçük gürültüyü ele
 double maxNucleusAreaUm2   = 80.0    // büyük tümör/stroma çekirdeklerini ele
 double lymphocyteMaxAreaUm2 = 40.0   // lenfosit adayı: küçük yuvarlak çekirdek
 String detectionChannel    = "Hematoxylin OD"
+String summaryName         = "Stromal TIL Özet"
+
+// ── Önceki sonuç kipi (ev kuralı: hiçbir şey sorulmadan silinmez) ───────────
+//   ekle     → hiçbir şey silinmez; yeni özet sıradaki adı alır ("<ad> (2)" …).
+//   değiştir → yalnız bu yardımcının özet anotasyonları (tam ad ya da "ad (N)") silinir;
+//              içlerindeki nesneler korunur (keepChildren = true).
+//   Başsız kip: `-a mevcut=ekle` | `-a mevcut=degistir`; önceki sonuç varken belirtilmezse durur.
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+// Bu yardımcının özeti mi? Yalnız TAM ad ya da "ad (N)" — önek eşleşmesi YOK:
+// kullanıcının "Stromal TIL Özet notlarım" diye adlandırdığı anotasyon süpürülmez.
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
+def askExisting = { hierarchy ->
+    def prev = prevOwnObjects(hierarchy, summaryName)
+    if (prev.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.1e749978a0e7', 'Ekle — öncekine dokunma, yeni bir özet olarak ekle (varsayılan)')
+    String optRep = workshopText('script.3bb827725a09', 'Değiştir — önceki özet anotasyonları silinir')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.7206cf547d44', 'Önceki sonuç — Stromal TIL'),
+        String.format(java.util.Locale.US, workshopText('script.72caa7fba38b', 'Bu lamda bu yardımcının yazdığı %,d özet anotasyonu zaten var ("Stromal TIL Özet").\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni özet "Stromal TIL Özet (2)" gibi ayrı bir ad alır ve iki özet birlikte durur.\n\n"Değiştir" seçilirse önceki özet anotasyonları silinir. Aynı adı kendiniz verdiyseniz o anotasyon da silinir. Diğer anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?'), prev.size()),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.89a856ac207d', 'Önceki özet silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.d9ffa820dc55', '%,d özet anotasyonu silinecek. Bunlar üzerinde elle yaptığınız değişiklikler ve aynı adı kendiniz verdiğiniz anotasyonlar da gider; içlerindeki diğer nesneler korunur.\n\nDevam edilsin mi?'), prev.size()))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+def applyMode = { hierarchy, String mode ->
+    def prev = prevOwnObjects(hierarchy, summaryName)
+    def prevNames = prev.collect { it.getName() }.unique().sort()
+    int removed = 0
+    String setName
+    if (mode == MODE_REPLACE) {
+        removed = prev.size()
+        if (removed > 0) hierarchy.removeObjects(prev, true)
+        setName = summaryName
+    } else {
+        setName = nextOwnSetName(hierarchy, summaryName)
+    }
+    return [setName: setName, removed: removed, prevNames: (mode == MODE_REPLACE ? [] : prevNames)]
+}
+
+def scriptArgs = []
+try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+def argMap = [:]
+scriptArgs.each { a -> def sa = a?.toString() ?: ''; int ia = sa.indexOf('='); if (ia > 0) argMap[sa.substring(0, ia).trim()] = sa.substring(ia + 1).trim() }
+String mevcut = argMap.mevcut == null ? null : argMap.mevcut.toLowerCase(java.util.Locale.ROOT)
+if (isHeadless && mevcut != null && !['ekle', 'degistir'].contains(mevcut)) {
+    println String.format(java.util.Locale.US, workshopText('script.768b9abc88f3', 'HATA: mevcut yalnız \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut)
+    return
+}
 
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
@@ -127,6 +197,25 @@ if (!(pw > 0) || !(ph > 0)) {
     Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), workshopText('script.66586705b08c', "Lamda piksel boyutu (µm) tanımlı değil; yoğunluk hesaplanamaz." +
         "\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)."))
     return
+}
+
+
+// Önceki sonuç varsa HESAPLAMADAN ÖNCE sor (İptal: hiçbir şey çalışmaz, hiçbir şey yazılmaz).
+String runMode = MODE_ADD
+def prevOwnNow = prevOwnObjects(imageData.getHierarchy(), summaryName)
+if (!prevOwnNow.isEmpty()) {
+    if (isHeadless) {
+        if (mevcut == null) {
+            println String.format(java.util.Locale.US, workshopText('script.24a442295e5a', 'Bu lamda bu yardımcının yazdığı %,d özet anotasyonu ("%s") zaten var. Hiçbir şey yazılmadı. Yeni bir kopya eklemek için mevcut=ekle, önceki sonucu değiştirmek için mevcut=degistir ile yeniden çalıştırın.'), prevOwnNow.size(), summaryName)
+            return
+        }
+        runMode = (mevcut == 'degistir') ? MODE_REPLACE : MODE_ADD
+    } else {
+        runMode = askExisting(imageData.getHierarchy())
+        if (runMode == null) return
+    }
+} else if (isHeadless && mevcut == 'degistir') {
+    runMode = MODE_REPLACE
 }
 
 // ── 2) Stroma içinde çekirdek tespiti ──────────────────────────────
@@ -204,12 +293,13 @@ if (totalCells == 0) {
 }
 
 // ── 4) Kilitli özet anotasyonu (Veri dışa aktarma modülü için) ─────────
-QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() == "Stromal TIL Özet" }, false)
+// Önceki özet SORULMADAN silinmez: kip yukarıda seçildi (ekle: sıradaki ad; değiştir: yalnız kendi özetleri).
+def appliedMode = applyMode(imageData.getHierarchy(), runMode)
 def srv = imageData.getServer()
 def summary = qupath.lib.objects.PathObjects.createAnnotationObject(
     qupath.lib.roi.ROIs.createRectangleROI(0, 0, srv.getWidth(), srv.getHeight(),
         qupath.lib.regions.ImagePlane.getDefaultPlane()))
-summary.setName("Stromal TIL Özet")
+summary.setName(appliedMode.setName)
 summary.measurements['Stroma alanı (mm2)']                    = totalStromaMm2
 summary.measurements['Stromal hücre sayısı']                  = totalCells as double
 summary.measurements['Lenfosit adayı sayısı']                 = totalLympho as double
@@ -224,6 +314,13 @@ def areaNote = areaKnown == 0
     : ""
 
 // ── 5) Sonucu sun ───────────────────────────────────────────────────
+def modeNotes = new StringBuilder()
+if (!appliedMode.prevNames.isEmpty()) {
+    modeNotes << "\n" << String.format(java.util.Locale.US, workshopText('script.7577a3bac9a2', 'DİKKAT — bu lamda önceki sonuç da duruyor: %s\nYeni özet şu adla eklendi: %s\nHiçbir şey silinmedi. Eski özeti kaldırmak için o addaki anotasyonu seçip silin ya da yeniden çalıştırırken "Değiştir"i seçin. Dışa aktarma ve kohort özetleri iki özeti de görür.'), appliedMode.prevNames.join(', '), appliedMode.setName) << "\n"
+    modeNotes << workshopText('script.46fd40a69eb4', 'Seçili anotasyonların üzerindeki ölçümler bu YENİ çalıştırmayı gösterir; önceki özet nesnesi eski değerleri göstermeye devam eder.') << "\n"
+} else if (appliedMode.removed > 0) {
+    modeNotes << "\n" << String.format(java.util.Locale.US, workshopText('script.bc31ff876c31', 'Önceki sonuç değiştirildi: %,d özet anotasyonu silindi (içlerindeki diğer nesneler korundu).'), appliedMode.removed) << "\n"
+}
 def body = new StringBuilder()
 body << "STROMAL TIL YOĞUNLUĞU (morfolojik vekil)\n"
 body << "════════════════════════════════════════\n\n"
@@ -231,14 +328,15 @@ body << String.format(java.util.Locale.US, "Stroma alanı            : %.3f mm²
 body << String.format(java.util.Locale.US, "Stromal hücre (toplam)  : %,d  →  %.0f hücre/mm²%n", totalCells, overallCellDensity)
 body << String.format(java.util.Locale.US, "Lenfosit adayı (≤%.0f µm²): %,d  →  %.0f hücre/mm²%n",
         lymphocyteMaxAreaUm2, totalLympho, overallLymphoDensity)
-body << areaNote << "\n\n"
+body << areaNote << "\n"
+body << modeNotes.toString() << "\n"
 body << "Yöntem: stromada çekirdek tespiti; küçük yuvarlak çekirdek = lenfosit vekili.\n"
 body << "Bu bir SAYIM/YOĞUNLUKtur — IIOBWG görsel TIL%'i, klinik eşik veya yorum DEĞİL.\n"
 body << "Lenfosit kimliği için CD3/CD8 İHK doğrulaması gerekir (Salgado 2015; Thagaard 2021).\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
 
 showResultWindow("Stromal TIL yoğunluğu", body.toString())
-println "✓ Stromal TIL yoğunluğu yazıldı (her Stroma anotasyonu + 'Stromal TIL Özet')."
+println "✓ Stromal TIL yoğunluğu yazıldı (her Stroma anotasyonu + '${appliedMode.setName}')."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.
 private String workshopText(String key, String fallback) {

@@ -64,11 +64,45 @@ def menuHint = { String where ->
         "${workshopText('script.2da9535b4302', 'Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\n')}${where}")
 }
 
+// ── Önceki sonuç: SORULMADAN silinmez (ev kuralı: sonuç yazan her betik önce sorar) ──
+// Ekle (varsayılan): hiçbir şey silinmez; yeni özet "Ki-67 Tümör Özet (2)", "(3)" … adını alır.
+// Değiştir: yalnız bu betiğin özetleri (TAM ad ya da "ad (N)", önek eşleşmesi YOK) ve DOĞRUDAN
+// içlerindeki hücre tespitleri silinir; içlerindeki anotasyonlar korunur (keepChildren = true).
+def KI67_BASE = 'Ki-67 Tümör Özet'              // Yol A özet anotasyonunun adı (ilk set)
+def KI67_REGION_BASE = 'Ki-67 tespit alanı'     // Yol B'de önceki tespitli bölge için kopya bölgenin adı
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+// Bu betiğin seti mi? Yalnız TAM ad ya da "ad (N)" — önek eşleşmesi YOK:
+// kullanıcının "Ki-67 Tümör Özet düzeltmelerim" diye adlandırdığı anotasyon süpürülmez.
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
+// Yol A özetinin DOĞRUDAN içindeki hücre tespitleri = bu betiğin kendi çıktısı (PositiveCellDetection).
+def ki67OwnDetections = { summaryObj ->
+    return summaryObj.getChildObjects().findAll { it.isDetection() }
+}
+
 // ──────────────────────────────────────────────────────────────
 // Yol A — Hızlı Ki-67: seçili Tumor anotasyonlarında DAB eşiğiyle ölçüm.
 //   Dönüş: [ok:true, text:…] | [ok:false, error:…]. Pencere kapanmadan tekrar çağrılır.
 // ──────────────────────────────────────────────────────────────
-def runDetection = { double nuclear1, double nuclear2, double nuclear3 ->
+def runDetection = { double nuclear1, double nuclear2, double nuclear3, String mode = 'add' ->
     if (!(nuclear1 < nuclear2 && nuclear2 < nuclear3))
         return [ok:false, error:'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.']
 
@@ -96,12 +130,20 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3 ->
     if (tumorUnion == null || tumorUnion.isEmpty())
         return [ok:false, error:'Tumor anotasyonları geçerli bir alan oluşturmuyor.']
 
-    // Eski özet anotasyonu ve alt tespitlerini temizle (yeniden çalıştırılabilirlik).
-    def oldSummaries = QP.getAnnotationObjects().findAll { it.getName() == 'Ki-67 Tümör Özet' }
-    if (!oldSummaries.isEmpty()) QP.removeObjects(oldSummaries, false)
+    // Önceki sonuç (bu betiğin özetleri: tam ad ya da "(N)") SORULMADAN silinmez. Kip çağırandan gelir:
+    //   ekle     → hiçbir şey silinmez; yeni özet sıradaki adı alır ("Ki-67 Tümör Özet (2)" …).
+    //   değiştir → önceki özetler ve doğrudan içlerindeki hücre tespitleri, yeni ölçüm BAŞARIYLA
+    //              bittikten sonra silinir (tespit başarısız olursa eski sonuç sağlam kalır).
+    // Önceki sonuç varken kip belirtilmediyse hiçbir şey yazılmadan durulur (fail closed).
+    def hierA = imageData.getHierarchy()
+    def prevSummaries = prevOwnObjects(hierA, KI67_BASE)
+    if (!prevSummaries.isEmpty() && mode != MODE_ADD && mode != MODE_REPLACE)
+        return [ok:false, error:workshopText('script.0f11d2259312', 'Bu lamda önceki bir Ki-67 sonucu var ve ne yapılacağı belirtilmedi. Hiçbir şey yazılmadı.')]
+    boolean replaceRun = (mode == MODE_REPLACE) && !prevSummaries.isEmpty()
+    String summaryName = (!prevSummaries.isEmpty() && !replaceRun) ? nextOwnSetName(hierA, KI67_BASE) : KI67_BASE
 
     def summary = PathObjects.createAnnotationObject(tumorUnion)
-    summary.setName('Ki-67 Tümör Özet')
+    summary.setName(summaryName)
     QP.addObjects([summary])
 
     String detectionChannel = atolyeS('atolye.detectionChannel', 'Hematoxylin OD')
@@ -134,11 +176,26 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3 ->
 
     def detections = summary.getChildObjects().findAll { it.isDetection() }
     if (detections.isEmpty()) {
-        QP.removeObjects([summary], false)
+        // Bu çalıştırmanın KENDİ özeti (yukarıda referansla oluşturuldu) — başka nesne değil.
+        QP.removeObjects([summary], true)
         QP.fireHierarchyUpdate()
         return [ok:false, error:'Tumor ROI içinde çekirdek tespit edilmedi. Tespit ve boya vektörü ayarlarını kontrol edin.']
     }
     summary.setLocked(true)
+
+    // Değiştir: yeni ölçüm başarılı → ÖNCEKİ özetler (yukarıda, yeni özet eklenmeden önce alındı) şimdi silinir.
+    // Önce doğrudan içlerindeki hücre tespitleri (bu betiğin çıktısı), sonra özet; diğer alt nesneler korunur.
+    int removedSummaries = 0
+    int removedDetections = 0
+    if (replaceRun) {
+        prevSummaries.each { oldSummary ->
+            def oldDets = ki67OwnDetections(oldSummary)
+            if (!oldDets.isEmpty()) QP.removeObjects(oldDets, true)
+            removedDetections += oldDets.size()
+        }
+        QP.removeObjects(prevSummaries, true)
+        removedSummaries = prevSummaries.size()
+    }
 
     def summarize = { collection, roi ->
         int n0 = 0, n1 = 0, n2 = 0, n3 = 0
@@ -215,6 +272,13 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3 ->
     body << String.format(java.util.Locale.US, 'DAB eşikleri           : %.2f / %.2f / %.2f%n', nuclear1, nuclear2, nuclear3)
     body << String.format(java.util.Locale.US, 'İşlem süresi           : %.1f sn%n', elapsed)
     body << 'Analiz sınırı           : patolog tarafından seçilen Tumor ROI birleşimi\n\n'
+    if (!prevSummaries.isEmpty() && !replaceRun) {
+        // Ekle: önceki özet duruyor; Tumor anotasyonlarına yazılan ölçümler BU çalıştırmayı gösterir.
+        body << String.format(java.util.Locale.US, workshopText('script.c4402f967aba', 'Özet anotasyonu: %s. Bu lamda önceki Ki-67 sonucu da duruyor: %s. Hiçbir şey silinmedi; eski özeti kaldırmak için o addaki anotasyonu seçip silin ya da bir sonraki çalıştırmada "Değiştir"i seçin. Tumor anotasyonlarınıza yazılan ölçümler (ROI alanı, çekirdek sayıları, Ki-67 pozitif yüzdesi ve yoğunluk) BU çalıştırmayı gösterir; önceki özet anotasyonu eski değerleri göstermeye devam eder.'), summaryName,
+            prevSummaries.collect { it.getName() }.unique().sort().join(', ')) << '\n\n'
+    } else if (replaceRun) {
+        body << String.format(java.util.Locale.US, workshopText('script.46f3c5cb9752', 'Önceki sonuç değiştirildi: %,d özet anotasyonu ve doğrudan içlerindeki %,d hücre tespiti silindi (özetlerin içindeki anotasyonlar korundu).'), removedSummaries, removedDetections) << '\n\n'
+    }
     body << 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.\n'
     body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
 
@@ -254,13 +318,20 @@ def isTumorCell = { c ->
     pc != null && (pc.getName() == 'Tumor' || pc.getParentClass()?.getName() == 'Tumor')
 }
 
-// Yol B — DETECT: seçili ROI içinde yoğunluksuz hücre tespiti (önce bu bölgedeki tespitleri sil).
-def runCellDetection = { regionAnno ->
+// Yol B — DETECT: seçili ROI içinde yoğunluksuz hücre tespiti.
+// Bölgenin altındaki önceki tespitler SORULMADAN silinmez: yalnız kullanıcı "Değiştir"i seçtiyse (mode=replace)
+// ve yalnız BU bölgenin altındakiler silinir — lamdaki diğer anotasyonların (ör. Hücre Tespiti /
+// Nükleer Boya modülleri) tespitleri korunur. Tespit başarısız olursa silinenler geri konur.
+def runCellDetection = { regionAnno, String mode = 'add' ->
+    def removedExisting = []
     try {
-        // Yalnızca bu bölgenin altındaki tespitleri sil — lamdaki diğer
-        // anotasyonların (ör. Hücre Tespiti / Nükleer Boya modülleri) tespitleri korunur.
         def existing = regionAnno.getChildObjects().findAll { it.isDetection() }
-        if (!existing.isEmpty()) QP.removeObjects(existing, false)
+        if (!existing.isEmpty() && mode != MODE_REPLACE)
+            return [ok:false, error:workshopText('script.37eb5f471b98', 'Bu bölgenin altında önceki tespitler var ve ne yapılacağı belirtilmedi. Hiçbir şey silinmedi.')]
+        if (!existing.isEmpty()) {
+            QP.removeObjects(existing, true)
+            removedExisting = existing
+        }
         String detectionChannel = atolyeS('atolye.detectionChannel', 'Hematoxylin OD')
         long t0 = System.currentTimeMillis()
         QP.selectObjects(regionAnno)
@@ -284,10 +355,12 @@ def runCellDetection = { regionAnno ->
         )
         double elapsed = (System.currentTimeMillis() - t0) / 1000.0
         def cells = regionAnno.getChildObjects().findAll { it.isDetection() }
-        if (cells.isEmpty())
+        if (cells.isEmpty()) {
+            if (!removedExisting.isEmpty()) { regionAnno.addChildObjects(removedExisting); QP.fireHierarchyUpdate() }
             return [ok:false, error:'ROI içinde çekirdek tespit edilmedi. Boya vektörü/ayarlarını kontrol edin.']
+        }
         println String.format(java.util.Locale.US, 'Tümör içi Ki-67 modülü Yol B tespit: %,d çekirdek (%.1f sn)', cells.size(), elapsed)
-        return [ok:true, count:cells.size()]
+        return [ok:true, count:cells.size(), removed:removedExisting.size()]
     } catch (Throwable t) {
         return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '')]
     }
@@ -391,6 +464,10 @@ def scoreIntensity = { regionAnno, double n1, double n2, double n3 ->
         body << String.format(java.util.Locale.US, '2+      : %,d%n', t2)
         body << String.format(java.util.Locale.US, '3+      : %,d%n', t3)
         body << '\n' + String.format(java.util.Locale.US, 'DAB eşikleri: %.2f / %.2f / %.2f%n', n1, n2, n3)
+        if (regionAnno != null && isOwnSetName(regionAnno.getName(), KI67_REGION_BASE)) {
+            // Önceki tespitli bölgede "Ekle": ölçümler kopya bölgeye yazıldı, özgün bölge değişmedi.
+            body << '\n' + String.format(java.util.Locale.US, workshopText('script.6ed907313908', 'Bu ölçümler "%s" anotasyonuna yazıldı. Özgün bölgedeki önceki tespitler ve ölçümler değişmedi; bu sayılar yalnız bu çalıştırmayı gösterir.'), regionAnno.getName()) + '\n'
+        }
         body << '\nLI yalnız nesne sınıflandırıcının Tumor dediği hücreleri kapsar;\n'
         body << 'Ki-67+ lenfositler/stromal hücreler paydadan çıkarılmıştır.\n'
         body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
@@ -477,10 +554,26 @@ if (QP.getSelectedObject() instanceof PathAnnotationObject && QP.getSelectedObje
 
 // Headless: yalnız Yol A — atölye varsayılanlarıyla bir kez çalıştır + yazdır.
 if (isHeadless) {
+    // Önceki sonuç: başsız modda diyalog yok — `-a mevcut=ekle|degistir`. Belirtilmezse (ve önceki sonuç
+    // varsa) hiçbir şey yazılmaz. Bilinmeyen değer HER durumda durdurur (fail closed).
+    def scriptArgs = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+    def argMap = [:]
+    scriptArgs.each { a -> def sa = a?.toString() ?: ''; int ia = sa.indexOf('='); if (ia > 0) argMap[sa.substring(0, ia).trim()] = sa.substring(ia + 1).trim() }
+    String mevcut = argMap.mevcut == null ? null : argMap.mevcut.toLowerCase(java.util.Locale.ROOT)
+    if (mevcut != null && !['ekle', 'degistir'].contains(mevcut)) {
+        println String.format(java.util.Locale.US, workshopText('script.768b9abc88f3', 'HATA: mevcut yalnız \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut); return
+    }
+    def prevHeadless = prevOwnObjects(QP.getCurrentImageData()?.getHierarchy(), KI67_BASE)
+    if (!prevHeadless.isEmpty() && mevcut == null) {
+        println String.format(java.util.Locale.US, workshopText('script.02e697219cf5', 'Bu lamda bu betiğin oluşturduğu %,d "Ki-67 Tümör Özet" anotasyonu zaten var. Hiçbir şey yazılmadı. Yeni bir özet eklemek için -a mevcut=ekle, önceki sonucu değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.'), prevHeadless.size()); return
+    }
+    String headlessMode = (mevcut == 'degistir') ? MODE_REPLACE : MODE_ADD
     def r = runDetection(
         atolyeD('atolye.nuclear1', 0.20),
         atolyeD('atolye.nuclear2', 0.40),
-        atolyeD('atolye.nuclear3', 0.60)
+        atolyeD('atolye.nuclear3', 0.60),
+        headlessMode
     )
     println r.ok ? r.text : ("Hata: " + r.error)
     return
@@ -522,8 +615,59 @@ def busyBar = { ->
     def pb = new javafx.scene.control.ProgressBar(); pb.setProgress(-1.0); pb.setMaxWidth(Double.MAX_VALUE); return pb
 }
 
+// ── Önceki sonuç soruları (FX iş parçacığında, işlemden ÖNCE çağrılır) ──────────────
+// Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz).
+// Önceki sonuç yoksa sormadan 'add' döner. Pencere üstte-kal iken diyalog arkada kalmasın diye geçici kapatılır.
+def withStageBelow = { Closure body ->
+    if (stage != null) stage.setAlwaysOnTop(false)
+    try { return body() } finally { if (stage != null) stage.setAlwaysOnTop(true) }
+}
+// Yol A: önceki "Ki-67 Tümör Özet" (tam ad ya da "(N)") anotasyonları.
+def askExistingA = { hierarchy ->
+    def prev = prevOwnObjects(hierarchy, KI67_BASE)
+    if (prev.isEmpty()) return MODE_ADD
+    int nDet = prev.inject(0) { acc, o -> acc + ki67OwnDetections(o).size() } as int
+    String optAdd = workshopText('script.1e749978a0e7', 'Ekle — öncekine dokunma, yeni bir özet olarak ekle (varsayılan)')
+    String optRep = workshopText('script.718cddc070e2', 'Değiştir — önceki özet ve doğrudan içindeki hücre tespitleri silinir')
+    def pick = withStageBelow {
+        Dialogs.showChoiceDialog(workshopText('script.430d53352d5b', 'Önceki Ki-67 sonucu'),
+            String.format(java.util.Locale.US, workshopText('script.f6ee0826b713', 'Bu lamda zaten %,d "Ki-67 Tümör Özet" anotasyonu var (doğrudan içlerinde toplam %,d hücre tespiti).\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir özet olur ("Ki-67 Tümör Özet (2)" gibi). Lamda iki sonuç birlikte durur.\n\n"Değiştir" seçilirse yeni ölçüm başarıyla bittikten sonra önceki özet anotasyonları ve doğrudan içlerindeki hücre tespitleri silinir — bu tespitlerde elle yaptığınız düzeltmeler de gider. Özetlerin içine çizdiğiniz diğer anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki Ki-67 sonucu ne olsun?'), prev.size(), nDet),
+            [optAdd, optRep], optAdd)
+    }
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = withStageBelow {
+            Dialogs.showConfirmDialog(workshopText('script.fff8bd9bffe0', 'Önceki Ki-67 sonucu silinecek'),
+                String.format(java.util.Locale.US, workshopText('script.327217399e62', '%,d "Ki-67 Tümör Özet" anotasyonu ile doğrudan içlerindeki %,d hücre tespiti silinecek. Bu tespitlerde elle yaptığınız düzeltmeler KAYBOLUR. Bu adı elle verdiğiniz bir anotasyon da, betiğin kendi özetinden ayırt edilemediği için silinir. Özetlerin içindeki diğer anotasyonlar korunur.\n\nDevam edilsin mi?'), prev.size(), nDet))
+        }
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+// Yol B: seçili bölgenin altında önceki hücre tespitleri var mı?
+def askExistingB = { regionAnno ->
+    def existingDets = regionAnno.getChildObjects().findAll { it.isDetection() }
+    if (existingDets.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.c13fa0d17d1c', 'Ekle — öncekine dokunma, tespiti alanın yeni bir kopyasında yap (varsayılan)')
+    String optRep = workshopText('script.7bdb766199cb', 'Değiştir — bu bölgenin altındaki önceki tespitler silinir')
+    def pick = withStageBelow {
+        Dialogs.showChoiceDialog(workshopText('script.33c0a605d048', 'Bölgede önceki tespitler var'),
+            String.format(java.util.Locale.US, workshopText('script.8a73b3757999', 'Seçili bölgenin altında zaten %,d hücre tespiti var.\n\n"Ekle" seçilirse hiçbir şey silinmez; tespit, aynı alanın yeni bir kopyasında ("Ki-67 tespit alanı" adlı anotasyon) yapılır ve sonraki adımlar o kopya üzerinde çalışır. Özgün bölge ve altındaki tespitler olduğu gibi kalır.\n\n"Değiştir" seçilirse bu bölgenin altındaki tespitler silinip yeniden üretilir. Tespitlerin nereden geldiği ayırt edilemez; başka bir modülle ya da elle eklenenler de silinir. Başka anotasyonların altındaki tespitlere dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nBölgedeki önceki tespitler ne olsun?'), existingDets.size()),
+            [optAdd, optRep], optAdd)
+    }
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = withStageBelow {
+            Dialogs.showConfirmDialog(workshopText('script.633240bd9ac7', 'Bölgedeki önceki tespitler silinecek'),
+                String.format(java.util.Locale.US, workshopText('script.1dbc7aae12f6', 'Seçili bölgenin altındaki %,d hücre tespiti silinecek. Başka bir modülle ya da elle eklenenler ve elle yaptığınız düzeltmeler dahil KAYBOLUR. Yeni tespit hiç hücre bulamazsa silinenler geri konur.\n\nDevam edilsin mi?'), existingDets.size()))
+        }
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
 // Eşik + sonuç paneli — hem Yol A (Hızlı Ki-67) hem Yol B (yoğunluk) yerinde tekrar çalışır.
-def buildScorePanel = { content, buttons, String infoText, boolean advExpanded, Closure runner, resultRef, Closure backAction ->
+def buildScorePanel = { content, buttons, String infoText, boolean advExpanded, Closure runner, resultRef, Closure backAction, Closure preAsk = null ->
     def info = new javafx.scene.control.Label(infoText); info.setWrapText(true)
     def commitSpinner = { javafx.scene.control.Spinner sp ->
         try {
@@ -559,12 +703,15 @@ def buildScorePanel = { content, buttons, String infoText, boolean advExpanded, 
     def runBtn = new javafx.scene.control.Button(workshopText('script.79ef801ff99f', 'Çalıştır')); runBtn.setDefaultButton(true)
     runBtn.setOnAction({
         [spN1, spN2, spN3].each { commitSpinner(it) }
+        // Önceki sonuç varsa İŞLEMDEN ÖNCE (bu işleyici FX iş parçacığında) sor; İptal → hiçbir şey çalışmaz/yazılmaz.
+        def runMode = (preAsk != null) ? preAsk() : MODE_ADD
+        if (runMode == null) return
         runBtn.setDisable(true); status.setStyle(''); status.setText(workshopText('script.29f409509207', 'Çalışıyor…'))
         progress.setVisible(true); progress.setManaged(true); progress.setProgress(-1.0)
         double a = spN1.getValue() as double, b = spN2.getValue() as double, c = spN3.getValue() as double
         spN1Val.set((Double) a); spN2Val.set((Double) b); spN3Val.set((Double) c)
         def worker = new Thread({
-            def res = runner(a, b, c)
+            def res = runner(a, b, c, runMode)
             javafx.application.Platform.runLater {
                 progress.setVisible(false); progress.setManaged(false); runBtn.setDisable(false)
                 if (res.ok) {
@@ -587,12 +734,29 @@ def buildScorePanel = { content, buttons, String infoText, boolean advExpanded, 
 }
 
 // Arka plan: tespit + özellik (Yol B).
-def startDetect = { regionAnno ->
-    summaryAnnotation.set(regionAnno)
+def startDetect = { regionAnno, String mode = 'add' ->
+    def target = regionAnno
+    boolean madeCopy = false
+    // Önceki tespitleri olan bölgede "Ekle": tespit YENİ bir kopya bölgede yapılır; özgün bölge ve
+    // altındaki tespitler dokunulmadan kalır. (Bu işleyici FX iş parçacığında çalışır.)
+    if (mode == MODE_ADD && !regionAnno.getChildObjects().findAll { it.isDetection() }.isEmpty()) {
+        def copyAnno = PathObjects.createAnnotationObject(regionAnno.getROI())
+        copyAnno.setName(nextOwnSetName(QP.getCurrentHierarchy(), KI67_REGION_BASE))
+        QP.addObject(copyAnno)
+        target = copyAnno
+        madeCopy = true
+    }
+    summaryAnnotation.set(target)
     step.set('DETECTING'); render()
     def worker = new Thread({
-        def d = runCellDetection(regionAnno)
-        if (d.ok) addSmoothedFeatures(regionAnno)
+        def d = runCellDetection(target, mode)
+        if (d.ok) addSmoothedFeatures(target)
+        else if (madeCopy) {
+            // Başarısız çalıştırmanın KENDİ kopya bölgesi (yukarıda referansla oluşturuldu) kaldırılır.
+            try { QP.removeObjects([target], true); QP.fireHierarchyUpdate() } catch (Throwable ignore) {}
+            summaryAnnotation.set(regionAnno)
+        }
+        if (d.ok) d.copy = madeCopy ? target.getName() : null
         javafx.application.Platform.runLater {
             detectResult.set(d)
             if (d.ok) { step.set('TUMOR_EXAMPLES'); render() }
@@ -736,11 +900,12 @@ render = { ->
         title.setText(workshopText('script.5f7e4a504cc0', 'Hızlı Ki-67 — tümör bölgesini seçin'))
         buildScorePanel(content, buttons,
             'Sınıfı "Tumor" olan anotasyon(lar)ı çizip SEÇİN (kenarı sarı), sonra "Çalıştır".\n' +
-            'Her çalıştırma önceki "Ki-67 Tümör Özet" anotasyonunu yeniler; eşikleri değiştirip tekrar çalıştırabilirsiniz.',
+            workshopText('script.c48f60adadd6', 'Bu lamda önceki bir "Ki-67 Tümör Özet" varsa, çalıştırmadan önce ne yapılacağı sorulur (varsayılan: hiçbir şey silinmez). Eşikleri değiştirip tekrar çalıştırabilirsiniz.'),
             false,
-            { a, b, c -> runDetection(a, b, c) },
+            { a, b, c, m -> runDetection(a, b, c, m) },
             pathAResult,
-            { step.set('CHOICE'); render() })
+            { step.set('CHOICE'); render() },
+            { askExistingA(QP.getCurrentImageData()?.getHierarchy()) })
     } else if (cur == 'DETECT_REGION') {
         title.setText(workshopText('script.4924d86d6dd7', '1/5 — Tespit bölgesini seçin'))
         bodyLbl.setText(
@@ -753,7 +918,10 @@ render = { ->
             navButton(workshopText('script.a6ba34fc5c67', 'Tespit et ▶'), {
                 def sel = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getROI()?.isArea() }
                 if (sel.isEmpty()) { Dialogs.showWarningNotification(workshopText('script.e894b6d0ac6e', 'Bölge seçili değil'), workshopText('script.a97b5d9fae33', 'Önce bir alan anotasyonu çizip SEÇİN.')); return }
-                startDetect(sel[0])
+                // Bölgenin altında önceki tespitler varsa işlemden ÖNCE sor (İptal → hiçbir şey çalışmaz/yazılmaz).
+                def detMode = askExistingB(sel[0])
+                if (detMode == null) return
+                startDetect(sel[0], detMode)
             }, workshopText('script.c87420ed98c7', 'Seçili bölgede hücre tespiti + pürüzsüzleştirilmiş özellikler')))
     } else if (cur == 'DETECTING') {
         title.setText(workshopText('script.9429f7ad6229', 'Hücre tespiti + özellik hesaplama…'))
@@ -764,6 +932,8 @@ render = { ->
         title.setText(workshopText('script.c7d32438535f', '2/5 — Tümör hücresi örnekleri'))
         bodyLbl.setText(
             ((d?.ok) ? "${workshopText('script.f089332eb95f', 'Tespit edilen çekirdek: ')}${d.count}\n\n" : '') +
+            ((d?.ok && d.copy) ? String.format(java.util.Locale.US, workshopText('script.b88983480b0a', 'Bu bölgede önceki tespitler vardı ve hiçbirine dokunulmadı: yeni tespit "%s" anotasyonunda yapıldı. Sonraki adımlar (sınıflandırıcı ve yoğunluk) yalnız bu kopyada çalışır; önceki tespitler özgün bölgede duruyor. Eski olanı kaldırmak için o anotasyonu ya da altındaki tespitleri kendiniz silin.'), d.copy) + '\n\n' : '') +
+            ((d?.ok && (d.removed ?: 0) > 0) ? String.format(java.util.Locale.US, workshopText('script.c9e2eebbf5ad', 'Önceki sonuç değiştirildi: bölgenin altındaki %,d hücre tespiti silindi.'), d.removed) + '\n\n' : '') +
             workshopText('script.6f4d56956c30', 'Birkaç TİPİK TÜMÖR HÜCRESİ bölgesini küçük anotasyonlarla çizin ve sınıfını "Tumor" yapın\n') +
             workshopText('script.5ceebee7b2f5', '(Annotations sekmesinde sınıfı seçip "Set selected" ya da sağ tık → Set classification).\n') +
             workshopText('script.7bec4bc81f61', 'Tümör epiteline ait çekirdekleri hedefleyin; lenfosit ve stromadan uzak durun. Bitince İleri.\n\n') +
@@ -832,7 +1002,7 @@ render = { ->
             'DAB eşiklerini ayarlayıp "Çalıştır": yalnız Tumor hücreleri 0/1+/2+/3+ derecelenir.\n' +
             'Ki-67 LI = pozitif Tumor hücreleri / tüm Tumor hücreleri. Eşikleri değiştirip tekrar çalıştırabilirsiniz.',
             true,
-            { a, b, c -> scoreIntensity(summaryAnnotation.get(), a, b, c) },
+            { a, b, c, m -> scoreIntensity(summaryAnnotation.get(), a, b, c) },
             pathBResult,
             { step.set('TRAIN_GUIDE'); render() })
     }

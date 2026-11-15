@@ -70,6 +70,27 @@ def imageTypeGuidance = { ->
 }
 
 // H-DAB ise ve boya vektörleri eksikse atölye varsayılanını uygula.
+// Evet/Hayır sorusu — betik FX iş parçacığında da, betik iş parçacığında da çalışabilir.
+def askYesNo = { String title, String body ->
+    if (javafx.application.Platform.isFxApplicationThread()) return Dialogs.showConfirmDialog(title, body)
+    def answer = new java.util.concurrent.atomic.AtomicBoolean(false)
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    javafx.application.Platform.runLater {
+        try { answer.set(Dialogs.showConfirmDialog(title, body)) } finally { latch.countDown() }
+    }
+    latch.await()
+    return answer.get()
+}
+// Başsız kipte soru sorulamaz: açık bağımsız değişken gerekir (ör. -a boya=varsayilan).
+def headlessArg = { String key ->
+    def list = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) list = (a as List) } } catch (Throwable ignore) {}
+    def found = null
+    list.each { a -> def s = a?.toString() ?: ''; int i = s.indexOf('='); if (i > 0 && s.substring(0, i).trim() == key) found = s.substring(i + 1).trim().toLowerCase(java.util.Locale.ROOT) }
+    return found
+}
+
+// Varsayılan H-DAB vektörlerini uygulamak lamın MEVCUT boya vektörlerini değiştirir: SORULUR, sessizce yapılmaz.
 if (imageTypeOk()) {
     def stains = imageData.getColorDeconvolutionStains()
     def hasHematoxylin = false
@@ -80,7 +101,19 @@ if (imageTypeOk()) {
         }
     }
     if (!hasHematoxylin) {
-        println "⚠ H-DAB boya vektörleri tanımlı değil → BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
+        def stainNames = []
+        if (stains != null) { for (int i = 1; i <= 3; i++) { def nm = stains.getStain(i)?.getName(); if (nm) stainNames << nm } }
+        String stainList = stainNames.isEmpty() ? workshopText('script.edd17dfa3e74', '(tanımlı boya yok)') : stainNames.join(', ')
+        if (isHeadless) {
+            if (headlessArg('boya') != 'varsayilan') {
+                println String.format(java.util.Locale.US, workshopText('script.e7502113ef47', 'DURDU: görüntü tipi H-DAB ama "Hematoxylin" adlı boya yok (tanımlı boyalar: %s). Hiçbir şey değiştirilmedi. Varsayılan H-DAB boya vektörlerinin uygulanmasını (mevcut vektörlerin değişmesini) kabul ediyorsanız -a boya=varsayilan ile yeniden çalıştırın.'), stainList)
+                return
+            }
+        } else if (!askYesNo(workshopText('script.9d995633289c', 'Boya vektörleri değişecek'), String.format(java.util.Locale.US, workshopText('script.fcd4e17529fd', 'Bu lamın görüntü tipi Brightfield (H-DAB), ancak "Hematoxylin" adlı bir boya tanımlı değil.\nTanımlı boyalar: %s\n\nBu araç Hematoxylin ve DAB kanallarına ihtiyaç duyar. Devam etmek için QuPath\'in varsayılan H-DAB boya vektörleri uygulanmalıdır. Bu işlem lamın MEVCUT boya vektörlerini DEĞİŞTİRİR; kendiniz tahmin ettiğiniz vektörler varsa kaybolur.\n\nVarsayılan H-DAB boya vektörleri uygulansın mı?\n\n"Hayır" derseniz hiçbir şey değiştirilmez ve araç açılmaz.'), stainList))) {
+            Dialogs.showMessageDialog(workshopText('script.9d995633289c', 'Boya vektörleri değişecek'), workshopText('script.e9d070cff4f1', 'Hiçbir şey değiştirilmedi. Aracı kullanmak için boya vektörlerini kendiniz ayarlayın: Extensions → Atölye → Yardımcılar → Boya ve renk → Boya vektörleri sihirbazı. Boyalardan birinin adı "Hematoxylin" olmalıdır. Sonra bu aracı yeniden çalıştırın.'))
+            return
+        }
+        println "⚠ H-DAB boya vektörleri: kullanıcı onayıyla BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."
         QP.setImageType('BRIGHTFIELD_H_DAB')
     }
 }

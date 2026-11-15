@@ -47,6 +47,26 @@ def atolyeS = { String k, String  d -> (String)  __wpCall('str',  [String.class,
 def atolyeI = { String k, int     d -> (int)     __wpCall('intg', [String.class, int.class]     as Class[], [k, d] as Object[], d) }
 def atolyeB = { String k, boolean d -> (boolean) __wpCall('bool', [String.class, boolean.class] as Class[], [k, d] as Object[], d) }
 
+// Evet/Hayır sorusu — betik FX iş parçacığında da, betik iş parçacığında da çalışabilir.
+def askYesNo = { String title, String body ->
+    if (javafx.application.Platform.isFxApplicationThread()) return Dialogs.showConfirmDialog(title, body)
+    def answer = new java.util.concurrent.atomic.AtomicBoolean(false)
+    def latch = new java.util.concurrent.CountDownLatch(1)
+    javafx.application.Platform.runLater {
+        try { answer.set(Dialogs.showConfirmDialog(title, body)) } finally { latch.countDown() }
+    }
+    latch.await()
+    return answer.get()
+}
+// Başsız kipte soru sorulamaz: açık bağımsız değişken gerekir (ör. -a boya=varsayilan).
+def headlessArg = { String key ->
+    def list = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) list = (a as List) } } catch (Throwable ignore) {}
+    def found = null
+    list.each { a -> def s = a?.toString() ?: ''; int i = s.indexOf('='); if (i > 0 && s.substring(0, i).trim() == key) found = s.substring(i + 1).trim().toLowerCase(java.util.Locale.ROOT) }
+    return found
+}
+
 // ──────────────────────────────────────────────────────────────
 // 1) Ön kontrol — açık görüntü var mı?
 // ──────────────────────────────────────────────────────────────
@@ -75,7 +95,20 @@ if (curImageType == qupath.lib.images.ImageData.ImageType.FLUORESCENCE) {
     // Floresan görüntünün tipini parlak alana çevirmek kalıcı bir hatadır — dokunma.
     println "⚠ Görüntü tipi FLORESAN — bu modül parlak alan H&E/İHK içindir; tip değiştirilmedi."
 } else if (!hasHematoxylin) {
-    println "⚠ Hematoxylin boyası tanımlı değil → BRIGHTFIELD_H_E varsayılanı uygulanıyor."
+    // Görüntü tipini H&E yapmak lamın tipini VE boya vektörlerini değiştirir → SORULUR, sessizce yapılmaz.
+    String typeNow = curImageType?.toString() ?: atolyeText('cell.type.unset', 'ayarlanmamış')
+    if (isHeadless) {
+        if (headlessArg('tip') != 'he') {
+            println String.format(java.util.Locale.US, atolyeText('cell.type.headlessStop', 'DURDU: görüntü tipi "%s" ve "Hematoxylin" adlı boya yok. Hiçbir şey değiştirilmedi. Görüntü tipinin Brightfield (H&E) yapılmasını kabul ediyorsanız -a tip=he ile yeniden çalıştırın.'), typeNow)
+            return
+        }
+    } else if (!askYesNo(atolyeText('cell.type.askTitle', 'Görüntü tipi değişecek'),
+            String.format(java.util.Locale.US, atolyeText('cell.type.askBody', 'Bu lamın görüntü tipi: %s. "Hematoxylin" adlı bir boya tanımlı değil.\n\nHücre tespiti Hematoxylin kanalını kullanır. Devam etmek için görüntü tipi "Brightfield (H&E)" yapılmalıdır. Bu işlem lamın görüntü tipini ve MEVCUT boya vektörlerini DEĞİŞTİRİR.\n\nLam bir İHK (DAB) kesitiyse "Hayır" deyin ve Image sekmesinden "Brightfield (H-DAB)" seçin.\n\nGörüntü tipi "Brightfield (H&E)" yapılsın mı?'), typeNow))) {
+        Dialogs.showMessageDialog(atolyeText('cell.type.askTitle', 'Görüntü tipi değişecek'),
+            atolyeText('cell.type.declined', 'Hiçbir şey değiştirilmedi. Sol paneldeki Image sekmesinde Image type değerini H&E için "Brightfield (H&E)", İHK için "Brightfield (H-DAB)" olarak seçin, sonra aracı yeniden çalıştırın.'))
+        return
+    }
+    println "⚠ Hematoxylin boyası tanımlı değil → kullanıcı onayıyla BRIGHTFIELD_H_E uygulanıyor."
     QP.setImageType('BRIGHTFIELD_H_E')
 }
 

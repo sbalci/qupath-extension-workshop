@@ -50,6 +50,63 @@ import qupath.lib.scripting.QP
 def isHeadless = QuPathGUI.getInstance() == null
 final String GRID_NAME = "__GozKarariKalibrasyonIzgarasi__"
 
+// ── Önceki ızgara: SORULMADAN silinmez (ev kuralı) ──────────────────
+// Izgara GEÇİCİDİR; bu pencerenin kendi oluşturduğu kareler nesne başvurusuyla izlenir ve yalnız
+// onlar otomatik kaldırılır (ad süpürmesi YOK). Başka bir pencereden/yarım kalmış bir oturumdan
+// kalan ızgara karelerinin (TAM ad ya da "ad (N)", N >= 2) üstüne yeni ızgara koymadan önce SORULUR.
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
+// Bu pencerenin KENDİ karelerinin dışında kalan (başka oturumdan kalma) ızgara kareleri.
+def foreignGridObjects = { hierarchy, String base, List ownList ->
+    return prevOwnObjects(hierarchy, base).findAll { o -> !ownList.any { it.is(o) } }
+}
+// Kullanıcıya SOR (ızgara konmadan ÖNCE). Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey yazılmaz).
+def askExisting = { hierarchy, List foreign ->
+    if (foreign.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.bdcd95fa9aa5', 'Öncekine dokunma — yeni ızgarayı ayrı bir set olarak ekle (varsayılan)')
+    String optRep = workshopText('script.ade103dec9d5', 'Öncekini değiştir (başka oturumdan kalan kalibrasyon ızgarası kareleri silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.c77c2e120b24', 'Lamda önceki kalibrasyon ızgarası var'),
+        String.format(java.util.Locale.US, workshopText('script.a29b2b6957f7', 'Bu lamda, bu pencerenin koymadığı %,d kalibrasyon ızgarası karesi duruyor (başka bir pencereden ya da yarım kalmış bir oturumdan).\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni ızgara ayrı bir set olarak (adının sonunda "(2)" ile) üstüne konur ve iki ızgara üst üste görünür.\n\n"Değiştir" seçilirse o kareler silinir. Kendi anotasyonlarınıza dokunulmaz; karelerin içindeki nesneler korunur.\n\nİptal: ızgara konmaz, hiçbir şey yazılmaz.\n\nÖnceki ızgara ne olsun?'), foreign.size()),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.22f589664598', 'Önceki kalibrasyon ızgarası silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.e53de638f38c', '%,d kalibrasyon ızgarası karesi silinecek: adı "__GozKarariKalibrasyonIzgarasi__" olan (ya da sonunda "(2)", "(3)" … bulunan) anotasyonlar. Bu adı kendiniz verdiyseniz o anotasyon da silinir. Karelerin içindeki nesneler korunur.\n\nDevam edilsin mi?'), foreign.size()))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
+// Başsız kip ızgara yazmaz; yine de bilinmeyen `mevcut` değeri HER durumda durdurur (fail closed).
+def scriptArgs = []
+try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+def argMap = [:]
+scriptArgs.each { a -> def sa = a?.toString() ?: ''; int ia = sa.indexOf('='); if (ia > 0) argMap[sa.substring(0, ia).trim()] = sa.substring(ia + 1).trim() }
+String mevcutArg = argMap.mevcut == null ? null : argMap.mevcut.toLowerCase(Locale.ROOT)
+if (isHeadless && mevcutArg != null && !['ekle', 'degistir'].contains(mevcutArg)) {
+    println String.format(Locale.US, workshopText('script.37ab92155fc9', 'HATA: mevcut yalnızca \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut)
+    return
+}
+
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
     def msg = "Açık sanal lam bulunamadı.\n\nÖnce sınıflandırılmış hücre tespitleri içeren bir lam açın."
@@ -58,7 +115,7 @@ if (imageData == null) {
 }
 
 def selectedAreas = QP.getSelectedObjects().findAll {
-    it.isAnnotation() && it.getName() != GRID_NAME && it.getROI() != null && it.getROI().isArea() && it.getROI().getArea() > 0
+    it.isAnnotation() && !isOwnSetName(it.getName(), GRID_NAME) && it.getROI() != null && it.getROI().isArea() && it.getROI().getArea() > 0
 }
 if (selectedAreas.isEmpty()) {
     def msg = "Geçerli bir kapalı alan (ROI) seçili değil.\n\n" +
@@ -161,21 +218,54 @@ if (isHeadless) {
     return
 }
 
+def gridHierarchy = imageData.getHierarchy()
+def ownGridObjects = []            // bu pencerenin koyduğu kareler (nesne başvurusu; ad eşleşmesi DEĞİL)
+def acknowledgedForeign = []       // "Ekle" dediğimiz başka-oturum kareleri (aynı pencerede tekrar sorma)
+def gridNoteRef = new java.util.concurrent.atomic.AtomicReference('')
+
+// Yalnız bu pencerenin KENDİ kareleri kaldırılır — ad süpürmesi yok; başkasının/kullanıcının
+// aynı adı taşıyan anotasyonuna dokunulmaz.
 def removeGrid = {
-    def stale = QP.getAnnotationObjects().findAll { it.getName() == GRID_NAME }
-    if (!stale.isEmpty()) {
-        QP.removeObjects(stale, true)
-        QP.fireHierarchyUpdate()
+    if (!ownGridObjects.isEmpty()) {
+        def mine = new ArrayList(ownGridObjects)
+        ownGridObjects.clear()
+        gridHierarchy.removeObjects(mine, true)
+        QP.fireHierarchyUpdate(gridHierarchy)
     }
 }
 
+// Dönüş: true = ızgara kondu (ya da konacak yer yok), false = İptal (hiçbir şey yazılmadı).
 def addGrid = {
     removeGrid()
     double bx = targetRoi.getBoundsX()
     double by = targetRoi.getBoundsY()
     double bw = targetRoi.getBoundsWidth()
     double bh = targetRoi.getBoundsHeight()
-    if (bw <= 4 || bh <= 4) return
+    if (bw <= 4 || bh <= 4) return true
+    // Başka oturumdan kalma ızgara varsa SOR (silmeden önce); hiçbir şey sorulmadan silinmez.
+    def foreign = foreignGridObjects(gridHierarchy, GRID_NAME, ownGridObjects)
+    String gridMode = MODE_ADD
+    if (!foreign.isEmpty() && !foreign.every { f -> acknowledgedForeign.any { it.is(f) } }) {
+        gridMode = askExisting(gridHierarchy, foreign)
+        if (gridMode == null) return false
+    }
+    int removedForeign = 0
+    String setName
+    if (gridMode == MODE_REPLACE) {
+        removedForeign = foreign.size()
+        if (removedForeign > 0) gridHierarchy.removeObjects(foreign, true)
+        setName = GRID_NAME
+    } else {
+        foreign.each { f -> if (!acknowledgedForeign.any { it.is(f) }) acknowledgedForeign << f }
+        setName = nextOwnSetName(gridHierarchy, GRID_NAME)
+    }
+    if (gridMode == MODE_REPLACE) {
+        gridNoteRef.set(String.format(Locale.US, workshopText('script.70c393244c98', 'Önceki kalibrasyon ızgarası değiştirildi: %,d kare silindi (içlerindeki nesneler korundu).'), removedForeign))
+    } else if (!foreign.isEmpty()) {
+        gridNoteRef.set(String.format(Locale.US, workshopText('script.83a780dc32ca', 'DİKKAT — önceki kalibrasyon ızgarası hâlâ lamda duruyor: %s. Hiçbir şey silinmedi; yeni ızgara şu adı taşıyor: %s. Eskisini kaldırmak için o addaki anotasyonları seçip silin.'), foreign.collect { it.getName() }.unique().sort().join(', '), setName))
+    } else {
+        gridNoteRef.set('')
+    }
     ImagePlane plane = targetRoi.getImagePlane() ?: ImagePlane.getDefaultPlane()
     PathClass gridPc = PathClass.fromString("Kalibrasyon Izgarası", qupath.lib.common.ColorTools.packRGB(0, 114, 178))
     def cells = []
@@ -183,13 +273,15 @@ def addGrid = {
         for (int c = 0; c < 4; c++) {
             def rect = ROIs.createRectangleROI(bx + c * (bw / 4.0), by + r * (bh / 4.0), bw / 4.0, bh / 4.0, plane)
             def ann = PathObjects.createAnnotationObject(rect, gridPc)
-            ann.setName(GRID_NAME)
+            ann.setName(setName)
             ann.setLocked(true)
             cells << ann
         }
     }
-    QP.addObjects(cells)
-    QP.fireHierarchyUpdate()
+    gridHierarchy.addObjects(cells)
+    ownGridObjects.addAll(cells)
+    QP.fireHierarchyUpdate(gridHierarchy)
+    return true
 }
 
 def appendAndSummarizeLog = { double guessCellPct, Double guessAreaPct, double signedBias, double absErr, double relErr ->
@@ -284,8 +376,26 @@ javafx.application.Platform.runLater {
     infoLbl.setStyle("-fx-background-color: #eef6fb; -fx-border-color: #9ac4e2; -fx-border-radius: 4px; -fx-background-radius: 4px; -fx-padding: 8px;")
 
     def gridCheck = new javafx.scene.control.CheckBox(workshopText('script.a46d75af53c2', "📐 Seçili bölge üzerine geçici 4×4 kalibrasyon ızgarası (16 alt kare) yerleştir"))
+    def gridNoteLbl = new javafx.scene.control.Label('')
+    gridNoteLbl.setWrapText(true)
+    gridNoteLbl.setMaxWidth(Double.MAX_VALUE)
+    gridNoteLbl.setStyle('-fx-text-fill: #b8860b; -fx-font-weight: bold;')
+    gridNoteLbl.setVisible(false)
+    gridNoteLbl.setManaged(false)
+    def showGridNote = { ->
+        String note = gridNoteRef.get() ?: ''
+        gridNoteLbl.setText(note)
+        gridNoteLbl.setVisible(!note.isEmpty())
+        gridNoteLbl.setManaged(!note.isEmpty())
+    }
     gridCheck.selectedProperty().addListener({ obs, oldV, newV ->
-        if (newV) addGrid() else removeGrid()
+        if (newV) {
+            // İptal'de hiçbir şey yazılmaz: onay kutusu geri alınır.
+            if (!addGrid()) { gridCheck.setSelected(false); return }
+        } else {
+            removeGrid()
+        }
+        showGridNote()
         javafx.application.Platform.runLater { viewer?.repaint() }
     } as javafx.beans.value.ChangeListener)
 
@@ -380,6 +490,7 @@ javafx.application.Platform.runLater {
         def sb = new StringBuilder()
         sb << "GÖZ KARARI KALİBRASYON KARŞILAŞTIRMASI\n"
         sb << "══════════════════════════════════════════════════════════════\n"
+        if (gridNoteRef.get()) sb << gridNoteRef.get() << "\n\n"
         sb << String.format(Locale.US, "Sanal lam / Bölge             : %s / %s (%s)%n", imageName, roiName, areaInfo)
         sb << String.format(Locale.US, "Ölçülen oran tanımı           : %s%n", metricLabel)
         sb << String.format(Locale.US, "Sınıflandırılmış hücre        : %,d (hedef: %,d)%n%n", totalCount, posCount)
@@ -434,7 +545,7 @@ javafx.application.Platform.runLater {
     def footer = new javafx.scene.layout.HBox(10, revealBtn, copyBtn, spacer, alwaysTop, closeBtn)
     footer.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
 
-    def root = new javafx.scene.layout.VBox(10, titleLbl, infoLbl, gridCheck, blindToggle, form, resultArea, footer)
+    def root = new javafx.scene.layout.VBox(10, titleLbl, infoLbl, gridCheck, gridNoteLbl, blindToggle, form, resultArea, footer)
     root.setPadding(new javafx.geometry.Insets(12))
 
     stage.setOnHidden({

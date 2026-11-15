@@ -34,6 +34,85 @@ import qupath.lib.roi.RoiTools
 
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
+// ── Önceki sonuç: SORULMADAN silinmez (ev kuralı) ───────────────────
+// Bu betiğin çıktısı: "Yoğunluk grid r,c" kareleri + "Yoğunluk Özet". Yalnız TAM ad ya da
+// "ad (N)" (N >= 2) eşleşir — önek eşleşmesi YOK; kullanıcının verdiği başka adlara dokunulmaz.
+def GRID_BASE    = 'Yoğunluk grid'
+def SUMMARY_BASE = 'Yoğunluk Özet'
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
+// Izgara karesi adı: "<base> r,c" (ilk set) ya da "<base> (N) r,c" (N >= 2).
+def isOwnTileName = { String name, String base ->
+    if (name == null) return false
+    return name ==~ (java.util.regex.Pattern.quote(base) + ' (\\((?:[2-9]|[1-9][0-9]+)\\) )?[0-9]+,[0-9]+')
+}
+def tileSetIndex = { String name, String base ->
+    def m = (name =~ ('^' + java.util.regex.Pattern.quote(base) + ' \\(([0-9]+)\\) [0-9]+,[0-9]+$'))
+    return m.find() ? (m.group(1) as int) : 1
+}
+def prevOwnGridObjects = { hierarchy, String gridBase, String summaryBase ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnTileName(it.getName(), gridBase) || isOwnSetName(it.getName(), summaryBase) }
+}
+def gridSetIndexes = { hierarchy, String gridBase, String summaryBase ->
+    return prevOwnGridObjects(hierarchy, gridBase, summaryBase).collect {
+        isOwnSetName(it.getName(), summaryBase) ? ownSetIndex(it.getName(), summaryBase) : tileSetIndex(it.getName(), gridBase)
+    }.unique().sort()
+}
+def nextGridSetIndex = { hierarchy, String gridBase, String summaryBase ->
+    def used = gridSetIndexes(hierarchy, gridBase, summaryBase)
+    return used.isEmpty() ? 1 : ((used.max() as int) + 1)
+}
+def setSuffix = { int index -> index > 1 ? (' (' + index + ')') : '' }
+
+// Önceki sonuç için kullanıcıya SOR (hesaptan ÖNCE). Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey yazılmaz).
+def askExisting = { hierarchy ->
+    def prev = prevOwnGridObjects(hierarchy, GRID_BASE, SUMMARY_BASE)
+    if (prev.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.5fcbb9588b11', 'Öncekine dokunma — yeni bir set olarak ekle (varsayılan)')
+    String optRep = workshopText('script.a2d620f13645', 'Öncekini değiştir (bu betiğin ızgara kareleri ve özet anotasyonu silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.6c29143b08ce', 'Önceki yoğunluk haritası sonucu'),
+        String.format(java.util.Locale.US, workshopText('script.e087287a1920', 'Bu lamda bu betiğin ürettiği %,d anotasyon zaten var (ızgara kareleri ve özet).\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir set olur ("Yoğunluk grid (2) 0,0" ve "Yoğunluk Özet (2)" gibi). Lamda iki set birlikte durur; dışa aktarım ve özetler ikisini de görür.\n\n"Değiştir" seçilirse önceki ızgara kareleri ve özet anotasyonu silinir. Kendi anotasyonlarınıza dokunulmaz; silinen karelerin içindeki nesneler korunur.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?'), prev.size()),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.7ac01d7e1a49', 'Önceki yoğunluk haritası sonucu silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.89d4eec58021', '%,d anotasyon silinecek: bu betiğin önceki ızgara kareleri ve özet anotasyonu (adı "Yoğunluk grid …" ya da "Yoğunluk Özet" olanlar). Bu adlardan birini kendiniz verdiyseniz o anotasyon da silinir; karelerde elle yaptığınız değişiklikler kaybolur. Karelerin içindeki nesneler korunur.\n\nDevam edilsin mi?'), prev.size()))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
+// Başsız kip: önceki sonuç varsa `mevcut=ekle` (kopya ekle) ya da `mevcut=degistir` olmadan hiçbir şey yazılmaz.
+def scriptArgs = []
+try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+def argMap = [:]
+scriptArgs.each { a -> def sa = a?.toString() ?: ''; int ia = sa.indexOf('='); if (ia > 0) argMap[sa.substring(0, ia).trim()] = sa.substring(ia + 1).trim() }
+String mevcutArg = argMap.mevcut == null ? null : argMap.mevcut.toLowerCase(java.util.Locale.ROOT)
+if (isHeadless && mevcutArg != null && !['ekle', 'degistir'].contains(mevcutArg)) {
+    println String.format(java.util.Locale.US, workshopText('script.37ab92155fc9', 'HATA: mevcut yalnızca \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut)
+    return
+}
+
 def showResultWindow = { String windowTitle, String windowBody ->
     if (isHeadless) {
         println "=== ${windowTitle} ===\n${windowBody}\n=================="
@@ -113,7 +192,7 @@ if (!(pw > 0) || !(ph > 0)) {
 
 def targets = QP.getSelectedObjects().findAll {
     it.isAnnotation() && it.getROI()?.isArea() &&
-        !(it.getName() ?: '').startsWith('Yoğunluk grid') && it.getName() != 'Yoğunluk Özet'
+        !isOwnTileName(it.getName(), GRID_BASE) && !isOwnSetName(it.getName(), SUMMARY_BASE)
 }
 if (targets.isEmpty()) {
     Dialogs.showErrorMessage(workshopText('script.acef16918bfc', 'Analiz alanı seçili değil'), workshopText('script.17f12d8e0b7d', 'Yoğunluk haritası için ölçülecek anotasyonları açıkça seçin.'))
@@ -130,6 +209,26 @@ def cells = QP.getDetectionObjects().findAll { detection ->
     detection.isCell() && roi != null && analysisROI.contains(roi.getCentroidX(), roi.getCentroidY())
 }
 int n = cells.size()
+
+// Önceki sonuç varsa hesaptan ÖNCE sor; İptal'de hiçbir şey yazılmaz.
+def hierarchy = imageData.getHierarchy()
+String writeMode = MODE_ADD
+def prevAtStart = prevOwnGridObjects(hierarchy, GRID_BASE, SUMMARY_BASE)
+if (!prevAtStart.isEmpty()) {
+    if (isHeadless) {
+        if (mevcutArg == null) {
+            println String.format(java.util.Locale.US, workshopText('script.54ea69e92480', 'Bu lamda bu betiğin önceki sonucu zaten var (%,d anotasyon). Hiçbir şey yazılmadı. Yeni bir set eklemek için mevcut=ekle, önceki sonucu değiştirmek için mevcut=degistir ile yeniden çalıştırın.'), prevAtStart.size())
+            return
+        }
+        writeMode = (mevcutArg == 'degistir') ? MODE_REPLACE : MODE_ADD
+    } else {
+        writeMode = askExisting(hierarchy)
+        if (writeMode == null) return
+    }
+}
+// Replace: yeni set ilk setin adlarını alır; Add: sıradaki set numarası.
+int setIndex = (writeMode == MODE_REPLACE) ? 1 : nextGridSetIndex(hierarchy, GRID_BASE, SUMMARY_BASE)
+def keptSetNames = (writeMode == MODE_REPLACE) ? [] : gridSetIndexes(hierarchy, GRID_BASE, SUMMARY_BASE).collect { SUMMARY_BASE + setSuffix(it as int) }
 
 // ── 2) Fiziksel kare boyutuyla, analiz ROI sınırlarından ızgara ─────
 double tilePxX = tileSizeMicrons / pw
@@ -156,10 +255,7 @@ cells.each { cell ->
 }
 
 // ── 3) Eski çıktıyı temizle; ROI ile kesişen sıfır/dolu tüm kareleri yaz ──
-QP.removeObjects(QP.getAnnotationObjects().findAll {
-    it.getName() != null && (it.getName().startsWith('Yoğunluk grid') || it.getName() == 'Yoğunluk Özet')
-}, false)
-
+// (Önceki sonuç burada SİLİNMEZ: yalnız Replace kolu, yeni nesneler hazır olunca siler.)
 def plane = analysisROI.getImagePlane()
 def newTiles = []
 double maxFullTileDensity = Double.NaN
@@ -186,7 +282,7 @@ for (int row = 0; row < nRows; row++) {
         }
 
         def tile = PathObjects.createAnnotationObject(clipped)
-        tile.setName(String.format(java.util.Locale.US, 'Yoğunluk grid %d,%d', row, col))
+        tile.setName(String.format(java.util.Locale.US, '%s %d,%d', GRID_BASE + setSuffix(setIndex), row, col))
         tile.measurements['Kare analiz alanı (mm2)'] = areaMm2
         tile.measurements['Kare kapsamı (%)'] = 100.0 * coverage
         tile.measurements['Hücre sayısı'] = count as double
@@ -199,7 +295,7 @@ for (int row = 0; row < nRows; row++) {
 double overallDensity = analyzedAreaMm2 > 0 ? n / analyzedAreaMm2 : Double.NaN
 
 def summary = PathObjects.createAnnotationObject(analysisROI)
-summary.setName('Yoğunluk Özet')
+summary.setName(SUMMARY_BASE + setSuffix(setIndex))
 summary.measurements['Hücre sayısı (toplam)'] = n as double
 summary.measurements['Analiz alanı (mm2)'] = analyzedAreaMm2
 summary.measurements['Kare sayısı'] = newTiles.size() as double
@@ -209,9 +305,17 @@ summary.measurements['Genel yoğunluk (hücre/mm2)'] = overallDensity
 summary.measurements['Maksimum tam-karo yoğunluğu (hücre/mm2)'] = maxFullTileDensity
 summary.setLocked(true)
 
-QP.addObjects(newTiles)
-QP.addObjects([summary])
-QP.fireHierarchyUpdate()
+// Replace: yalnız bu betiğin önceki ızgara/özet anotasyonları (tam ad ya da "ad (N)") silinir;
+// içlerindeki nesneler KORUNUR (keepChildren = true). Yeni nesneler hazır olduktan SONRA silinir.
+int removedCount = 0
+if (writeMode == MODE_REPLACE) {
+    def prevNow = prevOwnGridObjects(hierarchy, GRID_BASE, SUMMARY_BASE)
+    removedCount = prevNow.size()
+    if (removedCount > 0) hierarchy.removeObjects(prevNow, true)
+}
+hierarchy.addObjects(newTiles)
+hierarchy.addObjects([summary])
+QP.fireHierarchyUpdate(hierarchy)
 
 def fmt = { double value, String pattern ->
     Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : 'hesaplanamadı'
@@ -219,7 +323,12 @@ def fmt = { double value, String pattern ->
 def body = new StringBuilder()
 body << 'HÜCRE YOĞUNLUĞU HARİTASI\n'
 body << '══════════════════════════════════\n\n'
-body << String.format(java.util.Locale.US, 'Analiz alanı          : %.3f mm²%n', analyzedAreaMm2)
+if (!keptSetNames.isEmpty()) {
+    body << String.format(java.util.Locale.US, workshopText('script.b880deb01e0a', 'DİKKAT — önceki sonuç hâlâ lamda duruyor: %s. Hiçbir şey silinmedi. Eski seti kaldırmak için o addaki anotasyonları seçip silin ya da betiği yeniden çalıştırıp "Öncekini değiştir"i seçin. Dışa aktarım ve özetler iki seti de görür.\nBu çalıştırmanın özeti: %s'), keptSetNames.join(', '), summary.getName()) << '\n\n'
+} else if (removedCount > 0) {
+    body << String.format(java.util.Locale.US, workshopText('script.d0cc14f27b20', 'Önceki sonuç değiştirildi: %,d anotasyon silindi (içlerindeki nesneler korundu).'), removedCount) << '\n\n'
+}
+body << String.format(java.util.Locale.US, 'Analiz alanı         : %.3f mm²%n', analyzedAreaMm2)
 body << String.format(java.util.Locale.US, 'Hücre (toplam)        : %,d%n', n)
 body << String.format(java.util.Locale.US, 'Izgara                : %d × %d; kare ≈ %.0f µm%n', nCols, nRows, tilePxX * pw)
 body << String.format(java.util.Locale.US, 'ROI ile kesişen kare  : %,d%n', newTiles.size())

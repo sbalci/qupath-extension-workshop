@@ -1103,6 +1103,2746 @@ assert tmaSetIndex(null, cores, TMA_BASE) == 0
         }
     }
 
+    // The image type and stain vectors are never changed with only a log line: every
+    // setImageType call sits behind a question (GUI), a named argument (headless) or a button.
+    void testModulesAskBeforeChangingImageTypeOrStains() {
+        ['nukleer-boya.groovy', 'er-pr-hscore.groovy', 'membran-boya.groovy', 'sitoplazmik-boya.groovy'].each { file ->
+            String s = source(file)
+            int ask = s.indexOf("if (headlessArg('boya') != 'varsayilan') {")
+            int gui = s.indexOf('} else if (!askYesNo(', ask)
+            int set = s.indexOf("QP.setImageType('BRIGHTFIELD_H_DAB')")
+            assert ask >= 0 && gui > ask && set > gui : file
+            String between = s.substring(ask, set)
+            assert between.count('return') == 2 : file              // headless stop and GUI "No"
+            assert !s.contains('BRIGHTFIELD_H_DAB varsayılanı uygulanıyor."\n        QP.setImageType') || s.contains('kullanıcı onayıyla') : file
+            // The only other call is the explicit "set image type" button handler.
+            assert s.count("QP.setImageType('BRIGHTFIELD_H_DAB')") == 2 : file
+            assert s.indexOf('fixTypeBtn.setOnAction({') < s.lastIndexOf("QP.setImageType('BRIGHTFIELD_H_DAB')") : file
+        }
+        String cell = source('hucre-tespiti.groovy')
+        int ask = cell.indexOf("if (headlessArg('tip') != 'he') {")
+        int gui = cell.indexOf('} else if (!askYesNo(', ask)
+        int set = cell.indexOf("QP.setImageType('BRIGHTFIELD_H_E')")
+        assert ask >= 0 && gui > ask && set > gui
+        assert cell.count("QP.setImageType(") == 1
+        assert cell.substring(ask, set).count('return') == 2
+        // askYesNo and headlessArg behave: no args -> null; a named value is read lower-cased.
+        def r = shell([binding: new Binding([args: ['boya=VARSAYILAN', 'x=1']])]).evaluate(
+            closure('nukleer-boya.groovy', 'headlessArg') + "\n[headlessArg('boya'), headlessArg('yok')]")
+        assert r == ['varsayilan', null]
+    }
+
+
+    static final String HOTSPOT_FILE = 'yardimci-hotspot-sirali.groovy'
+
+    static String hotspotClosures() {
+        ['isOwnSetName', 'ownSetIndex', 'prevOwnObjects', 'nextOwnSetName', 'prevOwnSummaries',
+         'askExisting', 'headlessDecision', 'commitSummary', 'modeNote'].collect { closure(HOTSPOT_FILE, it) }.join('\n')
+    }
+
+    // A summary as the script writes it: carries the signature measurement. unsigned = a user's own annotation.
+    static def hotspotSummary(String name, double x, boolean signed = true) {
+        def a = ann(name, x)
+        if (signed) a.getMeasurements().put('Seçilen top-N', 1d)
+        a
+    }
+
+    // Add -> add -> add numbering; a user-renamed annotation is never part of "our" sets.
+    void testHotspotOwnSetNamingNeverMatchesByPrefix() {
+        def h = new PathObjectHierarchy()
+        def base = 'Hotspot Özet'
+        shell([h: h, base: base]).evaluate(hotspotClosures() + '''
+assert nextOwnSetName(h, base) == base
+assert prevOwnObjects(null, base).isEmpty()
+assert isOwnSetName(base, base) && isOwnSetName(base + ' (2)', base) && isOwnSetName(base + ' (17)', base)
+assert !isOwnSetName(base + ' (1)', base) && !isOwnSetName(base + ' (x)', base) && !isOwnSetName(base + ' (2) x', base)
+assert !isOwnSetName(base + ' düzeltmelerim', base) && !isOwnSetName('x ' + base, base) && !isOwnSetName(null, base)
+''')
+        def mine = ann(base + ' düzeltmelerim', 900)
+        h.addObjects([mine])
+        def names = []
+        3.times { i ->
+            def s = ann(shell([h: h, base: base]).evaluate(hotspotClosures() + '\nnextOwnSetName(h, base)'), i * 150)
+            names << s.getName()
+            h.addObjects([s])
+        }
+        assert names == [base, base + ' (2)', base + ' (3)']
+        assert h.getAnnotationObjects().contains(mine)
+        assert mine.getName() == base + ' düzeltmelerim'
+    }
+
+    // Behaviour: Add deletes nothing and numbers the new summary; Replace removes only signed own summaries,
+    // keeps the objects inside them, and never touches a user's same-name annotation that lacks the signature.
+    void testHotspotCommitAddKeepsEarlierAndReplaceKeepsUserObjects() {
+        def h = new PathObjectHierarchy()
+        def base = 'Hotspot Özet'
+        def s1 = hotspotSummary(base, 0)
+        def s2 = hotspotSummary(base + ' (2)', 150)
+        def mineSame = hotspotSummary(base, 300, false)
+        def mineRenamed = hotspotSummary(base + ' notlarım', 450, false)
+        h.addObjects([s1, s2, mineSame, mineRenamed])
+        def child = det('Tümör', 10); s1.addChildObject(child)
+        assert child.getParent() == s1
+        String code = hotspotClosures()
+        def vars = [h: h, base: base, SIG: 'Seçilen top-N', MODE_ADD: 'add', MODE_REPLACE: 'replace',
+                    workshopText: { Object... a -> a[0] }]
+        def sum3 = hotspotSummary('x', 600)
+        def r1 = shell(vars + [sum: sum3]).evaluate(code + "\ncommitSummary(h, base, SIG, MODE_ADD, sum)")
+        assert r1.setName == base + ' (3)' && r1.removed == 0
+        assert r1.prevNames == [base, base + ' (2)']
+        assert sum3.getName() == base + ' (3)'
+        assert shell(vars + [res: r1]).evaluate(code + "\nmodeNote(res)")      // result-window note after Add
+        assert h.getAnnotationObjects().size() == 5
+        assert h.getAnnotationObjects().containsAll([s1, s2, mineSame, mineRenamed, sum3])
+        def sum4 = hotspotSummary('y', 750)
+        def r2 = shell(vars + [sum: sum4]).evaluate(code + "\ncommitSummary(h, base, SIG, MODE_REPLACE, sum)")
+        assert r2.removed == 3 && r2.prevNames.isEmpty()
+        assert r2.setName == base + ' (2)'
+        assert shell(vars + [res: r2]).evaluate(code + "\nmodeNote(res)")      // result-window note after Replace
+        assert !h.getAnnotationObjects().contains(s1) && !h.getAnnotationObjects().contains(s2) && !h.getAnnotationObjects().contains(sum3)
+        assert h.getAnnotationObjects().containsAll([mineSame, mineRenamed, sum4])
+        assert h.getAnnotationObjects().size() == 3
+        assert h.getDetectionObjects().contains(child)
+        assert child.getParent() != s1
+        def h2 = new PathObjectHierarchy()
+        def sum5 = hotspotSummary('z', 0)
+        def r3 = shell(vars + [h: h2, sum: sum5]).evaluate(code + "\ncommitSummary(h, base, SIG, MODE_ADD, sum)")
+        assert r3.setName == base && r3.removed == 0 && r3.prevNames.isEmpty()
+        assert h2.getAnnotationObjects() == [sum5]
+    }
+
+    // Decisions: no question without an earlier own summary; Add is the default; Replace needs a second
+    // confirmation; Cancel anywhere returns null; a user's unsigned same-name annotation never triggers a question.
+    void testHotspotAskDecisions() {
+        def base = 'Hotspot Özet'
+        String code = hotspotClosures()
+        def h = new PathObjectHierarchy()
+        def calls = []
+        def mkVars = { choice, confirm ->
+            [h: h, base: base, SIG: 'Seçilen top-N', MODE_ADD: 'add', MODE_REPLACE: 'replace', workshopText: { Object... a -> a[0] },
+             Dialogs: new Expando(
+                showChoiceDialog: { t, b, opts, dflt -> calls << 'choice'; choice == 'add' ? opts[0] : (choice == 'replace' ? opts[1] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; confirm })]
+        }
+        def ask = { choice, confirm -> shell(mkVars(choice, confirm)).evaluate(code + "\naskExisting(h, base, SIG)") }
+        assert ask('replace', true) == 'add' && calls.isEmpty()
+        h.addObjects([hotspotSummary(base, 0, false)])
+        assert ask('replace', true) == 'add' && calls.isEmpty()
+        h.addObjects([hotspotSummary(base, 150)])
+        assert ask('add', true) == 'add' && calls == ['choice']
+        calls.clear()
+        assert ask('replace', true) == 'replace' && calls == ['choice', 'confirm']
+        calls.clear()
+        assert ask('replace', false) == null && calls == ['choice', 'confirm']
+        calls.clear()
+        assert ask(null, true) == null && calls == ['choice']
+        assert h.getAnnotationObjects().size() == 2
+    }
+
+    // Headless: no dialog. An earlier own summary stops the run unless mevcut=ekle|degistir is given;
+    // an unknown value stops it whether or not an earlier result exists; deciding never writes.
+    void testHotspotHeadlessFailsClosed() {
+        def base = 'Hotspot Özet'
+        String code = hotspotClosures()
+        def h = new PathObjectHierarchy()
+        def dec = { String m -> shell([h: h, base: base, SIG: 'Seçilen top-N', MODE_ADD: 'add', MODE_REPLACE: 'replace',
+                                       workshopText: { Object... a -> a[0] }, mev: m]).evaluate(code + "\nheadlessDecision(h, base, SIG, mev)") }
+        assert dec(null).mode == 'add' && dec(null).error == null
+        assert dec('ekle').mode == 'add' && dec('degistir').mode == 'replace'
+        assert dec('sil').mode == null && dec('sil').error
+        h.addObjects([hotspotSummary(base, 0)])
+        assert dec('sil').mode == null && dec('sil').error
+        assert dec(null).mode == null && dec(null).error
+        assert dec('ekle').mode == 'add' && dec('degistir').mode == 'replace'
+        assert h.getAnnotationObjects().size() == 1
+    }
+
+    // Source contract: removal sits only in the Replace branch, the question precedes any work, Cancel returns
+    // first, headless stops first, and the summary name comes only from commitSummary.
+    void testHotspotAsksBeforeWriting() {
+        String s = source(HOTSPOT_FILE)
+        assert s.count('removeObjects(') == 1
+        assert !s.contains('QP.removeObjects') && !s.contains('clearAllObjects') && !s.contains('clearDetections') && !s.contains('removeObject(')
+        assert s.count('.setName(') == 1
+        int rep = s.indexOf('if (mode == MODE_REPLACE) {')
+        int rem = s.indexOf('hierarchy.removeObjects(prev, true)')
+        assert rep >= 0 && rem > rep && rem - rep < 250
+        String askSrc = closure(HOTSPOT_FILE, 'askExisting')
+        assert askSrc.contains('if (prev.isEmpty()) return MODE_ADD')
+        assert askSrc.contains('if (pick == null) return null')
+        assert askSrc.contains('return ok ? MODE_REPLACE : null')
+        assert askSrc.contains('prevOwnSummaries(hierarchy, base, sigKey)')
+        assert !s.contains('startsWith(base)') && !s.contains('startsWith(summaryName)')
+        int work = s.indexOf('allAnnos.findAll { it.getPathClass()?.toString() == hotspotClass')
+        int ask = s.indexOf('writeMode = askExisting(imageData.getHierarchy()')
+        int cancel = s.indexOf('if (writeMode == null) { println "İptal edildi."; return }')
+        int head = s.indexOf('def hd = headlessDecision(imageData.getHierarchy()')
+        int stop = s.indexOf('if (hd.mode == null) { println hd.error; return }')
+        assert work > 0 && ask > 0 && ask < cancel && cancel < work
+        assert head > 0 && head < stop && stop < work
+        assert s.contains("['ekle', 'degistir'].contains(mevcut)")
+        assert s.contains('mevcutArg = argMap.mevcut == null')
+        assert s.contains('commitSummary(imageData.getHierarchy(), ') && s.contains(', writeMode, ')
+    }
+
+
+    static final String NNDIST_FILE = 'yardimci-nn-mesafe.groovy'
+
+    static String nnDistanceClosures() {
+        ['isOwnSetName', 'ownSetIndex', 'prevOwnObjects', 'nextOwnSetName', 'prevOwnSummaries',
+         'askExisting', 'headlessDecision', 'commitSummary', 'modeNote'].collect { closure(NNDIST_FILE, it) }.join('\n')
+    }
+
+    // A summary as the script writes it: carries the signature measurement. unsigned = a user's own annotation.
+    static def nnDistanceSummary(String name, double x, boolean signed = true) {
+        def a = ann(name, x)
+        if (signed) a.getMeasurements().put('Ortalama NN mesafesi (µm)', 1d)
+        a
+    }
+
+    // Add -> add -> add numbering; a user-renamed annotation is never part of "our" sets.
+    void testNnDistanceOwnSetNamingNeverMatchesByPrefix() {
+        def h = new PathObjectHierarchy()
+        def base = 'En Yakın Komşu Özet'
+        shell([h: h, base: base]).evaluate(nnDistanceClosures() + '''
+assert nextOwnSetName(h, base) == base
+assert prevOwnObjects(null, base).isEmpty()
+assert isOwnSetName(base, base) && isOwnSetName(base + ' (2)', base) && isOwnSetName(base + ' (17)', base)
+assert !isOwnSetName(base + ' (1)', base) && !isOwnSetName(base + ' (x)', base) && !isOwnSetName(base + ' (2) x', base)
+assert !isOwnSetName(base + ' düzeltmelerim', base) && !isOwnSetName('x ' + base, base) && !isOwnSetName(null, base)
+''')
+        def mine = ann(base + ' düzeltmelerim', 900)
+        h.addObjects([mine])
+        def names = []
+        3.times { i ->
+            def s = ann(shell([h: h, base: base]).evaluate(nnDistanceClosures() + '\nnextOwnSetName(h, base)'), i * 150)
+            names << s.getName()
+            h.addObjects([s])
+        }
+        assert names == [base, base + ' (2)', base + ' (3)']
+        assert h.getAnnotationObjects().contains(mine)
+        assert mine.getName() == base + ' düzeltmelerim'
+    }
+
+    // Behaviour: Add deletes nothing and numbers the new summary; Replace removes only signed own summaries,
+    // keeps the objects inside them, and never touches a user's same-name annotation that lacks the signature.
+    void testNnDistanceCommitAddKeepsEarlierAndReplaceKeepsUserObjects() {
+        def h = new PathObjectHierarchy()
+        def base = 'En Yakın Komşu Özet'
+        def s1 = nnDistanceSummary(base, 0)
+        def s2 = nnDistanceSummary(base + ' (2)', 150)
+        def mineSame = nnDistanceSummary(base, 300, false)
+        def mineRenamed = nnDistanceSummary(base + ' notlarım', 450, false)
+        h.addObjects([s1, s2, mineSame, mineRenamed])
+        def child = det('Tümör', 10); s1.addChildObject(child)
+        assert child.getParent() == s1
+        String code = nnDistanceClosures()
+        def vars = [h: h, base: base, SIG: 'Ortalama NN mesafesi (µm)', MODE_ADD: 'add', MODE_REPLACE: 'replace',
+                    workshopText: { Object... a -> a[0] }]
+        def sum3 = nnDistanceSummary('x', 600)
+        def r1 = shell(vars + [sum: sum3]).evaluate(code + "\ncommitSummary(h, base, SIG, MODE_ADD, sum)")
+        assert r1.setName == base + ' (3)' && r1.removed == 0
+        assert r1.prevNames == [base, base + ' (2)']
+        assert sum3.getName() == base + ' (3)'
+        assert shell(vars + [res: r1]).evaluate(code + "\nmodeNote(res)")      // result-window note after Add
+        assert h.getAnnotationObjects().size() == 5
+        assert h.getAnnotationObjects().containsAll([s1, s2, mineSame, mineRenamed, sum3])
+        def sum4 = nnDistanceSummary('y', 750)
+        def r2 = shell(vars + [sum: sum4]).evaluate(code + "\ncommitSummary(h, base, SIG, MODE_REPLACE, sum)")
+        assert r2.removed == 3 && r2.prevNames.isEmpty()
+        assert r2.setName == base + ' (2)'
+        assert shell(vars + [res: r2]).evaluate(code + "\nmodeNote(res)")      // result-window note after Replace
+        assert !h.getAnnotationObjects().contains(s1) && !h.getAnnotationObjects().contains(s2) && !h.getAnnotationObjects().contains(sum3)
+        assert h.getAnnotationObjects().containsAll([mineSame, mineRenamed, sum4])
+        assert h.getAnnotationObjects().size() == 3
+        assert h.getDetectionObjects().contains(child)
+        assert child.getParent() != s1
+        def h2 = new PathObjectHierarchy()
+        def sum5 = nnDistanceSummary('z', 0)
+        def r3 = shell(vars + [h: h2, sum: sum5]).evaluate(code + "\ncommitSummary(h, base, SIG, MODE_ADD, sum)")
+        assert r3.setName == base && r3.removed == 0 && r3.prevNames.isEmpty()
+        assert h2.getAnnotationObjects() == [sum5]
+    }
+
+    // Decisions: no question without an earlier own summary; Add is the default; Replace needs a second
+    // confirmation; Cancel anywhere returns null; a user's unsigned same-name annotation never triggers a question.
+    void testNnDistanceAskDecisions() {
+        def base = 'En Yakın Komşu Özet'
+        String code = nnDistanceClosures()
+        def h = new PathObjectHierarchy()
+        def calls = []
+        def mkVars = { choice, confirm ->
+            [h: h, base: base, SIG: 'Ortalama NN mesafesi (µm)', MODE_ADD: 'add', MODE_REPLACE: 'replace', workshopText: { Object... a -> a[0] },
+             Dialogs: new Expando(
+                showChoiceDialog: { t, b, opts, dflt -> calls << 'choice'; choice == 'add' ? opts[0] : (choice == 'replace' ? opts[1] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; confirm })]
+        }
+        def ask = { choice, confirm -> shell(mkVars(choice, confirm)).evaluate(code + "\naskExisting(h, base, SIG)") }
+        assert ask('replace', true) == 'add' && calls.isEmpty()
+        h.addObjects([nnDistanceSummary(base, 0, false)])
+        assert ask('replace', true) == 'add' && calls.isEmpty()
+        h.addObjects([nnDistanceSummary(base, 150)])
+        assert ask('add', true) == 'add' && calls == ['choice']
+        calls.clear()
+        assert ask('replace', true) == 'replace' && calls == ['choice', 'confirm']
+        calls.clear()
+        assert ask('replace', false) == null && calls == ['choice', 'confirm']
+        calls.clear()
+        assert ask(null, true) == null && calls == ['choice']
+        assert h.getAnnotationObjects().size() == 2
+    }
+
+    // Headless: no dialog. An earlier own summary stops the run unless mevcut=ekle|degistir is given;
+    // an unknown value stops it whether or not an earlier result exists; deciding never writes.
+    void testNnDistanceHeadlessFailsClosed() {
+        def base = 'En Yakın Komşu Özet'
+        String code = nnDistanceClosures()
+        def h = new PathObjectHierarchy()
+        def dec = { String m -> shell([h: h, base: base, SIG: 'Ortalama NN mesafesi (µm)', MODE_ADD: 'add', MODE_REPLACE: 'replace',
+                                       workshopText: { Object... a -> a[0] }, mev: m]).evaluate(code + "\nheadlessDecision(h, base, SIG, mev)") }
+        assert dec(null).mode == 'add' && dec(null).error == null
+        assert dec('ekle').mode == 'add' && dec('degistir').mode == 'replace'
+        assert dec('sil').mode == null && dec('sil').error
+        h.addObjects([nnDistanceSummary(base, 0)])
+        assert dec('sil').mode == null && dec('sil').error
+        assert dec(null).mode == null && dec(null).error
+        assert dec('ekle').mode == 'add' && dec('degistir').mode == 'replace'
+        assert h.getAnnotationObjects().size() == 1
+    }
+
+    // Source contract: removal sits only in the Replace branch, the question precedes any work, Cancel returns
+    // first, headless stops first, and the summary name comes only from commitSummary.
+    void testNnDistanceAsksBeforeWriting() {
+        String s = source(NNDIST_FILE)
+        assert s.count('removeObjects(') == 1
+        assert !s.contains('QP.removeObjects') && !s.contains('clearAllObjects') && !s.contains('clearDetections') && !s.contains('removeObject(')
+        assert s.count('.setName(') == 1
+        int rep = s.indexOf('if (mode == MODE_REPLACE) {')
+        int rem = s.indexOf('hierarchy.removeObjects(prev, true)')
+        assert rep >= 0 && rem > rep && rem - rep < 250
+        String askSrc = closure(NNDIST_FILE, 'askExisting')
+        assert askSrc.contains('if (prev.isEmpty()) return MODE_ADD')
+        assert askSrc.contains('if (pick == null) return null')
+        assert askSrc.contains('return ok ? MODE_REPLACE : null')
+        assert askSrc.contains('prevOwnSummaries(hierarchy, base, sigKey)')
+        assert !s.contains('startsWith(base)') && !s.contains('startsWith(summaryName)')
+        int work = s.indexOf('double[] xs = new double[n]')
+        int ask = s.indexOf('writeMode = askExisting(imageData.getHierarchy()')
+        int cancel = s.indexOf('if (writeMode == null) { println "İptal edildi."; return }')
+        int head = s.indexOf('def hd = headlessDecision(imageData.getHierarchy()')
+        int stop = s.indexOf('if (hd.mode == null) { println hd.error; return }')
+        assert work > 0 && ask > 0 && ask < cancel && cancel < work
+        assert head > 0 && head < stop && stop < work
+        assert s.contains("['ekle', 'degistir'].contains(mevcut)")
+        assert s.contains('mevcutArg = argMap.mevcut == null')
+        assert s.contains('commitSummary(imageData.getHierarchy(), ') && s.contains(', writeMode, ')
+    }
+
+
+    static final String CROSSNN_FILE = 'yardimci-capraz-nn-mesafe.groovy'
+
+    static String crossNnClosures() {
+        ['isOwnSetName', 'ownSetIndex', 'prevOwnObjects', 'nextOwnSetName', 'prevOwnSummaries',
+         'askExisting', 'headlessDecision', 'commitSummary', 'modeNote'].collect { closure(CROSSNN_FILE, it) }.join('\n')
+    }
+
+    // A summary as the script writes it: carries the signature measurement. unsigned = a user's own annotation.
+    static def crossNnSummary(String name, double x, boolean signed = true) {
+        def a = ann(name, x)
+        if (signed) a.getMeasurements().put('Ortalama çapraz NN (µm)', 1d)
+        a
+    }
+
+    // Add -> add -> add numbering; a user-renamed annotation is never part of "our" sets.
+    void testCrossNnOwnSetNamingNeverMatchesByPrefix() {
+        def h = new PathObjectHierarchy()
+        def base = 'Çapraz NN Özet (Tümör→Lenfosit)'
+        shell([h: h, base: base]).evaluate(crossNnClosures() + '''
+assert nextOwnSetName(h, base) == base
+assert prevOwnObjects(null, base).isEmpty()
+assert isOwnSetName(base, base) && isOwnSetName(base + ' (2)', base) && isOwnSetName(base + ' (17)', base)
+assert !isOwnSetName(base + ' (1)', base) && !isOwnSetName(base + ' (x)', base) && !isOwnSetName(base + ' (2) x', base)
+assert !isOwnSetName(base + ' düzeltmelerim', base) && !isOwnSetName('x ' + base, base) && !isOwnSetName(null, base)
+''')
+        def mine = ann(base + ' düzeltmelerim', 900)
+        h.addObjects([mine])
+        def names = []
+        3.times { i ->
+            def s = ann(shell([h: h, base: base]).evaluate(crossNnClosures() + '\nnextOwnSetName(h, base)'), i * 150)
+            names << s.getName()
+            h.addObjects([s])
+        }
+        assert names == [base, base + ' (2)', base + ' (3)']
+        assert h.getAnnotationObjects().contains(mine)
+        assert mine.getName() == base + ' düzeltmelerim'
+    }
+
+    // Behaviour: Add deletes nothing and numbers the new summary; Replace removes only signed own summaries,
+    // keeps the objects inside them, and never touches a user's same-name annotation that lacks the signature.
+    void testCrossNnCommitAddKeepsEarlierAndReplaceKeepsUserObjects() {
+        def h = new PathObjectHierarchy()
+        def base = 'Çapraz NN Özet (Tümör→Lenfosit)'
+        def s1 = crossNnSummary(base, 0)
+        def s2 = crossNnSummary(base + ' (2)', 150)
+        def mineSame = crossNnSummary(base, 300, false)
+        def mineRenamed = crossNnSummary(base + ' notlarım', 450, false)
+        h.addObjects([s1, s2, mineSame, mineRenamed])
+        def child = det('Tümör', 10); s1.addChildObject(child)
+        assert child.getParent() == s1
+        String code = crossNnClosures()
+        def vars = [h: h, base: base, SIG: 'Ortalama çapraz NN (µm)', MODE_ADD: 'add', MODE_REPLACE: 'replace',
+                    workshopText: { Object... a -> a[0] }]
+        def sum3 = crossNnSummary('x', 600)
+        def r1 = shell(vars + [sum: sum3]).evaluate(code + "\ncommitSummary(h, base, SIG, MODE_ADD, sum)")
+        assert r1.setName == base + ' (3)' && r1.removed == 0
+        assert r1.prevNames == [base, base + ' (2)']
+        assert sum3.getName() == base + ' (3)'
+        assert shell(vars + [res: r1]).evaluate(code + "\nmodeNote(res, 'Tümör→Lenfosit en yakın komşu (µm)')")      // result-window note after Add
+        assert h.getAnnotationObjects().size() == 5
+        assert h.getAnnotationObjects().containsAll([s1, s2, mineSame, mineRenamed, sum3])
+        def sum4 = crossNnSummary('y', 750)
+        def r2 = shell(vars + [sum: sum4]).evaluate(code + "\ncommitSummary(h, base, SIG, MODE_REPLACE, sum)")
+        assert r2.removed == 3 && r2.prevNames.isEmpty()
+        assert r2.setName == base + ' (2)'
+        assert shell(vars + [res: r2]).evaluate(code + "\nmodeNote(res, 'Tümör→Lenfosit en yakın komşu (µm)')")      // result-window note after Replace
+        assert !h.getAnnotationObjects().contains(s1) && !h.getAnnotationObjects().contains(s2) && !h.getAnnotationObjects().contains(sum3)
+        assert h.getAnnotationObjects().containsAll([mineSame, mineRenamed, sum4])
+        assert h.getAnnotationObjects().size() == 3
+        assert h.getDetectionObjects().contains(child)
+        assert child.getParent() != s1
+        def h2 = new PathObjectHierarchy()
+        def sum5 = crossNnSummary('z', 0)
+        def r3 = shell(vars + [h: h2, sum: sum5]).evaluate(code + "\ncommitSummary(h, base, SIG, MODE_ADD, sum)")
+        assert r3.setName == base && r3.removed == 0 && r3.prevNames.isEmpty()
+        assert h2.getAnnotationObjects() == [sum5]
+    }
+
+    // Decisions: no question without an earlier own summary; Add is the default; Replace needs a second
+    // confirmation; Cancel anywhere returns null; a user's unsigned same-name annotation never triggers a question.
+    void testCrossNnAskDecisions() {
+        def base = 'Çapraz NN Özet (Tümör→Lenfosit)'
+        String code = crossNnClosures()
+        def h = new PathObjectHierarchy()
+        def calls = []
+        def mkVars = { choice, confirm ->
+            [h: h, base: base, SIG: 'Ortalama çapraz NN (µm)', MODE_ADD: 'add', MODE_REPLACE: 'replace', workshopText: { Object... a -> a[0] },
+             Dialogs: new Expando(
+                showChoiceDialog: { t, b, opts, dflt -> calls << 'choice'; choice == 'add' ? opts[0] : (choice == 'replace' ? opts[1] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; confirm })]
+        }
+        def ask = { choice, confirm -> shell(mkVars(choice, confirm)).evaluate(code + "\naskExisting(h, base, SIG, 'Tümör→Lenfosit en yakın komşu (µm)')") }
+        assert ask('replace', true) == 'add' && calls.isEmpty()
+        h.addObjects([crossNnSummary(base, 0, false)])
+        assert ask('replace', true) == 'add' && calls.isEmpty()
+        h.addObjects([crossNnSummary(base, 150)])
+        assert ask('add', true) == 'add' && calls == ['choice']
+        calls.clear()
+        assert ask('replace', true) == 'replace' && calls == ['choice', 'confirm']
+        calls.clear()
+        assert ask('replace', false) == null && calls == ['choice', 'confirm']
+        calls.clear()
+        assert ask(null, true) == null && calls == ['choice']
+        assert h.getAnnotationObjects().size() == 2
+    }
+
+    // Headless: no dialog. An earlier own summary stops the run unless mevcut=ekle|degistir is given;
+    // an unknown value stops it whether or not an earlier result exists; deciding never writes.
+    void testCrossNnHeadlessFailsClosed() {
+        def base = 'Çapraz NN Özet (Tümör→Lenfosit)'
+        String code = crossNnClosures()
+        def h = new PathObjectHierarchy()
+        def dec = { String m -> shell([h: h, base: base, SIG: 'Ortalama çapraz NN (µm)', MODE_ADD: 'add', MODE_REPLACE: 'replace',
+                                       workshopText: { Object... a -> a[0] }, mev: m]).evaluate(code + "\nheadlessDecision(h, base, SIG, mev)") }
+        assert dec(null).mode == 'add' && dec(null).error == null
+        assert dec('ekle').mode == 'add' && dec('degistir').mode == 'replace'
+        assert dec('sil').mode == null && dec('sil').error
+        h.addObjects([crossNnSummary(base, 0)])
+        assert dec('sil').mode == null && dec('sil').error
+        assert dec(null).mode == null && dec(null).error
+        assert dec('ekle').mode == 'add' && dec('degistir').mode == 'replace'
+        assert h.getAnnotationObjects().size() == 1
+    }
+
+    // Source contract: removal sits only in the Replace branch, the question precedes any work, Cancel returns
+    // first, headless stops first, and the summary name comes only from commitSummary.
+    void testCrossNnAsksBeforeWriting() {
+        String s = source(CROSSNN_FILE)
+        assert s.count('removeObjects(') == 1
+        assert !s.contains('QP.removeObjects') && !s.contains('clearAllObjects') && !s.contains('clearDetections') && !s.contains('removeObject(')
+        assert s.count('.setName(') == 1
+        int rep = s.indexOf('if (mode == MODE_REPLACE) {')
+        int rem = s.indexOf('hierarchy.removeObjects(prev, true)')
+        assert rep >= 0 && rem > rep && rem - rep < 250
+        String askSrc = closure(CROSSNN_FILE, 'askExisting')
+        assert askSrc.contains('if (prev.isEmpty()) return MODE_ADD')
+        assert askSrc.contains('if (pick == null) return null')
+        assert askSrc.contains('return ok ? MODE_REPLACE : null')
+        assert askSrc.contains('prevOwnSummaries(hierarchy, base, sigKey)')
+        assert !s.contains('startsWith(base)') && !s.contains('startsWith(summaryName)')
+        int work = s.indexOf('def bucketsB = new HashMap')
+        int ask = s.indexOf('writeMode = askExisting(imageData.getHierarchy()')
+        int cancel = s.indexOf('if (writeMode == null) { println "İptal edildi."; return }')
+        int head = s.indexOf('def hd = headlessDecision(imageData.getHierarchy()')
+        int stop = s.indexOf('if (hd.mode == null) { println hd.error; return }')
+        assert work > 0 && ask > 0 && ask < cancel && cancel < work
+        assert head > 0 && head < stop && stop < work
+        assert s.contains("['ekle', 'degistir'].contains(mevcut)")
+        assert s.contains('mevcutArg = argMap.mevcut == null')
+        assert s.contains('commitSummary(imageData.getHierarchy(), ') && s.contains(', writeMode, ')
+    }
+
+
+    static final String CLASSCOUNT_FILE = 'yardimci-sinif-sayim.groovy'
+
+    static String classCountClosures() {
+        ['isOwnSetName', 'ownSetIndex', 'prevOwnObjects', 'nextOwnSetName', 'prevOwnSummaries',
+         'askExisting', 'headlessDecision', 'commitSummary', 'modeNote'].collect { closure(CLASSCOUNT_FILE, it) }.join('\n')
+    }
+
+    // A summary as the script writes it: carries the signature measurement. unsigned = a user's own annotation.
+    static def classCountSummary(String name, double x, boolean signed = true) {
+        def a = ann(name, x)
+        if (signed) a.getMeasurements().put('Toplam hücre', 1d)
+        a
+    }
+
+    // Add -> add -> add numbering; a user-renamed annotation is never part of "our" sets.
+    void testClassCountOwnSetNamingNeverMatchesByPrefix() {
+        def h = new PathObjectHierarchy()
+        def base = 'Sınıf Sayım Özet'
+        shell([h: h, base: base]).evaluate(classCountClosures() + '''
+assert nextOwnSetName(h, base) == base
+assert prevOwnObjects(null, base).isEmpty()
+assert isOwnSetName(base, base) && isOwnSetName(base + ' (2)', base) && isOwnSetName(base + ' (17)', base)
+assert !isOwnSetName(base + ' (1)', base) && !isOwnSetName(base + ' (x)', base) && !isOwnSetName(base + ' (2) x', base)
+assert !isOwnSetName(base + ' düzeltmelerim', base) && !isOwnSetName('x ' + base, base) && !isOwnSetName(null, base)
+''')
+        def mine = ann(base + ' düzeltmelerim', 900)
+        h.addObjects([mine])
+        def names = []
+        3.times { i ->
+            def s = ann(shell([h: h, base: base]).evaluate(classCountClosures() + '\nnextOwnSetName(h, base)'), i * 150)
+            names << s.getName()
+            h.addObjects([s])
+        }
+        assert names == [base, base + ' (2)', base + ' (3)']
+        assert h.getAnnotationObjects().contains(mine)
+        assert mine.getName() == base + ' düzeltmelerim'
+    }
+
+    // Behaviour: Add deletes nothing and numbers the new summary; Replace removes only signed own summaries,
+    // keeps the objects inside them, and never touches a user's same-name annotation that lacks the signature.
+    void testClassCountCommitAddKeepsEarlierAndReplaceKeepsUserObjects() {
+        def h = new PathObjectHierarchy()
+        def base = 'Sınıf Sayım Özet'
+        def s1 = classCountSummary(base, 0)
+        def s2 = classCountSummary(base + ' (2)', 150)
+        def mineSame = classCountSummary(base, 300, false)
+        def mineRenamed = classCountSummary(base + ' notlarım', 450, false)
+        h.addObjects([s1, s2, mineSame, mineRenamed])
+        def child = det('Tümör', 10); s1.addChildObject(child)
+        assert child.getParent() == s1
+        String code = classCountClosures()
+        def vars = [h: h, base: base, SIG: 'Toplam hücre', MODE_ADD: 'add', MODE_REPLACE: 'replace',
+                    workshopText: { Object... a -> a[0] }]
+        def sum3 = classCountSummary('x', 600)
+        def r1 = shell(vars + [sum: sum3]).evaluate(code + "\ncommitSummary(h, base, SIG, MODE_ADD, sum)")
+        assert r1.setName == base + ' (3)' && r1.removed == 0
+        assert r1.prevNames == [base, base + ' (2)']
+        assert sum3.getName() == base + ' (3)'
+        assert shell(vars + [res: r1]).evaluate(code + "\nmodeNote(res)")      // result-window note after Add
+        assert h.getAnnotationObjects().size() == 5
+        assert h.getAnnotationObjects().containsAll([s1, s2, mineSame, mineRenamed, sum3])
+        def sum4 = classCountSummary('y', 750)
+        def r2 = shell(vars + [sum: sum4]).evaluate(code + "\ncommitSummary(h, base, SIG, MODE_REPLACE, sum)")
+        assert r2.removed == 3 && r2.prevNames.isEmpty()
+        assert r2.setName == base + ' (2)'
+        assert shell(vars + [res: r2]).evaluate(code + "\nmodeNote(res)")      // result-window note after Replace
+        assert !h.getAnnotationObjects().contains(s1) && !h.getAnnotationObjects().contains(s2) && !h.getAnnotationObjects().contains(sum3)
+        assert h.getAnnotationObjects().containsAll([mineSame, mineRenamed, sum4])
+        assert h.getAnnotationObjects().size() == 3
+        assert h.getDetectionObjects().contains(child)
+        assert child.getParent() != s1
+        def h2 = new PathObjectHierarchy()
+        def sum5 = classCountSummary('z', 0)
+        def r3 = shell(vars + [h: h2, sum: sum5]).evaluate(code + "\ncommitSummary(h, base, SIG, MODE_ADD, sum)")
+        assert r3.setName == base && r3.removed == 0 && r3.prevNames.isEmpty()
+        assert h2.getAnnotationObjects() == [sum5]
+    }
+
+    // Decisions: no question without an earlier own summary; Add is the default; Replace needs a second
+    // confirmation; Cancel anywhere returns null; a user's unsigned same-name annotation never triggers a question.
+    void testClassCountAskDecisions() {
+        def base = 'Sınıf Sayım Özet'
+        String code = classCountClosures()
+        def h = new PathObjectHierarchy()
+        def calls = []
+        def mkVars = { choice, confirm ->
+            [h: h, base: base, SIG: 'Toplam hücre', MODE_ADD: 'add', MODE_REPLACE: 'replace', workshopText: { Object... a -> a[0] },
+             Dialogs: new Expando(
+                showChoiceDialog: { t, b, opts, dflt -> calls << 'choice'; choice == 'add' ? opts[0] : (choice == 'replace' ? opts[1] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; confirm })]
+        }
+        def ask = { choice, confirm -> shell(mkVars(choice, confirm)).evaluate(code + "\naskExisting(h, base, SIG)") }
+        assert ask('replace', true) == 'add' && calls.isEmpty()
+        h.addObjects([classCountSummary(base, 0, false)])
+        assert ask('replace', true) == 'add' && calls.isEmpty()
+        h.addObjects([classCountSummary(base, 150)])
+        assert ask('add', true) == 'add' && calls == ['choice']
+        calls.clear()
+        assert ask('replace', true) == 'replace' && calls == ['choice', 'confirm']
+        calls.clear()
+        assert ask('replace', false) == null && calls == ['choice', 'confirm']
+        calls.clear()
+        assert ask(null, true) == null && calls == ['choice']
+        assert h.getAnnotationObjects().size() == 2
+    }
+
+    // Headless: no dialog. An earlier own summary stops the run unless mevcut=ekle|degistir is given;
+    // an unknown value stops it whether or not an earlier result exists; deciding never writes.
+    void testClassCountHeadlessFailsClosed() {
+        def base = 'Sınıf Sayım Özet'
+        String code = classCountClosures()
+        def h = new PathObjectHierarchy()
+        def dec = { String m -> shell([h: h, base: base, SIG: 'Toplam hücre', MODE_ADD: 'add', MODE_REPLACE: 'replace',
+                                       workshopText: { Object... a -> a[0] }, mev: m]).evaluate(code + "\nheadlessDecision(h, base, SIG, mev)") }
+        assert dec(null).mode == 'add' && dec(null).error == null
+        assert dec('ekle').mode == 'add' && dec('degistir').mode == 'replace'
+        assert dec('sil').mode == null && dec('sil').error
+        h.addObjects([classCountSummary(base, 0)])
+        assert dec('sil').mode == null && dec('sil').error
+        assert dec(null).mode == null && dec(null).error
+        assert dec('ekle').mode == 'add' && dec('degistir').mode == 'replace'
+        assert h.getAnnotationObjects().size() == 1
+    }
+
+    // Source contract: removal sits only in the Replace branch, the question precedes any work, Cancel returns
+    // first, headless stops first, and the summary name comes only from commitSummary.
+    void testClassCountAsksBeforeWriting() {
+        String s = source(CLASSCOUNT_FILE)
+        assert s.count('removeObjects(') == 1
+        assert !s.contains('QP.removeObjects') && !s.contains('clearAllObjects') && !s.contains('clearDetections') && !s.contains('removeObject(')
+        assert s.count('.setName(') == 1
+        int rep = s.indexOf('if (mode == MODE_REPLACE) {')
+        int rem = s.indexOf('hierarchy.removeObjects(prev, true)')
+        assert rep >= 0 && rem > rep && rem - rep < 250
+        String askSrc = closure(CLASSCOUNT_FILE, 'askExisting')
+        assert askSrc.contains('if (prev.isEmpty()) return MODE_ADD')
+        assert askSrc.contains('if (pick == null) return null')
+        assert askSrc.contains('return ok ? MODE_REPLACE : null')
+        assert askSrc.contains('prevOwnSummaries(hierarchy, base, sigKey)')
+        assert !s.contains('startsWith(base)') && !s.contains('startsWith(summaryName)')
+        int work = s.indexOf('targets.each { ann ->')
+        int ask = s.indexOf('writeMode = askExisting(imageData.getHierarchy()')
+        int cancel = s.indexOf('if (writeMode == null) { println "İptal edildi."; return }')
+        int head = s.indexOf('def hd = headlessDecision(imageData.getHierarchy()')
+        int stop = s.indexOf('if (hd.mode == null) { println hd.error; return }')
+        assert work > 0 && ask > 0 && ask < cancel && cancel < work
+        assert head > 0 && head < stop && stop < work
+        assert s.contains("['ekle', 'degistir'].contains(mevcut)")
+        assert s.contains('mevcutArg = argMap.mevcut == null')
+        assert s.contains('commitSummary(imageData.getHierarchy(), ') && s.contains(', writeMode, ')
+    }
+
+
+    static final String DELAUNAY_FILE = 'yardimci-delaunay-komsuluk.groovy'
+
+    static String delaunayClosures() {
+        ['isOwnSetName', 'ownSetIndex', 'prevOwnObjects', 'nextOwnSetName', 'prevOwnSummaries',
+         'askExisting', 'headlessDecision', 'commitSummary', 'modeNote'].collect { closure(DELAUNAY_FILE, it) }.join('\n')
+    }
+
+    // A summary as the script writes it: carries the signature measurement. unsigned = a user's own annotation.
+    static def delaunaySummary(String name, double x, boolean signed = true) {
+        def a = ann(name, x)
+        if (signed) a.getMeasurements().put('Ortalama komşu sayısı', 1d)
+        a
+    }
+
+    // Add -> add -> add numbering; a user-renamed annotation is never part of "our" sets.
+    void testDelaunayOwnSetNamingNeverMatchesByPrefix() {
+        def h = new PathObjectHierarchy()
+        def base = 'Delaunay Özet'
+        shell([h: h, base: base]).evaluate(delaunayClosures() + '''
+assert nextOwnSetName(h, base) == base
+assert prevOwnObjects(null, base).isEmpty()
+assert isOwnSetName(base, base) && isOwnSetName(base + ' (2)', base) && isOwnSetName(base + ' (17)', base)
+assert !isOwnSetName(base + ' (1)', base) && !isOwnSetName(base + ' (x)', base) && !isOwnSetName(base + ' (2) x', base)
+assert !isOwnSetName(base + ' düzeltmelerim', base) && !isOwnSetName('x ' + base, base) && !isOwnSetName(null, base)
+''')
+        def mine = ann(base + ' düzeltmelerim', 900)
+        h.addObjects([mine])
+        def names = []
+        3.times { i ->
+            def s = ann(shell([h: h, base: base]).evaluate(delaunayClosures() + '\nnextOwnSetName(h, base)'), i * 150)
+            names << s.getName()
+            h.addObjects([s])
+        }
+        assert names == [base, base + ' (2)', base + ' (3)']
+        assert h.getAnnotationObjects().contains(mine)
+        assert mine.getName() == base + ' düzeltmelerim'
+    }
+
+    // Behaviour: Add deletes nothing and numbers the new summary; Replace removes only signed own summaries,
+    // keeps the objects inside them, and never touches a user's same-name annotation that lacks the signature.
+    void testDelaunayCommitAddKeepsEarlierAndReplaceKeepsUserObjects() {
+        def h = new PathObjectHierarchy()
+        def base = 'Delaunay Özet'
+        def s1 = delaunaySummary(base, 0)
+        def s2 = delaunaySummary(base + ' (2)', 150)
+        def mineSame = delaunaySummary(base, 300, false)
+        def mineRenamed = delaunaySummary(base + ' notlarım', 450, false)
+        h.addObjects([s1, s2, mineSame, mineRenamed])
+        def child = det('Tümör', 10); s1.addChildObject(child)
+        assert child.getParent() == s1
+        String code = delaunayClosures()
+        def vars = [h: h, base: base, SIG: 'Ortalama komşu sayısı', MODE_ADD: 'add', MODE_REPLACE: 'replace',
+                    workshopText: { Object... a -> a[0] }]
+        def sum3 = delaunaySummary('x', 600)
+        def r1 = shell(vars + [sum: sum3]).evaluate(code + "\ncommitSummary(h, base, SIG, MODE_ADD, sum)")
+        assert r1.setName == base + ' (3)' && r1.removed == 0
+        assert r1.prevNames == [base, base + ' (2)']
+        assert sum3.getName() == base + ' (3)'
+        assert shell(vars + [res: r1]).evaluate(code + "\nmodeNote(res)")      // result-window note after Add
+        assert h.getAnnotationObjects().size() == 5
+        assert h.getAnnotationObjects().containsAll([s1, s2, mineSame, mineRenamed, sum3])
+        def sum4 = delaunaySummary('y', 750)
+        def r2 = shell(vars + [sum: sum4]).evaluate(code + "\ncommitSummary(h, base, SIG, MODE_REPLACE, sum)")
+        assert r2.removed == 3 && r2.prevNames.isEmpty()
+        assert r2.setName == base + ' (2)'
+        assert shell(vars + [res: r2]).evaluate(code + "\nmodeNote(res)")      // result-window note after Replace
+        assert !h.getAnnotationObjects().contains(s1) && !h.getAnnotationObjects().contains(s2) && !h.getAnnotationObjects().contains(sum3)
+        assert h.getAnnotationObjects().containsAll([mineSame, mineRenamed, sum4])
+        assert h.getAnnotationObjects().size() == 3
+        assert h.getDetectionObjects().contains(child)
+        assert child.getParent() != s1
+        def h2 = new PathObjectHierarchy()
+        def sum5 = delaunaySummary('z', 0)
+        def r3 = shell(vars + [h: h2, sum: sum5]).evaluate(code + "\ncommitSummary(h, base, SIG, MODE_ADD, sum)")
+        assert r3.setName == base && r3.removed == 0 && r3.prevNames.isEmpty()
+        assert h2.getAnnotationObjects() == [sum5]
+    }
+
+    // Decisions: no question without an earlier own summary; Add is the default; Replace needs a second
+    // confirmation; Cancel anywhere returns null; a user's unsigned same-name annotation never triggers a question.
+    void testDelaunayAskDecisions() {
+        def base = 'Delaunay Özet'
+        String code = delaunayClosures()
+        def h = new PathObjectHierarchy()
+        def calls = []
+        def mkVars = { choice, confirm ->
+            [h: h, base: base, SIG: 'Ortalama komşu sayısı', MODE_ADD: 'add', MODE_REPLACE: 'replace', workshopText: { Object... a -> a[0] },
+             Dialogs: new Expando(
+                showChoiceDialog: { t, b, opts, dflt -> calls << 'choice'; choice == 'add' ? opts[0] : (choice == 'replace' ? opts[1] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; confirm })]
+        }
+        def ask = { choice, confirm -> shell(mkVars(choice, confirm)).evaluate(code + "\naskExisting(h, base, SIG)") }
+        assert ask('replace', true) == 'add' && calls.isEmpty()
+        h.addObjects([delaunaySummary(base, 0, false)])
+        assert ask('replace', true) == 'add' && calls.isEmpty()
+        h.addObjects([delaunaySummary(base, 150)])
+        assert ask('add', true) == 'add' && calls == ['choice']
+        calls.clear()
+        assert ask('replace', true) == 'replace' && calls == ['choice', 'confirm']
+        calls.clear()
+        assert ask('replace', false) == null && calls == ['choice', 'confirm']
+        calls.clear()
+        assert ask(null, true) == null && calls == ['choice']
+        assert h.getAnnotationObjects().size() == 2
+    }
+
+    // Headless: no dialog. An earlier own summary stops the run unless mevcut=ekle|degistir is given;
+    // an unknown value stops it whether or not an earlier result exists; deciding never writes.
+    void testDelaunayHeadlessFailsClosed() {
+        def base = 'Delaunay Özet'
+        String code = delaunayClosures()
+        def h = new PathObjectHierarchy()
+        def dec = { String m -> shell([h: h, base: base, SIG: 'Ortalama komşu sayısı', MODE_ADD: 'add', MODE_REPLACE: 'replace',
+                                       workshopText: { Object... a -> a[0] }, mev: m]).evaluate(code + "\nheadlessDecision(h, base, SIG, mev)") }
+        assert dec(null).mode == 'add' && dec(null).error == null
+        assert dec('ekle').mode == 'add' && dec('degistir').mode == 'replace'
+        assert dec('sil').mode == null && dec('sil').error
+        h.addObjects([delaunaySummary(base, 0)])
+        assert dec('sil').mode == null && dec('sil').error
+        assert dec(null).mode == null && dec(null).error
+        assert dec('ekle').mode == 'add' && dec('degistir').mode == 'replace'
+        assert h.getAnnotationObjects().size() == 1
+    }
+
+    // Source contract: removal sits only in the Replace branch, the question precedes any work, Cancel returns
+    // first, headless stops first, and the summary name comes only from commitSummary.
+    void testDelaunayAsksBeforeWriting() {
+        String s = source(DELAUNAY_FILE)
+        assert s.count('removeObjects(') == 1
+        assert !s.contains('QP.removeObjects') && !s.contains('clearAllObjects') && !s.contains('clearDetections') && !s.contains('removeObject(')
+        assert s.count('.setName(') == 1
+        int rep = s.indexOf('if (mode == MODE_REPLACE) {')
+        int rem = s.indexOf('hierarchy.removeObjects(prev, true)')
+        assert rep >= 0 && rem > rep && rem - rep < 250
+        String askSrc = closure(DELAUNAY_FILE, 'askExisting')
+        assert askSrc.contains('if (prev.isEmpty()) return MODE_ADD')
+        assert askSrc.contains('if (pick == null) return null')
+        assert askSrc.contains('return ok ? MODE_REPLACE : null')
+        assert askSrc.contains('prevOwnSummaries(hierarchy, base, sigKey)')
+        assert !s.contains('startsWith(base)') && !s.contains('startsWith(summaryName)')
+        int work = s.indexOf('def subdivision = DelaunayTools')
+        int ask = s.indexOf('writeMode = askExisting(imageData.getHierarchy()')
+        int cancel = s.indexOf('if (writeMode == null) { println "İptal edildi."; return }')
+        int head = s.indexOf('def hd = headlessDecision(imageData.getHierarchy()')
+        int stop = s.indexOf('if (hd.mode == null) { println hd.error; return }')
+        assert work > 0 && ask > 0 && ask < cancel && cancel < work
+        assert head > 0 && head < stop && stop < work
+        assert s.contains("['ekle', 'degistir'].contains(mevcut)")
+        assert s.contains('mevcutArg = argMap.mevcut == null')
+        assert s.contains('commitSummary(imageData.getHierarchy(), ') && s.contains(', writeMode, ')
+    }
+
+
+    // Add -> add -> add numbering; a user-renamed annotation is never swept; Replace keeps what is inside.
+    void testValidationF1OwnSetNamingAndApplyMode() {
+        String f = 'yardimci-dogrulama-f1.groovy'
+        String base = 'Doğrulama Özet'
+        String pre = "def summaryName = '" + base + "'\ndef MODE_ADD = 'add'\ndef MODE_REPLACE = 'replace'\n" + ownSetCode(f) + '\n' + closure(f, 'applyMode') + '\n'
+        def h = new PathObjectHierarchy()
+        shell([h: h]).evaluate(pre + '''
+assert prevOwnObjects(null, summaryName).isEmpty()
+assert nextOwnSetName(h, summaryName) == summaryName
+''')
+        def mine = ann(base + ' notlarım', 900)
+        h.addObject(mine)
+        def made = []
+        def seen = []
+        3.times { i ->
+            def r = shell([h: h]).evaluate(pre + "applyMode(h, MODE_ADD)")
+            seen << r
+            def a = ann(r.setName, 200 * (i + 1))
+            made << a
+            h.addObject(a)
+        }
+        assert made*.getName() == [base, base + ' (2)', base + ' (3)']
+        assert seen[0].prevNames == [] && seen[0].removed == 0
+        assert seen[1].prevNames == [base]
+        assert seen[2].prevNames == [base, base + ' (2)']
+        assert h.getAnnotationObjects().contains(mine)
+        shell([h: h]).evaluate(pre + '''
+assert !isOwnSetName(summaryName + ' notlarım', summaryName)
+assert !isOwnSetName(summaryName + ' (1)', summaryName)
+assert !isOwnSetName(summaryName + ' (x)', summaryName)
+assert !isOwnSetName(null, summaryName)
+assert prevOwnObjects(h, summaryName).size() == 3
+''')
+        // Replace: only the three summaries go; the user's annotation stays; objects inside are handled as documented.
+        def inside = ann('Kullanıcı bölgesi', 5)
+        made[1].addChildObject(inside)
+        def cell = det('Pozitif', 210)
+        made[1].addChildObject(cell)
+        def r = shell([h: h]).evaluate(pre + "applyMode(h, MODE_REPLACE)")
+        assert r.removed == 3 && r.prevNames == [] && r.setName == base
+        assert h.getAnnotationObjects().contains(mine)
+        assert h.getAnnotationObjects().contains(inside)
+        assert h.getAnnotationObjects().findAll { it.getName() == base || it.getName().startsWith(base + ' (') }.isEmpty()
+        assert h.getDetectionObjects().contains(cell)   // keepChildren = true
+    }
+
+    // Source contract: removal only in the replace branch, the question precedes the computation,
+    // Cancel returns first, headless fails closed.
+    void testValidationF1AsksBeforeRemoving() {
+        String f = 'yardimci-dogrulama-f1.groovy'
+        String s = source(f)
+        assert s.count('removeObjects(') == 1
+        assert !s.contains('QP.removeObjects')
+        int rep = s.indexOf('if (mode == MODE_REPLACE) {')
+        assert rep > 0 && s.indexOf('removeObjects(') > rep
+        // GUI: the question is asked in startCompute before the worker thread and the COMPUTING step.
+        int start = s.indexOf('def startCompute = {')
+        assert start > 0
+        int ask = s.indexOf('askExisting(ctx.imageData.getHierarchy())', start)
+        int cancel = s.indexOf('if (existingMode == null) return', start)
+        int busy = s.indexOf("step.set('COMPUTING'); render()", start)
+        int run = s.indexOf('runValidation(gtL', start)
+        assert ask > start && cancel > ask && busy > cancel && run > busy
+        // Headless: unknown mevcut fails closed before anything else; an earlier result without mevcut stops.
+        int guard = s.indexOf("['ekle', 'degistir'].contains(mevcut)")
+        int head = s.indexOf('if (isHeadless) {', s.indexOf('// ── HEADLESS'))
+        assert guard > 0 && guard < head
+        String block = s.substring(head, s.indexOf('// ── Tek pencere', head))
+        int stop = block.indexOf('mevcut == null')
+        assert stop > 0 && stop < block.indexOf('runValidation(')
+        assert block.substring(stop, block.indexOf('String headlessMode')).contains('return')
+        assert !block.contains('removeObjects') && !block.contains('addObjects')
+        // runValidation applies the mode after every validation return and before it writes the summary.
+        int apply = s.indexOf('applyMode(ctx.imageData.getHierarchy(), existingMode)')
+        assert apply > s.indexOf("return [ok: false, reason: 'IOU_NEEDS_AREA']") && apply < s.indexOf('summary.setName(')
+    }
+
+    // The question: no earlier result runs silently; Add is the default; Replace needs a second confirmation; Cancel gives null.
+    void testValidationF1AskExistingDecisions() {
+        String f = 'yardimci-dogrulama-f1.groovy'
+        String base = 'Doğrulama Özet'
+        def run = { Map dlg, int n ->
+            def calls = []
+            def h = new PathObjectHierarchy()
+            (0..<n).each { h.addObject(ann(base, 100 * it)) }
+            h.addObject(ann(base + ' notlarım', 900))
+            def Dialogs = new Expando(
+                showChoiceDialog: { t, b, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; dlg.confirm })
+            String code = "def summaryName = '" + base + "'\ndef MODE_ADD = 'add'\ndef MODE_REPLACE = 'replace'\n" + ownSetCode(f) + '\n' +
+                closure(f, 'askExisting').replaceAll(/@WT:(\w+)@/) { all, nm -> "'" + nm + "'" }
+            def r = shell([Dialogs: Dialogs, h: h, workshopText: { Object... t -> t[0] }]).evaluate(code + '\naskExisting(h)')
+            [r, calls]
+        }
+        assert run([pick: 'add'], 0) == ['add', []]
+        assert run([pick: null], 3) == [null, ['choice']]
+        assert run([pick: 'add'], 3) == ['add', ['choice']]
+        assert run([pick: 'rep', confirm: true], 3) == ['replace', ['choice', 'confirm']]
+        assert run([pick: 'rep', confirm: false], 3) == [null, ['choice', 'confirm']]
+    }
+
+
+    // Add -> add -> add numbering; a user-renamed annotation is never swept; Replace keeps what is inside.
+    void testImmuneDensityOwnSetNamingAndApplyMode() {
+        String f = 'yardimci-immun-yogunluk.groovy'
+        String base = 'İmmün Yoğunluk Özet'
+        String pre = "def summaryName = '" + base + "'\ndef MODE_ADD = 'add'\ndef MODE_REPLACE = 'replace'\n" + ownSetCode(f) + '\n' + closure(f, 'applyMode') + '\n'
+        def h = new PathObjectHierarchy()
+        shell([h: h]).evaluate(pre + '''
+assert prevOwnObjects(null, summaryName).isEmpty()
+assert nextOwnSetName(h, summaryName) == summaryName
+''')
+        def mine = ann(base + ' notlarım', 900)
+        h.addObject(mine)
+        def made = []
+        def seen = []
+        3.times { i ->
+            def r = shell([h: h]).evaluate(pre + "applyMode(h, MODE_ADD)")
+            seen << r
+            def a = ann(r.setName, 200 * (i + 1))
+            made << a
+            h.addObject(a)
+        }
+        assert made*.getName() == [base, base + ' (2)', base + ' (3)']
+        assert seen[0].prevNames == [] && seen[0].removed == 0
+        assert seen[1].prevNames == [base]
+        assert seen[2].prevNames == [base, base + ' (2)']
+        assert h.getAnnotationObjects().contains(mine)
+        shell([h: h]).evaluate(pre + '''
+assert !isOwnSetName(summaryName + ' notlarım', summaryName)
+assert !isOwnSetName(summaryName + ' (1)', summaryName)
+assert !isOwnSetName(summaryName + ' (x)', summaryName)
+assert !isOwnSetName(null, summaryName)
+assert prevOwnObjects(h, summaryName).size() == 3
+''')
+        // Replace: only the three summaries go; the user's annotation stays; objects inside are handled as documented.
+        def inside = ann('Kullanıcı bölgesi', 5)
+        made[1].addChildObject(inside)
+        def cell = det('Pozitif', 210)
+        made[1].addChildObject(cell)
+        def r = shell([h: h]).evaluate(pre + "applyMode(h, MODE_REPLACE)")
+        assert r.removed == 3 && r.prevNames == [] && r.setName == base
+        assert h.getAnnotationObjects().contains(mine)
+        assert h.getAnnotationObjects().contains(inside)
+        assert h.getAnnotationObjects().findAll { it.getName() == base || it.getName().startsWith(base + ' (') }.isEmpty()
+        assert h.getDetectionObjects().contains(cell)   // keepChildren = true
+    }
+
+    // Source contract: removal only in the replace branch, the question precedes the computation,
+    // Cancel returns first, headless fails closed.
+    void testImmuneDensityAsksBeforeRemoving() {
+        String f = 'yardimci-immun-yogunluk.groovy'
+        String s = source(f)
+        assert s.count('removeObjects(') == 1
+        assert !s.contains('QP.removeObjects')
+        int rep = s.indexOf('if (mode == MODE_REPLACE) {')
+        assert rep > 0 && s.indexOf('removeObjects(') > rep
+        int ask = s.indexOf('runMode = askExisting(imageData.getHierarchy())')
+        int cancel = s.indexOf('if (runMode == null) return', ask)
+        int compute = s.indexOf("QP.runPlugin(", ask)
+        int write = s.indexOf('applyMode(imageData.getHierarchy(), runMode)')
+        assert ask > 0 && cancel > ask && compute > cancel
+        assert write > compute
+        // Headless: unknown mevcut fails closed before anything else; an earlier result without mevcut stops.
+        int guard = s.indexOf("['ekle', 'degistir'].contains(mevcut)")
+        assert guard > 0 && guard < s.indexOf('def imageData = QP.getCurrentImageData()')
+        String block = s.substring(s.lastIndexOf('if (isHeadless) {', ask), ask)
+        int stop = block.indexOf('mevcut == null')
+        assert stop > 0 && block.substring(stop).contains('return')
+        assert !block.contains('removeObjects') && !block.contains('addObjects')
+    }
+
+    // The question: no earlier result runs silently; Add is the default; Replace needs a second confirmation; Cancel gives null.
+    void testImmuneDensityAskExistingDecisions() {
+        String f = 'yardimci-immun-yogunluk.groovy'
+        String base = 'İmmün Yoğunluk Özet'
+        def run = { Map dlg, int n ->
+            def calls = []
+            def h = new PathObjectHierarchy()
+            (0..<n).each { h.addObject(ann(base, 100 * it)) }
+            h.addObject(ann(base + ' notlarım', 900))
+            def Dialogs = new Expando(
+                showChoiceDialog: { t, b, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; dlg.confirm })
+            String code = "def summaryName = '" + base + "'\ndef MODE_ADD = 'add'\ndef MODE_REPLACE = 'replace'\n" + ownSetCode(f) + '\n' +
+                closure(f, 'askExisting').replaceAll(/@WT:(\w+)@/) { all, nm -> "'" + nm + "'" }
+            def r = shell([Dialogs: Dialogs, h: h, workshopText: { Object... t -> t[0] }]).evaluate(code + '\naskExisting(h)')
+            [r, calls]
+        }
+        assert run([pick: 'add'], 0) == ['add', []]
+        assert run([pick: null], 3) == [null, ['choice']]
+        assert run([pick: 'add'], 3) == ['add', ['choice']]
+        assert run([pick: 'rep', confirm: true], 3) == ['replace', ['choice', 'confirm']]
+        assert run([pick: 'rep', confirm: false], 3) == [null, ['choice', 'confirm']]
+    }
+
+
+    // Add -> add -> add numbering; a user-renamed annotation is never swept; Replace keeps what is inside.
+    void testStromalTilOwnSetNamingAndApplyMode() {
+        String f = 'yardimci-stromal-til.groovy'
+        String base = 'Stromal TIL Özet'
+        String pre = "def summaryName = '" + base + "'\ndef MODE_ADD = 'add'\ndef MODE_REPLACE = 'replace'\n" + ownSetCode(f) + '\n' + closure(f, 'applyMode') + '\n'
+        def h = new PathObjectHierarchy()
+        shell([h: h]).evaluate(pre + '''
+assert prevOwnObjects(null, summaryName).isEmpty()
+assert nextOwnSetName(h, summaryName) == summaryName
+''')
+        def mine = ann(base + ' notlarım', 900)
+        h.addObject(mine)
+        def made = []
+        def seen = []
+        3.times { i ->
+            def r = shell([h: h]).evaluate(pre + "applyMode(h, MODE_ADD)")
+            seen << r
+            def a = ann(r.setName, 200 * (i + 1))
+            made << a
+            h.addObject(a)
+        }
+        assert made*.getName() == [base, base + ' (2)', base + ' (3)']
+        assert seen[0].prevNames == [] && seen[0].removed == 0
+        assert seen[1].prevNames == [base]
+        assert seen[2].prevNames == [base, base + ' (2)']
+        assert h.getAnnotationObjects().contains(mine)
+        shell([h: h]).evaluate(pre + '''
+assert !isOwnSetName(summaryName + ' notlarım', summaryName)
+assert !isOwnSetName(summaryName + ' (1)', summaryName)
+assert !isOwnSetName(summaryName + ' (x)', summaryName)
+assert !isOwnSetName(null, summaryName)
+assert prevOwnObjects(h, summaryName).size() == 3
+''')
+        // Replace: only the three summaries go; the user's annotation stays; objects inside are handled as documented.
+        def inside = ann('Kullanıcı bölgesi', 5)
+        made[1].addChildObject(inside)
+        def cell = det('Pozitif', 210)
+        made[1].addChildObject(cell)
+        def r = shell([h: h]).evaluate(pre + "applyMode(h, MODE_REPLACE)")
+        assert r.removed == 3 && r.prevNames == [] && r.setName == base
+        assert h.getAnnotationObjects().contains(mine)
+        assert h.getAnnotationObjects().contains(inside)
+        assert h.getAnnotationObjects().findAll { it.getName() == base || it.getName().startsWith(base + ' (') }.isEmpty()
+        assert h.getDetectionObjects().contains(cell)   // keepChildren = true
+    }
+
+    // Source contract: removal only in the replace branch, the question precedes the computation,
+    // Cancel returns first, headless fails closed.
+    void testStromalTilAsksBeforeRemoving() {
+        String f = 'yardimci-stromal-til.groovy'
+        String s = source(f)
+        assert s.count('removeObjects(') == 1
+        assert !s.contains('QP.removeObjects')
+        int rep = s.indexOf('if (mode == MODE_REPLACE) {')
+        assert rep > 0 && s.indexOf('removeObjects(') > rep
+        int ask = s.indexOf('runMode = askExisting(imageData.getHierarchy())')
+        int cancel = s.indexOf('if (runMode == null) return', ask)
+        int compute = s.indexOf("QP.runPlugin(", ask)
+        int write = s.indexOf('applyMode(imageData.getHierarchy(), runMode)')
+        assert ask > 0 && cancel > ask && compute > cancel
+        assert write > compute
+        // Headless: unknown mevcut fails closed before anything else; an earlier result without mevcut stops.
+        int guard = s.indexOf("['ekle', 'degistir'].contains(mevcut)")
+        assert guard > 0 && guard < s.indexOf('def imageData = QP.getCurrentImageData()')
+        String block = s.substring(s.lastIndexOf('if (isHeadless) {', ask), ask)
+        int stop = block.indexOf('mevcut == null')
+        assert stop > 0 && block.substring(stop).contains('return')
+        assert !block.contains('removeObjects') && !block.contains('addObjects')
+    }
+
+    // The question: no earlier result runs silently; Add is the default; Replace needs a second confirmation; Cancel gives null.
+    void testStromalTilAskExistingDecisions() {
+        String f = 'yardimci-stromal-til.groovy'
+        String base = 'Stromal TIL Özet'
+        def run = { Map dlg, int n ->
+            def calls = []
+            def h = new PathObjectHierarchy()
+            (0..<n).each { h.addObject(ann(base, 100 * it)) }
+            h.addObject(ann(base + ' notlarım', 900))
+            def Dialogs = new Expando(
+                showChoiceDialog: { t, b, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; dlg.confirm })
+            String code = "def summaryName = '" + base + "'\ndef MODE_ADD = 'add'\ndef MODE_REPLACE = 'replace'\n" + ownSetCode(f) + '\n' +
+                closure(f, 'askExisting').replaceAll(/@WT:(\w+)@/) { all, nm -> "'" + nm + "'" }
+            def r = shell([Dialogs: Dialogs, h: h, workshopText: { Object... t -> t[0] }]).evaluate(code + '\naskExisting(h)')
+            [r, calls]
+        }
+        assert run([pick: 'add'], 0) == ['add', []]
+        assert run([pick: null], 3) == [null, ['choice']]
+        assert run([pick: 'add'], 3) == ['add', ['choice']]
+        assert run([pick: 'rep', confirm: true], 3) == ['replace', ['choice', 'confirm']]
+        assert run([pick: 'rep', confirm: false], 3) == [null, ['choice', 'confirm']]
+    }
+
+
+    // Add -> add -> add numbering; a user-renamed annotation is never swept; Replace keeps what is inside.
+    void testWsinferSummaryOwnSetNamingAndApplyMode() {
+        String f = 'yardimci-wsinfer-ozet.groovy'
+        String base = 'WSInfer Alan Özet'
+        String pre = "def summaryName = '" + base + "'\ndef MODE_ADD = 'add'\ndef MODE_REPLACE = 'replace'\n" + ownSetCode(f) + '\n' + closure(f, 'applyMode') + '\n'
+        def h = new PathObjectHierarchy()
+        shell([h: h]).evaluate(pre + '''
+assert prevOwnObjects(null, summaryName).isEmpty()
+assert nextOwnSetName(h, summaryName) == summaryName
+''')
+        def mine = ann(base + ' notlarım', 900)
+        h.addObject(mine)
+        def made = []
+        def seen = []
+        3.times { i ->
+            def r = shell([h: h]).evaluate(pre + "applyMode(h, MODE_ADD)")
+            seen << r
+            def a = ann(r.setName, 200 * (i + 1))
+            made << a
+            h.addObject(a)
+        }
+        assert made*.getName() == [base, base + ' (2)', base + ' (3)']
+        assert seen[0].prevNames == [] && seen[0].removed == 0
+        assert seen[1].prevNames == [base]
+        assert seen[2].prevNames == [base, base + ' (2)']
+        assert h.getAnnotationObjects().contains(mine)
+        shell([h: h]).evaluate(pre + '''
+assert !isOwnSetName(summaryName + ' notlarım', summaryName)
+assert !isOwnSetName(summaryName + ' (1)', summaryName)
+assert !isOwnSetName(summaryName + ' (x)', summaryName)
+assert !isOwnSetName(null, summaryName)
+assert prevOwnObjects(h, summaryName).size() == 3
+''')
+        // Replace: only the three summaries go; the user's annotation stays; objects inside are handled as documented.
+        def inside = ann('Kullanıcı bölgesi', 5)
+        made[1].addChildObject(inside)
+        def cell = det('Pozitif', 210)
+        made[1].addChildObject(cell)
+        def r = shell([h: h]).evaluate(pre + "applyMode(h, MODE_REPLACE)")
+        assert r.removed == 3 && r.prevNames == [] && r.setName == base
+        assert h.getAnnotationObjects().contains(mine)
+        assert h.getAnnotationObjects().contains(inside)
+        assert h.getAnnotationObjects().findAll { it.getName() == base || it.getName().startsWith(base + ' (') }.isEmpty()
+        assert h.getDetectionObjects().contains(cell)   // keepChildren = true
+    }
+
+    // Source contract: removal only in the replace branch, the question precedes the computation,
+    // Cancel returns first, headless fails closed.
+    void testWsinferSummaryAsksBeforeRemoving() {
+        String f = 'yardimci-wsinfer-ozet.groovy'
+        String s = source(f)
+        assert s.count('removeObjects(') == 1
+        assert !s.contains('QP.removeObjects')
+        int rep = s.indexOf('if (mode == MODE_REPLACE) {')
+        assert rep > 0 && s.indexOf('removeObjects(') > rep
+        int ask = s.indexOf('runMode = askExisting(imageData.getHierarchy())')
+        int cancel = s.indexOf('if (runMode == null) return', ask)
+        int compute = s.indexOf("def classOf = { d ->", ask)
+        int write = s.indexOf('applyMode(imageData.getHierarchy(), runMode)')
+        assert ask > 0 && cancel > ask && compute > cancel
+        assert write > compute
+        // Headless: unknown mevcut fails closed before anything else; an earlier result without mevcut stops.
+        int guard = s.indexOf("['ekle', 'degistir'].contains(mevcut)")
+        assert guard > 0 && guard < s.indexOf('def imageData = QP.getCurrentImageData()')
+        String block = s.substring(s.lastIndexOf('if (isHeadless) {', ask), ask)
+        int stop = block.indexOf('mevcut == null')
+        assert stop > 0 && block.substring(stop).contains('return')
+        assert !block.contains('removeObjects') && !block.contains('addObjects')
+    }
+
+    // The question: no earlier result runs silently; Add is the default; Replace needs a second confirmation; Cancel gives null.
+    void testWsinferSummaryAskExistingDecisions() {
+        String f = 'yardimci-wsinfer-ozet.groovy'
+        String base = 'WSInfer Alan Özet'
+        def run = { Map dlg, int n ->
+            def calls = []
+            def h = new PathObjectHierarchy()
+            (0..<n).each { h.addObject(ann(base, 100 * it)) }
+            h.addObject(ann(base + ' notlarım', 900))
+            def Dialogs = new Expando(
+                showChoiceDialog: { t, b, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; dlg.confirm })
+            String code = "def summaryName = '" + base + "'\ndef MODE_ADD = 'add'\ndef MODE_REPLACE = 'replace'\n" + ownSetCode(f) + '\n' +
+                closure(f, 'askExisting').replaceAll(/@WT:(\w+)@/) { all, nm -> "'" + nm + "'" }
+            def r = shell([Dialogs: Dialogs, h: h, workshopText: { Object... t -> t[0] }]).evaluate(code + '\naskExisting(h)')
+            [r, calls]
+        }
+        assert run([pick: 'add'], 0) == ['add', []]
+        assert run([pick: null], 3) == [null, ['choice']]
+        assert run([pick: 'add'], 3) == ['add', ['choice']]
+        assert run([pick: 'rep', confirm: true], 3) == ['replace', ['choice', 'confirm']]
+        assert run([pick: 'rep', confirm: false], 3) == [null, ['choice', 'confirm']]
+    }
+
+
+    // Add -> add -> add numbering; a user-renamed annotation is never swept; Replace keeps what is inside.
+    void testPhh3OwnSetNamingAndApplyMode() {
+        String f = 'yardimci-mitoz-phh3.groovy'
+        String base = 'Mitoz Özet'
+        String pre = "def summaryName = '" + base + "'\ndef MODE_ADD = 'add'\ndef MODE_REPLACE = 'replace'\n" + ownSetCode(f) + '\n' + closure(f, 'applyMode') + '\n'
+        def h = new PathObjectHierarchy()
+        shell([h: h]).evaluate(pre + '''
+assert prevOwnObjects(null, summaryName).isEmpty()
+assert nextOwnSetName(h, summaryName) == summaryName
+''')
+        def mine = ann(base + ' notlarım', 900)
+        h.addObject(mine)
+        def made = []
+        def seen = []
+        3.times { i ->
+            def r = shell([h: h]).evaluate(pre + "applyMode(h, MODE_ADD)")
+            seen << r
+            def a = ann(r.setName, 200 * (i + 1))
+            made << a
+            h.addObject(a)
+        }
+        assert made*.getName() == [base, base + ' (2)', base + ' (3)']
+        assert seen[0].prevNames == [] && seen[0].removed == 0
+        assert seen[1].prevNames == [base]
+        assert seen[2].prevNames == [base, base + ' (2)']
+        assert h.getAnnotationObjects().contains(mine)
+        shell([h: h]).evaluate(pre + '''
+assert !isOwnSetName(summaryName + ' notlarım', summaryName)
+assert !isOwnSetName(summaryName + ' (1)', summaryName)
+assert !isOwnSetName(summaryName + ' (x)', summaryName)
+assert !isOwnSetName(null, summaryName)
+assert prevOwnObjects(h, summaryName).size() == 3
+''')
+        // Replace: only the three summaries go; the user's annotation stays; objects inside are handled as documented.
+        def inside = ann('Kullanıcı bölgesi', 5)
+        made[1].addChildObject(inside)
+        def cell = det('Pozitif', 210)
+        made[1].addChildObject(cell)
+        def r = shell([h: h]).evaluate(pre + "applyMode(h, MODE_REPLACE)")
+        assert r.removed == 3 && r.prevNames == [] && r.setName == base
+        assert h.getAnnotationObjects().contains(mine)
+        assert h.getAnnotationObjects().contains(inside)
+        assert h.getAnnotationObjects().findAll { it.getName() == base || it.getName().startsWith(base + ' (') }.isEmpty()
+        assert r.removedDet == 1
+        assert !h.getDetectionObjects().contains(cell)   // this helper's own PHH3 detections go with their summary
+    }
+
+    // Source contract: removal only in the replace branch, the question precedes the computation,
+    // Cancel returns first, headless fails closed.
+    void testPhh3AsksBeforeRemoving() {
+        String f = 'yardimci-mitoz-phh3.groovy'
+        String s = source(f)
+        assert s.count('removeObjects(') == 2
+        assert !s.contains('QP.removeObjects')
+        int rep = s.indexOf('if (mode == MODE_REPLACE) {')
+        assert rep > 0 && s.indexOf('removeObjects(') > rep
+        int ask = s.indexOf('runMode = askExisting(imageData.getHierarchy())')
+        int cancel = s.indexOf('if (runMode == null) return', ask)
+        int compute = s.indexOf("QP.runPlugin(", ask)
+        int write = s.indexOf('applyMode(imageData.getHierarchy(), runMode)')
+        assert ask > 0 && cancel > ask && compute > cancel
+        assert write > cancel   // the summary is the detection parent: written before the plugin runs
+        // Headless: unknown mevcut fails closed before anything else; an earlier result without mevcut stops.
+        int guard = s.indexOf("['ekle', 'degistir'].contains(mevcut)")
+        assert guard > 0 && guard < s.indexOf('def imageData = QP.getCurrentImageData()')
+        String block = s.substring(s.lastIndexOf('if (isHeadless) {', ask), ask)
+        int stop = block.indexOf('mevcut == null')
+        assert stop > 0 && block.substring(stop).contains('return')
+        assert !block.contains('removeObjects') && !block.contains('addObjects')
+    }
+
+    // The question: no earlier result runs silently; Add is the default; Replace needs a second confirmation; Cancel gives null.
+    void testPhh3AskExistingDecisions() {
+        String f = 'yardimci-mitoz-phh3.groovy'
+        String base = 'Mitoz Özet'
+        def run = { Map dlg, int n ->
+            def calls = []
+            def h = new PathObjectHierarchy()
+            (0..<n).each { h.addObject(ann(base, 100 * it)) }
+            h.addObject(ann(base + ' notlarım', 900))
+            def Dialogs = new Expando(
+                showChoiceDialog: { t, b, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; dlg.confirm })
+            String code = "def summaryName = '" + base + "'\ndef MODE_ADD = 'add'\ndef MODE_REPLACE = 'replace'\n" + ownSetCode(f) + '\n' +
+                closure(f, 'askExisting').replaceAll(/@WT:(\w+)@/) { all, nm -> "'" + nm + "'" }
+            def r = shell([Dialogs: Dialogs, h: h, workshopText: { Object... t -> t[0] }]).evaluate(code + '\naskExisting(h)')
+            [r, calls]
+        }
+        assert run([pick: 'add'], 0) == ['add', []]
+        assert run([pick: null], 3) == [null, ['choice']]
+        assert run([pick: 'add'], 3) == ['add', ['choice']]
+        assert run([pick: 'rep', confirm: true], 3) == ['replace', ['choice', 'confirm']]
+        assert run([pick: 'rep', confirm: false], 3) == [null, ['choice', 'confirm']]
+    }
+
+    // Structure distance: "this helper's summary" = exact name or "name (N)", N >= 2, never a prefix.
+    // add -> add -> add numbering; a user-renamed annotation survives; Replace keeps child objects.
+    void testStructureDistanceOwnSetNamingNeverMatchesByPrefix() {
+        String f = 'yardimci-yapi-uzaklik.groovy'
+        def h = new PathObjectHierarchy()
+        def base = 'Yapıya Uzaklık Özet'
+        shell([h: h, base: base]).evaluate(ownSetCode(f) + '''
+assert nextOwnSetName(h, base) == base
+assert prevOwnObjects(null, base).isEmpty()
+''')
+        def mine = ann(base + ' notlarım')
+        h.addObjects([ann(base), mine, ann(base + ' (1)', 200), ann(base + ' (x)', 400), ann('Başka', 600)])
+        shell([h: h, base: base]).evaluate(ownSetCode(f) + '''
+assert prevOwnObjects(h, base).size() == 1
+assert nextOwnSetName(h, base) == base + ' (2)'
+assert !isOwnSetName(base + ' notlarım', base)
+assert !isOwnSetName(base + ' (1)', base)
+assert !isOwnSetName(base + ' (x)', base)
+assert !isOwnSetName(null, base)
+''')
+        h.addObjects([ann(base + ' (2)', 800)])
+        shell([h: h, base: base]).evaluate(ownSetCode(f) + "assert nextOwnSetName(h, base) == base + ' (3)'")
+        h.addObjects([ann(base + ' (5)', 1000)])
+        def prev = shell([h: h, base: base]).evaluate(ownSetCode(f) + '''
+assert nextOwnSetName(h, base) == base + ' (6)'
+prevOwnObjects(h, base)
+''')
+        assert prev.size() == 3
+        // Replace as the script performs it: own summaries only, children kept.
+        def own = h.getAnnotationObjects().find { it.getName() == base }
+        def child = det('Tümör', 10)
+        own.addChildObject(child)
+        h.removeObjects(prev, true)
+        assert h.getAnnotationObjects().contains(mine)
+        assert h.getAnnotationObjects().size() == 4
+        assert h.getDetectionObjects().contains(child)
+        assert child.getParent() != own
+    }
+
+    // The question: none without an earlier result; Add is the default and deletes nothing; Replace
+    // needs a second confirmation; Cancel (null, or "no" at the confirmation) writes nothing.
+    void testStructureDistanceAskExistingDecisions() {
+        String f = 'yardimci-yapi-uzaklik.groovy'
+        def withPrev = new PathObjectHierarchy()
+        withPrev.addObjects([ann('Yapıya Uzaklık Özet'), ann('Yapıya Uzaklık Özet (2)', 200)])
+        def run = { Map dlg, hier ->
+            def calls = []
+            def stub = new Expando(
+                showChoiceDialog: { t, b, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; dlg.confirm })
+            def r = shell([Dialogs: stub, workshopText: { Object... a -> a[0] }, h: hier]).evaluate('''
+def MODE_ADD = 'add'
+def MODE_REPLACE = 'replace'
+String summaryName = 'Yapıya Uzaklık Özet'
+String distMeas = 'Yapıya uzaklık'
+''' + ownSetCode(f) + '\n' + closure(f, 'askExisting').replaceAll(/@WT:(\w+)@/) { all, n -> "'" + n + "'" } + '''
+askExisting(h)''')
+            [r, calls]
+        }
+        assert run([pick: 'add'], new PathObjectHierarchy()) == ['add', []]
+        assert run([pick: null], withPrev) == [null, ['choice']]
+        assert run([pick: 'add'], withPrev) == ['add', ['choice']]
+        assert run([pick: 'rep', confirm: true], withPrev) == ['replace', ['choice', 'confirm']]
+        assert run([pick: 'rep', confirm: false], withPrev) == [null, ['choice', 'confirm']]
+    }
+
+    // Source contract: removal only inside the Replace branch, the question precedes the computation,
+    // Cancel returns first, the unknown `mevcut` value and an earlier result both stop a headless run.
+    void testStructureDistanceAsksBeforeRemoving() {
+        String f = 'yardimci-yapi-uzaklik.groovy'
+        String s = source(f)
+        assert s.count('removeObjects(') == 1
+        assert !s.contains('clearAllObjects') && !s.contains('clearDetections') && !s.contains('removeObjectsAndDescendants')
+        int rep = s.indexOf('if (writeMode == MODE_REPLACE) {')
+        int rem = s.indexOf('QP.removeObjects(prevNow, true)')
+        assert rep >= 0 && rem > rep && rem - rep < 250
+        assert rem < s.indexOf('QP.addObjects([summary])')
+        int calc = s.indexOf('DistanceTools.centroidToBoundsDistance2D(')
+        int ask = s.indexOf('writeMode = askExisting(imgHierarchy)')
+        assert ask > 0 && calc > ask
+        int cancel = s.indexOf('if (writeMode == null) { println "İptal edildi."; return }', ask)
+        assert cancel > ask && cancel < calc
+        assert s.contains('!isOwnSetName(it.getName(), summaryName)')   // an earlier summary is never a target
+        String askSrc = closure(f, 'askExisting')
+        assert askSrc.contains('if (prev.isEmpty()) return MODE_ADD')
+        assert askSrc.contains('if (pick == null) return null')
+        assert askSrc.contains('return ok ? MODE_REPLACE : null')
+        int hl = s.indexOf('String mevcutArg = null')
+        assert hl >= 0
+        int bad = s.indexOf("['ekle', 'degistir'].contains(mevcutArg)", hl)
+        assert bad > hl && bad < s.indexOf('def imageData = QP.getCurrentImageData()')   // unknown value fails closed first
+        int stop = s.indexOf('if (mevcutArg == null) {', hl)
+        assert stop > hl && stop < calc                                                   // earlier result + no argument: stop
+        assert s.indexOf("writeMode = (mevcutArg == 'degistir') ? MODE_REPLACE : MODE_ADD", stop) > stop
+    }
+
+    // Intersection area: "this helper's summary" = exact name or "name (N)", N >= 2, never a prefix.
+    void testIntersectionAreaOwnSetNamingNeverMatchesByPrefix() {
+        String f = 'yardimci-kesisim-alani.groovy'
+        def h = new PathObjectHierarchy()
+        def base = 'Kesişim Alanı Özet'
+        shell([h: h, base: base]).evaluate(ownSetCode(f) + '''
+assert nextOwnSetName(h, base) == base
+assert prevOwnObjects(null, base).isEmpty()
+''')
+        def mine = ann(base + ' notlarım')
+        h.addObjects([ann(base), mine, ann(base + ' (1)', 200), ann(base + ' (x)', 400), ann('Başka', 600)])
+        shell([h: h, base: base]).evaluate(ownSetCode(f) + '''
+assert prevOwnObjects(h, base).size() == 1
+assert nextOwnSetName(h, base) == base + ' (2)'
+assert !isOwnSetName(base + ' notlarım', base) && !isOwnSetName(base + ' (1)', base) && !isOwnSetName(base + ' (x)', base)
+assert !isOwnSetName(null, base)
+''')
+        h.addObjects([ann(base + ' (2)', 800)])
+        shell([h: h, base: base]).evaluate(ownSetCode(f) + "assert nextOwnSetName(h, base) == base + ' (3)'")
+        h.addObjects([ann(base + ' (5)', 1000)])
+        def prev = shell([h: h, base: base]).evaluate(ownSetCode(f) + '''
+assert nextOwnSetName(h, base) == base + ' (6)'
+prevOwnObjects(h, base)
+''')
+        assert prev.size() == 3
+        def own = h.getAnnotationObjects().find { it.getName() == base }
+        def child = det('Tümör', 10)
+        own.addChildObject(child)
+        h.removeObjects(prev, true)
+        assert h.getAnnotationObjects().contains(mine)
+        assert h.getAnnotationObjects().size() == 4
+        assert h.getDetectionObjects().contains(child)
+    }
+
+    void testIntersectionAreaAskExistingDecisions() {
+        String f = 'yardimci-kesisim-alani.groovy'
+        def withPrev = new PathObjectHierarchy()
+        withPrev.addObjects([ann('Kesişim Alanı Özet'), ann('Kesişim Alanı Özet (3)', 200)])
+        def run = { Map dlg, hier ->
+            def calls = []
+            def stub = new Expando(
+                showChoiceDialog: { t, b, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; dlg.confirm })
+            def r = shell([Dialogs: stub, workshopText: { Object... a -> a[0] }, h: hier]).evaluate('''
+def MODE_ADD = 'add'
+def MODE_REPLACE = 'replace'
+String summaryName = 'Kesişim Alanı Özet'
+''' + ownSetCode(f) + '\n' + closure(f, 'askExisting').replaceAll(/@WT:(\w+)@/) { all, n -> "'" + n + "'" } + '''
+askExisting(h, 'Kesişen B alanı', 'Kesişen B oranı')''')
+            [r, calls]
+        }
+        assert run([pick: 'add'], new PathObjectHierarchy()) == ['add', []]
+        assert run([pick: null], withPrev) == [null, ['choice']]
+        assert run([pick: 'add'], withPrev) == ['add', ['choice']]
+        assert run([pick: 'rep', confirm: true], withPrev) == ['replace', ['choice', 'confirm']]
+        assert run([pick: 'rep', confirm: false], withPrev) == [null, ['choice', 'confirm']]
+    }
+
+    void testIntersectionAreaAsksBeforeRemoving() {
+        String f = 'yardimci-kesisim-alani.groovy'
+        String s = source(f)
+        assert s.count('removeObjects(') == 1
+        assert !s.contains('clearAllObjects') && !s.contains('clearDetections') && !s.contains('removeObjectsAndDescendants')
+        int rep = s.indexOf('if (writeMode == MODE_REPLACE) {')
+        int rem = s.indexOf('QP.removeObjects(prevNow, true)')
+        assert rep >= 0 && rem > rep && rem - rep < 250
+        assert rem < s.indexOf('QP.addObjects([summary])')
+        int calc = s.indexOf('a.measurements[measArea] = interUm2')          // first write to the user's A annotations
+        int ask = s.indexOf('writeMode = askExisting(imgHierarchy, measArea, measPct)')
+        assert ask > 0 && calc > ask
+        int cancel = s.indexOf('if (writeMode == null) { println "İptal edildi."; return }', ask)
+        assert cancel > ask && cancel < calc
+        String askSrc = closure(f, 'askExisting')
+        assert askSrc.contains('if (prev.isEmpty()) return MODE_ADD')
+        assert askSrc.contains('if (pick == null) return null')
+        assert askSrc.contains('return ok ? MODE_REPLACE : null')
+        int hl = s.indexOf('String mevcutArg = null')
+        assert hl >= 0
+        int bad = s.indexOf("['ekle', 'degistir'].contains(mevcutArg)", hl)
+        assert bad > hl && bad < s.indexOf('def imageData = QP.getCurrentImageData()')
+        int stop = s.indexOf('if (mevcutArg == null) {', hl)
+        assert stop > hl && stop < calc
+        assert s.indexOf("writeMode = (mevcutArg == 'degistir') ? MODE_REPLACE : MODE_ADD", stop) > stop
+    }
+
+    static String peritumoralBandCode(String f) {
+        'String BAND_CLASS = "Peritümöral bant"\n' +
+            ['bandSetIndex', 'prevOwnBands', 'nextBandRunIndex'].collect { closure(f, it) }.join('\n') + '\n'
+    }
+
+    // Peritumoral band: this helper's band = class + its own name pattern ("<source> · dış bant 50µm" with an
+    // optional " (N)", N >= 2) + the two measurements it writes. A same-class band the user drew, renamed,
+    // or edited down to no measurements is never ours. add -> add -> add numbering; Replace keeps children.
+    void testPeritumoralBandOwnSetNeverMatchesByPrefixOrClassOnly() {
+        String f = 'yardimci-peritumoral-bant.groovy'
+        String u = 'µ'
+        String code = peritumoralBandCode(f)
+        def mk = { String nm, double x, boolean classed = true, boolean meas = true ->
+            def a = ann(nm, x)
+            if (classed) a.setPathClass(PathClass.fromString('Peritümöral bant'))
+            if (meas) {
+                a.getMeasurements().put('Bant alanı (' + u + 'm²)', 1d)
+                a.getMeasurements().put('Bant genişliği (' + u + 'm)', 50d)
+            }
+            a
+        }
+        String n1 = 'Tümör · dış bant 50' + u + 'm'
+        shell([:]).evaluate(code + '''
+String n1 = 'Tümör · dış bant 50µm'
+assert bandSetIndex(n1) == 1
+assert bandSetIndex(n1 + ' (2)') == 2 && bandSetIndex(n1 + ' (12)') == 12
+assert bandSetIndex(n1 + ' (1)') == 0 && bandSetIndex(n1 + ' (x)') == 0 && bandSetIndex(n1 + ' (0)') == 0
+assert bandSetIndex(n1 + ' notlarım') == 0 && bandSetIndex('Bant') == 0 && bandSetIndex('Tümör · dış bant') == 0
+assert bandSetIndex('Kenar · iç bant 20µm') == 1 && bandSetIndex('Kenar · kenar bandı 100µm (3)') == 3
+assert bandSetIndex(null) == 0
+assert prevOwnBands(null).isEmpty()
+''')
+        def h = new PathObjectHierarchy()
+        assert shell([h: h]).evaluate(code + 'nextBandRunIndex(h)') == 1
+        def own1 = mk(n1, 0)
+        def own1b = mk('Bez · dış bant 50' + u + 'm', 200)
+        def renamed = mk(n1 + ' notlarım', 400)
+        def noClass = mk(n1, 600, false)
+        def noMeas = mk(n1, 800, true, false)
+        def other = ann('Başka', 1000)
+        h.addObjects([own1, own1b, renamed, noClass, noMeas, other])
+        def prev = shell([h: h]).evaluate(code + 'prevOwnBands(h)')
+        assert prev as Set == ([own1, own1b] as Set)
+        assert shell([h: h]).evaluate(code + 'nextBandRunIndex(h)') == 2
+        def set2 = mk(n1 + ' (2)', 1200)
+        h.addObjects([set2])
+        assert shell([h: h]).evaluate(code + 'nextBandRunIndex(h)') == 3
+        def set5 = mk(n1 + ' (5)', 1400)
+        h.addObjects([set5])
+        assert shell([h: h]).evaluate(code + 'nextBandRunIndex(h)') == 6
+        // Replace as the script performs it: own bands only (all sources), children kept.
+        def all = shell([h: h]).evaluate(code + 'prevOwnBands(h)')
+        assert all as Set == ([own1, own1b, set2, set5] as Set)
+        def child = det('Tümör', 10)
+        own1.addChildObject(child)
+        h.removeObjects(all, true)
+        assert h.getAnnotationObjects() as Set == ([renamed, noClass, noMeas, other] as Set)
+        assert h.getDetectionObjects().contains(child)
+    }
+
+    void testPeritumoralBandAskExistingDecisions() {
+        String f = 'yardimci-peritumoral-bant.groovy'
+        String u = 'µ'
+        def withPrev = new PathObjectHierarchy()
+        def b = ann('Tümör · dış bant 50' + u + 'm')
+        b.setPathClass(PathClass.fromString('Peritümöral bant'))
+        b.getMeasurements().put('Bant alanı (' + u + 'm²)', 1d)
+        b.getMeasurements().put('Bant genişliği (' + u + 'm)', 50d)
+        withPrev.addObjects([b])
+        def run = { Map dlg, hier ->
+            def calls = []
+            def stub = new Expando(
+                showChoiceDialog: { t, bd, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, bd -> calls << 'confirm'; dlg.confirm })
+            def r = shell([Dialogs: stub, workshopText: { Object... a -> a[0] }, h: hier]).evaluate('''
+def MODE_ADD = 'add'
+def MODE_REPLACE = 'replace'
+''' + peritumoralBandCode(f) + closure(f, 'askExisting').replaceAll(/@WT:(\w+)@/) { all, n -> "'" + n + "'" } + '''
+askExisting(h)''')
+            [r, calls]
+        }
+        assert run([pick: 'add'], new PathObjectHierarchy()) == ['add', []]
+        assert run([pick: null], withPrev) == [null, ['choice']]
+        assert run([pick: 'add'], withPrev) == ['add', ['choice']]
+        assert run([pick: 'rep', confirm: true], withPrev) == ['replace', ['choice', 'confirm']]
+        assert run([pick: 'rep', confirm: false], withPrev) == [null, ['choice', 'confirm']]
+    }
+
+    void testPeritumoralBandAsksBeforeRemoving() {
+        String f = 'yardimci-peritumoral-bant.groovy'
+        String s = source(f)
+        assert s.count('removeObjects(') == 1
+        assert !s.contains('clearAllObjects') && !s.contains('clearDetections') && !s.contains('removeObjectsAndDescendants')
+        assert !s.contains('def stale = ')                       // no class-only sweep any more
+        int rep = s.indexOf('if (writeMode == MODE_REPLACE) {')
+        int rem = s.indexOf('QP.removeObjects(prevNow, true)')
+        assert rep >= 0 && rem > rep && rem - rep < 250
+        int add = s.indexOf('QP.addObjects(created)')
+        assert rem < add
+        int calc = s.indexOf('targets.eachWithIndex { t, i ->')
+        int ask = s.indexOf('writeMode = askExisting(imgHierarchy)')
+        assert ask > 0 && calc > ask
+        int cancel = s.indexOf('if (writeMode == null) { println "İptal edildi."; return }', ask)
+        assert cancel > ask && cancel < calc
+        assert s.indexOf('+ runSuffix)') > calc                 // new bands carry the set number
+        String askSrc = closure(f, 'askExisting')
+        assert askSrc.contains('if (prev.isEmpty()) return MODE_ADD')
+        assert askSrc.contains('if (pick == null) return null')
+        assert askSrc.contains('return ok ? MODE_REPLACE : null')
+        int hl = s.indexOf('String mevcutArg = null')
+        assert hl >= 0
+        int bad = s.indexOf("['ekle', 'degistir'].contains(mevcutArg)", hl)
+        assert bad > hl && bad < s.indexOf('def imageData = QP.getCurrentImageData()')
+        int stop = s.indexOf('if (mevcutArg == null) {', hl)
+        assert stop > hl && stop < calc
+        assert s.indexOf("writeMode = (mevcutArg == 'degistir') ? MODE_REPLACE : MODE_ADD", stop) > stop
+    }
+
+    // Convex hull: this helper's hull = exact name (or "name (N)", N >= 2) AND the hull class. A user's
+    // unclassed annotation with the same name, a renamed hull, or another source's hull is never ours.
+    void testConvexHullOwnSetNeverMatchesByPrefixOrOtherClass() {
+        String f = 'yardimci-konveks-zarf.groovy'
+        String hullClass = 'Konveks Zarf'
+        String base = 'Konveks Zarf · seçili'
+        def mk = { String nm, double x, boolean classed ->
+            def a = ann(nm, x)
+            if (classed) a.setPathClass(PathClass.fromString(hullClass))
+            a
+        }
+        def h = new PathObjectHierarchy()
+        String code = 'String HULL_CLASS = "' + hullClass + '"\n' + ownSetCode(f) + '\n' + closure(f, 'prevHullObjects') + '\n'
+        shell([h: h, base: base]).evaluate(code + '''
+assert prevHullObjects(h, base).isEmpty()
+assert prevHullObjects(null, base).isEmpty()
+assert nextOwnSetName(h, base) == base
+''')
+        def own1 = mk(base, 0, true)
+        def renamed = mk(base + ' notlarım', 200, true)
+        def unclassed = mk(base, 400, false)
+        def otherSource = mk('Konveks Zarf · Tümör', 600, true)
+        def bad1 = mk(base + ' (1)', 800, true)
+        h.addObjects([own1, renamed, unclassed, otherSource, bad1])
+        def prev1 = shell([h: h, base: base]).evaluate(code + 'prevHullObjects(h, base)')
+        assert prev1 == [own1]
+        // Add -> add: next names are numbered; the unclassed same-name object only ever raises the number.
+        def own2 = mk(base + ' (2)', 1000, true)
+        h.addObjects([own2])
+        assert shell([h: h, base: base]).evaluate(code + 'nextOwnSetName(h, base)') == base + ' (3)'
+        def own5 = mk(base + ' (5)', 1200, true)
+        h.addObjects([own5])
+        assert shell([h: h, base: base]).evaluate(code + 'nextOwnSetName(h, base)') == base + ' (6)'
+        def prev = shell([h: h, base: base]).evaluate(code + 'prevHullObjects(h, base)')
+        assert prev as Set == [own1, own2, own5] as Set
+        // Replace as the script performs it: only those, children kept.
+        def child = det('Tümör', 10)
+        own1.addChildObject(child)
+        h.removeObjects(prev, true)
+        assert h.getAnnotationObjects() as Set == [renamed, unclassed, otherSource, bad1] as Set
+        assert h.getDetectionObjects().contains(child)
+    }
+
+    void testConvexHullAskExistingDecisions() {
+        String f = 'yardimci-konveks-zarf.groovy'
+        String base = 'Konveks Zarf · seçili'
+        def withPrev = new PathObjectHierarchy()
+        def a1 = ann(base); a1.setPathClass(PathClass.fromString('Konveks Zarf'))
+        withPrev.addObjects([a1])
+        def onlyUnclassed = new PathObjectHierarchy()
+        onlyUnclassed.addObjects([ann(base)])
+        def run = { Map dlg, hier ->
+            def calls = []
+            def stub = new Expando(
+                showChoiceDialog: { t, b, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; dlg.confirm })
+            def r = shell([Dialogs: stub, workshopText: { Object... a -> a[0] }, h: hier, base: base]).evaluate('''
+def MODE_ADD = 'add'
+def MODE_REPLACE = 'replace'
+String HULL_CLASS = 'Konveks Zarf'
+''' + ownSetCode(f) + '\n' + closure(f, 'prevHullObjects') + '\n' + closure(f, 'askExisting').replaceAll(/@WT:(\w+)@/) { all, n -> "'" + n + "'" } + '''
+askExisting(h, base)''')
+            [r, calls]
+        }
+        assert run([pick: 'add'], new PathObjectHierarchy()) == ['add', []]
+        assert run([pick: 'add'], onlyUnclassed) == ['add', []]            // a user's unclassed look-alike raises no question
+        assert run([pick: null], withPrev) == [null, ['choice']]
+        assert run([pick: 'add'], withPrev) == ['add', ['choice']]
+        assert run([pick: 'rep', confirm: true], withPrev) == ['replace', ['choice', 'confirm']]
+        assert run([pick: 'rep', confirm: false], withPrev) == [null, ['choice', 'confirm']]
+    }
+
+    void testConvexHullAsksBeforeRemoving() {
+        String f = 'yardimci-konveks-zarf.groovy'
+        String s = source(f)
+        assert s.count('removeObjects(') == 1
+        assert !s.contains('clearAllObjects') && !s.contains('clearDetections') && !s.contains('removeObjectsAndDescendants')
+        int rep = s.indexOf('if (writeMode == MODE_REPLACE) {')
+        int rem = s.indexOf('QP.removeObjects(prevNow, true)')
+        assert rep >= 0 && rem > rep && rem - rep < 250
+        assert rem < s.indexOf('QP.addObjects([hullAnno])')
+        int calc = s.indexOf('def union = (geoms.size() == 1)')
+        int ask = s.indexOf('writeMode = askExisting(imgHierarchy, hullName)')
+        assert ask > 0 && calc > ask
+        int cancel = s.indexOf('if (writeMode == null) { println "İptal edildi."; return }', ask)
+        assert cancel > ask && cancel < calc
+        String askSrc = closure(f, 'askExisting')
+        assert askSrc.contains('prevHullObjects(hierarchy, base)')
+        assert askSrc.contains('if (prev.isEmpty()) return MODE_ADD')
+        assert askSrc.contains('if (pick == null) return null')
+        assert askSrc.contains('return ok ? MODE_REPLACE : null')
+        assert !s.contains('def stale = ')
+        int hl = s.indexOf('String mevcutArg = null')
+        assert hl >= 0
+        int bad = s.indexOf("['ekle', 'degistir'].contains(mevcutArg)", hl)
+        assert bad > hl && bad < s.indexOf('def imageData = QP.getCurrentImageData()')
+        int stop = s.indexOf('if (mevcutArg == null) {', hl)
+        assert stop > hl && stop < calc
+        assert s.indexOf("writeMode = (mevcutArg == 'degistir') ? MODE_REPLACE : MODE_ADD", stop) > stop
+    }
+
+    static String centrePeripheryCode(String f) {
+        'def REGION_CLASSES = ["Merkez (eşit alanlı)", "Çevre (eşit alanlı)", "Ara bölge (eşit alanlı)"]\n' +
+            ['regionSetIndex', 'prevOwnRegions', 'nextRegionRunIndex'].collect { closure(f, it) }.join('\n') + '\n'
+    }
+
+    // Centre/periphery: this helper's region = one of its three classes + its own name pattern
+    // ("<source> · Merkez (2/2)" with an optional " (N)", N >= 2) + the two measurements it writes.
+    // The "(i/n)" ordinal is never mistaken for a set number. add -> add -> add numbering; Replace keeps children.
+    void testCentrePeripheryOwnSetNeverMatchesByPrefixOrClassOnly() {
+        String f = 'yardimci-merkez-cevre.groovy'
+        String u = 'µ'
+        String code = centrePeripheryCode(f)
+        def mk = { String nm, double x, String cls = 'Merkez (eşit alanlı)', boolean meas = true ->
+            def a = ann(nm, x)
+            if (cls != null) a.setPathClass(PathClass.fromString(cls))
+            if (meas) {
+                a.getMeasurements().put('Bölge alanı (' + u + 'm²)', 1d)
+                a.getMeasurements().put('Bölge sırası (dıştan)', 2d)
+            }
+            a
+        }
+        shell([:]).evaluate(code + '''
+assert regionSetIndex('Tümör · Merkez (2/2)') == 1
+assert regionSetIndex('Tümör · Çevre (1/2)') == 1 && regionSetIndex('Tümör · Ara 1 (2/3)') == 1
+assert regionSetIndex('Tümör · Merkez (2/2) (2)') == 2 && regionSetIndex('Tümör · Merkez (2/2) (12)') == 12
+assert regionSetIndex('Tümör · Merkez (2/2) (1)') == 0 && regionSetIndex('Tümör · Merkez (2/2) (x)') == 0
+assert regionSetIndex('Tümör · Merkez') == 0 && regionSetIndex('Tümör · Merkez (2/2) notlarım') == 0
+assert regionSetIndex('Merkez (2/2)') == 0
+assert regionSetIndex(null) == 0
+assert prevOwnRegions(null).isEmpty()
+''')
+        def h = new PathObjectHierarchy()
+        assert shell([h: h]).evaluate(code + 'nextRegionRunIndex(h)') == 1
+        def own1 = mk('Tümör · Merkez (2/2)', 0)
+        def own1b = mk('Tümör · Çevre (1/2)', 200, 'Çevre (eşit alanlı)')
+        def renamed = mk('Tümör · Merkez (2/2) notlarım', 400)
+        def noClass = mk('Tümör · Merkez (2/2)', 600, null)
+        def wrongClass = mk('Tümör · Merkez (2/2)', 700, 'Tümör')
+        def noMeas = mk('Tümör · Merkez (2/2)', 800, 'Merkez (eşit alanlı)', false)
+        def other = ann('Başka', 1000)
+        h.addObjects([own1, own1b, renamed, noClass, wrongClass, noMeas, other])
+        def prev = shell([h: h]).evaluate(code + 'prevOwnRegions(h)')
+        assert prev as Set == ([own1, own1b] as Set)
+        assert shell([h: h]).evaluate(code + 'nextRegionRunIndex(h)') == 2
+        def set2 = mk('Tümör · Merkez (2/2) (2)', 1200)
+        h.addObjects([set2])
+        assert shell([h: h]).evaluate(code + 'nextRegionRunIndex(h)') == 3
+        def set5 = mk('Tümör · Çevre (1/2) (5)', 1400, 'Çevre (eşit alanlı)')
+        h.addObjects([set5])
+        assert shell([h: h]).evaluate(code + 'nextRegionRunIndex(h)') == 6
+        def all = shell([h: h]).evaluate(code + 'prevOwnRegions(h)')
+        assert all as Set == ([own1, own1b, set2, set5] as Set)
+        def child = det('Tümör', 10)
+        own1.addChildObject(child)
+        h.removeObjects(all, true)
+        assert h.getAnnotationObjects() as Set == ([renamed, noClass, wrongClass, noMeas, other] as Set)
+        assert h.getDetectionObjects().contains(child)
+    }
+
+    void testCentrePeripheryAskExistingDecisions() {
+        String f = 'yardimci-merkez-cevre.groovy'
+        String u = 'µ'
+        def withPrev = new PathObjectHierarchy()
+        def r1 = ann('Tümör · Merkez (2/2)')
+        r1.setPathClass(PathClass.fromString('Merkez (eşit alanlı)'))
+        r1.getMeasurements().put('Bölge alanı (' + u + 'm²)', 1d)
+        r1.getMeasurements().put('Bölge sırası (dıştan)', 2d)
+        withPrev.addObjects([r1])
+        def run = { Map dlg, hier ->
+            def calls = []
+            def stub = new Expando(
+                showChoiceDialog: { t, bd, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, bd -> calls << 'confirm'; dlg.confirm })
+            def r = shell([Dialogs: stub, workshopText: { Object... a -> a[0] }, h: hier]).evaluate('''
+def MODE_ADD = 'add'
+def MODE_REPLACE = 'replace'
+''' + centrePeripheryCode(f) + closure(f, 'askExisting').replaceAll(/@WT:(\w+)@/) { all, n -> "'" + n + "'" } + '''
+askExisting(h)''')
+            [r, calls]
+        }
+        assert run([pick: 'add'], new PathObjectHierarchy()) == ['add', []]
+        assert run([pick: null], withPrev) == [null, ['choice']]
+        assert run([pick: 'add'], withPrev) == ['add', ['choice']]
+        assert run([pick: 'rep', confirm: true], withPrev) == ['replace', ['choice', 'confirm']]
+        assert run([pick: 'rep', confirm: false], withPrev) == [null, ['choice', 'confirm']]
+    }
+
+    void testCentrePeripheryAsksBeforeRemoving() {
+        String f = 'yardimci-merkez-cevre.groovy'
+        String s = source(f)
+        assert s.count('removeObjects(') == 1
+        assert !s.contains('clearAllObjects') && !s.contains('clearDetections') && !s.contains('removeObjectsAndDescendants')
+        assert !s.contains('def stale = ')                       // no class-only sweep any more
+        int rep = s.indexOf('if (writeMode == MODE_REPLACE) {')
+        int rem = s.indexOf('QP.removeObjects(prevNow, true)')
+        assert rep >= 0 && rem > rep && rem - rep < 250
+        int add = s.indexOf('QP.addObjects(created)')
+        assert rem < add
+        int calc = s.indexOf('targets.eachWithIndex { t, si ->')
+        int ask = s.indexOf('writeMode = askExisting(imgHierarchy)')
+        assert ask > 0 && calc > ask
+        int cancel = s.indexOf('if (writeMode == null) { println "İptal edildi."; return }', ask)
+        assert cancel > ask && cancel < calc
+        assert s.indexOf('+ runSuffix)') > calc
+        String askSrc = closure(f, 'askExisting')
+        assert askSrc.contains('if (prev.isEmpty()) return MODE_ADD')
+        assert askSrc.contains('if (pick == null) return null')
+        assert askSrc.contains('return ok ? MODE_REPLACE : null')
+        int hl = s.indexOf('String mevcutArg = null')
+        assert hl >= 0
+        int bad = s.indexOf("['ekle', 'degistir'].contains(mevcutArg)", hl)
+        assert bad > hl && bad < s.indexOf('def imageData = QP.getCurrentImageData()')
+        int stop = s.indexOf('if (mevcutArg == null) {', hl)
+        assert stop > hl && stop < calc
+        assert s.indexOf("writeMode = (mevcutArg == 'degistir') ? MODE_REPLACE : MODE_ADD", stop) > stop
+    }
+
+
+    static final String KI67H = 'yardimci-ki67-heterojenlik.groovy'
+
+    static String ki67hClosures() {
+        ['isOwnSetName', 'ownSetIndex', 'prevOwnObjects', 'nextOwnSetName', 'isOwnTileName', 'tileSetIndex',
+         'prevOwnGridObjects', 'gridSetIndexes', 'nextGridSetIndex', 'setSuffix'].collect { closure(KI67H, it) }.join('\n')
+    }
+
+    // Own result = "Ki-67 grid r,c" / "Ki-67 grid (N) r,c" tiles and "Ki-67 Heterojenlik Özet" / "(N)" summaries,
+    // N >= 2, exact shape only. Add -> add -> add numbering; user-renamed annotations never match.
+    void testKi67HeterogeneityOwnSetNamingNeverMatchesByPrefix() {
+        def h = new PathObjectHierarchy()
+        def vars = [h: h, G: 'Ki-67 grid', S: 'Ki-67 Heterojenlik Özet']
+        shell(vars).evaluate(ki67hClosures() + '''
+assert prevOwnGridObjects(null, G, S).isEmpty()
+assert nextGridSetIndex(h, G, S) == 1
+assert setSuffix(1) == '' && setSuffix(2) == ' (2)'
+''')
+        def mineTile = ann('Ki-67 grid notlarım', 900)
+        def mineSum = ann('Ki-67 Heterojenlik Özet düzeltmelerim', 1000)
+        def mineNum = ann('Ki-67 grid 0,0 kopya', 1100)
+        h.addObjects([ann('Ki-67 grid 0,0'), ann('Ki-67 grid 1,2', 100), ann('Ki-67 Heterojenlik Özet', 200),
+                      mineTile, mineSum, mineNum, ann('Ki-67 grid (1) 0,0'), ann('Ki-67 grid (x) 0,0'),
+                      ann('Ki-67 Heterojenlik Özet (1)'), ann('Başka'), ann(null)])
+        shell(vars).evaluate(ki67hClosures() + '''
+assert prevOwnGridObjects(h, G, S).size() == 3
+assert gridSetIndexes(h, G, S) == [1]
+assert nextGridSetIndex(h, G, S) == 2
+assert isOwnTileName('Ki-67 grid 12,3', G) && isOwnTileName('Ki-67 grid (2) 0,0', G) && isOwnTileName('Ki-67 grid (13) 4,5', G)
+assert !isOwnTileName('Ki-67 grid (1) 0,0', G) && !isOwnTileName('Ki-67 grid (x) 0,0', G) && !isOwnTileName('Ki-67 grid', G)
+assert !isOwnTileName('Ki-67 grid 0,0 kopya', G) && !isOwnTileName('Ki-67 grid notlarım', G) && !isOwnTileName(null, G)
+assert !isOwnSetName('Ki-67 Heterojenlik Özet düzeltmelerim', S) && !isOwnSetName(null, S)
+assert tileSetIndex('Ki-67 grid 0,0', G) == 1 && tileSetIndex('Ki-67 grid (4) 0,0', G) == 4
+''')
+        h.addObjects([ann('Ki-67 grid (2) 0,0', 300), ann('Ki-67 grid (2) 0,1', 400), ann('Ki-67 Heterojenlik Özet (2)', 500)])
+        shell(vars).evaluate(ki67hClosures() + '''
+assert prevOwnGridObjects(h, G, S).size() == 6
+assert gridSetIndexes(h, G, S) == [1, 2]
+assert nextGridSetIndex(h, G, S) == 3
+assert nextOwnSetName(h, S) == S + ' (3)'
+''')
+        // tiles alone (summary deleted by the user) still count as an earlier result
+        def h2 = new PathObjectHierarchy()
+        h2.addObjects([ann('Ki-67 grid (3) 0,0')])
+        shell([h: h2, G: 'Ki-67 grid', S: 'Ki-67 Heterojenlik Özet']).evaluate(ki67hClosures() + '''
+assert prevOwnGridObjects(h, G, S).size() == 1
+assert nextGridSetIndex(h, G, S) == 4
+''')
+        assert h.getAnnotationObjects().containsAll([mineTile, mineSum, mineNum])
+    }
+
+    // Replace as the script performs it: removeObjects(own, true) keeps the objects inside the tiles and never
+    // touches user-named annotations; Add removes nothing.
+    void testKi67HeterogeneityReplaceKeepsChildrenAndUserObjects() {
+        def h = new PathObjectHierarchy()
+        def tile = ann('Ki-67 grid 0,0'), sum = ann('Ki-67 Heterojenlik Özet', 200), mine = ann('Ki-67 grid notlarım', 400)
+        h.addObjects([tile, sum, mine])
+        def inner = det('Tumor', 10); tile.addChildObject(inner)
+        def removed = shell([h: h, G: 'Ki-67 grid', S: 'Ki-67 Heterojenlik Özet']).evaluate(ki67hClosures() + '''
+def prevNow = prevOwnGridObjects(h, G, S)
+h.removeObjects(prevNow, true)
+prevNow.size()
+''')
+        assert removed == 2
+        assert h.getAnnotationObjects().toSet() == [mine] as Set
+        assert h.getDetectionObjects().contains(inner)
+        assert inner.getParent() != tile
+    }
+
+    // Decisions of the question: no earlier result -> add without asking; Cancel -> null; Replace needs a confirm.
+    void testKi67HeterogeneityAskExistingDecisions() {
+        def run = { Map dlg, int n ->
+            def calls = []
+            def h = new PathObjectHierarchy()
+            (0..<n).each { h.addObjects([ann('Ki-67 grid 0,' + it, 100 * it)]) }
+            def Dialogs = new Expando(
+                showChoiceDialog: { t, b, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; dlg.confirm })
+            String code = ki67hClosures() + '\n' + closure(KI67H, 'askExisting')
+            code = code.replaceAll(/@WT:(\w+)@/) { all, name -> "'" + name + "'" }
+            def r = shell([workshopText: { Object... a -> a[0] }, Dialogs: Dialogs, h: h, GRID_BASE: 'Ki-67 grid', SUMMARY_BASE: 'Ki-67 Heterojenlik Özet',
+                           MODE_ADD: 'add', MODE_REPLACE: 'replace']).evaluate(code + '\naskExisting(h)')
+            [r, calls]
+        }
+        assert run([pick: 'add'], 0) == ['add', []]
+        assert run([pick: null], 3) == [null, ['choice']]
+        assert run([pick: 'add'], 3) == ['add', ['choice']]
+        assert run([pick: 'rep', confirm: true], 3) == ['replace', ['choice', 'confirm']]
+        assert run([pick: 'rep', confirm: false], 3) == [null, ['choice', 'confirm']]
+    }
+
+    // Source contract: the only removal sits in the Replace branch after the new objects exist, the question
+    // precedes the computation, Cancel returns first, and headless mode fails closed.
+    void testKi67HeterogeneityAsksBeforeRemoving() {
+        String s = source(KI67H)
+        assert s.count('removeObjects(') == 1
+        assert !s.contains('QP.removeObjects') && !s.contains('clearAllObjects') && !s.contains('clearDetections')
+        int rep = s.indexOf('if (writeMode == MODE_REPLACE) {\n    def prevNow')
+        int rem = s.indexOf('hierarchy.removeObjects(prevNow, true)')
+        assert rep >= 0 && rem > rep && rem - rep < 250
+        assert rem > s.indexOf('summary.setLocked(true)')          // removal only after the new objects exist
+        assert rem < s.indexOf('hierarchy.addObjects(newTiles)')
+        int ask = s.indexOf('writeMode = askExisting(hierarchy)')
+        assert ask > 0
+        assert s.indexOf('if (writeMode == null) return', ask) in (ask + 1)..(ask + 80)
+        assert ask < s.indexOf('def tileTotal = new int[')          // asked before the computation
+        assert ask < s.indexOf('hierarchy.addObjects(newTiles)')
+        String ac = closure(KI67H, 'askExisting')
+        assert ac.contains('if (prev.isEmpty()) return MODE_ADD')
+        assert ac.contains('if (pick == null) return null')
+        assert ac.contains('return ok ? MODE_REPLACE : null')
+        // headless: unknown value fails closed first; an earlier result without mevcut stops before computing
+        int bad = s.indexOf("!['ekle', 'degistir'].contains(mevcutArg)")
+        assert bad > 0 && bad < s.indexOf('def imageData = QP.getCurrentImageData()')
+        int stop = s.indexOf('if (mevcutArg == null) {')
+        assert stop > 0 && stop < ask
+        assert s.indexOf('return', stop) < s.indexOf('writeMode = (mevcutArg', stop)
+        assert s.contains("writeMode = (mevcutArg == 'degistir') ? MODE_REPLACE : MODE_ADD")
+    }
+
+
+    static final String DENSITY_MAP = 'yardimci-yogunluk-haritasi.groovy'
+
+    static String densityMapClosures() {
+        ['isOwnSetName', 'ownSetIndex', 'prevOwnObjects', 'nextOwnSetName', 'isOwnTileName', 'tileSetIndex',
+         'prevOwnGridObjects', 'gridSetIndexes', 'nextGridSetIndex', 'setSuffix'].collect { closure(DENSITY_MAP, it) }.join('\n')
+    }
+
+    // Own result = "Yoğunluk grid r,c" / "Yoğunluk grid (N) r,c" tiles and "Yoğunluk Özet" / "(N)" summaries,
+    // N >= 2, exact shape only. Add -> add -> add numbering; user-renamed annotations never match.
+    void testDensityMapOwnSetNamingNeverMatchesByPrefix() {
+        def h = new PathObjectHierarchy()
+        def vars = [h: h, G: 'Yoğunluk grid', S: 'Yoğunluk Özet']
+        shell(vars).evaluate(densityMapClosures() + '''
+assert prevOwnGridObjects(null, G, S).isEmpty()
+assert nextGridSetIndex(h, G, S) == 1
+assert setSuffix(1) == '' && setSuffix(2) == ' (2)'
+''')
+        def mineTile = ann('Yoğunluk grid notlarım', 900)
+        def mineSum = ann('Yoğunluk Özet düzeltmelerim', 1000)
+        def mineNum = ann('Yoğunluk grid 0,0 kopya', 1100)
+        h.addObjects([ann('Yoğunluk grid 0,0'), ann('Yoğunluk grid 1,2', 100), ann('Yoğunluk Özet', 200),
+                      mineTile, mineSum, mineNum, ann('Yoğunluk grid (1) 0,0'), ann('Yoğunluk grid (x) 0,0'),
+                      ann('Yoğunluk Özet (1)'), ann('Başka'), ann(null)])
+        shell(vars).evaluate(densityMapClosures() + '''
+assert prevOwnGridObjects(h, G, S).size() == 3
+assert gridSetIndexes(h, G, S) == [1]
+assert nextGridSetIndex(h, G, S) == 2
+assert isOwnTileName('Yoğunluk grid 12,3', G) && isOwnTileName('Yoğunluk grid (2) 0,0', G) && isOwnTileName('Yoğunluk grid (13) 4,5', G)
+assert !isOwnTileName('Yoğunluk grid (1) 0,0', G) && !isOwnTileName('Yoğunluk grid (x) 0,0', G) && !isOwnTileName('Yoğunluk grid', G)
+assert !isOwnTileName('Yoğunluk grid 0,0 kopya', G) && !isOwnTileName('Yoğunluk grid notlarım', G) && !isOwnTileName(null, G)
+assert !isOwnSetName('Yoğunluk Özet düzeltmelerim', S) && !isOwnSetName(null, S)
+assert tileSetIndex('Yoğunluk grid 0,0', G) == 1 && tileSetIndex('Yoğunluk grid (4) 0,0', G) == 4
+''')
+        h.addObjects([ann('Yoğunluk grid (2) 0,0', 300), ann('Yoğunluk grid (2) 0,1', 400), ann('Yoğunluk Özet (2)', 500)])
+        shell(vars).evaluate(densityMapClosures() + '''
+assert prevOwnGridObjects(h, G, S).size() == 6
+assert gridSetIndexes(h, G, S) == [1, 2]
+assert nextGridSetIndex(h, G, S) == 3
+assert nextOwnSetName(h, S) == S + ' (3)'
+''')
+        // tiles alone (summary deleted by the user) still count as an earlier result
+        def h2 = new PathObjectHierarchy()
+        h2.addObjects([ann('Yoğunluk grid (3) 0,0')])
+        shell([h: h2, G: 'Yoğunluk grid', S: 'Yoğunluk Özet']).evaluate(densityMapClosures() + '''
+assert prevOwnGridObjects(h, G, S).size() == 1
+assert nextGridSetIndex(h, G, S) == 4
+''')
+        assert h.getAnnotationObjects().containsAll([mineTile, mineSum, mineNum])
+    }
+
+    // Replace as the script performs it: removeObjects(own, true) keeps the objects inside the tiles and never
+    // touches user-named annotations; Add removes nothing.
+    void testDensityMapReplaceKeepsChildrenAndUserObjects() {
+        def h = new PathObjectHierarchy()
+        def tile = ann('Yoğunluk grid 0,0'), sum = ann('Yoğunluk Özet', 200), mine = ann('Yoğunluk grid notlarım', 400)
+        h.addObjects([tile, sum, mine])
+        def inner = det('Tumor', 10); tile.addChildObject(inner)
+        def removed = shell([h: h, G: 'Yoğunluk grid', S: 'Yoğunluk Özet']).evaluate(densityMapClosures() + '''
+def prevNow = prevOwnGridObjects(h, G, S)
+h.removeObjects(prevNow, true)
+prevNow.size()
+''')
+        assert removed == 2
+        assert h.getAnnotationObjects().toSet() == [mine] as Set
+        assert h.getDetectionObjects().contains(inner)
+        assert inner.getParent() != tile
+    }
+
+    // Decisions of the question: no earlier result -> add without asking; Cancel -> null; Replace needs a confirm.
+    void testDensityMapAskExistingDecisions() {
+        def run = { Map dlg, int n ->
+            def calls = []
+            def h = new PathObjectHierarchy()
+            (0..<n).each { h.addObjects([ann('Yoğunluk grid 0,' + it, 100 * it)]) }
+            def Dialogs = new Expando(
+                showChoiceDialog: { t, b, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; dlg.confirm })
+            String code = densityMapClosures() + '\n' + closure(DENSITY_MAP, 'askExisting')
+            code = code.replaceAll(/@WT:(\w+)@/) { all, name -> "'" + name + "'" }
+            def r = shell([workshopText: { Object... a -> a[0] }, Dialogs: Dialogs, h: h, GRID_BASE: 'Yoğunluk grid', SUMMARY_BASE: 'Yoğunluk Özet',
+                           MODE_ADD: 'add', MODE_REPLACE: 'replace']).evaluate(code + '\naskExisting(h)')
+            [r, calls]
+        }
+        assert run([pick: 'add'], 0) == ['add', []]
+        assert run([pick: null], 3) == [null, ['choice']]
+        assert run([pick: 'add'], 3) == ['add', ['choice']]
+        assert run([pick: 'rep', confirm: true], 3) == ['replace', ['choice', 'confirm']]
+        assert run([pick: 'rep', confirm: false], 3) == [null, ['choice', 'confirm']]
+    }
+
+    // Source contract: the only removal sits in the Replace branch after the new objects exist, the question
+    // precedes the computation, Cancel returns first, and headless mode fails closed.
+    void testDensityMapAsksBeforeRemoving() {
+        String s = source(DENSITY_MAP)
+        assert s.count('removeObjects(') == 1
+        assert !s.contains('QP.removeObjects') && !s.contains('clearAllObjects') && !s.contains('clearDetections')
+        int rep = s.indexOf('if (writeMode == MODE_REPLACE) {\n    def prevNow')
+        int rem = s.indexOf('hierarchy.removeObjects(prevNow, true)')
+        assert rep >= 0 && rem > rep && rem - rep < 250
+        assert rem > s.indexOf('summary.setLocked(true)')          // removal only after the new objects exist
+        assert rem < s.indexOf('hierarchy.addObjects(newTiles)')
+        int ask = s.indexOf('writeMode = askExisting(hierarchy)')
+        assert ask > 0
+        assert s.indexOf('if (writeMode == null) return', ask) in (ask + 1)..(ask + 80)
+        assert ask < s.indexOf('int[] tileCount = new int[')          // asked before the computation
+        assert ask < s.indexOf('hierarchy.addObjects(newTiles)')
+        String ac = closure(DENSITY_MAP, 'askExisting')
+        assert ac.contains('if (prev.isEmpty()) return MODE_ADD')
+        assert ac.contains('if (pick == null) return null')
+        assert ac.contains('return ok ? MODE_REPLACE : null')
+        // headless: unknown value fails closed first; an earlier result without mevcut stops before computing
+        int bad = s.indexOf("!['ekle', 'degistir'].contains(mevcutArg)")
+        assert bad > 0 && bad < s.indexOf('def imageData = QP.getCurrentImageData()')
+        int stop = s.indexOf('if (mevcutArg == null) {')
+        assert stop > 0 && stop < ask
+        assert s.indexOf('return', stop) < s.indexOf('writeMode = (mevcutArg', stop)
+        assert s.contains("writeMode = (mevcutArg == 'degistir') ? MODE_REPLACE : MODE_ADD")
+    }
+
+
+    static final String EYEBALL = 'yardimci-goz-karari-kalibrasyon.groovy'
+    static final String EYEBALL_GRID = '__GozKarariKalibrasyonIzgarasi__'
+
+    static String eyeballClosures(List<String> extra = []) {
+        (['isOwnSetName', 'ownSetIndex', 'prevOwnObjects', 'nextOwnSetName', 'foreignGridObjects'] + extra).collect { closure(EYEBALL, it) }.join('\n')
+    }
+
+    // Foreign grid = exact name or "name (N>=2)" that this window did not place; a user-renamed annotation never
+    // matches; the window's own tiles are tracked by reference.
+    void testEyeballCalibrationOwnSetNamingNeverMatchesByPrefix() {
+        def h = new PathObjectHierarchy()
+        def own = [ann(EYEBALL_GRID, 0), ann(EYEBALL_GRID, 100)]
+        h.addObjects(own)
+        shell([h: h, G: EYEBALL_GRID, own: own]).evaluate(eyeballClosures() + '''
+assert foreignGridObjects(h, G, own).isEmpty()
+assert nextOwnSetName(h, G) == G + ' (2)'
+assert prevOwnObjects(null, G).isEmpty()
+''')
+        def stale = ann(EYEBALL_GRID, 200)
+        def stale2 = ann(EYEBALL_GRID + ' (2)', 300)
+        def mine = ann(EYEBALL_GRID + ' notlarım', 400)
+        h.addObjects([stale, stale2, mine, ann(EYEBALL_GRID + ' (1)', 500), ann(EYEBALL_GRID + ' (x)', 600), ann('Başka', 700)])
+        shell([h: h, G: EYEBALL_GRID, own: own, stale: stale, stale2: stale2]).evaluate(eyeballClosures() + '''
+assert foreignGridObjects(h, G, own) as Set == [stale, stale2] as Set
+assert nextOwnSetName(h, G) == G + ' (3)'
+assert !isOwnSetName(G + ' notlarım', G) && !isOwnSetName(G + ' (1)', G) && !isOwnSetName(G + ' (x)', G) && !isOwnSetName(null, G)
+''')
+        assert h.getAnnotationObjects().contains(mine)
+    }
+
+    // removeGrid takes away only the window's OWN tiles by reference, never anything that merely carries the name.
+    void testEyeballCalibrationRemoveGridOnlyOwnObjects() {
+        def h = new PathObjectHierarchy()
+        def own = [ann(EYEBALL_GRID, 0), ann(EYEBALL_GRID, 100)]
+        def sameName = ann(EYEBALL_GRID, 200)          // e.g. the user's, or another window's: NOT ours
+        def mine = ann('Benim bölgem', 300)
+        h.addObjects(own + [sameName, mine])
+        def inner = det('Tumor', 10); own[0].addChildObject(inner)
+        def qp = new Expando(fireHierarchyUpdate: { hh -> })
+        shell([ownGridObjects: new ArrayList(own), gridHierarchy: h, QP: qp]).evaluate(closure(EYEBALL, 'removeGrid') + '\nremoveGrid()')
+        assert h.getAnnotationObjects().toSet() == [sameName, mine] as Set
+        assert h.getDetectionObjects().contains(inner)        // keepChildren = true
+        // calling it again with nothing tracked removes nothing
+        shell([ownGridObjects: [], gridHierarchy: h, QP: qp]).evaluate(closure(EYEBALL, 'removeGrid') + '\nremoveGrid()')
+        assert h.getAnnotationObjects().size() == 2
+    }
+
+    // The question and the grid placement, with the production closures: Add keeps the earlier grid and names the new
+    // set "(2)"; Replace removes only the foreign tiles; Cancel places nothing.
+    void testEyeballCalibrationAskAndPlaceGrid() {
+        def run = { String pick, Boolean confirm ->
+            def h = new PathObjectHierarchy()
+            def stale = (0..<3).collect { ann(EYEBALL_GRID, 100 * it) }
+            def keep = ann('Benim bölgem', 900)
+            h.addObjects(stale + [keep])
+            def calls = []
+            def Dialogs = new Expando(
+                showChoiceDialog: { t, b, opts, def0 -> calls << 'choice'; pick == 'rep' ? opts[1] : (pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; confirm })
+            def noteRef = new java.util.concurrent.atomic.AtomicReference('')
+            def own = []
+            String code = '''import qupath.lib.objects.PathObjects
+import qupath.lib.objects.classes.PathClass
+import qupath.lib.regions.ImagePlane
+import qupath.lib.roi.ROIs
+import java.util.Locale
+''' + eyeballClosures(['removeGrid', 'askExisting', 'addGrid'])
+            code = code.replaceAll(/@WT:(\w+)@/) { all, name -> "'" + name + "'" }
+            def qp = new Expando(fireHierarchyUpdate: { hh -> })
+            def ok = shell([Dialogs: Dialogs, QP: qp, gridHierarchy: h, ownGridObjects: own, acknowledgedForeign: [], gridNoteRef: noteRef,
+                            GRID_NAME: EYEBALL_GRID, MODE_ADD: 'add', MODE_REPLACE: 'replace', targetRoi: roi(0), workshopText: { Object... a -> a[0] }]).evaluate(code + '\naddGrid()')
+            [ok, calls, h, stale, keep, own, noteRef.get()]
+        }
+        def (ok, calls, h, stale, keep, own, note) = run('add', null)
+        assert ok && calls == ['choice'] && own.size() == 16
+        assert h.getAnnotationObjects().containsAll(stale + [keep]) && h.getAnnotationObjects().size() == 3 + 1 + 16
+        assert own.every { it.getName() == EYEBALL_GRID + ' (2)' && it.isLocked() }
+        assert note
+        (ok, calls, h, stale, keep, own, note) = run('rep', true)
+        assert ok && calls == ['choice', 'confirm'] && own.size() == 16
+        assert h.getAnnotationObjects().size() == 1 + 16 && h.getAnnotationObjects().contains(keep)
+        assert note
+        assert own.every { it.getName() == EYEBALL_GRID } && stale.every { !h.getAnnotationObjects().contains(it) }
+        (ok, calls, h, stale, keep, own, note) = run('rep', false)
+        assert !ok && calls == ['choice', 'confirm'] && own.isEmpty() && h.getAnnotationObjects().size() == 4
+        (ok, calls, h, stale, keep, own, note) = run(null, null)
+        assert !ok && calls == ['choice'] && own.isEmpty() && h.getAnnotationObjects().size() == 4
+    }
+
+    // Source contract: nothing is removed by name sweep; the two removals are the own-tiles removal and the
+    // Replace branch; the question precedes any placement; Cancel un-ticks the box; the window close removes
+    // only own tiles; headless fails closed on an unknown value and never writes.
+    void testEyeballCalibrationAsksBeforeRemoving() {
+        String s = source(EYEBALL)
+        assert s.count('removeObjects(') == 2
+        assert !s.contains('QP.removeObjects') && !s.contains('clearAllObjects') && !s.contains('clearDetections')
+        assert !s.contains('getName() == GRID_NAME')
+        String rg = closure(EYEBALL, 'removeGrid')
+        assert rg.contains('ownGridObjects') && rg.contains('gridHierarchy.removeObjects(mine, true)') && !rg.contains('getName()')
+        String ag = closure(EYEBALL, 'addGrid')
+        int ask = ag.indexOf('gridMode = askExisting(gridHierarchy, foreign)')
+        assert ask > 0
+        assert ag.indexOf('if (gridMode == null) return false', ask) in (ask + 1)..(ask + 90)
+        int rep = ag.indexOf('if (gridMode == MODE_REPLACE) {\n        removedForeign')
+        int rem = ag.indexOf('gridHierarchy.removeObjects(foreign, true)')
+        assert rep > ask && rem > rep && rem - rep < 200
+        assert ask < ag.indexOf('gridHierarchy.addObjects(cells)')
+        assert s.contains('if (!addGrid()) { gridCheck.setSelected(false); return }')
+        assert s.contains('stage.setOnHidden({\n        removeGrid()')
+        int bad = s.indexOf("!['ekle', 'degistir'].contains(mevcutArg)")
+        assert bad > 0 && bad < s.indexOf('def imageData = QP.getCurrentImageData()')
+        int hl = s.indexOf('if (isHeadless) {\n    println String.format(Locale.US,')
+        assert hl > 0 && s.indexOf('return', hl) < s.indexOf('def removeGrid = {')
+    }
+
+
+    static final String HISTOART = 'yardimci-histoart-sihirbaz.groovy'
+    static final String HISTOART_SET = 'HistoART KK'
+
+    static String histoArtOwnTileCode() {
+        '''def PROB_MEAS = 'HistoART: Artefakt olasılığı'
+def CLASS_COLOR = ['Temiz': 1, 'Kan': 2]
+''' + closure(HISTOART, 'ownTileDetections')
+    }
+
+    // Own result = the sentinel annotation named exactly "HistoART KK" or "HistoART KK (N>=2)". Add -> add -> add
+    // numbering; a user-renamed annotation is never part of "our" sets.
+    void testHistoArtOwnSetNamingNeverMatchesByPrefix() {
+        def h = new PathObjectHierarchy()
+        shell([h: h, base: HISTOART_SET]).evaluate(ownSetCode(HISTOART) + '''
+assert nextOwnSetName(h, base) == base
+assert prevOwnObjects(null, base).isEmpty()
+''')
+        def mine = ann(HISTOART_SET + ' düzeltmelerim', 900)
+        h.addObjects([ann(HISTOART_SET), mine, ann(HISTOART_SET + ' (1)', 200), ann(HISTOART_SET + ' (x)', 300), ann('Başka', 400), ann(null, 500)])
+        shell([h: h, base: HISTOART_SET]).evaluate(ownSetCode(HISTOART) + '''
+assert prevOwnObjects(h, base).size() == 1
+assert nextOwnSetName(h, base) == base + ' (2)'
+assert !isOwnSetName(base + ' düzeltmelerim', base) && !isOwnSetName(base + ' (1)', base) && !isOwnSetName(base + ' (x)', base)
+assert !isOwnSetName(null, base)
+''')
+        h.addObjects([ann(HISTOART_SET + ' (2)', 600), ann(HISTOART_SET + ' (5)', 700)])
+        shell([h: h, base: HISTOART_SET]).evaluate(ownSetCode(HISTOART) + '''
+assert prevOwnObjects(h, base).size() == 3
+assert nextOwnSetName(h, base) == base + ' (6)'
+''')
+        assert h.getAnnotationObjects().contains(mine)
+    }
+
+    // The sentinel's own tile detections are those carrying the probability measurement or a wizard class;
+    // anything else under it (a user's annotation or detection) is not ours.
+    void testHistoArtOwnTileDetectionsExcludeUserObjects() {
+        def sentinel = ann(HISTOART_SET)
+        def t1 = det('Kan', 10); t1.getMeasurements().put('HistoART: Artefakt olasılığı', 0.9d)
+        def t2 = det('Temiz', 20)                                  // class only (probability was NaN)
+        def t3 = det('Tumor', 30); t3.getMeasurements().put('HistoART: Artefakt olasılığı', 0.1d)  // hand-reclassified, measurement kept
+        def userDet = det('Tumor', 40)
+        def userAnn = ann('Benim notum', 50)
+        [t1, t2, t3, userDet, userAnn].each { sentinel.addChildObject(it) }
+        def own = shell([sentinel: sentinel]).evaluate(histoArtOwnTileCode() + '\nownTileDetections(sentinel)')
+        assert own as Set == [t1, t2, t3] as Set
+    }
+
+    // Replace as the wizard performs it: own tile detections first, then the sets with keepChildren = true;
+    // user objects (also those under a set) and user-named annotations survive. Add removes nothing.
+    void testHistoArtReplaceKeepsUserObjects() {
+        def h = new PathObjectHierarchy()
+        def s1 = ann(HISTOART_SET), s2 = ann(HISTOART_SET + ' (2)', 200), mine = ann(HISTOART_SET + ' notlarım', 400)
+        h.addObjects([s1, s2, mine])
+        def t1 = det('Kan', 10); t1.getMeasurements().put('HistoART: Artefakt olasılığı', 0.9d)
+        def t2 = det('Temiz', 210)
+        def userDet = det('Tumor', 20)
+        s1.addChildObject(t1); s1.addChildObject(userDet); s2.addChildObject(t2)
+        def counts = shell([h: h, base: HISTOART_SET]).evaluate(ownSetCode(HISTOART) + '\n' + histoArtOwnTileCode() + '''
+def prevSets = prevOwnObjects(h, base)
+def prevTiles = prevSets.collectMany { ownTileDetections(it) }
+h.removeObjects(prevTiles, true)
+h.removeObjects(prevSets, true)
+[prevSets.size(), prevTiles.size()]
+''')
+        assert counts == [2, 2]
+        assert h.getAnnotationObjects().toSet() == [mine] as Set
+        assert h.getDetectionObjects().toSet() == [userDet] as Set
+        assert userDet.getParent() != s1
+    }
+
+    // Decisions of the question: no earlier result -> add without asking; Cancel -> null; Replace needs a confirm.
+    void testHistoArtAskExistingDecisions() {
+        def run = { Map dlg, int n ->
+            def calls = []
+            def h = new PathObjectHierarchy()
+            def sets = (0..<n).collect { i -> ann(i == 0 ? HISTOART_SET : HISTOART_SET + ' (' + (i + 1) + ')', 100 * (i + 1)) }
+            if (!sets.isEmpty()) h.addObjects(sets)
+            def Dialogs = new Expando(
+                showChoiceDialog: { t, b, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; dlg.confirm })
+            String code = histoArtOwnTileCode() + '\n' + ownSetCode(HISTOART) + '\n' + closure(HISTOART, 'askExisting')
+            code = code.replaceAll(/@WT:(\w+)@/) { all, name -> "'" + name + "'" }
+            def r = shell([workshopText: { Object... a -> a[0] }, Dialogs: Dialogs, h: h, HISTOART_SENTINEL: HISTOART_SET, MODE_ADD: 'add', MODE_REPLACE: 'replace']).evaluate(code + '\naskExisting(h)')
+            [r, calls]
+        }
+        assert run([pick: 'add'], 0) == ['add', []]
+        assert run([pick: null], 2) == [null, ['choice']]
+        assert run([pick: 'add'], 2) == ['add', ['choice']]
+        assert run([pick: 'rep', confirm: true], 2) == ['replace', ['choice', 'confirm']]
+        assert run([pick: 'rep', confirm: false], 2) == [null, ['choice', 'confirm']]
+    }
+
+    // Source contract: removal only in the Replace branch (own tiles, then own sets, keepChildren = true); the
+    // question precedes the tile export and Python run; Cancel returns first; the old yes/no confirm is gone;
+    // other sets are not treated as scan regions; the headless path never writes and fails closed.
+    void testHistoArtAsksBeforeRemoving() {
+        String s = source(HISTOART)
+        assert s.count('removeObjects(') == 2
+        assert !s.contains('QP.removeObjects') && !s.contains('clearAllObjects') && !s.contains('clearDetections')
+        assert !s.contains("it.getName() == HISTOART_SENTINEL") && !s.contains('!= HISTOART_SENTINEL')
+        assert s.count('!isOwnSetName(it.getName(), HISTOART_SENTINEL)') == 2   // exportTiles and the READY screen
+        int rep = s.indexOf('if (mode == MODE_REPLACE) {\n        def prevTiles')
+        int r1 = s.indexOf('hierarchy.removeObjects(prevTiles, true)')
+        int r2 = s.indexOf('hierarchy.removeObjects(prevSets, true)')
+        assert rep >= 0 && r1 > rep && r2 > r1 && r2 - rep < 400
+        assert r2 < s.indexOf('hierarchy.addObjects([sentinel])')
+        assert s.contains("def importPredictions = { File workDir, imageData, exp, String mode = 'add' ->")
+        assert s.contains('importPredictions(workDir, imageData, exp, runMode)')
+        int start = s.indexOf('def startRun = {')
+        int ask = s.indexOf('final String runMode = askExisting(imageData.getHierarchy())', start)
+        assert ask > start
+        assert s.indexOf('if (runMode == null) return', ask) in (ask + 1)..(ask + 120)
+        assert ask < s.indexOf('exportTiles(imageData, workDir, cfg, appendLine)', start)
+        assert ask < s.indexOf('def cfg = loadConfig()', start)
+        assert s.indexOf('if (isHeadless) return', start) in start..ask
+        assert !s.contains('showConfirmDialog(workshopText(\'script.e66fc10d5440\'')
+        String ac = closure(HISTOART, 'askExisting')
+        assert ac.contains('if (prev.isEmpty()) return MODE_ADD')
+        assert ac.contains('if (pick == null) return null')
+        assert ac.contains('return ok ? MODE_REPLACE : null')
+        // headless: unknown value fails closed first; nothing is written anywhere in the headless block
+        int hl = s.indexOf('if (isHeadless) {\n    // Başsız kip hiçbir şey yazmaz')
+        assert hl > 0
+        int hend = s.indexOf('// ── Alanları prefs', hl)
+        String block = s.substring(hl, hend)
+        assert block.contains("!['ekle', 'degistir'].contains(mevcutArg)")
+        assert block.indexOf("!['ekle', 'degistir'].contains(mevcutArg)") < block.indexOf('QP.getCurrentImageData()')
+        assert !block.contains('removeObjects') && !block.contains('addObjects') && !block.contains('importPredictions(')
+    }
+
+    // ---- tumor-ici-ki67.groovy: ask before replacing an earlier Ki-67 summary / region detections ----
+
+    static final String TUMOR_KI67_FILE = 'tumor-ici-ki67.groovy'
+
+    // Production source with translation tokens neutralised: a token becomes a distinct string (its own name).
+    static String tumorKi67Closure(String name) {
+        closure(TUMOR_KI67_FILE, name).replaceAll(/@WT:(\w+)@/, "'\$1'")
+    }
+
+    static String tumorKi67Prelude() {
+        '''def MODE_ADD = 'add'
+def MODE_REPLACE = 'replace'
+def KI67_BASE = 'Ki-67 Tümör Özet'
+def KI67_REGION_BASE = 'Ki-67 tespit alanı'
+''' + ownSetCode(TUMOR_KI67_FILE) + '\n' + tumorKi67Closure('ki67OwnDetections') + '\n'
+    }
+
+    // Add -> add -> add numbering; a user-renamed annotation is never part of "our" sets (summary and region copy).
+    void testTumorKi67OwnSetNamingNeverMatchesByPrefix() {
+        def h = new PathObjectHierarchy()
+        def base = 'Ki-67 Tümör Özet'
+        shell([h: h, base: base]).evaluate(ownSetCode(TUMOR_KI67_FILE) + '''
+assert nextOwnSetName(h, base) == base
+assert prevOwnObjects(null, base).isEmpty()
+''')
+        def mine = ann(base + ' düzeltmelerim')
+        h.addObjects([ann(base), mine, ann(base + ' (1)'), ann(base + ' (x)'), ann('Başka')])
+        shell([h: h, base: base]).evaluate(ownSetCode(TUMOR_KI67_FILE) + '''
+assert prevOwnObjects(h, base).size() == 1
+assert nextOwnSetName(h, base) == base + ' (2)'
+assert !isOwnSetName(base + ' düzeltmelerim', base)
+assert !isOwnSetName(base + ' (1)', base)
+assert !isOwnSetName(null, base)
+''')
+        h.addObjects([ann(base + ' (2)', 200)])
+        shell([h: h, base: base]).evaluate(ownSetCode(TUMOR_KI67_FILE) + '''
+assert nextOwnSetName(h, base) == base + ' (3)'
+assert nextOwnSetName(h, 'Ki-67 tespit alanı') == 'Ki-67 tespit alanı'
+''')
+        assert h.getAnnotationObjects().contains(mine)
+    }
+
+    // The question: no earlier result -> no dialog; Cancel -> null; Add -> keep; Replace needs a second confirmation.
+    void testTumorKi67AskExistingDecisions() {
+        def run = { Map dlg, boolean withPrev ->
+            def h = new PathObjectHierarchy()
+            if (withPrev) {
+                def s1 = ann('Ki-67 Tümör Özet'); s1.addChildObjects([det(null, 10), det(null, 20)])
+                h.addObjects([s1, ann('Ki-67 Tümör Özet düzeltmelerim', 300)])
+            }
+            def calls = []
+            def Dialogs = new Expando(
+                showChoiceDialog: { t, b, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; dlg.confirm })
+            def r = shell([Dialogs: Dialogs, stage: null, h: h, workshopText: { Object... a -> a[0] }]).evaluate(
+                tumorKi67Prelude() + tumorKi67Closure('withStageBelow') + '\n' + tumorKi67Closure('askExistingA') + '\naskExistingA(h)')
+            [r, calls]
+        }
+        assert run([pick: 'rep', confirm: true], false) == ['add', []]
+        assert run([pick: null], true) == [null, ['choice']]
+        assert run([pick: 'add'], true) == ['add', ['choice']]
+        assert run([pick: 'rep', confirm: true], true) == ['replace', ['choice', 'confirm']]
+        assert run([pick: 'rep', confirm: false], true) == [null, ['choice', 'confirm']]
+    }
+
+    // Path B detection: nothing is removed unless the user chose Replace; a failed Replace puts the old cells back.
+    void testTumorKi67DetectOnlyReplacesWhenAskedAndRestoresOnFailure() {
+        def build = { ->
+            def region = ann('Alan')
+            def d1 = det(null, 10); def d2 = det(null, 20)
+            region.addChildObjects([d1, d2])
+            [region, d1, d2]
+        }
+        def exec = { Map vars, String mode ->
+            def log = []
+            def QP = new Expando(
+                removeObjects: { list, keep -> log << [list.size(), keep]; vars.region.removeChildObjects(list as List) },
+                selectObjects: { x -> },
+                runPlugin: { a, b -> if (vars.plugin) vars.plugin() },
+                fireHierarchyUpdate: { -> })
+            def res = shell(vars + [QP: QP, log: log, workshopText: { Object... a -> a[0] },
+                atolyeS: { String k, String d -> d }, atolyeD: { String k, double d -> d }, atolyeB: { String k, boolean d -> d }]).evaluate(
+                tumorKi67Prelude() + tumorKi67Closure('runCellDetection') + "\nrunCellDetection(region, '" + mode + "')")
+            [res, log]
+        }
+        // Add with existing detections (should not happen: the caller makes a copy) -> fail closed, nothing removed.
+        def (region, d1, d2) = build()
+        def (res, log) = exec([region: region], 'add')
+        assert !res.ok && log.isEmpty()
+        assert region.getChildObjects().findAll { it.isDetection() }.size() == 2
+        // Replace, new run finds nothing -> earlier detections restored.
+        (region, d1, d2) = build()
+        (res, log) = exec([region: region], 'replace')
+        assert !res.ok && log == [[2, true]]
+        def kids = region.getChildObjects().findAll { it.isDetection() }
+        assert kids.size() == 2 && kids.contains(d1) && kids.contains(d2)
+        // Replace, new run succeeds -> old ones are gone, new one stays, count reported.
+        (region, d1, d2) = build()
+        (res, log) = exec([region: region, plugin: { -> region.addChildObjects([det(null, 40)]) }], 'replace')
+        assert res.ok && res.count == 1 && res.removed == 2
+        assert !region.getChildObjects().findAll { it.isDetection() }.contains(d1)
+    }
+
+    // Source contract: removal only in the replace branch AFTER a successful run, the question precedes the work,
+    // Cancel returns first, no earlier result without a choice, headless fails closed.
+    void testTumorKi67AsksBeforeRemoving() {
+        String s = source(TUMOR_KI67_FILE)
+        assert s.count('removeObjects(') == 5 && s.count('removeObject(') == 0
+        assert !s.contains('QP.removeObjectsAndDescendants(') && !(s =~ /removeObjects?\([^\n]*, false\)/).find()
+        // Path A: removal of earlier summaries only in `if (replaceRun)`, after detection succeeded.
+        int run = s.indexOf('def runDetection = {')
+        int detected = s.indexOf('if (detections.isEmpty()) {', run)
+        int locked = s.indexOf('summary.setLocked(true)', detected)
+        int rep = s.indexOf('if (replaceRun) {', locked)
+        int rem = s.indexOf('QP.removeObjects(prevSummaries, true)', rep)
+        assert run > 0 && detected > run && locked > detected && rep > locked && rem > rep && rem - rep < 500
+        assert s.indexOf('QP.removeObjects(oldDets, true)', rep) in (rep + 1)..rem
+        assert s.substring(run, detected).contains('mode != MODE_ADD && mode != MODE_REPLACE')   // earlier result without a choice
+        assert s.substring(run, detected).contains('nextOwnSetName(hierA, KI67_BASE)')
+        // The failed run only removes ITS OWN summary (captured by reference above).
+        assert s.substring(detected, locked).contains('QP.removeObjects([summary], true)')
+        // The question is asked on the FX thread before the worker thread starts.
+        int panel = s.indexOf('def buildScorePanel = {')
+        int ask = s.indexOf('preAsk()', panel)
+        int thread = s.indexOf('def worker = new Thread({', ask)
+        assert ask > panel && thread > ask
+        assert s.substring(ask, thread).contains('if (runMode == null) return')
+        assert s.contains('{ askExistingA(QP.getCurrentImageData()?.getHierarchy()) })')
+        for (String n in ['askExistingA', 'askExistingB']) {
+            String a = closure(TUMOR_KI67_FILE, n)
+            assert a.contains('return MODE_ADD') && a.contains('if (pick == null) return null') && a.contains('return ok ? MODE_REPLACE : null')
+        }
+        // Path B: the question precedes startDetect; Add makes a copy BEFORE the step changes; a failed run removes only the copy.
+        int btn = s.indexOf('def detMode = askExistingB(sel[0])')
+        assert btn > 0 && s.indexOf('if (detMode == null) return', btn) > btn && s.indexOf('startDetect(sel[0], detMode)', btn) > btn
+        int sd = s.indexOf('def startDetect = {')
+        int copy = s.indexOf('createAnnotationObject(regionAnno.getROI())', sd)
+        int stepDet = s.indexOf("step.set('DETECTING')", sd)
+        assert copy > sd && copy < stepDet
+        assert s.substring(sd, stepDet).contains('mode == MODE_ADD && !regionAnno.getChildObjects().findAll { it.isDetection() }.isEmpty()')
+        assert s.substring(stepDet).contains('else if (madeCopy)')
+        // Replace in path B: only when the user chose it, and only under the selected region.
+        String det = closure(TUMOR_KI67_FILE, 'runCellDetection')
+        assert det.contains('if (!existing.isEmpty() && mode != MODE_REPLACE)')
+        assert det.indexOf('QP.removeObjects(existing, true)') > det.indexOf('mode != MODE_REPLACE')
+        // Headless: bad `mevcut` value fails closed; an earlier result without a choice stops before runDetection.
+        int head = s.indexOf('if (isHeadless) {', s.indexOf('suggestStainVectors()'))
+        String block = s.substring(head, s.indexOf('def stage = null'))
+        assert block.contains("['ekle', 'degistir'].contains(mevcut)")
+        assert block.indexOf('argMap.mevcut') < block.indexOf('def r = runDetection(')
+        assert block.indexOf('mevcut == null') < block.indexOf('def r = runDetection(')
+        assert block.count('return') >= 3
+    }
+
+    // ---- sihirbaz.groovy (Tümör/Stroma wizard): ask before replacing an earlier tumor/stroma result ----
+
+    static final String TS_WIZARD_FILE = 'sihirbaz.groovy'
+
+    // Production source with translation tokens neutralised: a token becomes a distinct string (its own name).
+    static String tsWizardClosure(String name) {
+        closure(TS_WIZARD_FILE, name).replaceAll(/@WT:(\w+)@/, "'\$1'")
+    }
+
+    static String tsWizardPrelude() {
+        '''def MODE_ADD = 'add'
+def MODE_REPLACE = 'replace'
+def SUMMARY_BASE = 'Tümör-Stroma Özet'
+def OUTPUT_TAG = 'Tümör/Stroma ölçüm'
+''' + ownSetCode(TS_WIZARD_FILE) + '\n' +
+            ['isOwnSummaryName', 'prevSummaryObjects', 'isOwnOutputObject', 'prevOutputObjects'].collect { tsWizardClosure(it) }.join('\n') + '\n'
+    }
+
+    static def tsWizardOutput(String cls, String name, String desc) {
+        def o = PathObjects.createAnnotationObject(roi(), PathClass.fromString(cls))
+        o.setName(name)
+        if (desc != null) o.setDescription(desc)
+        o
+    }
+
+    // Add -> add -> add numbering; user-renamed summaries are never "ours"; the legacy name 'TSR Özet' still is.
+    void testTumorStromaWizardOwnSetNamingNeverMatchesByPrefix() {
+        def h = new PathObjectHierarchy()
+        def base = 'Tümör-Stroma Özet'
+        shell([h: h, base: base]).evaluate(tsWizardPrelude() + '''
+assert nextOwnSetName(h, base) == base
+assert prevSummaryObjects(null).isEmpty() && prevOutputObjects(null).isEmpty()
+''')
+        def mine = ann(base + ' düzeltmelerim')
+        h.addObjects([ann(base), ann('TSR Özet', 100), mine, ann(base + ' (1)'), ann(base + ' (x)'), ann('TSR Özet (2)'), ann('Başka')])
+        shell([h: h, base: base]).evaluate(tsWizardPrelude() + '''
+assert prevSummaryObjects(h).size() == 2
+assert nextOwnSetName(h, base) == base + ' (2)'
+assert isOwnSummaryName('TSR Özet') && isOwnSummaryName(base) && isOwnSummaryName(base + ' (3)')
+assert !isOwnSummaryName(base + ' düzeltmelerim') && !isOwnSummaryName('TSR Özet (2)') && !isOwnSummaryName(null)
+''')
+        h.addObjects([ann(base + ' (2)', 200)])
+        shell([h: h, base: base]).evaluate(tsWizardPrelude() + '''
+assert nextOwnSetName(h, base) == base + ' (3)'
+''')
+        assert h.getAnnotationObjects().contains(mine)
+    }
+
+    // The wizard's class regions: exact name == class (or "class (N)") plus the exact description format for
+    // annotations. The old rule matched any description that merely STARTED with the tag, and called getDescription()
+    // on detections (which have none) — both are covered here.
+    void testTumorStromaWizardOutputMatchIsExactAndSafeOnDetections() {
+        def tag = 'Tümör/Stroma ölçüm — '
+        def own = tsWizardOutput('Tumor', 'Tumor', tag + 'Tumor (m)')
+        def own2 = tsWizardOutput('Stroma', 'Stroma (2)', tag + 'Stroma (m)')
+        def renamed = tsWizardOutput('Tumor', 'Benim tümörüm', tag + 'Tumor (m)')
+        def reclassified = tsWizardOutput('Stroma', 'Tumor', tag + 'Tumor (m)')
+        def prefixOnly = tsWizardOutput('Tumor', 'Tumor', 'Tümör/Stroma ölçüm notlarım')
+        def plain = tsWizardOutput('Tumor', 'Tumor', null)
+        def ownDet = det('Tumor'); ownDet.setName('Tumor')
+        def userDet = det('Tumor', 30)
+        def userDet2 = det(null, 50)
+        def h = new PathObjectHierarchy()
+        h.addObjects([own, own2, renamed, reclassified, prefixOnly, plain, ownDet, userDet, userDet2])
+        def got = shell([h: h]).evaluate(tsWizardPrelude() + 'prevOutputObjects(h)')
+        assert got.size() == 3 && got.contains(own) && got.contains(own2) && got.contains(ownDet)
+        // a user cell detection on the slide no longer makes the sweep throw
+        assert !got.contains(userDet) && !got.contains(userDet2)
+    }
+
+    // The question: no earlier result -> no dialog; Cancel -> null; Add -> keep; Replace needs a second confirmation.
+    void testTumorStromaWizardAskExistingDecisions() {
+        def run = { Map dlg, boolean withPrev ->
+            def h = new PathObjectHierarchy()
+            if (withPrev) h.addObjects([ann('Tümör-Stroma Özet'), tsWizardOutput('Tumor', 'Tumor', 'Tümör/Stroma ölçüm — Tumor (m)'), ann('Tümör-Stroma Özet düzeltmelerim', 300)])
+            def calls = []
+            def Dialogs = new Expando(
+                showChoiceDialog: { t, b, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; dlg.confirm })
+            def QP = new Expando(getCurrentImageData: { -> new Expando(getHierarchy: { -> h }) })
+            def r = shell([Dialogs: Dialogs, QP: QP, stage: null, workshopText: { Object... a -> a[0] }]).evaluate(
+                tsWizardPrelude() + tsWizardClosure('askExisting') + '\naskExisting()')
+            [r, calls]
+        }
+        assert run([pick: 'rep', confirm: true], false) == ['add', []]
+        assert run([pick: null], true) == [null, ['choice']]
+        assert run([pick: 'add'], true) == ['add', ['choice']]
+        assert run([pick: 'rep', confirm: true], true) == ['replace', ['choice', 'confirm']]
+        assert run([pick: 'rep', confirm: false], true) == [null, ['choice', 'confirm']]
+    }
+
+    // Temporary objects of this run are found by REFERENCE (identity set captured before the classifier call), not by
+    // name or class: a user's annotation with the same class and name stays; objects nested inside a generated one survive.
+    void testTumorStromaWizardGeneratedAreTemporaryByReference() {
+        String s = source(TS_WIZARD_FILE)
+        String beforeLine = s.readLines().find { it.trim().startsWith('def before = QP.getAnnotationObjects() as Set') }
+        String genLine = s.readLines().find { it.trim().startsWith('def generated = QP.getAnnotationObjects().findAll') }
+        String remLine = s.readLines().find { it.contains('QP.removeObjects(generated, true)') }
+        assert beforeLine && genLine && remLine
+        def h = new PathObjectHierarchy()
+        def userTumor = tsWizardOutput('Tumor', 'Tumor', null)
+        def userNoClass = ann('Alan')
+        h.addObjects([userTumor, userNoClass])
+        def QP = new Expando(getAnnotationObjects: { -> h.getAnnotationObjects() },
+            removeObjects: { list, keep -> h.removeObjects(list, keep) })
+        def sh = shell([QP: QP])
+        sh.evaluate(beforeLine.trim().replace('def before =', 'before ='))
+        def newA = tsWizardOutput('Tumor', 'Tumor', null)
+        def newB = tsWizardOutput('Stroma', 'Stroma', null)
+        def newNoClass = ann('Yeni sınıfsız', 500)
+        h.addObjects([newA, newB, newNoClass])
+        def inner = det('Tumor')
+        newA.addChildObjects([inner])
+        sh.evaluate(genLine.trim().replace('def generated =', 'generated =') + '\n' + remLine.trim())
+        def left = h.getAnnotationObjects()
+        assert left.contains(userTumor) && left.contains(userNoClass) && left.contains(newNoClass)
+        assert !left.contains(newA) && !left.contains(newB)
+        assert h.getDetectionObjects().contains(inner)
+    }
+
+    // Source contract: nothing is removed outside the explicit replace branch, the question precedes the measurement,
+    // Cancel returns first, an earlier result without a choice fails closed, headless never writes.
+    void testTumorStromaWizardAsksBeforeRemoving() {
+        String s = source(TS_WIZARD_FILE)
+        assert s.count('removeObjects(') == 3 && s.count('removeObject(') == 1
+        assert !s.contains('QP.removeObjectsAndDescendants(') && !(s =~ /removeObjects?\([^\n]*, false\)/).find()
+        int run = s.indexOf('def runMeasure = {')
+        assert s.substring(run).contains("String mode = 'add' ->")
+        int rep = s.indexOf('if (replaceRun) {', run)
+        int rem1 = s.indexOf('QP.removeObjects(oldOutputs, true)', rep)
+        int rem2 = s.indexOf('QP.removeObjects(oldSummaries, true)', rep)
+        assert rep > run && rem1 > rep && rem2 > rem1 && rem2 - rep < 500
+        // Earlier result without a choice -> error, before any object is created or removed.
+        int guard = s.indexOf('mode != MODE_ADD && mode != MODE_REPLACE', run)
+        assert guard > run && guard < rep && guard < s.indexOf('createMeasurementManager', run)
+        // Add -> a separate summary with the next name; the user's region is neither renamed nor reused.
+        assert s.contains('nextOwnSetName(hierM, SUMMARY_BASE)')
+        assert s.contains('if (reuseCandidate != null && !addRun)') && s.contains('else if (!addRun && !wholeSlide && regions.size() == 1)')
+        // The question is asked on the FX thread (button handlers) before the step changes and the worker starts.
+        int sm = s.indexOf('def startMeasure = {')
+        int ask = s.indexOf('String measureMode = askExisting()', sm)
+        int stepM = s.indexOf("step.set('MEASURING')", sm)
+        int worker = s.indexOf('def worker = new Thread({', sm)
+        assert ask > sm && ask < stepM && stepM < worker
+        assert s.indexOf('if (measureMode == null) return', ask) in ask..stepM
+        assert s.contains('runMeasure(modelName, wholeSlide, asDetections.get(), createSummary.get(), measureMode)')
+        String a = closure(TS_WIZARD_FILE, 'askExisting')
+        assert a.contains('return MODE_ADD') && a.contains('if (pick == null) return null') && a.contains('return ok ? MODE_REPLACE : null')
+        // The earlier tag rule (description prefix) and name-only summary lists are gone.
+        assert !s.contains('startsWith(OUTPUT_TAG)') && !s.contains('in summaryNames')
+        // The temporary summary of a no-summary run is this run's own object.
+        assert s.contains('QP.removeObject(summary, true)')
+        // Headless prints the state and returns before anything is written or measured.
+        int head = s.indexOf('if (isHeadless) {', run)
+        String block = s.substring(head, s.indexOf('def stage = null', head))
+        assert block.contains('return') && !block.contains('removeObjects') && !block.contains('addObjects') && !block.contains('runMeasure(')
+    }
+
+    // ---- tumor-stroma.groovy: ask before replacing an earlier tumor/stroma result ----
+
+    static final String TS_AREA_FILE = 'tumor-stroma.groovy'
+
+    // Production source with translation tokens neutralised: a token becomes a distinct string (its own name).
+    static String tsAreaClosure(String name) {
+        closure(TS_AREA_FILE, name).replaceAll(/@WT:(\w+)@/, "'\$1'")
+    }
+
+    static String tsAreaPrelude() {
+        '''def MODE_ADD = 'add'
+def MODE_REPLACE = 'replace'
+def SUMMARY_BASE = 'Tümör-Stroma Özet'
+''' + ownSetCode(TS_AREA_FILE) + '\n' +
+            ['isOwnSummaryName', 'prevSummaryObjects', 'isOwnClassRegion', 'ownClassRegionsUnder'].collect { tsAreaClosure(it) }.join('\n') + '\n'
+    }
+
+    static def tsAreaClassRegion(String cls, String name, String desc) {
+        def o = PathObjects.createAnnotationObject(roi(), PathClass.fromString(cls))
+        o.setName(name)
+        if (desc != null) o.setDescription(desc)
+        o
+    }
+
+    // Add -> add -> add numbering; user-renamed summaries are never "ours"; the legacy name 'TSR Özet' still is.
+    void testTumorStromaAreaOwnSetNamingNeverMatchesByPrefix() {
+        def h = new PathObjectHierarchy()
+        def base = 'Tümör-Stroma Özet'
+        shell([h: h, base: base]).evaluate(tsAreaPrelude() + '''
+assert nextOwnSetName(h, base) == base
+assert prevSummaryObjects(null).isEmpty()
+''')
+        def mine = ann(base + ' düzeltmelerim')
+        h.addObjects([ann(base), ann('TSR Özet', 100), mine, ann(base + ' (1)'), ann(base + ' (x)'), ann('TSR Özet (2)'), ann('Başka')])
+        shell([h: h, base: base]).evaluate(tsAreaPrelude() + '''
+assert prevSummaryObjects(h).size() == 2
+assert nextOwnSetName(h, base) == base + ' (2)'
+assert isOwnSummaryName('TSR Özet') && isOwnSummaryName(base) && isOwnSummaryName(base + ' (3)')
+assert !isOwnSummaryName(base + ' düzeltmelerim') && !isOwnSummaryName('TSR Özet (2)') && !isOwnSummaryName(null)
+''')
+        h.addObjects([ann(base + ' (2)', 200)])
+        shell([h: h, base: base]).evaluate(tsAreaPrelude() + '''
+assert prevSummaryObjects(h).size() == 3
+assert nextOwnSetName(h, base) == base + ' (3)'
+''')
+        assert h.getAnnotationObjects().contains(mine)
+    }
+
+    // Only the module's own, untouched class regions count; renamed, reclassified or foreign objects never do,
+    // and objects inside them are not reported as ours.
+    void testTumorStromaAreaClassRegionTagIsExact() {
+        def tag = ' — Tümör/Stroma modülü (tumor-stroma-RF)'
+        def own = tsAreaClassRegion('Tumor', 'Tumor', 'Tumor' + tag)
+        def ownDet = PathObjects.createDetectionObject(roi(), PathClass.fromString('Stroma'))
+        ownDet.setName('Stroma')                    // detections carry no description; name == class is the marker
+        def renamed = tsAreaClassRegion('Tumor', 'Benim tümörüm', 'Tumor' + tag)
+        def reclassified = tsAreaClassRegion('Stroma', 'Tumor', 'Tumor' + tag)
+        def foreign = tsAreaClassRegion('Tumor', 'Tumor', 'Tümör/Stroma ölçüm — Tumor (m)')
+        def plain = tsAreaClassRegion('Tumor', 'Tumor', null)
+        def userDet = det('Tumor')
+        def parent = ann('Tümör-Stroma Özet')
+        parent.addChildObjects([own, ownDet, renamed, reclassified, foreign, plain, userDet])
+        def got = shell([parent: parent]).evaluate(tsAreaPrelude() + 'ownClassRegionsUnder(parent)')
+        assert got.size() == 2 && got.contains(own) && got.contains(ownDet)
+    }
+
+    // The question: no dialog without an earlier result is handled by the caller; Cancel -> null; Replace asks twice.
+    void testTumorStromaAreaAskExistingDecisions() {
+        def run = { Map dlg ->
+            def calls = []
+            def Dialogs = new Expando(
+                showChoiceDialog: { t, b, opts, def0 -> calls << 'choice'; dlg.pick == 'rep' ? opts[1] : (dlg.pick == 'add' ? opts[0] : null) },
+                showConfirmDialog: { t, b -> calls << 'confirm'; dlg.confirm })
+            def r = shell([Dialogs: Dialogs, workshopText: { Object... a -> a[0] }]).evaluate('''
+def MODE_ADD = 'add'
+def MODE_REPLACE = 'replace'
+''' + tsAreaClosure('askExisting') + '\naskExisting(2, 4)')
+            [r, calls]
+        }
+        assert run([pick: null]) == [null, ['choice']]
+        assert run([pick: 'add']) == ['add', ['choice']]
+        assert run([pick: 'rep', confirm: true]) == ['replace', ['choice', 'confirm']]
+        assert run([pick: 'rep', confirm: false]) == [null, ['choice', 'confirm']]
+    }
+
+    // Temporary objects of this run are found by REFERENCE (identity set captured before the classifier call), not by
+    // name or class: a user's annotation with the same class and name stays; objects nested inside a generated one survive.
+    void testTumorStromaAreaGeneratedAreTemporaryByReference() {
+        String s = source(TS_AREA_FILE)
+        String beforeLine = s.readLines().find { it.startsWith('def before = QP.getAnnotationObjects() as Set') }
+        String genLine = s.readLines().find { it.startsWith('def generated = QP.getAnnotationObjects().findAll') }
+        String remLine = s.readLines().find { it.contains('QP.removeObjects(generated, true)') }
+        assert beforeLine && genLine && remLine
+        def h = new PathObjectHierarchy()
+        def userTumor = tsAreaClassRegion('Tumor', 'Tumor', null)       // user's own, same class and name as an output
+        def userNoClass = ann('Alan')
+        h.addObjects([userTumor, userNoClass])
+        def QP = new Expando(getAnnotationObjects: { -> h.getAnnotationObjects() },
+            removeObjects: { list, keep -> h.removeObjects(list, keep) })
+        def sh = shell([QP: QP])
+        sh.evaluate(beforeLine.replace('def before =', 'before ='))
+        def newA = tsAreaClassRegion('Tumor', 'Tumor', null)
+        def newB = tsAreaClassRegion('Stroma', 'Stroma', null)
+        def newNoClass = ann('Yeni sınıfsız', 500)
+        h.addObjects([newA, newB, newNoClass])
+        def inner = det('Tumor')
+        newA.addChildObjects([inner])                                   // foreign object nested inside a generated one
+        sh.evaluate(genLine.replace('def generated =', 'generated =') + '\n' + remLine.trim())
+        def left = h.getAnnotationObjects()
+        assert left.contains(userTumor) && left.contains(userNoClass) && left.contains(newNoClass)
+        assert !left.contains(newA) && !left.contains(newB)
+        assert h.getDetectionObjects().contains(inner)                  // keepChildren = true
+    }
+
+    // Source contract: nothing is removed outside the explicit replace branch, the question precedes the measurement
+    // and every change to the user's region, Cancel returns first, headless fails closed.
+    void testTumorStromaAreaAsksBeforeRemoving() {
+        String s = source(TS_AREA_FILE)
+        assert s.count('removeObjects(') == 3 && s.count('removeObject(') == 0
+        assert !s.contains('QP.removeObjectsAndDescendants(') && !(s =~ /removeObjects?\([^\n]*, false\)/).find()
+        int rep = s.indexOf('if (replaceRun) {')
+        int rem1 = s.indexOf('QP.removeObjects(oldRegions, true)', rep)
+        int rem2 = s.indexOf('QP.removeObjects(oldSummaries, true)', rep)
+        assert rep > 0 && rem1 > rep && rem2 > rem1 && rem2 - rep < 500
+        // The question comes before the user's region is renamed/cleared and before any measurement or classifier use.
+        int ask = s.indexOf('existingMode = askExisting(')
+        int mutate = s.indexOf('summary.setName(summaryName); summary.setPathClass(null)')
+        int measure = s.indexOf('PixelClassifierTools.createMeasurementManager(imageData, classifier)', s.indexOf('def perModel'))
+        assert ask > 0 && mutate > ask && measure > ask && rep > measure
+        assert s.indexOf('if (existingMode == null) return', ask) > ask && s.indexOf('if (existingMode == null) return', ask) < mutate
+        assert s.contains('if (addRun) reuse = false')
+        assert s.contains('nextOwnSetName(hier, SUMMARY_BASE)')
+        // Replace removes only this module's own regions (tagged) and summaries (exact name or "(N)").
+        assert s.substring(s.indexOf('def prevRegions ='), ask).contains('ownClassRegionsUnder')
+        assert !s.contains('startsWith(SUMMARY') && !s.contains("in ['Tümör-Stroma Özet', 'TSR Özet']")
+        // Own/temporary objects of the run are captured by reference before the classifier call.
+        int before = s.indexOf('def before = QP.getAnnotationObjects() as Set')
+        int create = s.indexOf('QP.createAnnotationsFromPixelClassifier', before)
+        assert before > 0 && create > before && s.indexOf('!before.contains(it)', create) > create
+        // Headless: bad `mevcut` fails closed; an earlier result without a choice stops before any write.
+        int head = s.indexOf('String headlessMevcut = null')
+        String hb = s.substring(head, s.indexOf('def headlessModels = []', head))
+        assert hb.contains("['ekle', 'degistir'].contains(headlessMevcut)") && hb.contains('return')
+        String block = s.substring(ask - 700, ask)
+        assert block.contains('headlessMevcut == null') && block.contains('return')
+    }
+
     // Source-order contract only: interactive dialog/cancellation acceptance remains manual.
     void testConfirmationAndLateCancellationContracts() {
         [HISTO, CYTO, NUC,

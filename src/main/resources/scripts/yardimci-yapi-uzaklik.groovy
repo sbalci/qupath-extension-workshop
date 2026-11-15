@@ -42,6 +42,9 @@
  *     Spearman korelasyonu — yapı-içi / yapı-dışı ayrı ("belirteç yapıya
  *     yaklaştıkça değişiyor mu?")
  *   • Sonuç penceresinde özet tablo
+ *   • Önceki özet varsa SORAR: "Ekle" (varsayılan) hiçbir şey silmez, yeni özet
+ *     "Yapıya Uzaklık Özet (2)" gibi adlanır; "Değiştir" yalnız bu yardımcının özetlerini siler.
+ *     Başsız kip: -a mevcut=ekle | -a mevcut=degistir (belirtilmezse durur, hiçbir şey yazmaz).
  *
  * YÖNTEM REFERANSLARI:
  *   • Bankhead P et al. (2017), Sci Rep — QuPath. doi:10.1038/s41598-017-17204-5
@@ -124,6 +127,66 @@ double bandMicrons = 50.0          // "sınır bandı" eşiği (µm): |mesafe| �
 String distMeas    = "Yapıya uzaklık (µm)"
 String summaryName = "Yapıya Uzaklık Özet"
 
+// ── Önceki sonuç: SORULMADAN silinmez (ev kuralı) ────────────────────
+// Önceki sonuç = bu yardımcının yazdığı özet anotasyonu: TAM ad ya da "ad (N)" (N >= 2) — önek
+// eşleşmesi YOK; kullanıcının "… notlarım" diye adlandırdığı anotasyon süpürülmez.
+// Varsayılan kip HİÇBİR ŞEY SİLMEZ: Ekle → yeni özet "Yapıya Uzaklık Özet (2)", "(3)" … adını alır.
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
+
+// Başsız kip: -a mevcut=ekle | -a mevcut=degistir. Bilinmeyen değer HER durumda durdurur (fail closed).
+String mevcutArg = null
+if (isHeadless) {
+    def scriptArgs = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+    def argMap = [:]
+    scriptArgs.each { a -> def sa = a?.toString() ?: ''; int ia = sa.indexOf('='); if (ia > 0) argMap[sa.substring(0, ia).trim()] = sa.substring(ia + 1).trim() }
+    if (argMap.mevcut != null) {
+        mevcutArg = argMap.mevcut.toLowerCase(java.util.Locale.ROOT)
+        if (!['ekle', 'degistir'].contains(mevcutArg)) {
+            println String.format(java.util.Locale.US, workshopText('script.768b9abc88f3', 'HATA: mevcut yalnız \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut); return
+        }
+    }
+}
+
+// Önceki sonuç için kullanıcıya SOR (HESAPLAMADAN önce çağrılır).
+//   Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey hesaplanmaz, hiçbir şey yazılmaz).
+def askExisting = { hierarchy ->
+    def prev = prevOwnObjects(hierarchy, summaryName)
+    if (prev.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.e6b0dca2f71e', 'Öncekine dokunma — yeni bir özet olarak ekle (varsayılan)')
+    String optRep = workshopText('script.84d3e02923f2', 'Öncekini değiştir (bu yardımcının özeti silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.f00b78a85792', 'Önceki yapıya uzaklık özeti'),
+        String.format(java.util.Locale.US, workshopText('script.bfafd5a844f3', 'Bu lamda bu yardımcının yazdığı %,d özet anotasyonu zaten var.\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni özet ayrı bir anotasyon olur ("%s (2)" gibi).\n\n"Değiştir" seçilirse önceki özet anotasyonları silinir. Kendi anotasyonlarınıza dokunulmaz.\n\nHer iki durumda da hücrelerdeki "%s" ölçümü bu çalıştırmanın değeriyle yeniden yazılır.\n\nİptal: hiçbir şey hesaplanmaz, hiçbir şey yazılmaz.\n\nÖnceki özet ne olsun?'), prev.size(), summaryName, distMeas),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.89a856ac207d', 'Önceki özet silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.5ad805a3ff2a', '%,d özet anotasyonu silinecek; bunlardaki ölçümler kaybolur. Kendi anotasyonlarınıza dokunulmaz. Hücrelerdeki "%s" ölçümü bu çalıştırmanın değeriyle yazılır.\n\nDevam edilsin mi?'), prev.size(), distMeas))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
@@ -147,7 +210,7 @@ if (detections.isEmpty()) {
 }
 
 def targets = QP.getSelectedObjects().findAll {
-    it.isAnnotation() && it.getROI() != null && it.getName() != summaryName
+    it.isAnnotation() && it.getROI() != null && !isOwnSetName(it.getName(), summaryName)
 }
 if (targets.isEmpty()) {
     def msg = "Hedef yapı seçili değil.\n\n" +
@@ -155,6 +218,23 @@ if (targets.isEmpty()) {
               "anotasyon olarak çizin ve SEÇİN, sonra betiği tekrar çalıştırın."
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.584f0675ba8a', "Yapı seçili değil"), msg)
     return
+}
+
+// ── 1b) Önceki özet var mı? HESAPLAMADAN ÖNCE sor ────────────────────
+def imgHierarchy = imageData.getHierarchy()
+def prevOwn = prevOwnObjects(imgHierarchy, summaryName)
+def prevNames = prevOwn.collect { it.getName() }.unique().sort()
+String writeMode = MODE_ADD
+if (!prevOwn.isEmpty()) {
+    if (isHeadless) {
+        if (mevcutArg == null) {
+            println String.format(java.util.Locale.US, workshopText('script.9ff4de821d21', 'Bu lamda bu yardımcının yazdığı %,d özet anotasyonu ("%s") zaten var. Hiçbir şey yazılmadı. Yeni bir kopya eklemek için -a mevcut=ekle, önceki sonucu değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.'), prevOwn.size(), summaryName); return
+        }
+        writeMode = (mevcutArg == 'degistir') ? MODE_REPLACE : MODE_ADD
+    } else {
+        writeMode = askExisting(imgHierarchy)
+        if (writeMode == null) { println "İptal edildi."; return }
+    }
 }
 
 // ── 2) İşaretli mesafe (merkez → yapı sınırı), µm ───────────────────
@@ -260,13 +340,24 @@ if (corrMeas != null) {
 }
 
 // ── 4) Kilitli özet anotasyonu ──────────────────────────────────────
-QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() == summaryName }, false)
+// Önceki özet: kip çağırandan gelir. Ekle → hiçbir şey silinmez; Değiştir → yalnız bu yardımcının
+// özetleri (tam ad ya da "(N)") silinir, içlerindeki nesneler korunur.
+int removedPrev = 0
+String thisSummaryName
+if (writeMode == MODE_REPLACE) {
+    def prevNow = prevOwnObjects(imgHierarchy, summaryName)
+    removedPrev = prevNow.size()
+    if (removedPrev > 0) QP.removeObjects(prevNow, true)
+    thisSummaryName = summaryName
+} else {
+    thisSummaryName = nextOwnSetName(imgHierarchy, summaryName)
+}
 def srv = imageData.getServer()
 def summary = qupath.lib.objects.PathObjects.createAnnotationObject(
     qupath.lib.roi.ROIs.createRectangleROI(0, 0, srv.getWidth(), srv.getHeight(),
         qupath.lib.regions.ImagePlane.getDefaultPlane()))
-summary.setName(summaryName)
-summary.measurements['Hücre sayısı']                  = total as double
+summary.setName(thisSummaryName)
+summary.measurements['Hücre sayısı']                = total as double
 summary.measurements['Hedef yapı sayısı']             = targets.size() as double
 summary.measurements['Sınır bandı eşiği (µm)']        = bandMicrons
 summary.measurements['Ortalama uzaklık (µm)']         = meanD
@@ -314,6 +405,13 @@ if (corrMeas != null) {
     body << String.format(java.util.Locale.US, "  Spearman rho (tüm/içi/dışı): %s / %s / %s%n", fmtR(rhoAll), fmtR(rhoIn), fmtR(rhoOut))
     body << String.format(java.util.Locale.US, "  N            (tüm/içi/dışı) : %,d / %,d / %,d%n", corrN, corrNin, corrNout)
     body << "  (pozitif r: ölçüm mesafeyle artar · HMS-IAC S1 deseni)\n"
+}
+body << "\n"
+body << String.format(java.util.Locale.US, workshopText('script.a9b6daa16201', 'Özet adı           : %s'), thisSummaryName) << "\n"
+if (writeMode == MODE_ADD && !prevNames.isEmpty()) {
+    body << "\n" << String.format(java.util.Locale.US, workshopText('script.34266a313dd6', 'DİKKAT — bu lamda önceki özet de duruyor: %s\nHiçbir şey silinmedi. Eskisini kaldırmak için o addaki anotasyonu seçip silin ya da yardımcıyı yeniden çalıştırırken "Öncekini değiştir"i seçin.\nHer hücredeki "%s" ölçümü bu çalıştırmanın değerini gösterir; önceki özet anotasyonu ise önceki çalıştırmanın değerlerini gösterir.'), prevNames.join(', '), distMeas) << "\n"
+} else if (removedPrev > 0) {
+    body << "\n" << String.format(java.util.Locale.US, workshopText('script.be27a1bc19b6', 'Önceki özet değiştirildi: %,d anotasyon silindi.'), removedPrev) << "\n"
 }
 body << "\n"
 body << "İşaret kuralı: NEGATİF mesafe → hücre yapının İÇİNDE; pozitif → dışında.\n"
