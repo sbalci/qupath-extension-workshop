@@ -1,3 +1,74 @@
+# 15 November 2026 — audit follow-up: nothing is deleted without asking (branch `fix/ask-first-and-rc9`)
+
+Local branch, 14 commits on top of `ceb2935`. **Nothing was pushed, tagged or released.** The version string is still `0.2.2-rc8`; the next test build is `v0.2.2-rc9`, cut only on the owner's go-ahead after a GUI pass.
+
+**Release order that must be kept:** owner's GUI pass → release `v0.2.2-rc9` → only then merge the QuPath site branch `fix/audit-2026-11-15`. The site branch describes the questions this branch adds; the installable rc8 does not ask them.
+
+## What changed
+
+| Plan item | Result | Commit |
+|---|---|---|
+| 1–3 Ask before replacing: wizards | GrandQC import, VALIS, Warpy, affine transfer, KongNet import, mitosis compare, both TIA Toolbox wizards, native tissue detection, tumour budding, HistoART. Add is the default and deletes nothing; Replace needs a second confirmation; Cancel runs nothing; headless stops and names `mevcut=ekle|degistir`. | `b3bfb65`, `ef5485b`, `66268e2` |
+| 4 Ask before replacing: measurement helpers | 21 helpers and module scripts that wrote a summary, grid, band or region. Own output is matched exactly, never by prefix or by class alone. | `66268e2` |
+| 4b Exports ask about copies | Measurement export and the two cohort summaries ask "all copies or only the newest" (`kopyalar=hepsi|enyeni`). The GrandQC cohort summary sees `GrandQC KK (N)` sets. | `3d10305` |
+| (added) Detection asks before replacing cells | Eleven tools that run cell detection; "keep, do not run" is preselected. Headless: `-a mevcut=degistir`. | `3d10305` |
+| (added) Tümör/Stroma keeps the user's region | Replace re-measures in place; only a summary the tool created itself can be deleted. | `3d10305` |
+| 5 No silent image-type change | Cell detection and the four stain modules say what will change and ask. Headless: `-a tip=he`, `-a boya=varsayilan`. | `66268e2` |
+| 6 Tests | 67 → 241 tests. CI floor raised to 230. | all |
+| 7 Error guidance | A mistyped number, an internal fault and a word containing "nan" each get the right next step. The dialog no longer calls the diagnostic summary anonymised. | `2ea366e` |
+| 8 Messages with a next step | 24 scripts; log-only warnings the user must act on are shown. | `9627a53` |
+| 9 English mode | About 4,170 more strings in 101 scripts; 5,589 paired strings. | `78b85c8` |
+| 10 Menu-path hints | 92 hints in 58 scripts name the topic group. | `56056f8` |
+| 11 Sanofi entry active | The wizard shows the access steps when the gated model refuses; a login done in an ordinary command window is picked up. | `ef5485b`, `8f3a8e8` |
+| 12 Tümör/Stroma submenu | Wizard, "Adım 1 — Model eğit", "Adım 2 — Alan ölçümü". | `8f3a8e8` |
+| 13 README and docs | Install steps follow the site and use QuPath 0.6.0's real button names (read from the installed program). | `9d5bc70` |
+| 14 Changelog | Rebuilt from the tag history, dated. | `66268e2` and later |
+| 15 `verify-candidate.py` on Windows | Reads sources as UTF-8. | `b511ba2` |
+| 16 Release rc9 | **Not done — waits for the owner.** | — |
+
+Records: `docs/ask-first-review-2026-11-15.md` (pattern, every script, limits), `docs/menu-path-hints-2026-11-15.md`, `docs/message-next-steps-2026-11-15.md`, `docs/english-coverage-2026-11-15.md`.
+
+## Verified, and how
+
+- `gradlew test`: 241 tests pass (naming, matching and decision logic run against QuPath core objects; source-order checks that the question precedes the work and that Cancel returns first).
+- All 103 packaged scripts compile in the real QuPath 0.6.0 and 0.7.0 console builds.
+- Parent repository checks: script mirror identical (103 pairs), Groovy lint clean, Turkish house-style terms clean.
+- Catalog: every English format piece is a valid pattern with the same placeholders as the Turkish one.
+
+## Not verified — the owner's GUI pass is the review
+
+**No dialog added on this branch has been opened in QuPath.** The changes were written and reviewed by automated agents; the source fingerprints in `script-core.json` record that, not a human review. Before rc9, please check in the GUI:
+
+1. Each changed tool with an earlier result on the slide: the question appears before any heavy work; Add leaves the old result and names the new one `… (2)`; Replace asks again and removes only the tool's own objects; Cancel changes nothing.
+2. Detection tools: with cells already in the annotation, "keep" is preselected and pressing Enter runs nothing.
+3. Tümör/Stroma: select one region, run, run again with Replace — the outline you drew must still be there.
+4. Transfer wizards: Replace removes the old transfer and its cells, and keeps an object you drew inside afterwards.
+5. English mode: open the core module windows and two or three wizards; look for leftover Turkish, clipped labels and wrong numbers in result text (about 170 text expressions became format calls).
+6. Sanofi wizard without access to the gated model: the access steps appear.
+7. The three entries of the new Tümör/Stroma submenu open.
+8. Catalog install button names against the README.
+
+Not run at all: any Python bridge with a real model (GrandQC, VALIS, Warpy, KongNet, TIA Toolbox, Cellpose, StarDist, InstanSeg), headless runs on a real project, macOS and Linux.
+
+## Waiting for the owner's decision
+
+- **Release `v0.2.2-rc9`** after the GUI pass (`bump-extension-version.ps1`; then `check-release-sync.ps1`).
+- **Anonymisation wizard in English:** not translated; its status codes are compared as text and its reports are written to files. Needs its own pass. Do you want it?
+- **Choice items that are also compared as text** (tile exporter modes, VALIS reference choice, peritumoural band direction) stay Turkish in English mode. Translating them is a code change.
+- **Other exporters still include result copies without saying so:** `yardimci-anotasyon-disa-aktar`, `yardimci-karo-disa-aktarma`, `yardimci-kohort-boya-qc`, `yardimci-kosu-manifesti`, `yardimci-wsinfer-ozet`, `yardimci-tma-cekirdek-aktarim`, `yardimci-omezarr-disa-aktarma`. Extend the question to them?
+- **StarDist wizard's optional classifier filter** removes the false-positive class after detection without a separate question.
+- **Mitosis display rings** left behind when a user deletes a point are no longer swept automatically.
+- By decision, unchanged: diagnostic masking code, `uv` download without a checksum pin, the root menu name, the decimal point in the UI.
+
+## Limits that remain
+
+- An annotation the user names exactly like a tool's own result cannot be told apart from it; the confirmation states the count first.
+- The re-detect question counts cells that are direct children of the target annotation.
+- A trailing ` (N)` is read as a copy number only when another member of the same base name is on the image.
+- In the budding helper, Replace removes earlier results before the new detection runs.
+
+---
+
 # 15 Kasım 2026 — kalan betik pencerelerinin TR/EN metinleri
 
 - 39 betik ve önceki üç yardımcının dokuz sabit rehber/seçici metni ortak dil kaynağına bağlandı. Katalog 102 betik/2.096 TR/EN metindir; hücre tespiti ayrıca 25 ortak anahtar kullanır. Her rapor/veri gövdesinin çevrildiği iddia edilmez.
