@@ -83,11 +83,20 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("ER / PR H-score",                "er-pr-hscore.groovy"),
         new ScriptEntry("Membran boya (HER2)",            "membran-boya.groovy"),
         new ScriptEntry("Sitoplazmik boya (CD68)",        "sitoplazmik-boya.groovy"),
-        new ScriptEntry("Tümör/Stroma sihirbazı",         "sihirbaz.groovy"),
         new ScriptEntry("Tümör içi Ki-67",                "tumor-ici-ki67.groovy"),
         new ScriptEntry("QuANTUM cTCF",                   "quantum-ctcf.groovy"),
         new ScriptEntry("Veri dışa aktarma",              "veri-aktarma.groovy")
     );
+
+    /**
+     * Tümör/Stroma: the wizard plus its two steps as standalone entries. Each step
+     * script checks its own prerequisites and says what is missing.
+     */
+    private static final ScriptGroup TUMOR_STROMA_MODULE = new ScriptGroup("Tümör/Stroma", "group.tumorStroma", List.of(
+        new ScriptEntry("Tümör/Stroma sihirbazı",          "sihirbaz.groovy"),
+        new ScriptEntry("Adım 1 — Model eğit",             "model-egit.groovy"),
+        new ScriptEntry("Adım 2 — Alan ölçümü",            "tumor-stroma.groovy")
+    ));
 
     private static final ScriptGroup TISSUE_MODULE = new ScriptGroup("Doku tespiti", "group.tissue", List.of(
         new ScriptEntry("Yerleşik (Otsu / ContourTracing)",             "yardimci-doku-tespiti-sihirbaz.groovy"),
@@ -102,7 +111,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         new ScriptEntry("MIDOG25 FCOS (torchvision)",                     "yardimci-mitoz-fcos.groovy"),
         new ScriptEntry("MIDOG DA-RetinaNet (2021, eski)",                "yardimci-mitoz-retinanet.groovy"),
         new ScriptEntry("Atipik sınıflandırma — MIDOG25 EffNetV2",        "yardimci-mitoz-atipik-effnet.groovy"),
-        new ScriptEntry("Atipik sınıflandırma — Sanofi EFTD (kapılı)",    "yardimci-mitoz-atipik-sanofi.groovy", true),
+        new ScriptEntry("Atipik sınıflandırma — Sanofi EFTD (kapılı)",    "yardimci-mitoz-atipik-sanofi.groovy"),
         new ScriptEntry("Modelleri karşılaştır (aynı bölge)",             "yardimci-mitoz-karsilastir.groovy")
     ));
 
@@ -245,6 +254,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         List<String> out = new ArrayList<>();
         for (ScriptEntry e : SCRIPTS) out.add(e.resource);
         for (ScriptEntry e : TISSUE_MODULE.entries()) out.add(e.resource);
+        for (ScriptEntry e : TUMOR_STROMA_MODULE.entries()) out.add(e.resource);
         for (ScriptEntry e : MITOSIS_MODULE.entries()) out.add(e.resource);
         for (ScriptEntry e : ALIGNMENT_MODULE.entries()) out.add(e.resource);
         out.add(SYNC_GRID_ENTRY.resource);
@@ -261,6 +271,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         for (ScriptEntry e : SCRIPTS) out.add(e.i18nKey);
         out.add(TISSUE_MODULE.i18nKey());
         for (ScriptEntry e : TISSUE_MODULE.entries()) out.add(e.i18nKey);
+        out.add(TUMOR_STROMA_MODULE.i18nKey());
+        for (ScriptEntry e : TUMOR_STROMA_MODULE.entries()) out.add(e.i18nKey);
         out.add(MITOSIS_MODULE.i18nKey());
         for (ScriptEntry e : MITOSIS_MODULE.entries()) out.add(e.i18nKey);
         out.add(ALIGNMENT_MODULE.i18nKey());
@@ -311,6 +323,9 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                 modulesMenu.getItems().add(buildMenuItem(qupath, entry));
                 if (moduleIndex == 0) {
                     modulesMenu.getItems().add(buildSubmenu(qupath, TISSUE_MODULE));
+                }
+                if ("sitoplazmik-boya.groovy".equals(entry.resource)) {
+                    modulesMenu.getItems().add(buildSubmenu(qupath, TUMOR_STROMA_MODULE));
                 }
                 if ("quantum-ctcf.groovy".equals(entry.resource)) {
                     modulesMenu.getItems().add(buildSubmenu(qupath, MITOSIS_MODULE));
@@ -380,6 +395,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
 
             int totalModuleScripts = SCRIPTS.size()
                     + TISSUE_MODULE.entries().size()
+                    + TUMOR_STROMA_MODULE.entries().size()
                     + MITOSIS_MODULE.entries().size()
                     + ALIGNMENT_MODULE.entries().size();
             int totalUtilityScripts = UTILITY_GROUPS.stream().mapToInt(g -> g.entries().size()).sum();

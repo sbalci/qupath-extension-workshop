@@ -55,7 +55,11 @@ class WorkshopI18nAndCatalogTest extends GroovyTestCase {
         // Every new ScriptGroup("...", "group.key", ...) i18n key must resolve in TR & EN
         def groupMatcher = (src =~ /new\s+ScriptGroup\(\s*"[^"]+"\s*,\s*"([^"]+)"/)
         def groupKeys = groupMatcher.collect { it[1] as String }
-        assertEquals(12, groupKeys.size())
+        assertEquals(13, groupKeys.size())
+        assertTrue(groupKeys.contains('group.tumorStroma'))
+        // The two Tumor/Stroma steps are reachable from the menu, and no entry is permanently greyed out.
+        assertTrue(src.contains('"model-egit.groovy"') && src.contains('"tumor-stroma.groovy"'))
+        assertFalse(src.contains('"yardimci-mitoz-atipik-sanofi.groovy", true'))
         groupKeys.each { String key ->
             assertFalse("Unmapped TR group key: ${key}", WorkshopI18n.t(key, false) == key)
             assertFalse("Unmapped EN group key: ${key}", WorkshopI18n.t(key, true) == key)
