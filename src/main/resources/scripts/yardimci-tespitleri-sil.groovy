@@ -196,21 +196,21 @@ if (allDetections.isEmpty()) {
 // 3) Kullanıcıya seç ettir
 // ──────────────────────────────────────────────────────────────
 def secim = chooseAction(
-    "Tespitleri Sil — Hangileri?",
-    "Bu lamdaki detection durumu:\n\n" +
-    String.format(java.util.Locale.US, "  Toplam tespit             : %,d\n", allDetections.size()) +
-    String.format(java.util.Locale.US, "  Sahipsiz (anotasyon dışı) : %,d\n", orphanDetections.size()) +
-    String.format(java.util.Locale.US, "  Anotasyon altında         : %,d\n", nestedDetections) +
-    String.format(java.util.Locale.US, "  Olanaksız küçük (≤ %.2f µm²): %,d\n\n", DEFAULT_MIN_AREA, smallPreview) +
-    "Üç seçenek:\n\n" +
-    "  • Yalnızca sahipsiz tespitleri sil (varsayılan, güvenli):\n" +
-    "    Hiçbir anotasyonun içinde olmayan (örn. anotasyonu silinmiş)\n    tespitleri temizler.\n\n" +
-    "  • Tümünü sil:\n" +
-    "    Lamdaki BÜTÜN tespitleri siler — anotasyonlar dokunulmaz.\n\n" +
-    "  • Küçük çekirdekleri sil…:\n" +
-    "    'Nucleus: Area' bir eşiğin altında kalan olanaksız küçük\n" +
-    "    tespitleri siler (eşiği bir sonraki adımda girersiniz).\n\n" +
-    "Anotasyonlar (ROI'ler) HİÇBİR DURUMDA silinmez."
+    workshopText('script.7dc44acb7d06', 'Tespitleri Sil — Hangileri?'),
+    workshopText('script.fef0bb39562f', 'Bu lamdaki detection durumu:\n\n') +
+    String.format(java.util.Locale.US, workshopText('script.269ea846f793', '  Toplam tespit             : %,d\n'), allDetections.size()) +
+    String.format(java.util.Locale.US, workshopText('script.dcab353401a7', '  Sahipsiz (anotasyon dışı) : %,d\n'), orphanDetections.size()) +
+    String.format(java.util.Locale.US, workshopText('script.673ea0a3345c', '  Anotasyon altında         : %,d\n'), nestedDetections) +
+    String.format(java.util.Locale.US, workshopText('script.90186848fdd4', '  Olanaksız küçük (≤ %.2f µm²): %,d\n\n'), DEFAULT_MIN_AREA, smallPreview) +
+    workshopText('script.0f03caf4792d', 'Üç seçenek:\n\n') +
+    workshopText('script.18eaed136c25', '  • Yalnızca sahipsiz tespitleri sil (varsayılan, güvenli):\n') +
+    workshopText('script.b18e02e0fd68', '    Hiçbir anotasyonun içinde olmayan (örn. anotasyonu silinmiş)\n    tespitleri temizler.\n\n') +
+    workshopText('script.358c2f60fb55', '  • Tümünü sil:\n') +
+    workshopText('script.1c81f191c521', '    Lamdaki BÜTÜN tespitleri siler — anotasyonlar dokunulmaz.\n\n') +
+    workshopText('script.ba0e5bceb029', '  • Küçük çekirdekleri sil…:\n') +
+    workshopText('script.66ac1a238fc2', '    \'Nucleus: Area\' bir eşiğin altında kalan olanaksız küçük\n') +
+    workshopText('script.0c0a3358d1e1', '    tespitleri siler (eşiği bir sonraki adımda girersiniz).\n\n') +
+    workshopText('script.5b80696db458', 'Anotasyonlar (ROI\'ler) HİÇBİR DURUMDA silinmez.')
 )
 
 if (secim == "cancel") {
@@ -233,7 +233,7 @@ if (secim == "all") {
     }
     silinen = allDetections.size()
     QP.clearDetections()
-    mod = "Tüm tespitler silindi"
+    mod = workshopText('script.65b0f24246da', 'Tüm tespitler silindi')
 } else if (secim == "small") {
     double thr = DEFAULT_MIN_AREA
     if (!isHeadless) {
@@ -247,13 +247,13 @@ if (secim == "all") {
     def toDelete = allDetections.findAll { double a = nucleusArea(it); !Double.isNaN(a) && a > 0 && a <= thr }
     silinen = toDelete.size()
     if (silinen > 0) QP.removeObjects(toDelete, true)
-    mod = String.format(java.util.Locale.US, "Olanaksız küçük çekirdekler silindi (Nucleus: Area ≤ %.2f µm²)", thr)
+    mod = String.format(java.util.Locale.US, workshopText('script.4fc150615ef5', 'Olanaksız küçük çekirdekler silindi (Nucleus: Area ≤ %.2f µm²)'), thr)
 } else { // "orphan"
     silinen = orphanDetections.size()
     if (silinen > 0) {
         QP.removeObjects(orphanDetections, true)
     }
-    mod = "Yalnızca sahipsiz tespitler silindi (anotasyon altındakiler korundu)"
+    mod = workshopText('script.3e45dfa64392', 'Yalnızca sahipsiz tespitler silindi (anotasyon altındakiler korundu)')
 }
 
 QP.fireHierarchyUpdate()
@@ -262,15 +262,15 @@ def elapsed = (System.currentTimeMillis() - t0) / 1000.0
 def kalan = QP.getDetectionObjects().size()
 
 showResultWindow(
-    "Temizlik Tamamlandı 🧹",
+    workshopText('script.7108b534db0e', 'Temizlik Tamamlandı 🧹'),
     String.format(java.util.Locale.US, 
         "%s.\n\n" +
-        "📊 Özet\n" +
+        workshopText('script.10e7d671084f', '📊 Özet\n') +
         "──────────────\n" +
-        "  Silinen tespit : %,d\n" +
-        "  Kalan tespit   : %,d\n" +
-        "  Süre           : %.2f sn\n\n" +
-        "Anotasyonlar değiştirilmedi.",
+        workshopText('script.000d3b8ff97c', '  Silinen tespit : %,d\n') +
+        workshopText('script.97dacf552270', '  Kalan tespit   : %,d\n') +
+        workshopText('script.bd96620117d1', '  Süre           : %.2f sn\n\n') +
+        workshopText('script.ce800b0435f5', 'Anotasyonlar değiştirilmedi.'),
         mod, silinen, kalan, elapsed
     )
 )

@@ -20,6 +20,9 @@ The review record for the behaviour changes is `docs/ask-first-review-2026-11-15
 - Measurement export and the two cohort summaries ask when a slide holds copies of the same result: all copies, or only the newest of each kind (headless: `kopyalar=hepsi` or `kopyalar=enyeni`). The GrandQC cohort summary now sees `GrandQC KK (N)` sets.
 - Cell detection and the four stain modules no longer change the image type or stain vectors with only a log line: they say what will change and ask. Headless runs need `-a tip=he` (cell detection) or `-a boya=varsayilan` (stain modules).
 
+### Changed — English mode
+- About 4,170 more strings in 101 script windows follow the language setting (dialogs, labels, guidance, status, errors and result text); the catalog now holds 5,589 paired strings. Log output, data names, values that code compares as text, and the anonymisation wizard stay Turkish. See `docs/english-coverage-2026-11-15.md`.
+
 ### Changed — menu
 - **Tümör/Stroma** is a submenu: the wizard, *Adım 1 — Model eğit* and *Adım 2 — Alan ölçümü*. The two step scripts were bundled before but had no menu entry.
 - *Atipik sınıflandırma — Sanofi EFTD (kapılı)* is no longer permanently greyed out. When access to the gated model is missing the wizard shows the steps to obtain it; a Hugging Face login done in an ordinary command window is now picked up.

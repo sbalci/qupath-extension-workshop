@@ -75,13 +75,13 @@ def imageTypeOk = { ->
     n.contains('H_DAB')
 }
 def imageTypeGuidance = { ->
-    "Bu lam 'Brightfield (H-DAB)' olarak ayarlı değil.\n" +
-    "Şu anki tip: ${imageData.getImageType()?.toString() ?: ''}\n\n" +
-    "Çözüm:\n" +
-    "  • Penceredeki \"Görüntü tipini 'Brightfield (H-DAB)' olarak ayarla\" düğmesine tıklayın, VEYA\n" +
-    "  1. Image panelini açın (sol-üst)\n" +
-    "  2. 'Image type' → 'Brightfield (H-DAB)' seçin (DAB ayrımı için gerekli)\n" +
-    "  3. Yukarıdaki 'Çalıştır' düğmesine tekrar basın"
+    workshopText('script.415a5e83cd58', 'Bu lam \'Brightfield (H-DAB)\' olarak ayarlı değil.\n') +
+    String.format(java.util.Locale.US, workshopText('script.a53dc88cdb8c', 'Şu anki tip: %s\n\n'), imageData.getImageType()?.toString() ?: '') +
+    workshopText('script.c92b22ac3c2b', 'Çözüm:\n') +
+    workshopText('script.dd4d6557261d', '  • Penceredeki "Görüntü tipini \'Brightfield (H-DAB)\' olarak ayarla" düğmesine tıklayın, VEYA\n') +
+    workshopText('script.e3cf68f1032b', '  1. Image panelini açın (sol-üst)\n') +
+    workshopText('script.a1477e685c9d', '  2. \'Image type\' → \'Brightfield (H-DAB)\' seçin (DAB ayrımı için gerekli)\n') +
+    workshopText('script.1b9856c27353', '  3. Yukarıdaki \'Çalıştır\' düğmesine tekrar basın')
 }
 
 // H-DAB ise ve boya vektörleri eksikse atölye varsayılanını uygula.
@@ -166,12 +166,12 @@ def suggestStainVectors = { ->
                         svClose(svVecOf(svStains.getStain(2)), SV_DEF_DAB)
     if (!svDefault) { println '✓ Boya vektörleri bu lamdan tahmin/kalibre edilmiş görünüyor.'; return }
     def svMsg =
-        '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu lamdan tahmin EDİLMEMİŞ.\n\n' +
-        'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n' +
-        'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n' +
-        'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n' +
-        '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n' +
-        '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et'
+        workshopText('script.f3f75b6ee2d7', '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu lamdan tahmin EDİLMEMİŞ.\n\n') +
+        workshopText('script.0236cb297d65', 'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n') +
+        workshopText('script.06d512ead76b', 'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n') +
+        workshopText('script.41b8026c8dbe', 'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n') +
+        workshopText('script.61c29a66c32b', '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n') +
+        workshopText('script.e6ac9add601c', '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et')
     if (isHeadless) { println svMsg; return }
     if (!qupath.fx.dialogs.Dialogs.showConfirmDialog(workshopText('script.cb5b26abe800', 'Boya vektörleri — öneri'), svMsg)) return
     def svSel = QP.getSelectedObjects().findAll { it.hasROI() && it.getROI().isArea() }
@@ -244,30 +244,30 @@ def finishCytoMetrics = { targetAnnotation, double cyto1, double cyto2, double c
     int warnGenericCount = atolyeI('atolye.warnGenericCount', 200)
     def uyari = ""
     if (totalCells < warnGenericCount) {
-        uyari = String.format(java.util.Locale.US, "\n⚠️ Sadece %,d hücre — istatistiksel olarak güvenilmez (≥%d önerilir).", totalCells, warnGenericCount)
+        uyari = String.format(java.util.Locale.US, workshopText('script.d4cf789a9ab8', '\n⚠️ Sadece %,d hücre — istatistiksel olarak güvenilmez (≥%d önerilir).'), totalCells, warnGenericCount)
     }
     double elapsed = detectElapsed + (System.currentTimeMillis() - t0) / 1000.0
     def text = String.format(java.util.Locale.US,
-        "CD68 / Sitoplazmik İHK bitti.\n\n" +
-        "Parametreler : 1+=%.2f  2+=%.2f  3+=%.2f  genişletme=%.1f µm\n" +
+        workshopText('script.5a1118944ff2', 'CD68 / Sitoplazmik İHK bitti.\n\n') +
+        workshopText('script.180d31043f7b', 'Parametreler : 1+=%.2f  2+=%.2f  3+=%.2f  genişletme=%.1f µm\n') +
         "────────────────────────────────────\n" +
-        "📊 Hücre dağılımı (n = %,d toplam)\n" +
+        workshopText('script.fd5a45d6ff22', '📊 Hücre dağılımı (n = %,d toplam)\n') +
         "────────────────────────────────────\n" +
-        "  0  (negatif)        : %,d  (%%%.1f)\n" +
-        "  1+ (zayıf)          : %,d  (%%%.1f)\n" +
-        "  2+ (orta)           : %,d  (%%%.1f)\n" +
-        "  3+ (güçlü)          : %,d  (%%%.1f)\n\n" +
-        "🎯 Bütünleşik metrikler\n" +
+        workshopText('script.8bdb8da5d919', '  0  (negatif)        : %,d  (%%%.1f)\n') +
+        workshopText('script.7d19001826f1', '  1+ (zayıf)          : %,d  (%%%.1f)\n') +
+        workshopText('script.026d1428f1af', '  2+ (orta)           : %,d  (%%%.1f)\n') +
+        workshopText('script.2e6b170fda6b', '  3+ (güçlü)          : %,d  (%%%.1f)\n\n') +
+        workshopText('script.f465893309dd', '🎯 Bütünleşik metrikler\n') +
         "────────────────────────\n" +
-        "  Pozitif yüzdesi       : %%%.1f\n" +
+        workshopText('script.5b94c5ef2c93', '  Pozitif yüzdesi       : %%%.1f\n') +
         "  H-score (0–300)       : %.0f\n" +
-        "  Toplam yoğunluk       : ~%,d hücre/mm²\n" +
-        "  CD68+ yoğunluk        : ~%,d hücre/mm²\n" +
-        "  Anotasyon alanı       : %.2f mm²\n" +
-        "  Süre                  : %.1f sn\n\n" +
-        "Payda: anotasyonda tespit edilen TÜM hücreler (hücre tipi ayrılmaz).\n" +
+        workshopText('script.8f9c0d6c4fb7', '  Toplam yoğunluk       : ~%,d hücre/mm²\n') +
+        workshopText('script.e233c73268ac', '  CD68+ yoğunluk        : ~%,d hücre/mm²\n') +
+        workshopText('script.ea697a56cd04', '  Anotasyon alanı       : %.2f mm²\n') +
+        workshopText('script.4ffb245e4266', '  Süre                  : %.1f sn\n\n') +
+        workshopText('script.949356b80a55', 'Payda: anotasyonda tespit edilen TÜM hücreler (hücre tipi ayrılmaz).\n') +
         "%s\n" +
-        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
+        workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'),
         cyto1, cyto2, cyto3, cellExpansionCyto,
         totalCells,
         nNeg, pctNeg, n1, pct1, n2, pct2, n3, pct3,
@@ -283,12 +283,12 @@ def countReplaceable = { ann -> ann == null ? 0 : ann.getChildObjects().findAll 
 
 def runDetection = { double cyto1, double cyto2, double cyto3, double cellExpansionCyto, int replaced = 0 ->
     if (!(cyto1 < cyto2 && cyto2 < cyto3))
-        return [ok:false, error:'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.']
+        return [ok:false, error:workshopText('script.80e3c67757b9', 'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.')]
     if (!imageTypeOk())
         return [ok:false, error: imageTypeGuidance(), imageTypeIssue:true]
     def selected = QP.getSelectedObject()
     if (selected == null || !(selected instanceof PathAnnotationObject))
-        return [ok:false, error:'Önce ölçmek istediğiniz alan anotasyonunu seçin (üst araç çubuğundan Dikdörtgen [R], Çokgen [P] veya Fırça [B] ile çizip üzerine tıklayın; seçili anotasyonun kenarı SARI görünür).']
+        return [ok:false, error:workshopText('script.b32142899c7f', 'Önce ölçmek istediğiniz alan anotasyonunu seçin (üst araç çubuğundan Dikdörtgen [R], Çokgen [P] veya Fırça [B] ile çizip üzerine tıklayın; seçili anotasyonun kenarı SARI görünür).')]
     def targetAnnotation = selected
     double pixelSize       = atolyeD('atolye.pixelSize', 0.5)
     double backgroundRadius = atolyeD('atolye.backgroundRadius', 8.0)
@@ -333,15 +333,15 @@ def runDetection = { double cyto1, double cyto2, double cyto3, double cellExpans
 // Hızlı yeniden say (tespit YOK): yalnızca mevcut hücreleri yeni eşiklerle sınıflandırır.
 def recount = { double cyto1, double cyto2, double cyto3, double cellExpansionCyto ->
     if (!(cyto1 < cyto2 && cyto2 < cyto3))
-        return [ok:false, error:'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.']
+        return [ok:false, error:workshopText('script.80e3c67757b9', 'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.')]
     if (!imageTypeOk())
         return [ok:false, error: imageTypeGuidance(), imageTypeIssue:true]
     def selected = QP.getSelectedObject()
     if (selected == null || !(selected instanceof PathAnnotationObject))
-        return [ok:false, error:'Önce ölçmek istediğiniz alan anotasyonunu seçin (üst araç çubuğundan Dikdörtgen [R], Çokgen [P] veya Fırça [B] ile çizip üzerine tıklayın; seçili anotasyonun kenarı SARI görünür).']
+        return [ok:false, error:workshopText('script.b32142899c7f', 'Önce ölçmek istediğiniz alan anotasyonunu seçin (üst araç çubuğundan Dikdörtgen [R], Çokgen [P] veya Fırça [B] ile çizip üzerine tıklayın; seçili anotasyonun kenarı SARI görünür).')]
     def existing = selected.getChildObjects().findAll { it.isDetection() }
     if (existing.isEmpty())
-        return [ok:false, error:'Bu anotasyonda hücre tespiti yok. Önce "Çalıştır" ile tespit yapın, sonra "Yeniden say (hızlı)" kullanın.']
+        return [ok:false, error:workshopText('script.c6c7df5dba6e', 'Bu anotasyonda hücre tespiti yok. Önce "Çalıştır" ile tespit yapın, sonra "Yeniden say (hızlı)" kullanın.')]
     return finishCytoMetrics(selected, cyto1, cyto2, cyto3, cellExpansionCyto, 0.0)
 }
 

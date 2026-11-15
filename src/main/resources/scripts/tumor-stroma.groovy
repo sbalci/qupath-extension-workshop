@@ -164,7 +164,7 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
                     workshopText('script.b13fefb3614b', '(Projede sınıflandırıcı yok. Aşağıdan örnek modeli kurun ya da sihirbazı açın.)')))
             } else {
                 entries.each { e ->
-                    def label = e.source == 'BUNDLED' ? "${e.name}  (örnek, paketli)" : e.name
+                    def label = e.source == 'BUNDLED' ? String.format(java.util.Locale.US, workshopText('script.38a4c9a6230a', '%s  (örnek, paketli)'), e.name) : e.name
                     def cb = new javafx.scene.control.CheckBox(label)
                     cb.setUserData(e.name)
                     if (e.name == preferName) cb.setSelected(true)
@@ -193,7 +193,7 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
             def installBtn = new javafx.scene.control.Button(workshopText('script.ba4a31a6e293', 'Örnek modeli kur'))
             installBtn.setOnAction({
                 if (!launch('yardimci-ornek-siniflandirici.groovy')) {
-                    qupath.fx.dialogs.Dialogs.showMessageDialog('Eklenti gerekli',
+                    qupath.fx.dialogs.Dialogs.showMessageDialog(workshopText('script.97fb26fec49d', 'Eklenti gerekli'),
                         workshopText('script.036f0e16fc4a', 'Örnek modeli kurmak için: Extensions → Atölye → Yardımcılar → İçe ve dışa aktarma / veri →\n"Örnek tümör/stroma sınıflandırıcısını projeye kaydet".'))
                 }
                 result.set([action: 'CANCEL']); stage.close()
@@ -201,7 +201,7 @@ def chooseModels = { List entries, String preferName, Closure launch, boolean bu
             def wizardBtn = new javafx.scene.control.Button(workshopText('script.0adf2615b6d3', 'Sihirbazı aç (yeni model)'))
             wizardBtn.setOnAction({
                 if (!launch('sihirbaz.groovy')) {
-                    qupath.fx.dialogs.Dialogs.showMessageDialog('Eklenti gerekli',
+                    qupath.fx.dialogs.Dialogs.showMessageDialog(workshopText('script.97fb26fec49d', 'Eklenti gerekli'),
                         workshopText('script.65eb635495c1', 'Sihirbaz için: Extensions → Atölye → Modüller → Tümör/Stroma →\n"Tümör/Stroma sihirbazı".'))
                 }
                 result.set([action: 'CANCEL']); stage.close()
@@ -509,7 +509,7 @@ def measureWith = { manager, tumorAreaName, stromaAreaName, roi ->
             ratio: ratio, coveragePct: coveragePct]
 }
 def formatValue = { double value, String pattern ->
-    Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : 'hesaplanamadı'
+    Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : workshopText('script.77fa6502fb41', 'hesaplanamadı')
 }
 
 boolean multi = selectedModelNames.size() > 1
@@ -702,31 +702,31 @@ imageData.getHierarchy().getSelectionModel().clearSelection()
 QP.fireHierarchyUpdate()
 
 def body = new StringBuilder()
-body << 'TÜMÖR/STROMA ALAN ÖLÇÜMÜ\n'
+body << workshopText('script.67996edf6691', 'TÜMÖR/STROMA ALAN ÖLÇÜMÜ\n')
 body << '════════════════════════════════════════\n\n'
-body << "Kapsam              : ${wholeSlide ? 'Tüm lam' : 'Seçili anotasyon(lar)'}\n"
-if (wholeSlide) body << 'Not: Tüm lam modunda boş cam/arka plan da Tumor/Stroma sayılabilir (kaba tahmin).\n'
-body << "Lamdaki bindirme  : ${primary.model}\n\n"
+body << String.format(java.util.Locale.US, workshopText('script.83c7d2fd6f06', 'Kapsam              : %s\n'), wholeSlide ? workshopText('script.dc1f7a613431', 'Tüm lam') : workshopText('script.888debc99627', 'Seçili anotasyon(lar)'))
+if (wholeSlide) body << workshopText('script.4124d11aebfe', 'Not: Tüm lam modunda boş cam/arka plan da Tumor/Stroma sayılabilir (kaba tahmin).\n')
+body << String.format(java.util.Locale.US, workshopText('script.99ebe4c89900', 'Lamdaki bindirme  : %s\n\n'), primary.model)
 
 if (perModel.size() == 1) {
     def a = primary.aggregate
-    body << "Sınıflandırıcı      : ${primary.model}\n"
-    body << String.format(java.util.Locale.US, 'ROI alanı             : %.3f mm²%n', a.roiArea)
-    body << String.format(java.util.Locale.US, 'Tümör alanı           : %.3f mm²%n', a.tumorArea)
-    body << String.format(java.util.Locale.US, 'Stroma alanı          : %.3f mm²%n', a.stromaArea)
-    body << "Tümör alanı (%)      : ${formatValue(a.tumorPct, '%.2f%%')}\n"
-    body << "Stroma alanı (%)     : ${formatValue(a.stromaPct, '%.2f%%')}\n"
-    body << "Tümör/Stroma oranı   : ${formatValue(a.ratio, '%.4f')}\n"
-    body << "Sınıflandırılmış kapsam: ${formatValue(a.coveragePct, '%.2f%%')}\n"
+    body << String.format(java.util.Locale.US, workshopText('script.62fe2a3bd49b', 'Sınıflandırıcı      : %s\n'), primary.model)
+    body << String.format(java.util.Locale.US, workshopText('script.3768b291104b', 'ROI alanı             : %.3f mm²%n'), a.roiArea)
+    body << String.format(java.util.Locale.US, workshopText('script.8d21770bb358', 'Tümör alanı           : %.3f mm²%n'), a.tumorArea)
+    body << String.format(java.util.Locale.US, workshopText('script.ee9e57915b13', 'Stroma alanı          : %.3f mm²%n'), a.stromaArea)
+    body << String.format(java.util.Locale.US, workshopText('script.b3d1cb657c01', 'Tümör alanı (%%)      : %s\n'), formatValue(a.tumorPct, '%.2f%%'))
+    body << String.format(java.util.Locale.US, workshopText('script.181a294123d5', 'Stroma alanı (%%)     : %s\n'), formatValue(a.stromaPct, '%.2f%%'))
+    body << String.format(java.util.Locale.US, workshopText('script.a09e5dc78541', 'Tümör/Stroma oranı   : %s\n'), formatValue(a.ratio, '%.4f'))
+    body << String.format(java.util.Locale.US, workshopText('script.21a70919911e', 'Sınıflandırılmış kapsam: %s\n'), formatValue(a.coveragePct, '%.2f%%'))
     primary.analysisRows.each { row ->
         def m = row.metrics
-        body << "\n${row.name}: Tümör ${formatValue(m.tumorPct, '%.2f%%')} | " +
+        body << String.format(java.util.Locale.US, workshopText('script.8233648e847c', '\n%s: Tümör %s | '), row.name, formatValue(m.tumorPct, '%.2f%%')) +
                 "Stroma ${formatValue(m.stromaPct, '%.2f%%')} | T/S ${formatValue(m.ratio, '%.4f')}\n"
     }
 } else {
-    body << 'KARŞILAŞTIRMA (kapsam birleşimi)\n'
+    body << workshopText('script.44b0831aa8de', 'KARŞILAŞTIRMA (kapsam birleşimi)\n')
     body << '────────────────────────────────────────\n'
-    body << String.format(java.util.Locale.US, '%-22s %9s %9s %8s%n', 'Model', 'Tümör%', 'Stroma%', 'T/S')
+    body << String.format(java.util.Locale.US, '%-22s %9s %9s %8s%n', 'Model', workshopText('script.206bab00862a', 'Tümör%'), 'Stroma%', 'T/S')
     perModel.each { pm ->
         def a = pm.aggregate
         body << String.format(java.util.Locale.US, '%-22s %9s %9s %8s%n',
@@ -744,18 +744,18 @@ if (addRun) {
 } else if (replaceRun) {
     body << '\n' << String.format(java.util.Locale.US, workshopText('script.04273d6ac80a', 'ÖNCEKİ SONUÇ DEĞİŞTİRİLDİ\n%,d sınıf bölgesi ve aracın kendi oluşturduğu %,d eski özet anotasyonu silindi (içlerindeki diğer nesneler korundu). Sizin çizdiğiniz bölge ya da işaretlenmemiş özet silinmedi; özet bölgesi korundu ve ölçümler onda yeniden hesaplandı.'), removedRegions, removedSummaries) << '\n'
 }
-body << '\nQC NOTLARI\n'
+body << workshopText('script.6003ea9920d9', '\nQC NOTLARI\n')
 body << '────────────────────────────────────────\n'
-body << '• Payda yalnız Tumor + Stroma olarak sınıflandırılan alandır.\n'
-body << '• Çoklu modelde nesne ölçümleri model adıyla ön-eklenir ([model] ...).\n'
-body << '• Sınıf bölgeleri her sınıf için TEK, sınıf adıyla etiketli birleşik bölgedir\n'
-body << '  (yalnız birincil model). İçi boş tespit (detection) olarak da üretilebilir.\n'
-body << '• Tek bölge seçiliyse o anotasyon özet olur (kopya üretilmez).\n'
-body << '• İpucu: anotasyon dolgusunu Shift+F ile kapatıp sınıf sınırlarını görebilirsiniz.\n\n'
-body << 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.\n'
-body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
+body << workshopText('script.570a8cff0263', '• Payda yalnız Tumor + Stroma olarak sınıflandırılan alandır.\n')
+body << workshopText('script.a565e5d34d96', '• Çoklu modelde nesne ölçümleri model adıyla ön-eklenir ([model] ...).\n')
+body << workshopText('script.706077fa61d9', '• Sınıf bölgeleri her sınıf için TEK, sınıf adıyla etiketli birleşik bölgedir\n')
+body << workshopText('script.d0b87a75b4f5', '  (yalnız birincil model). İçi boş tespit (detection) olarak da üretilebilir.\n')
+body << workshopText('script.e7fa0c9b8ca7', '• Tek bölge seçiliyse o anotasyon özet olur (kopya üretilmez).\n')
+body << workshopText('script.4263c167cb60', '• İpucu: anotasyon dolgusunu Shift+F ile kapatıp sınıf sınırlarını görebilirsiniz.\n\n')
+body << workshopText('script.89893f30f3c3', 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.\n')
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow('Tümör/Stroma ölçümü', body.toString())
+showResultWindow(workshopText('script.205cfd5131df', 'Tümör/Stroma ölçümü'), body.toString())
 println String.format(java.util.Locale.US, 'Tümör/Stroma modülü tamamlandı: %d model, kapsam=%s',
     perModel.size(), (wholeSlide ? 'slide' : 'region'))
 

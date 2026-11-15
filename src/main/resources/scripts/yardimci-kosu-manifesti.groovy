@@ -114,7 +114,7 @@ def imageData = QP.getCurrentImageData()
 // Açık görüntü yoksa bile "Tüm proje" kapsamı çalışabilmeli (proje girdilerini kendisi okur).
 // Yalnız HEM görüntü HEM proje yoksa dur.
 if (imageData == null && QP.getProject() == null) {
-    def msg = "Önce bir lam ya da bir QuPath projesi açın."
+    def msg = workshopText('script.f4de29da0fe4', 'Önce bir lam ya da bir QuPath projesi açın.')
     if (isHeadless) { println msg; return }
     Dialogs.showErrorMessage(workshopText('script.ad2ee773f83d', "Görüntü ve proje açık değil"), msg)
     return
@@ -281,13 +281,13 @@ def errors = []
 
 if (scope == "Tüm proje") {
     if (project == null) {
-        def msg = "Tüm proje taraması için açık bir QuPath projesi gerekir."
+        def msg = workshopText('script.490da95b4766', 'Tüm proje taraması için açık bir QuPath projesi gerekir.')
         if (isHeadless) { println msg; return }
         Dialogs.showErrorMessage(workshopText('script.830fe38f7e53', "Proje yok"), msg); return
     }
     def entries = project.getImageList()
     if (entries == null || entries.isEmpty()) {
-        def msg = "Projede hiç görüntü yok."
+        def msg = workshopText('script.8e92ae3b3ef2', 'Projede hiç görüntü yok.')
         if (isHeadless) { println msg; return }
         Dialogs.showErrorMessage(workshopText('script.cb3ed2211f0a', "Boş proje"), msg); return
     }
@@ -322,25 +322,25 @@ if (scope == "Tüm proje") {
 
 // ── Sonuç penceresi ───────────────────────────────────────────────────────────
 def sb = new StringBuilder()
-sb << "İŞLEM KAYDI\n"
+sb << workshopText('script.2f44c9f1566a', 'İŞLEM KAYDI\n')
 sb << "═══════════════════════════════════════\n\n"
-sb << String.format(java.util.Locale.US, "Kapsam          : %s%n", scope)
-sb << String.format(java.util.Locale.US, "Yazılan dosya   : %,d%n", writtenFiles.size())
+sb << String.format(java.util.Locale.US, workshopText('script.d930002b98f6', 'Kapsam          : %s%n'), scope)
+sb << String.format(java.util.Locale.US, workshopText('script.d38459852caf', 'Yazılan dosya   : %,d%n'), writtenFiles.size())
 if (errors.size() > 0)
-    sb << String.format(java.util.Locale.US, "Atlanan / hatalı: %,d%n", errors.size())
-sb << String.format(java.util.Locale.US, "Çıktı dizini    : %s%n%n", manifestDir.getAbsolutePath())
+    sb << String.format(java.util.Locale.US, workshopText('script.c0fa4b70f976', 'Atlanan / hatalı: %,d%n'), errors.size())
+sb << String.format(java.util.Locale.US, workshopText('script.8a14d73372b4', 'Çıktı dizini    : %s%n%n'), manifestDir.getAbsolutePath())
 writtenFiles.each { f -> sb << "  • " + f.getName() + "\n" }
 if (errors.size() > 0) {
-    sb << "\nHatalar:\n"
+    sb << workshopText('script.bad87637afa1', '\nHatalar:\n')
     errors.take(10).each { sb << "  ⚠ " + it + "\n" }
 }
 if (userNote != null && !userNote.isEmpty())
-    sb << String.format(java.util.Locale.US, "%nNot : %s%n", userNote)
-sb << "\nKayıt alanları: kimlik · boya vektörleri · analiz durumu · ortam · kullanıcı notu.\n"
-sb << "JSON dosyalarını Python veya R ile okuyarak iş akışının izlenebilirlik kaydını tutabilirsiniz.\n\n"
-sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    sb << String.format(java.util.Locale.US, workshopText('script.75a3027209fc', '%nNot : %s%n'), userNote)
+sb << workshopText('script.a9cc7c57ef2d', '\nKayıt alanları: kimlik · boya vektörleri · analiz durumu · ortam · kullanıcı notu.\n')
+sb << workshopText('script.789014f0aab1', 'JSON dosyalarını Python veya R ile okuyarak iş akışının izlenebilirlik kaydını tutabilirsiniz.\n\n')
+sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("İşlem Kaydı", sb.toString())
+showResultWindow(workshopText('script.1d5fb78dc0e9', 'İşlem Kaydı'), sb.toString())
 println "✓ İşlem kaydı tamamlandı (${writtenFiles.size()} dosya → ${manifestDir.getAbsolutePath()})."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

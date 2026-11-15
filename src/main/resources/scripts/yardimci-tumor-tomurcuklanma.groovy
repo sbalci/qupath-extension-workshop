@@ -125,10 +125,10 @@ final String CK_CLASSIFIER_JSON = '''{
 
 def modeLabel = { String m ->
     switch (m) {
-        case 'area':    return 'Seçili alan anotasyonu'
-        case 'front':   return 'İnvazif cephe (çizgi → bant)'
-        case 'hotspot': return 'Hotspot alanı (ITBCC 0.785 mm²)'
-        case 'tma':     return 'TMA çekirdekleri'
+        case 'area':    return workshopText('script.26a79129dd50', 'Seçili alan anotasyonu')
+        case 'front':   return workshopText('script.32164ffe9533', 'İnvazif cephe (çizgi → bant)')
+        case 'hotspot': return workshopText('script.6a60f1e3f909', 'Hotspot alanı (ITBCC 0.785 mm²)')
+        case 'tma':     return workshopText('script.58e0ec3e0b3f', 'TMA çekirdekleri')
         default:        return m
     }
 }
@@ -291,18 +291,18 @@ def detectBudsIn = { parentAnn, classifier, double pw, double ph, double budMin,
 def runBudding = { String mode, double budMin, double budMax, double frontMargin, double erodeUm, boolean fillHoles, String existMode = 'add' ->
     try {
         def imageData = QP.getCurrentImageData()
-        if (imageData == null) return [ok:false, error:'Görüntü açık değil.']
+        if (imageData == null) return [ok:false, error:workshopText('script.da80fab350d1', 'Görüntü açık değil.')]
         if (!imageData.isBrightfield())
-            return [ok:false, error:'Bu araç parlak alan (brightfield) DAB görüntüsü gerektirir.\n' +
-                                    'Görüntü tipini [Image → Set image type] ile Brightfield (H-DAB) yapın.']
+            return [ok:false, error:workshopText('script.69aa58a00b16', 'Bu araç parlak alan (brightfield) DAB görüntüsü gerektirir.\n') +
+                                    workshopText('script.4ecd9e8b1dca', 'Görüntü tipini [Image → Set image type] ile Brightfield (H-DAB) yapın.')]
         def cal = imageData.getServer().getPixelCalibration()
         double pw = cal.getPixelWidthMicrons(), ph = cal.getPixelHeightMicrons()
         if (!(pw > 0) || !(ph > 0))
-            return [ok:false, error:'Piksel kalibrasyonu yok (µm/px). Önce [Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)] ile ayarlayın.']
-        if (budMax <= budMin) return [ok:false, error:'Üst boyut eşiği alt eşikten büyük olmalı.']
+            return [ok:false, error:workshopText('script.f40476ed03c9', 'Piksel kalibrasyonu yok (µm/px). Önce [Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)] ile ayarlayın.')]
+        if (budMax <= budMin) return [ok:false, error:workshopText('script.b4dd0500d30b', 'Üst boyut eşiği alt eşikten büyük olmalı.')]
 
         def classifier = buildClassifier()
-        if (classifier == null) return [ok:false, error:'CK piksel sınıflandırıcısı yüklenemedi (gömülü JSON ayrıştırılamadı).']
+        if (classifier == null) return [ok:false, error:workshopText('script.114778ef784a', 'CK piksel sınıflandırıcısı yüklenemedi (gömülü JSON ayrıştırılamadı).')]
 
         def hierarchy = imageData.getHierarchy()
         def parents = []          // her biri [ann:..., label:...]
@@ -323,7 +323,7 @@ def runBudding = { String mode, double budMin, double budMax, double frontMargin
             }
             if (sel.isEmpty()) return [ok:false, error:'NO_REGION']
             if (doReplace) removedN = removeEarlier(hierarchy, earlier)
-            sel.eachWithIndex { a, i -> parents << [ann:a, label:(a.getName() ?: ('Bölge ' + (i + 1)))] }
+            sel.eachWithIndex { a, i -> parents << [ann:a, label:(a.getName() ?: (workshopText('script.54c8792106f1', 'Bölge ') + (i + 1)))] }
         } else if (mode == 'front') {
             def lines = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getROI()?.isLine() }
             if (lines.isEmpty()) return [ok:false, error:'NO_LINE']
@@ -336,7 +336,7 @@ def runBudding = { String mode, double budMin, double budMax, double frontMargin
                 def bandAnn = PathObjects.createAnnotationObject(bandRoi)
                 bandAnn.setName(bandName)
                 QP.addObject(bandAnn)
-                parents << [ann:bandAnn, label:('İnvazif cephe bandı ' + (i + 1))]
+                parents << [ann:bandAnn, label:(workshopText('script.7ae7d9124839', 'İnvazif cephe bandı ') + (i + 1))]
             }
         } else if (mode == 'tma') {
             def grid = hierarchy.getTMAGrid()
@@ -353,11 +353,11 @@ def runBudding = { String mode, double budMin, double budMax, double frontMargin
                 def pAnn = PathObjects.createAnnotationObject(pRoi)
                 pAnn.setName(tmaBase + ': ' + (core.getName() ?: '?'))
                 QP.addObject(pAnn)
-                parents << [ann:pAnn, label:('Çekirdek ' + (core.getName() ?: '?'))]
+                parents << [ann:pAnn, label:(workshopText('script.a29c2da5855b', 'Çekirdek ') + (core.getName() ?: '?'))]
             }
-            if (parents.isEmpty()) return [ok:false, error:'Geçerli (missing olmayan) TMA çekirdeği bulunamadı.']
+            if (parents.isEmpty()) return [ok:false, error:workshopText('script.7ab03b5bcc7e', 'Geçerli (missing olmayan) TMA çekirdeği bulunamadı.')]
         } else {
-            return [ok:false, error:'Bilinmeyen mod: ' + mode]
+            return [ok:false, error:workshopText('script.8ee42e194d51', 'Bilinmeyen mod: ') + mode]
         }
 
         def perRegion = []
@@ -382,23 +382,23 @@ def runBudding = { String mode, double budMin, double budMax, double frontMargin
 
         double density = totalAreaMm2 > 0 ? (totalBuds / totalAreaMm2) : Double.NaN
         StringBuilder sb = new StringBuilder()
-        sb.append('Mod                  : ').append(modeLabel(mode)).append('\n')
-        sb.append('Bölge/çekirdek sayısı: ').append(parents.size()).append('\n')
-        sb.append('Toplam tomurcuk      : ').append(totalBuds).append('\n')
-        sb.append(String.format(java.util.Locale.US, 'Ölçülen alan         : %.4f mm²%n', totalAreaMm2))
+        sb.append(workshopText('script.6599ee0c36bd', 'Mod                  : ')).append(modeLabel(mode)).append('\n')
+        sb.append(workshopText('script.34b0f456ce65', 'Bölge/çekirdek sayısı: ')).append(parents.size()).append('\n')
+        sb.append(workshopText('script.61c177c9c81a', 'Toplam tomurcuk      : ')).append(totalBuds).append('\n')
+        sb.append(String.format(java.util.Locale.US, workshopText('script.2bb6fa74720b', 'Ölçülen alan         : %.4f mm²%n'), totalAreaMm2))
         sb.append(Double.isFinite(density)
-                ? String.format(java.util.Locale.US, 'Tomurcuk yoğunluğu   : %.1f tomurcuk/mm²%n', density)
-                : 'Tomurcuk yoğunluğu   : hesaplanamadı\n')
-        sb.append(String.format(java.util.Locale.US, 'Boyut penceresi      : %.0f–%.0f µm²%n', budMin, budMax))
+                ? String.format(java.util.Locale.US, workshopText('script.cc3a54a61a34', 'Tomurcuk yoğunluğu   : %.1f tomurcuk/mm²%n'), density)
+                : workshopText('script.9e1bd35b2003', 'Tomurcuk yoğunluğu   : hesaplanamadı\n'))
+        sb.append(String.format(java.util.Locale.US, workshopText('script.ae2978ec47db', 'Boyut penceresi      : %.0f–%.0f µm²%n'), budMin, budMax))
         if (mode == 'front')
-            sb.append(String.format(java.util.Locale.US, 'Cephe bandı yarıçapı : %.0f µm%n', frontMargin))
+            sb.append(String.format(java.util.Locale.US, workshopText('script.35c79ff98704', 'Cephe bandı yarıçapı : %.0f µm%n'), frontMargin))
         if (mode == 'tma')
-            sb.append(String.format(java.util.Locale.US, 'Çekirdek aşındırma   : %.0f µm%n', erodeUm))
+            sb.append(String.format(java.util.Locale.US, workshopText('script.8875ed95c8e5', 'Çekirdek aşındırma   : %.0f µm%n'), erodeUm))
 
         if (parents.size() > 1) {
-            sb.append('\nBölge dökümü:\n')
+            sb.append(workshopText('script.a99f64d7cdda', '\nBölge dökümü:\n'))
             perRegion.each { r ->
-                sb.append(String.format(java.util.Locale.US, '  • %-26s %d tomurcuk  (%.4f mm²)%n', r.label, r.n, r.areaMm2))
+                sb.append(String.format(java.util.Locale.US, workshopText('script.62800150e278', '  • %-26s %d tomurcuk  (%.4f mm²)%n'), r.label, r.n, r.areaMm2))
             }
         }
 
@@ -410,8 +410,8 @@ def runBudding = { String mode, double budMin, double budMax, double frontMargin
             boolean near = !perRegion.isEmpty() && perRegion.every { Math.abs(it.areaMm2 - ITBCC_FIELD_MM2) <= tol }
             sb.append('\n')
             sb.append(near
-                ? 'Seçili alan ≈ ITBCC sahası (0.785 mm²); ham tomurcuk sayısı doğrudan saha sayımıdır.\n'
-                : 'Not: seçili alan 0.785 mm² (ITBCC sahası) ile aynı değil; saha sayımı için\n     1 mm Ø (≈0.785 mm²) bir daire kullanın ([Objects → Annotations → Specify annotation]).\n')
+                ? workshopText('script.166da84abeff', 'Seçili alan ≈ ITBCC sahası (0.785 mm²); ham tomurcuk sayısı doğrudan saha sayımıdır.\n')
+                : workshopText('script.606e67a3f006', 'Not: seçili alan 0.785 mm² (ITBCC sahası) ile aynı değil; saha sayımı için\n     1 mm Ø (≈0.785 mm²) bir daire kullanın ([Objects → Annotations → Specify annotation]).\n'))
         }
 
         if (!doReplace && earlier.count > 0) {
@@ -424,10 +424,10 @@ def runBudding = { String mode, double budMin, double budMax, double frontMargin
             sb.append('\n').append(String.format(java.util.Locale.US, workshopText('script.2f88f960c3b6', 'Önceki tomurcuk sonucu değiştirildi: %,d nesne silindi (anotasyonların içindeki diğer nesneler korundu).'), removedN)).append('\n')
         }
 
-        sb.append('\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; ITBCC derecesi (Bd1/Bd2/Bd3) üretmez.')
+        sb.append(workshopText('script.df9f993d16e8', '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; ITBCC derecesi (Bd1/Bd2/Bd3) üretmez.'))
         return [ok:true, text:sb.toString()]
     } catch (Throwable t) {
-        return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(mesaj yok)')]
+        return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.5c099e44e889', '(mesaj yok)'))]
     }
 }
 
@@ -527,10 +527,10 @@ render = { ->
 
         def tg = new javafx.scene.control.ToggleGroup()
         def modesBox = new javafx.scene.layout.VBox(4)
-        [['area','Seçili alan anotasyonu'],
-         ['front','İnvazif cephe (çizgi → bant)'],
-         ['hotspot','Hotspot alanı (ITBCC 0.785 mm²)'],
-         ['tma','TMA çekirdekleri (dearray edilmiş)']].each { m ->
+        [['area',workshopText('script.26a79129dd50', 'Seçili alan anotasyonu')],
+         ['front',workshopText('script.32164ffe9533', 'İnvazif cephe (çizgi → bant)')],
+         ['hotspot',workshopText('script.6a60f1e3f909', 'Hotspot alanı (ITBCC 0.785 mm²)')],
+         ['tma',workshopText('script.46d053257ad9', 'TMA çekirdekleri (dearray edilmiş)')]].each { m ->
             def rb = new javafx.scene.control.RadioButton(m[1])
             rb.setToggleGroup(tg)
             if (m[0] == modeRef.get()) rb.setSelected(true)

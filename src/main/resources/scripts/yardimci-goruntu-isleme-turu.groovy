@@ -55,67 +55,37 @@ def isHeadless = gui == null
 // onizleme ∈ {null, 'RGB_LUT', 'CHANNELS', 'DECONV', 'GAUSSIAN', 'THRESHOLD', 'WATERSHED', 'COMPOSE'}
 def pages = [
     [id: 'intro', onizleme: null,
-     baslik: 'Görüntü işleme kavramları — kendi lamınızda',
-     govde: 'Bu tur, dijital patolojide hücre tespitinin "perde arkasını" kendi açık lamınız ' +
-            'üzerinde adım adım gösterir. En verimli kullanım için çekirdek içeren KÜÇÜK bir bölge ' +
-            '(R aracı) çizip seçin; bir seçim yoksa görüntüleyici görünümü kullanılır. Önizlemeler ' +
-            'salt okunurdur — lamınızı değiştirmez.\n\n' +
-            'Kaynak: Pete Bankhead\'in dijital patoloji için görüntü-işleme sözlüğü (CC-BY 4.0). ' +
-            'Aynı kavramların atölyedeki karşılıkları için: Ek — Görüntü Analizi Temelleri.'],
+     baslik: workshopText('script.9b0927a8bf3d', 'Görüntü işleme kavramları — kendi lamınızda'),
+     govde: workshopText('script.220d9ae88abc', 'Bu tur, dijital patolojide hücre tespitinin "perde arkasını" kendi açık lamınız üzerinde adım adım gösterir. En verimli kullanım için çekirdek içeren KÜÇÜK bir bölge (R aracı) çizip seçin; bir seçim yoksa görüntüleyici görünümü kullanılır. Önizlemeler salt okunurdur — lamınızı değiştirmez.\n\nKaynak: Pete Bankhead\'in dijital patoloji için görüntü-işleme sözlüğü (CC-BY 4.0). Aynı kavramların atölyedeki karşılıkları için: Ek — Görüntü Analizi Temelleri.')],
 
     [id: 'digital', onizleme: 'RGB_LUT',
-     baslik: '1 · Dijital görüntü ve LUT',
-     govde: 'Bir görüntü, her hücresi bir piksel değeri olan sayısal bir ızgaradır. Ekranda gördüğünüz ' +
-            'renk, bu sayıların bir "bakış tablosu" (LUT — lookup table) ile boyanmış hâlidir. LUT ya da ' +
-            'parlaklık/kontrast yalnız EKRANI değiştirir; analizde kullanılan piksel değerlerine dokunmaz. ' +
-            'Solda özgün RGB, sağda aynı verinin gri (yoğunluk) gösterimi — veri aynı, görünüm farklı.'],
+     baslik: workshopText('script.77541b99a7d2', '1 · Dijital görüntü ve LUT'),
+     govde: workshopText('script.6bd2b7b26c6b', 'Bir görüntü, her hücresi bir piksel değeri olan sayısal bir ızgaradır. Ekranda gördüğünüz renk, bu sayıların bir "bakış tablosu" (LUT — lookup table) ile boyanmış hâlidir. LUT ya da parlaklık/kontrast yalnız EKRANI değiştirir; analizde kullanılan piksel değerlerine dokunmaz. Solda özgün RGB, sağda aynı verinin gri (yoğunluk) gösterimi — veri aynı, görünüm farklı.')],
 
     [id: 'channels', onizleme: 'CHANNELS',
-     baslik: '2 · RGB → kanallar',
-     govde: 'Bir RGB görüntüde her pikselin üç değeri vardır: kırmızı, yeşil, mavi. Bunlar ayrı yoğunluk ' +
-            'düzlemleridir; toplanınca ekrandaki rengi verir. H&E\'de hematoksilenin maviye yakın olması ' +
-            'kırmızı kanalda koyu, mavi kanalda açık görünmesine yol açar — renk ayrımının temeli budur.'],
+     baslik: workshopText('script.a17ad1020ef7', '2 · RGB → kanallar'),
+     govde: workshopText('script.e128d75f9823', 'Bir RGB görüntüde her pikselin üç değeri vardır: kırmızı, yeşil, mavi. Bunlar ayrı yoğunluk düzlemleridir; toplanınca ekrandaki rengi verir. H&E\'de hematoksilenin maviye yakın olması kırmızı kanalda koyu, mavi kanalda açık görünmesine yol açar — renk ayrımının temeli budur.')],
 
     [id: 'deconv', onizleme: 'DECONV',
-     baslik: '3 · Renk dekonvolüsyonu (Hematoksilen + DAB/Eozin)',
-     govde: 'Renk dekonvolüsyonu, RGB\'yi boya rengine göre tek-kanallı yoğunluk görüntülerine ayırır ' +
-            '(Ruifrok–Johnston). Solda hematoksilen, sağda ikinci boya (DAB/Eozin) yoğunluğu — koyu = çok boya.\n\n' +
-            'Sınırlar (Bankhead): yöntem "imkânsız" sonuç verebilir (negatif boya değerleri); kuvvetli ' +
-            'DAB-pozitif (kahverengi) pikseller genelde yüksek hematoksilen değeri de taşır. Doğru boya ' +
-            'vektörü için: Yardımcılar → Boya ve renk → Boya vektörleri sihirbazı.'],
+     baslik: workshopText('script.134b38eac0bf', '3 · Renk dekonvolüsyonu (Hematoksilen + DAB/Eozin)'),
+     govde: workshopText('script.2bdab0b9ee96', 'Renk dekonvolüsyonu, RGB\'yi boya rengine göre tek-kanallı yoğunluk görüntülerine ayırır (Ruifrok–Johnston). Solda hematoksilen, sağda ikinci boya (DAB/Eozin) yoğunluğu — koyu = çok boya.\n\nSınırlar (Bankhead): yöntem "imkânsız" sonuç verebilir (negatif boya değerleri); kuvvetli DAB-pozitif (kahverengi) pikseller genelde yüksek hematoksilen değeri de taşır. Doğru boya vektörü için: Yardımcılar → Boya ve renk → Boya vektörleri sihirbazı.')],
 
     [id: 'gaussian', onizleme: 'GAUSSIAN',
-     baslik: '4 · Gaussian filtre (σ)',
-     govde: 'Gaussian filtre, her pikseli komşularının ağırlıklı ortalamasıyla değiştirerek gürültüyü ' +
-            'azaltır. σ (sigma) büyüdükçe yumuşatma artar. Çok küçük σ tek çekirdeği parçalara bölebilir; ' +
-            'çok büyük σ bitişik çekirdekleri birbirine karıştırır. (σ burada önizleme pikseli; QuPath\'te µm.)\n\n' +
-            'Hematoksilen kanalında soldan sağa artan σ — yumuşamanın etkisini izleyin.'],
+     baslik: workshopText('script.4cac2d8a0f94', '4 · Gaussian filtre (σ)'),
+     govde: workshopText('script.680d9ae4b848', 'Gaussian filtre, her pikseli komşularının ağırlıklı ortalamasıyla değiştirerek gürültüyü azaltır. σ (sigma) büyüdükçe yumuşatma artar. Çok küçük σ tek çekirdeği parçalara bölebilir; çok büyük σ bitişik çekirdekleri birbirine karıştırır. (σ burada önizleme pikseli; QuPath\'te µm.)\n\nHematoksilen kanalında soldan sağa artan σ — yumuşamanın etkisini izleyin.')],
 
     [id: 'threshold', onizleme: 'THRESHOLD',
-     baslik: '5 · Eşikleme → ikili (binary) görüntü',
-     govde: 'Eşikleme, bir yoğunluk değerinin üstündeki pikselleri "ön plan" (beyaz), altındakileri ' +
-            '"arka plan" (siyah) yapar. Aynı kanalda üç farklı eşik — eşik seçiminin bulunan nesnelerin ' +
-            'sayısını ve şeklini ne kadar değiştirdiğine dikkat edin. Bankhead\'in dersi: eşik TEK BAŞINA ' +
-            'çekirdek tespiti için yetmez; devamında daha çok işlem (mesafe + watershed) gerekir.'],
+     baslik: workshopText('script.723b960da15f', '5 · Eşikleme → ikili (binary) görüntü'),
+     govde: workshopText('script.ac866a2671c5', 'Eşikleme, bir yoğunluk değerinin üstündeki pikselleri "ön plan" (beyaz), altındakileri "arka plan" (siyah) yapar. Aynı kanalda üç farklı eşik — eşik seçiminin bulunan nesnelerin sayısını ve şeklini ne kadar değiştirdiğine dikkat edin. Bankhead\'in dersi: eşik TEK BAŞINA çekirdek tespiti için yetmez; devamında daha çok işlem (mesafe + watershed) gerekir.')],
 
     [id: 'watershed', onizleme: 'WATERSHED',
-     baslik: '6 · Mesafe dönüşümü + watershed',
-     govde: 'İkili maskede birbirine değen çekirdekler tek bir nesneye yapışır. Mesafe dönüşümü, her ön plan ' +
-            'pikseline en yakın arka plana olan uzaklığı atar — çekirdek merkezleri en yüksek değeri alır. ' +
-            'Bu merkezler "tohum" olur; watershed bölgeleri tohumlardan büyütüp bitişik çekirdekleri ayırır ' +
-            '(hepsini değil). Aşağıda eşiklenmiş maske + tahmini merkezler (mesafe tepe noktaları) işaretli. ' +
-            'Gerçek bölme QuPath\'in watershed tespitinde olur: Hücre tespiti modülü.'],
+     baslik: workshopText('script.0a1bc8ded132', '6 · Mesafe dönüşümü + watershed'),
+     govde: workshopText('script.da1f1264ef91', 'İkili maskede birbirine değen çekirdekler tek bir nesneye yapışır. Mesafe dönüşümü, her ön plan pikseline en yakın arka plana olan uzaklığı atar — çekirdek merkezleri en yüksek değeri alır. Bu merkezler "tohum" olur; watershed bölgeleri tohumlardan büyütüp bitişik çekirdekleri ayırır (hepsini değil). Aşağıda eşiklenmiş maske + tahmini merkezler (mesafe tepe noktaları) işaretli. Gerçek bölme QuPath\'in watershed tespitinde olur: Hücre tespiti modülü.')],
 
     [id: 'compose', onizleme: 'COMPOSE',
-     baslik: '7 · İş akışını birleştir — bu, Hücre tespiti modülüdür',
-     govde: 'Bu adımları birleştirince bir hücre-tespit boru hattı çıkar:\n' +
-            '   dekonvolüsyon → Gaussian (σ) → eşik (ikili) → mesafe + watershed → nesneler.\n' +
-            'Hücre tespiti modülü tam olarak bunu yapar; "Gelişmiş ayarlar"daki eşik ve σ, gördüğünüz ' +
-            'adımları kontrol eder.\n\n' +
-            'Bankhead\'in uyarısı: bu kadar basit bir hat yalnız birkaç görüntüde ve düşük büyütmede iyi ' +
-            'görünür; yüksek büyütmede hatalar belirginleşir. Gerçek uygulamalar çok daha fazla ayarlanabilir ' +
-            'parametre gerektirir — bu yüzden Hücre tespiti modülü sonrası eşikleri kendi lamınızda kalibre edersiniz.\n\n' +
-            '⚠️ Yalnızca araştırma/eğitim amaçlı; ölçüm veya klinik karar üretmez.']
+     baslik: workshopText('script.1a6c1dcf6571', '7 · İş akışını birleştir — bu, Hücre tespiti modülüdür'),
+     govde: workshopText('script.86296f1f8b47', 'Bu adımları birleştirince bir hücre-tespit boru hattı çıkar:\n   dekonvolüsyon → Gaussian (σ) → eşik (ikili) → mesafe + watershed → nesneler.\nHücre tespiti modülü tam olarak bunu yapar; "Gelişmiş ayarlar"daki eşik ve σ, gördüğünüz adımları kontrol eder.\n\nBankhead\'in uyarısı: bu kadar basit bir hat yalnız birkaç görüntüde ve düşük büyütmede iyi görünür; yüksek büyütmede hatalar belirginleşir. Gerçek uygulamalar çok daha fazla ayarlanabilir parametre gerektirir — bu yüzden Hücre tespiti modülü sonrası eşikleri kendi lamınızda kalibre edersiniz.\n\n') +
+            workshopText('script.ec795184a5f5', '⚠️ Yalnızca araştırma/eğitim amaçlı; ölçüm veya klinik karar üretmez.')]
 ]
 
 // ── Headless: turu çalıştıramayız (GUI gerekir) — içeriği konsola özetle ─────
@@ -231,7 +201,7 @@ def readPreviewRegion = { imageData ->
     String desc
     if (roi != null) {
         x = roi.getBoundsX(); y = roi.getBoundsY(); rw = roi.getBoundsWidth(); rh = roi.getBoundsHeight()
-        desc = 'Seçili bölge'
+        desc = workshopText('script.260f79348a10', 'Seçili bölge')
     } else {
         try {
             def viewer = gui.getViewer()
@@ -239,9 +209,9 @@ def readPreviewRegion = { imageData ->
             def node = viewer.getView()
             double vw = node.getWidth() * ds0, vh = node.getHeight() * ds0
             x = viewer.getCenterPixelX() - vw / 2.0d; y = viewer.getCenterPixelY() - vh / 2.0d; rw = vw; rh = vh
-            desc = 'Görüntüleyici görünümü'
+            desc = workshopText('script.43358f4e31ab', 'Görüntüleyici görünümü')
         } catch (Throwable t) {
-            x = 0; y = 0; rw = server.getWidth(); rh = server.getHeight(); desc = 'Tüm görüntü'
+            x = 0; y = 0; rw = server.getWidth(); rh = server.getHeight(); desc = workshopText('script.9ec6c2aa4413', 'Tüm görüntü')
         }
     }
     if (x < 0) x = 0; if (y < 0) y = 0
@@ -261,7 +231,7 @@ def readPreviewRegion = { imageData ->
 // Tüm önizleme görüntülerini hesapla (arka planda); döner: cache Map
 def computePreviews = { imageData ->
     def region = readPreviewRegion(imageData)
-    if (region == null) return [error: 'Önizleme bölgesi okunamadı (boş/sıfır boyut?).']
+    if (region == null) return [error: workshopText('script.37213237b5cc', 'Önizleme bölgesi okunamadı (boş/sıfır boyut?).')]
     int w = region.w, h = region.h
     int[] rgb = region.rgb
     def cache = [w: w, h: h, desc: region.desc, downsample: region.downsample]
@@ -298,8 +268,8 @@ def computePreviews = { imageData ->
         }
         cache.hema = amountToGray(a1, w, h)
         cache.stain2 = amountToGray(a2, w, h)
-        cache.name1 = s1.getName() ?: 'Hematoksilen'
-        cache.name2 = s2.getName() ?: 'Boya 2'
+        cache.name1 = s1.getName() ?: workshopText('script.4a71b20112a0', 'Hematoksilen')
+        cache.name2 = s2.getName() ?: workshopText('script.0bb66a7527b9', 'Boya 2')
         cache.hasStains = true
         work = a1
     } else {
@@ -372,19 +342,19 @@ def buildPreview = { String kind, cache ->
     row.setStyle('-fx-padding: 6 0 6 0;')
     if (kind == 'RGB_LUT') {
         row.getChildren().addAll(
-            thumb((java.awt.image.BufferedImage) cache.original, 'Özgün RGB (renkli LUT)', 240.0d),
-            thumb((java.awt.image.BufferedImage) cache.gray, 'Aynı veri, gri LUT', 240.0d))
+            thumb((java.awt.image.BufferedImage) cache.original, workshopText('script.7fe2b144a0b1', 'Özgün RGB (renkli LUT)'), 240.0d),
+            thumb((java.awt.image.BufferedImage) cache.gray, workshopText('script.64069dab4c9f', 'Aynı veri, gri LUT'), 240.0d))
     } else if (kind == 'CHANNELS') {
         row.getChildren().addAll(
-            thumb((java.awt.image.BufferedImage) cache.chR, 'Kırmızı (R)', 160.0d),
-            thumb((java.awt.image.BufferedImage) cache.chG, 'Yeşil (G)', 160.0d),
-            thumb((java.awt.image.BufferedImage) cache.chB, 'Mavi (B)', 160.0d))
+            thumb((java.awt.image.BufferedImage) cache.chR, workshopText('script.8a5eab833e37', 'Kırmızı (R)'), 160.0d),
+            thumb((java.awt.image.BufferedImage) cache.chG, workshopText('script.f642fad5775b', 'Yeşil (G)'), 160.0d),
+            thumb((java.awt.image.BufferedImage) cache.chB, workshopText('script.f4d5040a16c6', 'Mavi (B)'), 160.0d))
     } else if (kind == 'DECONV') {
         if (cache.hasStains) {
             row.getChildren().addAll(
-                thumb((java.awt.image.BufferedImage) cache.original, 'Özgün RGB', 170.0d),
-                thumb((java.awt.image.BufferedImage) cache.hema, (cache.name1 ?: 'Hematoksilen') + ' (yoğunluk)', 170.0d),
-                thumb((java.awt.image.BufferedImage) cache.stain2, (cache.name2 ?: 'Boya 2') + ' (yoğunluk)', 170.0d))
+                thumb((java.awt.image.BufferedImage) cache.original, workshopText('script.345eac0093d4', 'Özgün RGB'), 170.0d),
+                thumb((java.awt.image.BufferedImage) cache.hema, (cache.name1 ?: workshopText('script.4a71b20112a0', 'Hematoksilen')) + workshopText('script.7d68af5a74ce', ' (yoğunluk)'), 170.0d),
+                thumb((java.awt.image.BufferedImage) cache.stain2, (cache.name2 ?: workshopText('script.0bb66a7527b9', 'Boya 2')) + workshopText('script.7d68af5a74ce', ' (yoğunluk)'), 170.0d))
         } else {
             def lbl = new javafx.scene.control.Label(
                 workshopText('script.016778e1c1dd', 'Bu görüntüde renk dekonvolüsyonu (boya vektörü) tanımlı değil — büyük olasılıkla brightfield değil. Görüntü tipini ayarlayın (Yardımcılar → Temel araçlar → Görüntü tipi ayarla). Aşağıdaki Gaussian/eşik sayfaları gri (yoğunluk) kanalı üzerinden çalışır.'))
@@ -397,21 +367,21 @@ def buildPreview = { String kind, cache ->
                 String.format(java.util.Locale.US, 'σ ≈ %.1f', (double) gm.sigma), 160.0d))
         }
     } else if (kind == 'THRESHOLD') {
-        def labels = ['düşük eşik', 'orta eşik', 'yüksek eşik']
+        def labels = [workshopText('script.6b6c3f0ccff5', 'düşük eşik'), workshopText('script.f1fc62911661', 'orta eşik'), workshopText('script.3873d70712bb', 'yüksek eşik')]
         cache.thresholds.eachWithIndex { tm, n ->
             row.getChildren().add(thumb((java.awt.image.BufferedImage) tm.img,
                 String.format(java.util.Locale.US, '%s (≈ %.2f)', labels[n], (double) tm.thr), 160.0d))
         }
     } else if (kind == 'WATERSHED') {
         row.getChildren().addAll(
-            thumb((java.awt.image.BufferedImage) cache.hema ?: (java.awt.image.BufferedImage) cache.gray, 'Yoğunluk', 170.0d),
-            thumb((java.awt.image.BufferedImage) cache.watershed, 'İkili maske (orta eşik)', 170.0d))
+            thumb((java.awt.image.BufferedImage) cache.hema ?: (java.awt.image.BufferedImage) cache.gray, workshopText('script.db2dae274e56', 'Yoğunluk'), 170.0d),
+            thumb((java.awt.image.BufferedImage) cache.watershed, workshopText('script.8ad05ef1c8e0', 'İkili maske (orta eşik)'), 170.0d))
     } else if (kind == 'COMPOSE') {
         def imgs = []
         imgs << thumb((java.awt.image.BufferedImage) cache.original, 'RGB', 120.0d)
-        if (cache.hasStains) imgs << thumb((java.awt.image.BufferedImage) cache.hema, 'Hematoksilen', 120.0d)
+        if (cache.hasStains) imgs << thumb((java.awt.image.BufferedImage) cache.hema, workshopText('script.4a71b20112a0', 'Hematoksilen'), 120.0d)
         if (!cache.gaussians.isEmpty()) imgs << thumb((java.awt.image.BufferedImage) cache.gaussians[1].img, 'Gaussian', 120.0d)
-        if (!cache.thresholds.isEmpty()) imgs << thumb((java.awt.image.BufferedImage) cache.thresholds[1].img, 'Eşik (ikili)', 120.0d)
+        if (!cache.thresholds.isEmpty()) imgs << thumb((java.awt.image.BufferedImage) cache.thresholds[1].img, workshopText('script.30d5032ceea3', 'Eşik (ikili)'), 120.0d)
         imgs.each { row.getChildren().add(it) }
     } else {
         return null
@@ -426,7 +396,7 @@ def buildPreview = { String kind, cache ->
 
 def startCompute = { ->
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { cacheRef.set([error: 'Önce bir lam açın.']); render(); return }
+    if (imageData == null) { cacheRef.set([error: workshopText('script.12204d6dbab7', 'Önce bir lam açın.')]); render(); return }
     if (computing.get()) return
     computing.set(true)
     cacheRef.set(null)
@@ -434,7 +404,7 @@ def startCompute = { ->
     def worker = new Thread({
         def result
         try { result = computePreviews(imageData) }
-        catch (Throwable t) { result = [error: 'Önizleme üretilemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
+        catch (Throwable t) { result = [error: workshopText('script.1e20aaf900b1', 'Önizleme üretilemedi: ') + (t.getMessage() ?: t.getClass().getSimpleName())] }
         javafx.application.Platform.runLater {
             cacheRef.set(result)
             computing.set(false)

@@ -158,40 +158,12 @@ def openUrl = { String url ->
     }, 'OpenUrl').start()
 }
 def showWarpyInstall = {
-    def steps = 'Warpy (qupath-extension-warpy, BIOP) KURULUMU — BIOP KATALOĞUNDAN önerilir:\n\n' +
-        '1. Extensions → Manage extensions → Manage extension catalogs → Add.\n' +
-        '2. Katalog URL\'sini yapıştırın:\n     ' + BIOP_CATALOG_URL + '\n' +
-        '   (aşağıdaki düğme bu adresi açar/panoya kopyalar.)\n' +
-        '3. Katalogdan Warpy\'yi kurun — QuPath sürümünüzle EŞLEŞEN derlemeyi verir (elle .jar\'dan güvenli;\n' +
-        '   yanlış sürüm elle .jar yüklenmeyebilir).\n' +
-        '4. QuPath\'i YENİDEN BAŞLATIN.\n\n' +
-        'AYRICA Fiji gerekir (AYRI uygulama; hizalama Fiji\'de yapılır):\n' +
-        '  • Fiji\'yi ' + FIJI_DOWNLOAD_URL + ' adresinden indirin ("Fiji indir" düğmesi), arşivi açın.\n' +
-        '  • Fiji\'de PTBIOP güncelleme sitesini açın + elastix wrapper\'larını ayarlayın\n' +
-        '    (Plugins → BIOP → Set and Check Wrappers). BigWarp Fiji çekirdeğinde gelir.\n\n' +
-        'BIOP katalog sayfasını şimdi açayım mı?'
+    def steps = workshopText('script.b89b0d40335a', 'Warpy (qupath-extension-warpy, BIOP) KURULUMU — BIOP KATALOĞUNDAN önerilir:\n\n1. Extensions → Manage extensions → Manage extension catalogs → Add.\n2. Katalog URL\'sini yapıştırın:\n     ') + BIOP_CATALOG_URL + '\n' +
+        workshopText('script.12e771e3b104', '   (aşağıdaki düğme bu adresi açar/panoya kopyalar.)\n3. Katalogdan Warpy\'yi kurun — QuPath sürümünüzle EŞLEŞEN derlemeyi verir (elle .jar\'dan güvenli;\n   yanlış sürüm elle .jar yüklenmeyebilir).\n4. QuPath\'i YENİDEN BAŞLATIN.\n\nAYRICA Fiji gerekir (AYRI uygulama; hizalama Fiji\'de yapılır):\n  • Fiji\'yi ') + FIJI_DOWNLOAD_URL + workshopText('script.b8b1bb2d315d', ' adresinden indirin ("Fiji indir" düğmesi), arşivi açın.\n  • Fiji\'de PTBIOP güncelleme sitesini açın + elastix wrapper\'larını ayarlayın\n    (Plugins → BIOP → Set and Check Wrappers). BigWarp Fiji çekirdeğinde gelir.\n\nBIOP katalog sayfasını şimdi açayım mı?')
     if (Dialogs.showConfirmDialog(workshopText('script.a374f8165f51', 'Warpy nasıl kurulur? (BIOP kataloğu)'), steps)) openUrl(BIOP_CATALOG_URL)
 }
 def showFijiPlugins = {
-    def s = 'FIJI EKLENTİLERİ (Warpy hizalaması için) — Fiji açıkken:\n\n' +
-        '1) PTBIOP güncelleme sitesi (BigDataViewer-Playground + Warpy komutları):\n' +
-        '   Help → Update… → (kontrol bitince) Manage update sites → listeden PTBIOP\'u İŞARETLE →\n' +
-        '   Close → Apply changes → Fiji\'yi YENİDEN BAŞLAT.\n' +
-        '   ⚠ İhtiyacınız olan menü "BigDataViewer-Playground"dur (tireli) — DÜZ "BigDataViewer" DEĞİL.\n' +
-        '   PTBIOP açıkken de "BigDataViewer-Playground" görünmüyorsa: Apply changes + yeniden başlat;\n' +
-        '   hâlâ yoksa PTBIOP\'u kapatıp-açıp yeniden Apply edin (temiz indirme) ve Update penceresindeki hataları kontrol edin.\n' +
-        '   JAR kurulu (jars/bigdataviewer-playground-*.jar VAR) AMA menü yoksa: Fiji\'nizde JAR ÇAKIŞMASI vardır\n' +
-        '   (deneysel "SciJava-Ops"/scijava3 -SNAPSHOT jar\'ları klasik SciJava ile çakışır → menü kaydı düşer).\n' +
-        '   Bunlar genelde "Fiji-Latest" (nightly, sites.imagej.net/Fiji) güncelleme sitesinden gelir:\n' +
-        '   Manage Update Sites → "Fiji-Latest"i KAPAT (ImageJ/Fiji/PTBIOP/ElastixWrapper açık kalsın) → Apply → yeniden başlat.\n' +
-        '   Window → Console başlangıç hatasını gösterir. En güvenlisi: YALNIZ PTBIOP açık TEMİZ bir Fiji (fiji.sc).\n\n' +
-        '2) elastix (otomatik afin + spline; Fiji EKLENTİSİ DEĞİL, harici çalıştırılabilir):\n' +
-        '   • İndir (test edilen sürüm 5.0.1): ' + ELASTIX_URL + ' → Windows zip → bir klasöre açın.\n' +
-        '   • Windows\'ta çalışmazsa "Visual C++ redistributable" kurun.\n' +
-        '   • Fiji → Plugins → BIOP → Set and Check Wrappers → elastix.exe ve transformix.exe yollarını verin.\n\n' +
-        '3) BigWarp: Fiji çekirdeğinde gelir (kurulum gerekmez).\n\n' +
-        'Sonra Fiji\'yi yeniden başlatın; Warpy komutu Plugins → BigDataViewer-Playground → Sources → Register\n' +
-        'altında görünür. elastix sürüm sayfasını şimdi açayım mı?'
+    def s = workshopText('script.a8d028214f86', 'FIJI EKLENTİLERİ (Warpy hizalaması için) — Fiji açıkken:\n\n1) PTBIOP güncelleme sitesi (BigDataViewer-Playground + Warpy komutları):\n   Help → Update… → (kontrol bitince) Manage update sites → listeden PTBIOP\'u İŞARETLE →\n   Close → Apply changes → Fiji\'yi YENİDEN BAŞLAT.\n   ⚠ İhtiyacınız olan menü "BigDataViewer-Playground"dur (tireli) — DÜZ "BigDataViewer" DEĞİL.\n   PTBIOP açıkken de "BigDataViewer-Playground" görünmüyorsa: Apply changes + yeniden başlat;\n   hâlâ yoksa PTBIOP\'u kapatıp-açıp yeniden Apply edin (temiz indirme) ve Update penceresindeki hataları kontrol edin.\n   JAR kurulu (jars/bigdataviewer-playground-*.jar VAR) AMA menü yoksa: Fiji\'nizde JAR ÇAKIŞMASI vardır\n   (deneysel "SciJava-Ops"/scijava3 -SNAPSHOT jar\'ları klasik SciJava ile çakışır → menü kaydı düşer).\n   Bunlar genelde "Fiji-Latest" (nightly, sites.imagej.net/Fiji) güncelleme sitesinden gelir:\n   Manage Update Sites → "Fiji-Latest"i KAPAT (ImageJ/Fiji/PTBIOP/ElastixWrapper açık kalsın) → Apply → yeniden başlat.\n   Window → Console başlangıç hatasını gösterir. En güvenlisi: YALNIZ PTBIOP açık TEMİZ bir Fiji (fiji.sc).\n\n2) elastix (otomatik afin + spline; Fiji EKLENTİSİ DEĞİL, harici çalıştırılabilir):\n   • İndir (test edilen sürüm 5.0.1): ') + ELASTIX_URL + workshopText('script.e3641b6e9da3', ' → Windows zip → bir klasöre açın.\n   • Windows\'ta çalışmazsa "Visual C++ redistributable" kurun.\n   • Fiji → Plugins → BIOP → Set and Check Wrappers → elastix.exe ve transformix.exe yollarını verin.\n\n3) BigWarp: Fiji çekirdeğinde gelir (kurulum gerekmez).\n\nSonra Fiji\'yi yeniden başlatın; Warpy komutu Plugins → BigDataViewer-Playground → Sources → Register\naltında görünür. elastix sürüm sayfasını şimdi açayım mı?')
     if (Dialogs.showConfirmDialog(workshopText('script.d38ca9de9c03', 'Fiji eklentileri nasıl kurulur? (PTBIOP + elastix)'), s)) openUrl(ELASTIX_URL)
 }
 
@@ -220,9 +192,9 @@ if (isHeadless) {
 def doTransfer = { Object sourceEntry, boolean addMeas, double downsample, boolean lock, String mode = 'add' ->
     try {
         def W = warpyClass()
-        if (W == null) return [ok:false, kind:'noclass', error:"Warpy eklentisi kurulu değil (BIOP kataloğu). Kurup QuPath'i yeniden başlatın."]
+        if (W == null) return [ok:false, kind:'noclass', error:workshopText('script.e599520b381f', 'Warpy eklentisi kurulu değil (BIOP kataloğu). Kurup QuPath\'i yeniden başlatın.')]
         def targetEntry = QP.getProjectEntry()
-        if (targetEntry == null) return [ok:false, kind:'notarget', error:"Hedef lam bulunamadı; aktarımın HEDEF (sabit) lamını açın."]
+        if (targetEntry == null) return [ok:false, kind:'notarget', error:workshopText('script.a8870befe937', 'Hedef lam bulunamadı; aktarımın HEDEF (sabit) lamını açın.')]
 
         def transform, objs, transferred
         try {
@@ -230,14 +202,14 @@ def doTransfer = { Object sourceEntry, boolean addMeas, double downsample, boole
             objs       = callStatic(W, 'getPathObjectsFromEntry', [sourceEntry])
             transferred = callStatic(W, 'transformPathObjects', [objs, transform])
         } catch (groovy.lang.MissingMethodException | NoSuchMethodException nsme) {
-            return [ok:false, kind:'nomethod', error:"Warpy API imzası beklenenden farklı (sürüm uyumsuzluğu): " + nsme.getMessage()]
+            return [ok:false, kind:'nomethod', error:workshopText('script.13607c6b9909', 'Warpy API imzası beklenenden farklı (sürüm uyumsuzluğu): ') + nsme.getMessage()]
         } catch (Throwable t) {
             def cause = (t.getCause() != null) ? t.getCause() : t
-            return [ok:false, kind:'compute', error:"Warpy dönüşümü uygulanamadı: " + cause.getClass().getSimpleName() + ': ' + (cause.getMessage() ?: '')]
+            return [ok:false, kind:'compute', error:workshopText('script.00ddb41ec932', 'Warpy dönüşümü uygulanamadı: ') + cause.getClass().getSimpleName() + ': ' + (cause.getMessage() ?: '')]
         }
 
         def n = (transferred == null) ? 0 : transferred.size()
-        if (n == 0) return [ok:false, kind:'empty', error:"Kaynak lamda aktarılacak nesne yok."]
+        if (n == 0) return [ok:false, kind:'empty', error:workshopText('script.e8824ca3a1c6', 'Kaynak lamda aktarılacak nesne yok.')]
 
         transferred.each { o -> o.setName(SENTINEL); if (lock) o.setLocked(true) }
 
@@ -399,8 +371,8 @@ javafx.application.Platform.runLater {
                         status.setStyle(''); status.setText(String.format(java.util.Locale.US,
                             workshopText('script.8d4f44cf84e8', 'Tamamlandı ✅ — %,d nesne aktarıldı. Örtüşmeyi gözle doğrulayın.'), r.count))
                         def msg = new StringBuilder()
-                        msg << String.format(java.util.Locale.US, 'Kaynak: %s%n', srcName)
-                        msg << String.format(java.util.Locale.US, 'Aktarılan nesne: %,d (kilitli; ad "%s")%n', r.count, (r.setName ?: SENTINEL))
+                        msg << String.format(java.util.Locale.US, workshopText('script.b3989cbb3bf6', 'Kaynak: %s%n'), srcName)
+                        msg << String.format(java.util.Locale.US, workshopText('script.2380a7791215', 'Aktarılan nesne: %,d (kilitli; ad "%s")%n'), r.count, (r.setName ?: SENTINEL))
                         if (r.prevNames) {
                             def stillMsg = String.format(java.util.Locale.US, workshopText('script.b953a9fa8fe1', 'DİKKAT — bu lamda önceki Warpy aktarımı da duruyor: %1$s. Hiçbir şey silinmedi; yeni set "%2$s" adıyla eklendi. Eski seti kaldırmak için o addaki anotasyonları seçip silin ya da yeniden aktarırken "Öncekini değiştir"i seçin. Dışa aktarım ve ölçümler iki seti de görür.'), r.prevNames.join(', '), r.setName)
                             msg << '\n' << stillMsg << '\n'
@@ -410,9 +382,9 @@ javafx.application.Platform.runLater {
                             msg << '\n' << replMsg << '\n'
                             status.setText(status.getText() + '\n' + replMsg)
                         }
-                        if (r.measWarn) msg << ('\nNot: yoğunluk ölçümü eklenemedi (aktarım tamam): ' + r.measWarn + '\n')
-                        msg << '\nEsnek dönüşüm hücre düzeyinde daha iyidir; yine de örtüşmeyi opaklık\n'
-                        msg << 'kaydırıcısıyla doğrulayın. ⚠️ Yalnızca araştırma/eğitim amaçlıdır.'
+                        if (r.measWarn) msg << (workshopText('script.b5d6d3a337e2', '\nNot: yoğunluk ölçümü eklenemedi (aktarım tamam): ') + r.measWarn + '\n')
+                        msg << workshopText('script.5bb051c91e47', '\nEsnek dönüşüm hücre düzeyinde daha iyidir; yine de örtüşmeyi opaklık\n')
+                        msg << workshopText('script.01d07eb3013a', 'kaydırıcısıyla doğrulayın. ⚠️ Yalnızca araştırma/eğitim amaçlıdır.')
                         Dialogs.showMessageDialog(workshopText('script.ef00ffdefd8a', 'Warpy aktarımı tamamlandı'), msg.toString())
                     } else {
                         status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + (r.error ?: workshopText('script.da001998a5bd', 'Bilinmeyen hata')))
@@ -429,9 +401,9 @@ javafx.application.Platform.runLater {
         // ── 4 ADIMLI REHBER ─────────────────────────────────────────────
         // ① Warpy eklentisini kur
         def step1 = new javafx.scene.layout.VBox(6,
-            stepHeader('① Warpy eklentisini kur (BIOP kataloğu)'),
+            stepHeader(workshopText('script.2ad19a8d5f5b', '① Warpy eklentisini kur (BIOP kataloğu)')),
             warpyRow,
-            instr('Warpy esnek (non-rigid) hizalamayı Fiji ile yapar. Eklentiyi BIOP kataloğundan kurun (elle .jar\'dan güvenli), sonra QuPath\'i yeniden başlatın.'))
+            instr(workshopText('script.0663b6f036e8', 'Warpy esnek (non-rigid) hizalamayı Fiji ile yapar. Eklentiyi BIOP kataloğundan kurun (elle .jar\'dan güvenli), sonra QuPath\'i yeniden başlatın.')))
 
         // ② Fiji uygulamasını + eklentilerini kur
         def fijiRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label(workshopText('script.610d768d402a', 'Fiji yolu:')), fijiField, fijiBrowse, fijiDownloadBtn)
@@ -440,19 +412,16 @@ javafx.application.Platform.runLater {
         def fijiPluginsBtn = new javafx.scene.control.Button(workshopText('script.ee7167c3031a', 'Fiji eklentileri (PTBIOP + elastix) nasıl kurulur?'))
         fijiPluginsBtn.setOnAction({ showFijiPlugins() })
         def step2 = new javafx.scene.layout.VBox(6,
-            stepHeader('② Fiji uygulamasını ve eklentilerini kur'),
-            instr('Fiji AYRI bir uygulamadır (fiji.sc). "Fiji indir" ile indirip arşivi açın; çalıştırılabilir yolunu "…" ile seçin. Sonra Fiji eklentilerini kurun: PTBIOP güncelleme sitesi + elastix wrapper\'ları (BigWarp Fiji ile gelir).'),
+            stepHeader(workshopText('script.5410888c6e0d', '② Fiji uygulamasını ve eklentilerini kur')),
+            instr(workshopText('script.aa6579253a46', 'Fiji AYRI bir uygulamadır (fiji.sc). "Fiji indir" ile indirip arşivi açın; çalıştırılabilir yolunu "…" ile seçin. Sonra Fiji eklentilerini kurun: PTBIOP güncelleme sitesi + elastix wrapper\'ları (BigWarp Fiji ile gelir).')),
             fijiRow,
             new javafx.scene.layout.HBox(8, fijiPluginsBtn))
 
         // ③ Fiji'de görüntüleri aç + hizalamayı (registration) çalıştır
         def step3 = new javafx.scene.layout.VBox(6,
-            stepHeader('③ Fiji\'de projeyi aç ve hizalamayı (registration) çalıştır'),
+            stepHeader(workshopText('script.b76129e15f0d', '③ Fiji\'de projeyi aç ve hizalamayı (registration) çalıştır')),
             new javafx.scene.layout.HBox(8, launchBtn),
-            instr('Fiji açıldıktan sonra (menü: BigDataViewer-Playground — TİRELİ; düz "BigDataViewer" DEĞİL. Yoksa ②\'deki PTBIOP\'u kurun):\n' +
-                  '  a) Plugins → BigDataViewer-Playground → BDVDataset → Create BDV Dataset (QuPath) → project.qpproj\'u açın (birim: mm).\n' +
-                  '  b) Plugins → BigDataViewer-Playground → Sources → Register → QuPath - Create Warpy Registration:\n' +
-                  '     rigid → elastix afin → elastix spline → (ops.) BigWarp → dönüşüm QuPath projesine YAZILIR (transform_<hedef>_<kaynak>.json).'))
+            instr(workshopText('script.ec0253d9c853', 'Fiji açıldıktan sonra (menü: BigDataViewer-Playground — TİRELİ; düz "BigDataViewer" DEĞİL. Yoksa ②\'deki PTBIOP\'u kurun):\n  a) Plugins → BigDataViewer-Playground → BDVDataset → Create BDV Dataset (QuPath) → project.qpproj\'u açın (birim: mm).\n  b) Plugins → BigDataViewer-Playground → Sources → Register → QuPath - Create Warpy Registration:\n     rigid → elastix afin → elastix spline → (ops.) BigWarp → dönüşüm QuPath projesine YAZILIR (transform_<hedef>_<kaynak>.json).')))
 
         // ④ QuPath'e dön → anotasyonları aktar
         def srcRow = new javafx.scene.layout.HBox(8, new javafx.scene.control.Label(workshopText('script.a4aab64f8584', 'Kaynak lam:')), sourceBox, refreshBtn)
@@ -462,8 +431,8 @@ javafx.application.Platform.runLater {
         def srcNote = new javafx.scene.control.Label(workshopText('script.ffe0a5050b9c', 'Kaynak listesi, ③\'teki Fiji hizalaması projeye yazıldıktan SONRA "↻ Kaynakları tazele" ile dolar. HEDEF (sabit) lam AÇIK olmalı; henüz hizalama yoksa liste BOŞTUR.'))
         srcNote.setWrapText(true); srcNote.setMaxWidth(Double.MAX_VALUE); srcNote.setStyle('-fx-opacity: 0.8; -fx-font-size: 11px;')
         def step4 = new javafx.scene.layout.VBox(6,
-            stepHeader('④ QuPath\'e dön → anotasyonları aktar'),
-            instr('HEDEF (sabit) lamı QuPath\'te açın, "↻ Kaynakları tazele" deyin, kaynağı seçip "Anotasyonları aktar"a basın. Örtüşmeyi opaklık kaydırıcısıyla doğrulayın.'),
+            stepHeader(workshopText('script.1fbd7084c582', '④ QuPath\'e dön → anotasyonları aktar')),
+            instr(workshopText('script.70dfaeed0656', 'HEDEF (sabit) lamı QuPath\'te açın, "↻ Kaynakları tazele" deyin, kaynağı seçip "Anotasyonları aktar"a basın. Örtüşmeyi opaklık kaydırıcısıyla doğrulayın.')),
             srcRow, srcNote,
             new javafx.scene.layout.VBox(4, measChk, dsRow, lockChk),
             status)

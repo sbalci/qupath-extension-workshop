@@ -96,7 +96,7 @@ def launchBundled = { String name ->
     return true
 }
 def menuHint = { String where ->
-    Dialogs.showMessageDialog('Eklenti gerekli',
+    Dialogs.showMessageDialog(workshopText('script.97fb26fec49d', 'Eklenti gerekli'),
         "${workshopText('script.2da9535b4302', 'Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\n')}${where}")
 }
 
@@ -135,12 +135,12 @@ def installExample = { ->
     def json = bundledClassifierJson()
     if (json == null) {
         try { json = downloadGunzip(EXAMPLE_MODEL_GZ_URL) }
-        catch (Throwable t) { return [ok:false, reason:'ERROR', error:"Paketli model yok ve indirilemedi: ${t.getClass().getSimpleName()}"] }
+        catch (Throwable t) { return [ok:false, reason:'ERROR', error:String.format(java.util.Locale.US, workshopText('script.77ff6d23f044', 'Paketli model yok ve indirilemedi: %s'), t.getClass().getSimpleName())] }
     }
     try {
         def classifier = qupath.lib.io.GsonTools.getInstance()
             .fromJson(json, qupath.lib.classifiers.pixel.PixelClassifier.class)
-        if (classifier == null) return [ok:false, reason:'ERROR', error:'JSON ayrıştırılamadı.']
+        if (classifier == null) return [ok:false, reason:'ERROR', error:workshopText('script.25103ec1e9ee', 'JSON ayrıştırılamadı.')]
         project.getPixelClassifiers().put(name, classifier)
         return [ok:true, name:name, existed:false]
     } catch (Throwable t) {
@@ -212,7 +212,7 @@ def trainAndSave = { String targetName, java.util.List selectedNames ->
             if (pc != null) labelMap.put(pc, idx++)
         }
         if (labelMap.size() < 2)
-            return [ok:false, error:'Anotasyonlardan en az iki sınıf çıkarılamadı. Tumor ve Stroma bölgelerinin boş olmadığından emin olun.']
+            return [ok:false, error:workshopText('script.92daf42efb7a', 'Anotasyonlardan en az iki sınıf çıkarılamadı. Tumor ve Stroma bölgelerinin boş olmadığından emin olun.')]
 
         def trainingData = training.createTrainingDataForLabelMap(
             java.util.Collections.singletonList(imageData), labelMap)
@@ -241,7 +241,7 @@ def trainAndSave = { String targetName, java.util.List selectedNames ->
         project.getPixelClassifiers().put(targetName, classifier)
         return [ok:true]
     } catch (Throwable t) {
-        return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(mesaj yok)')]
+        return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.5c099e44e889', '(mesaj yok)'))]
     }
 }
 
@@ -334,14 +334,14 @@ def classifierAreaToMm2 ={ Number value, String measurementName ->
 def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = false, boolean createSummary = true, String mode = 'add' ->
     try {
         def imageData = QP.getCurrentImageData()
-        if (imageData == null) return [ok:false, error:'Görüntü açık değil.']
+        if (imageData == null) return [ok:false, error:workshopText('script.da80fab350d1', 'Görüntü açık değil.')]
         def project = QP.getProject()
-        if (project == null) return [ok:false, error:'Proje açık değil.']
+        if (project == null) return [ok:false, error:workshopText('script.7dfc869848aa', 'Proje açık değil.')]
         def classifier = project.getPixelClassifiers().get(modelName)
-        if (classifier == null) return [ok:false, error:"Sınıflandırıcı bulunamadı: ${modelName}"]
+        if (classifier == null) return [ok:false, error:String.format(java.util.Locale.US, workshopText('script.d0f243fc7172', 'Sınıflandırıcı bulunamadı: %s'), modelName)]
         def cal = imageData.getServer().getPixelCalibration()
         double pw = cal.getPixelWidthMicrons(), ph = cal.getPixelHeightMicrons()
-        if (!(pw > 0) || !(ph > 0)) return [ok:false, error:'Piksel kalibrasyonu yok (mm² hesaplanamaz).']
+        if (!(pw > 0) || !(ph > 0)) return [ok:false, error:workshopText('script.21bd4871cafe', 'Piksel kalibrasyonu yok (mm² hesaplanamaz).')]
 
         // Önceki sonuç (bu sihirbazın özetleri + etiketli sınıf bölgeleri) SORULMADAN silinmez. Kip çağırandan
         // gelir (startMeasure, FX iş parçacığında, işlemden ÖNCE sordu). Önceki sonuç varken kip belirtilmediyse
@@ -403,14 +403,14 @@ def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = 
             } catch (Throwable ignored) { }
         }
         if (measureRoi == null || measureRoi.isEmpty() || !measureRoi.isArea())
-            return [ok:false, error:'Ölçülecek alan kalmadı (Ignore* tüm bölgeyi kaplıyor olabilir).']
+            return [ok:false, error:workshopText('script.16899172f9b7', 'Ölçülecek alan kalmadı (Ignore* tüm bölgeyi kaplıyor olabilir).')]
 
         def manager = PixelClassifierTools.createMeasurementManager(imageData, classifier)
         def names = manager.getMeasurementNames()
         String tumorName = names.find { it.startsWith('Tumor area ') }
         String stromaName = names.find { it.startsWith('Stroma area ') }
         if (tumorName == null || stromaName == null)
-            return [ok:false, error:'Model Tumor/Stroma çıktı sınıflarını içermiyor.']
+            return [ok:false, error:workshopText('script.ef11f9669651', 'Model Tumor/Stroma çıktı sınıflarını içermiyor.')]
 
         double tumorMm2 = classifierAreaToMm2(manager.getMeasurementValue(measureRoi, tumorName), tumorName)
         double stromaMm2 = classifierAreaToMm2(manager.getMeasurementValue(measureRoi, stromaName), stromaName)
@@ -539,21 +539,21 @@ def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = 
         imageData.getHierarchy().getSelectionModel().clearSelection()
         QP.fireHierarchyUpdate()
 
-        def fmt = { double v, String p -> Double.isFinite(v) ? String.format(java.util.Locale.US, p, v) : 'hesaplanamadı' }
+        def fmt = { double v, String p -> Double.isFinite(v) ? String.format(java.util.Locale.US, p, v) : workshopText('script.77fa6502fb41', 'hesaplanamadı') }
         def text =
             "Model                : ${modelName}\n" +
             (wholeSlide
-                ? "Kapsam               : Tüm lam (boş cam/arka plan da sayılabilir — kaba tahmin)\n"
-                : "Ölçülen bölge sayısı : ${regionCount}\n") +
-            "Görsel çıktı         : ${asDetections ? 'sınıf tespitleri (Detections paneli)' : 'etiketli sınıf anotasyonları'}\n" +
-            "Özet anotasyonu      : ${createSummary ? 'yazıldı (TSR Özet sınıfı — göz simgesiyle gizlenebilir)' : 'oluşturulmadı (yalnız bu pencere)'}\n" +
-            String.format(java.util.Locale.US, "ROI alanı            : %.3f mm²%n", roiMm2) +
-            String.format(java.util.Locale.US, "Tümör alanı          : %.3f mm²%n", tumorMm2) +
-            String.format(java.util.Locale.US, "Stroma alanı         : %.3f mm²%n", stromaMm2) +
-            "Tümör alanı (%)      : ${fmt(tumorPct, '%.2f%%')}\n" +
-            "Stroma alanı (%)     : ${fmt(stromaPct, '%.2f%%')}\n" +
-            "Tümör/Stroma oranı   : ${fmt(ratio, '%.4f')}\n" +
-            "Sınıflandırılmış kapsam: ${fmt(coverage, '%.2f%%')}"
+                ? workshopText('script.9abdddff8273', 'Kapsam               : Tüm lam (boş cam/arka plan da sayılabilir — kaba tahmin)\n')
+                : String.format(java.util.Locale.US, workshopText('script.66e6a445369f', 'Ölçülen bölge sayısı : %s\n'), regionCount)) +
+            String.format(java.util.Locale.US, workshopText('script.078dcfa92c59', 'Görsel çıktı         : %s\n'), asDetections ? workshopText('script.00e8a15fc53f', 'sınıf tespitleri (Detections paneli)') : workshopText('script.3d31c94ceba6', 'etiketli sınıf anotasyonları')) +
+            String.format(java.util.Locale.US, workshopText('script.f51deac67bdd', 'Özet anotasyonu      : %s\n'), createSummary ? workshopText('script.b41a0ea5b4f2', 'yazıldı (TSR Özet sınıfı — göz simgesiyle gizlenebilir)') : workshopText('script.928ee6ecfa1f', 'oluşturulmadı (yalnız bu pencere)')) +
+            String.format(java.util.Locale.US, workshopText('script.f6e089e2ca2d', 'ROI alanı            : %.3f mm²%n'), roiMm2) +
+            String.format(java.util.Locale.US, workshopText('script.7c06da4769cd', 'Tümör alanı          : %.3f mm²%n'), tumorMm2) +
+            String.format(java.util.Locale.US, workshopText('script.28f9244fad3f', 'Stroma alanı         : %.3f mm²%n'), stromaMm2) +
+            String.format(java.util.Locale.US, workshopText('script.b3d1cb657c01', 'Tümör alanı (%%)      : %s\n'), fmt(tumorPct, '%.2f%%')) +
+            String.format(java.util.Locale.US, workshopText('script.181a294123d5', 'Stroma alanı (%%)     : %s\n'), fmt(stromaPct, '%.2f%%')) +
+            String.format(java.util.Locale.US, workshopText('script.a09e5dc78541', 'Tümör/Stroma oranı   : %s\n'), fmt(ratio, '%.4f')) +
+            String.format(java.util.Locale.US, workshopText('script.f41f2cfc439d', 'Sınıflandırılmış kapsam: %s'), fmt(coverage, '%.2f%%'))
         if (addRun) {
             // Ekle: önceki sonuç duruyor; yeni sonucun adı ve eskilerin adı açıkça yazılır.
             def prevNames = (prevSummaries.collect { it.getName() } + prevOutputs.collect { it.getName() }).unique().sort()
@@ -564,7 +564,7 @@ def runMeasure = { String modelName, boolean wholeSlide, boolean asDetections = 
         }
         return [ok:true, text:text]
     } catch (Throwable t) {
-        return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(mesaj yok)')]
+        return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.5c099e44e889', '(mesaj yok)'))]
     }
 }
 
@@ -761,11 +761,11 @@ render = { ->
             workshopText('script.ee6240d9a4a1', "Eksik olanı aşağıdaki düğmelerle düzeltin, sonra 'Yenile'."))
         def fixType = navButton(workshopText('script.bbf6fba1e891', 'Görüntü tipini ayarla'), {
             if (stage != null) stage.setAlwaysOnTop(false)
-            if (!launchBundled('yardimci-image-type.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla')
+            if (!launchBundled('yardimci-image-type.groovy')) menuHint(workshopText('script.c2c8bba69355', 'Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla'))
         })
-        def fixCal = navButton('Kalibrasyonu ayarla', {
+        def fixCal = navButton(workshopText('script.c43c68f554a0', 'Kalibrasyonu ayarla'), {
             if (stage != null) stage.setAlwaysOnTop(false)
-            if (!launchBundled('yardimci-kalibrasyon.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)')
+            if (!launchBundled('yardimci-kalibrasyon.groovy')) menuHint(workshopText('script.e3dc2534d6aa', 'Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)'))
         })
         content.getChildren().add(new javafx.scene.layout.HBox(8, fixType, fixCal))
         def cont = navButton(workshopText('script.09839547cef8', 'Devam ▶'), { step.set('CLASSES'); render() })
@@ -794,7 +794,7 @@ render = { ->
         def grid = new javafx.scene.layout.VBox(4)
         MANDATORY_CLASSES.each { nm ->
             int c = s.counts[nm] ?: 0
-            def lbl = new javafx.scene.control.Label("${c > 0 ? '✓' : '✗'}  ${nm} — ${c} anotasyon (zorunlu)")
+            def lbl = new javafx.scene.control.Label(String.format(java.util.Locale.US, workshopText('script.44cd0b06a779', '%s  %s — %s anotasyon (zorunlu)'), c > 0 ? '✓' : '✗', nm, c))
             if (c == 0) lbl.setStyle('-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.75;')
             grid.getChildren().add(lbl)
         }
@@ -836,7 +836,7 @@ render = { ->
             navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('CLASSES'); render() }),
             navButton(workshopText('script.ece53f594d06', 'Eğit & kaydet'), {
                 String nm = nameField.getText()?.trim()
-                if (!nm) { Dialogs.showWarningNotification('Ad gerekli', workshopText('script.2b79d4526eed', 'Bir sınıflandırıcı adı girin.')); return }
+                if (!nm) { Dialogs.showWarningNotification(workshopText('script.45df3b41f998', 'Ad gerekli'), workshopText('script.2b79d4526eed', 'Bir sınıflandırıcı adı girin.')); return }
                 if (s.classifiers.contains(nm)) {
                     if (stage != null) stage.setAlwaysOnTop(false)
                     boolean ow = Dialogs.showConfirmDialog(workshopText('script.d9f96ac310ff', 'Üzerine yaz?'), "'${nm}${workshopText('script.c6423379998e', '\' zaten var. Üzerine yazılsın mı?')}")
@@ -871,7 +871,7 @@ render = { ->
         String nm = trainedName.get()
         title.setText(workshopText('script.ff56a682c4e1', 'Model kaydedildi ✅ — şimdi bölgeyi seçin'))
         bodyLbl.setText(
-            "'${nm}' projeye kaydedildi.\n\n" +
+            String.format(java.util.Locale.US, workshopText('script.700d441536a7', '\'%s\' projeye kaydedildi.\n\n'), nm) +
             workshopText('script.bcb91bdf1bb0', 'Çalıştırmak için:\n') +
             workshopText('script.179c881b6fad', '  1. Ölçmek istediğiniz dokuyu bir anotasyonla çizin.\n') +
             workshopText('script.efcb82f4a317', '  2. Bu anotasyonu SEÇİN.\n') +
@@ -933,7 +933,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 

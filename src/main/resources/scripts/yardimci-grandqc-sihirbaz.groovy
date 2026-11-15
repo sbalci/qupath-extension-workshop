@@ -123,12 +123,12 @@ def sha256Of = { File f ->
 }
 // Tek dosya: null = sorun yok; aksi hâlde sorunun açık metni.
 def weightProblem = { File f ->
-    if (!f.isFile() || f.length() == 0) return 'dosya yok: ' + f.getAbsolutePath()
+    if (!f.isFile() || f.length() == 0) return workshopText('script.547b15a9b13d', 'dosya yok: ') + f.getAbsolutePath()
     def want = GRANDQC_SHA256[f.getName()]
-    if (want == null) return 'tanınmayan model dosyası (sabitlenmiş özet yok): ' + f.getAbsolutePath()
+    if (want == null) return workshopText('script.14eaf86cc424', 'tanınmayan model dosyası (sabitlenmiş özet yok): ') + f.getAbsolutePath()
     String got
-    try { got = sha256Of(f) } catch (Throwable t) { return 'okunamadı: ' + f.getAbsolutePath() + ' (' + (t.getMessage() ?: t.getClass().getSimpleName()) + ')' }
-    return (got == want) ? null : ('SHA-256 uyuşmuyor (bozuk/eksik indirme ya da değiştirilmiş dosya): ' + f.getAbsolutePath())
+    try { got = sha256Of(f) } catch (Throwable t) { return workshopText('script.9df4e710a75e', 'okunamadı: ') + f.getAbsolutePath() + ' (' + (t.getMessage() ?: t.getClass().getSimpleName()) + ')' }
+    return (got == want) ? null : (workshopText('script.ebdafd25731c', 'SHA-256 uyuşmuyor (bozuk/eksik indirme ya da değiştirilmiş dosya): ') + f.getAbsolutePath())
 }
 // Bir çalıştırmanın gerçekten yükleyeceği iki dosya (doku + seçili MPP'nin artefakt modeli).
 def runWeightFiles = { String scriptsDir, mpp ->
@@ -220,19 +220,19 @@ def effectiveDevice = { cfg -> (cfg?.device?.trim()) ?: detectAccelerator() }
 // (izin/kilit) "zaten doğru"/"satır yok" iyi-huylu durumundan ayırır.
 def patchDevice = { String scriptsDir, String device ->
     def patched = []; def errors = []
-    if (!scriptsDir?.trim()) { errors << 'betik dizini ayarsız'; return [patched: patched, errors: errors] }
+    if (!scriptsDir?.trim()) { errors << workshopText('script.564dd23e7444', 'betik dizini ayarsız'); return [patched: patched, errors: errors] }
     def dev = (device?.trim()) ?: 'cpu'
     ['wsi_tis_detect.py', 'main.py'].each { fn ->
         def f = new File(scriptsDir, fn)
         if (!f.isFile()) return   // dosya yoksa configMissing zaten yakalar; burada sessiz
         String txt
         try { txt = f.getText('UTF-8') }
-        catch (Throwable re) { errors << (fn + ' okunamadı: ' + (re.getMessage() ?: re.getClass().getSimpleName())); return }
+        catch (Throwable re) { errors << (fn + workshopText('script.365ceb923d02', ' okunamadı: ') + (re.getMessage() ?: re.getClass().getSimpleName())); return }
         // ^ (isteğe bağlı boşluk) DEVICE = 'xxx'  |  "xxx:0"  → DEVICE = '<dev>'
         def out = txt.replaceAll(/(?m)^([ \t]*DEVICE[ \t]*=[ \t]*)['"][^'"\r\n]*['"]/, '$1\'' + dev + '\'')
         if (out == txt) return    // DEVICE satırı yok ya da zaten doğru — iyi huylu
         try { f.setText(out, 'UTF-8'); patched << (fn + " → DEVICE='" + dev + "'") }
-        catch (Throwable we) { errors << (fn + ' yazılamadı: ' + (we.getMessage() ?: we.getClass().getSimpleName())) }
+        catch (Throwable we) { errors << (fn + workshopText('script.baceb3595cba', ' yazılamadı: ') + (we.getMessage() ?: we.getClass().getSimpleName())) }
     }
     return [patched: patched, errors: errors]
 }
@@ -241,17 +241,17 @@ def patchDevice = { String scriptsDir, String device ->
 def configMissing = { cfg ->
     def miss = []
     if (!cfg.python?.trim() || !(new File(cfg.python)).isFile())
-        miss << 'Python yürütülebilir (python.exe)'
+        miss << workshopText('script.5623a3de03e1', 'Python yürütülebilir (python.exe)')
     if (!cfg.scripts?.trim() || !(new File(cfg.scripts, 'wsi_tis_detect.py')).isFile())
-        miss << 'GrandQC betik dizini (wsi_tis_detect.py)'
+        miss << workshopText('script.779ce1b59f5b', 'GrandQC betik dizini (wsi_tis_detect.py)')
     if (cfg.scripts?.trim() && !(new File(cfg.scripts, 'main.py')).isFile())
-        miss << 'GrandQC betik dizini (main.py)'
+        miss << workshopText('script.a6eab16867d0', 'GrandQC betik dizini (main.py)')
     // Model ağırlıkları: betik dizinindeki (ya da modelDir) models/td ve models/qc altında en az birer .pth
     if (cfg.scripts?.trim()) {
         def md = cfg.modelDir?.trim() ? new File(cfg.modelDir) : new File(cfg.scripts, 'models')
         def hasPth = { File d -> d.isDirectory() && (((d.listFiles({ f, n -> n.toLowerCase(java.util.Locale.ROOT).endsWith('.pth') } as java.io.FilenameFilter))?.length) ?: 0) > 0 }
         if (!hasPth(new File(md, 'td')) || !hasPth(new File(md, 'qc')))
-            miss << 'Model ağırlıkları (models/td + models/qc altında .pth)'
+            miss << workshopText('script.e44862cbfb14', 'Model ağırlıkları (models/td + models/qc altında .pth)')
     }
     return miss
 }
@@ -340,26 +340,26 @@ def cmdText = { cfg, folder, slideName ->
     def s1 = new File(cfg.scripts, 'wsi_tis_detect.py').getAbsolutePath()
     def s2 = new File(cfg.scripts, 'main.py').getAbsolutePath()
     def sb = new StringBuilder()
-    sb << "# GrandQC — bu klasördeki TÜM lamları işler: " << folder << "\n"
-    sb << "# NOT: GrandQC cihazı kaynakta sabitler. Bu iki .py dosyasında\n"
-    sb << "#      DEVICE = '...' satırını cihazınıza göre ayarlayın (cuda / mps / cpu).\n"
-    sb << "#      'Doğrudan çalıştır' bu yamayı sizin için otomatik yapar (seçili cihaz: " << effectiveDevice(cfg) << ").\n\n"
-    sb << "# 0) Önce betik dizinine geçin — betikler modelleri göreli yoldan ('./models/...') yükler\n"
+    sb << workshopText('script.d91cf96d88dc', '# GrandQC — bu klasördeki TÜM lamları işler: ') << folder << "\n"
+    sb << workshopText('script.5c7b1259a8b5', '# NOT: GrandQC cihazı kaynakta sabitler. Bu iki .py dosyasında\n')
+    sb << workshopText('script.b3101a957450', '#      DEVICE = \'...\' satırını cihazınıza göre ayarlayın (cuda / mps / cpu).\n')
+    sb << workshopText('script.2fd9aaf5c625', '#      \'Doğrudan çalıştır\' bu yamayı sizin için otomatik yapar (seçili cihaz: ') << effectiveDevice(cfg) << ").\n\n"
+    sb << workshopText('script.65b5d55bd440', '# 0) Önce betik dizinine geçin — betikler modelleri göreli yoldan (\'./models/...\') yükler\n')
     sb << "cd " << q(cfg.scripts) << "\n\n"
-    sb << "# PyTorch 2.6+ ile 2. adım 'Weights only load failed' verir (modeller tam nesne olarak pickle'lı).\n"
-    sb << "# 'Doğrudan çalıştır' ağırlıkların SHA-256 özetini doğrular ve bu değişkeni kendisi ayarlar.\n"
-    sb << "# Elle çalıştırıyorsanız, YALNIZ dosyalar resmî Zenodo kayıtlarından geldiyse (PowerShell):\n"
+    sb << workshopText('script.d3bed35d8a49', '# PyTorch 2.6+ ile 2. adım \'Weights only load failed\' verir (modeller tam nesne olarak pickle\'lı).\n')
+    sb << workshopText('script.4fbc366bfa7f', '# \'Doğrudan çalıştır\' ağırlıkların SHA-256 özetini doğrular ve bu değişkeni kendisi ayarlar.\n')
+    sb << workshopText('script.434e5fa7a063', '# Elle çalıştırıyorsanız, YALNIZ dosyalar resmî Zenodo kayıtlarından geldiyse (PowerShell):\n')
     sb << "#   \$env:TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD = '1'\n\n"
-    sb << "# 1) Doku tespiti (MPP10)\n"
+    sb << workshopText('script.52e71a8a802d', '# 1) Doku tespiti (MPP10)\n')
     sb << q(py) << ' ' << q(s1) << ' --slide_folder ' << q(folder) << ' --output_dir ' << q(folder) << "\n\n"
-    sb << "# 2) Artefakt kalite kontrolü (MPP " << cfg.mpp << ")\n"
+    sb << workshopText('script.5eac54afd941', '# 2) Artefakt kalite kontrolü (MPP ') << cfg.mpp << ")\n"
     sb << q(py) << ' ' << q(s2) << ' --slide_folder ' << q(folder) << ' --output_dir ' << q(folder)
     sb << ' --mpp_model ' << cfg.mpp << ' --create_geojson Y' << "\n\n"
-    sb << "# Beklenen çıktı:\n"
+    sb << workshopText('script.7aa999f753a5', '# Beklenen çıktı:\n')
     sb << "#   " << folder << File.separator << "geojson_qc" << File.separator << slideName << ".geojson\n\n"
     if (cfg.modelDir?.trim())
-        sb << "# Model dizini: " << cfg.modelDir << "  (Tissue_Detection_MPP10.pth + GrandQC_MPP*.pth)\n"
-    sb << "# Lisans: CC BY-NC-SA 4.0 — yalnız araştırma/eğitim.\n"
+        sb << workshopText('script.e814b1dd9d91', '# Model dizini: ') << cfg.modelDir << "  (Tissue_Detection_MPP10.pth + GrandQC_MPP*.pth)\n"
+    sb << workshopText('script.0a3e010d9f46', '# Lisans: CC BY-NC-SA 4.0 — yalnız araştırma/eğitim.\n')
     return sb.toString()
 }
 
@@ -399,8 +399,8 @@ def ensureClass = { String name ->
 // kullanır; böylece hem tek lam hem proje geneli (batch) yol aynı kodu paylaşır.
 def importGeoJSON = { File geojsonFile, hierarchy, String mode = 'add' ->
     if (geojsonFile == null || !geojsonFile.isFile())
-        return [ok: false, error: 'GeoJSON bulunamadı:\n' + (geojsonFile?.getAbsolutePath() ?: '(yol yok)') +
-                '\n\nÖnce GrandQC hattını çalıştırın (Komut üret / Doğrudan çalıştır).']
+        return [ok: false, error: workshopText('script.61027cc60e81', 'GeoJSON bulunamadı:\n') + (geojsonFile?.getAbsolutePath() ?: workshopText('script.7732453089e4', '(yol yok)')) +
+                workshopText('script.7a35358e79e2', '\n\nÖnce GrandQC hattını çalıştırın (Komut üret / Doğrudan çalıştır).')]
     int minVertex = 4
     def plane = ImagePlane.getDefaultPlane()
     def gf = new org.locationtech.jts.geom.GeometryFactory()
@@ -463,7 +463,7 @@ def importGeoJSON = { File geojsonFile, hierarchy, String mode = 'add' ->
         try {
             def root = JsonParser.parseReader(reader).getAsJsonObject()
             if (!root.has('features'))
-                return [ok: false, error: "Geçersiz GeoJSON: 'features' dizisi yok (FeatureCollection bekleniyor)."]
+                return [ok: false, error: workshopText('script.2cd091049702', 'Geçersiz GeoJSON: \'features\' dizisi yok (FeatureCollection bekleniyor).')]
             root.getAsJsonArray('features').each { fe ->
               // Bozuk tek bir özellik TÜM dosyanın içe aktarımını iptal etmesin: say ve devam et.
               try {
@@ -501,7 +501,7 @@ def importGeoJSON = { File geojsonFile, hierarchy, String mode = 'add' ->
         return [ok: false, error: String.format(java.util.Locale.US, workshopText('script.cc58e417f2b4', 'GeoJSON dosyası okunamadı. Dosyanın GrandQC\'nin ürettiği geçerli bir .geojson olduğunu ve başka bir programda açık olmadığını denetleyin; gerekirse GrandQC adımını yeniden çalıştırın.\n\nTeknik ayrıntı: %s'), (t.getMessage() ?: t.getClass().getSimpleName()))]
     }
     if (newAnns.isEmpty())
-        return [ok: false, error: 'GeoJSON dosyasında geçerli Polygon/MultiPolygon özelliği bulunamadı (atlanan: ' + skipped + ').']
+        return [ok: false, error: workshopText('script.1149564c8762', 'GeoJSON dosyasında geçerli Polygon/MultiPolygon özelliği bulunamadı (atlanan: ') + skipped + ').']
     // Önceki içe aktarım: SORULMADAN SİLİNMEZ. Kip çağırandan gelir (varsayılan: ekle).
     //   ekle     → hiçbir şey silinmez; yeni set sıradaki adı alır ("GrandQC KK (2)" …).
     //   değiştir → yalnız bu sihirbazın setleri (tam ad ya da "(N)") silinir; içlerindeki
@@ -556,7 +556,7 @@ def computeCleanTissue = { imageData, importedAnns, hierarchy ->
     def tissueAnns   = importedAnns.findAll { it.getPathClass()?.getName() == TISSUE_CLASS }
     def artifactAnns = importedAnns.findAll { ARTIFACT_CLASSES.contains(it.getPathClass()?.getName()) }
     if (tissueAnns.isEmpty())
-        return [ok: false, error: 'GeoJSON içinde "Tissue" sınıflı anotasyon yok — Temiz doku üretilemedi.']
+        return [ok: false, error: workshopText('script.771e452396fd', 'GeoJSON içinde "Tissue" sınıflı anotasyon yok — Temiz doku üretilemedi.')]
     def cal = imageData.getServer().getPixelCalibration()
     double pw = cal.getPixelWidthMicrons()
     double ph = cal.getPixelHeightMicrons()
@@ -565,14 +565,14 @@ def computeCleanTissue = { imageData, importedAnns, hierarchy ->
 
     def tissueUnion
     try { tissueUnion = unionRois(tissueAnns.collect { it.getROI() }) }
-    catch (Throwable t) { return [ok: false, error: 'Doku birleştirme hatası: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
+    catch (Throwable t) { return [ok: false, error: workshopText('script.0760db6a39ff', 'Doku birleştirme hatası: ') + (t.getMessage() ?: t.getClass().getSimpleName())] }
 
     def cleanRoi
     try { cleanRoi = subtractRois(tissueUnion, artifactAnns.collect { it.getROI() }) }
-    catch (Throwable t) { return [ok: false, error: 'Artefakt çıkarma hatası: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
+    catch (Throwable t) { return [ok: false, error: workshopText('script.cc5e54942156', 'Artefakt çıkarma hatası: ') + (t.getMessage() ?: t.getClass().getSimpleName())] }
 
     if (cleanRoi == null || cleanRoi.isEmpty() || !cleanRoi.isArea())
-        return [ok: false, error: 'Temiz doku alanı boş kaldı (artefaktlar dokunun tamamını kaplıyor olabilir).']
+        return [ok: false, error: workshopText('script.e696318298e3', 'Temiz doku alanı boş kaldı (artefaktlar dokunun tamamını kaplıyor olabilir).')]
 
     def cleanAnn = PathObjects.createAnnotationObject(cleanRoi, ensureClass(CLEAN_CLASS))
     // Temiz doku, türediği setin adını taşır (ekle kipinde "GrandQC KK (2)" …).
@@ -596,9 +596,9 @@ def computeCleanTissue = { imageData, importedAnns, hierarchy ->
 // ── Özet metni ──────────────────────────────────────────────────────────────
 def buildResultText = { slide, imp, clean ->
     def sb = new StringBuilder()
-    sb << "GrandQC KALİTE KONTROL — ÖZET\n"
+    sb << workshopText('script.b72a6754f387', 'GrandQC KALİTE KONTROL — ÖZET\n')
     sb << "═══════════════════════════════\n\n"
-    sb << "Lam   : " << slide.name << "\n"
+    sb << workshopText('script.a0858f037ccf', 'Lam   : ') << slide.name << "\n"
     sb << "GeoJSON : " << (imp.file?.getAbsolutePath() ?: '-') << "\n"
     sb << workshopText('script.1634a63e0849', 'Set adı : ') << (imp.setName ?: '-') << "\n"
     if (imp.prevNames) {
@@ -608,38 +608,38 @@ def buildResultText = { slide, imp, clean ->
         sb << String.format(java.util.Locale.US, workshopText('script.df0a1e595b27', 'Önceki GrandQC sonucu değiştirildi: %,d anotasyon silindi (içlerindeki alt nesneler korundu).'), imp.removed) << "\n"
     }
     sb << "\n"
-    sb << "Anotasyon dökümü (sınıf → adet):\n"
+    sb << workshopText('script.49dc315c31ea', 'Anotasyon dökümü (sınıf → adet):\n')
     int total = 0
     imp.counts.each { cn, n ->
         sb << String.format(java.util.Locale.US, "  %-30s : %,d%n", cn, n)
         total += n
     }
-    sb << String.format(java.util.Locale.US, "  %-30s : %,d%n", '(toplam)', total)
-    sb << String.format(java.util.Locale.US, "  atlanan geometri: %,d%n%n", (imp.skipped ?: 0))
+    sb << String.format(java.util.Locale.US, "  %-30s : %,d%n", workshopText('script.24d37979974f', '(toplam)'), total)
+    sb << String.format(java.util.Locale.US, workshopText('script.87dd4df4a044', '  atlanan geometri: %,d%n%n'), (imp.skipped ?: 0))
     if (clean != null && clean.ok) {
-        sb << "Temiz doku (Temiz doku) eklendi.\n"
+        sb << workshopText('script.fdd317ffb9de', 'Temiz doku (Temiz doku) eklendi.\n')
         if (clean.calibrated) {
-            sb << String.format(java.util.Locale.US, "  Doku alanı       : %.3f mm²%n", clean.tissueMm2)
-            sb << String.format(java.util.Locale.US, "  Temiz doku alanı : %.3f mm²%n", clean.cleanMm2)
-            sb << String.format(java.util.Locale.US, "  Artefakt alanı   : %.3f mm² (doku içi %.1f%%)%n", clean.artMm2, clean.artPct)
+            sb << String.format(java.util.Locale.US, workshopText('script.d7bc0fae1ee9', '  Doku alanı       : %.3f mm²%n'), clean.tissueMm2)
+            sb << String.format(java.util.Locale.US, workshopText('script.a9b2930b3d4f', '  Temiz doku alanı : %.3f mm²%n'), clean.cleanMm2)
+            sb << String.format(java.util.Locale.US, workshopText('script.fa478bccacbb', '  Artefakt alanı   : %.3f mm² (doku içi %.1f%%)%n'), clean.artMm2, clean.artPct)
         } else {
-            sb << "  (Görüntü kalibre değil — alanlar mm² olarak verilemedi.)\n"
+            sb << workshopText('script.6942e8b34997', '  (Görüntü kalibre değil — alanlar mm² olarak verilemedi.)\n')
         }
         if (clean.tissueFrag != null) {
-            sb << String.format(java.util.Locale.US, "  Doku parça sayısı: %,d   (temiz doku parçası: %,d)%n",
+            sb << String.format(java.util.Locale.US, workshopText('script.1e27210615cd', '  Doku parça sayısı: %,d   (temiz doku parçası: %,d)%n'),
                 (clean.tissueFrag ?: 0), (clean.cleanFrag ?: 0))
             if (clean.calibrated && (clean.tissueFrag ?: 0) > 0 && !Double.isNaN(clean.fragMeanMm2))
-                sb << String.format(java.util.Locale.US, "  Parça alanı (mm²): en büyük %.3f · en küçük %.3f · ortalama %.3f%n",
+                sb << String.format(java.util.Locale.US, workshopText('script.e75a9d329b52', '  Parça alanı (mm²): en büyük %.3f · en küçük %.3f · ortalama %.3f%n'),
                     clean.fragMaxMm2, clean.fragMinMm2, clean.fragMeanMm2)
         }
-        sb << "\nSonraki analiz modüllerini bu \"Temiz doku\" anotasyonuyla sınırlayabilirsiniz.\n"
+        sb << workshopText('script.17846c169d88', '\nSonraki analiz modüllerini bu "Temiz doku" anotasyonuyla sınırlayabilirsiniz.\n')
     } else {
-        sb << "Temiz doku üretilemedi"
+        sb << workshopText('script.f1cc3c31f317', 'Temiz doku üretilemedi')
         if (clean != null && clean.error) sb << " — " << clean.error
-        sb << "\nArtefakt/doku anotasyonları yine de eklendi.\n"
+        sb << workshopText('script.c49ff6bb70b4', '\nArtefakt/doku anotasyonları yine de eklendi.\n')
     }
-    sb << "\nGrandQC çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Manuel Düzeltme eki, Yapay Zekâ Araçlarını Değerlendirme eki).\n"
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    sb << workshopText('script.de79ae8eb2c7', '\nGrandQC çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Manuel Düzeltme eki, Yapay Zekâ Araçlarını Değerlendirme eki).\n')
+    sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
@@ -736,11 +736,11 @@ def askExisting = { hierarchy ->
 }
 
 def runImportClean = { slide, manualFolder, String mode = 'add' ->
-    busyLabelRef.set('GeoJSON içe aktarılıyor…'); step.set('BUSY'); render()
+    busyLabelRef.set(workshopText('script.d0dbcf48f7e2', 'GeoJSON içe aktarılıyor…')); step.set('BUSY'); render()
     def worker = new Thread({
         def curData0 = QP.getCurrentImageData()
         if (curData0 == null) {
-            javafx.application.Platform.runLater { errorTextRef.set('Açık görüntü yok — içe aktarım için bir lam açın.'); step.set('ERROR'); render() }
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.8113d202a16b', 'Açık görüntü yok — içe aktarım için bir lam açın.')); step.set('ERROR'); render() }
             return
         }
         // Kimlik denetimi: pencere kipsiz (Modality.NONE) ve "Doğrudan çalıştır" işlemi dakikalarca
@@ -752,7 +752,7 @@ def runImportClean = { slide, manualFolder, String mode = 'add' ->
             (slide.name == curSlide0.name)
         if (!sameSlide) {
             javafx.application.Platform.runLater {
-                errorTextRef.set('Açık görüntü değişti — içe aktarım "' + slide.name + '" için başlatıldı ama şu an "' + curSlide0.name + '" açık.\n\n"' + slide.name + '" lamını yeniden açıp tekrar deneyin.')
+                errorTextRef.set(workshopText('script.be692392850d', 'Açık görüntü değişti — içe aktarım "') + slide.name + workshopText('script.8141074e3e31', '" için başlatıldı ama şu an "') + curSlide0.name + workshopText('script.e18713cfaf82', '" açık.\n\n"') + slide.name + workshopText('script.7d0da5649bed', '" lamını yeniden açıp tekrar deneyin.'))
                 step.set('ERROR'); render()
             }
             return
@@ -763,7 +763,7 @@ def runImportClean = { slide, manualFolder, String mode = 'add' ->
             javafx.application.Platform.runLater { errorTextRef.set(imp.error); step.set('ERROR'); render() }
             return
         }
-        javafx.application.Platform.runLater { busyLabelRef.set('Temiz doku hesaplanıyor…'); render() }
+        javafx.application.Platform.runLater { busyLabelRef.set(workshopText('script.adf7d347c2f0', 'Temiz doku hesaplanıyor…')); render() }
         def clean
         try { clean = computeCleanTissue(curData0, imp.annotations, curData0.getHierarchy()) }
         catch (Throwable t) { clean = [ok: false, error: (t.getMessage() ?: t.getClass().getSimpleName())] }
@@ -783,7 +783,7 @@ def runQuick = { List cmd, long tSec ->
     def pb = new ProcessBuilder(cmd); pb.redirectErrorStream(true)
     def proc
     try { proc = pb.start() }
-    catch (Throwable e) { return [ok: false, out: 'başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    catch (Throwable e) { return [ok: false, out: workshopText('script.3068bd4874d5', 'başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     def sb = new StringBuilder()
     try {
         def reader = new java.io.BufferedReader(new java.io.InputStreamReader(proc.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))
@@ -792,41 +792,41 @@ def runQuick = { List cmd, long tSec ->
     } catch (Throwable ignore) {}
     boolean fin
     try { fin = proc.waitFor(tSec, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, out: sb.toString() + '(kesildi)'] }
-    if (!fin) { proc.destroyForcibly(); return [ok: false, out: sb.toString() + '(zaman aşımı)'] }
+    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, out: sb.toString() + workshopText('script.0c8c7f126c4e', '(kesildi)')] }
+    if (!fin) { proc.destroyForcibly(); return [ok: false, out: sb.toString() + workshopText('script.7c0a1db4efb8', '(zaman aşımı)')] }
     return [ok: (proc.exitValue() == 0), out: sb.toString()]
 }
 
 // ── Ön uçuş: ortam doğrulama (python + paketler + model dosyaları) — SALT bilgi ──
 def runDiag = { ->
     def cfg = loadConfig()
-    busyLabelRef.set('Ortam doğrulanıyor…'); step.set('BUSY'); render()
+    busyLabelRef.set(workshopText('script.d0d28f60649e', 'Ortam doğrulanıyor…')); step.set('BUSY'); render()
     def worker = new Thread({
         def sb = new StringBuilder()
-        sb << "GrandQC ORTAM DOĞRULAMA\n"
+        sb << workshopText('script.7fd6607ab89a', 'GrandQC ORTAM DOĞRULAMA\n')
         sb << "═══════════════════════════════\n\n"
         def missing = []   // sonda AÇIKÇA listelenir: ne eksik + nasıl giderilir
         def py = cfg.python
         if (!py?.trim() || !(new File(py)).isFile()) {
-            sb << "✗ python.exe : ayarlı değil ya da bulunamadı\n"
-            missing << ('Python ortamı: ' + (py?.trim() ? ('dosya yok → ' + py) : 'yol ayarlı değil') +
-                        '\n     Çözüm: kurulum ekranında "① Python ortamı" ile GrandQC ortamını kurun.')
+            sb << workshopText('script.d63aac00defd', '✗ python.exe : ayarlı değil ya da bulunamadı\n')
+            missing << (workshopText('script.449761b5f697', 'Python ortamı: ') + (py?.trim() ? (workshopText('script.632bfdd5d33f', 'dosya yok → ') + py) : workshopText('script.fb272efe0130', 'yol ayarlı değil')) +
+                        workshopText('script.8b932ddf6cb1', '\n     Çözüm: kurulum ekranında "① Python ortamı" ile GrandQC ortamını kurun.'))
         } else {
             sb << "✓ python.exe : " << py << "\n"
             def v = runQuick([py, '--version'], 20L)
-            sb << "  sürüm : " << ((v.out ?: '').trim() ?: '(okunamadı)') << "\n\n"
-            sb << "Paketler / cihaz (import testi, ~torch soğuk başlatma nedeniyle biraz sürebilir):\n"
+            sb << workshopText('script.2c77e430617c', '  sürüm : ') << ((v.out ?: '').trim() ?: workshopText('script.0606471b88cd', '(okunamadı)')) << "\n\n"
+            sb << workshopText('script.767b43fab94e', 'Paketler / cihaz (import testi, ~torch soğuk başlatma nedeniyle biraz sürebilir):\n')
             def imp = runQuick([py, '-c', PY_DIAG], 120L)
             def lines = (imp.out ?: '').readLines()
             lines.each { sb << it << "\n" }
             ['numpy', 'cv2', 'torch', 'openslide'].each { m ->
                 def ln = lines.find { it.trim().startsWith(m + ':') }
                 if (ln == null)
-                    missing << ('Python paketi "' + m + '": denetlenemedi (import testi çıktı vermedi)' +
-                                '\n     Çözüm: "① Python ortamı" ile GrandQC ortamını yeniden kurun.')
+                    missing << (workshopText('script.f4457e3c92c5', 'Python paketi "') + m + workshopText('script.02608036263f', '": denetlenemedi (import testi çıktı vermedi)') +
+                                workshopText('script.17ceee251c4e', '\n     Çözüm: "① Python ortamı" ile GrandQC ortamını yeniden kurun.'))
                 else if (!ln.trim().endsWith('OK'))
-                    missing << ('Python paketi "' + m + '": içe aktarılamıyor — ' + ln.trim() +
-                                '\n     Çözüm: "① Python ortamı" ile GrandQC ortamını yeniden kurun.')
+                    missing << (workshopText('script.f4457e3c92c5', 'Python paketi "') + m + workshopText('script.434ea26792a8', '": içe aktarılamıyor — ') + ln.trim() +
+                                workshopText('script.17ceee251c4e', '\n     Çözüm: "① Python ortamı" ile GrandQC ortamını yeniden kurun.'))
             }
         }
         // Betikler + modeller: GrandQC ağırlıkları YALNIZ <betik dizini>/models altından,
@@ -834,37 +834,37 @@ def runDiag = { ->
         sb << "\n"
         def sd = cfg.scripts?.trim() ? new File(cfg.scripts) : null
         if (sd == null || !sd.isDirectory()) {
-            sb << "✗ betik dizini : " << (sd == null ? 'ayarlı değil' : ('klasör yok → ' + sd.getAbsolutePath())) << "\n"
-            missing << ('GrandQC betik dizini: ' + (sd == null ? 'ayarlı değil' : ('klasör yok → ' + sd.getAbsolutePath())) +
-                        '\n     Çözüm: kurulum ekranında "② GrandQC deposu indir".')
+            sb << workshopText('script.e05094d73284', '✗ betik dizini : ') << (sd == null ? workshopText('script.63d75c612d39', 'ayarlı değil') : (workshopText('script.f8365360045c', 'klasör yok → ') + sd.getAbsolutePath())) << "\n"
+            missing << (workshopText('script.6778bfd20bd4', 'GrandQC betik dizini: ') + (sd == null ? workshopText('script.63d75c612d39', 'ayarlı değil') : (workshopText('script.f8365360045c', 'klasör yok → ') + sd.getAbsolutePath())) +
+                        workshopText('script.b72d5ee3722a', '\n     Çözüm: kurulum ekranında "② GrandQC deposu indir".'))
         } else {
-            sb << "✓ betik dizini : " << sd.getAbsolutePath() << "\n"
+            sb << workshopText('script.9c2b88a02bf3', '✓ betik dizini : ') << sd.getAbsolutePath() << "\n"
             ['wsi_tis_detect.py', 'main.py'].each { fn ->
                 boolean ok = new File(sd, fn).isFile()
-                sb << (ok ? "✓ " : "✗ ") << "betik : " << fn << "\n"
-                if (!ok) missing << ('Betik dosyası: ' + new File(sd, fn).getAbsolutePath() +
-                                     '\n     Çözüm: kurulum ekranında "② GrandQC deposu indir".')
+                sb << (ok ? "✓ " : "✗ ") << workshopText('script.dc49801618ad', 'betik : ') << fn << "\n"
+                if (!ok) missing << (workshopText('script.17406a8fc08a', 'Betik dosyası: ') + new File(sd, fn).getAbsolutePath() +
+                                     workshopText('script.b72d5ee3722a', '\n     Çözüm: kurulum ekranında "② GrandQC deposu indir".'))
             }
             runWeightFiles(sd.getAbsolutePath(), cfg.mpp).each { File mf ->
                 def prob = weightProblem(mf)
                 sb << (prob == null ? "✓ " : "✗ ") << "model : models/" << mf.getParentFile().getName() << "/" << mf.getName() <<
-                      (prob == null ? "  (SHA-256 doğrulandı)" : "") << "\n"
-                if (prob != null) missing << ('Model ağırlığı — ' + prob +
-                                     '\n     Çözüm: kurulum ekranında "③ Model indir" (dosyayı resmî Zenodo kaydından yeniden indirir).')
+                      (prob == null ? workshopText('script.b7044f449768', '  (SHA-256 doğrulandı)') : "") << "\n"
+                if (prob != null) missing << (workshopText('script.b9e715300ea9', 'Model ağırlığı — ') + prob +
+                                     workshopText('script.638f0e4cea91', '\n     Çözüm: kurulum ekranında "③ Model indir" (dosyayı resmî Zenodo kaydından yeniden indirir).'))
             }
             if (cfg.modelDir?.trim() && new File(cfg.modelDir).getAbsolutePath() != new File(sd, 'models').getAbsolutePath())
-                sb << "ℹ \"Model dizini\" alanı (" << cfg.modelDir << ") GrandQC betiklerince KULLANILMAZ;\n" <<
-                      "  ağırlıklar yalnız betik dizinindeki models/ klasöründen okunur.\n"
+                sb << workshopText('script.0336a39e8e8e', 'ℹ "Model dizini" alanı (') << cfg.modelDir << workshopText('script.e03fe03e4379', ') GrandQC betiklerince KULLANILMAZ;\n') <<
+                      workshopText('script.92e051eb35df', '  ağırlıklar yalnız betik dizinindeki models/ klasöründen okunur.\n')
         }
         sb << "\n═══════════════════════════════\n"
         if (missing.isEmpty()) {
-            sb << "SONUÇ: ✓ Eksik yok — ortam çalıştırmaya hazır görünüyor.\n"
+            sb << workshopText('script.d2e4c5a83e1d', 'SONUÇ: ✓ Eksik yok — ortam çalıştırmaya hazır görünüyor.\n')
         } else {
-            sb << "SONUÇ: ✗ " << missing.size() << " EKSİK — bunlar giderilmeden çalıştırma hata verir:\n"
+            sb << workshopText('script.f0a9b5f9027f', 'SONUÇ: ✗ ') << missing.size() << workshopText('script.56e8eb190570', ' EKSİK — bunlar giderilmeden çalıştırma hata verir:\n')
             missing.eachWithIndex { m, i -> sb << "  " << (i + 1) << ") " << m << "\n" }
         }
-        sb << "\nBu ekran yalnız rapor verir; hiçbir şeyi değiştirmez.\n"
-        sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+        sb << workshopText('script.30443897f529', '\nBu ekran yalnız rapor verir; hiçbir şeyi değiştirmez.\n')
+        sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
         def txt = sb.toString()
         javafx.application.Platform.runLater { diagTextRef.set(txt); step.set('DIAG'); render() }
     }, 'AtolyeGrandQC-Diag')
@@ -877,11 +877,11 @@ def runDiag = { ->
 // GeoJSON çözümü YALNIZ tam ad (exactGeoJSON) — yanlış lama yazmayı önler.
 def runBatchImport = { manualFolder, String mode = 'add' ->
     def project = QP.getProject()
-    if (project == null) { errorTextRef.set('Proje açık değil — proje geneli içe aktarım için bir QuPath projesi açın.'); step.set('ERROR'); render(); return }
+    if (project == null) { errorTextRef.set(workshopText('script.bd2f027fad3e', 'Proje açık değil — proje geneli içe aktarım için bir QuPath projesi açın.')); step.set('ERROR'); render(); return }
     def entries = project.getImageList()
-    if (entries == null || entries.isEmpty()) { errorTextRef.set('Projede görüntü yok.'); step.set('ERROR'); render(); return }
+    if (entries == null || entries.isEmpty()) { errorTextRef.set(workshopText('script.4e709de3731a', 'Projede görüntü yok.')); step.set('ERROR'); render(); return }
     cancelledRef.set(false); batchBusyRef.set(true)   // cancelledRef Python-iptaliyle paylaşılır → burada sıfırla
-    busyLabelRef.set('Proje geneli GeoJSON içe aktarılıyor…'); step.set('BUSY'); render()
+    busyLabelRef.set(workshopText('script.7bfdceb07908', 'Proje geneli GeoJSON içe aktarılıyor…')); step.set('BUSY'); render()
     def worker = new Thread({
         int okN = 0, skipN = 0, failN = 0
         def lines = []
@@ -890,11 +890,11 @@ def runBatchImport = { manualFolder, String mode = 'add' ->
         int idx = 0
         for (entry in entries) {
             idx++
-            if (cancelledRef.get()) { cancelled = true; lines << '  ⏹ (iptal edildi — kalan görüntüler işlenmedi)'; break }
+            if (cancelledRef.get()) { cancelled = true; lines << workshopText('script.d2c65e6e8ec5', '  ⏹ (iptal edildi — kalan görüntüler işlenmedi)'); break }
             def nm = null
             try { nm = entry.getImageName() } catch (Throwable ignore) {}
-            if (nm == null) nm = ('görüntü ' + idx)
-            javafx.application.Platform.runLater { busyLabelRef.set('Proje ' + idx + '/' + entries.size() + ' — ' + nm + '…'); render() }
+            if (nm == null) nm = (workshopText('script.a9b51fc6b55b', 'görüntü ') + idx)
+            javafx.application.Platform.runLater { busyLabelRef.set(workshopText('script.134fa363faca', 'Proje ') + idx + '/' + entries.size() + ' — ' + nm + '…'); render() }
             // Canlı veriyi YALNIZ gerçekten bu girdiyse kullan (referans yakalandıktan sonra sabittir).
             def liveData = null
             try {
@@ -913,7 +913,7 @@ def runBatchImport = { manualFolder, String mode = 'add' ->
                 def gj = exactGeoJSON(slide, slide.folder)
                 if (gj == null && manualFolder != null && manualFolder.toString().trim())
                     gj = exactGeoJSON(slide, manualFolder.toString().trim())
-                if (gj == null) { skipN++; lines << ('  • ' + nm + ' — atlandı (GeoJSON yok)'); continue }
+                if (gj == null) { skipN++; lines << ('  • ' + nm + workshopText('script.0926ab8e25b3', ' — atlandı (GeoJSON yok)')); continue }
                 def hier = data.getHierarchy()
                 def imp = importGeoJSON(gj, hier, mode)
                 if (!imp.ok) { failN++; lines << ('  ✗ ' + nm + ' — ' + (imp.error ?: '').readLines().take(1).join(' ')); continue }
@@ -923,13 +923,13 @@ def runBatchImport = { manualFolder, String mode = 'add' ->
                 catch (Throwable ct) { clean = [ok: false, error: (ct.getMessage() ?: ct.getClass().getSimpleName())] }
                 boolean saved = true
                 try { entry.saveImageData(data) }
-                catch (Throwable se) { saved = false; failN++; lines << ('  ✗ ' + nm + ' — kaydedilemedi: ' + (se.getMessage() ?: se.getClass().getSimpleName())) }
+                catch (Throwable se) { saved = false; failN++; lines << ('  ✗ ' + nm + workshopText('script.5c072bd530a4', ' — kaydedilemedi: ') + (se.getMessage() ?: se.getClass().getSimpleName())) }
                 if (saved) {
                     okN++
-                    def cleanNote = (clean != null && !clean.ok) ? (' [Temiz doku üretilemedi: ' + (clean.error ?: '-') + ']') : ''
+                    def cleanNote = (clean != null && !clean.ok) ? (workshopText('script.98b6bee922cb', ' [Temiz doku üretilemedi: ') + (clean.error ?: '-') + ']') : ''
                     def prevNote = imp.prevNames ? (' [' + workshopText('script.d082ce69005f', 'önceki duruyor: ') + imp.prevNames.join(', ') + ' → ' + imp.setName + ']') :
                         ((imp.removed ?: 0) > 0 ? (' [' + String.format(java.util.Locale.US, workshopText('script.be8d521b4f49', 'önceki %,d anotasyon silindi'), imp.removed) + ']') : '')
-                    lines << ('  ✓ ' + nm + ' — ' + imp.annotations.size() + ' nesne' + cleanNote + prevNote)
+                    lines << ('  ✓ ' + nm + ' — ' + imp.annotations.size() + workshopText('script.05d01f4ee15c', ' nesne') + cleanNote + prevNote)
                     if (liveData != null) currentTouched = true
                 }
             } catch (Throwable t) {
@@ -942,15 +942,15 @@ def runBatchImport = { manualFolder, String mode = 'add' ->
         javafx.application.Platform.runLater {
             if (currentTouched) { try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {} }
             def rb = new StringBuilder()
-            rb << "GrandQC — PROJE GENELİ İÇE AKTARIM" << (cancelled ? " (İPTAL EDİLDİ)" : "") << "\n"
+            rb << workshopText('script.024998d62935', 'GrandQC — PROJE GENELİ İÇE AKTARIM') << (cancelled ? workshopText('script.0f71a2452bcb', ' (İPTAL EDİLDİ)') : "") << "\n"
             rb << "═══════════════════════════════\n\n"
-            rb << String.format(java.util.Locale.US, "Görüntü: %,d   içe aktarıldı: %,d   atlandı: %,d   hata: %,d%n%n", entries.size(), okN, skipN, failN)
+            rb << String.format(java.util.Locale.US, workshopText('script.da8e3713014f', 'Görüntü: %,d   içe aktarıldı: %,d   atlandı: %,d   hata: %,d%n%n'), entries.size(), okN, skipN, failN)
             lines.each { rb << it << "\n" }
-            rb << "\nHer görüntünün GeoJSON'u KENDİ klasöründeki geojson_qc/ içinde TAM ADLA arandı.\n"
-            rb << (currentTouched ? "Açık lamın TÜM güncel hâli diske kaydedildi (yalnız GrandQC nesneleri değil); görüntüleyici yenilendi.\n"
-                                  : "Açık lamda değişiklik olduysa görmek için lamı yeniden açın.\n")
-            rb << "\nGrandQC çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın.\n"
-            rb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+            rb << workshopText('script.37b935e2ada8', '\nHer görüntünün GeoJSON\'u KENDİ klasöründeki geojson_qc/ içinde TAM ADLA arandı.\n')
+            rb << (currentTouched ? workshopText('script.056fbba3c19e', 'Açık lamın TÜM güncel hâli diske kaydedildi (yalnız GrandQC nesneleri değil); görüntüleyici yenilendi.\n')
+                                  : workshopText('script.d91fb94e270a', 'Açık lamda değişiklik olduysa görmek için lamı yeniden açın.\n'))
+            rb << workshopText('script.9e204f8b9a83', '\nGrandQC çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın.\n')
+            rb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
             resultFolderRef.set(null)   // batch: çok klasör olabilir → tek rapor butonu gösterme
             resultTextRef.set(rb.toString()); step.set('RESULT'); render()
         }
@@ -1000,7 +1000,7 @@ def runPython = { List cmd, Closure onLine, boolean verifiedWeights = false ->
     applyCacheEnv(pb)
     def proc
     try { proc = pb.start() }
-    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.f0e1e3289660', 'Python başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     processRef.set(proc)
     def last = new java.util.ArrayDeque()
     try {
@@ -1015,9 +1015,9 @@ def runPython = { List cmd, Closure onLine, boolean verifiedWeights = false ->
     } catch (Throwable ignore) {}
     boolean finished
     try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
-    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
+    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: String.format(java.util.Locale.US, workshopText('script.959c500322fd', 'Zaman aşımı (%s sn)'), PYTHON_TIMEOUT_SECONDS)] }
+    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
     int code = proc.exitValue()
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
@@ -1029,14 +1029,14 @@ def startDirectRun = { slide ->
     def cfg = loadConfig()
     def folder = effectiveFolder(slide)
     if (folder == null) {
-        errorTextRef.set('Lam yerel diskte değil ve klasör elle girilmedi.\nKomut üret ekranında klasörü elle belirtin.')
+        errorTextRef.set(workshopText('script.09b4455d9805', 'Lam yerel diskte değil ve klasör elle girilmedi.\nKomut üret ekranında klasörü elle belirtin.'))
         step.set('ERROR'); render(); return
     }
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea()
     la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Doku tespiti (1/2)'); step.set('RUNNING'); render()
+    runPhaseRef.set(workshopText('script.0187e23f9945', 'Doku tespiti (1/2)')); step.set('RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln ->
             javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') }
@@ -1044,36 +1044,34 @@ def startDirectRun = { slide ->
         // GrandQC betikleri cihazı kaynakta sabitler — çalıştırmadan önce yamala.
         def dev = effectiveDevice(cfg)
         def pd = patchDevice(cfg.scripts, dev)
-        if (pd.patched) appendLine('# Cihaz: ' + dev + '  (yamalandı: ' + pd.patched.join(', ') + ')')
-        else appendLine('# Cihaz: ' + dev + '  (DEVICE satırı zaten uygun ya da bulunamadı)')
-        if (pd.errors) appendLine('# ⚠ Cihaz yaması BAŞARISIZ — betik dosyaları yazılamadı; DEVICE hâlâ eski değerde olabilir:\n#   ' + pd.errors.join('\n#   '))
+        if (pd.patched) appendLine(workshopText('script.612bfadc5815', '# Cihaz: ') + dev + workshopText('script.50308c2093ac', '  (yamalandı: ') + pd.patched.join(', ') + ')')
+        else appendLine(workshopText('script.612bfadc5815', '# Cihaz: ') + dev + workshopText('script.637bc2e76fe7', '  (DEVICE satırı zaten uygun ya da bulunamadı)'))
+        if (pd.errors) appendLine(workshopText('script.73ab33aa8d8d', '# ⚠ Cihaz yaması BAŞARISIZ — betik dosyaları yazılamadı; DEVICE hâlâ eski değerde olabilir:\n#   ') + pd.errors.join('\n#   '))
         // Ağırlıkları yüklemeden ÖNCE sabitlenmiş SHA-256 ile doğrula; tutmuyorsa hiç çalıştırma.
-        appendLine('# Model ağırlıkları doğrulanıyor (SHA-256)…')
+        appendLine(workshopText('script.76e0d6dfefad', '# Model ağırlıkları doğrulanıyor (SHA-256)…'))
         def wProblems = runWeightFiles(cfg.scripts, cfg.mpp).collect { weightProblem(it) }.findAll { it != null }
         if (wProblems) {
             javafx.application.Platform.runLater {
-                errorTextRef.set('Model ağırlıkları doğrulanamadı — çalıştırma başlatılmadı.\n\n  • ' + wProblems.join('\n  • ') +
-                    '\n\nGrandQC modelleri pickle biçimindedir; özeti tutmayan bir dosya güvenlik nedeniyle yüklenmez.\n' +
-                    'Çözüm: dosyayı silip kurulum ekranındaki "③ Model indir" ile yeniden indirin\n' +
-                    '(kurulum ekranı: yapılandırma eksikken açılır; ya da dosyaları resmî Zenodo kayıtlarından elle indirin).')
+                errorTextRef.set(workshopText('script.b57ededcf554', 'Model ağırlıkları doğrulanamadı — çalıştırma başlatılmadı.\n\n  • ') + wProblems.join('\n  • ') +
+                    workshopText('script.4af226579a79', '\n\nGrandQC modelleri pickle biçimindedir; özeti tutmayan bir dosya güvenlik nedeniyle yüklenmez.\nÇözüm: dosyayı silip kurulum ekranındaki "③ Model indir" ile yeniden indirin\n(kurulum ekranı: yapılandırma eksikken açılır; ya da dosyaları resmî Zenodo kayıtlarından elle indirin).'))
                 step.set('ERROR'); render()
             }
             return
         }
-        appendLine('# ✓ Ağırlıklar doğrulandı.')
+        appendLine(workshopText('script.9817d5ca73fd', '# ✓ Ağırlıklar doğrulandı.'))
         def r1 = runPython(tissueCmd(cfg, folder), appendLine)
         if (!r1.ok) {
             javafx.application.Platform.runLater {
-                errorTextRef.set('Doku tespiti başarısız (çıkış kodu: ' + r1.exitCode + ')\n\n' + (r1.error ?: '') + '\n' + (r1.lastLines ?: ''))
+                errorTextRef.set(workshopText('script.eeba713df5af', 'Doku tespiti başarısız (çıkış kodu: ') + r1.exitCode + ')\n\n' + (r1.error ?: '') + '\n' + (r1.lastLines ?: ''))
                 step.set('ERROR'); render()
             }
             return
         }
-        javafx.application.Platform.runLater { runPhaseRef.set('Artefakt KK (2/2)'); render() }
+        javafx.application.Platform.runLater { runPhaseRef.set(workshopText('script.c81962cc6a6d', 'Artefakt KK (2/2)')); render() }
         def r2 = runPython(artifactCmd(cfg, folder), appendLine, true)   // ağırlıklar yukarıda doğrulandı
         if (!r2.ok) {
             javafx.application.Platform.runLater {
-                errorTextRef.set('Artefakt KK başarısız (çıkış kodu: ' + r2.exitCode + ')\n\n' + (r2.error ?: '') + '\n' + (r2.lastLines ?: ''))
+                errorTextRef.set(workshopText('script.24dc8b573893', 'Artefakt KK başarısız (çıkış kodu: ') + r2.exitCode + ')\n\n' + (r2.error ?: '') + '\n' + (r2.lastLines ?: ''))
                 step.set('ERROR'); render()
             }
             return
@@ -1158,10 +1156,10 @@ def httpDownload = { String urlStr, File dest ->
     if (dest.getParentFile() != null) dest.getParentFile().mkdirs()
     String cur = urlStr; int hops = 0
     while (true) {
-        if (hops++ > 8) throw new RuntimeException('Çok fazla yönlendirme')
+        if (hops++ > 8) throw new RuntimeException(workshopText('script.88523abfcd5f', 'Çok fazla yönlendirme'))
         def base = new java.net.URL(cur)
         if (!'https'.equalsIgnoreCase(base.getProtocol()))
-            throw new RuntimeException('Güvensiz (https değil) bağlantı reddedildi: ' + cur)
+            throw new RuntimeException(workshopText('script.668b99e2bdca', 'Güvensiz (https değil) bağlantı reddedildi: ') + cur)
         def conn = (java.net.HttpURLConnection) base.openConnection()
         conn.setInstanceFollowRedirects(false)
         conn.setConnectTimeout(30000); conn.setReadTimeout(120000)
@@ -1170,7 +1168,7 @@ def httpDownload = { String urlStr, File dest ->
         try { code = conn.getResponseCode() } catch (Throwable t) { conn.disconnect(); throw t }
         if (code >= 300 && code < 400) {
             def loc = conn.getHeaderField('Location'); conn.disconnect()
-            if (!loc) throw new RuntimeException('Yönlendirme konumu yok')
+            if (!loc) throw new RuntimeException(workshopText('script.d08139f58fa2', 'Yönlendirme konumu yok'))
             cur = new java.net.URL(base, loc).toString()   // göreli Location'ı taban URL'ye göre çöz
             continue
         }
@@ -1191,7 +1189,7 @@ def httpDownload = { String urlStr, File dest ->
                     }
                 } finally { os.close() }
                 if (total > 0 && done != total)
-                    throw new RuntimeException('Eksik indirme (' + done + '/' + total + ' bayt): ' + dest.getName())
+                    throw new RuntimeException(workshopText('script.165aa70cc164', 'Eksik indirme (') + done + '/' + total + workshopText('script.8b280e10d6ac', ' bayt): ') + dest.getName())
                 ok = true
             } finally { ins.close() }
         } finally {
@@ -1211,7 +1209,7 @@ def unzipTo = { File zipFile, File destDir ->
         while ((e = zis.getNextEntry()) != null) {
             def out = new File(destDir, e.getName())
             def oc = out.getCanonicalPath()
-            if (oc != destCanon && !oc.startsWith(destCanon + File.separator)) throw new RuntimeException('Güvensiz zip girdisi: ' + e.getName())
+            if (oc != destCanon && !oc.startsWith(destCanon + File.separator)) throw new RuntimeException(workshopText('script.cf1c6041c841', 'Güvensiz zip girdisi: ') + e.getName())
             if (e.isDirectory()) out.mkdirs()
             else {
                 if (out.getParentFile() != null) out.getParentFile().mkdirs()
@@ -1221,44 +1219,44 @@ def unzipTo = { File zipFile, File destDir ->
             }
             zis.closeEntry()
         }
-        appendInstallLog('    ' + cnt + ' dosya açıldı')
+        appendInstallLog('    ' + cnt + workshopText('script.ba06fabdeb9f', ' dosya açıldı'))
     } finally { zis.close() }
 }
 // ② GrandQC deposunu indir + çıkar + betik dizinini otomatik ayarla
 def installRepo = {
-    if (installBusyRef.getAndSet(true)) { appendInstallLog('(Kurulum sürüyor — bekleyin.)'); return }
+    if (installBusyRef.getAndSet(true)) { appendInstallLog(workshopText('script.4e8eb942c7c8', '(Kurulum sürüyor — bekleyin.)')); return }
     new Thread({
         try {
-            appendInstallLog(''); appendInstallLog('② GrandQC deposu indiriliyor…'); appendInstallLog('    ' + GRANDQC_REPO_ZIP)
+            appendInstallLog(''); appendInstallLog(workshopText('script.d0b0ee6aae3a', '② GrandQC deposu indiriliyor…')); appendInstallLog('    ' + GRANDQC_REPO_ZIP)
             def gqBase = grandqcBase(); gqBase.mkdirs()
             def zipF = new File(gqBase, 'grandqc-main.zip')
             httpDownload(GRANDQC_REPO_ZIP, zipF)
-            appendInstallLog('    açılıyor → ' + gqBase.getAbsolutePath())
+            appendInstallLog(workshopText('script.ab3a137baee6', '    açılıyor → ') + gqBase.getAbsolutePath())
             unzipTo(zipF, gqBase)
             try { zipF.delete() } catch (Throwable t) {}
             def sd = grandqcScriptDir()
             if (new File(sd, 'wsi_tis_detect.py').isFile()) {
                 prefs.put(PREF_SCRIPTS, sd.getAbsolutePath()); try { prefs.flush() } catch (Throwable t) {}
-                appendInstallLog('✓ Betik dizini ayarlandı: ' + sd.getAbsolutePath())
-            } else appendInstallLog('⚠ wsi_tis_detect.py beklenen yerde yok: ' + sd.getAbsolutePath())
+                appendInstallLog(workshopText('script.86f0273f5718', '✓ Betik dizini ayarlandı: ') + sd.getAbsolutePath())
+            } else appendInstallLog(workshopText('script.94f909c567ae', '⚠ wsi_tis_detect.py beklenen yerde yok: ') + sd.getAbsolutePath())
             javafx.application.Platform.runLater { if (step.get() == 'CONFIG_INCOMPLETE') { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() } }
         } catch (Throwable t) {
-            appendInstallLog('✗ Depo indirilemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName()))
-            appendInstallLog('   Elle indirin: ' + GRANDQC_REPO_ZIP)
+            appendInstallLog(workshopText('script.07eff7ccd3d6', '✗ Depo indirilemedi: ') + (t.getMessage() ?: t.getClass().getSimpleName()))
+            appendInstallLog(workshopText('script.caf5f858402d', '   Elle indirin: ') + GRANDQC_REPO_ZIP)
         } finally { installBusyRef.set(false) }
     } as Runnable).start()
 }
 // ③ Model ağırlıklarını indir → betik dizinindeki models/td, models/qc
 def installModels = {
-    if (installBusyRef.getAndSet(true)) { appendInstallLog('(Kurulum sürüyor — bekleyin.)'); return }
+    if (installBusyRef.getAndSet(true)) { appendInstallLog(workshopText('script.4e8eb942c7c8', '(Kurulum sürüyor — bekleyin.)')); return }
     new Thread({
         try {
             def sd = loadConfig().scripts?.trim() ? new File(loadConfig().scripts) : grandqcScriptDir()
             if (!new File(sd, 'wsi_tis_detect.py').isFile()) {
-                appendInstallLog(''); appendInstallLog('⚠ Önce ② ile GrandQC deposunu indirin (modeller repo içine yerleşir).'); return
+                appendInstallLog(''); appendInstallLog(workshopText('script.1067be8b3b8c', '⚠ Önce ② ile GrandQC deposunu indirin (modeller repo içine yerleşir).')); return
             }
             def modelsRoot = new File(sd, 'models')
-            appendInstallLog(''); appendInstallLog('③ Model ağırlıkları indiriliyor (' + GRANDQC_MODELS.size() + ' dosya, ~100 MB)…')
+            appendInstallLog(''); appendInstallLog(workshopText('script.5938c83fb51e', '③ Model ağırlıkları indiriliyor (') + GRANDQC_MODELS.size() + workshopText('script.6fdd9a3578b3', ' dosya, ~100 MB)…'))
             for (m in GRANDQC_MODELS) {
                 def dest = new File(new File(modelsRoot, m.sub), m.name)
                 appendInstallLog('  ' + m.name + ' → models/' + m.sub + '/')
@@ -1266,15 +1264,15 @@ def installModels = {
                 def prob = weightProblem(dest)
                 if (prob != null) {
                     try { dest.delete() } catch (Throwable ignore) {}
-                    throw new IOException(m.name + ' doğrulanamadı — ' + prob + ' (dosya silindi; yeniden deneyin)')
+                    throw new IOException(m.name + workshopText('script.9f771c6234db', ' doğrulanamadı — ') + prob + workshopText('script.2b44ed58e241', ' (dosya silindi; yeniden deneyin)'))
                 }
-                appendInstallLog('    ✓ SHA-256 doğrulandı')
+                appendInstallLog(workshopText('script.88af5aada3c0', '    ✓ SHA-256 doğrulandı'))
             }
             prefs.put(PREF_MODEL, modelsRoot.getAbsolutePath()); try { prefs.flush() } catch (Throwable t) {}
-            appendInstallLog('✓ Modeller indirildi; model dizini: ' + modelsRoot.getAbsolutePath())
+            appendInstallLog(workshopText('script.eeaff6ec5cbf', '✓ Modeller indirildi; model dizini: ') + modelsRoot.getAbsolutePath())
             javafx.application.Platform.runLater { if (step.get() == 'CONFIG_INCOMPLETE') { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() } }
         } catch (Throwable t) {
-            appendInstallLog('✗ Model indirilemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName()))
+            appendInstallLog(workshopText('script.5645e9f88c45', '✗ Model indirilemedi: ') + (t.getMessage() ?: t.getClass().getSimpleName()))
         } finally { installBusyRef.set(false) }
     } as Runnable).start()
 }
@@ -1378,14 +1376,14 @@ render = { ->
             '(indirir/kurar). Eksik/geçersiz:\n  • ') + (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')))
         def gqPy = grandqcVenvPython()   // kayıtlı KESİN yol varsa onu göster, yoksa tahmin
         def resArea = new javafx.scene.control.TextArea(
-            'KAYNAKLAR — ne · nereden · nereye:\n' +
-            '① Python ortamı : ' + (gqPy != null ? gqPy.getAbsolutePath() + '  (kurulu)' :
-                'uv venv + paketler → ' + new File(new File(atolyeDataRoot(), 'runtimes'), 'grandqc/.venv').getAbsolutePath()) + '\n' +
-            '   (buton Atölye Python ortam yöneticisini açar; "GrandQC"yi kurun — python otomatik algılanır)\n' +
-            '   (veri kökünü değiştirmek için ortam yöneticisindeki "Veri kökü → Değiştir…")\n' +
-            '② GrandQC deposu: ' + GRANDQC_REPO_ZIP + '\n' +
+            workshopText('script.8e5d789c9c31', 'KAYNAKLAR — ne · nereden · nereye:\n') +
+            workshopText('script.d4c0c98d3165', '① Python ortamı : ') + (gqPy != null ? gqPy.getAbsolutePath() + workshopText('script.973c6b0f374a', '  (kurulu)') :
+                workshopText('script.7f1745079cf3', 'uv venv + paketler → ') + new File(new File(atolyeDataRoot(), 'runtimes'), 'grandqc/.venv').getAbsolutePath()) + '\n' +
+            workshopText('script.713b941ecc2f', '   (buton Atölye Python ortam yöneticisini açar; "GrandQC"yi kurun — python otomatik algılanır)\n') +
+            workshopText('script.acc44b8d397b', '   (veri kökünü değiştirmek için ortam yöneticisindeki "Veri kökü → Değiştir…")\n') +
+            workshopText('script.a3e91edb3039', '② GrandQC deposu: ') + GRANDQC_REPO_ZIP + '\n' +
             '   → ' + grandqcScriptDir().getAbsolutePath() + '\n' +
-            '③ Model (Zenodo · CC BY-NC-SA 4.0):\n' +
+            workshopText('script.79714953d3ee', '③ Model (Zenodo · CC BY-NC-SA 4.0):\n') +
             '   • Tissue_Detection_MPP10.pth  (~27 MB) → models/td/   [zenodo 14507273]\n' +
             '   • GrandQC_MPP1 / 15 / 2.pth   (3×~25 MB) → models/qc/  [zenodo 14041538]')
         resArea.setEditable(false); resArea.setWrapText(false); resArea.setStyle(MONO); resArea.setPrefRowCount(9); resArea.setMaxHeight(190)
@@ -1446,14 +1444,14 @@ render = { ->
             boolean isHE = typeName.contains('BRIGHTFIELD_H_E')
             title.setText(workshopText('script.590fd7fa9d85', 'GrandQC — hazır'))
             def sb = new StringBuilder()
-            sb << "Lam        : " << slide.name << "\n"
-            sb << "Kapsam       : " << (scopeFolder ?: '(yerel disk değil — klasör seçin)')
-            sb << (overridden ? '   [seçilen klasör]' : (scopeFolder != null ? '   [lamın klasörü]' : '')) << "\n"
-            sb << "Python       : " << (cfg.python ?: '(ayarsız)') << "\n"
-            sb << "MPP modeli   : " << cfg.mpp << "\n"
-            sb << "Cihaz        : " << effectiveDevice(cfg) << (cfg.device?.trim() ? '' : ' (otomatik)') << "\n"
+            sb << workshopText('script.13db0a0038b7', 'Lam        : ') << slide.name << "\n"
+            sb << workshopText('script.403f715955b9', 'Kapsam       : ') << (scopeFolder ?: workshopText('script.776b1516f967', '(yerel disk değil — klasör seçin)'))
+            sb << (overridden ? workshopText('script.5a1dc087f65c', '   [seçilen klasör]') : (scopeFolder != null ? workshopText('script.9c777ed9fdbe', '   [lamın klasörü]') : '')) << "\n"
+            sb << "Python       : " << (cfg.python ?: workshopText('script.a2bfafb27517', '(ayarsız)')) << "\n"
+            sb << workshopText('script.63d4f6936077', 'MPP modeli   : ') << cfg.mpp << "\n"
+            sb << workshopText('script.64885087d749', 'Cihaz        : ') << effectiveDevice(cfg) << (cfg.device?.trim() ? '' : workshopText('script.53556c94cb86', ' (otomatik)')) << "\n"
             def gj = findGeoJSON(slide, scopeFolder)
-            sb << "GeoJSON      : " << ((gj != null && gj.isFile()) ? ('mevcut — ' + gj.getName()) : 'yok (henüz çalıştırılmadı)') << "\n"
+            sb << "GeoJSON      : " << ((gj != null && gj.isFile()) ? (workshopText('script.e035ef64e507', 'mevcut — ') + gj.getName()) : workshopText('script.1885f202d40b', 'yok (henüz çalıştırılmadı)')) << "\n"
             addMonoArea(sb.toString())
             addGuidance(workshopText('script.3af75b519540', 'Kapsam: GrandQC seçili KLASÖRDEKİ tüm lamları işler (tek lam / anotasyon modu yoktur). ' +
                         'Öntanımlı olarak açık lamın klasörü kullanılır; tüm projeyi/başka bir klasörü işlemek için "Klasör seç…".'))
@@ -1467,7 +1465,7 @@ render = { ->
             if (overridden)
                 actions.add(navButton(workshopText('script.f31e3e783230', '↺ Lamın klasörü'), { manualFolderRef.set(null); render() }, workshopText('script.edb567f95eed', 'Kapsamı açık lamın klasörüne döndür')))
             actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
-            actions.add(navButton(workshopText('script.a9907c8f2f7d', 'Komut üret ▶'), { cmdTextRef.set(cmdText(cfg, (effectiveFolder(slide) ?: '<lam-klasörü>'), slide.name)); step.set('CMD_READY'); render() }))
+            actions.add(navButton(workshopText('script.a9907c8f2f7d', 'Komut üret ▶'), { cmdTextRef.set(cmdText(cfg, (effectiveFolder(slide) ?: workshopText('script.b9787e08b2d0', '<lam-klasörü>')), slide.name)); step.set('CMD_READY'); render() }))
             if (gj != null && gj.isFile())
                 actions.add(navButton(workshopText('script.eca38b5d1b2a', 'GeoJSON içe aktar'), { def m = askExisting(QP.getCurrentImageData()?.getHierarchy()); if (m != null) runImportClean(slide, effectiveFolder(slide), m) }, workshopText('script.a5d05195ff26', 'Mevcut GrandQC GeoJSON çıktısını içe aktarır')))
             def runBtn = navButton(workshopText('script.3ecd99c46bb6', 'Doğrudan çalıştır ▶'), { startDirectRun(slide) }, workshopText('script.5a37a3a27f8d', 'Python hattını QuPath içinden çalıştırır (venv gerekli)'))
@@ -1543,9 +1541,9 @@ render = { ->
             actions.add(navButton(workshopText('script.b1ae91710f02', 'Rapor görüntüle'), {
                 String rtxt
                 try { rtxt = reportFile.getText('UTF-8') }
-                catch (Throwable t) { rtxt = 'Rapor okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName()) }
+                catch (Throwable t) { rtxt = workshopText('script.c4937d4a6588', 'Rapor okunamadı: ') + (t.getMessage() ?: t.getClass().getSimpleName()) }
                 reportPathRef.set(reportFile)
-                reportTextRef.set('Dosya: ' + reportFile.getAbsolutePath() + '\n\n' + rtxt)
+                reportTextRef.set(workshopText('script.d1604e2669fb', 'Dosya: ') + reportFile.getAbsolutePath() + '\n\n' + rtxt)
                 step.set('REPORT'); render()
             }, workshopText('script.b56375a2f81d', 'GrandQC lam başına istatistik raporu (büyütme/MPP, karo sayısı, boyut, süre)')))
         actions.add(navButton(workshopText('script.c94499b243e4', '↻ Yeniden çalıştır'), { step.set('READY'); render() }))
@@ -1560,7 +1558,7 @@ render = { ->
             def src = reportPathRef.get()
             def suggested = new File(src != null ? src.getName() : 'grandqc_rapor.txt')
             def dest = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, workshopText('script.5568a23417d1', 'Raporu kaydet'), suggested,
-                new javafx.stage.FileChooser.ExtensionFilter('Metin (*.txt)', '*.txt'))
+                new javafx.stage.FileChooser.ExtensionFilter(workshopText('script.e8e01c438ea2', 'Metin (*.txt)'), '*.txt'))
             if (dest != null) {
                 try { dest.setText(reportTextRef.get(), 'UTF-8'); Dialogs.showInfoNotification(workshopText('script.50ae0510ab38', 'Rapor kaydedildi'), dest.getName()) }
                 catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.4066bc1f732a', 'Kaydedilemedi'), (t.getMessage() ?: t.getClass().getSimpleName())) }

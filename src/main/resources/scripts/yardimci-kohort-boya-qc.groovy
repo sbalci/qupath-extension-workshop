@@ -214,13 +214,13 @@ def quartiles = { List<Double> vals ->
 // ── Ön kontrol: proje gerekli ─────────────────────────────────────────────────
 def project = QP.getProject()
 if (project == null) {
-    def msg = "Bu betik açık bir QuPath projesi gerektirir.\nÖnce bir proje açın (File → Open Project)."
+    def msg = workshopText('script.592c4639fa51', 'Bu betik açık bir QuPath projesi gerektirir.\nÖnce bir proje açın (File → Open Project).')
     if (isHeadless) { println msg; return }
     Dialogs.showErrorMessage(workshopText('script.830fe38f7e53', "Proje yok"), msg); return
 }
 def entries = project.getImageList()
 if (entries == null || entries.isEmpty()) {
-    def msg = "Projede hiç görüntü yok."
+    def msg = workshopText('script.8e92ae3b3ef2', 'Projede hiç görüntü yok.')
     if (isHeadless) { println msg; return }
     Dialogs.showErrorMessage(workshopText('script.3fa03a8fb823', "Görüntü yok"), msg); return
 }
@@ -271,7 +271,7 @@ entries.eachWithIndex { entry, idx ->
 
 if (rows.isEmpty()) {
     def msg = String.format(java.util.Locale.US,
-        "Hiçbir görüntüden ölçüm alınamadı (atlandı: %d, hata: %d).\nTüm görüntülerin H&E/H-DAB boya vektörleri tanımlı mı?", skipped, errCount)
+        workshopText('script.97c7e2f659bf', 'Hiçbir görüntüden ölçüm alınamadı (atlandı: %d, hata: %d).\nTüm görüntülerin H&E/H-DAB boya vektörleri tanımlı mı?'), skipped, errCount)
     if (isHeadless) { println msg; return }
     Dialogs.showErrorMessage(workshopText('script.e4abb9d051d0', "Sonuç yok"), msg); return
 }
@@ -316,11 +316,11 @@ def outlierRows = rows.findAll { r ->
 
 // ── Sonuç metni ──────────────────────────────────────────────────────────────
 def sb = new StringBuilder()
-sb << "KOHORT BOYA OD DRIFT — SONUÇLAR\n"
+sb << workshopText('script.f8125ce162f1', 'KOHORT BOYA OD DRIFT — SONUÇLAR\n')
 sb << "════════════════════════════════════════════════════════════════════\n\n"
-sb << String.format(java.util.Locale.US, "Taranan      : %,d görüntü  (atlandı: %d, hata: %d)%n", rows.size(), skipped, errCount)
+sb << String.format(java.util.Locale.US, workshopText('script.352d66b44bec', 'Taranan      : %,d görüntü  (atlandı: %d, hata: %d)%n'), rows.size(), skipped, errCount)
 sb << "\n"
-sb << String.format(java.util.Locale.US, "%-42s  %7s  %7s  %7s  %7s%n", "Görüntü", "OD1", "OD2", "ODoran", "L*oran")
+sb << String.format(java.util.Locale.US, "%-42s  %7s  %7s  %7s  %7s%n", workshopText('script.461af90e2417', 'Görüntü'), "OD1", "OD2", workshopText('script.a10366209247', 'ODoran'), workshopText('script.29f9fe68da75', 'L*oran'))
 sb << "─" * 72 + "\n"
 rows.sort { it.image_name }.each { r ->
     def f3 = { v -> (v instanceof Number && !Double.isNaN((double)v)) ? String.format(java.util.Locale.US, "%7.3f", (double)v) : "      —" }
@@ -329,7 +329,7 @@ rows.sort { it.image_name }.each { r ->
         f3(r.od1_mean), f3(r.od2_mean), f3(r.od_ratio), f3(r.lab_l_ratio))
 }
 sb << "─" * 72 + "\n"
-sb << String.format(java.util.Locale.US, "%-42s  %7s  %7s  %7s  %7s%n", "MEDYAN",
+sb << String.format(java.util.Locale.US, "%-42s  %7s  %7s  %7s  %7s%n", workshopText('script.860901f4da7f', 'MEDYAN'),
     String.format(java.util.Locale.US, "%7.3f", (double)stats.od1_mean.med),
     String.format(java.util.Locale.US, "%7.3f", (double)stats.od2_mean.med),
     String.format(java.util.Locale.US, "%7.3f", (double)stats.od_ratio.med),
@@ -344,32 +344,32 @@ sb << String.format(java.util.Locale.US, "%-42s  %7s  %7s  %7s  %7s%n", "MIN",
     String.format(java.util.Locale.US, "%7.3f", (double)stats.od2_mean.min),
     String.format(java.util.Locale.US, "%7.3f", (double)stats.od_ratio.min),
     String.format(java.util.Locale.US, "%7.3f", (double)stats.lab_l_ratio.min))
-sb << String.format(java.util.Locale.US, "%-42s  %7s  %7s  %7s  %7s%n", "MAKS",
+sb << String.format(java.util.Locale.US, "%-42s  %7s  %7s  %7s  %7s%n", workshopText('script.f69a83a017e7', 'MAKS'),
     String.format(java.util.Locale.US, "%7.3f", (double)stats.od1_mean.max),
     String.format(java.util.Locale.US, "%7.3f", (double)stats.od2_mean.max),
     String.format(java.util.Locale.US, "%7.3f", (double)stats.od_ratio.max),
     String.format(java.util.Locale.US, "%7.3f", (double)stats.lab_l_ratio.max))
 sb << "\n"
 if (outlierRows.isEmpty()) {
-    sb << "Tüm görüntüler kohort medyanının 1,5·IQR aralığı içinde.\n"
+    sb << workshopText('script.99fb706717d6', 'Tüm görüntüler kohort medyanının 1,5·IQR aralığı içinde.\n')
 } else {
-    sb << String.format(java.util.Locale.US, "Tukey çitlerinin dışındaki lamlar (%d adet) — Q1 − 1,5·IQR altı ya da Q3 + 1,5·IQR üstü:%n", outlierRows.size())
+    sb << String.format(java.util.Locale.US, workshopText('script.11c09cc81471', 'Tukey çitlerinin dışındaki lamlar (%d adet) — Q1 − 1,5·IQR altı ya da Q3 + 1,5·IQR üstü:%n'), outlierRows.size())
     outlierRows.each { r ->
         def flags = numCols.findAll { col ->
             def v = r[col]; if (!(v instanceof Number)) return false
             double d = (double)v; if (Double.isNaN(d)) return false
             def s = stats[col]; (!Double.isNaN((double)s.lo) && !Double.isNaN((double)s.hi)) && (d < (double)s.lo || d > (double)s.hi)
         }
-        sb << String.format(java.util.Locale.US, "  %-44s → metriklerde kohort medyanından uzak (%s)%n",
+        sb << String.format(java.util.Locale.US, workshopText('script.605b6a759f99', '  %-44s → metriklerde kohort medyanından uzak (%s)%n'),
             (r.image_name?.size() > 44 ? r.image_name[0..41] + "…" : r.image_name),
             flags.join(", "))
     }
 }
 sb << "\nCSV: " + csvFile.getAbsolutePath() + "\n"
-sb << "\nYöntem: Dunn ve ark. 2025, J Pathol Inform 17:100423; Tukey 1.5·IQR.\n"
-sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik yorum içermez."
+sb << workshopText('script.2ae805f9342b', '\nYöntem: Dunn ve ark. 2025, J Pathol Inform 17:100423; Tukey 1.5·IQR.\n')
+sb << workshopText('script.4a020727b3ed', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik yorum içermez.')
 
-showResultWindow("Kohort Boya OD Drift", sb.toString())
+showResultWindow(workshopText('script.a708840bf1fe', 'Kohort Boya OD Drift'), sb.toString())
 println String.format(java.util.Locale.US,
     "✓ Kohort boya QC tamamlandı: %d görüntü, %d outlier. CSV: %s",
     rows.size(), outlierRows.size(), csvFile.getAbsolutePath())

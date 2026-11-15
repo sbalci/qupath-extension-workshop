@@ -187,7 +187,7 @@ def compressionChoices = { server ->
 def exportOne = { server, ann, java.util.Map cfg, File outFile ->
     def roi = ann.getROI()
     def cb = clampedBounds(roi, server)
-    if (cb == null) throw new IOException('Bölge tümüyle görüntü dışında')
+    if (cb == null) throw new IOException(workshopText('script.5fb7d68d5512', 'Bölge tümüyle görüntü dışında'))
     int rx = cb[0], ry = cb[1], rw = cb[2], rh = cb[3]
     boolean clamped = (rx != (int) Math.floor(roi.getBoundsX())
                     || ry != (int) Math.floor(roi.getBoundsY())
@@ -210,7 +210,7 @@ def exportOne = { server, ann, java.util.Map cfg, File outFile ->
     } else if (fmt == FMT_JPG) {
         def request = RegionRequest.createInstance(server.getPath(), ds, rx, ry, rw, rh, z, t)
         def img = server.readRegion(request)
-        if (img == null) throw new IOException('Bölge okunamadı')
+        if (img == null) throw new IOException(workshopText('script.73a674c515d7', 'Bölge okunamadı'))
         def rgb = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_RGB)
         def g2 = rgb.createGraphics(); g2.drawImage(img, 0, 0, java.awt.Color.WHITE, null); g2.dispose()
         def iw = ImageIO.getImageWritersByFormatName('jpg').next()
@@ -258,9 +258,9 @@ def writeSidecar = { File jsonFile, server, ann, java.util.Map cfg, java.util.Ma
 // ── Çıkarım akışı (FX düğmesinden tetiklenir; iş arka planda) ───────────────────
 def startExport = {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.da80fab350d1', 'Görüntü açık değil.')); step.set('ERROR'); render(); return }
     def anns = selectedAreaAnns()
-    if (anns.isEmpty()) { errorTextRef.set('Önce bir ALAN anotasyonu (dikdörtgen vb.) çizip SEÇİN.'); step.set('ERROR'); render(); return }
+    if (anns.isEmpty()) { errorTextRef.set(workshopText('script.5ae02a005a6f', 'Önce bir ALAN anotasyonu (dikdörtgen vb.) çizip SEÇİN.')); step.set('ERROR'); render(); return }
     def server = imageData.getServer()
 
     // Denetimlerden yapılandırmayı oku
@@ -313,12 +313,12 @@ def startExport = {
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def written = []
         int idx = 0, n = anns.size()
-        appendLine('Çıktı klasörü: ' + outDir.getAbsolutePath())
-        appendLine(String.format(java.util.Locale.US, 'Biçim: %s · sıkıştırma: %s · downsample: %.3f · %d bölge', fmt, comp, ds, n))
+        appendLine(workshopText('script.e4e60e4cc159', 'Çıktı klasörü: ') + outDir.getAbsolutePath())
+        appendLine(String.format(java.util.Locale.US, workshopText('script.d0f803312bd8', 'Biçim: %s · sıkıştırma: %s · downsample: %.3f · %d bölge'), fmt, comp, ds, n))
         try {
             for (ann in anns) {
                 idx++
-                if (cancelledRef.get()) { appendLine('İptal edildi (' + (idx - 1) + '/' + n + ' tamamlandı).'); break }
+                if (cancelledRef.get()) { appendLine(workshopText('script.a26939448d1d', 'İptal edildi (') + (idx - 1) + '/' + n + workshopText('script.11b5cdca4488', ' tamamlandı).')); break }
                 def nm = ann.getName()
                 def base = toSlug(nm ?: (slideSlug + '_' + String.format(java.util.Locale.US, '%03d', idx))) + '__' + stamp
                 def outFile = uniqueFile(outDir, base, extFor(fmt))
@@ -327,26 +327,26 @@ def startExport = {
                     def r = exportOne(server, ann, cfg, outFile)
                     writeSidecar(new File(outDir, outFile.getName().replaceAll('\\.[^.]+$', '') + '.json'), server, ann, cfg, r)
                     written << outFile.getName()
-                    appendLine(String.format(java.util.Locale.US, '   ✓ %,d × %,d px%s', (int) r.outW, (int) r.outH, (((boolean) r.clamped) ? ' (kenarda kırpıldı)' : '')))
+                    appendLine(String.format(java.util.Locale.US, '   ✓ %,d × %,d px%s', (int) r.outW, (int) r.outH, (((boolean) r.clamped) ? workshopText('script.ac54db5f6a39', ' (kenarda kırpıldı)') : '')))
                 } catch (Throwable t) {
-                    appendLine('   ✗ hata: ' + (t.getMessage() ?: t.getClass().getSimpleName()))
+                    appendLine(workshopText('script.02bcb6f5e3a3', '   ✗ hata: ') + (t.getMessage() ?: t.getClass().getSimpleName()))
                 }
             }
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { errorTextRef.set('Çıkarım başarısız:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.b4d3f4465742', 'Çıkarım başarısız:\n') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
             return
         }
         def sb = new StringBuilder()
-        sb << 'GÖRÜNTÜ ALANI ÇIKARTMA — ÖZET\n'
+        sb << workshopText('script.b1d4790e7d5d', 'GÖRÜNTÜ ALANI ÇIKARTMA — ÖZET\n')
         sb << '════════════════════════════════\n\n'
-        sb << 'Yazılan dosya   : ' << written.size() << ' / ' << n << '\n'
-        sb << 'Klasör          : ' << outDir.getAbsolutePath() << '\n'
-        sb << String.format(java.util.Locale.US, 'Biçim/sıkıştırma: %s · %s%n', fmt, (fmt == FMT_OME ? comp : '—'))
+        sb << workshopText('script.90795979dfba', 'Yazılan dosya   : ') << written.size() << ' / ' << n << '\n'
+        sb << workshopText('script.d85d84eff840', 'Klasör          : ') << outDir.getAbsolutePath() << '\n'
+        sb << String.format(java.util.Locale.US, workshopText('script.c8e947cb1f46', 'Biçim/sıkıştırma: %s · %s%n'), fmt, (fmt == FMT_OME ? comp : '—'))
         sb << String.format(java.util.Locale.US, 'Downsample      : %.3f (≈ %%%.0f)%n', ds, (100.0d / ds))
-        if (!written.isEmpty()) { sb << '\nDosyalar:\n'; written.each { sb << '  • ' << it << '\n' } }
-        sb << '\nHer görüntünün yanına bir .json künyesi (koordinat/çözünürlük) yazıldı.\n'
-        if (fmt == FMT_OME) sb << 'OME-TIFF; QuPath/OMERO/Fiji ile yeniden açılabilir (gerçek .svs değil).\n'
-        sb << '⚠️ Yalnızca araştırma/eğitim amaçlıdır.'
+        if (!written.isEmpty()) { sb << workshopText('script.39e246546e3e', '\nDosyalar:\n'); written.each { sb << '  • ' << it << '\n' } }
+        sb << workshopText('script.419d380b787b', '\nHer görüntünün yanına bir .json künyesi (koordinat/çözünürlük) yazıldı.\n')
+        if (fmt == FMT_OME) sb << workshopText('script.4ebefafe0fa4', 'OME-TIFF; QuPath/OMERO/Fiji ile yeniden açılabilir (gerçek .svs değil).\n')
+        sb << workshopText('script.47bd28634423', '⚠️ Yalnızca araştırma/eğitim amaçlıdır.')
         javafx.application.Platform.runLater { resultTextRef.set(sb.toString()); step.set('RESULT'); render() }
     }, 'AtolyeBolgeCikart-Run')
     worker.setDaemon(true); worker.start()
@@ -438,7 +438,7 @@ render = { ->
 
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         int row = 0
-        def browse = navButton('…', { def d = FileChoosers.promptForDirectory('Çıktı klasörü seç', outDirRef.get()); if (d != null) { outDirRef.set(d); outLbl.setText(d.getAbsolutePath()) } })
+        def browse = navButton('…', { def d = FileChoosers.promptForDirectory(workshopText('script.9c8f655f3669', 'Çıktı klasörü seç'), outDirRef.get()); if (d != null) { outDirRef.set(d); outLbl.setText(d.getAbsolutePath()) } })
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.071c30132baf', 'Biçim:')), fmtBox)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.3f68d88af08a', 'Sıkıştırma (OME-TIFF):')), compBox)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.f7ea86c4cbd2', 'JPEG kalitesi (1-100):')), qual)

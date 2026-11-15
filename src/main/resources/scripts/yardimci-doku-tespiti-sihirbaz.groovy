@@ -61,9 +61,9 @@ String MODE_REPLACE = 'replace'
 int BINS = 512
 List<String> CHOICES = ["OD toplamı (OD sum)", "Hematoksilen", "Arka plan (parlaklık)"]
 // "Hematoksilen" tabanı gerçek renk ayırmadır: yalnız eozin alan (çekirdekten fakir) doku ~0 değer alır.
-String HEM_NOTE = "  Not: Hematoksilen tabanı yalnız çekirdekten zengin alanları seçer; eozinle boyanan, çekirdekten\n" +
-                  "  fakir doku (ör. stroma) dışarıda kalabilir. Dokunun tamamı için \"OD toplamı\" kullanın."
-String HEM_FALLBACK = "  Not: Boya vektörleri tanımlı değil; Hematoksilen yerine OD toplamı kullanıldı."
+String HEM_NOTE = workshopText('script.5bdb44f81a06', '  Not: Hematoksilen tabanı yalnız çekirdekten zengin alanları seçer; eozinle boyanan, çekirdekten\n') +
+                  workshopText('script.700667bd01be', '  fakir doku (ör. stroma) dışarıda kalabilir. Dokunun tamamı için "OD toplamı" kullanın.')
+String HEM_FALLBACK = workshopText('script.ad4c95343e2c', '  Not: Boya vektörleri tanımlı değil; Hematoksilen yerine OD toplamı kullanıldı.')
 def prefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/doku-tespiti-sihirbaz')
 
 // ── 1) Ön kontroller ────────────────────────────────────────────────
@@ -146,11 +146,11 @@ def otsuOf = { float[] scalar ->
 def buildCache = { double ds, String choice ->
     def request = RegionRequest.createInstance(server.getPath(), ds, 0, 0, server.getWidth(), server.getHeight())
     java.awt.image.BufferedImage img = server.readRegion(request)
-    if (img == null) return [error: "Bölge okunamadı (boş görüntü). Downsample çok küçük olabilir."]
+    if (img == null) return [error: workshopText('script.e7399263faef', 'Bölge okunamadı (boş görüntü). Downsample çok küçük olabilir.')]
     def raster = img.getRaster()
     int W = raster.getWidth(), H = raster.getHeight()
     if (raster.getNumBands() < 3)
-        return [error: "Bu araç RGB (parlak alan) görüntü bekler; bant sayısı: ${raster.getNumBands()}."]
+        return [error: String.format(java.util.Locale.US, workshopText('script.38061551508a', 'Bu araç RGB (parlak alan) görüntü bekler; bant sayısı: %s.'), raster.getNumBands())]
     float[] scalar = computeScalar(raster, W, H, choice)
     def o = otsuOf(scalar)
     int[] baseArgb = new int[W * H]
@@ -255,20 +255,20 @@ def summaryOf = { String choice, double ds, double thr, boolean useOtsu, double 
     double slidePx2  = (double) server.getWidth() * server.getHeight()
     double frac = (slidePx2 > 0) ? 100.0d * tissuePx2 / slidePx2 : 0.0d
     def b = new StringBuilder()
-    b << "DOKU TESPİTİ (native)\n"
-    b << "Eşik tabanı  : ${choice}\n"
+    b << workshopText('script.0ae2c29c7a21', 'DOKU TESPİTİ (native)\n')
+    b << String.format(java.util.Locale.US, workshopText('script.a56d7203f2dd', 'Eşik tabanı  : %s\n'), choice)
     if (choice == CHOICES[1]) b << (stains != null ? HEM_NOTE : HEM_FALLBACK) << "\n"
-    b << String.format(java.util.Locale.US, "Alt örnekleme (downsample): %.0f%n", ds)
-    b << String.format(java.util.Locale.US, "Eşik         : %.4f  (%s)%n", thr, useOtsu ? "Otsu" : "elle")
-    b << String.format(java.util.Locale.US, "Minimum alan : %.2f mm²%s%n", minAreaMm2,
-        calibrated ? "" : "  — UYGULANMADI (görüntü kalibre değil; mm² hesaplanamaz)")
-    b << String.format(java.util.Locale.US, "Parça sayısı : %d → birleştirildi%n", pieces)
+    b << String.format(java.util.Locale.US, workshopText('script.f96be2b74251', 'Alt örnekleme (downsample): %.0f%n'), ds)
+    b << String.format(java.util.Locale.US, workshopText('script.254d92be9ae7', 'Eşik         : %.4f  (%s)%n'), thr, useOtsu ? "Otsu" : workshopText('script.18ae79fac195', 'elle'))
+    b << String.format(java.util.Locale.US, workshopText('script.447af7860277', 'Minimum alan : %.2f mm²%s%n'), minAreaMm2,
+        calibrated ? "" : workshopText('script.1c55df3d1990', '  — UYGULANMADI (görüntü kalibre değil; mm² hesaplanamaz)'))
+    b << String.format(java.util.Locale.US, workshopText('script.34d24906f20f', 'Parça sayısı : %d → birleştirildi%n'), pieces)
     if (calibrated)
-        b << String.format(java.util.Locale.US, "Doku alanı   : %.2f mm²%n", tissuePx2 * pw * ph / 1_000_000.0d)
+        b << String.format(java.util.Locale.US, workshopText('script.bc0b975e6c0a', 'Doku alanı   : %.2f mm²%n'), tissuePx2 * pw * ph / 1_000_000.0d)
     else
-        b << String.format(java.util.Locale.US, "Doku alanı   : %,.0f px²  (kalibre değil)%n", tissuePx2)
-    b << String.format(java.util.Locale.US, "Doku fraksiyonu : %.1f %%%n", frac)
-    b << "\nKilitli 'Doku' anotasyonu eklendi. ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm."
+        b << String.format(java.util.Locale.US, workshopText('script.7ce550f7eb67', 'Doku alanı   : %,.0f px²  (kalibre değil)%n'), tissuePx2)
+    b << String.format(java.util.Locale.US, workshopText('script.6d83e48dddd4', 'Doku fraksiyonu : %.1f %%%n'), frac)
+    b << workshopText('script.b22cc63ded96', '\nKilitli \'Doku\' anotasyonu eklendi. ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm.')
     if (info != null) {
         b << "\n" << workshopText('script.1634a63e0849', 'Set adı : ') << (info.setName ?: '-') << "\n"
         if (info.prevNames) {

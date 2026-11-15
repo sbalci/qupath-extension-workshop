@@ -127,8 +127,8 @@ if (imageData == null) {
 
 def project = QP.getProject()
 if (project == null) {
-    def msg = "Bu betik bir proje gerektirir (kayıtlı sınıflandırıcılar projede tutulur).\n" +
-              "Lamı bir QuPath projesine ekleyip tekrar deneyin."
+    def msg = workshopText('script.6cfdc02de0f9', 'Bu betik bir proje gerektirir (kayıtlı sınıflandırıcılar projede tutulur).\n') +
+              workshopText('script.4d79dd3aa73f', 'Lamı bir QuPath projesine ekleyip tekrar deneyin.')
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.830fe38f7e53', "Proje yok"), msg)
     return
 }
@@ -136,9 +136,9 @@ if (project == null) {
 def server = imageData.getServer()
 def cal = server.getPixelCalibration()
 if (cal == null || !cal.hasPixelSizeMicrons()) {
-    def msg = "Görüntü kalibrasyonu (µm/px) yok; alanlar µm²/mm² olarak ölçülemez.\n\n" +
-              "Önce piksel boyutunu ayarlayın:\n" +
-              "  [Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)]"
+    def msg = workshopText('script.b8a89f9ef6e8', 'Görüntü kalibrasyonu (µm/px) yok; alanlar µm²/mm² olarak ölçülemez.\n\n') +
+              workshopText('script.921642fd64de', 'Önce piksel boyutunu ayarlayın:\n') +
+              workshopText('script.85e3ebc30f18', '  [Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)]')
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), msg)
     return
 }
@@ -147,7 +147,7 @@ double pxH = cal.getPixelHeightMicrons()
 
 def targets = QP.getSelectedObjects().findAll { it.isAnnotation() }
 if (targets.isEmpty()) {
-    def msg = "Ölçülecek anotasyon yok.\n\nÖnce bölgeyi anotasyon olarak çizin ve SEÇİN."
+    def msg = workshopText('script.0bc95044d482', 'Ölçülecek anotasyon yok.\n\nÖnce bölgeyi anotasyon olarak çizin ve SEÇİN.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.469472ee53f3', "Anotasyon yok"), msg)
     return
 }
@@ -161,11 +161,11 @@ try {
 }
 names.sort()
 if (names.isEmpty()) {
-    def msg = "Projede kayıtlı piksel sınıflandırıcı (eşikleyici) yok.\n\n" +
-              "Bir kez oluşturmanız gerekir:\n" +
+    def msg = workshopText('script.f6d4f7da15ec', 'Projede kayıtlı piksel sınıflandırıcı (eşikleyici) yok.\n\n') +
+              workshopText('script.7e76e0e94a55', 'Bir kez oluşturmanız gerekir:\n') +
               "  [Classify → Pixel classification → Create thresholder]\n" +
-              "  • Channel + Threshold ayarlayın, sınıfları adlandırın, [Save].\n\n" +
-              "Ayrıntı: Tümör/Stroma modülü — \"Önce en basit sınıflandırıcı: eşikleyici\"."
+              workshopText('script.a0a08fe7eb88', '  • Channel + Threshold ayarlayın, sınıfları adlandırın, [Save].\n\n') +
+              workshopText('script.71bab3b465f9', 'Ayrıntı: Tümör/Stroma modülü — "Önce en basit sınıflandırıcı: eşikleyici".')
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.9b963a692abd', "Sınıflandırıcı yok"), msg)
     return
 }
@@ -194,8 +194,7 @@ try {
     classifier = null
 }
 if (classifier == null) {
-    def msg = "Sınıflandırıcı yüklenemedi: \"${chosen}\"\n\n" +
-              "Adın birebir eşleştiğinden ve sınıflandırıcının bozulmadığından emin olun."
+    def msg = String.format(java.util.Locale.US, workshopText('script.1c1d6fae7952', 'Sınıflandırıcı yüklenemedi: "%s"\n\nAdın birebir eşleştiğinden ve sınıflandırıcının bozulmadığından emin olun.'), chosen)
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.ea8a4476846b', "Yüklenemedi"), msg)
     return
 }
@@ -244,9 +243,9 @@ targets.each { ann ->
 QP.fireHierarchyUpdate()
 
 if (classAreaUm2.isEmpty() || totalRegionUm2 <= 0) {
-    def msg = "Sınıflandırıcı çalıştı ama beklenen alan ölçümleri bulunamadı.\n\n" +
-              "Seçili bölgenin sınıflandırıcının çalıştığı alanı içerdiğinden ve\n" +
-              "sınıflandırıcının alan ölçümü ürettiğinden emin olun."
+    def msg = workshopText('script.270de2c387c6', 'Sınıflandırıcı çalıştı ama beklenen alan ölçümleri bulunamadı.\n\n') +
+              workshopText('script.34eb5d84a198', 'Seçili bölgenin sınıflandırıcının çalıştığı alanı içerdiğinden ve\n') +
+              workshopText('script.5f202e1c100b', 'sınıflandırıcının alan ölçümü ürettiğinden emin olun.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.e3dc9a444a25', "Ölçüm yok"), msg)
     return
 }
@@ -257,13 +256,13 @@ classAreaUm2.values().each { classifiedTotal += (it as double) }
 double covPct = totalRegionUm2 > 0 ? (100.0 * classifiedTotal / totalRegionUm2) : Double.NaN
 
 def body = new StringBuilder()
-body << "EŞİK İLE ALAN ÖLÇÜMÜ (% bölge)\n"
+body << workshopText('script.9f5990aeab58', 'EŞİK İLE ALAN ÖLÇÜMÜ (% bölge)\n')
 body << "═════════════════════════════════════\n\n"
-body << "Sınıflandırıcı     : \"" << chosen << "\"\n"
-body << String.format(java.util.Locale.US, "Ölçülen anotasyon  : %d%n", measured)
-body << String.format(java.util.Locale.US, "Bölge alanı        : %.4f mm²%n", totalRegionUm2 / 1.0e6)
+body << workshopText('script.f35a66c9ef99', 'Sınıflandırıcı     : "') << chosen << "\"\n"
+body << String.format(java.util.Locale.US, workshopText('script.4a85f4f47f27', 'Ölçülen anotasyon  : %d%n'), measured)
+body << String.format(java.util.Locale.US, workshopText('script.2ac06b049f94', 'Bölge alanı        : %.4f mm²%n'), totalRegionUm2 / 1.0e6)
 body << "\n"
-body << "Sınıf                  Alan (mm²)       Alan (µm²)      % bölge\n"
+body << workshopText('script.48a8b0e57405', 'Sınıf                  Alan (mm²)       Alan (µm²)      % bölge\n')
 body << "──────────────────────────────────────────────────────────────\n"
 classAreaUm2.each { cn, a ->
     double av = a as double
@@ -271,16 +270,16 @@ classAreaUm2.each { cn, a ->
     body << String.format(java.util.Locale.US, "%-20s %12.5f %15.2f %10.2f %%%n", cn, av / 1.0e6, av, pct)
 }
 body << "──────────────────────────────────────────────────────────────\n"
-body << String.format(java.util.Locale.US, "Sınıflandırılmış kapsam : %.2f %% (bölgenin)%n", covPct)
+body << String.format(java.util.Locale.US, workshopText('script.4cc62338a3be', 'Sınıflandırılmış kapsam : %.2f %% (bölgenin)%n'), covPct)
 body << "\n"
-body << "Not: sınıf alanları piksel sınıflandırıcının çözünürlüğünde sayılır;\n"
-body << "bölge alanı geometrik hesaplanır. Bu yüzden kapsam %100 olmayabilir\n"
-body << "(bkz. TSR Metodolojisi eki — alan ölçüm metodolojisi).\n\n"
-body << "Bu bir ALANdır — klinik skor, eşik veya yorum DEĞİL.\n"
+body << workshopText('script.bad0b19c62e7', 'Not: sınıf alanları piksel sınıflandırıcının çözünürlüğünde sayılır;\n')
+body << workshopText('script.cab13b3785ac', 'bölge alanı geometrik hesaplanır. Bu yüzden kapsam %100 olmayabilir\n')
+body << workshopText('script.d9d5ece167da', '(bkz. TSR Metodolojisi eki — alan ölçüm metodolojisi).\n\n')
+body << workshopText('script.b2c032c6bc7b', 'Bu bir ALANdır — klinik skor, eşik veya yorum DEĞİL.\n')
 body << "(Bankhead 2017)\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("Eşik ile alan ölçümü", body.toString())
+showResultWindow(workshopText('script.8ec17bab9e88', 'Eşik ile alan ölçümü'), body.toString())
 println "✓ % bölge ölçümleri yazıldı (her anotasyon, her sınıf)."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

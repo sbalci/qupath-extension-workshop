@@ -35,27 +35,27 @@ def isHeadless = gui == null
 // envIds: Atölye Python ortam yöneticisindeki ortam kimlikleri (yalnız durum göstergesi).
 // anyEnv: en az biri yeterli (karşılaştırma). disabled: menüde de devre dışı olan giriş.
 def MODEL_GROUPS = [
-    [title: 'Dedektörler — seçili bölgede mitozları bulur',
+    [title: workshopText('script.b909bd1b8cb1', 'Dedektörler — seçili bölgede mitozları bulur'),
      items: [
         [label: 'KongNet MIDOG (TIA Toolbox)', script: 'yardimci-mitoz-tiatoolbox.groovy', envIds: ['tiatoolbox-region'],
-         note: 'Warwick TIA Centre\'ın KongNet-Det (MIDOG) H&E mitoz dedektörü; TIA Toolbox ortamında çalışır.'],
+         note: workshopText('script.6dfd4210c172', 'Warwick TIA Centre\'ın KongNet-Det (MIDOG) H&E mitoz dedektörü; TIA Toolbox ortamında çalışır.')],
         [label: 'MIDOG25 FCOS (torchvision)', script: 'yardimci-mitoz-fcos.groovy', envIds: ['midog-fcos'],
-         note: 'MIDOG 2025 Görev 1 resmî referans dedektörü (FCOS-ResNeXt101); ağırlık ve referans kod "Modeli yerel indir" ile bir kez indirilir.'],
-        [label: 'MIDOG DA-RetinaNet (2021, eski)', script: 'yardimci-mitoz-retinanet.groovy', envIds: ['midog-retinanet-legacy'],
-         note: '2021/22 MIDOG referans dedektörü (fastai v1); eski ve kırılgan bir yığındır, atölyede doğrulanmamıştır — FCOS önerilir.'],
+         note: workshopText('script.4d0afcadb91d', 'MIDOG 2025 Görev 1 resmî referans dedektörü (FCOS-ResNeXt101); ağırlık ve referans kod "Modeli yerel indir" ile bir kez indirilir.')],
+        [label: workshopText('script.1fe2062444de', 'MIDOG DA-RetinaNet (2021, eski)'), script: 'yardimci-mitoz-retinanet.groovy', envIds: ['midog-retinanet-legacy'],
+         note: workshopText('script.64e430984e40', '2021/22 MIDOG referans dedektörü (fastai v1); eski ve kırılgan bir yığındır, atölyede doğrulanmamıştır — FCOS önerilir.')],
      ]],
-    [title: 'Sınıflandırıcılar — bulunmuş mitozları tipik/atipik olarak ayırır (tespitten sonra)',
+    [title: workshopText('script.cf3da9b83051', 'Sınıflandırıcılar — bulunmuş mitozları tipik/atipik olarak ayırır (tespitten sonra)'),
      items: [
-        [label: 'Atipik sınıflandırma — MIDOG25 EffNetV2', script: 'yardimci-mitoz-atipik-effnet.groovy', envIds: ['midog-atypical'],
-         note: 'MIDOG 2025 Görev 2 resmî referans sınıflandırıcısı (EfficientNetV2-M). Önce bir dedektörle "Mitosis" noktaları üretin.'],
-        [label: 'Atipik sınıflandırma — Sanofi EFTD (kapılı)', script: 'yardimci-mitoz-atipik-sanofi.groovy', envIds: ['sanofi-eftd'], disabled: true,
-         note: 'Varsayılan olarak devre dışı: DINOv3-H+ omurgası Hugging Face\'te kapılıdır (Meta lisansı + huggingface-cli girişi gerekir).'],
+        [label: workshopText('script.771542ccc150', 'Atipik sınıflandırma — MIDOG25 EffNetV2'), script: 'yardimci-mitoz-atipik-effnet.groovy', envIds: ['midog-atypical'],
+         note: workshopText('script.529a5296a0f7', 'MIDOG 2025 Görev 2 resmî referans sınıflandırıcısı (EfficientNetV2-M). Önce bir dedektörle "Mitosis" noktaları üretin.')],
+        [label: workshopText('script.2baeb3b7558e', 'Atipik sınıflandırma — Sanofi EFTD (kapılı)'), script: 'yardimci-mitoz-atipik-sanofi.groovy', envIds: ['sanofi-eftd'], disabled: true,
+         note: workshopText('script.2e4b5fe6c305', 'Varsayılan olarak devre dışı: DINOv3-H+ omurgası Hugging Face\'te kapılıdır (Meta lisansı + huggingface-cli girişi gerekir).')],
      ]],
-    [title: 'Karşılaştırma',
+    [title: workshopText('script.3de740d7f47c', 'Karşılaştırma'),
      items: [
-        [label: 'Modelleri karşılaştır (aynı bölge)', script: 'yardimci-mitoz-karsilastir.groovy',
+        [label: workshopText('script.6143d0a24266', 'Modelleri karşılaştır (aynı bölge)'), script: 'yardimci-mitoz-karsilastir.groovy',
          envIds: ['tiatoolbox-region', 'midog-fcos', 'midog-retinanet-legacy', 'hovernext'], anyEnv: true,
-         note: 'Kurulu dedektörleri aynı bölgede sırayla çalıştırır ve modeller arası uyumu ölçer (doğruluk ölçüsü değildir).'],
+         note: workshopText('script.a5e92e4fa12d', 'Kurulu dedektörleri aynı bölgede sırayla çalıştırır ve modeller arası uyumu ölçer (doğruluk ölçüsü değildir).')],
      ]],
 ]
 
@@ -82,8 +82,8 @@ def envInstalled = { String id ->
 def statusOf = { item ->
     def ids = item.envIds ?: []
     int n = (ids.count { envInstalled(it) }) as int
-    if (item.anyEnv) return [ok: n > 0, text: (n > 0 ? String.format(java.util.Locale.US, '✓ %d/%d dedektör ortamı kurulu', n, ids.size()) : '○ dedektör ortamı kurulu değil')]
-    return [ok: n == ids.size(), text: (n == ids.size() ? '✓ Python ortamı kurulu' : '○ Python ortamı kurulu değil')]
+    if (item.anyEnv) return [ok: n > 0, text: (n > 0 ? String.format(java.util.Locale.US, workshopText('script.f28f3f3f485b', '✓ %d/%d dedektör ortamı kurulu'), n, ids.size()) : workshopText('script.d84902bc96dc', '○ dedektör ortamı kurulu değil'))]
+    return [ok: n == ids.size(), text: (n == ids.size() ? workshopText('script.6643d1d804cf', '✓ Python ortamı kurulu') : workshopText('script.2b6de925f0bc', '○ Python ortamı kurulu değil'))]
 }
 
 // ── Headless ──────────────────────────────────────────────────────────────────
@@ -119,7 +119,7 @@ def launchScript = { String resourceName, Map returnHook, Closure onOpened ->
             if (url == null) {
                 javafx.application.Platform.runLater {
                     busyRef.set(false)
-                    errorTextRef.set('Betik bulunamadı: ' + resourceName + '\nAtölye eklentisinin kurulu ve güncel olduğundan emin olun (Extensions → Atölye).')
+                    errorTextRef.set(workshopText('script.79a62aab0b81', 'Betik bulunamadı: ') + resourceName + workshopText('script.d489f0149d8e', '\nAtölye eklentisinin kurulu ve güncel olduğundan emin olun (Extensions → Atölye).'))
                     step.set('ERROR'); render()
                 }
                 return
@@ -134,7 +134,7 @@ def launchScript = { String resourceName, Map returnHook, Closure onOpened ->
         } catch (Throwable t) {
             javafx.application.Platform.runLater {
                 busyRef.set(false)
-                errorTextRef.set('Açılamadı: ' + resourceName + '\n' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
+                errorTextRef.set(workshopText('script.6f5403a53236', 'Açılamadı: ') + resourceName + '\n' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: ''))
                 step.set('ERROR'); render()
             }
         }
@@ -144,7 +144,7 @@ def launchScript = { String resourceName, Map returnHook, Closure onOpened ->
 // Seçilen modelin sihirbazını aç; açıldığında bu liste kapanır (sihirbazdaki "◀ Mitoz listesi" geri getirir).
 def openModel = { item ->
     if (item.disabled || busyRef.getAndSet(true)) return
-    openingRef.set(item.label + ' açılıyor…'); step.set('OPENING'); render()
+    openingRef.set(item.label + workshopText('script.145ce86d7b2f', ' açılıyor…')); step.set('OPENING'); render()
     launchScript(item.script, null, { if (stage != null) stage.close() })
 }
 
@@ -154,7 +154,7 @@ def openEnvManager = { ->
     MODEL_GROUPS.each { g -> g.items.each { m ->
         if (!m.disabled && !m.anyEnv) (m.envIds ?: []).each { id -> if (!envInstalled(id) && !missing.contains(id)) missing << id }
     } }
-    def hook = [envIds: missing, wizard: 'Mitoz modelleri listesi',
+    def hook = [envIds: missing, wizard: workshopText('script.f78f1962faba', 'Mitoz modelleri listesi'),
                 onReturn: { reopen ->
                     javafx.application.Platform.runLater {
                         if (stage == null || (!stage.isShowing() && !reopen)) return
@@ -168,7 +168,7 @@ def openEnvManager = { ->
 }
 
 def slideNameOf = { imageData ->
-    try { return imageData.getServer().getMetadata().getName() ?: '(adsız)' } catch (Throwable t) { return '(adsız)' }
+    try { return imageData.getServer().getMetadata().getName() ?: workshopText('script.2966ac6511d8', '(adsız)') } catch (Throwable t) { return workshopText('script.2966ac6511d8', '(adsız)') }
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────

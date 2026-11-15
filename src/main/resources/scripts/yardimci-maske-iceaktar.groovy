@@ -137,8 +137,8 @@ def server = imageData.getServer()
 // ── 2) Maske dosyasını seç ──────────────────────────────────────────
 // qupath.fx.dialogs.Dialogs'ta promptForFile YOK (0.6/0.7'de doğrulandı) → FileChoosers kullanılır.
 def maskFile = qupath.fx.dialogs.FileChoosers.promptForFile(
-    "Maske görüntüsünü seçin",
-    qupath.fx.dialogs.FileChoosers.createExtensionFilter("Maske görüntüsü (*.png, *.tif, *.tiff)", "*.png", "*.tif", "*.tiff"))
+    workshopText('script.4a3b3d23fcbc', 'Maske görüntüsünü seçin'),
+    qupath.fx.dialogs.FileChoosers.createExtensionFilter(workshopText('script.af4c92fa22df', 'Maske görüntüsü (*.png, *.tif, *.tiff)'), "*.png", "*.tif", "*.tiff"))
 if (maskFile == null) {
     println "İptal edildi — dosya seçilmedi."
     return
@@ -318,8 +318,8 @@ if (newAnns.isEmpty()) {
 // bu yardımcının kendi anotasyonları kaldırılır, altlarındaki nesneler korunur.
 def oldImports = QP.getAnnotationObjects().findAll { it.getName() == importSentinelName }
 if (!oldImports.isEmpty()) {
-    def optAdd = "Ekle — hiçbir şeyi silme"
-    def optRep = "Önceki içe aktarımı değiştir"
+    def optAdd = workshopText('script.eb621546d054', 'Ekle — hiçbir şeyi silme')
+    def optRep = workshopText('script.27c4071a15db', 'Önceki içe aktarımı değiştir')
     def ch = Dialogs.showChoiceDialog(workshopText('script.dd2c102cce23', "Önceki içe aktarım bulundu"),
         workshopText('script.cb9ed0395ead', "Bu görüntüde önceki bir içe aktarımdan ") + oldImports.size() + workshopText('script.465be7ff125b', " anotasyon var (\"") + importSentinelName + "\").\n\n" +
         workshopText('script.529d5ee71f24', "• Ekle: hiçbir şey silinmez; yeni bölgeler öncekilerin yanına eklenir (aynı maskeyi\n") +
@@ -340,15 +340,15 @@ double ph = cal.getPixelHeightMicrons()
 boolean calibrated = (pw > 0 && ph > 0 && !Double.isNaN(pw) && !Double.isNaN(ph))
 
 def body = new StringBuilder()
-body << "MASKE İÇE AKTARMA — RASTER → ANOTASYON\n"
+body << workshopText('script.8c2d4494df8e', 'MASKE İÇE AKTARMA — RASTER → ANOTASYON\n')
 body << "══════════════════════════════════════\n\n"
-body << "Maske    : ${maskFile.getName()}\n"
-body << "Görüntü  : ${server.getMetadata().getName()}\n"
-body << (sidecar != null ? "Yan dosya: ${jsonSidecar.getName()} (downsample + sınıf adları okundu)\n" : "Yan dosya: yok (downsample/sınıf elle girildi)\n")
-body << String.format(java.util.Locale.US, "Maske     : %,d × %,d px → downsample %.3f%n", maskW, maskH, downsample)
-body << (binaryFallback ? "Mod      : ikili (çok sayıda farklı değer → tüm sıfır-dışı = ön plan)\n" : "")
-body << String.format(java.util.Locale.US, "%nİçe aktarılan anotasyon : %,d  (bölme: %s)%n", newAnns.size(), (split ? "evet" : "hayır"))
-body << "\nSınıf dökümü (sınıf → adet" << (calibrated ? " → alan mm²" : "") << "):\n"
+body << String.format(java.util.Locale.US, workshopText('script.629b0ea177ae', 'Maske    : %s\n'), maskFile.getName())
+body << String.format(java.util.Locale.US, workshopText('script.77c4330a21eb', 'Görüntü  : %s\n'), server.getMetadata().getName())
+body << (sidecar != null ? String.format(java.util.Locale.US, workshopText('script.419a8e2733ba', 'Yan dosya: %s (downsample + sınıf adları okundu)\n'), jsonSidecar.getName()) : workshopText('script.e92b33bd92d3', 'Yan dosya: yok (downsample/sınıf elle girildi)\n'))
+body << String.format(java.util.Locale.US, workshopText('script.f1710754276c', 'Maske     : %,d × %,d px → downsample %.3f%n'), maskW, maskH, downsample)
+body << (binaryFallback ? workshopText('script.8e139ff64be4', 'Mod      : ikili (çok sayıda farklı değer → tüm sıfır-dışı = ön plan)\n') : "")
+body << String.format(java.util.Locale.US, workshopText('script.865c38c8c4e9', '%nİçe aktarılan anotasyon : %,d  (bölme: %s)%n'), newAnns.size(), (split ? workshopText('script.23f31d553dea', 'evet') : workshopText('script.5935eed908c4', 'hayır')))
+body << workshopText('script.7efbf8c207d7', '\nSınıf dökümü (sınıf → adet') << (calibrated ? workshopText('script.e73f952c8a74', ' → alan mm²') : "") << "):\n"
 classCounts.each { cls, n ->
     if (calibrated) {
         double mm2 = (classAreaPx.getOrDefault(cls, 0.0d)) * pw * ph / 1_000_000.0d
@@ -357,12 +357,12 @@ classCounts.each { cls, n ->
         body << String.format(java.util.Locale.US, "  %-22s : %,6d%n", cls, n)
     }
 }
-if (!calibrated) body << "\n(Görüntü kalibre değil — alanlar mm² olarak verilemedi.)\n"
-body << "\nTüm bölgeler" << (lockImported ? " kilitli" : "") << " anotasyon olarak eklendi.\n"
-body << "Maske bir derin öğrenme çıktısıysa görsel olarak doğrulayın; klinik yorum üretilmez.\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar."
+if (!calibrated) body << workshopText('script.787d7a9538ce', '\n(Görüntü kalibre değil — alanlar mm² olarak verilemedi.)\n')
+body << workshopText('script.0a6c409b07f6', '\nTüm bölgeler') << (lockImported ? workshopText('script.180b8b7836a5', ' kilitli') : "") << workshopText('script.58e7c13f8f04', ' anotasyon olarak eklendi.\n')
+body << workshopText('script.513442f9b978', 'Maske bir derin öğrenme çıktısıysa görsel olarak doğrulayın; klinik yorum üretilmez.\n')
+body << workshopText('script.625c43e2ff2e', '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.')
 
-showResultWindow("Maske içe aktarma", body.toString())
+showResultWindow(workshopText('script.0c946a04070d', 'Maske içe aktarma'), body.toString())
 println "✓ Maske içe aktarımı tamamlandı (${newAnns.size()} anotasyon, ${labelsPresent.size()} indeks)."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

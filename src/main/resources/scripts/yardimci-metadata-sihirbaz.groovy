@@ -481,42 +481,42 @@ def extractMetadata = { imageData, entry, project ->
 def reportText = { m ->
     def sb = new StringBuilder()
     def line = { String label, Object val -> sb << String.format(java.util.Locale.US, '  %-22s : %s%n', label, (val == null ? '—' : val.toString())) }
-    sb << 'LAM ÜST VERİSİ\n'
+    sb << workshopText('script.6a55a336eb4b', 'LAM ÜST VERİSİ\n')
     sb << '═════════════════\n'
-    line('Görüntü', m.image_name)
-    line('Boyut (px)', fmtInt((long) m.width_pixels) + ' × ' + fmtInt((long) m.height_pixels))
-    line('Kanal / z / t', '' + m.num_channels + ' / ' + m.num_z_slices + ' / ' + m.num_timepoints)
-    line('RGB', m.is_rgb ? 'evet' : 'hayır')
-    line('Piksel tipi', m.pixel_type)
-    line('Sunucu', m.server_type)
+    line(workshopText('script.461af90e2417', 'Görüntü'), m.image_name)
+    line(workshopText('script.21a0402a0c89', 'Boyut (px)'), fmtInt((long) m.width_pixels) + ' × ' + fmtInt((long) m.height_pixels))
+    line(workshopText('script.e657d2246571', 'Kanal / z / t'), '' + m.num_channels + ' / ' + m.num_z_slices + ' / ' + m.num_timepoints)
+    line('RGB', m.is_rgb ? workshopText('script.23f31d553dea', 'evet') : workshopText('script.5935eed908c4', 'hayır'))
+    line(workshopText('script.73d3db6aea2d', 'Piksel tipi'), m.pixel_type)
+    line(workshopText('script.813afe3961ce', 'Sunucu'), m.server_type)
     sb << '\n'
-    line('Piksel (µm/px)', (m.pixel_width_um != null && !Double.isNaN((double) m.pixel_width_um)) ? (fmt((double) m.pixel_width_um, 4) + ' × ' + fmt((double) m.pixel_height_um, 4)) : '— (kalibre değil)')
-    line('Kestirilen büyütme', (m.estimated_magnification != null) ? ('~' + m.estimated_magnification + '×  (sezgisel)') : '—')
-    if (m.objective_magnification != null) line('Objektif büyütme', fmt((double) m.objective_magnification, 1) + '×  (gömülü)')
-    if (m.area_mm2 != null) line('Tarama alanı (mm²)', fmt((double) m.area_mm2, 1) + '  (tüm görüntü; doku alanı değil)')
+    line(workshopText('script.31c9e37c66f0', 'Piksel (µm/px)'), (m.pixel_width_um != null && !Double.isNaN((double) m.pixel_width_um)) ? (fmt((double) m.pixel_width_um, 4) + ' × ' + fmt((double) m.pixel_height_um, 4)) : workshopText('script.fd37d740d655', '— (kalibre değil)'))
+    line(workshopText('script.4ed910425d26', 'Kestirilen büyütme'), (m.estimated_magnification != null) ? ('~' + m.estimated_magnification + workshopText('script.24d9413d676e', '×  (sezgisel)')) : '—')
+    if (m.objective_magnification != null) line(workshopText('script.e7e9fe31e01e', 'Objektif büyütme'), fmt((double) m.objective_magnification, 1) + workshopText('script.1c7ba23fa07d', '×  (gömülü)'))
+    if (m.area_mm2 != null) line(workshopText('script.ac90a6a3bb47', 'Tarama alanı (mm²)'), fmt((double) m.area_mm2, 1) + workshopText('script.eb312084c25f', '  (tüm görüntü; doku alanı değil)'))
     sb << '\n'
-    line('Piramit', (m.has_pyramid ? ('evet, ' + m.pyramid_levels + ' seviye') : 'YOK ⚠'))
-    if (m.pyramid_factor != null) line('Piramit faktörü', fmt((double) m.pyramid_factor, 2))
-    line('Önerilen analiz sv.', m.suggested_analysis_level)
+    line(workshopText('script.192a4a0b2af0', 'Piramit'), (m.has_pyramid ? (workshopText('script.1196f7379c16', 'evet, ') + m.pyramid_levels + workshopText('script.8ab55a6e0b19', ' seviye')) : workshopText('script.66cd6138b8d6', 'YOK ⚠')))
+    if (m.pyramid_factor != null) line(workshopText('script.cd49fb021c54', 'Piramit faktörü'), fmt((double) m.pyramid_factor, 2))
+    line(workshopText('script.034ec16e5b23', 'Önerilen analiz sv.'), m.suggested_analysis_level)
     sb << '\n'
-    if (m.file_extension != null) line('Dosya türü', m.file_extension)
-    if (m.file_size_mb != null) line('Dosya boyutu (MB)', fmt((double) m.file_size_mb, 1))
-    if (m.scanner != null) line('Tarayıcı', m.scanner)
-    if (m.scanner_type != null) line('Tarayıcı tipi', m.scanner_type)
-    if (m.scan_date != null) line('Tarama tarihi', m.scan_date + (m.scan_time != null ? (' ' + m.scan_time) : ''))
-    if (m.compression != null) line('Sıkıştırma', m.compression + (m.compression_quality != null ? (' Q=' + m.compression_quality) : ''))
-    if (m.tiff_ifd_count != null) line('TIFF IFD sayısı', '' + m.tiff_ifd_count + (m.is_bigtiff ? '  (BigTIFF)' : ''))
-    if (m.has_icc_profile != null) line('ICC profili', m.has_icc_profile ? ('var' + (m.icc_md5 != null ? ('  md5 ' + m.icc_md5.toString().substring(0, 12) + (m.icc_created != null ? ('  oluşturma ' + m.icc_created) : '')) : '')) : 'yok')
-    if (m.icc_description != null) line('ICC açıklaması', m.icc_description)
-    if (m.has_label_image != null) line('Etiket / makro görüntü', (m.has_label_image ? 'var' : 'yok') + ' / ' + (m.has_macro_image ? 'var' : 'yok'))
+    if (m.file_extension != null) line(workshopText('script.939fff63bb7c', 'Dosya türü'), m.file_extension)
+    if (m.file_size_mb != null) line(workshopText('script.972ab9e1f097', 'Dosya boyutu (MB)'), fmt((double) m.file_size_mb, 1))
+    if (m.scanner != null) line(workshopText('script.0d88d1c942f0', 'Tarayıcı'), m.scanner)
+    if (m.scanner_type != null) line(workshopText('script.f32690bbe210', 'Tarayıcı tipi'), m.scanner_type)
+    if (m.scan_date != null) line(workshopText('script.b72b6176f2be', 'Tarama tarihi'), m.scan_date + (m.scan_time != null ? (' ' + m.scan_time) : ''))
+    if (m.compression != null) line(workshopText('script.f7f04a6ae176', 'Sıkıştırma'), m.compression + (m.compression_quality != null ? (' Q=' + m.compression_quality) : ''))
+    if (m.tiff_ifd_count != null) line(workshopText('script.617de9bc06a3', 'TIFF IFD sayısı'), '' + m.tiff_ifd_count + (m.is_bigtiff ? '  (BigTIFF)' : ''))
+    if (m.has_icc_profile != null) line(workshopText('script.3e8274205126', 'ICC profili'), m.has_icc_profile ? (workshopText('script.c86872dc97dd', 'var') + (m.icc_md5 != null ? ('  md5 ' + m.icc_md5.toString().substring(0, 12) + (m.icc_created != null ? (workshopText('script.97766ae6211c', '  oluşturma ') + m.icc_created) : '')) : '')) : workshopText('script.b83cecac4fb8', 'yok'))
+    if (m.icc_description != null) line(workshopText('script.88ed4b0572a5', 'ICC açıklaması'), m.icc_description)
+    if (m.has_label_image != null) line(workshopText('script.588d9debf8e3', 'Etiket / makro görüntü'), (m.has_label_image ? workshopText('script.c86872dc97dd', 'var') : workshopText('script.b83cecac4fb8', 'yok')) + ' / ' + (m.has_macro_image ? workshopText('script.c86872dc97dd', 'var') : workshopText('script.b83cecac4fb8', 'yok')))
     if (m.embedded_identity_filled_count != null) {
         sb << '\n'
-        line('Gömülü kimlik alanı (dolu)', m.embedded_identity_filled ?: 'yok')
-        line('Gömülü kimlik alanı (boş)', m.embedded_identity_blank ?: 'yok')
+        line(workshopText('script.fbf90a063627', 'Gömülü kimlik alanı (dolu)'), m.embedded_identity_filled ?: workshopText('script.b83cecac4fb8', 'yok'))
+        line(workshopText('script.b6c7a3f5c8a6', 'Gömülü kimlik alanı (boş)'), m.embedded_identity_blank ?: workshopText('script.b83cecac4fb8', 'yok'))
     }
     int rawN = m.keySet().count { it.toString().startsWith('raw_') }
-    if (rawN > 0) sb << String.format(java.util.Locale.US, '%n  (+ %d gömülü ham anahtar — CSV\'de raw_* sütunları)%n', rawN)
-    sb << '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
+    if (rawN > 0) sb << String.format(java.util.Locale.US, workshopText('script.c16f9f5ba2a6', '%n  (+ %d gömülü ham anahtar — CSV\'de raw_* sütunları)%n'), rawN)
+    sb << workshopText('script.0a96d0aa4dbc', '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
@@ -599,47 +599,47 @@ def resolveOutDir = { project ->
 // ── Özet metni ───────────────────────────────────────────────────────────────
 def buildSummary = { List rows, List errors, File outDir, File csvFile, boolean wroteCols ->
     def sb = new StringBuilder()
-    sb << 'KOHORT ÜST VERİSİ — ÖZET\n'
+    sb << workshopText('script.93941a91bf08', 'KOHORT ÜST VERİSİ — ÖZET\n')
     sb << '════════════════════════\n\n'
-    sb << String.format(java.util.Locale.US, '  Taranan lam   : %,d%n', rows.size())
-    sb << String.format(java.util.Locale.US, '  Atlanan / hatalı: %,d%n', errors.size())
+    sb << String.format(java.util.Locale.US, workshopText('script.ed6fcb393624', '  Taranan lam   : %,d%n'), rows.size())
+    sb << String.format(java.util.Locale.US, workshopText('script.6b236b82525c', '  Atlanan / hatalı: %,d%n'), errors.size())
     def pixels = rows.collect { it.pixel_width_um }.findAll { it != null && !Double.isNaN((double) it) && it > 0 }
     if (!pixels.isEmpty()) {
-        sb << String.format(java.util.Locale.US, '  Piksel (µm/px)  : %.3f – %.3f%n', (double) pixels.min(), (double) pixels.max())
+        sb << String.format(java.util.Locale.US, workshopText('script.5d47dfd73a32', '  Piksel (µm/px)  : %.3f – %.3f%n'), (double) pixels.min(), (double) pixels.max())
     }
     int withPyr = rows.count { it.has_pyramid }
-    sb << String.format(java.util.Locale.US, '  Piramitli       : %,d / %,d%n', withPyr, rows.size())
+    sb << String.format(java.util.Locale.US, workshopText('script.a13ff5bff28f', '  Piramitli       : %,d / %,d%n'), withPyr, rows.size())
     def scanners = rows.collect { it.scanner }.findAll { it }.countBy { it }
-    if (!scanners.isEmpty()) sb << '  Tarayıcılar     : ' + scanners.collect { k, v -> k + ' (' + v + ')' }.join(', ') + '\n'
+    if (!scanners.isEmpty()) sb << workshopText('script.9c023475715f', '  Tarayıcılar     : ') + scanners.collect { k, v -> k + ' (' + v + ')' }.join(', ') + '\n'
     def iccs = rows.collect { it.icc_md5 }.findAll { it }.countBy { it.toString().substring(0, 12) }
-    if (!iccs.isEmpty()) sb << '  ICC profilleri  : ' + iccs.size() + ' farklı: ' + iccs.collect { k, v -> k + ' (' + v + ')' }.join(', ') + '\n'
+    if (!iccs.isEmpty()) sb << workshopText('script.aaccf6caa5d6', '  ICC profilleri  : ') + iccs.size() + workshopText('script.6ab09234ab20', ' farklı: ') + iccs.collect { k, v -> k + ' (' + v + ')' }.join(', ') + '\n'
     def formats = rows.collect { it.file_extension }.findAll { it }.countBy { it }
-    if (!formats.isEmpty()) sb << '  Biçimler        : ' + formats.collect { k, v -> k + '(' + v + ')' }.join(', ') + '\n'
+    if (!formats.isEmpty()) sb << workshopText('script.00e3f5cdd8c6', '  Biçimler        : ') + formats.collect { k, v -> k + '(' + v + ')' }.join(', ') + '\n'
     double totMB = 0.0d; rows.each { if (it.file_size_mb != null) totMB += (double) it.file_size_mb }
-    if (totMB > 0) sb << String.format(java.util.Locale.US, '  Toplam boyut    : %,d MB%n', Math.round(totMB))
+    if (totMB > 0) sb << String.format(java.util.Locale.US, workshopText('script.ef9236540606', '  Toplam boyut    : %,d MB%n'), Math.round(totMB))
     int withLabel = rows.count { it.has_label_image }, withMacro = rows.count { it.has_macro_image }
-    sb << String.format(java.util.Locale.US, '  Etiket görüntüsü: %,d / %,d%n', withLabel, rows.size())
-    sb << String.format(java.util.Locale.US, '  Makro görüntü   : %,d / %,d%n', withMacro, rows.size())
+    sb << String.format(java.util.Locale.US, workshopText('script.76837dffc730', '  Etiket görüntüsü: %,d / %,d%n'), withLabel, rows.size())
+    sb << String.format(java.util.Locale.US, workshopText('script.23f05253ea5b', '  Makro görüntü   : %,d / %,d%n'), withMacro, rows.size())
     def headerRows = rows.findAll { it.embedded_identity_filled_count != null }
     if (!headerRows.isEmpty()) {
         int withId = headerRows.count { ((int) it.embedded_identity_filled_count) > 0 }
-        sb << String.format(java.util.Locale.US, '  Gömülü kimlik alanı dolu lam: %,d / %,d%n', withId, headerRows.size())
+        sb << String.format(java.util.Locale.US, workshopText('script.eaef875bebe8', '  Gömülü kimlik alanı dolu lam: %,d / %,d%n'), withId, headerRows.size())
         def idKeys = new java.util.TreeSet()
         headerRows.each { r -> (r.embedded_identity_filled ?: '').toString().split(';').each { if (it.trim()) idKeys.add(it.trim()) } }
-        if (!idKeys.isEmpty()) sb << '  Dolu alanlar    : ' + idKeys.join(', ') + '\n'
-        sb << '\n  Dikkat: CSV bu alanların DEĞERLERİNİ de içerir (raw_* ve tarama sütunları).\n'
-        sb << '  CSV\'yi paylaşmadan önce bu sütunları ve file_path / file_uri sütunlarını gözden geçirin.\n'
+        if (!idKeys.isEmpty()) sb << workshopText('script.7dd1a701262b', '  Dolu alanlar    : ') + idKeys.join(', ') + '\n'
+        sb << workshopText('script.2d92ceb2d031', '\n  Dikkat: CSV bu alanların DEĞERLERİNİ de içerir (raw_* ve tarama sütunları).\n')
+        sb << workshopText('script.dd1c850295fb', '  CSV\'yi paylaşmadan önce bu sütunları ve file_path / file_uri sütunlarını gözden geçirin.\n')
     }
     sb << '\n  CSV   : ' + csvFile.getAbsolutePath() + '\n'
-    sb << '  Özet  : ' + new File(outDir, 'detailed_summary.txt').getAbsolutePath() + '\n'
-    if (wroteCols) sb << '\n  ✓ Çekirdek alanlar Proje sekmesine sütun olarak da yazıldı (sıralanabilir).\n'
+    sb << workshopText('script.fc3d578f59b0', '  Özet  : ') + new File(outDir, 'detailed_summary.txt').getAbsolutePath() + '\n'
+    if (wroteCols) sb << workshopText('script.04bfcadd3311', '\n  ✓ Çekirdek alanlar Proje sekmesine sütun olarak da yazıldı (sıralanabilir).\n')
     if (!errors.isEmpty()) {
-        sb << '\n  Hatalar:\n'
+        sb << workshopText('script.307ef037c1a7', '\n  Hatalar:\n')
         errors.take(12).each { sb << '   • ' + it + '\n' }
-        if (errors.size() > 12) sb << '   … (+' + (errors.size() - 12) + ' daha)\n'
+        if (errors.size() > 12) sb << '   … (+' + (errors.size() - 12) + workshopText('script.aa09562b82f8', ' daha)\n')
     }
-    sb << '\nCSV\'yi Excel/R/Python\'da açıp kohort dahil/dışlama ölçütlerinizi tanımlayın.\n'
-    sb << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
+    sb << workshopText('script.ae38e31ed6ac', '\nCSV\'yi Excel/R/Python\'da açıp kohort dahil/dışlama ölçütlerinizi tanımlayın.\n')
+    sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
@@ -648,7 +648,7 @@ def writeSummaryFile = { List rows, List errors, File outDir, File csvFile, Stri
     try {
         def f = new File(outDir, 'detailed_summary.txt')
         f.withWriter('UTF-8') { w ->
-            w.writeLine('Kohort Üst Verisi — ' + nowStr())
+            w.writeLine(workshopText('script.531332af9011', 'Kohort Üst Verisi — ') + nowStr())
             w.writeLine('QuPath ' + GeneralTools.getVersion())
             w.writeLine(summaryText.replace('—', '-'))
         }
@@ -658,9 +658,9 @@ def writeSummaryFile = { List rows, List errors, File outDir, File csvFile, Stri
 // ── Tüm projeyi tara (arka plan iş parçacığı) ───────────────────────────────
 def startScan = {
     def project = QP.getProject()
-    if (project == null) { errorTextRef.set('Açık proje yok. Önce bir QuPath projesi açın.'); step.set('ERROR'); render(); return }
+    if (project == null) { errorTextRef.set(workshopText('script.74407717e08a', 'Açık proje yok. Önce bir QuPath projesi açın.')); step.set('ERROR'); render(); return }
     def entries = project.getImageList()
-    if (entries == null || entries.isEmpty()) { errorTextRef.set('Projede görüntü yok.'); step.set('ERROR'); render(); return }
+    if (entries == null || entries.isEmpty()) { errorTextRef.set(workshopText('script.4e709de3731a', 'Projede görüntü yok.')); step.set('ERROR'); render(); return }
     boolean wantCols = writeColsRef.get()
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
@@ -671,11 +671,11 @@ def startScan = {
         def outDir = resolveOutDir(project)
         try { outDir.mkdirs() } catch (Throwable ignore) {}
         outDirRef.set(outDir)
-        appendLine('Çıktı dizini: ' + outDir.getAbsolutePath())
+        appendLine(workshopText('script.588c28f4b341', 'Çıktı dizini: ') + outDir.getAbsolutePath())
         def rows = []; def errors = []
         int total = entries.size(); int i = 0
         for (entry in entries) {
-            if (cancelledRef.get()) { appendLine('İptal edildi.'); break }
+            if (cancelledRef.get()) { appendLine(workshopText('script.fee85e45842b', 'İptal edildi.')); break }
             i++
             def nm = entry.getImageName()
             appendLine(String.format(java.util.Locale.US, '[%d/%d] %s', i, total, nm))
@@ -687,22 +687,22 @@ def startScan = {
                 }
             } catch (Throwable t) {
                 errors << (nm + ' → ' + (t.getMessage() ?: t.getClass().getSimpleName()))
-                appendLine('   ⚠ atlandı: ' + (t.getMessage() ?: t.getClass().getSimpleName()))
+                appendLine(workshopText('script.06992aff64cd', '   ⚠ atlandı: ') + (t.getMessage() ?: t.getClass().getSimpleName()))
             }
         }
         boolean wroteCols = false
         if (wantCols && !rows.isEmpty()) {
-            try { project.syncChanges(); wroteCols = true } catch (Throwable t) { errors << ('Proje sütunları kaydedilemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName())) }
+            try { project.syncChanges(); wroteCols = true } catch (Throwable t) { errors << (workshopText('script.60026c070e90', 'Proje sütunları kaydedilemedi: ') + (t.getMessage() ?: t.getClass().getSimpleName())) }
         }
         def csvFile = new File(outDir, 'cohort_metadata.csv')
         if (!rows.isEmpty()) {
             try { writeCsv(rows, csvFile) }
-            catch (Throwable t) { javafx.application.Platform.runLater { errorTextRef.set('CSV yazılamadı:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }; return }
+            catch (Throwable t) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.8df4c0a5bc04', 'CSV yazılamadı:\n') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }; return }
         }
         def summary = buildSummary(rows, errors, outDir, csvFile, wroteCols)
         writeSummaryFile(rows, errors, outDir, csvFile, summary)
         javafx.application.Platform.runLater {
-            if (rows.isEmpty()) { errorTextRef.set('Hiçbir görüntü okunamadı.\n' + (errors.isEmpty() ? '' : errors.take(8).join('\n'))); step.set('ERROR'); render() }
+            if (rows.isEmpty()) { errorTextRef.set(workshopText('script.af7c02296703', 'Hiçbir görüntü okunamadı.\n') + (errors.isEmpty() ? '' : errors.take(8).join('\n'))); step.set('ERROR'); render() }
             else { resultTextRef.set(summary); step.set('RESULT'); render() }
         }
     }, 'AtolyeMetadata-Scan')
@@ -738,7 +738,7 @@ render = { ->
         if (imageData != null) {
             def rep
             try { rep = reportText(extractMetadata(imageData, QP.getProjectEntry(), project)) }
-            catch (Throwable t) { rep = 'Açık lam okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName()) }
+            catch (Throwable t) { rep = workshopText('script.b6cfae86b4bd', 'Açık lam okunamadı: ') + (t.getMessage() ?: t.getClass().getSimpleName()) }
             reportRef.set(rep)
             addMonoArea(rep)
         } else {
@@ -819,7 +819,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println '✓ Kohort üst veri sihirbazı açıldı.'

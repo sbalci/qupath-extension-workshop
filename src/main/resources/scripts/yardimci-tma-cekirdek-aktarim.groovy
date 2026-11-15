@@ -109,9 +109,7 @@ if (imageData == null) {
 def hierarchy = imageData.getHierarchy()
 def tmaGrid = hierarchy.getTMAGrid()
 if (tmaGrid == null || tmaGrid.nCores() == 0) {
-    def msg = "Bu lamda TMA ızgarası yok.\n\n" +
-              "Önce [TMA → TMA dearrayer] ile çekirdekleri ızgaraya ayırın,\n" +
-              "sonra bir tespit modülü (Hücre Tespiti, Nükleer Boya vb.) çalıştırın."
+    def msg = workshopText('script.a2e8c87317bd', 'Bu lamda TMA ızgarası yok.\n\nÖnce [TMA → TMA dearrayer] ile çekirdekleri ızgaraya ayırın,\nsonra bir tespit modülü (Hücre Tespiti, Nükleer Boya vb.) çalıştırın.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.f8d7e11126af', "TMA bulunamadı"), msg)
     return
 }
@@ -164,9 +162,7 @@ cores.each { core ->
 QP.fireHierarchyUpdate()
 
 if (!anyDetections) {
-    def msg = "TMA ızgarası var ama çekirdeklerde hiç hücre tespiti yok.\n\n" +
-              "Önce bir tespit modülü (Hücre Tespiti, Nükleer Boya, ER/PR H-score,\n" +
-              "Membran Boya veya Sitoplazmik Boya modüllerinden biri) çalıştırın, sonra bu betiği tekrar deneyin."
+    def msg = workshopText('script.1c8753fa5c01', 'TMA ızgarası var ama çekirdeklerde hiç hücre tespiti yok.\n\nÖnce bir tespit modülü (Hücre Tespiti, Nükleer Boya, ER/PR H-score,\nMembran Boya veya Sitoplazmik Boya modüllerinden biri) çalıştırın, sonra bu betiği tekrar deneyin.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.4277b763a640', "Tespit yok"), msg)
     return
 }
@@ -195,18 +191,18 @@ tsvFile.write(sb.toString(), "UTF-8")
 // ── 4) Sonucu sun ───────────────────────────────────────────────────
 double overallPct = totalCells > 0 ? (100.0 * totalPos / totalCells) : Double.NaN
 def body = new StringBuilder()
-body << "TMA ÇEKİRDEK BAZLI DIŞA AKTARIM\n"
+body << workshopText('script.f49fca4ea492', 'TMA ÇEKİRDEK BAZLI DIŞA AKTARIM\n')
 body << "═══════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Çekirdek sayısı   : %d  (geçerli: %d)%n", cores.size(), validCores)
-body << String.format(java.util.Locale.US, "Toplam hücre      : %,d  (yalnız geçerli çekirdekler)%n", totalCells)
-body << String.format(java.util.Locale.US, "Toplam pozitif    : %,d  (%.1f %%)%n", totalPos, overallPct)
-if (!calibrated) body << "\n⚠️ Piksel kalibrasyonu yok → alan/yoğunluk sütunları boş bırakıldı.\n"
+body << String.format(java.util.Locale.US, workshopText('script.370bf15b2c0c', 'Çekirdek sayısı   : %d  (geçerli: %d)%n'), cores.size(), validCores)
+body << String.format(java.util.Locale.US, workshopText('script.88c6de820cfe', 'Toplam hücre      : %,d  (yalnız geçerli çekirdekler)%n'), totalCells)
+body << String.format(java.util.Locale.US, workshopText('script.d5be65da0e60', 'Toplam pozitif    : %,d  (%.1f %%)%n'), totalPos, overallPct)
+if (!calibrated) body << workshopText('script.d2d6c43cb5d0', '\n⚠️ Piksel kalibrasyonu yok → alan/yoğunluk sütunları boş bırakıldı.\n')
 body << "\nTSV: " << tsvFile.getAbsolutePath() << "\n\n"
-body << "Bu bir SAYIM/YOĞUNLUK tablosudur — klinik skor veya yorum DEĞİL.\n"
+body << workshopText('script.485febc7ee08', 'Bu bir SAYIM/YOĞUNLUK tablosudur — klinik skor veya yorum DEĞİL.\n')
 body << "(Kurowski 2024; Loughrey 2018; Porter 2023)\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("TMA çekirdek dışa aktarım", body.toString())
+showResultWindow(workshopText('script.7b717d989df8', 'TMA çekirdek dışa aktarım'), body.toString())
 println "✓ TMA çekirdek özeti yazıldı: ${tsvFile.getAbsolutePath()}"
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

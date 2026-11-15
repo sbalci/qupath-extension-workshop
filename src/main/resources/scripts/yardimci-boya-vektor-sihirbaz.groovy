@@ -130,56 +130,56 @@ def buildReport = { ->
         boolean def1 = vecClose(v1, DEF_HEMA)
         boolean def2 = vecClose(v2, DEF_EOSIN)
         verdict = (def1 && def2)
-            ? "⚠ Vektörler QuPath H&E VARSAYILANI ile aynı — bu lamdan tahmin EDİLMEMİŞ olabilir."
-            : "✓ Vektörler varsayılandan farklı — muhtemelen kalibre/tahmin edilmiş."
+            ? workshopText('script.59f9b8986149', '⚠ Vektörler QuPath H&E VARSAYILANI ile aynı — bu lamdan tahmin EDİLMEMİŞ olabilir.')
+            : workshopText('script.bc18eb6544d0', '✓ Vektörler varsayılandan farklı — muhtemelen kalibre/tahmin edilmiş.')
     } else if (isHDAB) {
         boolean def1 = vecClose(v1, DEF_HEMA)
         boolean def2 = vecClose(v2, DEF_DAB)
         verdict = (def1 && def2)
-            ? "⚠ Vektörler QuPath H-DAB VARSAYILANI ile aynı — bu lamdan tahmin EDİLMEMİŞ olabilir."
-            : "✓ Vektörler varsayılandan farklı — muhtemelen kalibre/tahmin edilmiş."
+            ? workshopText('script.c50fe9db6faf', '⚠ Vektörler QuPath H-DAB VARSAYILANI ile aynı — bu lamdan tahmin EDİLMEMİŞ olabilir.')
+            : workshopText('script.bc18eb6544d0', '✓ Vektörler varsayılandan farklı — muhtemelen kalibre/tahmin edilmiş.')
     } else {
         unknownType = true
-        verdict = "ℹ Boya tipi otomatik tanınamadı (H&E/H-DAB değil). Vektörleri elle doğrulayın."
+        verdict = workshopText('script.209d7c3ed1f0', 'ℹ Boya tipi otomatik tanınamadı (H&E/H-DAB değil). Vektörleri elle doğrulayın.')
     }
 
     def body = new StringBuilder()
-    body << "BOYA (RENK-DEKONVOLÜSYON) VEKTÖRLERİ\n"
+    body << workshopText('script.4025350ef888', 'BOYA (RENK-DEKONVOLÜSYON) VEKTÖRLERİ\n')
     body << "═════════════════════════════════════\n\n"
-    body << "Set adı       : " << (stains.getName() ?: "(adsız)") << "\n"
-    body << "Boya tipi     : " << (isHE ? "H&E" : (isHDAB ? "H-DAB" : "özel/bilinmiyor")) << "\n\n"
+    body << workshopText('script.c1d7b13e63de', 'Set adı       : ') << (stains.getName() ?: workshopText('script.2966ac6511d8', '(adsız)')) << "\n"
+    body << workshopText('script.9e85f3c180fe', 'Boya tipi     : ') << (isHE ? "H&E" : (isHDAB ? "H-DAB" : workshopText('script.66db0dad8aea', 'özel/bilinmiyor'))) << "\n\n"
     body << String.format(java.util.Locale.US, "Stain 1  %-14s %s%n", (s1?.getName() ?: "?"), fmtVec(v1))
     body << String.format(java.util.Locale.US, "Stain 2  %-14s %s%n", (s2?.getName() ?: "?"), fmtVec(v2))
     if (s3 != null) {
         String s3label = s3.isResidual() ? (s3.getName() + " (residual)") : s3.getName()
         body << String.format(java.util.Locale.US, "Stain 3  %-14s %s%n", s3label, fmtVec(vecOf(s3)))
     }
-    body << String.format(java.util.Locale.US, "%nArka plan (maks RGB) : %.1f, %.1f, %.1f%n",
+    body << String.format(java.util.Locale.US, workshopText('script.6dd6dfecffc5', '%nArka plan (maks RGB) : %.1f, %.1f, %.1f%n'),
             stains.getMaxRed() as double, stains.getMaxGreen() as double, stains.getMaxBlue() as double)
     body << "\n"
     body << verdict << "\n\n"
     if (!unknownType) {
-        body << "Karşılaştırma (varsayılan, ±" << String.format(java.util.Locale.US, "%.2f", TOL) << "):\n"
-        body << String.format(java.util.Locale.US, "  Hematoxylin varsayılan : %s%n", fmtVec(DEF_HEMA))
+        body << workshopText('script.287d9dfea641', 'Karşılaştırma (varsayılan, ±') << String.format(java.util.Locale.US, "%.2f", TOL) << "):\n"
+        body << String.format(java.util.Locale.US, workshopText('script.2671cfd3de8c', '  Hematoxylin varsayılan : %s%n'), fmtVec(DEF_HEMA))
         body << String.format(java.util.Locale.US, "  %-22s : %s%n",
-                (isHE ? "Eosin varsayılan" : "DAB varsayılan"), fmtVec(isHE ? DEF_EOSIN : DEF_DAB))
+                (isHE ? workshopText('script.55480d7fe8ec', 'Eosin varsayılan') : workshopText('script.89808c734db0', 'DAB varsayılan')), fmtVec(isHE ? DEF_EOSIN : DEF_DAB))
         body << "\n"
     }
-    body << "Renk dekonvolüsyonu — bilinen sınırlar (Bankhead):\n"
-    body << "  • Yöntem 'imkânsız' sonuç verebilir: kusurlu görüntü ya da yanlış vektörde\n"
-    body << "    bir boya NEGATİF değer alabilir — kantitatif eşiklerde bunu hesaba katın.\n"
-    body << "  • Kuvvetli DAB-pozitif (kahverengi) pikseller genelde YÜKSEK hematoksilen\n"
-    body << "    değeri de taşır; H kanalı pozitif alanlarda 'saf çekirdek' değildir.\n\n"
-    body << "Öneri: kantitatif H-DAB ölçümünde boya vektörlerini HER LAMTAN (ya da aynı\n"
-    body << "boyama/tarayıcı ile doğrulanmış bir grup için bir kez) tahmin edin.\n\n"
-    body << "Tahmin için: küçük ve temsilî bir bölge (iki boya + biraz arka plan) çizip seçin,\n"
-    body << "sonra aşağıdan \"Seçili bölgeden tahmin et\".\n\n"
-    body << "QuPath menüsü (ayrıntı/manuel):\n"
-    body << "  • Otomatik: Analyze → Preprocessing → Estimate stain vectors\n"
-    body << "  • Elle: Image sekmesinde boyaya (Stain 1/2) ya da arka plana ÇİFT TIKLAYIN\n"
-    body << "  • Resmî rehber: " << DOCS_URL << "\n\n"
-    body << "Boyama normalizasyonu (lamları birbirine benzetme) ayrı bir adımdır — bkz. Boyama normalizasyonu eki.\n\n"
-    body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    body << workshopText('script.5b4a25e73ecb', 'Renk dekonvolüsyonu — bilinen sınırlar (Bankhead):\n')
+    body << workshopText('script.a233a25f035c', '  • Yöntem \'imkânsız\' sonuç verebilir: kusurlu görüntü ya da yanlış vektörde\n')
+    body << workshopText('script.c89a66801031', '    bir boya NEGATİF değer alabilir — kantitatif eşiklerde bunu hesaba katın.\n')
+    body << workshopText('script.e592dfa99fb6', '  • Kuvvetli DAB-pozitif (kahverengi) pikseller genelde YÜKSEK hematoksilen\n')
+    body << workshopText('script.31adde720eeb', '    değeri de taşır; H kanalı pozitif alanlarda \'saf çekirdek\' değildir.\n\n')
+    body << workshopText('script.74c66e139d8a', 'Öneri: kantitatif H-DAB ölçümünde boya vektörlerini HER LAMTAN (ya da aynı\n')
+    body << workshopText('script.937514ee920e', 'boyama/tarayıcı ile doğrulanmış bir grup için bir kez) tahmin edin.\n\n')
+    body << workshopText('script.95164e28def2', 'Tahmin için: küçük ve temsilî bir bölge (iki boya + biraz arka plan) çizip seçin,\n')
+    body << workshopText('script.a7769cc51d01', 'sonra aşağıdan "Seçili bölgeden tahmin et".\n\n')
+    body << workshopText('script.aa64201fffad', 'QuPath menüsü (ayrıntı/manuel):\n')
+    body << workshopText('script.dc74b320f5e2', '  • Otomatik: Analyze → Preprocessing → Estimate stain vectors\n')
+    body << workshopText('script.d05d42ff91e3', '  • Elle: Image sekmesinde boyaya (Stain 1/2) ya da arka plana ÇİFT TIKLAYIN\n')
+    body << workshopText('script.46fc1998325b', '  • Resmî rehber: ') << DOCS_URL << "\n\n"
+    body << workshopText('script.b05d966f9959', 'Boyama normalizasyonu (lamları birbirine benzetme) ayrı bir adımdır — bkz. Boyama normalizasyonu eki.\n\n')
+    body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return [state: 'REPORT', text: body.toString()]
 }
 
@@ -196,7 +196,7 @@ def estimateFromSelection = { ->
     if (selected.isEmpty()) return [ok: false, reason: 'NO_REGION']
     def roi = selected[0].getROI()
     def multiNote = selected.size() > 1 ?
-        ("\n(Not: " + selected.size() + " nesne seçiliydi; ilk alan bölgesi kullanıldı.)") : ""
+        (workshopText('script.8784f53e6e54', '\n(Not: ') + selected.size() + workshopText('script.cf4f2e09dff5', ' nesne seçiliydi; ilk alan bölgesi kullanıldı.)')) : ""
 
     def server = imageData.getServer()
     double regionPixels = (roi.getBoundsWidth() as double) * (roi.getBoundsHeight() as double)
@@ -206,9 +206,9 @@ def estimateFromSelection = { ->
     try {
         img = server.readRegion(request)
     } catch (Throwable t) {
-        return [ok: false, reason: 'FAIL', error: "Seçili bölge okunamadı: " + (t.getMessage() ?: t.getClass().getSimpleName())]
+        return [ok: false, reason: 'FAIL', error: workshopText('script.098080ceec84', 'Seçili bölge okunamadı: ') + (t.getMessage() ?: t.getClass().getSimpleName())]
     }
-    if (img == null) return [ok: false, reason: 'FAIL', error: "Seçili bölgeden görüntü alınamadı (boş bölge?)."]
+    if (img == null) return [ok: false, reason: 'FAIL', error: workshopText('script.79246b8c6d87', 'Seçili bölgeden görüntü alınamadı (boş bölge?).')]
 
     def newStains
     try {
@@ -224,23 +224,23 @@ def estimateFromSelection = { ->
     double d2 = angleDeg(os2, ns2)
 
     def report = new StringBuilder()
-    report << "BOYA VEKTÖRÜ TAHMİNİ — ESKİ → YENİ\n"
+    report << workshopText('script.6a595f2b8c22', 'BOYA VEKTÖRÜ TAHMİNİ — ESKİ → YENİ\n')
     report << "═══════════════════════════════════════\n\n"
-    report << "Set adı : " << (oldStains.getName() ?: "(adsız)") << multiNote << "\n"
-    report << String.format(java.util.Locale.US, "Örnekleme downsample : %.2f%n%n", downsample)
+    report << workshopText('script.1634a63e0849', 'Set adı : ') << (oldStains.getName() ?: workshopText('script.2966ac6511d8', '(adsız)')) << multiNote << "\n"
+    report << String.format(java.util.Locale.US, workshopText('script.d5131acdcad5', 'Örnekleme downsample : %.2f%n%n'), downsample)
     report << (oldStains.getStain(1).getName() ?: "Stain 1") << "\n"
-    report << "  eski : " << fmtVec(os1) << "\n"
-    report << "  yeni : " << fmtVec(ns1) << "\n"
-    report << String.format(java.util.Locale.US, "  açısal değişim : %.2f derece%n%n", d1)
+    report << workshopText('script.4725f44139bf', '  eski : ') << fmtVec(os1) << "\n"
+    report << workshopText('script.2a129283c7a6', '  yeni : ') << fmtVec(ns1) << "\n"
+    report << String.format(java.util.Locale.US, workshopText('script.dff050e92e38', '  açısal değişim : %.2f derece%n%n'), d1)
     report << (oldStains.getStain(2).getName() ?: "Stain 2") << "\n"
-    report << "  eski : " << fmtVec(os2) << "\n"
-    report << "  yeni : " << fmtVec(ns2) << "\n"
-    report << String.format(java.util.Locale.US, "  açısal değişim : %.2f derece%n%n", d2)
+    report << workshopText('script.4725f44139bf', '  eski : ') << fmtVec(os2) << "\n"
+    report << workshopText('script.2a129283c7a6', '  yeni : ') << fmtVec(ns2) << "\n"
+    report << String.format(java.util.Locale.US, workshopText('script.dff050e92e38', '  açısal değişim : %.2f derece%n%n'), d2)
     report << String.format(java.util.Locale.US,
-            "Arka plan (maks RGB) eski : %.1f, %.1f, %.1f%n",
+            workshopText('script.761dce460b0c', 'Arka plan (maks RGB) eski : %.1f, %.1f, %.1f%n'),
             oldStains.getMaxRed() as double, oldStains.getMaxGreen() as double, oldStains.getMaxBlue() as double)
     report << String.format(java.util.Locale.US,
-            "Arka plan (maks RGB) yeni : %.1f, %.1f, %.1f%n",
+            workshopText('script.da4de31140c8', 'Arka plan (maks RGB) yeni : %.1f, %.1f, %.1f%n'),
             newStains.getMaxRed() as double, newStains.getMaxGreen() as double, newStains.getMaxBlue() as double)
     return [ok: true, oldStains: oldStains, newStains: newStains, text: report.toString()]
 }
@@ -422,14 +422,14 @@ render = { ->
         def r = buildReport()
         if (r.state == 'NO_IMAGE') {
             title.setText(workshopText('script.b4c901dc184b', 'Görüntü açık değil'))
-            addGuidance('Önce bir lam açın, sonra "⟳ Yenile".')
+            addGuidance(workshopText('script.e2638bc5557c', 'Önce bir lam açın, sonra "⟳ Yenile".'))
             actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
             actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
         } else if (r.state == 'NO_STAINS') {
             title.setText(workshopText('script.cfec911aa7bc', 'Boya vektörü tanımlı değil'))
             addGuidance(
                 workshopText('script.764b3ea6a979', 'Bu görüntüde renk-dekonvolüsyon (boya) vektörleri yok.\n\nOlası neden: görüntü tipi brightfield değil (örn. floresan/diğer).\n\nÇözüm:\n  • [Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla] ile tipi\n    Brightfield (H&E) ya da Brightfield (H-DAB) yapın.\n  • QuPath\'in kendi komutu: Analyze → Preprocessing → Estimate stain vectors\n  • Ayrıntı: ') + DOCS_URL + '\n\n' +
-                'Sonra "⟳ Yenile".')
+                workshopText('script.88c0ab160a9e', 'Sonra "⟳ Yenile".'))
             actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
             actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
         } else {
@@ -457,14 +457,14 @@ render = { ->
     } else if (cur == 'APPLIED') {
         def ap = appliedRef.get()
         def sb = new StringBuilder()
-        sb << "✓ Yeni boya vektörleri uygulandı (ad: \"Bölgeden tahmin (Atölye)\").\n\n"
+        sb << workshopText('script.b95588dc776b', '✓ Yeni boya vektörleri uygulandı (ad: "Bölgeden tahmin (Atölye)").\n\n')
         if (ap?.newStains != null) {
             def ns = ap.newStains
             sb << String.format(java.util.Locale.US, "%-12s : %s%n", (ns.getStain(1).getName() ?: "Stain 1"), fmtVec(vecOf(ns.getStain(1))))
             sb << String.format(java.util.Locale.US, "%-12s : %s%n", (ns.getStain(2).getName() ?: "Stain 2"), fmtVec(vecOf(ns.getStain(2))))
         }
-        sb << "\nGörüntü bu vektörlerle yeniden çizildi. Beğenmediyseniz [↩ Geri al].\n"
-        sb << "İnce ayar için: Image sekmesinde ilgili boyaya çift tıklayın."
+        sb << workshopText('script.fe2d0d09facb', '\nGörüntü bu vektörlerle yeniden çizildi. Beğenmediyseniz [↩ Geri al].\n')
+        sb << workshopText('script.ae326f40d948', 'İnce ayar için: Image sekmesinde ilgili boyaya çift tıklayın.')
         title.setText(workshopText('script.f7761d03f551', 'Uygulandı ✅'))
         addReportArea(sb.toString())
         actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
@@ -487,11 +487,11 @@ render = { ->
         def est = estRef.get()
         title.setText(workshopText('script.c009d4670c6a', 'Tahmin yapılamadı'))
         addGuidance(
-            (est?.error ?: 'Bilinmeyen hata.').toString() + '\n\n' +
+            (est?.error ?: workshopText('script.334b848286b9', 'Bilinmeyen hata.')).toString() + '\n\n' +
             workshopText('script.c3b80919dbd7', 'Olası neden: seçili bölge iki boyayı + biraz arka planı birlikte içermiyor\n') +
             workshopText('script.976c7fe37c1b', 'olabilir (QuPath renk denetimini geçemedi). Daha temsilî, küçük bir alan seçip\n') +
-            'tekrar deneyin.\n\n' +
-            '(Resmî komut: Analyze → Preprocessing → Estimate stain vectors · ' + DOCS_URL + ')')
+            workshopText('script.d6d888b1ed70', 'tekrar deneyin.\n\n') +
+            workshopText('script.ec4ad6464307', '(Resmî komut: Analyze → Preprocessing → Estimate stain vectors · ') + DOCS_URL + ')')
         actions.add(navButton(workshopText('script.6df60940343f', '◀ Rapora dön'), { step.set('REPORT'); render() }))
         actions.add(navButton(workshopText('script.11e805a92450', '↻ Tekrar dene'), { startEstimate() }))
     }
@@ -534,7 +534,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println "✓ Boya vektörleri sihirbazı açıldı (kontrol + tahmin tek pencerede)."

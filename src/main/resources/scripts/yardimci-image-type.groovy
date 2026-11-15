@@ -37,16 +37,16 @@ def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 // Görüntü tipi etiketleri ve enum karşılıkları
 // ──────────────────────────────────────────────────────────────
 def TYPE_OPTIONS = [
-    ["BRIGHTFIELD_H_DAB",  "Brightfield (H-DAB) — İHK / DAB lamları (Nükleer Boya, ER/PR H-score, Membran Boya, Sitoplazmik Boya, Tümör içi Ki-67 modülleri)"],
-    ["BRIGHTFIELD_H_E",    "Brightfield (H&E) — Hematoksilen-Eozin (Hücre Tespiti, Tümör/Stroma modülleri)"],
-    ["BRIGHTFIELD_OTHER",  "Brightfield (other) — diğer brightfield boyamaları"],
-    ["FLUORESCENCE",       "Fluorescence — floresan / immünofloresan"],
-    ["OTHER",              "Other — bilinmeyen / belirsiz"]
+    ["BRIGHTFIELD_H_DAB",  workshopText('script.d83d28f4d3f9', 'Brightfield (H-DAB) — İHK / DAB lamları (Nükleer Boya, ER/PR H-score, Membran Boya, Sitoplazmik Boya, Tümör içi Ki-67 modülleri)')],
+    ["BRIGHTFIELD_H_E",    workshopText('script.828436f4990e', 'Brightfield (H&E) — Hematoksilen-Eozin (Hücre Tespiti, Tümör/Stroma modülleri)')],
+    ["BRIGHTFIELD_OTHER",  workshopText('script.6308346925e4', 'Brightfield (other) — diğer brightfield boyamaları')],
+    ["FLUORESCENCE",       workshopText('script.ef9a81a6254a', 'Fluorescence — floresan / immünofloresan')],
+    ["OTHER",              workshopText('script.95285f93969f', 'Other — bilinmeyen / belirsiz')]
 ]
 
 def SCOPE_OPTIONS = [
-    ["current", "Yalnızca AÇIK lam"],
-    ["project", "Projedeki TÜM lamlar (toplu)"]
+    ["current", workshopText('script.33b5a1cb1e31', 'Yalnızca AÇIK lam')],
+    ["project", workshopText('script.4457424b0eb8', 'Projedeki TÜM lamlar (toplu)')]
 ]
 
 // ──────────────────────────────────────────────────────────────
@@ -247,7 +247,7 @@ if (scope == "current") {
     }
     def previous = imageData.getImageType()?.toString() ?: "—"
     if (imageData.getImageType() == targetType) {
-        skipped << "Açık lam (zaten ${targetTypeName})"
+        skipped << String.format(java.util.Locale.US, workshopText('script.12cdf28563d0', 'Açık lam (zaten %s)'), targetTypeName)
     } else {
         imageData.setImageType(targetType)
         // Açık görüntüde değişikliği diske de yansıt
@@ -260,7 +260,7 @@ if (scope == "current") {
             println "⚠ ImageData kaydedilemedi (proje açık değil mi?): ${t.message}"
             saveWarnings << String.format(java.util.Locale.US, workshopText('script.6ce019695f08', 'Görüntü tipi açık lamda değişti ama diske kaydedilemedi. Değişikliği kalıcı yapmak için QuPath ana penceresinde Ctrl+S ile kaydedin; kaydetmezseniz lamı yeniden açtığınızda eski tip geri gelebilir.\nTeknik ayrıntı: %s'), String.valueOf(t.message))
         }
-        updated << "Açık lam: ${previous} → ${targetTypeName}"
+        updated << String.format(java.util.Locale.US, workshopText('script.08bfeba685a2', 'Açık lam: %s → %s'), previous, targetTypeName)
     }
 } else { // "project"
     def project = QP.getProject()
@@ -285,7 +285,7 @@ if (scope == "current") {
             try {
                 def previous = imageData.getImageType()?.toString() ?: "—"
                 if (imageData.getImageType() == targetType) {
-                    skipped << "${entry.getImageName()} (zaten ${targetTypeName})"
+                    skipped << String.format(java.util.Locale.US, workshopText('script.ed2b18b76b50', '%s (zaten %s)'), entry.getImageName(), targetTypeName)
                 } else {
                     imageData.setImageType(targetType)
                     entry.saveImageData(imageData)
@@ -296,7 +296,7 @@ if (scope == "current") {
                 if (!isLive) { try { imageData.close() } catch (Throwable ignore) {} }
             }
         } catch (Throwable t) {
-            skipped << "${entry.getImageName()} (HATA: ${t.getClass().getSimpleName()})"
+            skipped << String.format(java.util.Locale.US, workshopText('script.ebf06979a138', '%s (HATA: %s)'), entry.getImageName(), t.getClass().getSimpleName())
         }
     }
 }
@@ -306,23 +306,23 @@ def elapsed = (System.currentTimeMillis() - t0) / 1000.0
 // ──────────────────────────────────────────────────────────────
 // 3) Sonuç penceresi
 // ──────────────────────────────────────────────────────────────
-def scopeLabel = scope == "current" ? "Yalnızca açık lam" : "Projedeki tüm lamlar"
+def scopeLabel = scope == "current" ? workshopText('script.5984233f5e74', 'Yalnızca açık lam') : workshopText('script.7dce99feafac', 'Projedeki tüm lamlar')
 def summary = new StringBuilder()
-summary << String.format(java.util.Locale.US, "Görüntü tipi → %s%n", targetTypeName)
-summary << String.format(java.util.Locale.US, "Kapsam        : %s%n", scopeLabel)
-summary << String.format(java.util.Locale.US, "Süre          : %.2f sn%n%n", elapsed)
-summary << String.format(java.util.Locale.US, "📋 Güncellenen (%d)%n", updated.size())
+summary << String.format(java.util.Locale.US, workshopText('script.205052a9dece', 'Görüntü tipi → %s%n'), targetTypeName)
+summary << String.format(java.util.Locale.US, workshopText('script.0ee2f896e27a', 'Kapsam        : %s%n'), scopeLabel)
+summary << String.format(java.util.Locale.US, workshopText('script.7f9d35fa600a', 'Süre          : %.2f sn%n%n'), elapsed)
+summary << String.format(java.util.Locale.US, workshopText('script.62c7d1e96c57', '📋 Güncellenen (%d)%n'), updated.size())
 summary << "──────────────────────────────────\n"
 if (updated.isEmpty()) {
-    summary << "  (yok)\n"
+    summary << workshopText('script.472c45024f76', '  (yok)\n')
 } else {
     updated.each { summary << "  • ${it}\n" }
 }
 summary << "\n"
-summary << String.format(java.util.Locale.US, "📋 Atlanan (%d)%n", skipped.size())
+summary << String.format(java.util.Locale.US, workshopText('script.d3a69a41d0b2', '📋 Atlanan (%d)%n'), skipped.size())
 summary << "──────────────────────────────────\n"
 if (skipped.isEmpty()) {
-    summary << "  (yok)\n"
+    summary << workshopText('script.472c45024f76', '  (yok)\n')
 } else {
     skipped.each { summary << "  • ${it}\n" }
 }
@@ -331,10 +331,10 @@ if (!saveWarnings.isEmpty()) {
     saveWarnings.each { summary << "⚠ " + it + "\n" }
     summary << "\n"
 }
-summary << "Not: Renk dekonvolüsyon vektörleri varsayılana sıfırlandı.\n"
-summary << "Özel kalibre vektörlerinizi yeniden uygulamayı unutmayın."
+summary << workshopText('script.c4ac75c9714b', 'Not: Renk dekonvolüsyon vektörleri varsayılana sıfırlandı.\n')
+summary << workshopText('script.366afee28de2', 'Özel kalibre vektörlerinizi yeniden uygulamayı unutmayın.')
 
-showResultWindow("Görüntü Tipi Ayarlandı 🎨", summary.toString())
+showResultWindow(workshopText('script.5007e47a35f1', 'Görüntü Tipi Ayarlandı 🎨'), summary.toString())
 
 println "─────────────────────────────────────"
 println "Görüntü tipi: ${targetTypeName}  |  Kapsam: ${scopeLabel}"

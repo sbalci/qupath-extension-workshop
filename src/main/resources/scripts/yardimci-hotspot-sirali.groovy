@@ -244,7 +244,7 @@ def classOf = { a ->
 def classNames = allAnnos.collect { classOf(it) }.findAll { it != null && it != hotspotClass }.unique().sort()
 
 if (classNames.isEmpty()) {
-    def msg = "Karo anotasyonu bulunamadı. Bir piksel sınıflandırıcı, ızgara betiği ya da Create tiles çalıştırın."
+    def msg = workshopText('script.54391e3e373c', 'Karo anotasyonu bulunamadı. Bir piksel sınıflandırıcı, ızgara betiği ya da Create tiles çalıştırın.')
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.ab46e48d894b', "Karo yok"), msg)
     return
 }
@@ -324,7 +324,7 @@ if (assignHotspotClass) {
 }
 def tiles = allAnnos.findAll { classOf(it) == chosenClass }
 if (tiles.isEmpty()) {
-    def msg = "'${chosenClass}' sınıfında karo bulunamadı."
+    def msg = String.format(java.util.Locale.US, workshopText('script.7fab97699e26', '\'%s\' sınıfında karo bulunamadı.'), chosenClass)
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.ab46e48d894b', "Karo yok"), msg)
     return
 }
@@ -339,7 +339,7 @@ def scoredTiles = tiles.findAll { tile ->
     [tile: tile, value: val, area: area]
 }.sort { -it.value }
 if (scoredTiles.isEmpty()) {
-    def msg = "'${chosenClass}' sınıfındaki ${tiles.size()} karonun hiçbirinde '${chosenKey}' ölçümü yok."
+    def msg = String.format(java.util.Locale.US, workshopText('script.83eb5cdf89a6', '\'%s\' sınıfındaki %s karonun hiçbirinde \'%s\' ölçümü yok.'), chosenClass, tiles.size(), chosenKey)
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.e3dc9a444a25', "Ölçüm yok"), msg)
     return
 }
@@ -390,13 +390,13 @@ QP.fireHierarchyUpdate()
 def fmt      = { double v, String pat -> Double.isFinite(v) ? String.format(java.util.Locale.US, pat, v) : 'NaN' }
 def areaUnit = hasCalibration ? 'µm²' : 'px²'
 def body     = new StringBuilder()
-body << "SIRALI YOĞUN ODAK (HOTSPOT) SEÇİCİ\n"
+body << workshopText('script.233b62645c63', 'SIRALI YOĞUN ODAK (HOTSPOT) SEÇİCİ\n')
 body << "═══════════════════════════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Sınıf       : %s (%d karo)%n", chosenClass, tiles.size())
-body << String.format(java.util.Locale.US, "Ölçüm       : %s%n", chosenKey)
+body << String.format(java.util.Locale.US, workshopText('script.7015e144b386', 'Sınıf       : %s (%d karo)%n'), chosenClass, tiles.size())
+body << String.format(java.util.Locale.US, workshopText('script.73f198b3c847', 'Ölçüm       : %s%n'), chosenKey)
 body << String.format(java.util.Locale.US, "Top-N       : %d%n%n", actualN)
 body << String.format(java.util.Locale.US, "%-5s  %-14s  %-14s  %s%n",
-    "Sıra", "Değer", String.format(java.util.Locale.US, "Alan (%s)", areaUnit), "Sentroid (px)")
+    workshopText('script.a6e66797310e', 'Sıra'), workshopText('script.4cfa2b03d54b', 'Değer'), String.format(java.util.Locale.US, workshopText('script.c6f0aae57ccc', 'Alan (%s)'), areaUnit), workshopText('script.c8df26b74d89', 'Sentroid (px)'))
 body << "─────  ──────────────  ────────────────  ──────────────────────\n"
 topTiles.eachWithIndex { entry, idx ->
     double cx = entry.tile.getROI().getCentroidX()
@@ -406,21 +406,21 @@ topTiles.eachWithIndex { entry, idx ->
 }
 body << "\n"
 body << String.format(java.util.Locale.US,
-    "Top-N karo ortalama (%s): %s%n", chosenKey, fmt(topMean, "%.4f"))
+    workshopText('script.6ad24188f9f0', 'Top-N karo ortalama (%s): %s%n'), chosenKey, fmt(topMean, "%.4f"))
 body << String.format(java.util.Locale.US,
-    "Top-N karo SD (n−1)   (%s): %s%n", chosenKey, fmt(topSD, "%.4f"))
+    workshopText('script.11219069afcd', 'Top-N karo SD (n−1)   (%s): %s%n'), chosenKey, fmt(topSD, "%.4f"))
 if (scoredTiles.size() < tiles.size()) body << String.format(java.util.Locale.US,
-    "%nNot: %d karo bu ölçümü taşımıyor; sıralamaya alınmadı.%n", tiles.size() - scoredTiles.size())
+    workshopText('script.c0ab73cadabc', '%nNot: %d karo bu ölçümü taşımıyor; sıralamaya alınmadı.%n'), tiles.size() - scoredTiles.size())
 if (assignHotspotClass) body << String.format(java.util.Locale.US,
-    "%nTop-%d karolara \"%s\" sınıfı atandı.%n", actualN, hotspotClass)
-if (chosenClass == NOCLASS) body << "\nSınıfsız seçenek: içinde başka anotasyon bulunan (üst) anotasyonlar karo sayılmadı. Üst anotasyon\nhiyerarşide karolarla aynı düzeydeyse sıralamaya girebilir; tablodaki alanları denetleyin.\n"
-body << "\nHer top-N karosuna '${rankMeasKey}' ölçümü yazıldı (Veri dışa aktarma modülü ile dışa aktarılır).\n"
-body << "Bu bir betimsel sıralama ölçümüdür; klinik kategori veya eşik üretmez.\n\n"
+    workshopText('script.3c95e6a828bb', '%nTop-%d karolara "%s" sınıfı atandı.%n'), actualN, hotspotClass)
+if (chosenClass == NOCLASS) body << workshopText('script.6e982c611621', '\nSınıfsız seçenek: içinde başka anotasyon bulunan (üst) anotasyonlar karo sayılmadı. Üst anotasyon\nhiyerarşide karolarla aynı düzeydeyse sıralamaya girebilir; tablodaki alanları denetleyin.\n')
+body << String.format(java.util.Locale.US, workshopText('script.197eb63434bc', '\nHer top-N karosuna \'%s\' ölçümü yazıldı (Veri dışa aktarma modülü ile dışa aktarılır).\n'), rankMeasKey)
+body << workshopText('script.755f84738421', 'Bu bir betimsel sıralama ölçümüdür; klinik kategori veya eşik üretmez.\n\n')
 def noteText = modeNote(sumRes)
 if (noteText) body << noteText << "\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("Sıralı Yoğun Odak Seçici", body.toString())
+showResultWindow(workshopText('script.1aa4965aa3ea', 'Sıralı Yoğun Odak Seçici'), body.toString())
 println String.format(java.util.Locale.US,
     "✓ Yoğun odak sıralama: sınıf='%s', ölçüm='%s', top-%d, ortalama=%s",
     chosenClass, chosenKey, actualN, fmt(topMean, "%.4f"))

@@ -203,7 +203,7 @@ if (!(pw > 0) || !(ph > 0)) {
 
 def detections = QP.getDetectionObjects().findAll { it.getROI() != null }
 if (detections.isEmpty()) {
-    def msg = "Lamda hücre tespiti yok.\nÖnce Hücre Tespiti, Nükleer Boya, Sitoplazmik Boya ya da Tümör içi Ki-67 modülü ile tespit yapın."
+    def msg = workshopText('script.93c39f575e31', 'Lamda hücre tespiti yok.\nÖnce Hücre Tespiti, Nükleer Boya, Sitoplazmik Boya ya da Tümör içi Ki-67 modülü ile tespit yapın.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.4277b763a640', "Tespit yok"), msg)
     return
 }
@@ -212,9 +212,7 @@ def targets = QP.getSelectedObjects().findAll {
     it.isAnnotation() && it.getROI() != null && !isOwnSetName(it.getName(), summaryName)
 }
 if (targets.isEmpty()) {
-    def msg = "Hedef yapı seçili değil.\n\n" +
-              "Mesafe ölçülecek yapıyı (tümör sınırı, damar, invazyon kenarı vb.)\n" +
-              "anotasyon olarak çizin ve SEÇİN, sonra betiği tekrar çalıştırın."
+    def msg = workshopText('script.56e1f1f3b451', 'Hedef yapı seçili değil.\n\nMesafe ölçülecek yapıyı (tümör sınırı, damar, invazyon kenarı vb.)\nanotasyon olarak çizin ve SEÇİN, sonra betiği tekrar çalıştırın.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.584f0675ba8a', "Yapı seçili değil"), msg)
     return
 }
@@ -250,11 +248,8 @@ detections.each { d ->
     if (v != null && !Double.isNaN(v as double)) vals << (v as double)
 }
 if (vals.isEmpty()) {
-    showResultWindow("Yapıya uzaklık — ölçüm üretilemedi",
-        "Mesafe ölçümü hiçbir hücreye yazılamadı.\n\n" +
-        "Seçili yapı(lar)ın geçerli bir alan/çizgi ROI'si olduğundan ve hücrelerle\n" +
-        "aynı z/t düzleminde bulunduğundan emin olun.\n\n" +
-        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.")
+    showResultWindow(workshopText('script.6ee2c41ec59c', 'Yapıya uzaklık — ölçüm üretilemedi'),
+        workshopText('script.aa01e06d5e4c', 'Mesafe ölçümü hiçbir hücreye yazılamadı.\n\nSeçili yapı(lar)ın geçerli bir alan/çizgi ROI\'si olduğundan ve hücrelerle\naynı z/t düzleminde bulunduğundan emin olun.\n\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'))
     return
 }
 
@@ -308,7 +303,7 @@ def fmtR = { double v -> Double.isNaN(v) ? "—" : String.format(java.util.Local
 def measNames = new java.util.TreeSet()
 detections.each { d -> try { d.getMeasurementList().getMeasurementNames().each { measNames.add(it) } } catch (Throwable ig) {} }
 measNames.remove(distMeas)
-String NONE_OPT = "(korelasyon yok)"
+String NONE_OPT = workshopText('script.82ac0e82f518', '(korelasyon yok)')
 String corrMeas = null
 if (!isHeadless && !measNames.isEmpty()) {
     def opts = [NONE_OPT] + measNames.toList()
@@ -381,29 +376,29 @@ QP.fireHierarchyUpdate()
 def structNames = targets.collect {
     def nm = it.getName()
     def pc = it.getPathClass()
-    nm ?: (pc != null ? pc.toString() : "(adsız)")
+    nm ?: (pc != null ? pc.toString() : workshopText('script.2966ac6511d8', '(adsız)'))
 }.unique()
 
 def body = new StringBuilder()
-body << "YAPIYA UZAKLIK (sınıra işaretli mesafe)\n"
+body << workshopText('script.6b9a691a319b', 'YAPIYA UZAKLIK (sınıra işaretli mesafe)\n')
 body << "════════════════════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Hücre sayısı       : %,d%n", total)
-body << "Hedef yapı(lar)    : ${structNames.join(', ')}\n"
-body << String.format(java.util.Locale.US, "Sınır bandı eşiği  : %.0f µm%n", bandMicrons)
+body << String.format(java.util.Locale.US, workshopText('script.569fea6c172d', 'Hücre sayısı       : %,d%n'), total)
+body << String.format(java.util.Locale.US, workshopText('script.059f164f1c68', 'Hedef yapı(lar)    : %s\n'), structNames.join(', '))
+body << String.format(java.util.Locale.US, workshopText('script.517291b2c51e', 'Sınır bandı eşiği  : %.0f µm%n'), bandMicrons)
 body << "\n"
-body << String.format(java.util.Locale.US, "Ortalama uzaklık   : %.1f µm%n", meanD)
-body << String.format(java.util.Locale.US, "Medyan uzaklık     : %.1f µm%n", medianD)
-body << String.format(java.util.Locale.US, "Min / Maks         : %.1f / %.1f µm%n", minD, maxD)
+body << String.format(java.util.Locale.US, workshopText('script.cdc5ff99ec9b', 'Ortalama uzaklık   : %.1f µm%n'), meanD)
+body << String.format(java.util.Locale.US, workshopText('script.84a4ac7ed7d9', 'Medyan uzaklık     : %.1f µm%n'), medianD)
+body << String.format(java.util.Locale.US, workshopText('script.bf5b7a5e38f0', 'Min / Maks         : %.1f / %.1f µm%n'), minD, maxD)
 body << "──────────────────────────────────────────────\n"
-body << String.format(java.util.Locale.US, "Yapı içinde (− )   : %,d  (%.1f %%)%n", insideCount, insidePct)
-body << String.format(java.util.Locale.US, "Sınır bandı ≤%.0fµm : %,d  (%.1f %%)%n", bandMicrons, bandCount, bandPct)
+body << String.format(java.util.Locale.US, workshopText('script.027dd53c043b', 'Yapı içinde (− )   : %,d  (%.1f %%)%n'), insideCount, insidePct)
+body << String.format(java.util.Locale.US, workshopText('script.375a9c955b5b', 'Sınır bandı ≤%.0fµm : %,d  (%.1f %%)%n'), bandMicrons, bandCount, bandPct)
 if (corrMeas != null) {
     body << "──────────────────────────────────────────────\n"
-    body << "Korelasyon (ölçüm ↔ uzaklık): " << corrMeas << "\n"
-    body << String.format(java.util.Locale.US, "  Pearson  r  (tüm/içi/dışı) : %s / %s / %s%n", fmtR(rAll), fmtR(rIn), fmtR(rOut))
-    body << String.format(java.util.Locale.US, "  Spearman rho (tüm/içi/dışı): %s / %s / %s%n", fmtR(rhoAll), fmtR(rhoIn), fmtR(rhoOut))
-    body << String.format(java.util.Locale.US, "  N            (tüm/içi/dışı) : %,d / %,d / %,d%n", corrN, corrNin, corrNout)
-    body << "  (pozitif r: ölçüm mesafeyle artar · HMS-IAC S1 deseni)\n"
+    body << workshopText('script.8ff614033725', 'Korelasyon (ölçüm ↔ uzaklık): ') << corrMeas << "\n"
+    body << String.format(java.util.Locale.US, workshopText('script.092eedf750d8', '  Pearson  r  (tüm/içi/dışı) : %s / %s / %s%n'), fmtR(rAll), fmtR(rIn), fmtR(rOut))
+    body << String.format(java.util.Locale.US, workshopText('script.1cf7ac583af0', '  Spearman rho (tüm/içi/dışı): %s / %s / %s%n'), fmtR(rhoAll), fmtR(rhoIn), fmtR(rhoOut))
+    body << String.format(java.util.Locale.US, workshopText('script.9d06ae8373a2', '  N            (tüm/içi/dışı) : %,d / %,d / %,d%n'), corrN, corrNin, corrNout)
+    body << workshopText('script.774d0d5fe4eb', '  (pozitif r: ölçüm mesafeyle artar · HMS-IAC S1 deseni)\n')
 }
 body << "\n"
 body << String.format(java.util.Locale.US, workshopText('script.a9b6daa16201', 'Özet adı           : %s'), thisSummaryName) << "\n"
@@ -413,15 +408,15 @@ if (writeMode == MODE_ADD && !prevNames.isEmpty()) {
     body << "\n" << String.format(java.util.Locale.US, workshopText('script.be27a1bc19b6', 'Önceki özet değiştirildi: %,d anotasyon silindi.'), removedPrev) << "\n"
 }
 body << "\n"
-body << "İşaret kuralı: NEGATİF mesafe → hücre yapının İÇİNDE; pozitif → dışında.\n"
-body << "Her hücreye '" << distMeas << "' ölçümü yazıldı; ölçüme göre renklendirince\n"
-body << "yapıya yakınlık haritası görünür ([Measure → Show measurement maps]).\n"
-body << "Veri dışa aktarma modülü ile dışa aktarılır.\n\n"
-body << "Bu bir MESAFE ölçümüdür — klinik skor, eşik veya yorum DEĞİL.\n"
+body << workshopText('script.03c8e92a9579', 'İşaret kuralı: NEGATİF mesafe → hücre yapının İÇİNDE; pozitif → dışında.\n')
+body << workshopText('script.29949c57ef1b', 'Her hücreye \'') << distMeas << workshopText('script.32ebce513fe0', '\' ölçümü yazıldı; ölçüme göre renklendirince\n')
+body << workshopText('script.63e7379183bf', 'yapıya yakınlık haritası görünür ([Measure → Show measurement maps]).\n')
+body << workshopText('script.90c1e2fcd1e3', 'Veri dışa aktarma modülü ile dışa aktarılır.\n\n')
+body << workshopText('script.0b7cad4b01cb', 'Bu bir MESAFE ölçümüdür — klinik skor, eşik veya yorum DEĞİL.\n')
 body << "(FS2K Session 12; Bankhead 2017)\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("Yapıya uzaklık", body.toString())
+showResultWindow(workshopText('script.c261a7709e67', 'Yapıya uzaklık'), body.toString())
 println String.format(java.util.Locale.US,
     "✓ Yapıya uzaklık yazıldı (ortalama %.1f µm, medyan %.1f µm; sınır bandı %%%.1f).",
     meanD, medianD, bandPct)

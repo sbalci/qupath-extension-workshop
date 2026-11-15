@@ -111,7 +111,7 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ── 1) Ön kontroller ───────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    def msg = "Önce bir görüntü açın."
+    def msg = workshopText('script.2822e3e9b3cd', 'Önce bir görüntü açın.')
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), msg)
     return
 }
@@ -149,9 +149,9 @@ ip.setAutoThreshold(method, darkBackground)
 // ── 4) Eşiklenen pikselleri tam çözünürlüklü QuPath ROI'sine çevir ──────────
 def roi = SimpleThresholding.thresholdToROI(ip, request)
 if (roi == null) {
-    def msg = "Otsu eşiği bu bölgede hiç piksel seçmedi.\n" +
-              "Farklı bir bölge deneyin ya da görüntü tipini doğrulayın\n" +
-              "(Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla)."
+    def msg = workshopText('script.c0219ac85d71', 'Otsu eşiği bu bölgede hiç piksel seçmedi.\n') +
+              workshopText('script.41ea697bc2a0', 'Farklı bir bölge deneyin ya da görüntü tipini doğrulayın\n') +
+              workshopText('script.2cb2ab157672', '(Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla).')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.31c96e8d3208', "Eşik boş"), msg)
     return
 }
@@ -168,26 +168,26 @@ double ph = cal != null ? cal.getPixelHeightMicrons() : Double.NaN
 boolean hasMicrons = (cal != null && cal.hasPixelSizeMicrons() && pw > 0 && ph > 0)
 
 def body = new StringBuilder()
-body << "IMAGEJ — OTOMATİK EŞİK → ANOTASYON\n"
+body << workshopText('script.8b52226e90d2', 'IMAGEJ — OTOMATİK EŞİK → ANOTASYON\n')
 body << "═══════════════════════════════════════\n\n"
-body << "Yöntem         : Otsu (ImageJ AutoThresholder)\n"
-body << "Bölge          : " << (useROI ? "seçili anotasyonun sınırlayıcı kutusu" : "tüm görüntü") << "\n"
-body << String.format(java.util.Locale.US, "Downsample     : %.2f×%n", downsample)
-body << String.format(java.util.Locale.US, "Arka plan      : %s%n", (darkBackground ? "koyu (floresan)" : "açık (parlak alan)"))
+body << workshopText('script.71249c17088d', 'Yöntem         : Otsu (ImageJ AutoThresholder)\n')
+body << workshopText('script.7d343e765a17', 'Bölge          : ') << (useROI ? workshopText('script.c2149a55ea9c', 'seçili anotasyonun sınırlayıcı kutusu') : workshopText('script.6fa17615dc47', 'tüm görüntü')) << "\n"
+body << String.format(java.util.Locale.US, workshopText('script.5a99c6f82e39', 'Downsample     : %.2f×%n'), downsample)
+body << String.format(java.util.Locale.US, workshopText('script.226b0a6568a5', 'Arka plan      : %s%n'), (darkBackground ? workshopText('script.8ee3f06da5e9', 'koyu (floresan)') : workshopText('script.0747113e127c', 'açık (parlak alan)')))
 body << "\n"
 if (hasMicrons) {
     double areaMm2 = roi.getArea() * pw * ph / 1_000_000.0
-    body << String.format(java.util.Locale.US, "Anotasyon alanı: %.4f mm²%n", areaMm2)
+    body << String.format(java.util.Locale.US, workshopText('script.bb4b66e96e1a', 'Anotasyon alanı: %.4f mm²%n'), areaMm2)
 } else {
-    body << "Anotasyon alanı: (piksel kalibrasyonu yok — mm² hesaplanamadı)\n"
+    body << workshopText('script.5f9ff8468f5b', 'Anotasyon alanı: (piksel kalibrasyonu yok — mm² hesaplanamadı)\n')
 }
-body << "Sınıf          : ImageJ Otsu\n"
+body << workshopText('script.9b1c6a09d454', 'Sınıf          : ImageJ Otsu\n')
 body << "\n"
-body << "Eşik DÜŞÜK çözünürlükte hesaplandı, ROI tam çözünürlükte oluşturuldu.\n"
-body << "Sonucu görsel olarak doğrulayın; gerekiyorsa elle düzeltin (Manuel Düzeltme eki).\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.092fb2b1df05', 'Eşik DÜŞÜK çözünürlükte hesaplandı, ROI tam çözünürlükte oluşturuldu.\n')
+body << workshopText('script.55135238fb5a', 'Sonucu görsel olarak doğrulayın; gerekiyorsa elle düzeltin (Manuel Düzeltme eki).\n\n')
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("ImageJ otomatik eşik", body.toString())
+showResultWindow(workshopText('script.3a3ef445ff81', 'ImageJ otomatik eşik'), body.toString())
 println "✓ ImageJ Otsu anotasyonu oluşturuldu (sınıf: ImageJ Otsu)."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

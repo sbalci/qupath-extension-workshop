@@ -54,7 +54,7 @@ def fmtInt = { long v -> String.format(java.util.Locale.US, '%,d', v) }
 
 // ── Kanal etiketi (RGB için renk adı; çok kanallıda metadata adı ya da Kanal N) ─
 def channelLabel = { int idx, boolean rgb, int nb, server ->
-    if (rgb && nb == 3) return (['Kırmızı (R)', 'Yeşil (G)', 'Mavi (B)'] as List)[idx]
+    if (rgb && nb == 3) return ([workshopText('script.8a5eab833e37', 'Kırmızı (R)'), workshopText('script.f642fad5775b', 'Yeşil (G)'), workshopText('script.f4d5040a16c6', 'Mavi (B)')] as List)[idx]
     try {
         def chs = server.getMetadata().getChannels()
         if (chs != null && idx < chs.size()) {
@@ -62,7 +62,7 @@ def channelLabel = { int idx, boolean rgb, int nb, server ->
             if (nm != null && !nm.isEmpty()) return nm
         }
     } catch (Throwable ignore) {}
-    return 'Kanal ' + (idx + 1)
+    return workshopText('script.9042acc490e8', 'Kanal ') + (idx + 1)
 }
 
 // ── Tek bölgeyi oku → kanal başına istatistik + 256-kovalı histogram ─────────
@@ -70,8 +70,8 @@ def channelLabel = { int idx, boolean rgb, int nb, server ->
 def computeStats = { server, RegionRequest request, boolean rgb, roi = null ->
     def result = [ok: false, note: '', bands: []]
     def img = null
-    try { img = server.readRegion(request) } catch (Throwable t) { result.note = 'Piksel okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName()); return result }
-    if (img == null) { result.note = 'Bölge boş döndü (okunamadı).'; return result }
+    try { img = server.readRegion(request) } catch (Throwable t) { result.note = workshopText('script.fd8dd08e7805', 'Piksel okunamadı: ') + (t.getMessage() ?: t.getClass().getSimpleName()); return result }
+    if (img == null) { result.note = workshopText('script.7b6178948389', 'Bölge boş döndü (okunamadı).'); return result }
     try {
         def raster = img.getRaster()
         int nb = raster.getNumBands()
@@ -123,9 +123,9 @@ def computeStats = { server, RegionRequest request, boolean rgb, roi = null ->
             ]
         }
         result.ok = !result.bands.isEmpty()
-        if (isFloat) result.note = 'Float piksel tipi — örnek değerleri tam sayıya yuvarlandı; istatistikler kabadır.'
+        if (isFloat) result.note = workshopText('script.b920104ec384', 'Float piksel tipi — örnek değerleri tam sayıya yuvarlandı; istatistikler kabadır.')
     } catch (Throwable t) {
-        result.note = 'İstatistik hesaplanamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())
+        result.note = workshopText('script.1f0bc8d552d0', 'İstatistik hesaplanamadı: ') + (t.getMessage() ?: t.getClass().getSimpleName())
     }
     return result
 }
@@ -151,7 +151,7 @@ def asciiHistogram = { long[] hist ->
 def buildReport = { imageData ->
     def server = imageData.getServer()
     def sb = new StringBuilder()
-    sb << 'GÖRÜNTÜ KÜNYESİ VE HİSTOGRAM\n'
+    sb << workshopText('script.818529b3b1f4', 'GÖRÜNTÜ KÜNYESİ VE HİSTOGRAM\n')
     sb << '════════════════════════════\n'
 
     // Künye
@@ -179,18 +179,18 @@ def buildReport = { imageData ->
     try { imgType = imageData.getImageType()?.toString() } catch (Throwable ignore) {}
 
     def line = { String label, Object val -> sb << String.format(java.util.Locale.US, '  %-20s : %s%n', label, (val == null ? '—' : val.toString())) }
-    line('Görüntü', imgName)
-    if (imgType != null) line('Görüntü tipi', imgType)
-    line('Piksel tipi', pixelType + (rgb ? ' (RGB)' : ''))
-    line('Kanal sayısı', nCh)
-    line('Boyut (px)', fmtInt((long) W) + ' × ' + fmtInt((long) H))
+    line(workshopText('script.461af90e2417', 'Görüntü'), imgName)
+    if (imgType != null) line(workshopText('script.35bba57c275d', 'Görüntü tipi'), imgType)
+    line(workshopText('script.73d3db6aea2d', 'Piksel tipi'), pixelType + (rgb ? ' (RGB)' : ''))
+    line(workshopText('script.e1bda2ff1ba1', 'Kanal sayısı'), nCh)
+    line(workshopText('script.21a0402a0c89', 'Boyut (px)'), fmtInt((long) W) + ' × ' + fmtInt((long) H))
     if (!Double.isNaN(pw) && pw > 0) {
-        line('Piksel (µm/px)', fmt(pw, 4) + ' × ' + fmt(ph, 4) + ' ' + unit)
-        line('Kestirilen büyütme', '~' + Math.round(0.25d / pw * 40) + '×  (sezgisel)')
+        line(workshopText('script.31c9e37c66f0', 'Piksel (µm/px)'), fmt(pw, 4) + ' × ' + fmt(ph, 4) + ' ' + unit)
+        line(workshopText('script.4ed910425d26', 'Kestirilen büyütme'), '~' + Math.round(0.25d / pw * 40) + workshopText('script.24d9413d676e', '×  (sezgisel)'))
     } else {
-        line('Piksel (µm/px)', '— (kalibre değil)')
+        line(workshopText('script.31c9e37c66f0', 'Piksel (µm/px)'), workshopText('script.fd37d740d655', '— (kalibre değil)'))
     }
-    line('Piramit seviyesi', nRes)
+    line(workshopText('script.8c1b9e6f8ab7', 'Piramit seviyesi'), nRes)
 
     // Örnekleme bölgesi
     def sel = QP.getSelectedObject()
@@ -202,41 +202,41 @@ def buildReport = { imageData ->
         rw = (int) Math.ceil(roi.getBoundsWidth()); rh = (int) Math.ceil(roi.getBoundsHeight())
         if (rx < 0) rx = 0
         if (ry < 0) ry = 0
-        regionDesc = roi.isArea() ? 'Seçili ROI (yalnız şeklin içi)' : 'Seçili ROI (sınırlayıcı kutu)'
+        regionDesc = roi.isArea() ? workshopText('script.1d342d05f768', 'Seçili ROI (yalnız şeklin içi)') : workshopText('script.0ffc78172f6e', 'Seçili ROI (sınırlayıcı kutu)')
     } else {
         rx = 0; ry = 0; rw = W; rh = H
-        regionDesc = 'Tüm görüntü'
+        regionDesc = workshopText('script.9ec6c2aa4413', 'Tüm görüntü')
     }
     if (rw > W - rx) rw = W - rx
     if (rh > H - ry) rh = H - ry
-    if (rw < 1 || rh < 1) { sb << '\n  ⚠ Geçerli bir bölge yok (boyut 0).\n'; return sb.toString() }
+    if (rw < 1 || rh < 1) { sb << workshopText('script.b4a8e0545acb', '\n  ⚠ Geçerli bir bölge yok (boyut 0).\n'); return sb.toString() }
 
     int TARGET = 1536
     double downsample = Math.max(1.0d, Math.max(rw, rh) / (double) TARGET)
     def request = RegionRequest.createInstance(server.getPath(), downsample, rx, ry, rw, rh)
 
     sb << '\n'
-    line('Örneklenen bölge', regionDesc)
-    line('Altörnekleme', '1/' + fmt(downsample, 1) + '  (yaklaşık)')
+    line(workshopText('script.a63826dfdf3f', 'Örneklenen bölge'), regionDesc)
+    line(workshopText('script.2823e35bb557', 'Altörnekleme'), '1/' + fmt(downsample, 1) + workshopText('script.720fd3b13a88', '  (yaklaşık)'))
 
     def stats = computeStats(server, request, rgb, roi)
     if (!stats.ok) {
-        sb << '\n  ⚠ ' + (stats.note ?: 'Piksel istatistiği üretilemedi.') + '\n'
-        sb << '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
+        sb << '\n  ⚠ ' + (stats.note ?: workshopText('script.c05f7ad73e4a', 'Piksel istatistiği üretilemedi.')) + '\n'
+        sb << workshopText('script.0a96d0aa4dbc', '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
         return sb.toString()
     }
 
     // Kanal istatistik tablosu
-    sb << '\nKANAL İSTATİSTİKLERİ (örnekten)\n'
+    sb << workshopText('script.0d33402254af', '\nKANAL İSTATİSTİKLERİ (örnekten)\n')
     sb << '───────────────────────────────\n'
-    sb << String.format(java.util.Locale.US, '  %-14s %8s %8s %9s %7s %7s%n', 'Kanal', 'En düşük', 'En yüksek', 'Ortalama', '%@0', '%@max')
+    sb << String.format(java.util.Locale.US, '  %-14s %8s %8s %9s %7s %7s%n', workshopText('script.fe59abe12ce9', 'Kanal'), workshopText('script.588aae6aafd4', 'En düşük'), workshopText('script.cc3dcc99e516', 'En yüksek'), workshopText('script.0dd43d35b19a', 'Ortalama'), '%@0', '%@max')
     stats.bands.each { bd ->
         sb << String.format(java.util.Locale.US, '  %-14s %8d %8d %9s %7s %7s%n',
             bd.label, (long) bd.min, (long) bd.max, fmt((double) bd.mean, 1), fmt((double) bd.pct0, 1), fmt((double) bd.pctMax, 1))
     }
 
     // Histogramlar
-    sb << '\nHİSTOGRAM (0–255 ölçekli, örnekten)\n'
+    sb << workshopText('script.372bad9d06a1', '\nHİSTOGRAM (0–255 ölçekli, örnekten)\n')
     sb << '───────────────────────────────────\n'
     stats.bands.each { bd ->
         sb << bd.label + '\n'
@@ -245,22 +245,22 @@ def buildReport = { imageData ->
     }
 
     // Doygunluk / kırpılma notu (dürüst çerçeve)
-    sb << 'Doygunluk / kırpılma (clipping) notu\n'
+    sb << workshopText('script.f9ca29e57fa3', 'Doygunluk / kırpılma (clipping) notu\n')
     sb << '────────────────────────────────────\n'
     if (rgb) {
-        sb << '  Brightfield/RGB: yüksek %@max çoğunlukla beyaz arka plandır\n'
-        sb << '  (doygunluk değil). Boyalı/koyu bölgelerde %@max düşük olmalı.\n'
+        sb << workshopText('script.f34533b4b6dc', '  Brightfield/RGB: yüksek %@max çoğunlukla beyaz arka plandır\n')
+        sb << workshopText('script.bb7071715fbf', '  (doygunluk değil). Boyalı/koyu bölgelerde %@max düşük olmalı.\n')
     } else {
         double worst = 0.0d
         stats.bands.each { bd -> if ((double) bd.pctMax > worst) worst = (double) bd.pctMax }
-        if (worst >= 1.0d) sb << '  Floresan: bir/birkaç kanalda %@max yüksek → dedektör doygunluğu\n  olabilir; pozlama/kazanç ayarını gözden geçirin.\n'
-        else sb << '  Floresan: %@max düşük → belirgin doygunluk işareti yok.\n'
+        if (worst >= 1.0d) sb << workshopText('script.2eab739e2489', '  Floresan: bir/birkaç kanalda %@max yüksek → dedektör doygunluğu\n  olabilir; pozlama/kazanç ayarını gözden geçirin.\n')
+        else sb << workshopText('script.57cfa10ac009', '  Floresan: %@max düşük → belirgin doygunluk işareti yok.\n')
     }
-    if (stats.note != null && !stats.note.isEmpty()) sb << '  Not: ' + stats.note + '\n'
+    if (stats.note != null && !stats.note.isEmpty()) sb << workshopText('script.68145fb813b0', '  Not: ') + stats.note + '\n'
 
-    sb << '\n📖 Kavramlar: bioimagebook "Measurements & histograms" + "Types & bit-depths"\n'
-    sb << '   (atölye: Ek — Görüntü Analizi Temelleri)\n'
-    sb << '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
+    sb << workshopText('script.8c3e7901b2d5', '\n📖 Kavramlar: bioimagebook "Measurements & histograms" + "Types & bit-depths"\n')
+    sb << workshopText('script.e74df5c93170', '   (atölye: Ek — Görüntü Analizi Temelleri)\n')
+    sb << workshopText('script.0a96d0aa4dbc', '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
@@ -317,7 +317,7 @@ def showResultWindow = { String text ->
 // ── Çalıştır ─────────────────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    def msg = 'Önce bir lam açın. (İsterseniz tek bir bölge anotasyonu seçin; yoksa tüm görüntü örneklenir.)'
+    def msg = workshopText('script.ba483bc2ef91', 'Önce bir lam açın. (İsterseniz tek bir bölge anotasyonu seçin; yoksa tüm görüntü örneklenir.)')
     if (isHeadless) println msg
     else Dialogs.showMessageDialog(workshopText('script.bde2c50086d3', 'Görüntü künyesi ve histogram'), msg)
     return

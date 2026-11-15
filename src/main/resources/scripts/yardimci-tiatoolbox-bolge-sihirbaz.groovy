@@ -71,28 +71,28 @@ def MODE_REPLACE = 'replace'
 
 // Atölye model kataloğu (TIA Toolbox nucleus_detector — patoloji nokta-tespiti).
 def MODELS = [
-    [name:'KongNet_Det_MIDOG_1', engine:'nucleus_detector', task:'Mitoz tespiti',
-     classes:['Mitotic figure'], desc:'MIDOG mitotik figür dedektörü (H&E, 0.5 µm/px — registry ioconfig).'],
-    [name:'KongNet_PanNuke_1', engine:'nucleus_detector', task:'Çekirdek tespiti',
+    [name:'KongNet_Det_MIDOG_1', engine:'nucleus_detector', task:workshopText('script.0fedefd1dd9a', 'Mitoz tespiti'),
+     classes:['Mitotic figure'], desc:workshopText('script.d633afbe3d39', 'MIDOG mitotik figür dedektörü (H&E, 0.5 µm/px — registry ioconfig).')],
+    [name:'KongNet_PanNuke_1', engine:'nucleus_detector', task:workshopText('script.e7ed70216be7', 'Çekirdek tespiti'),
      classes:['Neoplastic','Inflammatory','Connective','Dead','Epithelial'],
-     desc:'PanNuke 5-sınıf çekirdek (19 doku tipi, 0.25 µm/px).'],
-    [name:'KongNet_CoNIC_1', engine:'nucleus_detector', task:'Çekirdek tespiti',
+     desc:workshopText('script.8eddae1142bf', 'PanNuke 5-sınıf çekirdek (19 doku tipi, 0.25 µm/px).')],
+    [name:'KongNet_CoNIC_1', engine:'nucleus_detector', task:workshopText('script.e7ed70216be7', 'Çekirdek tespiti'),
      classes:['Neutrophil','Epithelial','Lymphocyte','Plasma','Eosinophil','Connective'],
-     desc:'CoNIC 6-sınıf kolorektal H&E (0.5 µm/px).'],
-    [name:'KongNet_MONKEY_1', engine:'nucleus_detector', task:'İmmün hücre tespiti',
+     desc:workshopText('script.5936ee54cbbe', 'CoNIC 6-sınıf kolorektal H&E (0.5 µm/px).')],
+    [name:'KongNet_MONKEY_1', engine:'nucleus_detector', task:workshopText('script.7009c6cfdebe', 'İmmün hücre tespiti'),
      classes:['Inflammatory','Lymphocyte','Monocyte'],
-     desc:'MONKEY immün-hücre (PAS böbrek biyopsisi, 0.25 µm/px).'],
-    [name:'KongNet_PUMA_T1_3', engine:'nucleus_detector', task:'Çekirdek (melanom)',
+     desc:workshopText('script.fb4458b7322e', 'MONKEY immün-hücre (PAS böbrek biyopsisi, 0.25 µm/px).')],
+    [name:'KongNet_PUMA_T1_3', engine:'nucleus_detector', task:workshopText('script.96593bf73c67', 'Çekirdek (melanom)'),
      classes:['Tumour cell','Lymphocyte','Other cell'],
-     desc:'PUMA Track 1 melanom H&E 3-sınıf.'],
-    [name:'KongNet_PUMA_T2_3', engine:'nucleus_detector', task:'Çekirdek (melanom)',
+     desc:workshopText('script.93dc1765dc98', 'PUMA Track 1 melanom H&E 3-sınıf.')],
+    [name:'KongNet_PUMA_T2_3', engine:'nucleus_detector', task:workshopText('script.96593bf73c67', 'Çekirdek (melanom)'),
      classes:['Tumour cell','Lymphocyte','Plasma cell','Histiocyte','Melanophage','Neutrophil',
               'Stroma cell','Epithelial cell','Endothelial cell','Apoptotic cell'],
-     desc:'PUMA Track 2 melanom H&E 10-sınıf.'],
-    [name:'mapde-conic', engine:'nucleus_detector', task:'Çekirdek tespiti',
-     classes:['Nucleus'], desc:'MapDe CoNIC tek-sınıf nokta dedektörü.'],
-    [name:'mapde-crchisto', engine:'nucleus_detector', task:'Çekirdek tespiti',
-     classes:['Nucleus'], desc:'MapDe CRCHisto tek-sınıf nokta dedektörü.'],
+     desc:workshopText('script.b9be3e164832', 'PUMA Track 2 melanom H&E 10-sınıf.')],
+    [name:'mapde-conic', engine:'nucleus_detector', task:workshopText('script.e7ed70216be7', 'Çekirdek tespiti'),
+     classes:['Nucleus'], desc:workshopText('script.35db0f6a4cfd', 'MapDe CoNIC tek-sınıf nokta dedektörü.')],
+    [name:'mapde-crchisto', engine:'nucleus_detector', task:workshopText('script.e7ed70216be7', 'Çekirdek tespiti'),
+     classes:['Nucleus'], desc:workshopText('script.d39da8782bf6', 'MapDe CRCHisto tek-sınıf nokta dedektörü.')],
 ]
 def MODEL_LABELS = MODELS.collect { it.name + '  —  ' + it.task }
 def modelByLabel = { String lbl -> def i = MODEL_LABELS.indexOf(lbl); return (i >= 0) ? MODELS[i] : MODELS[0] }
@@ -208,9 +208,9 @@ def loadConfig = { ->
 def configMissing = { cfg ->
     def miss = []
     if (!cfg.python?.trim() || !(new File(cfg.python)).isFile())
-        miss << 'Python yürütülebilir (tiatoolbox-runtime/.venv)'
+        miss << workshopText('script.de30363e22be', 'Python yürütülebilir (tiatoolbox-runtime/.venv)')
     if (!cfg.runner?.trim() || !(new File(cfg.runner)).isFile())
-        miss << 'Köprü betiği (region_runner.py)'
+        miss << workshopText('script.df608342ad41', 'Köprü betiği (region_runner.py)')
     return miss
 }
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
@@ -286,7 +286,7 @@ def exportRegionMask = { imageData, File workDir, double downsample, List region
     def f = new File(workDir, 'region_mask.png')
     if (f.getParentFile() != null) f.getParentFile().mkdirs()
     javax.imageio.ImageIO.write(img, 'PNG', f)
-    appendLine('Bölge maskesi: ' + f.getName() + ' (' + mw + ' × ' + mh + ' px, downsample ' + downsample + ')')
+    appendLine(workshopText('script.f76889ef649b', 'Bölge maskesi: ') + f.getName() + ' (' + mw + ' × ' + mh + ' px, downsample ' + downsample + ')')
     return [ok: true, file: f, w: mw, h: mh]
 }
 
@@ -327,12 +327,12 @@ def pointSetName = { String cls, int n, int idx ->
 // ── GeoJSON içe al + bölgeye göre filtrele + sınıf başına nokta-anotasyonu ──
 def importAndFilter = { File geojson, imageData, List regionRois, String mode = 'add' ->
     if (geojson == null || !geojson.isFile())
-        return [ok: false, error: 'GeoJSON çıktısı bulunamadı:\n' + (geojson?.getAbsolutePath() ?: '(yol yok)')]
+        return [ok: false, error: workshopText('script.8798754ae006', 'GeoJSON çıktısı bulunamadı:\n') + (geojson?.getAbsolutePath() ?: workshopText('script.7732453089e4', '(yol yok)'))]
     def root
     try { root = JsonParser.parseString(geojson.getText('UTF-8')).getAsJsonObject() }
-    catch (Throwable t) { return [ok: false, error: 'GeoJSON ayrıştırılamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
+    catch (Throwable t) { return [ok: false, error: workshopText('script.7876f6e33e69', 'GeoJSON ayrıştırılamadı: ') + (t.getMessage() ?: t.getClass().getSimpleName())] }
     def feats = root.has('features') ? root.getAsJsonArray('features') : null
-    if (feats == null) return [ok: false, error: 'GeoJSON "features" içermiyor.']
+    if (feats == null) return [ok: false, error: workshopText('script.9481e4c52092', 'GeoJSON "features" içermiyor.')]
     def plane = ImagePlane.getDefaultPlane()
     def byClass = new LinkedHashMap()
     int total = 0, inside = 0
@@ -396,50 +396,50 @@ def importAndFilter = { File geojson, imageData, List regionRois, String mode = 
 
 // ── Sonuç metni ─────────────────────────────────────────────────────────────
 def resultText = { imageData, cfg, model, exp, imp, scope = 'annotation' ->
-    def scopeLbl = (scope == 'image') ? 'Tüm görüntü' : 'Anotasyon bölgesi'
+    def scopeLbl = (scope == 'image') ? workshopText('script.9ec6c2aa4413', 'Tüm görüntü') : workshopText('script.3e59e2e8b820', 'Anotasyon bölgesi')
     def sb = new StringBuilder()
-    sb << "TIA TOOLBOX — TESPİT\n"
+    sb << workshopText('script.83b93db17daa', 'TIA TOOLBOX — TESPİT\n')
     sb << "════════════════════\n\n"
-    sb << "Lam   : " << imageNameOf(imageData) << "\n"
-    sb << "Kapsam  : " << scopeLbl << "\n"
+    sb << workshopText('script.a0858f037ccf', 'Lam   : ') << imageNameOf(imageData) << "\n"
+    sb << workshopText('script.d4f711335665', 'Kapsam  : ') << scopeLbl << "\n"
     sb << "Model   : " << model.name << "  (" << model.task << ")\n"
-    sb << "Cihaz   : " << (cfg.device ?: 'cuda') << "\n"
-    sb << String.format(java.util.Locale.US, "Maske   : %,d × %,d px (downsample %s)%n", (int)(exp?.w ?: 0), (int)(exp?.h ?: 0), (cfg.maskDownsample ?: '16.0'))
-    sb << String.format(java.util.Locale.US, "Tespit  : toplam %,d   ·   KAPSAM İÇİ %,d%n", (int)(imp?.total ?: 0), (int)(imp?.inside ?: 0))
-    sb << "\nSınıf başına (kapsam içi):\n"
+    sb << workshopText('script.76e969a2aac0', 'Cihaz   : ') << (cfg.device ?: 'cuda') << "\n"
+    sb << String.format(java.util.Locale.US, workshopText('script.65b4d49463ba', 'Maske   : %,d × %,d px (downsample %s)%n'), (int)(exp?.w ?: 0), (int)(exp?.h ?: 0), (cfg.maskDownsample ?: '16.0'))
+    sb << String.format(java.util.Locale.US, workshopText('script.16b55abf3110', 'Tespit  : toplam %,d   ·   KAPSAM İÇİ %,d%n'), (int)(imp?.total ?: 0), (int)(imp?.inside ?: 0))
+    sb << workshopText('script.098504b43fee', '\nSınıf başına (kapsam içi):\n')
     if (imp?.counts && !imp.counts.isEmpty()) imp.counts.each { k, v -> sb << String.format(java.util.Locale.US, "  • %-18s %,d%n", k.toString(), (int) v) }
-    else sb << "  (kapsam içinde tespit yok)\n"
-    sb << "\nTespitler sınıf başına kilitli nokta-anotasyonu olarak eklendi\n"
-    sb << "(Annotations sekmesi: '" << SENTINEL_PREFIX << "…'). Tahminleri görsel doğrulayın.\n"
+    else sb << workshopText('script.46591379ca47', '  (kapsam içinde tespit yok)\n')
+    sb << workshopText('script.c0d809930708', '\nTespitler sınıf başına kilitli nokta-anotasyonu olarak eklendi\n')
+    sb << workshopText('script.2ad1e6dac040', '(Annotations sekmesi: \'') << SENTINEL_PREFIX << workshopText('script.5ed4233e00ea', '…\'). Tahminleri görsel doğrulayın.\n')
     if (imp?.prevNames) {
         sb << "\n" << workshopText('script.661a7459b516', 'DİKKAT — bu lamda önceki sonuç da duruyor: ') << imp.prevNames.join(', ') << "\n"
         sb << workshopText('script.e61302cdacaf', 'Hiçbir şey silinmedi. Eski seti kaldırmak için o addaki anotasyonları seçip silin ya da yeniden çalıştırırken "Öncekini değiştir"i seçin. Dışa aktarım ve kohort özetleri iki seti de görür.') << "\n"
     } else if ((imp?.removed ?: 0) > 0) {
         sb << "\n" << String.format(java.util.Locale.US, workshopText('script.c8839122f795', 'Önceki sonuç değiştirildi: %,d anotasyon silindi (içlerindeki alt nesneler korundu).'), (int) imp.removed) << "\n"
     }
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
 // ── Proje kapsamı sonuç metni ────────────────────────────────────────────────
 def projectResultText = { cfg, model, summary ->
     def sb = new StringBuilder()
-    sb << "TIA TOOLBOX — TÜM PROJE\n"
+    sb << workshopText('script.cb1aa7d9c7bf', 'TIA TOOLBOX — TÜM PROJE\n')
     sb << "═══════════════════════\n\n"
     sb << "Model   : " << model.name << "  (" << model.task << ")\n"
-    sb << "Cihaz   : " << (cfg.device ?: 'cuda') << "\n"
-    sb << String.format(java.util.Locale.US, "Görüntü : %,d toplam · %,d denendi  (başarılı %,d · atlanan %,d · hata %,d)%n",
+    sb << workshopText('script.76e969a2aac0', 'Cihaz   : ') << (cfg.device ?: 'cuda') << "\n"
+    sb << String.format(java.util.Locale.US, workshopText('script.7e079ac7b6b9', 'Görüntü : %,d toplam · %,d denendi  (başarılı %,d · atlanan %,d · hata %,d)%n'),
         (int)(summary.total ?: 0), (int)(summary.attempted ?: 0), (int)(summary.ok ?: 0), (int)(summary.skipped ?: 0), (int)(summary.failed ?: 0))
     if (summary.cancelled)
-        sb << String.format(java.util.Locale.US, "İPTAL edildi — %,d görüntü hiç işlenmedi.%n", (int)(summary.notAttempted ?: 0))
-    sb << String.format(java.util.Locale.US, "Toplam tespit: %,d%n", (long)(summary.grandTotal ?: 0))
-    sb << "\nGörüntü başına (tespit):\n"
+        sb << String.format(java.util.Locale.US, workshopText('script.7b75d12e67e7', 'İPTAL edildi — %,d görüntü hiç işlenmedi.%n'), (int)(summary.notAttempted ?: 0))
+    sb << String.format(java.util.Locale.US, workshopText('script.1db119407c8c', 'Toplam tespit: %,d%n'), (long)(summary.grandTotal ?: 0))
+    sb << workshopText('script.302e8386d6d2', '\nGörüntü başına (tespit):\n')
     if (summary.perImage && !summary.perImage.isEmpty())
         summary.perImage.each { e -> sb << String.format(java.util.Locale.US, "  • %-34s %,d%s%n", (e.name ?: '?').toString(), (int)(e.count ?: 0), (e.note ? (' ' + e.note) : '')) }
-    else sb << "  (kaydedilmiş sonuç yok)\n"
-    sb << "\nHer görüntünün sonuçları o girdiye kaydedildi (nokta-anotasyonu '" << SENTINEL_PREFIX << "…').\n"
-    sb << "Atlananlar: yerel WSI yolu olmayan görüntüler (tiatoolbox lamı doğrudan açamaz).\n"
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    else sb << workshopText('script.57201cdb9369', '  (kaydedilmiş sonuç yok)\n')
+    sb << workshopText('script.8047cee4c027', '\nHer görüntünün sonuçları o girdiye kaydedildi (nokta-anotasyonu \'') << SENTINEL_PREFIX << "…').\n"
+    sb << workshopText('script.5834ccda39d7', 'Atlananlar: yerel WSI yolu olmayan görüntüler (tiatoolbox lamı doğrudan açamaz).\n')
+    sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
@@ -561,7 +561,7 @@ def runPython = { List cmd, Closure onLine ->
     applyCacheEnv(pb)
     def proc
     try { proc = pb.start() }
-    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.f0e1e3289660', 'Python başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     processRef.set(proc)
     def last = new java.util.ArrayDeque()
     try {
@@ -576,9 +576,9 @@ def runPython = { List cmd, Closure onLine ->
     } catch (Throwable ignore) {}
     boolean finished
     try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
-    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
+    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: workshopText('script.e6b0c32aaae9', 'Zaman aşımı (') + PYTHON_TIMEOUT_SECONDS + workshopText('script.2ccf3f4af0dd', ' sn)')] }
+    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
     int code = proc.exitValue()
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
@@ -588,11 +588,11 @@ def startSelftest = {
     persistFields()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
-    if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!miss.isEmpty()) { errorTextRef.set(workshopText('script.59d7792abf1b', 'Önce yapılandırmayı tamamlayın:\n  • ') + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Bağımlılık kontrolü'); step.set('CHECK_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.8369fe631575', 'Bağımlılık kontrolü')); step.set('CHECK_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def r = runPython([cfg.python, cfg.runner, 'selftest'], appendLine)
@@ -606,16 +606,16 @@ def startSelftest = {
 def runOnImageData = { imageData, cfg, model, List regionRois, Closure appendLine, Closure setPhase, String mode = 'add' ->
     def wsi = wsiPathOf(imageData)
     if (wsi == null) return [ok: false, error: 'Lamın yerel dosya yolu yok (WSI tiatoolbox tarafından açılamaz).']
-    if (regionRois == null || regionRois.isEmpty()) return [ok: false, error: 'Çıkarım bölgesi yok.']
+    if (regionRois == null || regionRois.isEmpty()) return [ok: false, error: workshopText('script.36f9778fc8d6', 'Çıkarım bölgesi yok.')]
     def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs()
     def base    = imageNameOf(imageData)
     def saveDir = new File(workDir, 'region_out_' + base)
     def outGeo  = new File(workDir, base + '_bolge.geojson')
     double mds = parseDoubleOr(cfg.maskDownsample, 16.0d)
-    setPhase('Bölge maskesi yazılıyor (1/2)…')
+    setPhase(workshopText('script.39b15cb4cff1', 'Bölge maskesi yazılıyor (1/2)…'))
     def exp = exportRegionMask(imageData, workDir, mds, regionRois, appendLine)
     if (!exp.ok) return [ok: false, error: exp.error]
-    if (cancelledRef.get()) return [ok: false, error: 'İptal edildi.']
+    if (cancelledRef.get()) return [ok: false, error: workshopText('script.fee85e45842b', 'İptal edildi.')]
     def cmd = [cfg.python, cfg.runner, 'detect',
                '--wsi', wsi,
                '--mask', exp.file.getAbsolutePath(),
@@ -626,9 +626,9 @@ def runOnImageData = { imageData, cfg, model, List regionRois, Closure appendLin
                '--device', (cfg.device ?: 'cuda'),
                '--batch-size', String.valueOf(parseIntOr(cfg.batchSize, 8)),
                '--classes', model.classes.join(',')]
-    setPhase('Çıkarım çalışıyor (2/2) — ' + model.name + '…')
+    setPhase(workshopText('script.2beccefd96ca', 'Çıkarım çalışıyor (2/2) — ') + model.name + '…')
     def r = runPython(cmd, appendLine)
-    if (!r.ok) return [ok: false, error: 'Çıkarım başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')]
+    if (!r.ok) return [ok: false, error: workshopText('script.07269218fcb7', 'Çıkarım başarısız (çıkış: ') + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')]
     def geo = outGeo
     try { def m = (r.lastLines ?: '') =~ /RESULT geojson=(.+)/; if (m.find()) { def gp = new File(m.group(1).trim()); if (gp.isFile()) geo = gp } } catch (Throwable ignore) {}
     def imp = importAndFilter(geo, imageData, regionRois, mode)
@@ -639,12 +639,12 @@ def runOnImageData = { imageData, cfg, model, List regionRois, Closure appendLin
 // ── Çalıştırma akışı — açık görüntü (kapsam: annotation | image) ─────────────
 def startRun = { String scope ->
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.da80fab350d1', 'Görüntü açık değil.')); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
     def model = modelByName(cfg.model)
     def regionRois = regionsForScope(imageData, scope)
     if (scope == 'annotation' && regionRois.isEmpty()) {
-        errorTextRef.set('Bölge yok.\nÖnce bir alan anotasyonu çizin/seçin (ya da kapsamı "Tüm görüntü" yapın).'); step.set('ERROR'); render(); return
+        errorTextRef.set(workshopText('script.5a73a41403f9', 'Bölge yok.\nÖnce bir alan anotasyonu çizin/seçin (ya da kapsamı "Tüm görüntü" yapın).')); step.set('ERROR'); render(); return
     }
     // Önceki sonuç varsa Python hattından ÖNCE sor: İptal'de hiçbir şey çalışmaz, hiçbir şey yazılmaz.
     final String importMode = askExisting(imageData)
@@ -652,12 +652,12 @@ def startRun = { String scope ->
     cancelledRef.set(false); geojsonRef.set(null)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Hazırlanıyor…'); step.set('RUN_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.074e464dc790', 'Hazırlanıyor…')); step.set('RUN_RUNNING'); render()
 
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def setPhase   = { String ph -> javafx.application.Platform.runLater { runPhaseRef.set(ph); render() } }
-        appendLine('Kapsam: ' + (scope == 'image' ? 'Tüm görüntü' : 'Anotasyon bölgesi'))
+        appendLine(workshopText('script.34a6f5b20d09', 'Kapsam: ') + (scope == 'image' ? workshopText('script.9ec6c2aa4413', 'Tüm görüntü') : workshopText('script.3e59e2e8b820', 'Anotasyon bölgesi')))
         try {
             def res = runOnImageData(imageData, cfg, model, regionRois, appendLine, setPhase, importMode)
             javafx.application.Platform.runLater {
@@ -669,7 +669,7 @@ def startRun = { String scope ->
                 }
             }
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { errorTextRef.set('Beklenmeyen hata:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.6af403a9fc32', 'Beklenmeyen hata:\n') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
         }
     }, 'AtolyeTIABolge-Run')
     worker.setDaemon(true); worker.start()
@@ -678,9 +678,9 @@ def startRun = { String scope ->
 // ── Çalıştırma akışı — tüm proje (her görüntüde tüm-görüntü kapsamı) ─────────
 def startProjectRun = {
     def project = QP.getProject()
-    if (project == null) { errorTextRef.set('Açık proje yok. "Tüm proje" kapsamı için bir QuPath projesi gerekir.'); step.set('ERROR'); render(); return }
+    if (project == null) { errorTextRef.set(workshopText('script.4902260836f8', 'Açık proje yok. "Tüm proje" kapsamı için bir QuPath projesi gerekir.')); step.set('ERROR'); render(); return }
     def entries = new ArrayList(project.getImageList())
-    if (entries.isEmpty()) { errorTextRef.set('Projede görüntü yok.'); step.set('ERROR'); render(); return }
+    if (entries.isEmpty()) { errorTextRef.set(workshopText('script.4e709de3731a', 'Projede görüntü yok.')); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
     def model = modelByName(cfg.model)
     // Önceki sonuçlar SORULMADAN silinmez: kip burada seçilir, İptal hiçbir şey çalıştırmaz.
@@ -689,7 +689,7 @@ def startProjectRun = {
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Proje işleniyor…'); step.set('RUN_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.c14f788cda90', 'Proje işleniyor…')); step.set('RUN_RUNNING'); render()
 
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
@@ -697,12 +697,12 @@ def startProjectRun = {
         long grandTotal = 0
         boolean cancelled = false
         def perImage = new ArrayList()
-        appendLine('Proje kapsamı: ' + entries.size() + ' görüntü · model ' + model.name + ' · cihaz ' + (cfg.device ?: 'cuda'))
+        appendLine(workshopText('script.1908ba27436f', 'Proje kapsamı: ') + entries.size() + workshopText('script.06298ceb64a4', ' görüntü · model ') + model.name + workshopText('script.63d7a9015ab9', ' · cihaz ') + (cfg.device ?: 'cuda'))
         for (entry in entries) {
-            if (cancelledRef.get()) { cancelled = true; appendLine('İptal edildi — kalan görüntüler işlenmedi.'); break }
+            if (cancelledRef.get()) { cancelled = true; appendLine(workshopText('script.005af5385744', 'İptal edildi — kalan görüntüler işlenmedi.')); break }
             done++
-            def nm = entry.getImageName() ?: ('görüntü ' + done)
-            javafx.application.Platform.runLater { runPhaseRef.set('Proje ' + done + '/' + entries.size() + ' — ' + nm); render() }
+            def nm = entry.getImageName() ?: (workshopText('script.a9b51fc6b55b', 'görüntü ') + done)
+            javafx.application.Platform.runLater { runPhaseRef.set(workshopText('script.134fa363faca', 'Proje ') + done + '/' + entries.size() + ' — ' + nm); render() }
             appendLine('')
             appendLine('── [' + done + '/' + entries.size() + '] ' + nm + ' ──')
             // CANLI veriyi YALNIZ, KULLANIM ANINDA açık görüntü gerçekten bu girdiyse kullan.
@@ -721,31 +721,31 @@ def startProjectRun = {
             def imgData = null
             boolean opened = false
             try {
-                if (liveData != null) { imgData = liveData; appendLine('   (açık görüntü — canlı veri kullanılıyor)') }
+                if (liveData != null) { imgData = liveData; appendLine(workshopText('script.fb01881f55ff', '   (açık görüntü — canlı veri kullanılıyor)')) }
                 else { imgData = entry.readImageData(); opened = true }
                 def regionRois = fullImageRois(imgData)
                 def res = runOnImageData(imgData, cfg, model, regionRois, appendLine, { String ph -> appendLine('   ' + ph) }, importMode)
                 if (!res.ok) {
-                    if ((res.error ?: '').contains('yerel dosya yolu yok')) { skipped++; appendLine('   ⏭ atlandı: yerel WSI yolu yok') }
-                    else { failed++; appendLine('   ✗ hata: ' + (res.error ?: '').readLines().take(2).join(' ')) }
+                    if ((res.error ?: '').contains('yerel dosya yolu yok')) { skipped++; appendLine(workshopText('script.2b2d78473c2c', '   ⏭ atlandı: yerel WSI yolu yok')) }
+                    else { failed++; appendLine(workshopText('script.02bcb6f5e3a3', '   ✗ hata: ') + (res.error ?: '').readLines().take(2).join(' ')) }
                 } else {
                     int inside = (int)(res.imp?.inside ?: 0)
                     // Sayaçları YALNIZ başarılı kayıttan sonra artır (kaydedilemeyen = başarısız).
                     boolean saved = true
                     try { entry.saveImageData(imgData) }
-                    catch (Throwable se) { saved = false; appendLine('   ✗ KAYDEDİLEMEDİ: ' + (se.getMessage() ?: se.getClass().getSimpleName())) }
+                    catch (Throwable se) { saved = false; appendLine(workshopText('script.11358a97abd9', '   ✗ KAYDEDİLEMEDİ: ') + (se.getMessage() ?: se.getClass().getSimpleName())) }
                     if (saved) {
                         String prevNote = res.imp?.prevNames ? ('[' + workshopText('script.19827e4eab38', 'önceki sonuç duruyor') + ': ' + res.imp.prevNames.join(', ') + ']') :
                             (((res.imp?.removed ?: 0) > 0) ? ('[' + String.format(java.util.Locale.US, workshopText('script.be8d521b4f49', 'önceki %,d anotasyon silindi'), (int) res.imp.removed) + ']') : '')
                         ok++; grandTotal += inside; perImage << [name: nm, count: inside, note: prevNote]
-                        appendLine('   ✓ tespit: ' + inside + ' (kaydedildi) ' + prevNote)
+                        appendLine(workshopText('script.96fb7b1a1e50', '   ✓ tespit: ') + inside + workshopText('script.82cb9b99efcf', ' (kaydedildi) ') + prevNote)
                     } else {
                         failed++
-                        appendLine('   ✗ ' + inside + ' tespit yapıldı ama girdiye yazılamadı')
+                        appendLine('   ✗ ' + inside + workshopText('script.1c52c97491c4', ' tespit yapıldı ama girdiye yazılamadı'))
                     }
                 }
             } catch (Throwable t) {
-                failed++; appendLine('   ✗ hata: ' + (t.getMessage() ?: t.getClass().getSimpleName()))
+                failed++; appendLine(workshopText('script.02bcb6f5e3a3', '   ✗ hata: ') + (t.getMessage() ?: t.getClass().getSimpleName()))
             } finally {
                 // Yalnız BİZİM açtığımız kopyanın sunucusunu kapat; açık görüntününkini ASLA.
                 try { if (opened && imgData != null) imgData.getServer()?.close() } catch (Throwable ignore) {}
@@ -847,14 +847,14 @@ render = { ->
             def project = QP.getProject()
             title.setText(workshopText('script.76da4893501d', 'TIA Toolbox — tespit'))
             def sb = new StringBuilder()
-            sb << "Lam          : " << imageNameOf(imageData) << "\n"
-            sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
-            sb << String.format(java.util.Locale.US, "Bölge anotasyonu: %,d   (seçili → seçili kullanılır)%n", rois.size())
-            sb << "Projedeki görüntü: " << ((project != null) ? project.getImageList().size().toString() : '(proje yok)') << "\n"
+            sb << workshopText('script.c482c0d5e596', 'Lam          : ') << imageNameOf(imageData) << "\n"
+            sb << "Python         : " << (cfg.python ?: workshopText('script.a2bfafb27517', '(ayarsız)')) << "\n"
+            sb << String.format(java.util.Locale.US, workshopText('script.24feb8c02003', 'Bölge anotasyonu: %,d   (seçili → seçili kullanılır)%n'), rois.size())
+            sb << workshopText('script.be5becb8c1b9', 'Projedeki görüntü: ') << ((project != null) ? project.getImageList().size().toString() : workshopText('script.bce246eec0f7', '(proje yok)')) << "\n"
             addMonoArea(sb.toString())
 
             // ── Kapsam seçici: anotasyon bölgesi / tüm görüntü / tüm proje ──
-            def SCOPE_LABELS = ['Anotasyon bölgesi', 'Tüm görüntü', 'Tüm proje']
+            def SCOPE_LABELS = [workshopText('script.3e59e2e8b820', 'Anotasyon bölgesi'), workshopText('script.9ec6c2aa4413', 'Tüm görüntü'), workshopText('script.3080d2dc7199', 'Tüm proje')]
             def SCOPE_KEYS   = ['annotation', 'image', 'project']
             def scopeChoice = new javafx.scene.control.ChoiceBox()
             SCOPE_LABELS.each { scopeChoice.getItems().add(it) }
@@ -871,9 +871,9 @@ render = { ->
             def scopeRow = new javafx.scene.layout.HBox(8); scopeRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
             scopeRow.getChildren().addAll(new javafx.scene.control.Label(workshopText('script.832662034af3', 'Kapsam:')), scopeChoice)
             center.getChildren().add(scopeRow)
-            def scopeHint = (scope == 'annotation') ? 'Yalnız çizili/seçili alan(lar) içinde çalışır (tek bölge tespiti).'
-                          : (scope == 'image')      ? 'Açık lamın TAMAMINDA çalışır (tüm-görüntü maskesi).'
-                          :                            'Projedeki TÜM görüntülerde tek tek çalışır; sonuç her girdiye kaydedilir.'
+            def scopeHint = (scope == 'annotation') ? workshopText('script.d78fa406f9e5', 'Yalnız çizili/seçili alan(lar) içinde çalışır (tek bölge tespiti).')
+                          : (scope == 'image')      ? workshopText('script.b0b46b7aab5a', 'Açık lamın TAMAMINDA çalışır (tüm-görüntü maskesi).')
+                          :                            workshopText('script.756b44e6f987', 'Projedeki TÜM görüntülerde tek tek çalışır; sonuç her girdiye kaydedilir.')
             addGuidance(workshopText('script.fa44c5666154', 'Kapsam — ') + scopeHint)
 
             // ── Aranabilir model seçici (TIA Toolbox model-arama penceresi taklidi) ──
@@ -925,7 +925,7 @@ render = { ->
             actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
             actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
             actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
-            def runLabel = needsProj ? 'Projede çalıştır ▶' : (scope == 'image' ? 'Görüntüde çalıştır ▶' : 'Bölgede çalıştır ▶')
+            def runLabel = needsProj ? workshopText('script.83c7fd14eeba', 'Projede çalıştır ▶') : (scope == 'image' ? workshopText('script.ffa79cdd0660', 'Görüntüde çalıştır ▶') : workshopText('script.8d97dafbbbd9', 'Bölgede çalıştır ▶'))
             def runBtn = navButton(runLabel, { needsProj ? startProjectRun() : startRun(scope) }, workshopText('script.d52b5dec4771', 'Seçili modeli seçilen kapsamda çalıştırır'))
             runBtn.setDisable(!canRun)
             if (needsAnn  && rois.size() < 1) addWarnLabel(workshopText('script.ef2fa8733bca', '⚠ "Anotasyon bölgesi" kapsamı için önce en az 1 alan anotasyonu çizin/seçin (ya da kapsamı değiştirin).'))

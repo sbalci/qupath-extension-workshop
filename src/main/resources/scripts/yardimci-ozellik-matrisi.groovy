@@ -334,17 +334,9 @@ def currentEntry = QP.getProjectEntry()
 // 2) Mod seçimi
 // ──────────────────────────────────────────────────────────────
 def choice = waitForChoice(
-    "Özellik matrisi - Makine öğrenmesi",
-    "Her hücre (tespit) için sayısal ölçümleri, etiket sütunlarıyla (cell_class,\n" +
-    "region_class) birlikte makine öğrenmesine hazır bir TSV matrisine yazacağım.\n\n" +
-    "Bu betik MODEL EĞİTMEZ — yalnızca X (özellikler) + y (etiketler) matrisini\n" +
-    "üretir. Modelleme Python / R tarafında yapılır.\n\n" +
-    "Çıktı klasörü:\n" +
-    "  <proje-klasörü>/${exportFolder}/YYYY-MM-DD_HHmmss/\n\n" +
-    "Hangi modu istiyorsunuz?\n" +
-    "  • Sadece bu görüntü — açık lamın canlı hiyerarşisi\n" +
-    "  • Tüm proje         — her lam + birleştirilmiş _all_features.tsv",
-    "Sadece bu görüntü", "Tüm proje"
+    workshopText('script.7dadf189c987', 'Özellik matrisi - Makine öğrenmesi'),
+    String.format(java.util.Locale.US, workshopText('script.90de9edecfc4', 'Her hücre (tespit) için sayısal ölçümleri, etiket sütunlarıyla (cell_class,\nregion_class) birlikte makine öğrenmesine hazır bir TSV matrisine yazacağım.\n\nBu betik MODEL EĞİTMEZ — yalnızca X (özellikler) + y (etiketler) matrisini\nüretir. Modelleme Python / R tarafında yapılır.\n\nÇıktı klasörü:\n  <proje-klasörü>/%s/YYYY-MM-DD_HHmmss/\n\nHangi modu istiyorsunuz?\n  • Sadece bu görüntü — açık lamın canlı hiyerarşisi\n  • Tüm proje         — her lam + birleştirilmiş _all_features.tsv'), exportFolder),
+    workshopText('script.70fdd47a1816', 'Sadece bu görüntü'), workshopText('script.3080d2dc7199', 'Tüm proje')
 )
 
 if (choice == null) { println "İptal."; return }
@@ -401,7 +393,7 @@ def processImage = { imageData, String imageName ->
         writeMatrix(perFile, rows, res.featureNames, exportSeparatorChar)
         if (perFile.length() > 0) filesWritten << perFile.getName()
     } catch (Throwable t) {
-        errors << "${imageName} → matris: ${t.getMessage()}"
+        errors << String.format(java.util.Locale.US, workshopText('script.6f00dee0f094', '%s → matris: %s'), imageName, t.getMessage())
     }
 
     masterFeatures.addAll(res.featureNames)
@@ -435,7 +427,7 @@ if (projectMode) {
                 processImage(imgData, entry.getImageName())
             }
         } catch (Throwable t) {
-            errors << "${entry.getImageName()} → readImageData: ${t.getMessage()}"
+            errors << String.format(java.util.Locale.US, workshopText('script.6de412d0fc6f', '%s → readImageData: %s'), entry.getImageName(), t.getMessage())
         }
     }
     // Birleştirilmiş matris + sözlük
@@ -458,7 +450,7 @@ try {
     writeDictionary(dictFile, masterFeatures, exportSeparatorChar)
     if (dictFile.length() > 0) filesWritten << dictFile.getName()
 } catch (Throwable t) {
-    errors << "_feature_dictionary: ${t.getMessage()}"
+    errors << String.format(java.util.Locale.US, workshopText('script.b094ecb108ab', '_feature_dictionary: %s'), t.getMessage())
 }
 
 def elapsed = (System.currentTimeMillis() - t0) / 1000.0
@@ -467,7 +459,7 @@ def elapsed = (System.currentTimeMillis() - t0) / 1000.0
 // 6) Sonuç penceresi
 // ──────────────────────────────────────────────────────────────
 def fmtCounts = { Map counts ->
-    if (counts.isEmpty()) return "  (yok)"
+    if (counts.isEmpty()) return workshopText('script.5ef9cb173fb5', '  (yok)')
     counts.sort { -it.value }.take(12).collect { k, v -> "  ${k}: ${v}" }.join("\n")  // sort: yeni map döner, orijinal değişmez
 }
 
@@ -475,47 +467,30 @@ def emptyHint = ""
 def allLabelsEmpty = (cellClassCounts.keySet() == ["(boş)"].toSet() || cellClassCounts.isEmpty()) &&
                      (regionClassCounts.keySet() == ["(boş)"].toSet() || regionClassCounts.isEmpty())
 if (totalRows == 0) {
-    emptyHint = "\n\n💡 Hiç tespit bulunamadı. Önce ilgili modüllerde hücre tespiti çalıştırın."
+    emptyHint = workshopText('script.df131c7e65f3', '\n\n💡 Hiç tespit bulunamadı. Önce ilgili modüllerde hücre tespiti çalıştırın.')
 } else if (allLabelsEmpty) {
-    emptyHint = "\n\n💡 cell_class ve region_class boş. Denetimli ML için etiket gerekir:\n" +
-                "  • cell_class için: hücreleri sınıflandırın (Nükleer boya / Tümör-Stroma modüllerinde).\n" +
-                "  • region_class için: tümör/stroma anotasyonu içinde tespit üretin (Tümör/Stroma modülü → Tümör içi Ki-67 modülü)."
+    emptyHint = workshopText('script.252f1718ba6d', '\n\n💡 cell_class ve region_class boş. Denetimli ML için etiket gerekir:\n  • cell_class için: hücreleri sınıflandırın (Nükleer boya / Tümör-Stroma modüllerinde).\n  • region_class için: tümör/stroma anotasyonu içinde tespit üretin (Tümör/Stroma modülü → Tümör içi Ki-67 modülü).')
 }
 
 def calibNote = uncalibratedImages.isEmpty() ? "" :
-    "\n\n⚠ Kalibrasyonsuz lam(lar) — centroid PİKSEL cinsinden yazıldı:\n" +
+    workshopText('script.44a726d5ee88', '\n\n⚠ Kalibrasyonsuz lam(lar) — centroid PİKSEL cinsinden yazıldı:\n') +
     uncalibratedImages.take(5).collect { "  • ${it}" }.join("\n") +
-    (uncalibratedImages.size() > 5 ? "\n  ... ve ${uncalibratedImages.size() - 5} lam daha" : "")
+    (uncalibratedImages.size() > 5 ? String.format(java.util.Locale.US, workshopText('script.7212c823e683', '\n  ... ve %d lam daha'), uncalibratedImages.size() - 5) : "")
 
 def errSection = (errors.isEmpty() ? "" :
-    "\n\n⚠️ Bazı dosyalar yazılamadı:\n" + errors.take(10).collect { "  • ${it}" }.join("\n")) + openSaveWarning
+    workshopText('script.bd4bae71b64b', '\n\n⚠️ Bazı dosyalar yazılamadı:\n') + errors.take(10).collect { "  • ${it}" }.join("\n")) + openSaveWarning
 
 showResultWindow(
-    "Özellik matrisi — Tamamlandı 🧮",
+    workshopText('script.f4b62501e6ae', 'Özellik matrisi — Tamamlandı 🧮'),
     String.format(java.util.Locale.US,
-        "Mod: %s\n" +
-        "Çıktı klasörü:\n  %s\n\n" +
-        "📊 Özet\n──────\n" +
-        "  Lam sayısı       : %d\n" +
-        "  Toplam hücre (satır): %d\n" +
-        "  Özellik sütunu     : %d\n" +
-        "  Yazılan dosya      : %d\n" +
-        "  Süre               : %.1f sn\n\n" +
-        "🏷 cell_class dağılımı\n──────────────────\n%s\n\n" +
-        "🏷 region_class dağılımı\n────────────────────\n%s%s%s%s\n\n" +
-        "📝 Sonraki adım:\n" +
-        "  • `${exportFolder}/%s/_all_features.tsv` (ya da <lam>__features.tsv) dosyasını\n" +
-        "    Python (pandas) / R ile okuyun. X = feature sütunları, y = cell_class veya region_class.\n" +
-        "  • Sütun grupları `_feature_dictionary.tsv` içinde id/label/feature olarak etiketlidir.\n" +
-        "  • Veri dışa aktarma modülünün web sayfasındaki 'Makine öğrenmesi için özellik matrisi' bölümünde\n" +
-        "    scikit-learn örneği var. Bu betik yalnızca matrisi üretir; model eğitmez.\n\n" +
-        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
-        (projectMode ? "Tüm proje" : "Sadece bu görüntü"),
+        workshopText('script.b30753ee4ba6', 'Mod: %s\nÇıktı klasörü:\n  %s\n\n📊 Özet\n──────\n  Lam sayısı       : %d\n  Toplam hücre (satır): %d\n  Özellik sütunu     : %d\n  Yazılan dosya      : %d\n  Süre               : %.1f sn\n\n🏷 cell_class dağılımı\n──────────────────\n%s\n\n🏷 region_class dağılımı\n────────────────────\n%s%s%s%s\n\n📝 Sonraki adım:\n  • `%s/%s/_all_features.tsv` (ya da <lam>__features.tsv) dosyasını\n    Python (pandas) / R ile okuyun. X = feature sütunları, y = cell_class veya region_class.\n  • Sütun grupları `_feature_dictionary.tsv` içinde id/label/feature olarak etiketlidir.\n  • Veri dışa aktarma modülünün web sayfasındaki \'Makine öğrenmesi için özellik matrisi\' bölümünde\n    scikit-learn örneği var. Bu betik yalnızca matrisi üretir; model eğitmez.\n\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'),
+        (projectMode ? workshopText('script.3080d2dc7199', 'Tüm proje') : workshopText('script.70fdd47a1816', 'Sadece bu görüntü')),
         outDir.getAbsolutePath(),
         imagesProcessed, totalRows, masterFeatures.size(),
         filesWritten.size(), elapsed,
         fmtCounts(cellClassCounts), fmtCounts(regionClassCounts),
         calibNote, emptyHint, errSection,
+        exportFolder,
         stamp
     )
 )

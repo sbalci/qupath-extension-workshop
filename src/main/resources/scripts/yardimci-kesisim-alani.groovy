@@ -201,9 +201,9 @@ def classNames = QP.getAnnotationObjects()
     .sort()
 
 if (classNames.size() < 2) {
-    def msg = "Kesişim için en az İKİ farklı sınıfta alan anotasyonu gerekir.\n" +
-              "Mevcut sınıf(lar): " + (classNames.join(', ') ?: '(yok)') + "\n\n" +
-              "Anotasyonları elle çizip sınıflayın ya da bir piksel sınıflandırıcı (Tümör/Stroma modülü) çalıştırın."
+    def msg = workshopText('script.3b853d1cf6e7', 'Kesişim için en az İKİ farklı sınıfta alan anotasyonu gerekir.\n') +
+              workshopText('script.b74458cb3bc3', 'Mevcut sınıf(lar): ') + (classNames.join(', ') ?: workshopText('script.715392eca0f8', '(yok)')) + "\n\n" +
+              workshopText('script.33345ee39f93', 'Anotasyonları elle çizip sınıflayın ya da bir piksel sınıflandırıcı (Tümör/Stroma modülü) çalıştırın.')
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.f34b330b89e2', "Yetersiz sınıf"), msg)
     return
 }
@@ -241,7 +241,7 @@ try { prefs.flush() } catch (Throwable ig) {}
 def aAnnos = QP.getAnnotationObjects().findAll { it.getROI()?.isArea() && it.getPathClass()?.toString() == classA }
 def bAnnos = QP.getAnnotationObjects().findAll { it.getROI()?.isArea() && it.getPathClass()?.toString() == classB }
 if (aAnnos.isEmpty() || bAnnos.isEmpty()) {
-    def msg = "Seçilen sınıflarda alan anotasyonu kalmadı (A: ${aAnnos.size()}, B: ${bAnnos.size()})."
+    def msg = String.format(java.util.Locale.US, workshopText('script.00cf2e39fb98', 'Seçilen sınıflarda alan anotasyonu kalmadı (A: %d, B: %d).'), aAnnos.size(), bAnnos.size())
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.469472ee53f3', "Anotasyon yok"), msg)
     return
 }
@@ -345,20 +345,20 @@ QP.fireHierarchyUpdate()
 
 // ── 6) Sonucu sun ───────────────────────────────────────────────────
 def body = new StringBuilder()
-body << "KESİŞİM ALANI (iki kompartman örtüşmesi)\n"
+body << workshopText('script.24f21cbb1f4c', 'KESİŞİM ALANI (iki kompartman örtüşmesi)\n')
 body << "════════════════════════════════════════════\n\n"
-body << "A sınıfı (ölçüm)   : ${classA}\n"
-body << "B sınıfı (örtüşen) : ${classB}\n"
-body << String.format(java.util.Locale.US, "A / B anotasyon    : %,d / %,d%n", aAnnos.size(), bAnnos.size())
+body << String.format(java.util.Locale.US, workshopText('script.963c575a356d', 'A sınıfı (ölçüm)   : %s\n'), classA)
+body << String.format(java.util.Locale.US, workshopText('script.3f8e15127c1e', 'B sınıfı (örtüşen) : %s\n'), classB)
+body << String.format(java.util.Locale.US, workshopText('script.b267d49c612f', 'A / B anotasyon    : %,d / %,d%n'), aAnnos.size(), bAnnos.size())
 body << "\n"
-body << String.format(java.util.Locale.US, "Toplam A alanı     : %,.0f µm²%n", totalAreaA)
-body << String.format(java.util.Locale.US, "Toplam kesişim     : %,.0f µm²%n", totalInter)
+body << String.format(java.util.Locale.US, workshopText('script.1926bfb99acc', 'Toplam A alanı     : %,.0f µm²%n'), totalAreaA)
+body << String.format(java.util.Locale.US, workshopText('script.21665dd09162', 'Toplam kesişim     : %,.0f µm²%n'), totalInter)
 body << "──────────────────────────────────────────────\n"
-body << String.format(java.util.Locale.US, "Genel örtüşme      : %.1f %%%n", overallPct)
-body << String.format(java.util.Locale.US, "Ortalama örtüşme   : %.1f %%  (A başına)%n", meanPct)
-body << String.format(java.util.Locale.US, "Örtüşen A adedi    : %,d / %,d%n", overlapCount, aAnnos.size())
+body << String.format(java.util.Locale.US, workshopText('script.bbfd2249dda5', 'Genel örtüşme      : %.1f %%%n'), overallPct)
+body << String.format(java.util.Locale.US, workshopText('script.67615a7eefb2', 'Ortalama örtüşme   : %.1f %%  (A başına)%n'), meanPct)
+body << String.format(java.util.Locale.US, workshopText('script.7fc38a3a0be5', 'Örtüşen A adedi    : %,d / %,d%n'), overlapCount, aAnnos.size())
 if (errCount > 0)
-    body << String.format(java.util.Locale.US, "Atlanan (geçersiz) : %,d%n", errCount)
+    body << String.format(java.util.Locale.US, workshopText('script.05d50b539341', 'Atlanan (geçersiz) : %,d%n'), errCount)
 body << "\n"
 body << String.format(java.util.Locale.US, workshopText('script.a9b6daa16201', 'Özet adı           : %s'), thisSummaryName) << "\n"
 if (writeMode == MODE_ADD && !prevNames.isEmpty()) {
@@ -367,15 +367,15 @@ if (writeMode == MODE_ADD && !prevNames.isEmpty()) {
     body << "\n" << String.format(java.util.Locale.US, workshopText('script.be27a1bc19b6', 'Önceki özet değiştirildi: %,d anotasyon silindi.'), removedPrev) << "\n"
 }
 body << "\n"
-body << "Her A anotasyonuna '${measArea}' ve\n"
-body << "'${measPct}' ölçümleri yazıldı (Veri dışa aktarma modülü ile dışa aktarılır).\n"
-body << "Ölçüme göre renklendirmek için: Measure → Show measurement maps.\n\n"
-body << "Not: JTS geometri alanı piksel² döner; µm²'ye pw·ph ile ölçeklenir.\n"
-body << "Bu bir ALAN ölçümüdür — klinik skor, eşik veya yorum DEĞİL.\n"
-body << "(Teknik esin: Crichton/Exeter 2025; Bankhead 2017)\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << String.format(java.util.Locale.US, workshopText('script.4401d64f02fc', 'Her A anotasyonuna \'%s\' ve\n'), measArea)
+body << String.format(java.util.Locale.US, workshopText('script.d4a2be27aada', '\'%s\' ölçümleri yazıldı (Veri dışa aktarma modülü ile dışa aktarılır).\n'), measPct)
+body << workshopText('script.ee6121eddd6c', 'Ölçüme göre renklendirmek için: Measure → Show measurement maps.\n\n')
+body << workshopText('script.e3c2c8f536a4', 'Not: JTS geometri alanı piksel² döner; µm²\'ye pw·ph ile ölçeklenir.\n')
+body << workshopText('script.32bf6030950b', 'Bu bir ALAN ölçümüdür — klinik skor, eşik veya yorum DEĞİL.\n')
+body << workshopText('script.b76ab34dd1f8', '(Teknik esin: Crichton/Exeter 2025; Bankhead 2017)\n\n')
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("Kesişim alanı", body.toString())
+showResultWindow(workshopText('script.fe998fe5724b', 'Kesişim alanı'), body.toString())
 println String.format(java.util.Locale.US,
     "✓ Kesişim alanı yazıldı: '%s' ∩ '%s' → genel örtüşme %%%.1f (%,d/%,d A örtüşüyor).",
     classA, classB, overallPct, overlapCount, aAnnos.size())

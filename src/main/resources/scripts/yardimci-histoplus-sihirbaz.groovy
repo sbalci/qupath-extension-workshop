@@ -74,8 +74,8 @@ def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-
 def SUMMARY_NAME = 'HistoPLUS hücre sınıfları özeti'
 // Önceki sonuç kipleri — çalıştırmadan ÖNCE sorulur (İptal'de hiçbir şey çalışmaz/yazılmaz).
 // Varsayılan "ekle": hiçbir şey silinmez (atölye kuralı: içe aktarma hiçbir şeyi kendiliğinden silmez).
-def MODE_ADD     = 'Önceki HistoPLUS sonucuna dokunma — yeni özet olarak ekle (varsayılan)'
-def MODE_REPLACE = 'Önceki HistoPLUS sonucunu değiştir (bu alandaki HistoPLUS sınıflı nesneler silinir)'
+def MODE_ADD     = workshopText('script.17a3b24c7437', 'Önceki HistoPLUS sonucuna dokunma — yeni özet olarak ekle (varsayılan)')
+def MODE_REPLACE = workshopText('script.20feba73ca1d', 'Önceki HistoPLUS sonucunu değiştir (bu alandaki HistoPLUS sınıflı nesneler silinir)')
 def ENV_ID       = 'histoplus'
 def RUNNER_REL   = 'python/histoplus/histoplus_runner.py'
 def CLASS_SUFFIX = ' (HistoPLUS)'
@@ -137,7 +137,7 @@ def canonicalKeyOf = { String rawKey ->
     return CANONICAL_ALIASES[norm] ?: trimmed
 }
 def trOf = { String key -> (classByKey[canonicalKeyOf(key)]?.tr) ?: key }
-def UNDOCUMENTED_NOTE = '"Minor Stromal Cell" modelin 15. çıkışıdır; makalenin 13 sınıfında yer almaz ve tanımı yayımlanmamıştır — ayrı raporlayın, yorumlamayın.'
+def UNDOCUMENTED_NOTE = workshopText('script.14351bfa446d', '"Minor Stromal Cell" modelin 15. çıkışıdır; makalenin 13 sınıfında yer almaz ve tanımı yayımlanmamıştır — ayrı raporlayın, yorumlamayın.')
 
 // ── Kalıcı yapılandırma: java.util.prefs (eklenti JAR'ı olmadan da çalışır) ──
 def prefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/histoplus')
@@ -373,7 +373,7 @@ def saveLogInteractive = {
     try {
         def suggested = new File(workDirRef.get() ?: new File(System.getProperty('user.home')), 'histoplus_wizard.log')
         def f = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, workshopText('script.c47d1c4e0b3a', 'Günlüğü kaydet'), suggested,
-            new javafx.stage.FileChooser.ExtensionFilter('Günlük (*.log, *.txt)', '*.log', '*.txt'))
+            new javafx.stage.FileChooser.ExtensionFilter(workshopText('script.c0f44ce4fc46', 'Günlük (*.log, *.txt)'), '*.log', '*.txt'))
         if (f != null) { f.setText(txt, 'UTF-8'); Dialogs.showInfoNotification(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.cbe9b591564d', 'Kaydedildi: ') + f.getAbsolutePath()) }
     } catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.a0f73789f289', 'Kaydedilemedi: ') + (t.getMessage() ?: t.getClass().getSimpleName())) }
 }
@@ -391,7 +391,7 @@ def runPython = { List cmd, Map extraEnv, Closure onLine ->
     applyCacheEnv(pb, extraEnv)
     def proc
     try { proc = pb.start() }
-    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName()), lines: []] }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.f0e1e3289660', 'Python başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName()), lines: []] }
     processRef.set(proc)
     def lines = new ArrayList()
     try {
@@ -404,10 +404,10 @@ def runPython = { List cmd, Map extraEnv, Closure onLine ->
         }
         reader.close()
     } catch (Throwable ignore) {}
-    if (cancelledRef.get()) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi', lines: lines] }
+    if (cancelledRef.get()) { killTree(proc); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi'), lines: lines] }
     int code
     try { code = proc.waitFor() }
-    catch (InterruptedException ie) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi', lines: lines] }
+    catch (InterruptedException ie) { killTree(proc); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi'), lines: lines] }
     return [ok: (code == 0), exitCode: code, lines: lines]
 }
 def tailOf = { List lines, int n -> lines.size() <= n ? lines.join('\n') : lines.subList(lines.size() - n, lines.size()).join('\n') }
@@ -416,7 +416,7 @@ def tailOf = { List lines, int n -> lines.size() <= n ? lines.join('\n') : lines
 def startJob = { String title, String runState, List args, Map extraEnv, Closure onFinish ->
     def cfg = loadConfig()
     def st = setupStatus(cfg)
-    if (!st.pythonOk || !st.runnerOk) { errorTextRef.set('Önce ① Python ortamını kurun ve köprü betiğini bulun.'); step.set('ERROR'); render(); return }
+    if (!st.pythonOk || !st.runnerOk) { errorTextRef.set(workshopText('script.c500a93feaf8', 'Önce ① Python ortamını kurun ve köprü betiğini bulun.')); step.set('ERROR'); render(); return }
     cancelledRef.set(false); resetLog()
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO)
     logAreaRef.set(la); jobTitleRef.set(title)
@@ -425,7 +425,7 @@ def startJob = { String title, String runState, List args, Map extraEnv, Closure
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def r = runPython([cfg.python, cfg.runner] + args, extraEnv, appendLine)
         if (r.error) appendLine('HATA: ' + r.error)
-        appendLine('# Çıkış kodu: ' + r.exitCode)
+        appendLine(workshopText('script.3510e56b50f2', '# Çıkış kodu: ') + r.exitCode)
         try { onFinish(r, cfg) } catch (Throwable t) { appendLine('HATA (sonuç işlenemedi): ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '')) }
         javafx.application.Platform.runLater { jobOkRef.set(r.ok); step.set(runState == 'CHECK_RUNNING' ? 'CHECK_DONE' : 'DL_DONE'); render() }
     }, 'AtolyeHistoPLUS-Job')
@@ -439,7 +439,7 @@ def markVerifiedFromLines = { List lines ->
     }
 }
 def startSelftest = {
-    startJob('Bağımlılık denetimi (selftest)', 'CHECK_RUNNING', ['selftest'], [:], { r, cfg ->
+    startJob(workshopText('script.f27ba047a16d', 'Bağımlılık denetimi (selftest)'), 'CHECK_RUNNING', ['selftest'], [:], { r, cfg ->
         def cudaLine = r.lines.find { it.startsWith('CUDA cuda=') }
         if (cudaLine != null) putPref(PREF_CUDA, cudaLine.substring('CUDA cuda='.length()).trim())
         if (r.exitCode != -1 && r.exitCode != -3)
@@ -448,14 +448,14 @@ def startSelftest = {
 }
 def startVerify = {
     def cfg = loadConfig(); def dir = modelFolderOf(cfg)
-    if (dir == null) { errorTextRef.set('Önce ağırlık klasörünü seçin.'); step.set('ERROR'); render(); return }
-    startJob('Ağırlıklar doğrulanıyor (SHA-256)', 'CHECK_RUNNING', ['verify', '--dir', dir.getAbsolutePath()], [:], { r, c -> markVerifiedFromLines(r.lines) })
+    if (dir == null) { errorTextRef.set(workshopText('script.f0d4012909f2', 'Önce ağırlık klasörünü seçin.')); step.set('ERROR'); render(); return }
+    startJob(workshopText('script.42cb7ad285fa', 'Ağırlıklar doğrulanıyor (SHA-256)'), 'CHECK_RUNNING', ['verify', '--dir', dir.getAbsolutePath()], [:], { r, c -> markVerifiedFromLines(r.lines) })
 }
 def startDownload = { String token ->
-    if (prefs.get(PREF_LICENSE, '') != LICENSE_TOKEN) { errorTextRef.set('Önce ② lisans onay kutusunu işaretleyin.'); step.set('ERROR'); render(); return }
+    if (prefs.get(PREF_LICENSE, '') != LICENSE_TOKEN) { errorTextRef.set(workshopText('script.9391e50405b6', 'Önce ② lisans onay kutusunu işaretleyin.')); step.set('ERROR'); render(); return }
     def dir = defaultModelFolder(); dir.mkdirs()
     def extra = (token?.trim()) ? [HF_TOKEN: token.trim()] : [:]
-    startJob('Ağırlıklar indiriliyor (Hugging Face, kapılı; 2 × ~285 MB)', 'DL_RUNNING', ['download', '--dir', dir.getAbsolutePath()], extra, { r, c -> markVerifiedFromLines(r.lines) })
+    startJob(workshopText('script.c08fbf94336d', 'Ağırlıklar indiriliyor (Hugging Face, kapılı; 2 × ~285 MB)'), 'DL_RUNNING', ['download', '--dir', dir.getAbsolutePath()], extra, { r, c -> markVerifiedFromLines(r.lines) })
 }
 
 // ── Ortam yöneticisinden bu sihirbaza dönüş ──────────────────────────────────
@@ -598,12 +598,12 @@ def slideFileOf = { imageData ->
                       (server instanceof qupath.lib.images.servers.SparseImageServer) ||
                       (server instanceof qupath.lib.images.servers.ConcatChannelsImageServer) ||
                       (server instanceof qupath.lib.images.servers.ZConcatenatedImageServer)
-    if (derived) return [ok: false, error: 'Bu görüntü kırpılmış/döndürülmüş ya da birleştirilmiş bir görünüm. HistoPLUS lam dosyasını doğrudan okur; koordinatlar dosyayla eşleşmez — özgün dosyayı açın.']
+    if (derived) return [ok: false, error: workshopText('script.9906bf839d50', 'Bu görüntü kırpılmış/döndürülmüş ya da birleştirilmiş bir görünüm. HistoPLUS lam dosyasını doğrudan okur; koordinatlar dosyayla eşleşmez — özgün dosyayı açın.')]
     def uris = null
     try { uris = server.getURIs() } catch (Throwable ignore) {}
-    if (uris == null || uris.size() != 1) return [ok: false, error: 'Görüntü tek bir yerel lam dosyasına karşılık gelmiyor (HistoPLUS dosyayı doğrudan okur).']
+    if (uris == null || uris.size() != 1) return [ok: false, error: workshopText('script.2ca4061c278e', 'Görüntü tek bir yerel lam dosyasına karşılık gelmiyor (HistoPLUS dosyayı doğrudan okur).')]
     def uri = uris.iterator().next()
-    if (!'file'.equals(uri.getScheme())) return [ok: false, error: 'Görüntü yerel bir dosya değil (' + uri.getScheme() + '). HistoPLUS yalnız yerel lam dosyası okur (OMERO/URL/DZI desteklenmez).']
+    if (!'file'.equals(uri.getScheme())) return [ok: false, error: workshopText('script.b2991decb34f', 'Görüntü yerel bir dosya değil (') + uri.getScheme() + workshopText('script.c4f304ed6392', '). HistoPLUS yalnız yerel lam dosyası okur (OMERO/URL/DZI desteklenmez).')]
     // Paths.get(URI) file://host/share/... UNC yollarını korur; new File(uri) host bileşenini sessizce atar.
     def f
     try {
@@ -613,7 +613,7 @@ def slideFileOf = { imageData ->
         def rawPath = (uri.getPath() ?: uri.getSchemeSpecificPart() ?: '').replace((char) '/', (char) '\\')
         f = (host != null && !host.trim().isEmpty()) ? new File('\\\\' + host + rawPath) : new File(rawPath)
     }
-    if (!f.isFile()) return [ok: false, error: 'Lam dosyası bulunamadı: ' + f.getAbsolutePath()]
+    if (!f.isFile()) return [ok: false, error: workshopText('script.763bf07a2c39', 'Lam dosyası bulunamadı: ') + f.getAbsolutePath()]
     def kind = ((server.getServerType() ?: '') + ' ' + server.getClass().getName()).toLowerCase(java.util.Locale.ROOT)
     return [ok: true, file: f, openslide: kind.contains('openslide')]
 }
@@ -650,11 +650,11 @@ def ensurePrecheck = { File slide, cfg ->
                 res = [path: slide.getAbsolutePath(), pc: [ok: '0', reason: 'timeout'], text: tailOf(lines, 5)]
             } else {
                 def errLines = lines.findAll { it.startsWith('HATA') }
-                def text = errLines.isEmpty() ? (tailOf(lines, 5) + '\n# Çıkış kodu: ' + proc.exitValue()) : errLines.join('\n')
+                def text = errLines.isEmpty() ? (tailOf(lines, 5) + workshopText('script.b6fd54b0b00e', '\n# Çıkış kodu: ') + proc.exitValue()) : errLines.join('\n')
                 res = [path: slide.getAbsolutePath(), pc: parsePrecheck(lines), text: text]
             }
         } catch (Throwable t) {
-            res = [path: slide.getAbsolutePath(), pc: [ok: '0', reason: 'error'], text: 'Ön denetim başlatılamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())]
+            res = [path: slide.getAbsolutePath(), pc: [ok: '0', reason: 'error'], text: workshopText('script.3bcc46d93c86', 'Ön denetim başlatılamadı: ') + (t.getMessage() ?: t.getClass().getSimpleName())]
         } finally {
             precheckProcRef.set(null)
             precheckBusy.set(false)
@@ -669,8 +669,8 @@ def ensurePrecheck = { File slide, cfg ->
 // Alan/yoğunluk için QuPath kalibrasyonu (varsa), yoksa dosyadaki µm/px (köprünün kullandığı).
 def calForAreas = { imageData, Map pc ->
     def cal = pixelMicrons(imageData)
-    if (cal != null) return [pw: cal.pw, ph: cal.ph, source: 'QuPath kalibrasyonu']
-    if (pc != null && pc.mpp_x) return [pw: (pc.mpp_x as double), ph: (pc.mpp_y as double), source: 'lam dosyası']
+    if (cal != null) return [pw: cal.pw, ph: cal.ph, source: workshopText('script.2b2723117498', 'QuPath kalibrasyonu')]
+    if (pc != null && pc.mpp_x) return [pw: (pc.mpp_x as double), ph: (pc.mpp_y as double), source: workshopText('script.16d5fc3b81f6', 'lam dosyası')]
     return null
 }
 def modelLabelOf = { String key -> WEIGHTS[key]?.label ?: (key ?: '—') }
@@ -680,36 +680,36 @@ def readiness = { imageData, cfg ->
     def blocks = []
     def warns = []
     def st = setupStatus(cfg)
-    if (!setupComplete(cfg)) blocks << 'Kurulum tamamlanmadı (① Python ortamı + denetim, ② lisans onayı + doğrulanmış ağırlık) — "◀ Kurulum".'
+    if (!setupComplete(cfg)) blocks << workshopText('script.ed9a29d00ea6', 'Kurulum tamamlanmadı (① Python ortamı + denetim, ② lisans onayı + doğrulanmış ağırlık) — "◀ Kurulum".')
     def targets = areaAnnotationsOf(imageData)
-    if (targets.size() == 0) blocks << 'Bir alan çizip seçin (birden çok alan için Ctrl+tık), sonra "⟳ Yenile".'
+    if (targets.size() == 0) blocks << workshopText('script.e46acfb95ea6', 'Bir alan çizip seçin (birden çok alan için Ctrl+tık), sonra "⟳ Yenile".')
     def sf = slideFileOf(imageData)
     if (!sf.ok) blocks << sf.error
     def pcRes = sf.ok ? ensurePrecheck(sf.file, cfg) : null
     def pc = pcRes?.pc
-    if (sf.ok && pcRes == null && setupComplete(cfg)) blocks << 'Lam dosyası denetleniyor… (birkaç saniye)'
+    if (sf.ok && pcRes == null && setupComplete(cfg)) blocks << workshopText('script.6016bdf1ec18', 'Lam dosyası denetleniyor… (birkaç saniye)')
     if (pc != null && pc.ok != '1') {
-        if (pc.reason == 'no_mpp') blocks << 'Lam dosyasında µm/px bilgisi yok. Köprü µm/px değerini dosyadan okur (upstream bu durumda sessizce 0.25 µm/px varsayardı); QuPath\'te girilen kalibrasyon aktarılamaz.'
-        else if (pc.reason == 'no_level') blocks << 'Lamda 0.25 ya da 0.5 µm/px\'e %20 yakın bir çözünürlük seviyesi yok (HistoPLUS yalnız 40× ve 20× modelleri sunar).' + (pcRes.text ? ('\n' + pcRes.text) : '')
-        else if (pc.reason == 'unreadable') blocks << 'OpenSlide bu lam dosyasını açamıyor (ör. CZI desteklenmez).' + (pcRes.text ? ('\n' + pcRes.text) : '')
-        else if (pc.reason == 'timeout') blocks << 'Lam ön denetimi 90 saniyede yanıt vermedi (ağ sürücüsü yavaş olabilir) — "⟳ Yenile" ile yeniden deneyin.'
-        else blocks << 'Lam ön denetimi başarısız.' + (pcRes.text ? ('\n' + pcRes.text) : '')
+        if (pc.reason == 'no_mpp') blocks << workshopText('script.868c5f7aa1fe', 'Lam dosyasında µm/px bilgisi yok. Köprü µm/px değerini dosyadan okur (upstream bu durumda sessizce 0.25 µm/px varsayardı); QuPath\'te girilen kalibrasyon aktarılamaz.')
+        else if (pc.reason == 'no_level') blocks << workshopText('script.9462fd7801a3', 'Lamda 0.25 ya da 0.5 µm/px\'e %20 yakın bir çözünürlük seviyesi yok (HistoPLUS yalnız 40× ve 20× modelleri sunar).') + (pcRes.text ? ('\n' + pcRes.text) : '')
+        else if (pc.reason == 'unreadable') blocks << workshopText('script.706c026cfc60', 'OpenSlide bu lam dosyasını açamıyor (ör. CZI desteklenmez).') + (pcRes.text ? ('\n' + pcRes.text) : '')
+        else if (pc.reason == 'timeout') blocks << workshopText('script.e14770ed46ef', 'Lam ön denetimi 90 saniyede yanıt vermedi (ağ sürücüsü yavaş olabilir) — "⟳ Yenile" ile yeniden deneyin.')
+        else blocks << workshopText('script.322721d72b4f', 'Lam ön denetimi başarısız.') + (pcRes.text ? ('\n' + pcRes.text) : '')
     }
     def modelKey = (pc != null && pc.ok == '1') ? pc.model : null
     if (modelKey != null && WEIGHTS.containsKey(modelKey)) {
         def wf = weightFileOf(cfg, modelKey)
-        if (!isVerified(wf)) blocks << 'Bu lam ' + modelLabelOf(modelKey) + ' modelini gerektirir ama ' + WEIGHTS[modelKey].file + ' yok ya da doğrulanmadı — "◀ Kurulum" → ②.'
+        if (!isVerified(wf)) blocks << workshopText('script.2f42c656127f', 'Bu lam ') + modelLabelOf(modelKey) + workshopText('script.7f0883a930fd', ' modelini gerektirir ama ') + WEIGHTS[modelKey].file + workshopText('script.b06f436492a2', ' yok ya da doğrulanmadı — "◀ Kurulum" → ②.')
         if (pc.level_mpp) {
             double lv = pc.level_mpp as double
             double mm = WEIGHTS[modelKey].mpp as double
             double diff = Math.abs(lv - mm) / mm
             if (diff > LEVEL_DIFF_WARN)
-                warns << String.format(java.util.Locale.US, 'Lam seviyesi %.3f µm/px, model %.2f µm/px için eğitildi (%%%.0f fark). HistoPLUS yeniden örnekleme yapmaz (upstream %%20\'ye kadar kabul eder) — çekirdek boyutları modele farklı görünür.', lv, mm, diff * 100.0d)
+                warns << String.format(java.util.Locale.US, workshopText('script.3f718ed8fbd0', 'Lam seviyesi %.3f µm/px, model %.2f µm/px için eğitildi (%%%.0f fark). HistoPLUS yeniden örnekleme yapmaz (upstream %%20\'ye kadar kabul eder) — çekirdek boyutları modele farklı görünür.'), lv, mm, diff * 100.0d)
         }
     }
     boolean boundsNonZero = pc != null && pc.ok == '1' && ((pc.bounds_x ?: '0') != '0' || (pc.bounds_y ?: '0') != '0')
     if (boundsNonZero && !sf.openslide) {
-        blocks << 'Lam dosyasında OpenSlide sınır ofseti var ama QuPath görüntüyü OpenSlide ile açmamış — hücre konturları kayar. Görüntüyü OpenSlide ile yeniden ekleyin.'
+        blocks << workshopText('script.4863c12fc881', 'Lam dosyasında OpenSlide sınır ofseti var ama QuPath görüntüyü OpenSlide ile açmamış — hücre konturları kayar. Görüntüyü OpenSlide ile yeniden ekleyin.')
     } else if (boundsNonZero && sf.openslide && pc.width && pc.height) {
         try {
             long serverW = imageData.getServer().getWidth()
@@ -718,29 +718,29 @@ def readiness = { imageData, cfg ->
             long pcH = pc.height as long
             if (serverW == pcW && serverH == pcH)
                 blocks << String.format(java.util.Locale.US,
-                    'Lam dosyasında OpenSlide sınır ofseti var; QuPath görüntü boyutu (%d×%d) OpenSlide\'ın ham boyutuyla aynı — görüntü sınırlara göre kırpılmamış, hücre konturları kayar. Görüntüyü sınırlara göre kırpılmış biçimde yeniden ekleyin.',
+                    workshopText('script.8d73f6051d8d', 'Lam dosyasında OpenSlide sınır ofseti var; QuPath görüntü boyutu (%d×%d) OpenSlide\'ın ham boyutuyla aynı — görüntü sınırlara göre kırpılmamış, hücre konturları kayar. Görüntüyü sınırlara göre kırpılmış biçimde yeniden ekleyin.'),
                     serverW, serverH)
         } catch (NumberFormatException ignore) {}
     }
-    if (cfg.device == 'cuda' && cfg.cuda == '0') blocks << 'GPU seçili ama denetimde CUDA bulunamadı — Otomatik ya da CPU seçin.'
-    if (parseIntOr(cfg.batchSize, 0) < 1) blocks << 'Batch size geçersiz (en az 1 olmalı) — "Gelişmiş" bölümünden düzeltin.'
-    if (parseIntOr(cfg.ppThreads, 0) < 1) blocks << 'Son-işleme iş parçacığı geçersiz (en az 1 olmalı) — "Gelişmiş" bölümünden düzeltin.'
+    if (cfg.device == 'cuda' && cfg.cuda == '0') blocks << workshopText('script.128106564f01', 'GPU seçili ama denetimde CUDA bulunamadı — Otomatik ya da CPU seçin.')
+    if (parseIntOr(cfg.batchSize, 0) < 1) blocks << workshopText('script.788b160a9a7e', 'Batch size geçersiz (en az 1 olmalı) — "Gelişmiş" bölümünden düzeltin.')
+    if (parseIntOr(cfg.ppThreads, 0) < 1) blocks << workshopText('script.0f8f53540630', 'Son-işleme iş parçacığı geçersiz (en az 1 olmalı) — "Gelişmiş" bölümünden düzeltin.')
     def typeName = (imageData.getImageType()?.name() ?: '').toUpperCase(java.util.Locale.ROOT)
-    if (!typeName.contains('BRIGHTFIELD_H_E')) warns << 'Görüntü tipi H&E değil (' + typeName + '). HistoPLUS yalnız H&E ile eğitildi.'
+    if (!typeName.contains('BRIGHTFIELD_H_E')) warns << workshopText('script.9e508280b7d4', 'Görüntü tipi H&E değil (') + typeName + workshopText('script.e98ad7de7448', '). HistoPLUS yalnız H&E ile eğitildi.')
     def unionRoi = targets.size() == 0 ? null : unionRoiOf(targets)
     def calA = calForAreas(imageData, pc)
     double areaMm2 = (unionRoi != null && calA != null) ? areaMm2Of(unionRoi, calA.pw, calA.ph) : Double.NaN
     boolean onCpu = cfg.device == 'cpu' || (cfg.device == 'auto' && cfg.cuda != '1')
-    if (cfg.device == 'auto' && cfg.cuda == '') warns << 'CUDA henüz denetlenmedi — ① "Denetle" ile GPU\'yu doğrulayın; alan uyarısı CPU\'ya göre hesaplandı.'
+    if (cfg.device == 'auto' && cfg.cuda == '') warns << workshopText('script.feb2fd69b85c', 'CUDA henüz denetlenmedi — ① "Denetle" ile GPU\'yu doğrulayın; alan uyarısı CPU\'ya göre hesaplandı.')
     double limit = onCpu ? AREA_WARN_CPU_MM2 : AREA_WARN_GPU_MM2
     if (Double.isFinite(areaMm2) && areaMm2 > limit)
-        warns << String.format(java.util.Locale.US, 'Büyük alan: %.2f mm² (%s uyarı eşiği %.2f mm²) — çalıştırma uzun sürebilir (GPU ~12 sn/mm², CPU ~7 dk/mm²).', areaMm2, onCpu ? 'CPU' : 'GPU', limit)
+        warns << String.format(java.util.Locale.US, workshopText('script.c105916490f6', 'Büyük alan: %.2f mm² (%s uyarı eşiği %.2f mm²) — çalıştırma uzun sürebilir (GPU ~12 sn/mm², CPU ~7 dk/mm²).'), areaMm2, onCpu ? 'CPU' : 'GPU', limit)
     def qp = pixelMicrons(imageData)
     if (qp != null && pc != null && pc.mpp_x) {
         double fileMpp = ((pc.mpp_x as double) + (pc.mpp_y as double)) / 2.0d
         double qpMpp = (qp.pw + qp.ph) / 2.0d
         if (fileMpp > 0 && Math.abs(qpMpp - fileMpp) / fileMpp > MPP_DIFF_WARN)
-            warns << String.format(java.util.Locale.US, 'QuPath µm/px (%.4f) dosyadakinden (%.4f) farklı — HistoPLUS DOSYADAKİ değeri kullanır.', qpMpp, fileMpp)
+            warns << String.format(java.util.Locale.US, workshopText('script.784c48db42ca', 'QuPath µm/px (%.4f) dosyadakinden (%.4f) farklı — HistoPLUS DOSYADAKİ değeri kullanır.'), qpMpp, fileMpp)
     }
     return [ok: blocks.isEmpty(), blocks: blocks, warns: warns, targets: targets, unionRoi: unionRoi,
             slide: sf, pc: pc, calA: calA, areaMm2: areaMm2, onCpu: onCpu, modelKey: modelKey]
@@ -748,7 +748,7 @@ def readiness = { imageData, cfg ->
 def refreshPrecheck = { -> precheckGenRef.incrementAndGet(); killTree(precheckProcRef.get()); precheckRef.set(null); render() }
 def elapsedText = { long ms ->
     long s = Math.max(0L, ms).intdiv(1000L)
-    return String.format(java.util.Locale.US, '%d dk %02d sn', s.intdiv(60L), s % 60L)
+    return String.format(java.util.Locale.US, workshopText('script.89225fe9bd02', '%d dk %02d sn'), s.intdiv(60L), s % 60L)
 }
 
 // ── İçe aktarma: HistoPLUS çekirdek konturları → sınıflı TESPİT nesneleri ──
@@ -874,17 +874,17 @@ def writeCounts = { imageData, List targets, unionRoi, List cells, calA, String 
 def resultText = { imageData, cfg, Map rd, Map imp, Map dens, Map stats, long elapsedMs ->
     def sb = new StringBuilder()
     int tot = imp.cells.size()
-    sb << "HISTOPLUS — SEÇİLİ ALANDA HÜCRE SINIFLARI\n"
+    sb << workshopText('script.2b46deba0daa', 'HISTOPLUS — SEÇİLİ ALANDA HÜCRE SINIFLARI\n')
     sb << "═════════════════════════════════════════\n\n"
-    sb << "Lam   : " << imageNameOf(imageData) << "\n"
+    sb << workshopText('script.a0858f037ccf', 'Lam   : ') << imageNameOf(imageData) << "\n"
     sb << "Model   : " << modelLabelOf(stats.model ?: rd.modelKey) << "  (HistoPLUS, CellViT + H0-mini)\n"
-    if (rd.pc?.mpp_x) sb << "µm/px   : " << rd.pc.mpp_x << " (lam dosyası) · kullanılan seviye " << (rd.pc.level_mpp ?: '?') << "\n"
+    if (rd.pc?.mpp_x) sb << "µm/px   : " << rd.pc.mpp_x << workshopText('script.5ff72aa7db83', ' (lam dosyası) · kullanılan seviye ') << (rd.pc.level_mpp ?: '?') << "\n"
     double a = dens.areaMm2 as double
     boolean haveArea = rd.calA != null && Double.isFinite(a) && a > 0
-    if (haveArea) sb << String.format(java.util.Locale.US, "Alan    : %.3f mm² (alan için: %s)\n", a, rd.calA.source)
-    sb << String.format(java.util.Locale.US, "Hücre   : %,d\n", tot)
-    sb << "Süre    : " << elapsedText(elapsedMs) << "\n\n"
-    sb << String.format(java.util.Locale.US, "%-26s %8s %7s %11s %10s\n", 'Sınıf', 'n', '%', 'hücre/mm²', 'ort. oy')
+    if (haveArea) sb << String.format(java.util.Locale.US, workshopText('script.a238af8bd11a', 'Alan    : %.3f mm² (alan için: %s)\n'), a, rd.calA.source)
+    sb << String.format(java.util.Locale.US, workshopText('script.db2a5ff24d71', 'Hücre   : %,d\n'), tot)
+    sb << workshopText('script.9928132fbfb4', 'Süre    : ') << elapsedText(elapsedMs) << "\n\n"
+    sb << String.format(java.util.Locale.US, "%-26s %8s %7s %11s %10s\n", workshopText('script.75c4ae45637f', 'Sınıf'), 'n', '%', workshopText('script.0accd665cbb9', 'hücre/mm²'), workshopText('script.6b5e3aef9ae7', 'ort. oy'))
     dens.keys.each { k ->
         def mine = imp.cells.findAll { it[2] == k }
         int n = mine.size()
@@ -895,28 +895,28 @@ def resultText = { imageData, cfg, Map rd, Map imp, Map dens, Map stats, long el
         String name = trOf(k) + ((classByKey[k]?.undocumented) ? ' ⚠' : '')
         sb << String.format(java.util.Locale.US, "%-26s %8d %7s %11s %10s\n", name, n, pct, dm, mv)
     }
-    if (tot == 0) sb << "\n0 hücre bulundu — alanın doku içerdiğini denetleyin.\n"
+    if (tot == 0) sb << workshopText('script.9dc6b50a54a9', '\n0 hücre bulundu — alanın doku içerdiğini denetleyin.\n')
     if (dens.keys.any { classByKey[it]?.undocumented }) sb << "\n⚠ " << UNDOCUMENTED_NOTE << "\n"
-    sb << "\n'ort. oy' = çekirdek piksellerinden sınıfa oy verenlerin ortalama kesri (" << VOTE_MEAS << "); OLASILIK DEĞİLDİR.\n"
+    sb << workshopText('script.fa901a1373af', '\n\'ort. oy\' = çekirdek piksellerinden sınıfa oy verenlerin ortalama kesri (') << VOTE_MEAS << workshopText('script.c354558d69e9', '); OLASILIK DEĞİLDİR.\n')
     if (stats.exported != null) {
         int exported = stats.exported as int
         int outside = imp.outside as int
         int skipped = exported - tot - outside
-        if (skipped != 0) sb << String.format(java.util.Locale.US, "\nUYARI: köprü %,d kontur yazdı, %,d içe aktarıldı, %,d alan dışında, %,d atlandı (beklenmeyen geometri ya da sınıf bilgisi eksik).\n", exported, tot, outside, skipped)
+        if (skipped != 0) sb << String.format(java.util.Locale.US, workshopText('script.c339f10d8084', '\nUYARI: köprü %,d kontur yazdı, %,d içe aktarıldı, %,d alan dışında, %,d atlandı (beklenmeyen geometri ya da sınıf bilgisi eksik).\n'), exported, tot, outside, skipped)
     }
-    if (!imp.unknown.isEmpty()) sb << "\nTabloda olmayan etiketler (özgün adıyla eklendi): " << imp.unknown.join(', ') << "\n"
-    sb << "\nÇekirdekler '<Sınıf> (HistoPLUS)' sınıflı poligon TESPİTLERİ olarak eklendi; kilitli özet: '" << (dens.summaryName ?: '?') << "'.\n"
+    if (!imp.unknown.isEmpty()) sb << workshopText('script.89a4a576f98c', '\nTabloda olmayan etiketler (özgün adıyla eklendi): ') << imp.unknown.join(', ') << "\n"
+    sb << workshopText('script.32b4339f8bfa', '\nÇekirdekler \'<Sınıf> (HistoPLUS)\' sınıflı poligon TESPİTLERİ olarak eklendi; kilitli özet: \'') << (dens.summaryName ?: '?') << "'.\n"
     if (dens.wroteTargets) {
         if (imp.removed > 0 || (imp.removedSummaries ?: 0) > 0)
-            sb << String.format(java.util.Locale.US, "Değiştir kipi: bu alandaki %,d önceki tespit ve %,d özet silindi.\n", imp.removed as int, (imp.removedSummaries ?: 0) as int)
-        sb << "Seçili anotasyonlara 'HistoPLUS: <sınıf> (n) / (%) / (/mm²)' yazıldı.\n"
+            sb << String.format(java.util.Locale.US, workshopText('script.a23d28036fda', 'Değiştir kipi: bu alandaki %,d önceki tespit ve %,d özet silindi.\n'), imp.removed as int, (imp.removedSummaries ?: 0) as int)
+        sb << workshopText('script.90aea3fe5d40', 'Seçili anotasyonlara \'HistoPLUS: <sınıf> (n) / (%) / (/mm²)\' yazıldı.\n')
     } else {
-        sb << "Ekle kipi: HİÇBİR ŞEY silinmedi. Bu alanda önceki bir çalıştırma varsa aynı çekirdeklerin iki\n"
-        sb << "kopyası vardır; seçili anotasyonların 'HistoPLUS: …' ölçümleri önceki çalıştırmadan KALDI —\n"
-        sb << "bu çalıştırmanın sayımları yukarıdaki tabloda ve yeni özet anotasyonundadır.\n"
+        sb << workshopText('script.47e7494d3da9', 'Ekle kipi: HİÇBİR ŞEY silinmedi. Bu alanda önceki bir çalıştırma varsa aynı çekirdeklerin iki\n')
+        sb << workshopText('script.85cd3a1940e5', 'kopyası vardır; seçili anotasyonların \'HistoPLUS: …\' ölçümleri önceki çalıştırmadan KALDI —\n')
+        sb << workshopText('script.d9218c1bbcd2', 'bu çalıştırmanın sayımları yukarıdaki tabloda ve yeni özet anotasyonundadır.\n')
     }
-    sb << "Sınıflar modelin eğitim veri setinin kategorileridir; görsel olarak doğrulayın.\n"
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    sb << workshopText('script.ba3f571c26ca', 'Sınıflar modelin eğitim veri setinin kategorileridir; görsel olarak doğrulayın.\n')
+    sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
@@ -925,10 +925,10 @@ def runStartRef = new java.util.concurrent.atomic.AtomicLong(0L)
 def timelineRef = new java.util.concurrent.atomic.AtomicReference(null)
 def startRun = {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.da80fab350d1', 'Görüntü açık değil.')); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
     def rd = readiness(imageData, cfg)
-    if (!rd.ok) { errorTextRef.set('Çalıştırılamadı:\n  • ' + rd.blocks.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!rd.ok) { errorTextRef.set(workshopText('script.01d6fdef4514', 'Çalıştırılamadı:\n  • ') + rd.blocks.join('\n  • ')); step.set('ERROR'); render(); return }
     // ── Önceki sonuç için kullanıcıya SOR (çalıştırmadan ÖNCE) ──────────────
     // İptal'de Python süreci hiç başlamaz ve hiçbir şey yazılmaz. Varsayılan "ekle": hiçbir şey silinmez.
     // (Toplu anotasyon içe aktarma ve NuClick sihirbazlarındaki kalıbın aynısı.)
@@ -940,16 +940,16 @@ def startRun = {
     if (nPrevSummaries > 0 || nPrevDets > 0) {
         def sb = new StringBuilder()
         sb << String.format(java.util.Locale.US,
-            'Seçili alanda zaten %,d HistoPLUS özeti ve HistoPLUS sınıflı %,d tespit var.',
+            workshopText('script.52fce7e1f03b', 'Seçili alanda zaten %,d HistoPLUS özeti ve HistoPLUS sınıflı %,d tespit var.'),
             nPrevSummaries, nPrevDets)
-        sb << '\n\n"Ekle" seçilirse hiçbir şey silinmez; sonuç "' + summaryBase + ' (2)" gibi yeni bir özet olur. '
-        sb << 'Aynı çekirdeklerin ikinci bir kopyasını göreceksiniz ve seçili anotasyonların '
-        sb << '"HistoPLUS: …" ölçümleri önceki çalıştırmadan KALIR (yeni sayımlar yeni özete yazılır).'
-        sb << '\n\n"Değiştir" seçilirse bu alanda HistoPLUS sınıfı taşıyan TÜM tespitler silinir — '
-        sb << 'elle HistoPLUS sınıfına atadığınız ya da çakışan bir alandaki başka bir çalıştırmanın '
-        sb << 'ürettiği tespitler de dahil (eşleşme sınıf adına göredir, kökene göre değil). '
-        sb << 'Kendi anotasyonlarınıza ve diğer sınıflara hiçbir kipte dokunulmaz.'
-        sb << '\n\nÖnceki HistoPLUS sonucu ne olsun?'
+        sb << workshopText('script.3b19d8cdc923', '\n\n"Ekle" seçilirse hiçbir şey silinmez; sonuç "') + summaryBase + workshopText('script.e21da0eaff0d', ' (2)" gibi yeni bir özet olur. ')
+        sb << workshopText('script.1d2411add05b', 'Aynı çekirdeklerin ikinci bir kopyasını göreceksiniz ve seçili anotasyonların ')
+        sb << workshopText('script.3fd218865762', '"HistoPLUS: …" ölçümleri önceki çalıştırmadan KALIR (yeni sayımlar yeni özete yazılır).')
+        sb << workshopText('script.812db3db0319', '\n\n"Değiştir" seçilirse bu alanda HistoPLUS sınıfı taşıyan TÜM tespitler silinir — ')
+        sb << workshopText('script.a4202b1a78ee', 'elle HistoPLUS sınıfına atadığınız ya da çakışan bir alandaki başka bir çalıştırmanın ')
+        sb << workshopText('script.6e98c0a134ae', 'ürettiği tespitler de dahil (eşleşme sınıf adına göredir, kökene göre değil). ')
+        sb << workshopText('script.4fb961a21263', 'Kendi anotasyonlarınıza ve diğer sınıflara hiçbir kipte dokunulmaz.')
+        sb << workshopText('script.14dde6869259', '\n\nÖnceki HistoPLUS sonucu ne olsun?')
         def pick = Dialogs.showChoiceDialog(workshopText('script.d2435b8e7d13', 'Önceki HistoPLUS sonucu'), sb.toString(), [MODE_ADD, MODE_REPLACE], MODE_ADD)
         if (pick == null) return                      // İptal → çalıştırma yok, yazma yok
         replacePrev = (pick == MODE_REPLACE)
@@ -965,7 +965,7 @@ def startRun = {
     final String runSummaryBase = summaryBase
     def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs(); workDirRef.set(workDir)
     def roiFile = new File(workDir, 'roi.geojson')
-    if (!writeRoiGeoJson(rd.unionRoi, roiFile)) { errorTextRef.set('Seçili alan GeoJSON olarak yazılamadı (boş geometri).'); step.set('ERROR'); render(); return }
+    if (!writeRoiGeoJson(rd.unionRoi, roiFile)) { errorTextRef.set(workshopText('script.1ec4f25529c3', 'Seçili alan GeoJSON olarak yazılamadı (boş geometri).')); step.set('ERROR'); render(); return }
     def cmd = [cfg.python, cfg.runner, 'detect',
                '--slide', rd.slide.file.getAbsolutePath(),
                '--roi', roiFile.getAbsolutePath(),
@@ -977,7 +977,7 @@ def startRun = {
     cancelledRef.set(false); resetLog(); runStartRef.set(System.currentTimeMillis())
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('HistoPLUS çalışıyor — ' + modelLabelOf(rd.modelKey)); step.set('RUN_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.c20d288ed223', 'HistoPLUS çalışıyor — ') + modelLabelOf(rd.modelKey)); step.set('RUN_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln ->
             def t = (ln ?: '').trim()
@@ -993,7 +993,7 @@ def startRun = {
             appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') }
         }
         try {
-            appendLine('Alan: ' + rd.targets.size() + ' anotasyon (birleşik) → ' + roiFile.getAbsolutePath())
+            appendLine(workshopText('script.a95d19c0d4c8', 'Alan: ') + rd.targets.size() + workshopText('script.b72b1bd5f456', ' anotasyon (birleşik) → ') + roiFile.getAbsolutePath())
             def r = runPython(cmd, [:], appendLine)
             long elapsed = System.currentTimeMillis() - runStartRef.get()
             if (!r.ok) {
@@ -1006,7 +1006,7 @@ def startRun = {
                     return
                 }
                 javafx.application.Platform.runLater {
-                    errorTextRef.set('HistoPLUS başarısız (çıkış: ' + r.exitCode + ')' + (r.error ? ('\n' + r.error) : '') + '\n\n' +
+                    errorTextRef.set(workshopText('script.d53753dae397', 'HistoPLUS başarısız (çıkış: ') + r.exitCode + ')' + (r.error ? ('\n' + r.error) : '') + '\n\n' +
                         tailOf(r.lines.findAll { !it.startsWith('PROGRESS ') }, 30))
                     step.set('ERROR'); render()
                 }
@@ -1021,7 +1021,7 @@ def startRun = {
                 if (t.startsWith('RESULT geojson=')) geo = new File(t.substring('RESULT geojson='.length()).trim())
             }
             if (geo != null && !geo.isFile()) geo = null
-            javafx.application.Platform.runLater { busyLabelRef.set('Hücreler içe aktarılıyor…'); step.set('BUSY'); render() }
+            javafx.application.Platform.runLater { busyLabelRef.set(workshopText('script.c56cd61805bd', 'Hücreler içe aktarılıyor…')); step.set('BUSY'); render() }
             // Uzun çalıştırmadan SONRA QP.getCurrentImageData()'yı YENİDEN ALMA: başlatan imageData'ya yaz.
             if (cancelledRef.get()) { javafx.application.Platform.runLater { step.set('READY'); render() }; return }
             def imp = importCells(geo, imageData, rd.unionRoi, rd.calA, runReplacePrev, runSummaryBase)
@@ -1030,14 +1030,14 @@ def startRun = {
                                              : nextSummaryName(imageData.getHierarchy(), rd.unionRoi, runSummaryBase)
             def dens = writeCounts(imageData, rd.targets, rd.unionRoi, imp.cells, rd.calA,
                                    (stats.model ?: rd.modelKey) as String, runReplacePrev, summaryName)
-            if (imp.outside > 0) appendLine('Not: alan dışında kalan ' + imp.outside + ' kontur atlandı (karolar alanı aşar; sayım yalnız alan içidir).')
+            if (imp.outside > 0) appendLine(workshopText('script.9309f1b8f107', 'Not: alan dışında kalan ') + imp.outside + workshopText('script.3bc3065e521a', ' kontur atlandı (karolar alanı aşar; sayım yalnız alan içidir).'))
             def txt = resultText(imageData, cfg, rd, imp, dens, stats, elapsed)
             javafx.application.Platform.runLater {
                 try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {}
                 resultTextRef.set(txt); step.set('RESULT'); render()
             }
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { errorTextRef.set('Beklenmeyen hata:\n' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '')); step.set('ERROR'); render() }
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.6af403a9fc32', 'Beklenmeyen hata:\n') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '')); step.set('ERROR'); render() }
         }
     }, 'AtolyeHistoPLUS-Run')
     worker.setDaemon(true); worker.start()
@@ -1114,17 +1114,14 @@ render = { ->
 
         section(workshopText('script.6ea97bd5d4f2', '② Lisans ve ağırlıklar'))
         def licenseArea = new javafx.scene.control.TextArea(
-            'HistoPLUS kodu ve ağırlıkları CC BY-NC-ND 4.0 lisanslıdır (depo LICENSE.md ve Hugging Face kapısı; makaledeki ' +
-            '"CC-BY-4.0" ifadesi depoyla çelişir — geçerli olan depo/HF lisansıdır). Atölye kodu ve ağırlıkları PAKETLEMEZ.\n\n' +
-            'Hugging Face erişim koşullarından (özgün metin):\n' +
+            workshopText('script.4f1b6fb081e1', 'HistoPLUS kodu ve ağırlıkları CC BY-NC-ND 4.0 lisanslıdır (depo LICENSE.md ve Hugging Face kapısı; makaledeki "CC-BY-4.0" ifadesi depoyla çelişir — geçerli olan depo/HF lisansıdır). Atölye kodu ve ağırlıkları PAKETLEMEZ.\n\n') +
+            workshopText('script.82118a7d870d', 'Hugging Face erişim koşullarından (özgün metin):\n') +
             '"Any commercial use, sale, or other monetization of the HistoPLUS model and its derivatives, which include models ' +
             'trained on outputs from the HistoPLUS model or datasets created from the HistoPLUS model, is prohibited and requires prior approval."\n' +
             '"By downloading this model, you agree not to distribute, publish or reproduce a copy of the model. If another user within ' +
             'your organization wishes to use the HistoPLUS model, they must register as an individual user and agree to comply with the terms of use."\n' +
             '"This model has not been reviewed, certified, or approved by any regulatory body."\n\n' +
-            'Yani: yalnız ticari olmayan akademik araştırma/eğitim; HistoPLUS çıktılarıyla eğitilen modeller ve oluşturulan veri setleri de ' +
-            'bu kısıta tabidir; ağırlık dosyalarını paylaşmayın; her kullanıcı huggingface.co/' + HF_REPO + ' sayfasındaki formu KENDİ hesabıyla doldurur ' +
-            '(DİKKAT: "owkin/histoplus" değil, "Owkin-Bioptimus/histoplus").')
+            workshopText('script.63773f83264e', 'Yani: yalnız ticari olmayan akademik araştırma/eğitim; HistoPLUS çıktılarıyla eğitilen modeller ve oluşturulan veri setleri de bu kısıta tabidir; ağırlık dosyalarını paylaşmayın; her kullanıcı huggingface.co/') + HF_REPO + workshopText('script.358ae8184616', ' sayfasındaki formu KENDİ hesabıyla doldurur (DİKKAT: "owkin/histoplus" değil, "Owkin-Bioptimus/histoplus").'))
         licenseArea.setEditable(false); licenseArea.setWrapText(true); licenseArea.setPrefRowCount(9)
         center.getChildren().add(licenseArea)
         def licenseChk = new javafx.scene.control.CheckBox(workshopText('script.f7bc35cf69e0', 'Okudum; bu koşulları kendi adıma kabul ediyorum ve Hugging Face erişim formunu KENDİ hesabımla doldurdum.'))
@@ -1195,22 +1192,22 @@ render = { ->
             def rd = readiness(imageData, cfg)
             title.setText(workshopText('script.f7e0ca4b56b0', 'HistoPLUS — seçili alanda çekirdek segmentasyonu + sınıflama'))
             def sb = new StringBuilder()
-            sb << "Lam        : " << imageNameOf(imageData) << "\n"
-            sb << "Dosya        : " << (rd.slide.ok ? rd.slide.file.getAbsolutePath() : '—') << "\n"
-            sb << "Model        : " << (rd.modelKey ? modelLabelOf(rd.modelKey) : '— (lam denetlenince seçilir)') << "\n"
-            sb << "Ağırlık      : " << (rd.modelKey ? (weightFileOf(cfg, rd.modelKey)?.getAbsolutePath() ?: '—') : '—') << "\n"
-            sb << "Seçili alan  : " << rd.targets.size() << " anotasyon"
+            sb << workshopText('script.13db0a0038b7', 'Lam        : ') << imageNameOf(imageData) << "\n"
+            sb << workshopText('script.b4fb1a99c06e', 'Dosya        : ') << (rd.slide.ok ? rd.slide.file.getAbsolutePath() : '—') << "\n"
+            sb << "Model        : " << (rd.modelKey ? modelLabelOf(rd.modelKey) : workshopText('script.405d6a379c74', '— (lam denetlenince seçilir)')) << "\n"
+            sb << workshopText('script.4a6827a5c260', 'Ağırlık      : ') << (rd.modelKey ? (weightFileOf(cfg, rd.modelKey)?.getAbsolutePath() ?: '—') : '—') << "\n"
+            sb << workshopText('script.dc272e1066b4', 'Seçili alan  : ') << rd.targets.size() << workshopText('script.a2fb89ad578d', ' anotasyon')
             if (Double.isFinite(rd.areaMm2 as double)) sb << String.format(java.util.Locale.US, " · %.3f mm²", rd.areaMm2 as double)
             sb << "\n"
-            if (rd.pc?.mpp_x) sb << "Dosya µm/px  : " << rd.pc.mpp_x << " × " << rd.pc.mpp_y << "  · kullanılacak seviye " << (rd.pc.level_mpp ?: '?') << "\n"
+            if (rd.pc?.mpp_x) sb << workshopText('script.6dcb5e936569', 'Dosya µm/px  : ') << rd.pc.mpp_x << " × " << rd.pc.mpp_y << workshopText('script.bf42d0e6964c', '  · kullanılacak seviye ') << (rd.pc.level_mpp ?: '?') << "\n"
             def qpc = pixelMicrons(imageData)
-            sb << "QuPath µm/px : " << (qpc != null ? String.format(java.util.Locale.US, '%.4f × %.4f', qpc.pw, qpc.ph) : 'kalibre değil') << "\n"
+            sb << "QuPath µm/px : " << (qpc != null ? String.format(java.util.Locale.US, '%.4f × %.4f', qpc.pw, qpc.ph) : workshopText('script.cbb528582308', 'kalibre değil')) << "\n"
             addMonoArea(sb.toString())
 
             // Seçenekler — değişiklik anında kaydedilir.
             def devIds = ['auto', 'cuda', 'cpu']
             def devChoice = new javafx.scene.control.ChoiceBox()
-            devChoice.getItems().addAll('Otomatik', 'GPU (CUDA)', 'CPU')
+            devChoice.getItems().addAll(workshopText('script.ee1cd50e9422', 'Otomatik'), 'GPU (CUDA)', 'CPU')
             devChoice.getSelectionModel().select(Math.max(0, devIds.indexOf(cfg.device)))
             devChoice.getSelectionModel().selectedIndexProperty().addListener({ obs, o, n ->
                 int i = n as int

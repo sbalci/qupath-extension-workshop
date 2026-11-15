@@ -223,14 +223,14 @@ if (copiesArg != null && copiesArg != 'hepsi' && copiesArg != 'enyeni') {
 // ── 1) Ön kontrol: açık proje zorunlu ────────────────────────────────────────
 def project = QP.getProject()
 if (project == null) {
-    def msg = "Önce bir QuPath projesi açın. (Dosya → Proje aç…)\nBu betik tek lam modunda çalışmaz."
+    def msg = workshopText('script.3fa7ab791c90', 'Önce bir QuPath projesi açın. (Dosya → Proje aç…)\nBu betik tek lam modunda çalışmaz.')
     if (isHeadless) { println msg; return }
     Dialogs.showErrorMessage(workshopText('script.a38d0e6adac0', "Proje açık değil"), msg)
     return
 }
 def entries = project.getImageList()
 if (entries == null || entries.isEmpty()) {
-    def msg = "Projede görüntü bulunamadı."
+    def msg = workshopText('script.87ae843447a4', 'Projede görüntü bulunamadı.')
     if (isHeadless) { println msg; return }
     Dialogs.showErrorMessage(workshopText('script.cb3ed2211f0a', "Boş proje"), msg)
     return
@@ -320,8 +320,7 @@ entries.eachWithIndex { entry, idx ->
 }
 
 if (setRows.isEmpty()) {
-    def msg = "Hiçbir görüntüde GrandQC anotasyonu (\"" + GRANDQC_SENTINEL + "\") bulunamadı.\n" +
-              "Önce GrandQC sihirbazıyla lamları işleyip GeoJSON'u içe aktarın."
+    def msg = String.format(java.util.Locale.US, workshopText('script.e4f9109fbd2b', 'Hiçbir görüntüde GrandQC anotasyonu ("%s") bulunamadı.\nÖnce GrandQC sihirbazıyla lamları işleyip GeoJSON\'u içe aktarın.'), GRANDQC_SENTINEL)
     if (isHeadless) { println msg; return }
     Dialogs.showWarningNotification(workshopText('script.05f7e81a10c9', "GrandQC kohort KK özeti"), msg)
     return
@@ -372,24 +371,24 @@ try {
         }
     }
 } catch (Throwable t) {
-    def msg = "TSV yazılamadı: ${t.getMessage() ?: t.getClass().getSimpleName()}\nHedef: ${tsvFile.getAbsolutePath()}"
+    def msg = String.format(java.util.Locale.US, workshopText('script.85a43ea5543c', 'TSV yazılamadı: %s\nHedef: %s'), (t.getMessage() ?: t.getClass().getSimpleName()), tsvFile.getAbsolutePath())
     if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage(workshopText('script.540d5d46fe47', "Yazma hatası"), msg)
     return
 }
 
 // ── 5) Sonucu sun ─────────────────────────────────────────────────────────────
 def body = new StringBuilder()
-body << "GrandQC KOHORT KALİTE KONTROL ÖZETİ\n"
+body << workshopText('script.91a1a764ba16', 'GrandQC KOHORT KALİTE KONTROL ÖZETİ\n')
 body << "═══════════════════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Görüntü sayısı        : %,d%n", totalImages)
-body << String.format(java.util.Locale.US, "Özetlenen (GrandQC'li): %,d%n", imagesSummarized)
-body << String.format(java.util.Locale.US, "Atlanan (anotasyon yok): %,d%n", skipped)
-body << String.format(java.util.Locale.US, "Okunamayan            : %,d%n", failed)
-body << "\nTSV dosyası:\n  " + tsvFile.getAbsolutePath() + "\n"
-body << "\nSütunlar: doku/temiz doku/artefakt alanı (mm²) + doku içi artefakt %,\n"
-body << "doku parça sayısı ve her artefakt sınıfı için alan (mm²) + bölge sayısı.\n"
-body << "Alanlar yalnız kalibre görüntülerde doldurulur; kalibre değilse hücre boş.\n"
-body << "Anotasyon üretmez, hiçbir lamı kaydetmez — salt okunur.\n\n"
+body << String.format(java.util.Locale.US, workshopText('script.1ac40bdbba03', 'Görüntü sayısı        : %,d%n'), totalImages)
+body << String.format(java.util.Locale.US, workshopText('script.463bc47fad0f', 'Özetlenen (GrandQC\'li): %,d%n'), imagesSummarized)
+body << String.format(java.util.Locale.US, workshopText('script.4889c9b54e99', 'Atlanan (anotasyon yok): %,d%n'), skipped)
+body << String.format(java.util.Locale.US, workshopText('script.e48c95b9ad02', 'Okunamayan            : %,d%n'), failed)
+body << workshopText('script.d4e41942ccc5', '\nTSV dosyası:\n  ') + tsvFile.getAbsolutePath() + "\n"
+body << workshopText('script.d0fe4b2da692', '\nSütunlar: doku/temiz doku/artefakt alanı (mm²) + doku içi artefakt %,\n')
+body << workshopText('script.e732614a220b', 'doku parça sayısı ve her artefakt sınıfı için alan (mm²) + bölge sayısı.\n')
+body << workshopText('script.6f2dca871694', 'Alanlar yalnız kalibre görüntülerde doldurulur; kalibre değilse hücre boş.\n')
+body << workshopText('script.843dab451422', 'Anotasyon üretmez, hiçbir lamı kaydetmez — salt okunur.\n\n')
 if (copiesChoice != null) {
     body << "🗂 "
     if (copiesChoice == 'newest') {
@@ -402,9 +401,9 @@ if (copiesChoice != null) {
     if (copiesLines.size() > 15) body << String.format(java.util.Locale.US, "  … +%,d%n", copiesLines.size() - 15)
     body << "\n"
 }
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("GrandQC Kohort KK Özeti", body.toString())
+showResultWindow(workshopText('script.34d5a51f3339', 'GrandQC Kohort KK Özeti'), body.toString())
 println String.format(java.util.Locale.US,
     "✓ TSV yazıldı: %d görüntü özetlendi (%d atlandı, %d hata) → %s",
     imagesSummarized, skipped, failed, tsvFile.getAbsolutePath())

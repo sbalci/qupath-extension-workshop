@@ -364,23 +364,23 @@ def trainResolutionMicrons = 2.0   // atölye sabiti — Tümör/Stroma modülü
 def extraClasses = classCounts.keySet().findAll { !(it in ['Tumor', 'Stroma', 'Region', 'TSR Özet']) }   // Region/TSR Özet eğitime girmez
 
 def devam = waitForConfirm(
-    "Tümör/Stroma (Adım 1) - Tümör/Stroma modeli eğit",
-    "Bu betik AÇIK lamdaki çizdiğiniz anotasyonlardan bir Random Forest piksel\n" +
-    "sınıflandırıcı eğitir ve projeye '${targetName}' adıyla kaydeder.\n\n" +
-    "Eğitim verisi (bu lam):\n" +
-    "  • Tumor  : ${tumorCount} anotasyon\n" +
-    "  • Stroma : ${stromaCount} anotasyon\n" +
-    (extraClasses ? "  • Ek sınıflar: ${extraClasses.join(', ')}\n" : "") +
-    "\nModel ayarları (atölye varsayılanı — Tümör/Stroma modülü §3 ile aynı):\n" +
-    "  • Sınıflandırıcı : Random Forest\n" +
-    "  • Özellikler     : Hematoxylin OD + Eosin OD; ham + Gaussian σ = 1, 2, 4 piksel\n" +
-    "                     (eğitim çözünürlüğünde; 2 µm/px'te 2, 4, 8 µm)\n" +
-    "  • Çözünürlük     : ${trainResolutionMicrons} µm/px\n\n" +
-    "Not: Bu işlem yalnızca modeli EĞİTİP KAYDEDER — lamdaki anotasyonlarınıza\n" +
-    "dokunmaz (silmez). Modeli seçili anotasyon sınırında ölçmek için sonra\n" +
-    "'Tümör/Stroma sihirbazı' betiğini çalıştırın.\n\n" +
-    "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n" +
-    "Hazırsanız Çalıştır düğmesine basın."
+    workshopText('script.d06964b0fd80', 'Tümör/Stroma (Adım 1) - Tümör/Stroma modeli eğit'),
+    workshopText('script.800d316105c7', 'Bu betik AÇIK lamdaki çizdiğiniz anotasyonlardan bir Random Forest piksel\n') +
+    String.format(java.util.Locale.US, workshopText('script.7abd1d5ca0d4', 'sınıflandırıcı eğitir ve projeye \'%s\' adıyla kaydeder.\n\n'), targetName) +
+    workshopText('script.c3ef8d15bcff', 'Eğitim verisi (bu lam):\n') +
+    String.format(java.util.Locale.US, workshopText('script.7ba466eb0558', '  • Tumor  : %s anotasyon\n'), tumorCount) +
+    String.format(java.util.Locale.US, workshopText('script.52fbea65ef4a', '  • Stroma : %s anotasyon\n'), stromaCount) +
+    (extraClasses ? String.format(java.util.Locale.US, workshopText('script.d4642b47c3c3', '  • Ek sınıflar: %s\n'), extraClasses.join(', ')) : "") +
+    workshopText('script.65f4c0dd9d0f', '\nModel ayarları (atölye varsayılanı — Tümör/Stroma modülü §3 ile aynı):\n') +
+    workshopText('script.54b044128dcd', '  • Sınıflandırıcı : Random Forest\n') +
+    workshopText('script.fcc3f8f963b2', '  • Özellikler     : Hematoxylin OD + Eosin OD; ham + Gaussian σ = 1, 2, 4 piksel\n') +
+    workshopText('script.1c08be09e144', '                     (eğitim çözünürlüğünde; 2 µm/px\'te 2, 4, 8 µm)\n') +
+    String.format(java.util.Locale.US, workshopText('script.90409a64f6a8', '  • Çözünürlük     : %s µm/px\n\n'), trainResolutionMicrons) +
+    workshopText('script.4213f85037d2', 'Not: Bu işlem yalnızca modeli EĞİTİP KAYDEDER — lamdaki anotasyonlarınıza\n') +
+    workshopText('script.237065010038', 'dokunmaz (silmez). Modeli seçili anotasyon sınırında ölçmek için sonra\n') +
+    workshopText('script.3d6c35fbc4c8', '\'Tümör/Stroma sihirbazı\' betiğini çalıştırın.\n\n') +
+    workshopText('script.ca5d7edd5429', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n\n') +
+    workshopText('script.379cc5560ff7', 'Hazırsanız Çalıştır düğmesine basın.')
 )
 if (!devam) { println "İptal."; return }
 
@@ -500,7 +500,7 @@ def previewText = { ->
             }
         }
         if (regionObjects.isEmpty()) {
-            return '  Önizleme için bir anotasyon seçin (ya da sınıfı "Region" olan bir anotasyon çizin).'
+            return workshopText('script.f3d336465146', '  Önizleme için bir anotasyon seçin (ya da sınıfı "Region" olan bir anotasyon çizin).')
         }
         def roi = RoiTools.union(regionObjects.collect { it.getROI() })
         def manager = PixelClassifierTools.createMeasurementManager(imageData, classifier)
@@ -508,7 +508,7 @@ def previewText = { ->
         def tumorName = names.find { it.startsWith('Tumor area ') }
         def stromaName = names.find { it.startsWith('Stroma area ') }
         if (tumorName == null || stromaName == null) {
-            return '  Önizleme için sınıflandırıcıda Tumor ve Stroma çıktı sınıfları bulunmalı.'
+            return workshopText('script.f3ec447a08b3', '  Önizleme için sınıflandırıcıda Tumor ve Stroma çıktı sınıfları bulunmalı.')
         }
         double tumor = manager.getMeasurementValue(roi, tumorName)?.doubleValue() ?: 0.0
         double stroma = manager.getMeasurementValue(roi, stromaName)?.doubleValue() ?: 0.0
@@ -517,26 +517,26 @@ def previewText = { ->
         double stromaPct = total > 0 ? 100.0 * stroma / total : Double.NaN
         double ratio = stroma > 0 ? tumor / stroma : Double.NaN
         def fmt = { double value, String pattern ->
-            Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : 'hesaplanamadı'
+            Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : workshopText('script.77fa6502fb41', 'hesaplanamadı')
         }
-        return '  Kapsam: seçili anotasyonların birleşimi\n' +
-            "  Tümör alanı (%)    : ${fmt(tumorPct, '%.2f%%')}\n" +
-            "  Stroma alanı (%)   : ${fmt(stromaPct, '%.2f%%')}\n" +
-            "  Tümör/Stroma oranı : ${fmt(ratio, '%.4f')}"
+        return workshopText('script.e944dab8be3c', '  Kapsam: seçili anotasyonların birleşimi\n') +
+            String.format(java.util.Locale.US, workshopText('script.d428db075421', '  Tümör alanı (%%)    : %s\n'), fmt(tumorPct, '%.2f%%')) +
+            String.format(java.util.Locale.US, workshopText('script.20790571d87a', '  Stroma alanı (%%)   : %s\n'), fmt(stromaPct, '%.2f%%')) +
+            String.format(java.util.Locale.US, workshopText('script.051082be6dc8', '  Tümör/Stroma oranı : %s'), fmt(ratio, '%.4f'))
     } catch (Throwable t) {
-        return "  (Önizleme yapılamadı: ${t.getClass().getSimpleName()} — model yine de kaydedildi.)"
+        return String.format(java.util.Locale.US, workshopText('script.ed4dc5d5bfea', '  (Önizleme yapılamadı: %s — model yine de kaydedildi.)'), t.getClass().getSimpleName())
     }
 }
 def baseResult = String.format(java.util.Locale.US,
-    "Model kaydedildi ✅\n\n" +
-    "  Ad        : %s\n" +
-    "  Konum     : <proje>/classifiers/%s.json\n" +
-    "  Eğitim    : Tumor=%d, Stroma=%d (bu lam)\n" +
-    "  Çözünürlük: %.1f µm/px  |  Süre: %.1f sn\n\n" +
-    "Sıradaki: ölçüm sınırını seçin; 'Tümör/Stroma sihirbazı' ile alanları ölçün.\n" +
-    "Lamda canlı renk haritasını görmek için: [Classify → Pixel classification →\n" +
+    workshopText('script.2129373aa2f0', 'Model kaydedildi ✅\n\n') +
+    workshopText('script.77400f196ecb', '  Ad        : %s\n') +
+    workshopText('script.f3687bbbfad8', '  Konum     : <proje>/classifiers/%s.json\n') +
+    workshopText('script.66826cd15b5c', '  Eğitim    : Tumor=%d, Stroma=%d (bu lam)\n') +
+    workshopText('script.6950d9da477f', '  Çözünürlük: %.1f µm/px  |  Süre: %.1f sn\n\n') +
+    workshopText('script.9f8713b874a2', 'Sıradaki: ölçüm sınırını seçin; \'Tümör/Stroma sihirbazı\' ile alanları ölçün.\n') +
+    workshopText('script.288de87231f2', 'Lamda canlı renk haritasını görmek için: [Classify → Pixel classification →\n') +
     "Load classifier] → %s.\n\n" +
-    "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
+    workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'),
     targetName, targetName, tumorCount, stromaCount, trainResolutionMicrons, elapsed, targetName)
 
 if (isHeadless) {
@@ -546,24 +546,24 @@ if (isHeadless) {
 } else {
     // Önizleme isteğe bağlı ve seçili anotasyon sınırı içinde hesaplanır.
     def wantPreview = waitForConfirm(
-        "Model kaydedildi — önizleme?",
+        workshopText('script.a8aa654f86d1', 'Model kaydedildi — önizleme?'),
         baseResult + "\n\n" +
-        "Seçili anotasyon(lar) içinde hızlı bir alan önizlemesi yapmak ister misiniz?\n" +
-        "Bu, modelin işe yarayıp yaramadığını görmek içindir; anotasyonlarınıza dokunmaz.\n" +
-        "Önce ölçmek istediğiniz anotasyonu seçin (seçim yoksa 'Region' sınıfı kullanılır).\n\n" +
-        "Önizleme için Çalıştır, atlamak için İptal."
+        workshopText('script.733e86cd8c07', 'Seçili anotasyon(lar) içinde hızlı bir alan önizlemesi yapmak ister misiniz?\n') +
+        workshopText('script.f14bf33b30cf', 'Bu, modelin işe yarayıp yaramadığını görmek içindir; anotasyonlarınıza dokunmaz.\n') +
+        workshopText('script.0f7c3fe26f6a', 'Önce ölçmek istediğiniz anotasyonu seçin (seçim yoksa \'Region\' sınıfı kullanılır).\n\n') +
+        workshopText('script.8a65b6f2a2d2', 'Önizleme için Çalıştır, atlamak için İptal.')
     )
     if (wantPreview) {
         println "Önizleme hesaplanıyor (tahribatsız)..."
         def pv = previewText()
         showResultWindow(
-            "Önizleme — kaba alan dağılımı",
+            workshopText('script.192658403b8c', 'Önizleme — kaba alan dağılımı'),
             baseResult + "\n\n" +
-            "Önizleme (seçili sınır, betimsel alan ölçümleri):\n" + pv + "\n\n" +
-            "Kalıcı ve dışa aktarılabilir ölçümler için Tümör/Stroma sihirbazını kullanın."
+            workshopText('script.07b997482a94', 'Önizleme (seçili sınır, betimsel alan ölçümleri):\n') + pv + "\n\n" +
+            workshopText('script.ef9b49fec4bb', 'Kalıcı ve dışa aktarılabilir ölçümler için Tümör/Stroma sihirbazını kullanın.')
         )
     } else {
-        showResultWindow("Tamamlandı 🧠", baseResult)
+        showResultWindow(workshopText('script.f587de64acf9', 'Tamamlandı 🧠'), baseResult)
     }
 }
 

@@ -239,13 +239,13 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
             def qualityField = field("90", 8)
             def g1 = newGrid()
             int r = 0
-            addRow(g1, r++, "Mod:", modeBox, "Sadece görüntü: RGB karolar. Görüntü + etiket maskesi: anotasyon sınıflarından maske (segmentasyon eğitimi).")
-            addRow(g1, r++, "Kapsam:", scopeBox, "Seçili anotasyon(lar): yalnızca seçtiğiniz ROI'ler. Tüm anotasyonlar: lamdaki her anotasyon.")
-            addRow(g1, r++, "Karo boyutu (px):", tileField, "Her karonun kenar uzunluğu (piksel). Tipik: 224, 256, 512.")
-            addRow(g1, r++, "Çözünürlük (µm/px):", umField, "Hedef çözünürlük; 20× ve 40× lamlarda aynı fiziksel alanı verir. Kalibre değilse downsample katsayısı olarak yorumlanır.")
-            addRow(g1, r++, "Örtüşme (px):", overlapField, "Komşu karolar arası ortak piksel. 0 = örtüşme yok. >0 ise karo düzeyinde rastgele bölme sızıntıya yol açar.")
-            addRow(g1, r++, "Format:", formatBox, "PNG: kayıpsız. JPG: küçük ama kayıplı. TIFF: kayıpsız, büyük. Maske modunda PNG'ye zorlanır.")
-            addRow(g1, r++, "JPG kalitesi (1–100):", qualityField, "Yalnız JPG seçiliyse kullanılır.")
+            addRow(g1, r++, workshopText('script.e79a63f3a487', 'Mod:'), modeBox, workshopText('script.3de093221862', 'Sadece görüntü: RGB karolar. Görüntü + etiket maskesi: anotasyon sınıflarından maske (segmentasyon eğitimi).'))
+            addRow(g1, r++, workshopText('script.832662034af3', 'Kapsam:'), scopeBox, workshopText('script.953642ef7970', 'Seçili anotasyon(lar): yalnızca seçtiğiniz ROI\'ler. Tüm anotasyonlar: lamdaki her anotasyon.'))
+            addRow(g1, r++, workshopText('script.91c09ece8069', 'Karo boyutu (px):'), tileField, workshopText('script.40df2db6df15', 'Her karonun kenar uzunluğu (piksel). Tipik: 224, 256, 512.'))
+            addRow(g1, r++, workshopText('script.0534807c8def', 'Çözünürlük (µm/px):'), umField, workshopText('script.5cf7fce8ea43', 'Hedef çözünürlük; 20× ve 40× lamlarda aynı fiziksel alanı verir. Kalibre değilse downsample katsayısı olarak yorumlanır.'))
+            addRow(g1, r++, workshopText('script.babcdc19a188', 'Örtüşme (px):'), overlapField, workshopText('script.77a5385ee45f', 'Komşu karolar arası ortak piksel. 0 = örtüşme yok. >0 ise karo düzeyinde rastgele bölme sızıntıya yol açar.'))
+            addRow(g1, r++, workshopText('script.9a5649a42cb2', 'Format:'), formatBox, workshopText('script.cdc98ea4bae3', 'PNG: kayıpsız. JPG: küçük ama kayıplı. TIFF: kayıpsız, büyük. Maske modunda PNG\'ye zorlanır.'))
+            addRow(g1, r++, workshopText('script.a20e7e828354', 'JPG kalitesi (1–100):'), qualityField, workshopText('script.cfe99d363120', 'Yalnız JPG seçiliyse kullanılır.'))
 
             // ── Sekme 2: Etiket ve bölge ──
             def groupBox = choice(["Sınıfa göre (yoksa ada göre)", "Anotasyon adına göre (yoksa sınıfa göre)", "Sınıf + ad"])
@@ -283,24 +283,24 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
             groupBox.valueProperty().addListener({ obs, o, n -> unchecked.clear(); rebuildLabels() } as javafx.beans.value.ChangeListener)
             excludeField.textProperty().addListener({ obs, o, n -> rebuildLabels() } as javafx.beans.value.ChangeListener)
             rebuildLabels()
-            def ignoreBox = check("Dışlama bölgelerini diğerlerinden çıkar", true)
-            def childBox = check("Alt anotasyonları üst anotasyondan çıkar", true)
+            def ignoreBox = check(workshopText('script.ceb0911c4527', 'Dışlama bölgelerini diğerlerinden çıkar'), true)
+            def childBox = check(workshopText('script.43ed45167b26', 'Alt anotasyonları üst anotasyondan çıkar'), true)
             def coverField = field("0", 8)
             def maxField = field("0", 8)
             def tissueField = field("0", 8)
             def whiteField = field("220", 8)
             def g2 = newGrid()
             r = 0
-            addRow(g2, r++, "Klasörleme:", groupBox, "Karoların etiketi: anotasyonun sınıfı, adı ya da ikisi. Sınıfsız ve adsız anotasyon: Sinifsiz.")
-            addRow(g2, r++, "Etiketler:", labelPane, "Bu lamda, seçili kapsam ve klasörlemeyle oluşacak etiketler ve anotasyon sayıları. İşareti kaldırılan etiket atlanır. Liste, kapsam / klasörleme / dışlama değişince yenilenir.")
-            addRow(g2, r++, "Dışlama sınıfları:", excludeField, "Virgülle ayırın; sonda * önek demektir (ör. Ignore*, Artifact, Fold, Blur). Bu sınıflar karo üretmez.")
-            addRow(g2, r++, "", ignoreBox, "Katlantı ya da kalem izi gibi dışlama anotasyonları diğer bölgelerden kesilip atılır.")
-            addRow(g2, r++, "", childBox, "Doku içinde Tümör gibi iç içe anotasyonlarda üst bölge, alt bölge çıkarılarak döşenir.")
-            addRow(g2, r++, "En az kapsama (%):", coverField, "Karonun alanının en az bu kadarı etiket bölgesinde olmalı. 0 = herhangi bir örtüşme yeter; kenar karolarını elemek için ör. 50.")
-            g2.add(help("Sınır karoları: bir karo iki etiket bölgesine değiyorsa yalnız kapsaması en büyük etikete yazılır. Aynı pikseller hiçbir zaman iki klasöre girmez; bu ayar kapatılamaz."), 0, r++, 3, 1)
-            addRow(g2, r++, "En az doku (%):", tissueField, "Karonun piksellerinin en az bu kadarı doku olmalı (beyazlık eşiğinden koyu). 0 = kapalı. Anotasyon geniş çizildiyse boş cam karolarını eler.")
-            addRow(g2, r++, "Beyazlık eşiği (0–255):", whiteField, "Gri değeri bunun altındaki piksel doku sayılır. 220 yaygın bir başlangıçtır; soluk boyamada yükseltin.")
-            addRow(g2, r++, "Etiket başına en çok:", maxField, "0 = sınırsız. Sayı verirseniz her etiketten rastgele (yinelenebilir) bu kadar karo seçilir. Sınır BU LAM içindir ve doku süzgecinden sonra uygulanır; küme genelindeki dengeyi sonuç penceresindeki küme özeti gösterir.")
+            addRow(g2, r++, workshopText('script.826589053e36', 'Klasörleme:'), groupBox, workshopText('script.62f462526d47', 'Karoların etiketi: anotasyonun sınıfı, adı ya da ikisi. Sınıfsız ve adsız anotasyon: Sinifsiz.'))
+            addRow(g2, r++, workshopText('script.5a43cd90414c', 'Etiketler:'), labelPane, workshopText('script.5e1546d7005c', 'Bu lamda, seçili kapsam ve klasörlemeyle oluşacak etiketler ve anotasyon sayıları. İşareti kaldırılan etiket atlanır. Liste, kapsam / klasörleme / dışlama değişince yenilenir.'))
+            addRow(g2, r++, workshopText('script.75a003f9b6e1', 'Dışlama sınıfları:'), excludeField, workshopText('script.f27a45f5aa8f', 'Virgülle ayırın; sonda * önek demektir (ör. Ignore*, Artifact, Fold, Blur). Bu sınıflar karo üretmez.'))
+            addRow(g2, r++, "", ignoreBox, workshopText('script.996b19cd30a9', 'Katlantı ya da kalem izi gibi dışlama anotasyonları diğer bölgelerden kesilip atılır.'))
+            addRow(g2, r++, "", childBox, workshopText('script.2e28ed29431a', 'Doku içinde Tümör gibi iç içe anotasyonlarda üst bölge, alt bölge çıkarılarak döşenir.'))
+            addRow(g2, r++, workshopText('script.d3cb3ce18941', 'En az kapsama (%):'), coverField, workshopText('script.f30261966e0c', 'Karonun alanının en az bu kadarı etiket bölgesinde olmalı. 0 = herhangi bir örtüşme yeter; kenar karolarını elemek için ör. 50.'))
+            g2.add(help(workshopText('script.32d8b49ffe28', 'Sınır karoları: bir karo iki etiket bölgesine değiyorsa yalnız kapsaması en büyük etikete yazılır. Aynı pikseller hiçbir zaman iki klasöre girmez; bu ayar kapatılamaz.')), 0, r++, 3, 1)
+            addRow(g2, r++, workshopText('script.fdb43c93704e', 'En az doku (%):'), tissueField, workshopText('script.fb6f8a35b97d', 'Karonun piksellerinin en az bu kadarı doku olmalı (beyazlık eşiğinden koyu). 0 = kapalı. Anotasyon geniş çizildiyse boş cam karolarını eler.'))
+            addRow(g2, r++, workshopText('script.9c5c32899757', 'Beyazlık eşiği (0–255):'), whiteField, workshopText('script.536f7b7253a3', 'Gri değeri bunun altındaki piksel doku sayılır. 220 yaygın bir başlangıçtır; soluk boyamada yükseltin.'))
+            addRow(g2, r++, workshopText('script.5da3306ceb16', 'Etiket başına en çok:'), maxField, workshopText('script.96c634df2520', '0 = sınırsız. Sayı verirseniz her etiketten rastgele (yinelenebilir) bu kadar karo seçilir. Sınır BU LAM içindir ve doku süzgecinden sonra uygulanır; küme genelindeki dengeyi sonuç penceresindeki küme özeti gösterir.'))
 
             // ── Sekme 3: Çıktı düzeni ──
             def outField = field(defaultOutRoot.getAbsolutePath(), 30)
@@ -313,20 +313,20 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
             })
             def outBox = new javafx.scene.layout.HBox(6, outField, browseBtn)
             def layoutBox = choice(["<Etiket>/<lam>/dosya", "<lam>/<Etiket>/dosya", "<Etiket>/dosya (lam klasörü yok)"])
-            def labelNameBox = check("Dosya adına etiketi yaz", true)
-            def splitNameBox = check("Dosya adına bölmeyi yaz", false)
-            def manifestBox = check("Karo listesini yaz (karo_listesi__<lam>.tsv)", true)
-            def coordsBox = check("Yalnız karo listesi (görüntü dosyası yazma)", false)
-            def previewBox = check("Önizleme görseli yaz (onizleme__<lam>.jpg)", true)
+            def labelNameBox = check(workshopText('script.f6d7fb2b11e1', 'Dosya adına etiketi yaz'), true)
+            def splitNameBox = check(workshopText('script.203a66546c4b', 'Dosya adına bölmeyi yaz'), false)
+            def manifestBox = check(workshopText('script.1dab070f0634', 'Karo listesini yaz (karo_listesi__<lam>.tsv)'), true)
+            def coordsBox = check(workshopText('script.1040d592403d', 'Yalnız karo listesi (görüntü dosyası yazma)'), false)
+            def previewBox = check(workshopText('script.98d64a817ebb', 'Önizleme görseli yaz (onizleme__<lam>.jpg)'), true)
             def g3 = newGrid()
             r = 0
-            addRow(g3, r++, "Çıktı klasörü:", outBox, "Bu klasörün altına, ayarları adında taşıyan bir küme klasörü açılır (karo_<boyut>px_<µm>um_ov<örtüşme>).")
-            addRow(g3, r++, "Klasör düzeni:", layoutBox, "Derin öğrenme araçlarının çoğu <sınıf>/<dosya> bekler. Lam klasörü, lam düzeyinde bölmeyi kolaylaştırır.")
-            addRow(g3, r++, "Dosya adı:", labelNameBox, "<lam>__<Etiket>__ds<d>_x<X>_y<Y>. Kapalıysa: <lam>__ds<d>_x<X>_y<Y>.")
-            addRow(g3, r++, "", splitNameBox, "Açıksa bölme de dosya adına girer: <lam>__<bölme>__<Etiket>__…")
-            addRow(g3, r++, "", coordsBox, "Karolar diske yazılmaz; yalnız koordinat listesi üretilir. Karoları sonradan kendi kodunuzla lamdan okursunuz (disk yeri ve kopya sorunu olmaz).")
-            addRow(g3, r++, "Önizleme:", previewBox, "Lamın küçük görüntüsü üzerinde yazılan karoların kutuları, etikete göre renkli. Dışa aktarımı gözle denetlemek için.")
-            addRow(g3, r++, "Karo listesi:", manifestBox, "Her karo için bir satır: bölme, etiket, x, y, kapsama, dosya. Eğitimde klasörü değil bu listeyi kullanın.")
+            addRow(g3, r++, workshopText('script.599185445cd3', 'Çıktı klasörü:'), outBox, workshopText('script.f1a635a0162a', 'Bu klasörün altına, ayarları adında taşıyan bir küme klasörü açılır (karo_<boyut>px_<µm>um_ov<örtüşme>).'))
+            addRow(g3, r++, workshopText('script.58df8e6cd188', 'Klasör düzeni:'), layoutBox, workshopText('script.4e822a8e755a', 'Derin öğrenme araçlarının çoğu <sınıf>/<dosya> bekler. Lam klasörü, lam düzeyinde bölmeyi kolaylaştırır.'))
+            addRow(g3, r++, workshopText('script.08692440ac82', 'Dosya adı:'), labelNameBox, workshopText('script.84748e372086', '<lam>__<Etiket>__ds<d>_x<X>_y<Y>. Kapalıysa: <lam>__ds<d>_x<X>_y<Y>.'))
+            addRow(g3, r++, "", splitNameBox, workshopText('script.80d2b88cd043', 'Açıksa bölme de dosya adına girer: <lam>__<bölme>__<Etiket>__…'))
+            addRow(g3, r++, "", coordsBox, workshopText('script.d434f4a2895e', 'Karolar diske yazılmaz; yalnız koordinat listesi üretilir. Karoları sonradan kendi kodunuzla lamdan okursunuz (disk yeri ve kopya sorunu olmaz).'))
+            addRow(g3, r++, workshopText('script.139d2010266b', 'Önizleme:'), previewBox, workshopText('script.047616b9b247', 'Lamın küçük görüntüsü üzerinde yazılan karoların kutuları, etikete göre renkli. Dışa aktarımı gözle denetlemek için.'))
+            addRow(g3, r++, workshopText('script.04ba91cd4df6', 'Karo listesi:'), manifestBox, workshopText('script.496470bc4e64', 'Her karo için bir satır: bölme, etiket, x, y, kapsama, dosya. Eğitimde klasörü değil bu listeyi kullanın.'))
 
             // ── Sekme 4: Bölme ve sızıntı ──
             def splitKeyField = field(defaults.splitKeys.findAll { it ==~ /[a-z_]+/ }.join(', '), 24)
@@ -343,34 +343,34 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
             leakInfo.setStyle("-fx-font-size: 11px; -fx-text-fill: #7a1f1f; -fx-background-color: #fdeeee; -fx-padding: 8;")
             def g4 = newGrid()
             r = 0
-            g4.add(help("Üst veride bölme varsa HER ZAMAN okunur ve klasörlerin başına <Bölme>/ düzeyi gelir (train / val / test). Bölme yoksa bu düzey açılmaz."), 0, r++, 3, 1)
-            addRow(g4, r++, "Bölme anahtarları:", splitKeyField, "Önce anotasyonun, yoksa proje girdisinin üst verisinde aranır. Virgülle ayırın.")
-            addRow(g4, r++, "Hasta anahtarları:", patientKeyField, "Proje girdisinin üst verisinde hasta kimliğini taşıyan anahtarlar. Virgülle ayırın.")
+            g4.add(help(workshopText('script.10a585663b48', 'Üst veride bölme varsa HER ZAMAN okunur ve klasörlerin başına <Bölme>/ düzeyi gelir (train / val / test). Bölme yoksa bu düzey açılmaz.')), 0, r++, 3, 1)
+            addRow(g4, r++, workshopText('script.0015bf40b9f7', 'Bölme anahtarları:'), splitKeyField, workshopText('script.0a127b1e8d21', 'Önce anotasyonun, yoksa proje girdisinin üst verisinde aranır. Virgülle ayırın.'))
+            addRow(g4, r++, workshopText('script.0290919acbbe', 'Hasta anahtarları:'), patientKeyField, workshopText('script.3cf02b584048', 'Proje girdisinin üst verisinde hasta kimliğini taşıyan anahtarlar. Virgülle ayırın.'))
             g4.add(leakInfo, 0, r, 3, 1)
 
             // ── Sekme 0: Rehber — amaca göre başlangıç ayarı + canlı özet ──
             // Öneriler sezgisel başlangıç değerleridir, kılavuz değildir; modelinizin beklediği ölçek her zaman önce gelir.
             def PRESETS = [
-                [ad: "Elle (ayarları ben seçerim)", uygula: null,
-                 neden: "Hiçbir ayara dokunulmaz. Diğer sekmelerde her şeyi kendiniz belirlersiniz."],
-                [ad: "Karo sınıflandırma / lam düzeyi model (MIL)", uygula: [mod: 0, karo: "256", um: "1.0", ort: "0", kap: "50", fmt: 0],
-                 neden: "Örtüşme 0: aynı doku iki kez sayılmaz ve karolar arası ortak piksel olmaz.\n" +
-                        "En az kapsama 50: çoğu arka plan ya da komşu bölge olan kenar karoları elenir.\n" +
-                        "Her lam aynı µm/px ile kesilir; 20× ve 40× taramalar aynı fiziksel alanı verir."],
-                [ad: "Temel model (foundation model) ile özellik çıkarımı", uygula: [mod: 0, karo: "224", um: "0.5", ort: "0", kap: "50", fmt: 0],
-                 neden: "Yaygın başlangıç: 224 px, 0,5 µm/px. ÖNCE model kartına bakın: karo boyutu ve µm/px modelin eğitildiği\n" +
-                        "değerle aynı olmalıdır. Yanlış ölçekte model hata vermez, yanlış cevap verir.\n" +
-                        "Örtüşme 0: gömmeler lam düzeyinde toplanırken aynı doku iki kez ağırlık almaz."],
-                [ad: "Segmentasyon eğitimi (görüntü + maske)", uygula: [mod: 1, karo: "512", um: "1.0", ort: "64", kap: "0", fmt: 0],
-                 neden: "Maske modu: her karoya eşleşen etiket maskesi yazılır (PNG zorunlu; JPG etiket değerlerini bozar).\n" +
-                        "Örtüşme 64 px: karo kenarında kesilen yapılar komşu karoda bütün görünür.\n" +
-                        "Kapsama 0: sınır karoları da gerekir; model sınırı öğrenir."],
-                [ad: "Hücre / çekirdek düzeyi eğitim", uygula: [mod: 0, karo: "256", um: "0.25", ort: "32", kap: "0", fmt: 0],
-                 neden: "Hücre ayrıntısı için ince ölçek (≈ 0,25 µm/px, 40×). Lamın kendi µm/px değerinden ince ölçek yeni ayrıntı üretmez.\n" +
-                        "Küçük örtüşme: kenarda yarım kalan çekirdek komşu karoda bütündür."],
-                [ad: "Paylaşmak için karolar", uygula: [mod: 0, karo: "512", um: "1.0", ort: "0", kap: "50", fmt: 0],
-                 neden: "Örtüşme 0: paylaşılan karolar arasında ortak bilgi olmamalıdır; karolardan lam yeniden kurulamamalıdır.\n" +
-                        "Paylaşmadan önce dosya adlarına ve karo listesine bakın: lam adı kimlik taşımamalıdır."],
+                [ad: workshopText('script.07acb8ed805e', 'Elle (ayarları ben seçerim)'), uygula: null,
+                 neden: workshopText('script.79b872a2b147', 'Hiçbir ayara dokunulmaz. Diğer sekmelerde her şeyi kendiniz belirlersiniz.')],
+                [ad: workshopText('script.6d0d550fbb7f', 'Karo sınıflandırma / lam düzeyi model (MIL)'), uygula: [mod: 0, karo: "256", um: "1.0", ort: "0", kap: "50", fmt: 0],
+                 neden: workshopText('script.e4ffb6e69c80', 'Örtüşme 0: aynı doku iki kez sayılmaz ve karolar arası ortak piksel olmaz.\n') +
+                        workshopText('script.15b89aa1087d', 'En az kapsama 50: çoğu arka plan ya da komşu bölge olan kenar karoları elenir.\n') +
+                        workshopText('script.accea3191a6b', 'Her lam aynı µm/px ile kesilir; 20× ve 40× taramalar aynı fiziksel alanı verir.')],
+                [ad: workshopText('script.9ac0979c6429', 'Temel model (foundation model) ile özellik çıkarımı'), uygula: [mod: 0, karo: "224", um: "0.5", ort: "0", kap: "50", fmt: 0],
+                 neden: workshopText('script.6eee032e900d', 'Yaygın başlangıç: 224 px, 0,5 µm/px. ÖNCE model kartına bakın: karo boyutu ve µm/px modelin eğitildiği\n') +
+                        workshopText('script.496bf826f1f8', 'değerle aynı olmalıdır. Yanlış ölçekte model hata vermez, yanlış cevap verir.\n') +
+                        workshopText('script.54555cad1a86', 'Örtüşme 0: gömmeler lam düzeyinde toplanırken aynı doku iki kez ağırlık almaz.')],
+                [ad: workshopText('script.d5463859d11d', 'Segmentasyon eğitimi (görüntü + maske)'), uygula: [mod: 1, karo: "512", um: "1.0", ort: "64", kap: "0", fmt: 0],
+                 neden: workshopText('script.6ef6daa0916f', 'Maske modu: her karoya eşleşen etiket maskesi yazılır (PNG zorunlu; JPG etiket değerlerini bozar).\n') +
+                        workshopText('script.36dc67156acc', 'Örtüşme 64 px: karo kenarında kesilen yapılar komşu karoda bütün görünür.\n') +
+                        workshopText('script.baa800711124', 'Kapsama 0: sınır karoları da gerekir; model sınırı öğrenir.')],
+                [ad: workshopText('script.b8df358264a2', 'Hücre / çekirdek düzeyi eğitim'), uygula: [mod: 0, karo: "256", um: "0.25", ort: "32", kap: "0", fmt: 0],
+                 neden: workshopText('script.7994f09cb462', 'Hücre ayrıntısı için ince ölçek (≈ 0,25 µm/px, 40×). Lamın kendi µm/px değerinden ince ölçek yeni ayrıntı üretmez.\n') +
+                        workshopText('script.23bbc4f239aa', 'Küçük örtüşme: kenarda yarım kalan çekirdek komşu karoda bütündür.')],
+                [ad: workshopText('script.550b104ad31f', 'Paylaşmak için karolar'), uygula: [mod: 0, karo: "512", um: "1.0", ort: "0", kap: "50", fmt: 0],
+                 neden: workshopText('script.2f452fa46f7f', 'Örtüşme 0: paylaşılan karolar arasında ortak bilgi olmamalıdır; karolardan lam yeniden kurulamamalıdır.\n') +
+                        workshopText('script.f4e68cd88337', 'Paylaşmadan önce dosya adlarına ve karo listesine bakın: lam adı kimlik taşımamalıdır.')],
             ]
             def presetBox = choice(PRESETS.collect { it.ad })
             def whyLabel = new javafx.scene.control.Label((String) PRESETS[0].neden)
@@ -401,17 +401,17 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
                     int ov = Integer.parseInt(overlapField.getText().trim())
                     boolean cal = (slidePx > 0 && !Double.isNaN(slidePx))
                     double ds = cal ? (um / slidePx) : um
-                    sb << String.format(java.util.Locale.US, "Görüş alanı : %s  (karo %d px × %.3f µm/px)%n",
-                            (cal ? String.format(java.util.Locale.US, "%.0f × %.0f µm", ts * um, ts * um) : "bilinmiyor (lam kalibre değil)"), ts, um)
-                    sb << String.format(java.util.Locale.US, "Bu lamda    : downsample %.2f%s%n", ds, (cal ? String.format(java.util.Locale.US, "  (lam %.4f µm/px)", slidePx) : "  (µm/px alanı downsample olarak yorumlanır)"))
-                    sb << String.format(java.util.Locale.US, "Adım        : %d px%s%n", ts - ov, (ov > 0 ? String.format(java.util.Locale.US, "  (komşu karolar %d px = %%%.0f ortak)", ov, 100.0d * ov / ts) : "  (örtüşme yok)"))
-                    if (cal && ds < 0.98d) sb << "⚠ İstenen ölçek lamın kendi çözünürlüğünden ince: karo büyütülerek üretilir, yeni ayrıntı içermez.\n"
-                    if (!cal) sb << "⚠ Lam kalibre değil: önce piksel boyutunu girin, yoksa lamlar arasında ölçek tutmaz.\n"
-                    if (ov > 0) sb << "⚠ Örtüşme açık: karo sayısı artar; karo düzeyinde rastgele bölme sızıntı olur.\n"
-                    if (formatBox.getValue().startsWith("JPG")) sb << "⚠ JPG kayıplıdır: renk ölçümü ya da yeniden sıkıştırma gerekiyorsa PNG seçin.\n"
-                    if (modeBox.getValue().startsWith("Görüntü +") && !formatBox.getValue().startsWith("PNG")) sb << "ℹ Maske modunda biçim PNG'ye çevrilir.\n"
+                    sb << String.format(java.util.Locale.US, workshopText('script.56c57373a6a9', 'Görüş alanı : %s  (karo %d px × %.3f µm/px)%n'),
+                            (cal ? String.format(java.util.Locale.US, "%.0f × %.0f µm", ts * um, ts * um) : workshopText('script.1a39508773e2', 'bilinmiyor (lam kalibre değil)')), ts, um)
+                    sb << String.format(java.util.Locale.US, workshopText('script.c18355c33791', 'Bu lamda    : downsample %.2f%s%n'), ds, (cal ? String.format(java.util.Locale.US, workshopText('script.ae743379199e', '  (lam %.4f µm/px)'), slidePx) : workshopText('script.f54389588cd8', '  (µm/px alanı downsample olarak yorumlanır)')))
+                    sb << String.format(java.util.Locale.US, workshopText('script.b0d42c70608d', 'Adım        : %d px%s%n'), ts - ov, (ov > 0 ? String.format(java.util.Locale.US, workshopText('script.2af8b514e100', '  (komşu karolar %d px = %%%.0f ortak)'), ov, 100.0d * ov / ts) : workshopText('script.20353d5e8a9a', '  (örtüşme yok)')))
+                    if (cal && ds < 0.98d) sb << workshopText('script.7492ecb2e771', '⚠ İstenen ölçek lamın kendi çözünürlüğünden ince: karo büyütülerek üretilir, yeni ayrıntı içermez.\n')
+                    if (!cal) sb << workshopText('script.ea5ad31036f4', '⚠ Lam kalibre değil: önce piksel boyutunu girin, yoksa lamlar arasında ölçek tutmaz.\n')
+                    if (ov > 0) sb << workshopText('script.27021c01b978', '⚠ Örtüşme açık: karo sayısı artar; karo düzeyinde rastgele bölme sızıntı olur.\n')
+                    if (formatBox.getValue().startsWith("JPG")) sb << workshopText('script.e1700b176125', '⚠ JPG kayıplıdır: renk ölçümü ya da yeniden sıkıştırma gerekiyorsa PNG seçin.\n')
+                    if (modeBox.getValue().startsWith("Görüntü +") && !formatBox.getValue().startsWith("PNG")) sb << workshopText('script.fcde55740736', 'ℹ Maske modunda biçim PNG\'ye çevrilir.\n')
                 } catch (Throwable ignore) {
-                    sb << "Karo boyutu, µm/px ve örtüşme alanlarına geçerli sayı girin.\n"
+                    sb << workshopText('script.2bccd1ff62a4', 'Karo boyutu, µm/px ve örtüşme alanlarına geçerli sayı girin.\n')
                 }
                 liveLabel.setText(sb.toString())
             }
@@ -433,13 +433,13 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
             refresh()
             def g0 = new javafx.scene.layout.VBox(10,
                 new javafx.scene.layout.HBox(10, new javafx.scene.control.Label(workshopText('script.1a1d63ded5bb', "Amaç:")), presetBox),
-                help("Bir amaç seçince karo boyutu, µm/px, örtüşme, kapsama ve mod başlangıç değerlerine ayarlanır; sonra diğer sekmelerde istediğinizi değiştirin."),
+                help(workshopText('script.597a86877cb3', 'Bir amaç seçince karo boyutu, µm/px, örtüşme, kapsama ve mod başlangıç değerlerine ayarlanır; sonra diğer sekmelerde istediğinizi değiştirin.')),
                 whyLabel, liveLabel, new javafx.scene.control.Separator(), rules)
             g0.setPadding(new javafx.geometry.Insets(12))
 
             def tabs = new javafx.scene.control.TabPane()
             tabs.setTabClosingPolicy(javafx.scene.control.TabPane.TabClosingPolicy.UNAVAILABLE)
-            [["Rehber", g0], ["Temel", g1], ["Etiket ve bölge", g2], ["Çıktı düzeni", g3], ["Bölme ve sızıntı", g4]].each { p ->
+            [[workshopText('script.5ecb4e4687b2', 'Rehber'), g0], [workshopText('script.5eac0ddf904c', 'Temel'), g1], [workshopText('script.d6f2b6c50fd8', 'Etiket ve bölge'), g2], [workshopText('script.fff0eb4e958d', 'Çıktı düzeni'), g3], [workshopText('script.5b5d6f6ea24e', 'Bölme ve sızıntı'), g4]].each { p ->
                 def sp = new javafx.scene.control.ScrollPane((javafx.scene.Node) p[1])
                 sp.setFitToWidth(true)
                 tabs.getTabs().add(new javafx.scene.control.Tab((String) p[0], sp))
@@ -930,7 +930,7 @@ if (!isHeadless && expectedTiles > 5000) {
         String.format(java.util.Locale.US,
             workshopText('script.7fc150e4bd79', "Bu ayarlarla %s%,d karo yazılacak.\n\n" +
             "Devam edilsin mi? (Karo boyutunu büyütmek, µm/px değerini büyütmek ya da\n" +
-            "en az kapsama eşiğini yükseltmek karo sayısını azaltır.)"), (capAfterTissue ? "en çok " : ""), expectedTiles)
+            "en az kapsama eşiğini yükseltmek karo sayısını azaltır.)"), (capAfterTissue ? workshopText('script.e9afdf972cef', 'en çok ') : ""), expectedTiles)
     )
     if (!ok) { println "Kullanıcı çok-karo onayını reddetti."; return }
 }
@@ -1041,7 +1041,7 @@ if (useSplit) {
     if (splitDirs != null) {
         splitDirs.findAll { it.isDirectory() && it.getName() != slideSplit }.each { sd ->
             def hit = findSlideTiles(sd)
-            if (!hit.isEmpty()) clash << (sd.getName() + "/ → " + hit.size() + " karo (ör. " + outDir.toPath().relativize(hit[0].toPath()).toString().replace('\\', '/') + ")")
+            if (!hit.isEmpty()) clash << (sd.getName() + "/ → " + hit.size() + workshopText('script.37bd7baa8151', ' karo (ör. ') + outDir.toPath().relativize(hit[0].toPath()).toString().replace('\\', '/') + ")")
         }
     }
     if (!clash.isEmpty()) {
@@ -1099,7 +1099,7 @@ if (useSplit) {
             return
         }
         if (!unreadable.isEmpty()) {
-            String why2 = "Aynı hastanın (" + patientId + ") şu lamlarının anotasyonları okunamadı; bölmeleri denetlenemedi:\n  " + unreadable.take(8).join("\n  ")
+            String why2 = workshopText('script.d3e0c304e209', 'Aynı hastanın (') + patientId + workshopText('script.c61b03e236fb', ') şu lamlarının anotasyonları okunamadı; bölmeleri denetlenemedi:\n  ') + unreadable.take(8).join("\n  ")
             if (isHeadless) { println "Veri sızıntısı denetlenemedi; karo yazılmadı.\n" + why2; return }
             if (!Dialogs.showConfirmDialog(workshopText('script.6e36e104161a', "Hasta düzeyinde sızıntı denetlenemedi"), why2 + workshopText('script.e8375469cf87', "\n\nBu lamların aynı bölmede olduğundan eminseniz devam edin.\nDevam edilsin mi?"))) {
                 println "Kullanıcı dışa aktarmayı durdurdu."; return
@@ -1133,12 +1133,12 @@ if (useSplit) {
     } else {
         // (d) hasta kimliği yok: denetlenemez → durur. Onayla devam yolu YOKTUR (ne pencerede ne headless):
         // bir "eminim" tıklaması hasta düzeyi denetimin yerini tutmaz ve denetimi atlatmanın tek yolu olurdu.
-        String why = "Bölme üst verisi var, ama bu lamın proje girdisinde hasta kimliği yok\n" +
-                     "(anahtar: patient / hasta / case / vaka / patient_pseudonym …).\n\n" +
-                     "Aynı hastanın başka lamlarının başka bölmede olup olmadığı DENETLENEMEDİ.\n\n" +
-                     "Proje sekmesinde lama sağ tıklayın → Add metadata → anahtar \"hasta\", değer hasta kimliği\n" +
-                     "(takma ad olabilir; aynı hastanın bütün lamlarında aynı olmalı). Sonra yeniden çalıştırın.\n" +
-                     "Hiçbir karo yazılmadı."
+        String why = workshopText('script.5e6772adfb84', 'Bölme üst verisi var, ama bu lamın proje girdisinde hasta kimliği yok\n') +
+                     workshopText('script.7196b01f474d', '(anahtar: patient / hasta / case / vaka / patient_pseudonym …).\n\n') +
+                     workshopText('script.ccbd6eebdd88', 'Aynı hastanın başka lamlarının başka bölmede olup olmadığı DENETLENEMEDİ.\n\n') +
+                     workshopText('script.2b87a578d348', 'Proje sekmesinde lama sağ tıklayın → Add metadata → anahtar "hasta", değer hasta kimliği\n') +
+                     workshopText('script.7dd02a49333a', '(takma ad olabilir; aynı hastanın bütün lamlarında aynı olmalı). Sonra yeniden çalıştırın.\n') +
+                     workshopText('script.9a8002559733', 'Hiçbir karo yazılmadı.')
         println "Veri sızıntısı denetlenemedi; karo yazılmadı.\n" + why
         if (!isHeadless) Dialogs.showErrorMessage(workshopText('script.e5f99f712db8', "Hasta kimliği yok: karo yazılmadı"), why)
         return
@@ -1207,8 +1207,8 @@ if (maskMode) {
 def oldTileFiles = findSlideTiles(useSplit ? new File(outDir, slideSplit) : outDir)
 String oldTilesNote = null
 if (!oldTileFiles.isEmpty()) {
-    String KEEP = "Eski karoları bırak (yalnız üzerine yaz)"
-    String WIPE = "Bu lamın eski karolarını sil, sonra yaz"
+    String KEEP = workshopText('script.911ea0b688c3', 'Eski karoları bırak (yalnız üzerine yaz)')
+    String WIPE = workshopText('script.0b180df72f39', 'Bu lamın eski karolarını sil, sonra yaz')
     String choice = KEEP
     if (!isHeadless) {
         choice = Dialogs.showChoiceDialog(
@@ -1224,10 +1224,10 @@ if (!oldTileFiles.isEmpty()) {
     if (choice == WIPE) {
         int removed = 0
         oldTileFiles.each { try { if (it.delete()) removed++ } catch (Throwable ignore) {} }
-        oldTilesNote = "  • Bu lamın " + removed + " eski karo dosyası silindi (seçiminizle)."
+        oldTilesNote = workshopText('script.2f315f619a9f', '  • Bu lamın ') + removed + workshopText('script.8821de9f1bf9', ' eski karo dosyası silindi (seçiminizle).')
     } else {
-        oldTilesNote = "  • ⚠️ Bu lamın " + oldTileFiles.size() + " eski karo dosyası yerinde bırakıldı. Klasörde güncel olmayan karo\n" +
-                       "    kalmış olabilir: eğitimde klasör içeriğini değil, karo listesini (" + ("karo_listesi__" + slug + ".tsv") + ") kullanın."
+        oldTilesNote = workshopText('script.b54e71d8fcef', '  • ⚠️ Bu lamın ') + oldTileFiles.size() + workshopText('script.268a80831a81', ' eski karo dosyası yerinde bırakıldı. Klasörde güncel olmayan karo\n') +
+                       workshopText('script.cd309a31ddc6', '    kalmış olabilir: eğitimde klasör içeriğini değil, karo listesini (') + ("karo_listesi__" + slug + ".tsv") + workshopText('script.1f4cde49b42a', ') kullanın.')
     }
 }
 
@@ -1335,7 +1335,7 @@ def writeOne = { List tile ->
             def ios = javax.imageio.ImageIO.createImageOutputStream(imgFile)
             try { jw.setOutput(ios); jw.write(null, new javax.imageio.IIOImage(img, null, null), jp) }
             finally { try { ios.close() } catch (Throwable ignore) {}; jw.dispose() }
-        } else if (!javax.imageio.ImageIO.write(img, imgFormat, imgFile)) throw new java.io.IOException("yazıcı bulunamadı: " + imgFormat)
+        } else if (!javax.imageio.ImageIO.write(img, imgFormat, imgFile)) throw new java.io.IOException(workshopText('script.0c30d013ae88', 'yazıcı bulunamadı: ') + imgFormat)
         imageCounter.incrementAndGet()
         String rel = outDir.toPath().relativize(imgFile.toPath()).toString().replace('\\', '/')
         String relMask = ''
@@ -1343,7 +1343,7 @@ def writeOne = { List tile ->
             def mreq = RegionRequest.createInstance(labelPath, downsample, x, y, tileL0, tileL0, planeZ, planeT)
             def mimg = fitTo(labelServer.readRegion(mreq), true)
             def maskFile = new File(labDir, fileStem + ".png")
-            if (!javax.imageio.ImageIO.write(mimg, "png", maskFile)) throw new java.io.IOException("maske yazılamadı")
+            if (!javax.imageio.ImageIO.write(mimg, "png", maskFile)) throw new java.io.IOException(workshopText('script.32da8f0f3a2b', 'maske yazılamadı'))
             maskCounter.incrementAndGet()
             relMask = outDir.toPath().relativize(maskFile.toPath()).toString().replace('\\', '/')
         }
@@ -1384,7 +1384,7 @@ if (capAfterTissue) {
                 for (int bi = 0; bi < batch.size(); bi++) {
                     def tf = futs[bi].get()
                     if (taken >= maxPerLabel) continue          // ölçüldü ama sınır doldu: sınırla dışarıda kalanlara sayılır
-                    if (tf == null) { failed++; errors << ("ön seçim: x" + batch[bi][1] + " y" + batch[bi][2] + " okunamadı"); continue }
+                    if (tf == null) { failed++; errors << (workshopText('script.3c526002a29c', 'ön seçim: x') + batch[bi][1] + " y" + batch[bi][2] + workshopText('script.2ebf2bd9d234', ' okunamadı')); continue }
                     if (((double) tf) < minTissue) { failed++; tissueDropped.incrementAndGet(); continue }
                     kept << batch[bi]
                     taken++
@@ -1397,7 +1397,7 @@ if (capAfterTissue) {
     } catch (Throwable t) {
         // Ön seçim yarıda kalırsa hiçbir karo yazılmaz: eksik bir seçimle devam etmek sayıları yanıltır.
         tiles = []
-        errors << ("ön seçim yarıda kaldı, karo yazılmadı: " + t.getClass().getSimpleName() + ": " + t.getMessage())
+        errors << (workshopText('script.4c1c5700cd19', 'ön seçim yarıda kaldı, karo yazılmadı: ') + t.getClass().getSimpleName() + ": " + t.getMessage())
     }
 }
 
@@ -1432,7 +1432,7 @@ if (writeManifest) try {
         }
     }
 } catch (Throwable t) {
-    errors << ("karo listesi yazılamadı: " + t.getMessage())
+    errors << (workshopText('script.a708f58146ba', 'karo listesi yazılamadı: ') + t.getMessage())
 }
 // labels.txt (sınıf → indeks) karolardan önce, "Maske indeksleri" adımında yazıldı.
 
@@ -1466,12 +1466,12 @@ if (!setRows.isEmpty()) {
     def setSlides = new java.util.TreeSet<String>(setRows.collect { (String) it[0] })
     def setPatients = new java.util.TreeSet<String>(setRows.collect { (String) it[1] }.findAll { it })
     int rowsNoPatient = setRows.count { !it[1] } as int
-    def splitTitle = { String s -> s ? s : "(bölmesiz)" }
+    def splitTitle = { String s -> s ? s : workshopText('script.4e86c3ac367d', '(bölmesiz)') }
     def sl = []
-    sl << String.format(java.util.Locale.US, "  %,d karo · %d lam · %d hasta%s", setRows.size(), setSlides.size(), setPatients.size(),
-                        (rowsNoPatient > 0 ? String.format(java.util.Locale.US, " (%,d karonun hasta kimliği yok)", rowsNoPatient) : ""))
-    sl << ("  " + String.format(java.util.Locale.US, "%-22s", "Etiket") + setSplits.collect { String.format(java.util.Locale.US, "%12s", splitTitle(it)) }.join("") +
-           String.format(java.util.Locale.US, "%12s%7s%7s%20s", "Toplam", "Lam", "Hasta", "En büyük hasta payı"))
+    sl << String.format(java.util.Locale.US, workshopText('script.14e6064e9647', '  %,d karo · %d lam · %d hasta%s'), setRows.size(), setSlides.size(), setPatients.size(),
+                        (rowsNoPatient > 0 ? String.format(java.util.Locale.US, workshopText('script.4e0b66dd94c1', ' (%,d karonun hasta kimliği yok)'), rowsNoPatient) : ""))
+    sl << ("  " + String.format(java.util.Locale.US, "%-22s", workshopText('script.bc91fce11d6f', 'Etiket')) + setSplits.collect { String.format(java.util.Locale.US, "%12s", splitTitle(it)) }.join("") +
+           String.format(java.util.Locale.US, "%12s%7s%7s%20s", workshopText('script.86e8f7f954ce', 'Toplam'), workshopText('script.c131f1441ec3', 'Lam'), workshopText('script.3c83e3558107', 'Hasta'), workshopText('script.57c036c1e8b7', 'En büyük hasta payı')))
     def tsv = [['etiket', 'bolme', 'karo', 'lam', 'hasta', 'en_buyuk_hasta_payi'].join('\t')]
     def warns = []
     def totals = new java.util.TreeMap<String, Integer>()
@@ -1494,24 +1494,24 @@ if (!setRows.isEmpty()) {
         }
         if (setSplits.size() > 1) {
             def missing = setSplits.findAll { String sp -> rowsL.count { it[2] == sp } == 0 }
-            if (!missing.isEmpty()) warns << ("  • ⚠️ \"" + lab + "\" şu bölmelerde hiç yok: " + missing.collect { splitTitle(it) }.join(", ") + ".")
+            if (!missing.isEmpty()) warns << ("  • ⚠️ \"" + lab + workshopText('script.c01a18fc5984', '" şu bölmelerde hiç yok: ') + missing.collect { splitTitle(it) }.join(", ") + ".")
         }
         if (setPatients.size() >= 3 && !Double.isNaN(topShare) && topShare > 0.5d) {
-            warns << String.format(java.util.Locale.US, "  • ⚠️ \"%s\" karolarının %% %.0f kadarı tek hastadan geliyor (%d hastadan).", lab, topShare * 100.0d, byPat.size())
+            warns << String.format(java.util.Locale.US, workshopText('script.dbd6c38dfe4e', '  • ⚠️ "%s" karolarının %% %.0f kadarı tek hastadan geliyor (%d hastadan).'), lab, topShare * 100.0d, byPat.size())
         }
     }
     if (totals.size() > 1) {
         int mx = totals.values().max()
         int mn = totals.values().min()
-        sl << (mn > 0 ? String.format(java.util.Locale.US, "  En büyük / en küçük etiket: %.1f kat (%,d / %,d karo)", mx / (double) mn, mx, mn) : "  En küçük etiketin karosu yok.")
+        sl << (mn > 0 ? String.format(java.util.Locale.US, workshopText('script.418a3e252a40', '  En büyük / en küçük etiket: %.1f kat (%,d / %,d karo)'), mx / (double) mn, mx, mn) : workshopText('script.b3ec200c5c4e', '  En küçük etiketin karosu yok.'))
     }
-    if (setPatients.size() > 0 && setPatients.size() < 3) warns << "  • Kümede 3'ten az hasta var: hasta payı uyarısı üretilmedi."
-    if (!setSkipped.isEmpty()) warns << ("  • ⚠️ Okunamayan karo listesi özete girmedi: " + setSkipped.join(", "))
-    if (maskMode) warns << "  • Maske modunda sayım karo etiketine göredir; maskelerin içindeki sınıf piksel payı ölçülmez."
-    warns << "  • Özet yalnız sayar: karo silmez, çoğaltmaz. Dengelemeyi eğitimde (örnekleme / ağırlık) yapın; doğrulama ve test bölmelerini dengelemeyin."
+    if (setPatients.size() > 0 && setPatients.size() < 3) warns << workshopText('script.34746c8607b1', '  • Kümede 3\'ten az hasta var: hasta payı uyarısı üretilmedi.')
+    if (!setSkipped.isEmpty()) warns << (workshopText('script.0bddda27effb', '  • ⚠️ Okunamayan karo listesi özete girmedi: ') + setSkipped.join(", "))
+    if (maskMode) warns << workshopText('script.e8afd677c501', '  • Maske modunda sayım karo etiketine göredir; maskelerin içindeki sınıf piksel payı ölçülmez.')
+    warns << workshopText('script.c11ce233bd95', '  • Özet yalnız sayar: karo silmez, çoğaltmaz. Dengelemeyi eğitimde (örnekleme / ağırlık) yapın; doğrulama ve test bölmelerini dengelemeyin.')
     try { setSummaryFile.write(tsv.join('\n') + '\n', 'UTF-8') }
-    catch (Throwable t) { errors << ("küme özeti yazılamadı: " + t.getMessage()) }
-    setSummaryBlock = "\n🧮 Küme özeti (bu kümedeki tüm karo listeleri · " + setSummaryFile.getName() + ")\n──────────────\n" + sl.join("\n") + "\n" + warns.join("\n") + "\n"
+    catch (Throwable t) { errors << (workshopText('script.1e8c76f461e8', 'küme özeti yazılamadı: ') + t.getMessage()) }
+    setSummaryBlock = workshopText('script.e76613b943ae', '\n🧮 Küme özeti (bu kümedeki tüm karo listeleri · ') + setSummaryFile.getName() + ")\n──────────────\n" + sl.join("\n") + "\n" + warns.join("\n") + "\n"
 }
 
 // Önizleme: lamın küçük görüntüsü üzerinde, listeye giren karoların kutuları (etikete göre renkli)
@@ -1549,7 +1549,7 @@ if (writePreview && !manifestRows.isEmpty()) {
         g2.dispose()
         previewWritten = javax.imageio.ImageIO.write(thumb, 'jpg', previewFile)
     } catch (Throwable t) {
-        errors << ("önizleme yazılamadı: " + t.getClass().getSimpleName() + ": " + t.getMessage())
+        errors << (workshopText('script.49c04cae20d8', 'önizleme yazılamadı: ') + t.getClass().getSimpleName() + ": " + t.getMessage())
     }
 }
 
@@ -1557,80 +1557,80 @@ if (writePreview && !manifestRows.isEmpty()) {
 // 10) Sonuç
 // ──────────────────────────────────────────────────────────────
 def labelBlock = perLabel.collect { k, v ->
-    String.format(java.util.Locale.US, "  %-34s %,7d karo   (%d anotasyon)", keyTitle(k), v, groupCount.get(k))
+    String.format(java.util.Locale.US, workshopText('script.0c71c58fb8ae', '  %-34s %,7d karo   (%d anotasyon)'), keyTitle(k), v, groupCount.get(k))
 }.join("\n")
-def legendBlock = maskMode ? ("\n🏷️  Sınıf → indeks (labels.txt)\n──────────────────\n" + legend.collect { "  ${it}" }.join("\n") + "\n") : ""
+def legendBlock = maskMode ? (workshopText('script.a8fbc0d14449', '\n🏷️  Sınıf → indeks (labels.txt)\n──────────────────\n') + legend.collect { "  ${it}" }.join("\n") + "\n") : ""
 def errBlock = errors.isEmpty() ? "" :
-    ("\n⚠️  Bazı karolar yazılamadı:\n" + errors.take(8).collect { "  • ${it}" }.join("\n") +
-     (errors.size() > 8 ? "\n  ... ve ${errors.size() - 8} hata daha" : "") + "\n")
+    (workshopText('script.f76c7cf4f9ee', '\n⚠️  Bazı karolar yazılamadı:\n') + errors.take(8).collect { "  • ${it}" }.join("\n") +
+     (errors.size() > 8 ? String.format(java.util.Locale.US, workshopText('script.404fef332326', '\n  ... ve %d hata daha'), errors.size() - 8) : "") + "\n")
 def emptyHint = (listedTiles == 0 && errors.isEmpty()) ?
-    "\n💡 0 karo yazıldı. Olası nedenler:\n" +
-    "  • Anotasyonlar seçilen karo boyutu / çözünürlük için çok küçük ya da en az kapsama / en az doku eşiği çok yüksek.\n" +
-    "  • Karo boyutunu küçültün, µm/px değerini düşürün ya da kapsama eşiğini azaltın.\n" : ""
+    workshopText('script.e211f0aa0706', '\n💡 0 karo yazıldı. Olası nedenler:\n') +
+    workshopText('script.90b7169972dc', '  • Anotasyonlar seçilen karo boyutu / çözünürlük için çok küçük ya da en az kapsama / en az doku eşiği çok yüksek.\n') +
+    workshopText('script.3d7852e10bcc', '  • Karo boyutunu küçültün, µm/px değerini düşürün ya da kapsama eşiğini azaltın.\n') : ""
 def notes = []
-if (ignoredAsLabel > 0) notes << ("  • " + ignoredAsLabel + " Ignore* anotasyonu karo üretmedi" + (subtractIgnore ? " ve diğer bölgelerden çıkarıldı." : "."))
-if (subtractChildren) notes << "  • Alt anotasyonlar üst anotasyondan çıkarıldı."
-if (skippedByClass > 0) notes << ("  • " + skippedByClass + " anotasyon, etiketi işaretli olmadığı için atlandı.")
-if (droppedByCap > 0) notes << ("  • Etiket başına en çok " + maxPerLabel + " karo: " + droppedByCap + " karo rastgele seçimle dışarıda kaldı" +
-                                (capAfterTissue ? " (sınır doku süzgecinden sonra uygulandı; atlanan doku sayısı yalnız incelenen karoları kapsar)." : "."))
-else if (maxPerLabel > 0) notes << ("  • Etiket başına en çok " + maxPerLabel + " karo: hiçbir etiket sınırı aşmadı. Sınır bu lam içindir, küme genelinde değil.")
-if (!writeManifest) notes << "  • Karo listesi yazılmadı (seçiminizle)."
-if (minTissue > 0.0d) notes << String.format(java.util.Locale.US, "  • En az doku %%%.0f (beyazlık eşiği %d): %,d karo yeterli doku içermediği için atlandı.", minTissue * 100.0d, whiteThreshold, tissueDropped.get())
-if (coordsOnly) notes << ("  • Yalnız karo listesi: " + listedTiles + " karonun koordinatı yazıldı, görüntü dosyası yazılmadı.")
-if (previewWritten) notes << ("  • Önizleme: " + previewFile.getName() + " (karo kutuları etikete göre renkli).")
-if (sharedTiles > 0) notes << ("  • " + sharedTiles + " sınır karosu birden çok etiket bölgesine değiyordu; her biri yalnız kapsaması en büyük etikete yazıldı.")
-if (overlap > 0) notes << "  • Örtüşme > 0: komşu karolar ortak piksel taşır; karo düzeyinde rastgele bölme sızıntıya yol açar."
+if (ignoredAsLabel > 0) notes << ("  • " + ignoredAsLabel + workshopText('script.b4053556d3d0', ' Ignore* anotasyonu karo üretmedi') + (subtractIgnore ? workshopText('script.6d0f766fe4c0', ' ve diğer bölgelerden çıkarıldı.') : "."))
+if (subtractChildren) notes << workshopText('script.197705e3efd1', '  • Alt anotasyonlar üst anotasyondan çıkarıldı.')
+if (skippedByClass > 0) notes << ("  • " + skippedByClass + workshopText('script.67f51c067dc0', ' anotasyon, etiketi işaretli olmadığı için atlandı.'))
+if (droppedByCap > 0) notes << (workshopText('script.0c014999b86e', '  • Etiket başına en çok ') + maxPerLabel + workshopText('script.cabba2831511', ' karo: ') + droppedByCap + workshopText('script.4313cdd2e426', ' karo rastgele seçimle dışarıda kaldı') +
+                                (capAfterTissue ? workshopText('script.259e05220b10', ' (sınır doku süzgecinden sonra uygulandı; atlanan doku sayısı yalnız incelenen karoları kapsar).') : "."))
+else if (maxPerLabel > 0) notes << (workshopText('script.0c014999b86e', '  • Etiket başına en çok ') + maxPerLabel + workshopText('script.116793cb8e53', ' karo: hiçbir etiket sınırı aşmadı. Sınır bu lam içindir, küme genelinde değil.'))
+if (!writeManifest) notes << workshopText('script.973f5dc155e3', '  • Karo listesi yazılmadı (seçiminizle).')
+if (minTissue > 0.0d) notes << String.format(java.util.Locale.US, workshopText('script.827de9720940', '  • En az doku %%%.0f (beyazlık eşiği %d): %,d karo yeterli doku içermediği için atlandı.'), minTissue * 100.0d, whiteThreshold, tissueDropped.get())
+if (coordsOnly) notes << (workshopText('script.3b1e7a221f03', '  • Yalnız karo listesi: ') + listedTiles + workshopText('script.bb6f005a9446', ' karonun koordinatı yazıldı, görüntü dosyası yazılmadı.'))
+if (previewWritten) notes << (workshopText('script.fd03800007e7', '  • Önizleme: ') + previewFile.getName() + workshopText('script.fab534d9b896', ' (karo kutuları etikete göre renkli).'))
+if (sharedTiles > 0) notes << ("  • " + sharedTiles + workshopText('script.0df6af03283f', ' sınır karosu birden çok etiket bölgesine değiyordu; her biri yalnız kapsaması en büyük etikete yazıldı.'))
+if (overlap > 0) notes << workshopText('script.ff564d11c257', '  • Örtüşme > 0: komşu karolar ortak piksel taşır; karo düzeyinde rastgele bölme sızıntıya yol açar.')
 if (useSplit) {
     def src = new java.util.TreeSet(groupInfo.values().collect { it.source }.findAll { it })
-    notes << ("  • Bölme üst veriden okundu (" + src.join(" + ") + "): " + splitsHere.join(", ") + ". Betik bölme atamaz.")
-    notes << ("  • Sızıntı denetimi: bu lam tek bölmede (" + slideSplit + "); aynı kümede başka bölmede karosu yok.")
-    notes << ("  • Hasta " + patientId + ": projedeki diğer lamları (proje girdisi + kayıtlı anotasyonlar) ve bu kümedeki karo listeleri denetlendi; başka bölmede yok.")
+    notes << (workshopText('script.807eb194da2e', '  • Bölme üst veriden okundu (') + src.join(" + ") + "): " + splitsHere.join(", ") + workshopText('script.9d249d11845c', '. Betik bölme atamaz.'))
+    notes << (workshopText('script.05a0bb9abdcf', '  • Sızıntı denetimi: bu lam tek bölmede (') + slideSplit + workshopText('script.1fcb0d84bfff', '); aynı kümede başka bölmede karosu yok.'))
+    notes << (workshopText('script.2c7de513fba2', '  • Hasta ') + patientId + workshopText('script.5e1278b4d04a', ': projedeki diğer lamları (proje girdisi + kayıtlı anotasyonlar) ve bu kümedeki karo listeleri denetlendi; başka bölmede yok.'))
 } else {
-    notes << "  • Bölme üst verisi bulunamadı (anahtar: split / bolme / set / fold): klasörlerde bölme düzeyi yok.\n    Bölmeyi sonradan yaparken karo düzeyinde değil, lam / hasta düzeyinde yapın."
+    notes << workshopText('script.2fd47763d493', '  • Bölme üst verisi bulunamadı (anahtar: split / bolme / set / fold): klasörlerde bölme düzeyi yok.\n    Bölmeyi sonradan yaparken karo düzeyinde değil, lam / hasta düzeyinde yapın.')
 }
 if (oldTilesNote != null) notes << oldTilesNote
 def noteBlock = notes.isEmpty() ? "" : ("\nℹ️  Notlar\n" + notes.join("\n") + "\n")
 
 showResultWindow(
-    "Karo dışa aktarma — Tamamlandı 🧩",
+    workshopText('script.521eb030acd5', 'Karo dışa aktarma — Tamamlandı 🧩'),
     String.format(java.util.Locale.US,
-        "Mod      : %s\n" +
-        "Kapsam   : %s (%d anotasyon)\n" +
-        "Çıktı klasörü:\n  %s\n" +
-        "Düzen    : %s\n" +
-        "Karo listesi: %s\n\n" +
-        "⚙️  Ayarlar\n" +
+        workshopText('script.2826806cb4a0', 'Mod      : %s\n') +
+        workshopText('script.6c94145a7d47', 'Kapsam   : %s (%d anotasyon)\n') +
+        workshopText('script.2f8acf0d8719', 'Çıktı klasörü:\n  %s\n') +
+        workshopText('script.99f6cc98b2de', 'Düzen    : %s\n') +
+        workshopText('script.d8747cd8239e', 'Karo listesi: %s\n\n') +
+        workshopText('script.4a700141e37d', '⚙️  Ayarlar\n') +
         "──────────\n" +
-        "  Karo boyutu : %d px  (tabanda %d px)\n" +
-        "  Çözünürlük  : %.3f µm/px → downsample %.3f%s\n" +
-        "  Örtüşme     : %d px\n" +
-        "  En az kapsama: %.0f %%\n" +
-        "  Format      : %s%s\n\n" +
-        "📊 Etiket başına\n" +
+        workshopText('script.c1788a573cd5', '  Karo boyutu : %d px  (tabanda %d px)\n') +
+        workshopText('script.97e2de4c38f5', '  Çözünürlük  : %.3f µm/px → downsample %.3f%s\n') +
+        workshopText('script.eb838ab57d82', '  Örtüşme     : %d px\n') +
+        workshopText('script.5eb2b15e63db', '  En az kapsama: %.0f %%\n') +
+        workshopText('script.8f8d9f7aec69', '  Format      : %s%s\n\n') +
+        workshopText('script.cee218e581c2', '📊 Etiket başına\n') +
         "──────────────\n" +
         "%s\n\n" +
-        "  Görüntü karosu : %,d\n" +
-        "  Maske karosu   : %,d\n" +
-        "  Süre           : %.1f sn\n" +
+        workshopText('script.ae087872e0df', '  Görüntü karosu : %,d\n') +
+        workshopText('script.1feb29d920f0', '  Maske karosu   : %,d\n') +
+        workshopText('script.dc0fc9eca957', '  Süre           : %.1f sn\n') +
         "%s%s%s%s\n" +
-        "📝 Sonraki adım:\n" +
-        "  • Karoları derin öğrenme / harici AI araçlarına verin (<Etiket>/<dosya> düzeni).\n" +
-        "  • Veri bölmeyi karo listesindeki lam / hasta düzeyinde yapın, karo düzeyinde değil.\n" +
-        "  • Yöntem ve ML'e devir notları: Ek — Karo (tile) dışa aktarma ve Veri dışa aktarma modülü.\n\n" +
-        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
-        (maskMode ? "Görüntü + etiket maskesi" : "Sadece görüntü"),
-        (selectedScope ? "Seçili anotasyon(lar)" : "Tüm anotasyonlar"), inScope.size(),
+        workshopText('script.bccb206f399a', '📝 Sonraki adım:\n') +
+        workshopText('script.f92e69376f19', '  • Karoları derin öğrenme / harici AI araçlarına verin (<Etiket>/<dosya> düzeni).\n') +
+        workshopText('script.f9da5d84bafb', '  • Veri bölmeyi karo listesindeki lam / hasta düzeyinde yapın, karo düzeyinde değil.\n') +
+        workshopText('script.e910cfd04a43', '  • Yöntem ve ML\'e devir notları: Ek — Karo (tile) dışa aktarma ve Veri dışa aktarma modülü.\n\n') +
+        workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'),
+        (maskMode ? workshopText('script.bc8e4d958ea2', 'Görüntü + etiket maskesi') : workshopText('script.78f68b95c255', 'Sadece görüntü')),
+        (selectedScope ? workshopText('script.888debc99627', 'Seçili anotasyon(lar)') : workshopText('script.20bd64d4aad0', 'Tüm anotasyonlar')), inScope.size(),
         outDir.getAbsolutePath(),
-        ((useSplit ? "<Bölme>/" : "") +
-            (layoutMode == 'slide-label' ? (slug + "/<Etiket>/") : (layoutMode == 'label' ? "<Etiket>/" : ("<Etiket>/" + slug + "/"))) +
-            (maskMode ? "images/" : "") + slug + ((useSplit && splitInName) ? "__<Bölme>" : "") + (labelInName ? "__<Etiket>" : "") +
+        ((useSplit ? workshopText('script.a9d12b6a3b71', '<Bölme>/') : "") +
+            (layoutMode == 'slide-label' ? (slug + workshopText('script.ae501067c0d6', '/<Etiket>/')) : (layoutMode == 'label' ? workshopText('script.e8a0dcfc39fb', '<Etiket>/') : (workshopText('script.e8a0dcfc39fb', '<Etiket>/') + slug + "/"))) +
+            (maskMode ? "images/" : "") + slug + ((useSplit && splitInName) ? workshopText('script.64955dacbf8a', '__<Bölme>') : "") + (labelInName ? workshopText('script.85307418cb92', '__<Etiket>') : "") +
             "__ds" + dsLabel + "_x<X>_y<Y>" + imageExt),
-        (writeManifest ? manifestFile.getName() : "yazılmadı"),
+        (writeManifest ? manifestFile.getName() : workshopText('script.36379381ad95', 'yazılmadı')),
         tileSize, tileL0,
-        umPerPx, downsample, (calibrated ? "" : " (kalibre değil)"),
+        umPerPx, downsample, (calibrated ? "" : workshopText('script.1b7faa476220', ' (kalibre değil)')),
         overlap,
         minCover * 100.0d,
-        (maskMode ? "PNG (maske için zorunlu)" : imageExt.substring(1).toUpperCase(java.util.Locale.ROOT)),
+        (maskMode ? workshopText('script.56d4396ac565', 'PNG (maske için zorunlu)') : imageExt.substring(1).toUpperCase(java.util.Locale.ROOT)),
         legendBlock,
         labelBlock,
         imageTiles, maskTiles, elapsed,

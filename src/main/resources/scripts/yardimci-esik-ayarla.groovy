@@ -58,9 +58,9 @@ def __wpCall  = { String m, Class[] sig, Object[] args, Object dflt ->
 def atolyeD = { String k, double d -> (double) __wpCall('dbl', [String.class, double.class] as Class[], [k, d] as Object[], d) }
 
 // ── Sabitler ────────────────────────────────────────────────────────
-String SCOPE_SELECTED = 'Seçili anotasyon(lar)'
-String SCOPE_ALL      = 'Tüm lam'
-String WINDOW_TITLE   = 'Eşik paleti — Eşikleri ayarla'
+String SCOPE_SELECTED = workshopText('script.888debc99627', 'Seçili anotasyon(lar)')
+String SCOPE_ALL      = workshopText('script.dc1f7a613431', 'Tüm lam')
+String WINDOW_TITLE   = workshopText('script.8a73eeba8daf', 'Eşik paleti — Eşikleri ayarla')
 
 // ── Ön kontrol ──────────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
@@ -112,14 +112,14 @@ def defaultsForColumn = { String column ->
     if (column.startsWith('Membrane:'))
         return [vals: [atolyeD('atolye.membrane1', 0.15), atolyeD('atolye.membrane2', 0.40), atolyeD('atolye.membrane3', 0.70)],
                 keys: ['atolye.membrane1', 'atolye.membrane2', 'atolye.membrane3'],
-                hint: 'Membran boya modülü (HER2)']
+                hint: workshopText('script.731c89852b77', 'Membran boya modülü (HER2)')]
     if (column.startsWith('Cytoplasm:'))
         return [vals: [atolyeD('atolye.cyto1', 0.10), atolyeD('atolye.cyto2', 0.20), atolyeD('atolye.cyto3', 0.35)],
                 keys: ['atolye.cyto1', 'atolye.cyto2', 'atolye.cyto3'],
-                hint: 'Sitoplazmik boya modülü (CD68)']
+                hint: workshopText('script.e16ee59f3750', 'Sitoplazmik boya modülü (CD68)')]
     return [vals: [atolyeD('atolye.nuclear1', 0.20), atolyeD('atolye.nuclear2', 0.40), atolyeD('atolye.nuclear3', 0.60)],
             keys: ['atolye.nuclear1', 'atolye.nuclear2', 'atolye.nuclear3'],
-            hint: 'Nükleer boya / ER-PR H-score / Tümör içi Ki-67 modülleri']
+            hint: workshopText('script.6f6e692da2ca', 'Nükleer boya / ER-PR H-score / Tümör içi Ki-67 modülleri')]
 }
 
 // ── Saf hesap çekirdeği ─────────────────────────────────────────────
@@ -198,22 +198,22 @@ def buildResultText = { String moduleHint, String column, String scopeLabel, Map
                         double t1, double t2, double t3, double[] baseline,
                         double elapsedSec, boolean staleRemoved ->
     def pixelNote = staleRemoved
-        ? '\nℹ Kapsamdaki anotasyonlarda bayatlamış piksel-bazlı H-score ölçümleri temizlendi.\n  Güncel eşiklerle yeniden hesaplamak için Membran boya modülünü yeniden çalıştırın.\n'
+        ? workshopText('script.0d2f60eb85aa', '\nℹ Kapsamdaki anotasyonlarda bayatlamış piksel-bazlı H-score ölçümleri temizlendi.\n  Güncel eşiklerle yeniden hesaplamak için Membran boya modülünü yeniden çalıştırın.\n')
         : ''
-    def mark = { double v, double b -> v != b ? ' (değiştirildi)' : '' }
+    def mark = { double v, double b -> v != b ? workshopText('script.99419b6153e0', ' (değiştirildi)') : '' }
     return String.format(java.util.Locale.US,
-        'Modül: %s\nÖlçüm: %s\nKapsam: %s\n\n' +
-        'Eşikler:\n  1+ ≥ %.3f OD%s\n  2+ ≥ %.3f OD%s\n  3+ ≥ %.3f OD%s\n\n' +
-        '📊 Grup dağılımı (n = %,d)\n──────────────────────────────────\n' +
-        '  0  (negatif)  : %,d  (%%%.1f)\n' +
-        '  1+ (zayıf)    : %,d  (%%%.1f)\n' +
-        '  2+ (orta)     : %,d  (%%%.1f)\n' +
-        '  3+ (güçlü)    : %,d  (%%%.1f)\n' +
-        '  Toplam ≥1+    : %,d  (%%%.1f)\n\n' +
-        '🎯 Metrikler\n──────────────\n' +
+        workshopText('script.af58ac72c333', 'Modül: %s\nÖlçüm: %s\nKapsam: %s\n\n') +
+        workshopText('script.87797d8f6997', 'Eşikler:\n  1+ ≥ %.3f OD%s\n  2+ ≥ %.3f OD%s\n  3+ ≥ %.3f OD%s\n\n') +
+        workshopText('script.bafb1d109918', '📊 Grup dağılımı (n = %,d)\n──────────────────────────────────\n') +
+        workshopText('script.458a4b6a6111', '  0  (negatif)  : %,d  (%%%.1f)\n') +
+        workshopText('script.da5b03b35a9e', '  1+ (zayıf)    : %,d  (%%%.1f)\n') +
+        workshopText('script.9efd9db5636a', '  2+ (orta)     : %,d  (%%%.1f)\n') +
+        workshopText('script.f8caebb9bb84', '  3+ (güçlü)    : %,d  (%%%.1f)\n') +
+        workshopText('script.092804e29151', '  Toplam ≥1+    : %,d  (%%%.1f)\n\n') +
+        workshopText('script.92fd0a50ac2b', '🎯 Metrikler\n──────────────\n') +
         '  H-score (0–300)   : %.0f\n' +
-        '  Süre              : %.2f sn\n%s\n' +
-        '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.',
+        workshopText('script.578b71c1ed29', '  Süre              : %.2f sn\n%s\n') +
+        workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'),
         moduleHint, column, scopeLabel,
         t1, mark(t1, baseline[0]), t2, mark(t2, baseline[1]), t3, mark(t3, baseline[2]),
         s.n, s.n0, s.p0, s.n1, s.p1, s.n2, s.p2, s.n3, s.p3,
@@ -370,7 +370,7 @@ javafx.application.Platform.runLater {
                           javafx.scene.paint.Color.web('#E6A817'),
                           javafx.scene.paint.Color.web('#D97706'),
                           javafx.scene.paint.Color.web('#7C2D12')]
-        def BAND_NAMES = ['Negatif', '1+', '2+', '3+']
+        def BAND_NAMES = [workshopText('script.9471e97fcb25', 'Negatif'), '1+', '2+', '3+']
         def bandRects = (0..3).collect { int i ->
             def r = new javafx.scene.shape.Rectangle(0, 1, 0, 14)
             r.setFill(BAND_FILLS[i]); r.setManaged(false)
@@ -812,41 +812,25 @@ javafx.application.Platform.runLater {
             return l
         }
         def stripNote = limitLabel(
-            'Şerit ≠ hücre görünümü: renk şeridi ORTALAMA OD sayısının lejantıdır; granüler-güçlü ve ' +
-            'yaygın-zayıf boyanma aynı ortalamayı paylaşabilir. Gerçek referans üstteki hücre kesitleridir.')
+            workshopText('script.7a5d76d61df4', 'Şerit ≠ hücre görünümü: renk şeridi ORTALAMA OD sayısının lejantıdır; granüler-güçlü ve yaygın-zayıf boyanma aynı ortalamayı paylaşabilir. Gerçek referans üstteki hücre kesitleridir.'))
         def liveNote = limitLabel(
-            'Çok büyük tespit kümelerinde her bırakışta yeniden sınıflandırma gecikme yaratabilir — ' +
-            'bu yüzden "Canlı uygula" kapatılabilir.')
+            workshopText('script.23687f3eb12e', 'Çok büyük tespit kümelerinde her bırakışta yeniden sınıflandırma gecikme yaratabilir — bu yüzden "Canlı uygula" kapatılabilir.'))
         def dabWarnLabel = limitLabel(
-            'Dikkat: varsayılan eşikler DAB için kalibre edilmiştir; bu kromojen için başlangıç noktası ' +
-            'olarak kullanın, doğrulanmış varsayılan değildir.')
+            workshopText('script.345e0989fa7a', 'Dikkat: varsayılan eşikler DAB için kalibre edilmiştir; bu kromojen için başlangıç noktası olarak kullanın, doğrulanmış varsayılan değildir.'))
         dabWarnLabel.setStyle('-fx-font-size: 11px; -fx-text-fill: #B45309;')
         dabWarnLabel.setVisible(false); dabWarnLabel.setManaged(false)
 
         def limitsBox = new javafx.scene.layout.VBox(6,
-            limitLabel('1) Şerit ≠ hücre görünümü — OD 0.4\'teki düz renk örneği "2+ hücre böyle görünür" demek ' +
-                'DEĞİLDİR; ortalama farklı boyanma desenlerinde aynı çıkabilir. Kesitler bu yüzden var.'),
-            limitLabel('2) Renkler boya vektörüne bağlı — şerit, görüntünün güncel vektör tahmininden üretilir; ' +
-                'yanlış tahmin yanlış renk gösterir. Önce Boya vektörleri sihirbazını çalıştırın (Yardımcılar → Boya ve renk).'),
-            limitLabel('3) Kesitler tek örnektir — her yuva hedef OD\'ye EN YAKIN tek hücreyi gösterir; o değerin ' +
-                'çevresindeki çeşitliliği gösteremez. Tüm dağılım histogramdadır.'),
-            limitLabel('4) Eşik sonucu doğrudan kaydırır — bir eşiği sürüklemek 1+/2+/3+ dağılımını ve H-score\'u ' +
-                'tanım gereği değiştirir; "doğru" tek eşik yoktur. Yöntem referansınızla tutarlı bir eşik seçip ' +
-                'belgeleyin; aynı çalışmada lamdan lama değiştirmeyin. "Otomatik öner" (3-eşik Otsu) yalnızca ' +
-                'veri-güdümlü bir başlangıç önerisidir — yöntemsel doğruluk iddiası taşımaz.'),
-            limitLabel('5) Yalnızca yeniden sınıflandırır — tespit/genişletme parametrelerine dokunmaz (onlar için modülü ' +
-                'yeniden çalıştırın). Piksel-bazlı H-score yeniden HESAPLANMAZ; bayat ölçümler her uygulamada temizlenir.'),
-            limitLabel('6) Canlı uygulamanın boyut maliyeti — büyük kümelerde her bırakışta yeniden sınıflandırma ' +
-                'gecikebilir; bu yüzden açma/kapama seçeneğidir.'),
-            limitLabel('7) Ölçüm üretir, yorum üretmez — klinik eşik/kategori önermez.'),
-            limitLabel('8) Canlı uygulama geri-al yığınını tüketir — her uygulama bir Ctrl+Z adımı kaydeder ve QuPath ' +
-                '10 adım tutar; uzun ayar oturumundan sonra sihirbaz-öncesi duruma Ctrl+Z ile dönmeye güvenmeyin. ' +
-                'Sıfırla + sürükleme, ölçümlerden kayıpsız geri dönüş yoludur.'),
-            limitLabel('9) Piksel-düzeyi alternatif — piksel renk eşikleme QuPath\'te zaten var: ' +
-                'Classify → Pixel classification → Create thresholder. Bu sihirbaz bir üst katmanda, hücre başına ' +
-                'ortalama kromojen OD üzerinde çalışır; ikisi birbirinin yedeği değil tamamlayıcısıdır.'),
-            limitLabel('10) Varsayılan eşikler DAB için kalibredir — AEC gibi diğer kromojenlerde başlangıç ' +
-                'noktasıdır, doğrulanmış varsayılan değildir.'))
+            limitLabel(workshopText('script.f4ed80f726f6', '1) Şerit ≠ hücre görünümü — OD 0.4\'teki düz renk örneği "2+ hücre böyle görünür" demek DEĞİLDİR; ortalama farklı boyanma desenlerinde aynı çıkabilir. Kesitler bu yüzden var.')),
+            limitLabel(workshopText('script.c8e03db77b62', '2) Renkler boya vektörüne bağlı — şerit, görüntünün güncel vektör tahmininden üretilir; yanlış tahmin yanlış renk gösterir. Önce Boya vektörleri sihirbazını çalıştırın (Yardımcılar → Boya ve renk).')),
+            limitLabel(workshopText('script.7a646d23c8e4', '3) Kesitler tek örnektir — her yuva hedef OD\'ye EN YAKIN tek hücreyi gösterir; o değerin çevresindeki çeşitliliği gösteremez. Tüm dağılım histogramdadır.')),
+            limitLabel(workshopText('script.e05d5a8d4fa6', '4) Eşik sonucu doğrudan kaydırır — bir eşiği sürüklemek 1+/2+/3+ dağılımını ve H-score\'u tanım gereği değiştirir; "doğru" tek eşik yoktur. Yöntem referansınızla tutarlı bir eşik seçip belgeleyin; aynı çalışmada lamdan lama değiştirmeyin. "Otomatik öner" (3-eşik Otsu) yalnızca veri-güdümlü bir başlangıç önerisidir — yöntemsel doğruluk iddiası taşımaz.')),
+            limitLabel(workshopText('script.153e054395ab', '5) Yalnızca yeniden sınıflandırır — tespit/genişletme parametrelerine dokunmaz (onlar için modülü yeniden çalıştırın). Piksel-bazlı H-score yeniden HESAPLANMAZ; bayat ölçümler her uygulamada temizlenir.')),
+            limitLabel(workshopText('script.f82e77c97fbe', '6) Canlı uygulamanın boyut maliyeti — büyük kümelerde her bırakışta yeniden sınıflandırma gecikebilir; bu yüzden açma/kapama seçeneğidir.')),
+            limitLabel(workshopText('script.dfa197d9fb6c', '7) Ölçüm üretir, yorum üretmez — klinik eşik/kategori önermez.')),
+            limitLabel(workshopText('script.a3a5b4b6c6b0', '8) Canlı uygulama geri-al yığınını tüketir — her uygulama bir Ctrl+Z adımı kaydeder ve QuPath 10 adım tutar; uzun ayar oturumundan sonra sihirbaz-öncesi duruma Ctrl+Z ile dönmeye güvenmeyin. Sıfırla + sürükleme, ölçümlerden kayıpsız geri dönüş yoludur.')),
+            limitLabel(workshopText('script.22b9462393ab', '9) Piksel-düzeyi alternatif — piksel renk eşikleme QuPath\'te zaten var: Classify → Pixel classification → Create thresholder. Bu sihirbaz bir üst katmanda, hücre başına ortalama kromojen OD üzerinde çalışır; ikisi birbirinin yedeği değil tamamlayıcısıdır.')),
+            limitLabel(workshopText('script.fa37f3451c5e', '10) Varsayılan eşikler DAB için kalibredir — AEC gibi diğer kromojenlerde başlangıç noktasıdır, doğrulanmış varsayılan değildir.')))
         limitsBox.setPadding(new javafx.geometry.Insets(4, 8, 4, 8))
         def limitsPane = new javafx.scene.control.TitledPane(workshopText('script.6b6e40a775ad', 'Sınırlamalar — neden böyle?'), limitsBox)
         limitsPane.setExpanded(false)
@@ -862,12 +846,12 @@ javafx.application.Platform.runLater {
                     def cells = cellsForScope(scope)
                     def cols = discoverColumns(cells)
                     if (cols.isEmpty()) {
-                        err = 'Bu kapsamda tanınan "... OD mean" sütunu taşıyan tespit yok.'
+                        err = workshopText('script.09def8423ba7', 'Bu kapsamda tanınan "... OD mean" sütunu taşıyan tespit yok.')
                     } else {
                         String column = (forcedColumn != null && cols.contains(forcedColumn)) ? forcedColumn : cols[0]
                         def sc = buildScored(cells, column)
                         if (((List) sc.cells).isEmpty()) {
-                            err = "Sütunda (${column}) sonlu değer taşıyan tespit yok."
+                            err = String.format(java.util.Locale.US, workshopText('script.d185c2e2ad0c', 'Sütunda (%s) sonlu değer taşıyan tespit yok.'), column)
                         } else {
                             def dflt = defaultsForColumn(column)
                             double[] sorted = (double[]) sc.sorted
@@ -967,7 +951,7 @@ javafx.application.Platform.runLater {
                         statusLabel.setText(workshopText('script.970dbbd01996', 'Hazır'))
                         updateStats()
                         if (showResult) {
-                            showResultWindow('Eşikler Uygulandı 🎛️',
+                            showResultWindow(workshopText('script.7266ce251fd1', 'Eşikler Uygulandı 🎛️'),
                                 buildResultText((String) d.hint, (String) d.column, (String) d.scopeLabel, s,
                                     (double) t[0], (double) t[1], (double) t[2],
                                     (double[]) d.baseline, elapsed, stale))

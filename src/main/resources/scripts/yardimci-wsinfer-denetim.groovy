@@ -114,7 +114,7 @@ if (imageData == null) {
 }
 
 def body = new StringBuilder()
-body << "WSInfer ÇIKARIM DENETİMİ (salt okunur)\n"
+body << workshopText('script.d6aeea3ed01c', 'WSInfer ÇIKARIM DENETİMİ (salt okunur)\n')
 body << "═════════════════════════════════════════\n\n"
 
 // ── 2) Eklenti kurulu mu? ───────────────────────────────────────────
@@ -126,15 +126,15 @@ try {
     wsinferInstalled = false
 }
 
-body << "1) EKLENTİ\n"
+body << workshopText('script.993c1b81b14e', '1) EKLENTİ\n')
 body << "──────────\n"
 if (wsinferInstalled) {
-    body << "   ✓ WSInfer eklentisi yüklü (qupath.ext.wsinfer.WSInfer).\n"
-    body << "     Çıkarım: [Extensions → WSInfer]\n"
+    body << workshopText('script.6b6216634870', '   ✓ WSInfer eklentisi yüklü (qupath.ext.wsinfer.WSInfer).\n')
+    body << workshopText('script.d4c4185b211f', '     Çıkarım: [Extensions → WSInfer]\n')
 } else {
-    body << "   ✗ WSInfer eklentisi BULUNAMADI.\n"
-    body << "     Kurulum: [Extensions → Manage extensions] → arama: WSInfer → Install\n"
-    body << "     (Bu denetim yine de mevcut karoları raporlar.)\n"
+    body << workshopText('script.0bc900260d7d', '   ✗ WSInfer eklentisi BULUNAMADI.\n')
+    body << workshopText('script.1eddb0a1e5f3', '     Kurulum: [Extensions → Manage extensions] → arama: WSInfer → Install\n')
+    body << workshopText('script.a5b4b8d9d460', '     (Bu denetim yine de mevcut karoları raporlar.)\n')
 }
 body << "\n"
 
@@ -145,34 +145,34 @@ boolean hasMicrons = (cal != null && cal.hasPixelSizeMicrons())
 double pw = (cal != null) ? cal.getPixelWidthMicrons() : Double.NaN
 double ph = (cal != null) ? cal.getPixelHeightMicrons() : Double.NaN
 
-body << "2) PİKSEL KALİBRASYONU (µm/px)\n"
+body << workshopText('script.358ec81d8788', '2) PİKSEL KALİBRASYONU (µm/px)\n')
 body << "──────────────────────────────\n"
 if (hasMicrons) {
     body << String.format(java.util.Locale.US,
-        "   ✓ Kalibre: %.4f x %.4f µm/px%n", pw, ph)
-    body << "     WSInfer karo boyutunu modelin spacing_um_px değerine göre doğru ölçekler.\n"
+        workshopText('script.793a4ba81e22', '   ✓ Kalibre: %.4f x %.4f µm/px%n'), pw, ph)
+    body << workshopText('script.bb8b878bace3', '     WSInfer karo boyutunu modelin spacing_um_px değerine göre doğru ölçekler.\n')
     // Karo boyutu MODELE ÖZGÜDÜR (zoo'da 96-350 px). Aralığın iki ucunu örnekleyip
     // tek bir sayının genelleme olmadığını gösteriyoruz.
-    body << "\n     Örnek — yerel karo genişliği modelin kendi patch/spacing değerlerine bağlıdır\n"
-    body << "     (zoo'da patch 96-350 px arasında değişir; kesin değer modelin config.json'unda):\n"
+    body << workshopText('script.5b9606291db9', '\n     Örnek — yerel karo genişliği modelin kendi patch/spacing değerlerine bağlıdır\n')
+    body << workshopText('script.2a56800ee816', '     (zoo\'da patch 96-350 px arasında değişir; kesin değer modelin config.json\'unda):\n')
     [[96, 1.0d], [224, 0.5d], [350, 0.25d]].each { pair ->
         int patch = pair[0] as int
         double spacing = pair[1] as double
         double downsample = spacing / ((pw + ph) / 2.0d)
         int wpx = Math.round(patch * downsample) as int
         body << String.format(java.util.Locale.US,
-            "       patch %3d px @ spacing %.2f  →  %d px yerel genişlik%n", patch, spacing, wpx)
+            workshopText('script.8be6802f9dc1', '       patch %3d px @ spacing %.2f  →  %d px yerel genişlik%n'), patch, spacing, wpx)
     }
 } else {
-    body << "   ✗ KALİBRASYON YOK — QuPath 1 pikseli 1 mikron sayıyor.\n\n"
-    body << "     ⚠ WSInfer bu durumda karo boyutunu YANLIŞ hesaplar:\n"
-    body << "       downsample = spacing_um_px / 1.0 olur, yani spacing_um_px = 0.5 olan bir\n"
-    body << "       model 224 px yerine yaklaşık 112 px genişlik ister — eğitildiğinden\n"
-    body << "       yaklaşık 2 kat daha yakın bir görüş alanı. Çıkarım HATASIZ tamamlanır;\n"
-    body << "       yanlış olduğunu size söyleyen bir uyarı çıkmaz.\n\n"
-    body << "     ⚠ Alan (mm²) ölçümleri de üretilemez / yanlış olur.\n\n"
-    body << "     Düzeltme: [Image] sekmesinden piksel boyutunu girin.\n"
-    body << "     (DZI/JPEG gibi kalibrasyon taşımayan kaynaklarda bu sık görülür.)\n"
+    body << workshopText('script.79a875353f2c', '   ✗ KALİBRASYON YOK — QuPath 1 pikseli 1 mikron sayıyor.\n\n')
+    body << workshopText('script.9c73dcd34299', '     ⚠ WSInfer bu durumda karo boyutunu YANLIŞ hesaplar:\n')
+    body << workshopText('script.6071debd3e53', '       downsample = spacing_um_px / 1.0 olur, yani spacing_um_px = 0.5 olan bir\n')
+    body << workshopText('script.ac5c97da3eb6', '       model 224 px yerine yaklaşık 112 px genişlik ister — eğitildiğinden\n')
+    body << workshopText('script.b919ef764aec', '       yaklaşık 2 kat daha yakın bir görüş alanı. Çıkarım HATASIZ tamamlanır;\n')
+    body << workshopText('script.223e72a1199d', '       yanlış olduğunu size söyleyen bir uyarı çıkmaz.\n\n')
+    body << workshopText('script.187d6f0832e1', '     ⚠ Alan (mm²) ölçümleri de üretilemez / yanlış olur.\n\n')
+    body << workshopText('script.346558d4a79d', '     Düzeltme: [Image] sekmesinden piksel boyutunu girin.\n')
+    body << workshopText('script.62c2b833623d', '     (DZI/JPEG gibi kalibrasyon taşımayan kaynaklarda bu sık görülür.)\n')
 }
 body << "\n"
 
@@ -185,14 +185,14 @@ if (tiles.isEmpty()) {
     usedFallback = true
 }
 
-body << "3) KARO SINIFLARI VE ÖLÇÜM ANAHTARLARI\n"
+body << workshopText('script.98999714b35d', '3) KARO SINIFLARI VE ÖLÇÜM ANAHTARLARI\n')
 body << "──────────────────────────────────────\n"
 if (tiles.isEmpty()) {
-    body << "   Henüz karo yok — önce [Extensions → WSInfer] ile bir model çalıştırın.\n"
-    body << "   Çıkarımdan sonra bu denetimi yeniden çalıştırın; gerçek sınıf adları burada listelenir.\n"
+    body << workshopText('script.46ad8d289b4a', '   Henüz karo yok — önce [Extensions → WSInfer] ile bir model çalıştırın.\n')
+    body << workshopText('script.2481e8ca6fd3', '   Çıkarımdan sonra bu denetimi yeniden çalıştırın; gerçek sınıf adları burada listelenir.\n')
 } else {
     if (usedFallback) {
-        body << "   Not: karo (tile) nesnesi bulunamadı; sınıflı tüm tespitler kullanıldı.\n\n"
+        body << workshopText('script.0a4a703da72b', '   Not: karo (tile) nesnesi bulunamadı; sınıflı tüm tespitler kullanıldı.\n\n')
     }
     Map<String, Integer> byClass = new LinkedHashMap<String, Integer>()
     tiles.each { d ->
@@ -200,9 +200,9 @@ if (tiles.isEmpty()) {
         String cls = (pc != null) ? pc.toString() : "(sınıfsız)"
         byClass[cls] = (byClass.containsKey(cls) ? byClass[cls] : 0) + 1
     }
-    body << String.format(java.util.Locale.US, "   Toplam karo: %,d   ·   Sınıf sayısı: %d%n%n",
+    body << String.format(java.util.Locale.US, workshopText('script.b42dfbffbe36', '   Toplam karo: %,d   ·   Sınıf sayısı: %d%n%n'),
         tiles.size(), byClass.size())
-    body << "   Sınıf adı (BİREBİR)                              Karo\n"
+    body << workshopText('script.508049230422', '   Sınıf adı (BİREBİR)                              Karo\n')
     body << "   ─────────────────────────────────────────────────────────\n"
     byClass.each { cls, cnt ->
         body << String.format(java.util.Locale.US, "   %-46s %,8d%n", cls, cnt)
@@ -212,13 +212,13 @@ if (tiles.isEmpty()) {
     def sample = tiles.find { it.getMeasurementList() != null && !it.getMeasurementList().getMeasurementNames().isEmpty() }
     if (sample != null) {
         def names = sample.getMeasurementList().getMeasurementNames()
-        body << "\n   Bir karodaki ölçüm anahtarları (olasılıklar; softmax ile normalize):\n"
+        body << workshopText('script.ac7dc127a63f', '\n   Bir karodaki ölçüm anahtarları (olasılıklar; softmax ile normalize):\n')
         names.each { String n -> body << "     · ${n}\n" }
     }
 
     def first = byClass.keySet().find { it != "(sınıfsız)" }
     if (first != null) {
-        body << "\n   Kopyalanabilir filtre örneği — kısaltma DEĞİL, birebir bu ad kullanılmalı:\n\n"
+        body << workshopText('script.39b2e620b06d', '\n   Kopyalanabilir filtre örneği — kısaltma DEĞİL, birebir bu ad kullanılmalı:\n\n')
         body << "     def hedefSinif = \"${first}\"\n"
         body << "     def secilen = QP.getDetectionObjects().findAll {\n"
         body << "         it.getPathClass()?.getName() == hedefSinif\n"
@@ -227,12 +227,12 @@ if (tiles.isEmpty()) {
 }
 body << "\n"
 
-body << "Bu bir DENETİM raporudur — nesne oluşturmaz, değiştirmez ve kaydetmez.\n"
-body << "Sınıf adları modelin config.json dosyasındaki class_names değerinden gelir\n"
+body << workshopText('script.432f2abb793b', 'Bu bir DENETİM raporudur — nesne oluşturmaz, değiştirmez ve kaydetmez.\n')
+body << workshopText('script.85fb488e5f9a', 'Sınıf adları modelin config.json dosyasındaki class_names değerinden gelir\n')
 body << "(Kaczmarzyk 2024; Bankhead 2017).\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("WSInfer çıkarım denetimi", body.toString())
+showResultWindow(workshopText('script.e7b9b3d06cfe', 'WSInfer çıkarım denetimi'), body.toString())
 println "✓ WSInfer denetimi tamamlandı (salt okunur)."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

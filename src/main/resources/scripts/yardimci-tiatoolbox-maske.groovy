@@ -208,7 +208,7 @@ def builder = new LabeledImageServer.Builder(imageData)
     .backgroundLabel(0, ColorTools.WHITE)
     .downsample(downsample)
     .multichannelOutput(false)
-def legend = ["0 = arka plan"]
+def legend = [workshopText('script.869ac0156228', '0 = arka plan')]
 def labelMap = new LinkedHashMap<String, Object>()
 labelMap.put("0", "arka plan")
 classes.eachWithIndex { pc, i ->
@@ -245,7 +245,7 @@ try {
 }
 double elapsed = (System.currentTimeMillis() - t0) / 1000.0
 
-if (!ok && errMsg == null) errMsg = "Maske yazılamadı (bilinmeyen neden)."
+if (!ok && errMsg == null) errMsg = workshopText('script.cf8da1335cb0', 'Maske yazılamadı (bilinmeyen neden).')
 if (errMsg != null) {
     Dialogs.showErrorMessage(workshopText('script.413b9dadce29', "Maske yazılamadı"), errMsg)
     println "HATA: ${errMsg}"
@@ -276,29 +276,14 @@ try { new File(outDir, "labels.txt").write(legend.join("\n") + "\n", "UTF-8") } 
 // ──────────────────────────────────────────────────────────────
 def legendBlock = legend.collect { "  ${it}" }.join("\n")
 showResultWindow(
-    "TIA Toolbox bölge maskesi — Tamamlandı 🗺️",
+    workshopText('script.5eaac1f269f0', 'TIA Toolbox bölge maskesi — Tamamlandı 🗺️'),
     String.format(java.util.Locale.US,
-        "Görüntü   : %s%n" +
-        "Maske     : %s%n" +
-        "Üst veri  : %s%n" +
-        "Çıktı klasörü:%n  %s%n%n" +
-        "⚙️  Ayarlar%n" +
-        "──────────%n" +
-        "  Çözünürlük : %.3f µm/px → downsample %.3f%s%n" +
-        "  Maske boyutu: %,d × %,d px%n" +
-        "  Süre        : %.1f sn%n%n" +
-        "🏷️  Sınıf → indeks (labels.txt)%n" +
-        "──────────────────%n" +
-        "%s%n%n" +
-        "📝 Sonraki adım — Python tarafı:%n" +
-        "  • TIA Toolbox: engine.run(images=[wsi], masks=['%s'], patch_mode=False, ...)%n" +
-        "  • Yöntem ve tam döngü: Ek — TIA Toolbox.%n%n" +
-        "⚠️ Yalnızca araştırma/eğitim amaçlı veri üretir.",
+        workshopText('script.71f7d28e8d6b', 'Görüntü   : %s%nMaske     : %s%nÜst veri  : %s%nÇıktı klasörü:%n  %s%n%n⚙️  Ayarlar%n──────────%n  Çözünürlük : %.3f µm/px → downsample %.3f%s%n  Maske boyutu: %,d × %,d px%n  Süre        : %.1f sn%n%n🏷️  Sınıf → indeks (labels.txt)%n──────────────────%n%s%n%n📝 Sonraki adım — Python tarafı:%n  • TIA Toolbox: engine.run(images=[wsi], masks=[\'%s\'], patch_mode=False, ...)%n  • Yöntem ve tam döngü: Ek — TIA Toolbox.%n%n⚠️ Yalnızca araştırma/eğitim amaçlı veri üretir.'),
         server.getMetadata().getName(),
         maskFile.getName(),
         jsonFile.getName(),
         outDir.getAbsolutePath(),
-        umPerPx, downsample, (calibrated ? "" : " (kalibre değil)"),
+        umPerPx, downsample, (calibrated ? "" : workshopText('script.1b7faa476220', ' (kalibre değil)')),
         maskW, maskH,
         elapsed,
         legendBlock,

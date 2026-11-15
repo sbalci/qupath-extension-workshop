@@ -109,23 +109,23 @@ def profileDescription = { java.awt.color.ICC_Profile prof ->
 def colorSpaceName = { int type ->
     switch (type) {
         case java.awt.color.ColorSpace.TYPE_RGB:  return 'RGB'
-        case java.awt.color.ColorSpace.TYPE_GRAY: return 'Gri tonlama'
+        case java.awt.color.ColorSpace.TYPE_GRAY: return workshopText('script.afb2a22c17ee', 'Gri tonlama')
         case java.awt.color.ColorSpace.TYPE_CMYK: return 'CMYK'
         case java.awt.color.ColorSpace.TYPE_Lab:  return 'L*a*b*'
         case java.awt.color.ColorSpace.TYPE_XYZ:  return 'XYZ'
-        default: return 'tip #' + type
+        default: return workshopText('script.3701d2d37718', 'tip #') + type
     }
 }
 def profileClassName = { int cls ->
     switch (cls) {
-        case java.awt.color.ICC_Profile.CLASS_INPUT:               return 'Girdi (scnr)'
-        case java.awt.color.ICC_Profile.CLASS_DISPLAY:             return 'Görüntüleme (mntr)'
-        case java.awt.color.ICC_Profile.CLASS_OUTPUT:              return 'Çıktı (prtr)'
-        case java.awt.color.ICC_Profile.CLASS_DEVICELINK:          return 'Aygıt bağlantı (link)'
-        case java.awt.color.ICC_Profile.CLASS_COLORSPACECONVERSION: return 'Renk uzayı dönüşüm (spac)'
-        case java.awt.color.ICC_Profile.CLASS_ABSTRACT:            return 'Soyut (abst)'
-        case java.awt.color.ICC_Profile.CLASS_NAMEDCOLOR:          return 'Adlı renk (nmcl)'
-        default: return 'sınıf #' + cls
+        case java.awt.color.ICC_Profile.CLASS_INPUT:               return workshopText('script.11d50e96ccd5', 'Girdi (scnr)')
+        case java.awt.color.ICC_Profile.CLASS_DISPLAY:             return workshopText('script.4214d2ef2c71', 'Görüntüleme (mntr)')
+        case java.awt.color.ICC_Profile.CLASS_OUTPUT:              return workshopText('script.0848d2ac0ce7', 'Çıktı (prtr)')
+        case java.awt.color.ICC_Profile.CLASS_DEVICELINK:          return workshopText('script.d77d9946243e', 'Aygıt bağlantı (link)')
+        case java.awt.color.ICC_Profile.CLASS_COLORSPACECONVERSION: return workshopText('script.21679d6309bb', 'Renk uzayı dönüşüm (spac)')
+        case java.awt.color.ICC_Profile.CLASS_ABSTRACT:            return workshopText('script.493b6dc3d41c', 'Soyut (abst)')
+        case java.awt.color.ICC_Profile.CLASS_NAMEDCOLOR:          return workshopText('script.eb3103238853', 'Adlı renk (nmcl)')
+        default: return workshopText('script.da9b22129061', 'sınıf #') + cls
     }
 }
 
@@ -150,9 +150,9 @@ def resolveTagBytes = { parser, ifd, int tag ->
 def gatherIcc = { String path ->
     def out = new java.util.LinkedHashMap()
     out.ext = fileExtension(path)
-    if (path == null) { out.ok = false; out.error = 'Dosya yolu çözülemedi (uzak/yerel olmayan kaynak olabilir).'; return out }
+    if (path == null) { out.ok = false; out.error = workshopText('script.34a4152e2dcc', 'Dosya yolu çözülemedi (uzak/yerel olmayan kaynak olabilir).'); return out }
     def f = new File(path)
-    if (!f.exists()) { out.ok = false; out.error = 'Dosya bulunamadı: ' + path; return out }
+    if (!f.exists()) { out.ok = false; out.error = workshopText('script.927d7419ec60', 'Dosya bulunamadı: ') + path; return out }
     out.fileSize = f.length()
 
     def ris = null
@@ -161,7 +161,7 @@ def gatherIcc = { String path ->
         ris = new loci.common.RandomAccessInputStream(path)
         parser = new loci.formats.tiff.TiffParser(ris)
         def ifd = parser.getFirstIFD()
-        if (ifd == null) { out.ok = false; out.error = 'Geçerli bir TIFF/SVS ilk IFD bulunamadı (bu biçim ICC denetimini desteklemiyor olabilir).'; return out }
+        if (ifd == null) { out.ok = false; out.error = workshopText('script.b510cfb683f0', 'Geçerli bir TIFF/SVS ilk IFD bulunamadı (bu biçim ICC denetimini desteklemiyor olabilir).'); return out }
 
         // ImageDescription (tarayıcı ipucu)
         try {
@@ -182,7 +182,7 @@ def gatherIcc = { String path ->
         out.error = (t.getMessage() ?: t.getClass().getSimpleName())
         // Bio-Formats sınıfları yüklenemediyse açık bir not
         if (t instanceof NoClassDefFoundError || t instanceof ClassNotFoundException) {
-            out.error = 'QuPath Bio-Formats okuyucusu bulunamadı; ICC denetimi için Bio-Formats eklentisi gerekir.'
+            out.error = workshopText('script.4a7432951d1e', 'QuPath Bio-Formats okuyucusu bulunamadı; ICC denetimi için Bio-Formats eklentisi gerekir.')
         }
         return out
     } finally {
@@ -209,16 +209,16 @@ def scannerHint = { String desc ->
 
 // ── Profil bayt dizisini okunabilir satırlara dök ────────────────────────────
 def appendProfileLines = { StringBuilder sb, Closure line, byte[] bytes ->
-    line('  Profil boyutu', fmtBytes((long) bytes.length))
+    line(workshopText('script.180ca5639c0e', '  Profil boyutu'), fmtBytes((long) bytes.length))
     try {
         def prof = java.awt.color.ICC_Profile.getInstance(bytes)
-        line('  Renk uzayı', colorSpaceName(prof.getColorSpaceType()))
-        line('  Bileşen sayısı', '' + prof.getNumComponents())
-        line('  Profil sınıfı', profileClassName(prof.getProfileClass()))
+        line(workshopText('script.e376f2384bbd', '  Renk uzayı'), colorSpaceName(prof.getColorSpaceType()))
+        line(workshopText('script.ca8f04d726db', '  Bileşen sayısı'), '' + prof.getNumComponents())
+        line(workshopText('script.153550b034b2', '  Profil sınıfı'), profileClassName(prof.getProfileClass()))
         def desc = profileDescription(prof)
-        if (desc != null) line('  Açıklama', '"' + desc + '"')
+        if (desc != null) line(workshopText('script.c97e74da3122', '  Açıklama'), '"' + desc + '"')
     } catch (Throwable t) {
-        line('  Not', 'Profil bayt verisi okundu ama çözümlenemedi (' + (t.getMessage() ?: t.getClass().getSimpleName()) + ')')
+        line(workshopText('script.90b627a17e93', '  Not'), workshopText('script.ba805d3f2bd2', 'Profil bayt verisi okundu ama çözümlenemedi (') + (t.getMessage() ?: t.getClass().getSimpleName()) + ')')
     }
 }
 
@@ -227,74 +227,74 @@ def buildReport = { String imageName, String path, Map g ->
     def sb = new StringBuilder()
     def line = { Object label, Object val -> sb << String.format(java.util.Locale.US, '  %-26s : %s%n', label.toString(), (val == null ? '—' : val.toString())) }
 
-    sb << 'ICC RENK PROFİLİ DENETİMİ\n'
+    sb << workshopText('script.8b0e3f9e80f9', 'ICC RENK PROFİLİ DENETİMİ\n')
     sb << '═════════════════════════\n'
-    line('Görüntü', imageName)
-    line('Dosya', path)
-    line('Biçim / uzantı', g.ext)
-    if (g.fileSize != null) line('Dosya boyutu', fmtBytes((long) g.fileSize))
+    line(workshopText('script.461af90e2417', 'Görüntü'), imageName)
+    line(workshopText('script.9cecd7340f24', 'Dosya'), path)
+    line(workshopText('script.90bea824e588', 'Biçim / uzantı'), g.ext)
+    if (g.fileSize != null) line(workshopText('script.edd1366d6cd2', 'Dosya boyutu'), fmtBytes((long) g.fileSize))
 
     if (!g.ok) {
-        sb << '\nDENETİM YAPILAMADI\n──────────────────\n'
-        sb << '  ' + (g.error ?: 'Bilinmeyen hata') + '\n'
-        sb << '\n  İpucu: bu araç yerel TIFF tabanlı lamlarda (.svs/.tif/.tiff) çalışır.\n'
-        sb << '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
+        sb << workshopText('script.274e4a8ccb43', '\nDENETİM YAPILAMADI\n──────────────────\n')
+        sb << '  ' + (g.error ?: workshopText('script.da001998a5bd', 'Bilinmeyen hata')) + '\n'
+        sb << workshopText('script.d4ba469ebf1a', '\n  İpucu: bu araç yerel TIFF tabanlı lamlarda (.svs/.tif/.tiff) çalışır.\n')
+        sb << workshopText('script.0a96d0aa4dbc', '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
         return sb.toString()
     }
 
     def hint = scannerHint((String) g.imageDescription)
-    line('Tarayıcı (ipucu)', hint ?: '— (ImageDescription\'da tanınmadı)')
+    line(workshopText('script.0aedc2a8fa6f', 'Tarayıcı (ipucu)'), hint ?: workshopText('script.48c7827ca069', '— (ImageDescription\'da tanınmadı)'))
     if (g.imageDescription != null) {
         def d = ((String) g.imageDescription).replaceAll('[\\r\\n]+', ' ').trim()
         if (d.length() > 160) d = d.substring(0, 160) + '…'
         line('ImageDescription', d)
     }
 
-    sb << '\nGÖMÜLÜ ICC PROFİLİ\n──────────────────\n'
+    sb << workshopText('script.ea4168fbf7cc', '\nGÖMÜLÜ ICC PROFİLİ\n──────────────────\n')
     boolean any = false
     if (g.has34675) {
         any = true
-        line('Standart konum (34675)', g.bytes34675 != null ? 'VAR' : 'VAR (bayt okunamadı)')
+        line(workshopText('script.6815f095be2e', 'Standart konum (34675)'), g.bytes34675 != null ? workshopText('script.b0398cdfc1c0', 'VAR') : workshopText('script.9a505ca8fc08', 'VAR (bayt okunamadı)'))
         if (g.bytes34675 != null) appendProfileLines(sb, line, (byte[]) g.bytes34675)
     } else {
-        line('Standart konum (34675)', 'YOK')
+        line(workshopText('script.6815f095be2e', 'Standart konum (34675)'), workshopText('script.aec8e694277c', 'YOK'))
     }
     if (g.hasFFFF) {
         any = true
-        line('Aperio konumu (0xFFFF)', g.bytesFFFF != null ? 'VAR' : 'VAR (bayt okunamadı)')
+        line(workshopText('script.096d44beff1c', 'Aperio konumu (0xFFFF)'), g.bytesFFFF != null ? workshopText('script.b0398cdfc1c0', 'VAR') : workshopText('script.9a505ca8fc08', 'VAR (bayt okunamadı)'))
         if (g.bytesFFFF != null) appendProfileLines(sb, line, (byte[]) g.bytesFFFF)
     } else {
-        line('Aperio konumu (0xFFFF)', 'YOK')
+        line(workshopText('script.096d44beff1c', 'Aperio konumu (0xFFFF)'), workshopText('script.aec8e694277c', 'YOK'))
     }
 
-    sb << '\nNE ANLAMA GELİYOR\n─────────────────\n'
+    sb << workshopText('script.0c251619da77', '\nNE ANLAMA GELİYOR\n─────────────────\n')
     if (any) {
-        sb << '  • Profilin dosyada bulunması, kullanılan okuyucunun onu uyguladığını göstermez.\n'
-        sb << '  • QuPath 0.7+ OpenSlide ile ICC profilini isteğe bağlı uygulayabilir;\n'
-        sb << '    okuyucuyu ve ICC tercihini ayrıca kontrol edin. Bu denetçi etkin dönüşümü sınamaz.\n'
+        sb << workshopText('script.f92f2220f109', '  • Profilin dosyada bulunması, kullanılan okuyucunun onu uyguladığını göstermez.\n')
+        sb << workshopText('script.1e009a0b4987', '  • QuPath 0.7+ OpenSlide ile ICC profilini isteğe bağlı uygulayabilir;\n')
+        sb << workshopText('script.e028a4aa4bf5', '    okuyucuyu ve ICC tercihini ayrıca kontrol edin. Bu denetçi etkin dönüşümü sınamaz.\n')
         if (g.hasFFFF) {
-            sb << '  • Profil 0xFFFF etiketinde: GT450 sınıfı tarayıcılar profili buraya\n'
-            sb << '    TAŞIR ki standart okuyucular çifte renk dönüşümü yapmasın — bu yüzden\n'
-            sb << '    QuPath onu görmez/uygulamaz.\n'
+            sb << workshopText('script.66e6c87ed4b0', '  • Profil 0xFFFF etiketinde: GT450 sınıfı tarayıcılar profili buraya\n')
+            sb << workshopText('script.4683c29a1119', '    TAŞIR ki standart okuyucular çifte renk dönüşümü yapmasın — bu yüzden\n')
+            sb << workshopText('script.b97780f0f043', '    QuPath onu görmez/uygulamaz.\n')
         }
     } else {
-        sb << '  • Bu dosyada gömülü ICC profili bulunmadı; QuPath ile ImageScope\n'
-        sb << '    arasında renk yönetiminden kaynaklı belirgin fark beklenmez.\n'
+        sb << workshopText('script.439901808056', '  • Bu dosyada gömülü ICC profili bulunmadı; QuPath ile ImageScope\n')
+        sb << workshopText('script.4a2a1732c959', '    arasında renk yönetiminden kaynaklı belirgin fark beklenmez.\n')
     }
 
-    sb << '\nÖLÇÜME ETKİSİ\n─────────────\n'
-    sb << '  • OD tabanlı ölçümde (Ki-67, H-score, HER2) doğru yaklaşım: boya\n'
-    sb << '    vektörlerini HER LAM için yeniden tahmin etmek (Yardımcılar → Boya ve renk →\n'
-    sb << '    Boya vektörleri sihirbazı).\n'
-    sb << '  • QuPath 0.7+ ICC profilini uygulayabilir (yalnız OpenSlide ile açılan\n'
-    sb << '    lamlarda, isteğe bağlı). Açıkken yalnız görünüm değil ANALİZ pikselleri\n'
-    sb << '    de değişir: OD ölçümleri profil açık ve kapalı alınmış lamlar arasında\n'
-    sb << '    karşılaştırılamaz. Bir kohortu tek ayarla ölçün.\n'
-    sb << '  • Sabit-RGB piksel sınıflandırıcı / derin öğrenme modelleri renk\n'
-    sb << '    kaymasına duyarlı olabilir → renk-sağlam girdi ya da yeniden eğitim.\n'
-    sb << '\n  Bu araç yalnızca DENETLER; görüntüyü ve renkleri DEĞİŞTİRMEZ.\n'
-    sb << '  Ayrıntı: Ekler → Renk Yönetimi (ICC).\n'
-    sb << '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
+    sb << workshopText('script.ee1c9d68b0c3', '\nÖLÇÜME ETKİSİ\n─────────────\n')
+    sb << workshopText('script.40ee22c66642', '  • OD tabanlı ölçümde (Ki-67, H-score, HER2) doğru yaklaşım: boya\n')
+    sb << workshopText('script.06a3e8aba9ac', '    vektörlerini HER LAM için yeniden tahmin etmek (Yardımcılar → Boya ve renk →\n')
+    sb << workshopText('script.73c6145f179e', '    Boya vektörleri sihirbazı).\n')
+    sb << workshopText('script.8233c441353e', '  • QuPath 0.7+ ICC profilini uygulayabilir (yalnız OpenSlide ile açılan\n')
+    sb << workshopText('script.acc893d68c17', '    lamlarda, isteğe bağlı). Açıkken yalnız görünüm değil ANALİZ pikselleri\n')
+    sb << workshopText('script.d973308865c1', '    de değişir: OD ölçümleri profil açık ve kapalı alınmış lamlar arasında\n')
+    sb << workshopText('script.e435e1f442b8', '    karşılaştırılamaz. Bir kohortu tek ayarla ölçün.\n')
+    sb << workshopText('script.6243b8d533f8', '  • Sabit-RGB piksel sınıflandırıcı / derin öğrenme modelleri renk\n')
+    sb << workshopText('script.2b728d58558e', '    kaymasına duyarlı olabilir → renk-sağlam girdi ya da yeniden eğitim.\n')
+    sb << workshopText('script.2aa8bc6a3005', '\n  Bu araç yalnızca DENETLER; görüntüyü ve renkleri DEĞİŞTİRMEZ.\n')
+    sb << workshopText('script.a49394e001c3', '  Ayrıntı: Ekler → Renk Yönetimi (ICC).\n')
+    sb << workshopText('script.0a96d0aa4dbc', '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
@@ -336,7 +336,7 @@ def copyToClipboard = { String txt ->
 // ── Açık lamı arka planda denetle ──────────────────────────────────────────
 def startInspect = {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Açık lam yok. Önce bir TIFF/SVS lamı açın.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.ff78989d4a0e', 'Açık lam yok. Önce bir TIFF/SVS lamı açın.')); step.set('ERROR'); render(); return }
     def server = imageData.getServer()
     def path = serverFilePath(server)
     def name = server.getMetadata().getName() ?: 'slide'
@@ -344,7 +344,7 @@ def startInspect = {
     def worker = new Thread({
         String report
         try { report = buildReport(name, path, gatherIcc(path)) }
-        catch (Throwable t) { javafx.application.Platform.runLater { errorTextRef.set('Denetim sırasında hata:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }; return }
+        catch (Throwable t) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.9044c16f7be3', 'Denetim sırasında hata:\n') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }; return }
         javafx.application.Platform.runLater { resultTextRef.set(report); step.set('RESULT'); render() }
     }, 'AtolyeICC-Inspect')
     worker.setDaemon(true); worker.start()

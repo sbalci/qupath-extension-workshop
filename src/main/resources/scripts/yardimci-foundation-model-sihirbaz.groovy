@@ -99,53 +99,53 @@ def buildReport = { m ->
     def sb = new StringBuilder()
     def line = { String label, Object val -> sb << String.format(java.util.Locale.US, '  %-26s : %s%n', label, (val == null ? '—' : val.toString())) }
 
-    sb << 'FOUNDATION MODEL — HAZIRLIK RAPORU\n'
+    sb << workshopText('script.89b59259771a', 'FOUNDATION MODEL — HAZIRLIK RAPORU\n')
     sb << '════════════════════════════════════\n'
-    line('Görüntü', m.image_name)
-    line('Boyut (px)', fmtInt((long) m.width_px) + ' × ' + fmtInt((long) m.height_px))
-    line('RGB / kanal', (m.is_rgb ? 'evet' : 'hayır') + ' / ' + m.n_channels)
+    line(workshopText('script.461af90e2417', 'Görüntü'), m.image_name)
+    line(workshopText('script.21a0402a0c89', 'Boyut (px)'), fmtInt((long) m.width_px) + ' × ' + fmtInt((long) m.height_px))
+    line(workshopText('script.4301f631ae2b', 'RGB / kanal'), (m.is_rgb ? workshopText('script.23f31d553dea', 'evet') : workshopText('script.5935eed908c4', 'hayır')) + ' / ' + m.n_channels)
     sb << '\n'
     if (m.calibrated) {
-        line('Piksel (µm/px)', fmt((double) m.pixel_um, 4))
+        line(workshopText('script.31c9e37c66f0', 'Piksel (µm/px)'), fmt((double) m.pixel_um, 4))
         // Gömülü objektif büyütme varsa onu (güvenilir) göster; yoksa sezgiseli göster — ikisi
         // birden gösterilirse 40× (gömülü) ile ~38× (sezgisel) çelişiyormuş gibi görünür.
-        if (m.objective_mag != null) line('Objektif büyütme', fmt((double) m.objective_mag, 1) + '×  (gömülü)')
-        else                         line('Kestirilen büyütme', '~' + m.estimated_mag + '×  (sezgisel)')
-        line('Önerilen downsample', fmt((double) m.recommended_downsample, 2) + '  (kesin ~' + TARGET_MPP + ' µm/px için)')
-        line('Tamsayı downsample', '' + m.integer_downsample + '  → etkin ' + fmt((double) m.effective_mpp, 3) + ' µm/px')
-        line('224 px karo ≈', fmt((double) m.tile_physical_um, 0) + ' µm  (' + TILE_PX + '×' + TILE_PX + ' px, tamsayı ds)')
+        if (m.objective_mag != null) line(workshopText('script.e7e9fe31e01e', 'Objektif büyütme'), fmt((double) m.objective_mag, 1) + workshopText('script.1c7ba23fa07d', '×  (gömülü)'))
+        else                         line(workshopText('script.4ed910425d26', 'Kestirilen büyütme'), '~' + m.estimated_mag + workshopText('script.24d9413d676e', '×  (sezgisel)'))
+        line(workshopText('script.0b3771067701', 'Önerilen downsample'), fmt((double) m.recommended_downsample, 2) + workshopText('script.b6896325cc1e', '  (kesin ~') + TARGET_MPP + workshopText('script.8f746ac3feba', ' µm/px için)'))
+        line(workshopText('script.59e59251d967', 'Tamsayı downsample'), '' + m.integer_downsample + workshopText('script.e5bdd9569daf', '  → etkin ') + fmt((double) m.effective_mpp, 3) + ' µm/px')
+        line(workshopText('script.47c379a55c13', '224 px karo ≈'), fmt((double) m.tile_physical_um, 0) + ' µm  (' + TILE_PX + '×' + TILE_PX + workshopText('script.98763e89b4a1', ' px, tamsayı ds)'))
     } else {
-        line('Piksel (µm/px)', '— (KALİBRE DEĞİL)')
+        line(workshopText('script.31c9e37c66f0', 'Piksel (µm/px)'), workshopText('script.72f234ccf44d', '— (KALİBRE DEĞİL)'))
     }
-    line('Piramit', m.has_pyramid ? ('evet, ' + m.pyramid_levels + ' seviye') : 'YOK')
-    line('Anotasyon (küratör)', m.has_annotations ? (m.annotation_count + ' adet') : 'yok')
+    line(workshopText('script.192a4a0b2af0', 'Piramit'), m.has_pyramid ? (workshopText('script.1196f7379c16', 'evet, ') + m.pyramid_levels + workshopText('script.8ab55a6e0b19', ' seviye')) : workshopText('script.aec8e694277c', 'YOK'))
+    line(workshopText('script.2eff3b268b9e', 'Anotasyon (küratör)'), m.has_annotations ? (m.annotation_count + workshopText('script.462fdded692e', ' adet')) : workshopText('script.b83cecac4fb8', 'yok'))
 
     // ── Sağlamlık + hazırlık kontrol listesi (uyarlanmış) ──
-    sb << '\nSAĞLAMLIK VE HAZIRLIK KONTROL LİSTESİ\n'
+    sb << workshopText('script.a680f142d82c', '\nSAĞLAMLIK VE HAZIRLIK KONTROL LİSTESİ\n')
     sb << '─────────────────────────────────────\n'
     def item = { String mark, String txt -> sb << '  ' + mark + ' ' + txt + '\n' }
 
     // Kalibrasyon
-    if (m.calibrated) item('✓', 'Kalibrasyon var — karo ölçeği (µm/px) güvenilir.')
-    else              item('⚠', 'Kalibre DEĞİL — önce piksel boyutunu ayarlayın (Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)); aksi halde FM karo ölçeği belirsizdir.')
+    if (m.calibrated) item('✓', workshopText('script.3f47bd50f82d', 'Kalibrasyon var — karo ölçeği (µm/px) güvenilir.'))
+    else              item('⚠', workshopText('script.02d0bcafbd46', 'Kalibre DEĞİL — önce piksel boyutunu ayarlayın (Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)); aksi halde FM karo ölçeği belirsizdir.'))
 
     // Piramit
-    if (m.large_no_pyramid) item('⚠', 'Büyük görüntü piramitsiz — karo dışa aktarımı yavaş/bellek-yoğun olabilir.')
+    if (m.large_no_pyramid) item('⚠', workshopText('script.a2ae61d8d194', 'Büyük görüntü piramitsiz — karo dışa aktarımı yavaş/bellek-yoğun olabilir.'))
 
     // Küratörlük
-    if (m.has_annotations) item('✓', 'Anotasyon mevcut — karo dışa aktarımını dokuyla sınırlayabilirsiniz (annotatedTilesOnly).')
-    else                   item('•', 'Anotasyon yok — arka plan/artefakt karoları gömmeyi/dikkati seyreltir. Önce doku maskesi/anotasyon çıkarın (bkz. Kalite Kontrol eki).')
+    if (m.has_annotations) item('✓', workshopText('script.1352134f7331', 'Anotasyon mevcut — karo dışa aktarımını dokuyla sınırlayabilirsiniz (annotatedTilesOnly).'))
+    else                   item('•', workshopText('script.5a0e444ce2a3', 'Anotasyon yok — arka plan/artefakt karoları gömmeyi/dikkati seyreltir. Önce doku maskesi/anotasyon çıkarın (bkz. Kalite Kontrol eki).'))
 
     // Batch etkisi (genelleme)
-    item('•', 'Genelleme/batch etkisi: FM gömmeleri biyolojiden çok tarayıcı/merkez imzasını kodlayabilir (de Jong 2025). Çok-merkez doğrulayın; gerekirse boyama normalizasyonu (Boyama normalizasyonu eki) uygulayın.')
+    item('•', workshopText('script.af351c8fee8e', 'Genelleme/batch etkisi: FM gömmeleri biyolojiden çok tarayıcı/merkez imzasını kodlayabilir (de Jong 2025). Çok-merkez doğrulayın; gerekirse boyama normalizasyonu (Boyama normalizasyonu eki) uygulayın.'))
 
     // Düşmanca / girdi bütünlüğü (UTAP — farkındalık)
-    item('•', 'Girdi bütünlüğü: FM çıktısı gözle görülmeyen düşmanca pertürbasyonlarla bozulabilir (UTAP — Wang ve ark. 2026). Yalnız güvenilir, değiştirilmemiş pikselleri besleyin; çıktıyı makullük açısından denetleyin.')
+    item('•', workshopText('script.6f3b61683409', 'Girdi bütünlüğü: FM çıktısı gözle görülmeyen düşmanca pertürbasyonlarla bozulabilir (UTAP — Wang ve ark. 2026). Yalnız güvenilir, değiştirilmemiş pikselleri besleyin; çıktıyı makullük açısından denetleyin.'))
 
     // Doğrulama
-    item('•', 'Doğrulama: hiçbir FM çıktısı, Yapay Zekâ Araçlarını Değerlendirme ekinin makullük/doğrulama kontrollerini geçmeden klinik karara dönüşmemeli.')
+    item('•', workshopText('script.76074ad52153', 'Doğrulama: hiçbir FM çıktısı, Yapay Zekâ Araçlarını Değerlendirme ekinin makullük/doğrulama kontrollerini geçmeden klinik karara dönüşmemeli.'))
 
-    sb << '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.'
+    sb << workshopText('script.f403fc30553d', '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik karar üretmez.')
     return sb.toString()
 }
 
@@ -202,7 +202,7 @@ render = { ->
     if (imageData != null) {
         def rep
         try { rep = buildReport(extractReadiness(imageData)) }
-        catch (Throwable t) { rep = 'Açık lam okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName()) }
+        catch (Throwable t) { rep = workshopText('script.b6cfae86b4bd', 'Açık lam okunamadı: ') + (t.getMessage() ?: t.getClass().getSimpleName()) }
         reportRef.set(rep)
         addMonoArea(rep)
     } else {

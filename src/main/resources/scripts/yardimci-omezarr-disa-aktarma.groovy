@@ -134,10 +134,10 @@ def showOptionsForm = { int selCount ->
             grid.setHgap(12); grid.setVgap(6)
             grid.setPadding(new javafx.geometry.Insets(12))
             int r = 0
-            grid.add(new javafx.scene.control.Label(workshopText('script.832662034af3', "Kapsam:")), 0, r);  grid.add(scopeBox, 1, r); grid.add(help("Tüm görüntü: açık lamın tamamı (büyük lamlarda yavaş/büyük). Seçili anotasyon(lar): seçtiğiniz ROI'lerin sınırlayıcı kutusu."), 2, r); r++
-            grid.add(new javafx.scene.control.Label(workshopText('script.24a074b1cbb5', "Parça boyutu (px):")), 0, r); grid.add(chunkField, 1, r); grid.add(help("OME-Zarr parça (chunk/tile) kenarı. Tipik: 256–1024. Varsayılan 512."), 2, r); r++
-            grid.add(new javafx.scene.control.Label(workshopText('script.1626d727a0c8', "Piramit:")), 0, r);  grid.add(pyramidCheck, 1, r); grid.add(help("İşaretliyse taban çözünürlük + 2× katları (çok düzeyli) yazılır — yakınlaş/uzaklaş için gereklidir. Kapalıysa yalnızca tam çözünürlük."), 2, r); r++
-            grid.add(new javafx.scene.control.Label(workshopText('script.ce0c9cf58753', "Sıkıştırma:")), 0, r); grid.add(new javafx.scene.control.Label(workshopText('script.ba34fa923f16', "blosc (QuPath varsayılanı)")), 1, r); grid.add(help("Parçalar varsayılan blosc kodlayıcısıyla sıkıştırılır; ayrı ayar gerekmez."), 2, r); r++
+            grid.add(new javafx.scene.control.Label(workshopText('script.832662034af3', "Kapsam:")), 0, r);  grid.add(scopeBox, 1, r); grid.add(help(workshopText('script.38ee57b34721', 'Tüm görüntü: açık lamın tamamı (büyük lamlarda yavaş/büyük). Seçili anotasyon(lar): seçtiğiniz ROI\'lerin sınırlayıcı kutusu.')), 2, r); r++
+            grid.add(new javafx.scene.control.Label(workshopText('script.24a074b1cbb5', "Parça boyutu (px):")), 0, r); grid.add(chunkField, 1, r); grid.add(help(workshopText('script.ab9e34d14228', 'OME-Zarr parça (chunk/tile) kenarı. Tipik: 256–1024. Varsayılan 512.')), 2, r); r++
+            grid.add(new javafx.scene.control.Label(workshopText('script.1626d727a0c8', "Piramit:")), 0, r);  grid.add(pyramidCheck, 1, r); grid.add(help(workshopText('script.fb0cdb833b62', 'İşaretliyse taban çözünürlük + 2× katları (çok düzeyli) yazılır — yakınlaş/uzaklaş için gereklidir. Kapalıysa yalnızca tam çözünürlük.')), 2, r); r++
+            grid.add(new javafx.scene.control.Label(workshopText('script.ce0c9cf58753', "Sıkıştırma:")), 0, r); grid.add(new javafx.scene.control.Label(workshopText('script.ba34fa923f16', "blosc (QuPath varsayılanı)")), 1, r); grid.add(help(workshopText('script.155f4d1fb8c3', 'Parçalar varsayılan blosc kodlayıcısıyla sıkıştırılır; ayrı ayar gerekmez.')), 2, r); r++
 
             def exportBtn = new javafx.scene.control.Button(workshopText('script.d4f745cb3bf5', "Dışa aktar"))
             exportBtn.setDefaultButton(true)
@@ -379,7 +379,7 @@ try {
         def partial = new File(outPath.toString())
         if (partial.exists()) {
             def failed = new File(partial.getParentFile(), partial.getName() + ".BASARISIZ")
-            if (partial.renameTo(failed)) errorMsg += "\n\nYarım kalan çıktı şu adla işaretlendi (kullanmayın, silebilirsiniz):\n" + failed.getAbsolutePath()
+            if (partial.renameTo(failed)) errorMsg += workshopText('script.ba73829d4694', '\n\nYarım kalan çıktı şu adla işaretlendi (kullanmayın, silebilirsiniz):\n') + failed.getAbsolutePath()
         }
     } catch (Throwable ignore) {}
 }
@@ -390,14 +390,8 @@ def elapsed = (System.currentTimeMillis() - t0) / 1000.0
 // ──────────────────────────────────────────────────────────────
 if (errorMsg != null) {
     showResultWindow(
-        "OME-Zarr dışa aktarma — Hata ⚠️",
-        "Dışa aktarım sırasında bir hata oluştu:\n\n" + errorMsg + "\n\n" +
-        "Olası nedenler:\n" +
-        "  • Disk dolu ya da çıktı klasörüne yazma izni yok.\n" +
-        "  • Çok büyük tüm lam yazımı kesildi — bir bölge (anotasyon) deneyin.\n" +
-        "  • QuPath 0.6.0+ gerekir (OME-Zarr yazıcısı bu sürümde geldi).\n\n" +
-        "Detay: View → Show log dialogue.\n\n" +
-        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+        workshopText('script.66374b50d88e', 'OME-Zarr dışa aktarma — Hata ⚠️'),
+        workshopText('script.87cbe5c77839', 'Dışa aktarım sırasında bir hata oluştu:\n\n') + errorMsg + workshopText('script.398f438f3011', '\n\nOlası nedenler:\n  • Disk dolu ya da çıktı klasörüne yazma izni yok.\n  • Çok büyük tüm lam yazımı kesildi — bir bölge (anotasyon) deneyin.\n  • QuPath 0.6.0+ gerekir (OME-Zarr yazıcısı bu sürümde geldi).\n\nDetay: View → Show log dialogue.\n\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     )
     println "⚠️  OME-Zarr dışa aktarımı başarısız: ${errorMsg}"
     return
@@ -409,7 +403,7 @@ def levelLines = []
 downsamples.eachWithIndex { d, i ->
     long lw = (long) Math.ceil(expW / d)
     long lh = (long) Math.ceil(expH / d)
-    levelLines << String.format(java.util.Locale.US, "  Düzey %d: downsample %.0f → %,d × %,d px", i, d, lw, lh)
+    levelLines << String.format(java.util.Locale.US, workshopText('script.81282c2148ad', '  Düzey %d: downsample %.0f → %,d × %,d px'), i, d, lw, lh)
 }
 
 def bundledInspectScript = { ->
@@ -432,30 +426,10 @@ def bundledInspectScript = { ->
 }.call()
 
 showResultWindow(
-    "OME-Zarr dışa aktarma — Tamamlandı 🧊",
+    workshopText('script.5d172ffee6fd', 'OME-Zarr dışa aktarma — Tamamlandı 🧊'),
     String.format(java.util.Locale.US,
-        "Kapsam   : %s\n" +
-        "Depo (klasör):\n  %s\n\n" +
-        "⚙️  Ayarlar\n" +
-        "──────────\n" +
-        "  Taban boyut : %,d × %,d px\n" +
-        "  Kanal       : %d\n" +
-        "  Parça (chunk): %d px\n" +
-        "  Sıkıştırma  : blosc (varsayılan)\n" +
-        "  Biçim       : OME-NGFF v0.4 (.ome.zarr)\n\n" +
-        "🗂️  Piramit düzeyleri (%d)\n" +
-        "──────────\n" +
-        "%s\n\n" +
-        "📊 Özet\n" +
-        "──────\n" +
-        "  Disk boyutu : %.1f MB\n" +
-        "  Süre        : %.1f sn\n\n" +
-        "📝 Sonraki adım:\n" +
-        "  • Depoyu QuPath'e geri sürükleyerek açabilirsiniz (Bio-Formats / OME-Zarr okuyucu).\n" +
-        "  • Python'da inceleyin: %s inspect <depo>\n" +
-        "  • Yöntem ve ekosistem: Ekler → OME-Zarr / OME-NGFF.\n\n" +
-        "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
-        (selectedScope ? "Seçili anotasyon(lar) (${selectedAnns.size()})".toString() : "Tüm görüntü"),
+        workshopText('script.e2d76b86fc74', 'Kapsam   : %s\nDepo (klasör):\n  %s\n\n⚙️  Ayarlar\n──────────\n  Taban boyut : %,d × %,d px\n  Kanal       : %d\n  Parça (chunk): %d px\n  Sıkıştırma  : blosc (varsayılan)\n  Biçim       : OME-NGFF v0.4 (.ome.zarr)\n\n🗂️  Piramit düzeyleri (%d)\n──────────\n%s\n\n📊 Özet\n──────\n  Disk boyutu : %.1f MB\n  Süre        : %.1f sn\n\n📝 Sonraki adım:\n  • Depoyu QuPath\'e geri sürükleyerek açabilirsiniz (Bio-Formats / OME-Zarr okuyucu).\n  • Python\'da inceleyin: %s inspect <depo>\n  • Yöntem ve ekosistem: Ekler → OME-Zarr / OME-NGFF.\n\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'),
+        (selectedScope ? String.format(java.util.Locale.US, workshopText('script.e649f679ad2d', 'Seçili anotasyon(lar) (%d)'), selectedAnns.size()) : workshopText('script.9ec6c2aa4413', 'Tüm görüntü')),
         outPath,
         expW, expH,
         server.nChannels(),

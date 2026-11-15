@@ -66,9 +66,9 @@ def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-
 def NORM_METHODS = ['macenko', 'vahadane', 'reinhard']
 def MASK_METHODS = ['otsu', 'morphological']
 def MODE_LABELS = [
-    'normalize-region': 'Boyama normalizasyonu — bölge önizleme',
-    'normalize-tiles' : 'Boyama normalizasyonu — karo grubu',
-    'tissue-mask'     : 'Doku maskesi (Otsu / Morphological)'
+    'normalize-region': workshopText('script.aa2a4072802b', 'Boyama normalizasyonu — bölge önizleme'),
+    'normalize-tiles' : workshopText('script.44099550daad', 'Boyama normalizasyonu — karo grubu'),
+    'tissue-mask'     : workshopText('script.f37cd77794a0', 'Doku maskesi (Otsu / Morphological)')
 ]
 def modeLabelToKey = { String lbl -> def k = MODE_LABELS.find { it.value == lbl }?.key; return (k ?: 'normalize-region') }
 def TISSUE_SENTINEL = 'Doku maskesi (TIA Toolbox)'   // bu sihirbazın içe aktardığı doku anotasyonunun adı (ilk set)
@@ -202,9 +202,9 @@ def loadConfig = { ->
 def configMissing = { cfg ->
     def miss = []
     if (!cfg.python?.trim() || !(new File(cfg.python)).isFile())
-        miss << 'Python yürütülebilir (python.exe)'
+        miss << workshopText('script.5623a3de03e1', 'Python yürütülebilir (python.exe)')
     if (!cfg.bridge?.trim() || !(new File(cfg.bridge)).isFile())
-        miss << 'TIA Toolbox köprüsü (tiatoolbox_bridge.py)'
+        miss << workshopText('script.7228c9d8fe30', 'TIA Toolbox köprüsü (tiatoolbox_bridge.py)')
     return miss
 }
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
@@ -294,20 +294,20 @@ def exportRegionPng = { imageData, File workDir, double downsample, Closure appe
         def anns = hierarchy.getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() }
         if (!anns.isEmpty()) roi = anns.iterator().next().getROI()
     }
-    if (roi == null) return [ok: false, error: 'Önizlenecek alan anotasyonu yok.\nBir bölge seçin ya da çizin.']
+    if (roi == null) return [ok: false, error: workshopText('script.d2bedca1c0ef', 'Önizlenecek alan anotasyonu yok.\nBir bölge seçin ya da çizin.')]
     int sw = server.getWidth(); int sh = server.getHeight()
     int x = Math.max(0, (int) Math.floor(roi.getBoundsX()))
     int y = Math.max(0, (int) Math.floor(roi.getBoundsY()))
     int w = Math.min(sw - x, (int) Math.ceil(roi.getBoundsWidth()))
     int h = Math.min(sh - y, (int) Math.ceil(roi.getBoundsHeight()))
-    if (w <= 0 || h <= 0) return [ok: false, error: 'Bölge boyutu geçersiz.']
+    if (w <= 0 || h <= 0) return [ok: false, error: workshopText('script.2fc9f312cfaf', 'Bölge boyutu geçersiz.')]
     def img
     try { img = server.readRegion(RegionRequest.createInstance(server.getPath(), downsample, x, y, w, h)) }
-    catch (Throwable t) { return [ok: false, error: 'Bölge okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
-    if (img == null) return [ok: false, error: 'Bölge okunamadı (boş).']
+    catch (Throwable t) { return [ok: false, error: workshopText('script.2c76fee2cd50', 'Bölge okunamadı: ') + (t.getMessage() ?: t.getClass().getSimpleName())] }
+    if (img == null) return [ok: false, error: workshopText('script.9eb087b3917d', 'Bölge okunamadı (boş).')]
     def f = new File(workDir, 'region.png')
     writePng(img, f)
-    appendLine('Bölge dışa aktarıldı: ' + f.getName() + ' (' + img.getWidth() + ' × ' + img.getHeight() + ' px)')
+    appendLine(workshopText('script.dc5d875f69fb', 'Bölge dışa aktarıldı: ') + f.getName() + ' (' + img.getWidth() + ' × ' + img.getHeight() + ' px)')
     return [ok: true, file: f, w: img.getWidth(), h: img.getHeight()]
 }
 
@@ -315,7 +315,7 @@ def exportRegionPng = { imageData, File workDir, double downsample, Closure appe
 def exportTilesFlat = { imageData, File workDir, double downsample, int tileSize, int maxTiles, Closure appendLine ->
     def server = imageData.getServer()
     def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() }
-    if (anns.isEmpty()) return [ok: false, error: 'Karolanacak alan anotasyonu yok.\nEn az 1 bölge çizin.']
+    if (anns.isEmpty()) return [ok: false, error: workshopText('script.a05369215cc0', 'Karolanacak alan anotasyonu yok.\nEn az 1 bölge çizin.')]
     def tilesDir = new File(workDir, 'tiles')
     // Önceki karoları temizle (idempotent)
     if (tilesDir.isDirectory()) { tilesDir.listFiles()?.each { it.delete() } }
@@ -327,7 +327,7 @@ def exportTilesFlat = { imageData, File workDir, double downsample, int tileSize
             writePng(img, new File(tilesDir, 'tile_' + i + '_x' + x + '_y' + y + '.png'))
         })
         total += n
-        appendLine('  karolar: anotasyon ' + i + '/' + anns.size() + ' (' + n + ')')
+        appendLine(workshopText('script.5462ffb21d1a', '  karolar: anotasyon ') + i + '/' + anns.size() + ' (' + n + ')')
     }
     return [ok: true, nAnns: anns.size(), nTiles: total, tilesDir: tilesDir]
 }
@@ -338,11 +338,11 @@ def exportThumbnailPng = { imageData, File workDir, double downsample, Closure a
     int W = server.getWidth(); int H = server.getHeight()
     def img
     try { img = server.readRegion(RegionRequest.createInstance(server.getPath(), downsample, 0, 0, W, H)) }
-    catch (Throwable t) { return [ok: false, error: 'Küçükresim okunamadı (downsample çok küçük olabilir): ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
-    if (img == null) return [ok: false, error: 'Küçükresim okunamadı (boş).']
+    catch (Throwable t) { return [ok: false, error: workshopText('script.c5f1b70f4dc8', 'Küçükresim okunamadı (downsample çok küçük olabilir): ') + (t.getMessage() ?: t.getClass().getSimpleName())] }
+    if (img == null) return [ok: false, error: workshopText('script.de314c0ed641', 'Küçükresim okunamadı (boş).')]
     def f = new File(workDir, 'thumbnail.png')
     writePng(img, f)
-    appendLine('Küçükresim: ' + f.getName() + ' (' + img.getWidth() + ' × ' + img.getHeight() + ' px, downsample ' + downsample + ')')
+    appendLine(workshopText('script.0f6d2c739680', 'Küçükresim: ') + f.getName() + ' (' + img.getWidth() + ' × ' + img.getHeight() + ' px, downsample ' + downsample + ')')
     return [ok: true, file: f, w: img.getWidth(), h: img.getHeight()]
 }
 
@@ -405,16 +405,16 @@ def openFileExternally = { File f ->
 def importTissueMask = { File workDir, imageData, double downsample, String mode = 'add' ->
     def maskFile = new File(workDir, 'tissue_mask.png')
     if (!maskFile.isFile())
-        return [ok: false, error: 'tissue_mask.png bulunamadı:\n' + maskFile.getAbsolutePath()]
+        return [ok: false, error: workshopText('script.a2788ac8ecc5', 'tissue_mask.png bulunamadı:\n') + maskFile.getAbsolutePath()]
     def img = null
     try { img = javax.imageio.ImageIO.read(maskFile) } catch (Throwable t) { img = null }
-    if (img == null) return [ok: false, error: 'Maske görüntüsü okunamadı.']
+    if (img == null) return [ok: false, error: workshopText('script.2e9549304c4c', 'Maske görüntüsü okunamadı.')]
     def raster = img.getRaster()
     def server = imageData.getServer()
     def request = RegionRequest.createInstance(server.getPath(), downsample, 0, 0, server.getWidth(), server.getHeight())
     def roi
     try { roi = ContourTracing.createTracedROI(raster, 1.0d, 255.0d, 0, request) }
-    catch (Throwable t) { return [ok: false, error: 'Maske izlenemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
+    catch (Throwable t) { return [ok: false, error: workshopText('script.c98ae994ffe2', 'Maske izlenemedi: ') + (t.getMessage() ?: t.getClass().getSimpleName())] }
 
     // Önceki içe aktarım: SORULMADAN SİLİNMEZ. Kip çağırandan gelir (varsayılan: ekle).
     //   ekle     → hiçbir şey silinmez; yeni set sıradaki adı alır ("Doku maskesi (TIA Toolbox) (2)" …).
@@ -457,45 +457,45 @@ def importTissueMask = { File workDir, imageData, double downsample, String mode
 // ── Özet metinleri ────────────────────────────────────────────────────────────
 def normRegionResultText = { File workDir, cfg, exp ->
     def sb = new StringBuilder()
-    sb << "Boyama normalizasyonU — BÖLGE ÖNİZLEME\n"
+    sb << workshopText('script.d739e5d47d86', 'Boyama normalizasyonU — BÖLGE ÖNİZLEME\n')
     sb << "════════════════════════════════════\n\n"
-    sb << "Yöntem    : " << (cfg.normMethod ?: 'macenko') << "\n"
-    sb << "Referans  : " << (cfg.useBuiltin == 'true' ? 'TIA Toolbox yerleşik (stain_norm_target)' : (cfg.reference?.trim() ?: '(yok)')) << "\n"
-    sb << String.format(java.util.Locale.US, "Bölge     : %,d × %,d px (downsample %s)%n", (int) (exp?.w ?: 0), (int) (exp?.h ?: 0), (cfg.downsample ?: '1.0'))
-    sb << "\nÇıktı:\n"
+    sb << workshopText('script.1deb6d354015', 'Yöntem    : ') << (cfg.normMethod ?: 'macenko') << "\n"
+    sb << workshopText('script.e732b27f7aa4', 'Referans  : ') << (cfg.useBuiltin == 'true' ? workshopText('script.b2613a71c69a', 'TIA Toolbox yerleşik (stain_norm_target)') : (cfg.reference?.trim() ?: workshopText('script.715392eca0f8', '(yok)'))) << "\n"
+    sb << String.format(java.util.Locale.US, workshopText('script.64738c061807', 'Bölge     : %,d × %,d px (downsample %s)%n'), (int) (exp?.w ?: 0), (int) (exp?.h ?: 0), (cfg.downsample ?: '1.0'))
+    sb << workshopText('script.8e8cf2f7b697', '\nÇıktı:\n')
     sb << "  • " << new File(new File(workDir, 'normalized'), 'region.png').getAbsolutePath() << "\n"
-    sb << "  • " << new File(workDir, 'montage.png').getAbsolutePath() << "  (orijinal | normalize)\n"
-    sb << "\nMontaj penceresi açıldı (açılmadıysa yukarıdaki yolu açın).\n"
-    sb << "Çıktı bir GÖRÜNTÜdür; QuPath nesnesi/ölçümü üretmez.\n"
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlıdır."
+    sb << "  • " << new File(workDir, 'montage.png').getAbsolutePath() << workshopText('script.953331a57b86', '  (orijinal | normalize)\n')
+    sb << workshopText('script.c1cc929829de', '\nMontaj penceresi açıldı (açılmadıysa yukarıdaki yolu açın).\n')
+    sb << workshopText('script.a58a6d839d57', 'Çıktı bir GÖRÜNTÜdür; QuPath nesnesi/ölçümü üretmez.\n')
+    sb << workshopText('script.47bd28634423', '⚠️ Yalnızca araştırma/eğitim amaçlıdır.')
     return sb.toString()
 }
 def normTilesResultText = { File workDir, cfg, exp, int normalized ->
     def sb = new StringBuilder()
-    sb << "Boyama normalizasyonU — KARO GRUBU\n"
+    sb << workshopText('script.18b746505a08', 'Boyama normalizasyonU — KARO GRUBU\n')
     sb << "═════════════════════════════════\n\n"
-    sb << "Yöntem    : " << (cfg.normMethod ?: 'macenko') << "\n"
-    sb << "Referans  : " << (cfg.useBuiltin == 'true' ? 'TIA Toolbox yerleşik (stain_norm_target)' : (cfg.reference?.trim() ?: 'ilk dolu karo')) << "\n"
-    sb << String.format(java.util.Locale.US, "Anotasyon : %,d   ·   dışa aktarılan karo: %,d%n", (int) (exp?.nAnns ?: 0), (int) (exp?.nTiles ?: 0))
-    sb << String.format(java.util.Locale.US, "Normalize : %,d karo%n", normalized)
-    sb << "\nÇıktı klasörü:\n  " << new File(workDir, 'normalized').getAbsolutePath() << "\n"
-    sb << "\nNormalize karolar bir ÖN-İŞLEME çıktısıdır (Foundation Model Gömme / Kaiko / SPIDER'a beslenebilir);\n"
-    sb << "QuPath nesnesi/ölçümü üretmez.\n"
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlıdır."
+    sb << workshopText('script.1deb6d354015', 'Yöntem    : ') << (cfg.normMethod ?: 'macenko') << "\n"
+    sb << workshopText('script.e732b27f7aa4', 'Referans  : ') << (cfg.useBuiltin == 'true' ? workshopText('script.b2613a71c69a', 'TIA Toolbox yerleşik (stain_norm_target)') : (cfg.reference?.trim() ?: workshopText('script.7af7f60ecdb0', 'ilk dolu karo'))) << "\n"
+    sb << String.format(java.util.Locale.US, workshopText('script.96fed3cce110', 'Anotasyon : %,d   ·   dışa aktarılan karo: %,d%n'), (int) (exp?.nAnns ?: 0), (int) (exp?.nTiles ?: 0))
+    sb << String.format(java.util.Locale.US, workshopText('script.fa8ee70b87b3', 'Normalize : %,d karo%n'), normalized)
+    sb << workshopText('script.c63916ab7e13', '\nÇıktı klasörü:\n  ') << new File(workDir, 'normalized').getAbsolutePath() << "\n"
+    sb << workshopText('script.56d1e33af113', '\nNormalize karolar bir ÖN-İŞLEME çıktısıdır (Foundation Model Gömme / Kaiko / SPIDER\'a beslenebilir);\n')
+    sb << workshopText('script.3e3b8c9df407', 'QuPath nesnesi/ölçümü üretmez.\n')
+    sb << workshopText('script.47bd28634423', '⚠️ Yalnızca araştırma/eğitim amaçlıdır.')
     return sb.toString()
 }
 def tissueResultText = { File workDir, cfg, exp, imp ->
     def sb = new StringBuilder()
-    sb << "DOKU MASKESİ — TIA Toolbox → QuPath\n"
+    sb << workshopText('script.f4805a111fe6', 'DOKU MASKESİ — TIA Toolbox → QuPath\n')
     sb << "═══════════════════════════════════\n\n"
-    sb << "Yöntem    : " << (cfg.maskMethod ?: 'otsu') << "\n"
-    sb << String.format(java.util.Locale.US, "Küçükresim: %,d × %,d px (downsample %s)%n", (int) (exp?.w ?: 0), (int) (exp?.h ?: 0), (cfg.maskDownsample ?: '16.0'))
-    sb << String.format(java.util.Locale.US, "Anotasyon : %,d ('Doku', kilitli)%n", (int) (imp?.nAnns ?: 0))
+    sb << workshopText('script.1deb6d354015', 'Yöntem    : ') << (cfg.maskMethod ?: 'otsu') << "\n"
+    sb << String.format(java.util.Locale.US, workshopText('script.f64cc14b6944', 'Küçükresim: %,d × %,d px (downsample %s)%n'), (int) (exp?.w ?: 0), (int) (exp?.h ?: 0), (cfg.maskDownsample ?: '16.0'))
+    sb << String.format(java.util.Locale.US, workshopText('script.858e1b525c9d', 'Anotasyon : %,d (\'Doku\', kilitli)%n'), (int) (imp?.nAnns ?: 0))
     if (imp?.calibrated && !Double.isNaN((double) imp.mm2))
-        sb << String.format(java.util.Locale.US, "Doku alanı: %.3f mm²%n", (double) imp.mm2)
+        sb << String.format(java.util.Locale.US, workshopText('script.b5a3dc08b131', 'Doku alanı: %.3f mm²%n'), (double) imp.mm2)
     else
-        sb << "Doku alanı: (görüntü kalibre değil — mm² verilemedi)\n"
-    sb << "\nMaske açık lama hizalı 'Doku' anotasyonu olarak eklendi.\n"
+        sb << workshopText('script.39e81a79d067', 'Doku alanı: (görüntü kalibre değil — mm² verilemedi)\n')
+    sb << workshopText('script.f9e14f9147bc', '\nMaske açık lama hizalı \'Doku\' anotasyonu olarak eklendi.\n')
     sb << workshopText('script.2513915f923e', 'Set adı   : ') << (imp?.setName ?: '-') << "\n"
     if (imp?.prevNames) {
         sb << "\n" << workshopText('script.661a7459b516', 'DİKKAT — bu lamda önceki sonuç da duruyor: ') << imp.prevNames.join(', ') << "\n"
@@ -503,8 +503,8 @@ def tissueResultText = { File workDir, cfg, exp, imp ->
     } else if ((imp?.removed ?: 0) > 0) {
         sb << "\n" << String.format(java.util.Locale.US, workshopText('script.2927902834a3', 'Önceki doku maskesi değiştirildi: %,d anotasyon silindi (içlerindeki alt nesneler korundu).'), (int) imp.removed) << "\n"
     }
-    sb << "Maske bir tahmindir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki). Klinik yorum üretilmez.\n"
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    sb << workshopText('script.db4ed0fd9b5a', 'Maske bir tahmindir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki). Klinik yorum üretilmez.\n')
+    sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
@@ -564,7 +564,7 @@ def runPython = { List cmd, Closure onLine ->
     applyCacheEnv(pb)
     def proc
     try { proc = pb.start() }
-    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.f0e1e3289660', 'Python başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     processRef.set(proc)
     def last = new java.util.ArrayDeque()
     try {
@@ -579,9 +579,9 @@ def runPython = { List cmd, Closure onLine ->
     } catch (Throwable ignore) {}
     boolean finished
     try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
-    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
+    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: workshopText('script.e6b0c32aaae9', 'Zaman aşımı (') + PYTHON_TIMEOUT_SECONDS + workshopText('script.2ccf3f4af0dd', ' sn)')] }
+    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
     int code = proc.exitValue()
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
@@ -593,11 +593,11 @@ def startSelftest = {
     persistFields()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
-    if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!miss.isEmpty()) { errorTextRef.set(workshopText('script.59d7792abf1b', 'Önce yapılandırmayı tamamlayın:\n  • ') + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Bağımlılık kontrolü'); step.set('CHECK_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.8369fe631575', 'Bağımlılık kontrolü')); step.set('CHECK_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def r = runPython(selftestCmd(cfg), appendLine)
@@ -629,7 +629,7 @@ def askExisting = { hierarchy ->
 // ── Çalıştırma akışı (moda göre dallanır) ───────────────────────────────────
 def startRun = {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.da80fab350d1', 'Görüntü açık değil.')); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
     def mode = cfg.mode
     // Doku maskesi modunda önceki sonuç varsa Python hattından ÖNCE sor: İptal'de hiçbir şey
@@ -646,18 +646,18 @@ def startRun = {
     openFileRef.set(null)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Hazırlanıyor…'); step.set('RUN_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.074e464dc790', 'Hazırlanıyor…')); step.set('RUN_RUNNING'); render()
 
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
-        appendLine('Çalışma dizini: ' + workDir.getAbsolutePath())
+        appendLine(workshopText('script.8fba4a8a6457', 'Çalışma dizini: ') + workDir.getAbsolutePath())
         try {
             if (mode == 'tissue-mask') {
                 double mds = parseDoubleOr(cfg.maskDownsample, 16.0d)
-                javafx.application.Platform.runLater { runPhaseRef.set('Küçükresim dışa aktarılıyor (1/3)…'); render() }
+                javafx.application.Platform.runLater { runPhaseRef.set(workshopText('script.0ed3830a5fe9', 'Küçükresim dışa aktarılıyor (1/3)…')); render() }
                 def exp = exportThumbnailPng(imageData, workDir, mds, appendLine)
                 if (!exp.ok) { javafx.application.Platform.runLater { errorTextRef.set(exp.error); step.set('ERROR'); render() }; return }
-                if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
+                if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.fee85e45842b', 'İptal edildi.')); step.set('ERROR'); render() }; return }
                 // getAveragedPixelSize() kalibre OLMAYAN görüntüde 1.0 döndürür (NaN değil) → sahte mpp üretmesin.
                 def __cal = imageData.getServer().getPixelCalibration()
                 double avgPx = __cal.hasPixelSizeMicrons() ? (__cal.getAveragedPixelSizeMicrons() as double) : Double.NaN
@@ -668,10 +668,10 @@ def startRun = {
                            '--method', (cfg.maskMethod ?: 'otsu'),
                            '--downsample', String.format(java.util.Locale.US, '%.4f', mds)]
                 if (mpp > 0) { cmd.add('--mpp'); cmd.add(String.format(java.util.Locale.US, '%.4f', mpp)) }
-                javafx.application.Platform.runLater { runPhaseRef.set('Doku maskesi üretiliyor (2/3)…'); render() }
+                javafx.application.Platform.runLater { runPhaseRef.set(workshopText('script.01b4dbd7572a', 'Doku maskesi üretiliyor (2/3)…')); render() }
                 def r = runPython(cmd, appendLine)
-                if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set('Doku maskesi başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return }
-                javafx.application.Platform.runLater { busyLabelRef.set('Maske QuPath\'e içe aktarılıyor (3/3)…'); step.set('BUSY'); render() }
+                if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.8a61a2996448', 'Doku maskesi başarısız (çıkış: ') + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return }
+                javafx.application.Platform.runLater { busyLabelRef.set(workshopText('script.1530e81f20c6', 'Maske QuPath\'e içe aktarılıyor (3/3)…')); step.set('BUSY'); render() }
                 def imp = importTissueMask(workDir, imageData, mds, tissueImportMode)   /* çalıştırma başlarken yakalanan görüntü — sonuç başka lama yazılmasın */
                 javafx.application.Platform.runLater {
                     if (!imp.ok) { errorTextRef.set(imp.error); step.set('ERROR'); render() }
@@ -681,37 +681,37 @@ def startRun = {
                 double ds = parseDoubleOr(cfg.downsample, 1.0d)
                 int tileSize = parseIntOr(cfg.tileSize, 1024)
                 int maxTiles = parseIntOr(cfg.maxTiles, 0)
-                javafx.application.Platform.runLater { runPhaseRef.set('Karolar dışa aktarılıyor (1/2)…'); render() }
+                javafx.application.Platform.runLater { runPhaseRef.set(workshopText('script.834f688b2505', 'Karolar dışa aktarılıyor (1/2)…')); render() }
                 def exp = exportTilesFlat(imageData, workDir, ds, tileSize, maxTiles, appendLine)
                 if (!exp.ok) { javafx.application.Platform.runLater { errorTextRef.set(exp.error); step.set('ERROR'); render() }; return }
-                if (exp.nTiles == 0) { javafx.application.Platform.runLater { errorTextRef.set('Normalize edilecek karo üretilemedi (çok küçük ya da tamamen arka plan olabilir).'); step.set('ERROR'); render() }; return }
-                if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
+                if (exp.nTiles == 0) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.becf82ced9b6', 'Normalize edilecek karo üretilemedi (çok küçük ya da tamamen arka plan olabilir).')); step.set('ERROR'); render() }; return }
+                if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.fee85e45842b', 'İptal edildi.')); step.set('ERROR'); render() }; return }
                 def cmd = [cfg.python, cfg.bridge, 'normalize',
                            '--tiles-dir', exp.tilesDir.getAbsolutePath(),
                            '--output-dir', workDir.getAbsolutePath(),
                            '--method', (cfg.normMethod ?: 'macenko')]
                 addRefArgs(cmd, cfg, true)
-                javafx.application.Platform.runLater { runPhaseRef.set('Boyama normalizasyonu (2/2)…'); render() }
+                javafx.application.Platform.runLater { runPhaseRef.set(workshopText('script.633407426a06', 'Boyama normalizasyonu (2/2)…')); render() }
                 def r = runPython(cmd, appendLine)
-                if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set('Normalize başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return }
+                if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.9a91c64ec2d1', 'Normalize başarısız (çıkış: ') + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return }
                 int normalized = exp.nTiles
                 try { def m = (r.lastLines ?: '') =~ /DONE normalize n=(\d+)/; if (m.find()) normalized = Integer.parseInt(m.group(1)) } catch (Throwable ignore) {}
                 int nfinal = normalized
                 javafx.application.Platform.runLater { resultTextRef.set(normTilesResultText(workDir, cfg, exp, nfinal)); step.set('RESULT'); render() }
             } else { // normalize-region
                 double ds = parseDoubleOr(cfg.downsample, 1.0d)
-                javafx.application.Platform.runLater { runPhaseRef.set('Bölge dışa aktarılıyor (1/2)…'); render() }
+                javafx.application.Platform.runLater { runPhaseRef.set(workshopText('script.9fa43f464e26', 'Bölge dışa aktarılıyor (1/2)…')); render() }
                 def exp = exportRegionPng(imageData, workDir, ds, appendLine)
                 if (!exp.ok) { javafx.application.Platform.runLater { errorTextRef.set(exp.error); step.set('ERROR'); render() }; return }
-                if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
+                if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.fee85e45842b', 'İptal edildi.')); step.set('ERROR'); render() }; return }
                 def cmd = [cfg.python, cfg.bridge, 'normalize',
                            '--input', exp.file.getAbsolutePath(),
                            '--output-dir', workDir.getAbsolutePath(),
                            '--method', (cfg.normMethod ?: 'macenko')]
                 addRefArgs(cmd, cfg, false)
-                javafx.application.Platform.runLater { runPhaseRef.set('Boyama normalizasyonu (2/2)…'); render() }
+                javafx.application.Platform.runLater { runPhaseRef.set(workshopText('script.633407426a06', 'Boyama normalizasyonu (2/2)…')); render() }
                 def r = runPython(cmd, appendLine)
-                if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set('Normalize başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return }
+                if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.9a91c64ec2d1', 'Normalize başarısız (çıkış: ') + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return }
                 def montage = new File(workDir, 'montage.png')
                 openFileRef.set(montage.isFile() ? montage : null)
                 javafx.application.Platform.runLater {
@@ -720,7 +720,7 @@ def startRun = {
                 }
             }
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { errorTextRef.set('Beklenmeyen hata:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.6af403a9fc32', 'Beklenmeyen hata:\n') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
         }
     }, 'AtolyeTIA-Run')
     worker.setDaemon(true); worker.start()
@@ -755,7 +755,7 @@ def openUrl = { String u -> try { qupath.lib.gui.QuPathGUI.openInBrowser(u) } ca
 // sürerken ekran değiştirilmez; yalnız pencere öne gelir.
 def envReturnHook = [
     envId   : 'tiatoolbox-stain',
-    wizard  : 'TIA Toolbox boyama normalizasyonu / doku maskesi',
+    wizard  : workshopText('script.d957b95da509', 'TIA Toolbox boyama normalizasyonu / doku maskesi'),
     onReturn: { reopen ->
         javafx.application.Platform.runLater {
             if (stage == null || (!stage.isShowing() && !reopen)) return
@@ -924,9 +924,9 @@ render = { ->
             def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() }
             title.setText(workshopText('script.9de5db9b9e84', 'TIA Toolbox — hazır'))
             def sb = new StringBuilder()
-            sb << "Lam          : " << imageNameOf(imageData) << "\n"
-            sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
-            sb << String.format(java.util.Locale.US, "Alan anotasyonu: %,d%n", anns.size())
+            sb << workshopText('script.c482c0d5e596', 'Lam          : ') << imageNameOf(imageData) << "\n"
+            sb << "Python         : " << (cfg.python ?: workshopText('script.a2bfafb27517', '(ayarsız)')) << "\n"
+            sb << String.format(java.util.Locale.US, workshopText('script.9ca54d48a490', 'Alan anotasyonu: %,d%n'), anns.size())
             addMonoArea(sb.toString())
 
             // Mod seçici (anında kaydeder + yeniler)
@@ -970,7 +970,7 @@ render = { ->
             actions.add(navButton(workshopText('script.7b31a9fc4816', 'Kapat'), { stage.close() }))
             actions.add(navButton(workshopText('script.b528a2cc114e', 'Yapılandır'), { step.set('CONFIG'); render() }))
             actions.add(navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }))
-            def runLabel = isTissue ? 'Doku maskesi çıkar ▶' : 'Normalize et ▶'
+            def runLabel = isTissue ? workshopText('script.e4b7ed203266', 'Doku maskesi çıkar ▶') : workshopText('script.9161a95a6d42', 'Normalize et ▶')
             def runBtn = navButton(runLabel, { startRun() }, workshopText('script.0a69a82585f3', 'Seçili modu çalıştırır'))
             runBtn.setDisable(!canRun)
             if (!canRun && needAnn && anns.size() < 1) addWarnLabel(workshopText('script.ea3050ab4b08', '⚠ Boyama normalizasyonu için en az 1 alan anotasyonu gerekir.'))

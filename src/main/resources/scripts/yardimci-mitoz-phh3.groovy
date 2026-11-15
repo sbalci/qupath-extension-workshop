@@ -95,12 +95,12 @@ def suggestStainVectors = { ->
                         svClose(svVecOf(svStains.getStain(2)), SV_DEF_DAB)
     if (!svDefault) { println '✓ Boya vektörleri bu lamdan tahmin/kalibre edilmiş görünüyor.'; return }
     def svMsg =
-        '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu lamdan tahmin EDİLMEMİŞ.\n\n' +
-        'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n' +
-        'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n' +
-        'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n' +
-        '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n' +
-        '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et'
+        workshopText('script.f3f75b6ee2d7', '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu lamdan tahmin EDİLMEMİŞ.\n\n') +
+        workshopText('script.0236cb297d65', 'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n') +
+        workshopText('script.06d512ead76b', 'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n') +
+        workshopText('script.41b8026c8dbe', 'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n') +
+        workshopText('script.61c29a66c32b', '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n') +
+        workshopText('script.e6ac9add601c', '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et')
     if (isHeadless) { println svMsg; return }
     if (!qupath.fx.dialogs.Dialogs.showConfirmDialog(workshopText('script.cb5b26abe800', 'Boya vektörleri — öneri'), svMsg)) return
     def svSel = QP.getSelectedObjects().findAll { it.hasROI() && it.getROI().isArea() }
@@ -432,28 +432,28 @@ if (!appliedMode.prevNames.isEmpty()) {
 }
 
 def fmt = { double value, String pattern ->
-    Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : 'hesaplanamadı'
+    Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : workshopText('script.77fa6502fb41', 'hesaplanamadı')
 }
 def body = new StringBuilder()
-body << "PHH3 MİTOZ KANTİFİKASYONU\n"
+body << workshopText('script.8aa42753c480', 'PHH3 MİTOZ KANTİFİKASYONU\n')
 body << "═════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Seçili ROI                : %,d%n", targets.size())
-body << String.format(java.util.Locale.US, "Birleşik ölçülen alan     : %.3f mm²%n", totalAreaMm2)
-body << String.format(java.util.Locale.US, "Toplam çekirdek           : %,d%n", totalNuclei)
-body << "PHH3-pozitif (mitoz adayı): ${totalPos}  (${fmt(overallPct, '%.2f%%')})\n"
-body << "PHH3+ çekirdek yoğunluğu  : ${fmt(overallDensity, '%.1f çekirdek/mm²')}\n"
+body << String.format(java.util.Locale.US, workshopText('script.31582a01fb1c', 'Seçili ROI                : %,d%n'), targets.size())
+body << String.format(java.util.Locale.US, workshopText('script.21a5a838de8e', 'Birleşik ölçülen alan     : %.3f mm²%n'), totalAreaMm2)
+body << String.format(java.util.Locale.US, workshopText('script.092e737d6bec', 'Toplam çekirdek           : %,d%n'), totalNuclei)
+body << String.format(java.util.Locale.US, workshopText('script.8b0abc013820', 'PHH3-pozitif (mitoz adayı): %s  (%s)\n'), totalPos, fmt(overallPct, '%.2f%%'))
+body << String.format(java.util.Locale.US, workshopText('script.fd456544f28f', 'PHH3+ çekirdek yoğunluğu  : %s\n'), fmt(overallDensity, workshopText('script.3e4207839698', '%.1f çekirdek/mm²')))
 if (Double.isFinite(observedPerWhoArea))
-    body << String.format(java.util.Locale.US, "Mitoz / %.0f mm² (gözlenen): %.0f%n", whoAreaMm2, observedPerWhoArea)
+    body << String.format(java.util.Locale.US, workshopText('script.831c565d21ef', 'Mitoz / %.0f mm² (gözlenen): %.0f%n'), whoAreaMm2, observedPerWhoArea)
 else
-    body << String.format(java.util.Locale.US, "Mitoz / %.0f mm²: hesaplanmadı (alan %.3f mm²; tolerans ±%.2f)%n", whoAreaMm2, totalAreaMm2, areaToleranceMm2)
-body << "\nPHH3 DAB eşiği: ${String.format(java.util.Locale.US, '%.2f', dabThreshold)}; min çekirdek alanı: ${String.format(java.util.Locale.US, '%.0f', minNucleusAreaUm2)} µm²\n\n"
+    body << String.format(java.util.Locale.US, workshopText('script.de61cbe22dd1', 'Mitoz / %.0f mm²: hesaplanmadı (alan %.3f mm²; tolerans ±%.2f)%n'), whoAreaMm2, totalAreaMm2, areaToleranceMm2)
+body << String.format(java.util.Locale.US, workshopText('script.a136016aacb5', '\nPHH3 DAB eşiği: %s; min çekirdek alanı: %s µm²\n\n'), String.format(java.util.Locale.US, '%.2f', dabThreshold), String.format(java.util.Locale.US, '%.0f', minNucleusAreaUm2))
 body << modeNotes.toString()
-body << "Birleşik özet örtüşen ROI alanlarını ve hücreleri yalnız bir kez sayar.\n"
-body << "Bu bir SAYIM/YOĞUNLUKtur; mitoz derecesi, grade eşiği veya klinik yorum değildir.\n"
-body << "PHH3 pozitifliği mitozla birebir eş değildir; adayları görsel olarak doğrulayın.\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.5c506867ba21', 'Birleşik özet örtüşen ROI alanlarını ve hücreleri yalnız bir kez sayar.\n')
+body << workshopText('script.55c1e89c5b0d', 'Bu bir SAYIM/YOĞUNLUKtur; mitoz derecesi, grade eşiği veya klinik yorum değildir.\n')
+body << workshopText('script.178689e357e5', 'PHH3 pozitifliği mitozla birebir eş değildir; adayları görsel olarak doğrulayın.\n')
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("PHH3 mitoz kantifikasyonu", body.toString())
+showResultWindow(workshopText('script.3ede552f30d1', 'PHH3 mitoz kantifikasyonu'), body.toString())
 println "✓ PHH3 mitoz ölçümü yazıldı (her seçili ROI + '${appliedMode.setName}')."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

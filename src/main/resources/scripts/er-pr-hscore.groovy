@@ -78,13 +78,13 @@ def imageTypeOk = { ->
     n.contains('H_DAB')
 }
 def imageTypeGuidance = { ->
-    "Bu lam 'Brightfield (H-DAB)' olarak ayarlı değil.\n" +
-    "Şu anki tip: ${imageData.getImageType()?.toString() ?: ''}\n\n" +
-    "Çözüm:\n" +
-    "  • Penceredeki \"Görüntü tipini 'Brightfield (H-DAB)' olarak ayarla\" düğmesine tıklayın, VEYA\n" +
-    "  1. Image panelini açın (sol-üst)\n" +
-    "  2. 'Image type' → 'Brightfield (H-DAB)' seçin (DAB ayrımı için gerekli)\n" +
-    "  3. Yukarıdaki 'Çalıştır' düğmesine tekrar basın"
+    workshopText('script.415a5e83cd58', 'Bu lam \'Brightfield (H-DAB)\' olarak ayarlı değil.\n') +
+    String.format(java.util.Locale.US, workshopText('script.a53dc88cdb8c', 'Şu anki tip: %s\n\n'), imageData.getImageType()?.toString() ?: '') +
+    workshopText('script.c92b22ac3c2b', 'Çözüm:\n') +
+    workshopText('script.dd4d6557261d', '  • Penceredeki "Görüntü tipini \'Brightfield (H-DAB)\' olarak ayarla" düğmesine tıklayın, VEYA\n') +
+    workshopText('script.e3cf68f1032b', '  1. Image panelini açın (sol-üst)\n') +
+    workshopText('script.a1477e685c9d', '  2. \'Image type\' → \'Brightfield (H-DAB)\' seçin (DAB ayrımı için gerekli)\n') +
+    workshopText('script.1b9856c27353', '  3. Yukarıdaki \'Çalıştır\' düğmesine tekrar basın')
 }
 
 // Evet/Hayır sorusu — betik FX iş parçacığında da, betik iş parçacığında da çalışabilir.
@@ -170,12 +170,12 @@ def suggestStainVectors = { ->
                         svClose(svVecOf(svStains.getStain(2)), SV_DEF_DAB)
     if (!svDefault) { println '✓ Boya vektörleri bu lamdan tahmin/kalibre edilmiş görünüyor.'; return }
     def svMsg =
-        '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu lamdan tahmin EDİLMEMİŞ.\n\n' +
-        'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n' +
-        'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n' +
-        'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n' +
-        '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n' +
-        '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et'
+        workshopText('script.f3f75b6ee2d7', '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu lamdan tahmin EDİLMEMİŞ.\n\n') +
+        workshopText('script.0236cb297d65', 'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n') +
+        workshopText('script.06d512ead76b', 'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n') +
+        workshopText('script.41b8026c8dbe', 'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n') +
+        workshopText('script.61c29a66c32b', '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n') +
+        workshopText('script.e6ac9add601c', '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et')
     if (isHeadless) { println svMsg; return }
     if (!qupath.fx.dialogs.Dialogs.showConfirmDialog(workshopText('script.cb5b26abe800', 'Boya vektörleri — öneri'), svMsg)) return
     def svSel = QP.getSelectedObjects().findAll { it.hasROI() && it.getROI().isArea() }
@@ -226,12 +226,12 @@ def resolveTarget = { ->
         return [ok:false, error: imageTypeGuidance(), imageTypeIssue:true]
     def selected = QP.getSelectedObject()
     if (selected == null || !(selected instanceof PathAnnotationObject))
-        return [ok:false, error:'Önce ölçmek istediğiniz alan anotasyonunu seçin (üst araç çubuğundan Dikdörtgen [R], Çokgen [P] veya Fırça [B] ile çizip üzerine tıklayın; seçili anotasyonun kenarı SARI görünür).']
+        return [ok:false, error:workshopText('script.b32142899c7f', 'Önce ölçmek istediğiniz alan anotasyonunu seçin (üst araç çubuğundan Dikdörtgen [R], Çokgen [P] veya Fırça [B] ile çizip üzerine tıklayın; seçili anotasyonun kenarı SARI görünür).')]
     def cal = imageData.getServer().getPixelCalibration()
     def pw = cal.getPixelWidthMicrons()
     def ph = cal.getPixelHeightMicrons()
     if (!(pw > 0) || !(ph > 0))
-        return [ok:false, error:'Piksel kalibrasyonu yok; alan/yoğunluk (mm²) hesaplanamaz (Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)).']
+        return [ok:false, error:workshopText('script.69667abe788c', 'Piksel kalibrasyonu yok; alan/yoğunluk (mm²) hesaplanamaz (Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)).')]
     return [ok:true, ann:selected, pw:pw, ph:ph]
 }
 
@@ -266,28 +266,28 @@ def buildResultText = { m, double thr1, double thr2, double thr3, double elapsed
     def uyari = ""
     if (m.total < warnGenericCount) {
         uyari = String.format(java.util.Locale.US,
-            "\n❗ Not: %,d hücre <%d — küçük örneklem; sonuçlar istatistiksel olarak güvenilir olmayabilir.",
+            workshopText('script.b2b14f9a4ed8', '\n❗ Not: %,d hücre <%d — küçük örneklem; sonuçlar istatistiksel olarak güvenilir olmayabilir.'),
             m.total, warnGenericCount)
     }
     def text = String.format(java.util.Locale.US,
-        "ER / PR Nükleer H-score kantifikasyonu bitti.\n\n" +
-        "Eşikler  : 1+=%.2f  2+=%.2f  3+=%.2f (DAB OD)%s\n\n" +
-        "Sayım (n = %,d toplam çekirdek)\n" +
+        workshopText('script.1980ec3be246', 'ER / PR Nükleer H-score kantifikasyonu bitti.\n\n') +
+        workshopText('script.3032632e6937', 'Eşikler  : 1+=%.2f  2+=%.2f  3+=%.2f (DAB OD)%s\n\n') +
+        workshopText('script.f8f100d834ca', 'Sayım (n = %,d toplam çekirdek)\n') +
         "────────────────────────────────────\n" +
-        "  Negatif (0)         : %,d  (%%%.1f)\n" +
-        "  1+ (zayıf)          : %,d  (%%%.1f)\n" +
-        "  2+ (orta)           : %,d  (%%%.1f)\n" +
-        "  3+ (güçlü)          : %,d  (%%%.1f)\n\n" +
-        "H-score (özet)\n" +
+        workshopText('script.0fca9b7550d1', '  Negatif (0)         : %,d  (%%%.1f)\n') +
+        workshopText('script.7d19001826f1', '  1+ (zayıf)          : %,d  (%%%.1f)\n') +
+        workshopText('script.026d1428f1af', '  2+ (orta)           : %,d  (%%%.1f)\n') +
+        workshopText('script.2e6b170fda6b', '  3+ (güçlü)          : %,d  (%%%.1f)\n\n') +
+        workshopText('script.589e2c8df334', 'H-score (özet)\n') +
         "─────────────────\n" +
         "  H-score (0–300)        : %.0f\n" +
-        "  Pozitif yüzdesi (≥1+)  : %%%.1f\n" +
+        workshopText('script.21943fcdd976', '  Pozitif yüzdesi (≥1+)  : %%%.1f\n') +
         "  %% 0 / 1+ / 2+ / 3+    : %%%.1f / %%%.1f / %%%.1f / %%%.1f\n\n" +
-        "  Hücre yoğunluğu        : ~%,d hücre/mm²\n" +
-        "  Anotasyon alanı        : %.2f mm²\n" +
-        "  Süre                   : %.1f sn\n",
+        workshopText('script.aadd92573377', '  Hücre yoğunluğu        : ~%,d hücre/mm²\n') +
+        workshopText('script.70415673effc', '  Anotasyon alanı        : %.2f mm²\n') +
+        workshopText('script.b1c2c35331a4', '  Süre                   : %.1f sn\n'),
         thr1, thr2, thr3,
-        (thr1 != DEF1 || thr2 != DEF2 || thr3 != DEF3) ? ' (değiştirildi)' : '',
+        (thr1 != DEF1 || thr2 != DEF2 || thr3 != DEF3) ? workshopText('script.99419b6153e0', ' (değiştirildi)') : '',
         m.total,
         m.n0, m.pctNeg, m.n1, m.pct1, m.n2, m.pct2, m.n3, m.pct3,
         m.hScore, m.posPct,
@@ -296,19 +296,19 @@ def buildResultText = { m, double thr1, double thr2, double thr3, double elapsed
     )
     if (baseline != null) {
         text += String.format(java.util.Locale.US,
-            "\n🎓 Öğretim — varsayılan ↔ sizin (aynı hücreler, yeniden sınıflandırıldı)\n" +
+            workshopText('script.e2e91ded8c5a', '\n🎓 Öğretim — varsayılan ↔ sizin (aynı hücreler, yeniden sınıflandırıldı)\n') +
             "──────────────────────────────────────────────\n" +
-            "  Varsayılan %.2f/%.2f/%.2f → H-score %.0f  (≥1+ %%%.1f)\n" +
-            "  Sizin      %.2f/%.2f/%.2f → H-score %.0f  (≥1+ %%%.1f)\n" +
-            "  Fark: %+.0f puan  (eşik yükseldikçe H-score düşer)\n",
+            workshopText('script.b0f0a3f12195', '  Varsayılan %.2f/%.2f/%.2f → H-score %.0f  (≥1+ %%%.1f)\n') +
+            workshopText('script.64f3df6221c9', '  Sizin      %.2f/%.2f/%.2f → H-score %.0f  (≥1+ %%%.1f)\n') +
+            workshopText('script.b1dbc8a0a693', '  Fark: %+.0f puan  (eşik yükseldikçe H-score düşer)\n'),
             DEF1, DEF2, DEF3, baseline.hScore, baseline.posPct,
             thr1, thr2, thr3, m.hScore, m.posPct,
             (m.hScore - baseline.hScore)
         )
     }
-    text += "\nPayda: anotasyonda tespit edilen TÜM çekirdekler. Hücre tipi ayrılmaz; stroma ve iltihap\n" +
-            "hücreleri de sayılır. Yalnız tümör hücreleri için anotasyonu tümör alanına sınırlayın.\n"
-    text += uyari + "\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    text += workshopText('script.0efe48fc6635', '\nPayda: anotasyonda tespit edilen TÜM çekirdekler. Hücre tipi ayrılmaz; stroma ve iltihap\n') +
+            workshopText('script.31b14ed21f95', 'hücreleri de sayılır. Yalnız tümör hücreleri için anotasyonu tümör alanına sınırlayın.\n')
+    text += uyari + workshopText('script.0a96d0aa4dbc', '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return text
 }
 
@@ -338,7 +338,7 @@ def countReplaceable = { ann -> ann == null ? 0 : ann.getChildObjects().findAll 
 
 def runDetection = { double nuclear1, double nuclear2, double nuclear3, boolean teaching, int replaced = 0 ->
     if (!(nuclear1 < nuclear2 && nuclear2 < nuclear3))
-        return [ok:false, error:'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.']
+        return [ok:false, error:workshopText('script.80e3c67757b9', 'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.')]
     def t = resolveTarget()
     if (!t.ok) return t
     def targetAnnotation = t.ann
@@ -388,12 +388,12 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3, boolean 
 
 def recount = { double thr1, double thr2, double thr3, boolean teaching ->
     if (!(thr1 < thr2 && thr2 < thr3))
-        return [ok:false, error:'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.']
+        return [ok:false, error:workshopText('script.80e3c67757b9', 'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.')]
     def t = resolveTarget()
     if (!t.ok) return t
     def existing = t.ann.getChildObjects().findAll { it.isDetection() }
     if (existing.isEmpty())
-        return [ok:false, error:'Bu anotasyonda hücre tespiti yok. Önce "Çalıştır" ile tespit yapın, sonra "Yeniden say (hızlı)" kullanın.']
+        return [ok:false, error:workshopText('script.c6c7df5dba6e', 'Bu anotasyonda hücre tespiti yok. Önce "Çalıştır" ile tespit yapın, sonra "Yeniden say (hızlı)" kullanın.')]
     return finishWithMetrics(t, thr1, thr2, thr3, teaching, 0.0)
 }
 

@@ -227,7 +227,7 @@ boolean hasMicrons = (cal != null && cal.hasPixelSizeMicrons() && pw > 0 && ph >
 
 def targets = QP.getSelectedObjects().findAll { it.isAnnotation() && !isOwnSetName(it.getName(), summaryName) }   // özet anotasyonları ("… (N)" dahil) sayılmaz
 if (targets.isEmpty()) {
-    def msg = "Sayılacak anotasyon yok.\n\nÖnce bölgeyi anotasyon olarak çizin ve SEÇİN."
+    def msg = workshopText('script.8d1a520e323f', 'Sayılacak anotasyon yok.\n\nÖnce bölgeyi anotasyon olarak çizin ve SEÇİN.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.469472ee53f3', "Anotasyon yok"), msg)
     return
 }
@@ -301,10 +301,7 @@ targets.each { ann ->
 }
 
 if (overallTotal == 0) {
-    def msg = "Seçili anotasyon(lar) içinde tespit bulunamadı.\n\n" +
-              "Önce bir hücre tespiti / sınıflandırma adımı çalıştırın\n" +
-              "(Hücre Tespiti, Nükleer Boya, Sitoplazmik Boya veya Tümör İçi Ki-67 modülü,\n" +
-              "ya da bir nesne sınıflandırıcı)."
+    def msg = workshopText('script.605fc08e4eb8', 'Seçili anotasyon(lar) içinde tespit bulunamadı.\n\nÖnce bir hücre tespiti / sınıflandırma adımı çalıştırın\n(Hücre Tespiti, Nükleer Boya, Sitoplazmik Boya veya Tümör İçi Ki-67 modülü,\nya da bir nesne sınıflandırıcı).')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.4277b763a640', "Tespit yok"), msg)
     return
 }
@@ -331,19 +328,19 @@ QP.fireHierarchyUpdate()
 
 // ── 4) Sonucu sun ───────────────────────────────────────────────────
 def body = new StringBuilder()
-body << "SINIF BAZLI HÜCRE SAYIMI (% dağılım)\n"
+body << workshopText('script.c424c7fc69ce', 'SINIF BAZLI HÜCRE SAYIMI (% dağılım)\n')
 body << "═════════════════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Ölçülen anotasyon  : %d%n", measured)
+body << String.format(java.util.Locale.US, workshopText('script.4a85f4f47f27', 'Ölçülen anotasyon  : %d%n'), measured)
 if (hasMicrons) {
-    body << String.format(java.util.Locale.US, "Ölçülen alan       : %.3f mm²%n", overallAreaMm2)
+    body << String.format(java.util.Locale.US, workshopText('script.1f687101716b', 'Ölçülen alan       : %.3f mm²%n'), overallAreaMm2)
 } else {
-    body << "Ölçülen alan       : kalibrasyon (µm/px) yok → yoğunluk atlandı\n"
+    body << workshopText('script.e8d61a8b2b1b', 'Ölçülen alan       : kalibrasyon (µm/px) yok → yoğunluk atlandı\n')
 }
-body << String.format(java.util.Locale.US, "Toplam hücre       : %,d%n", overallTotal)
+body << String.format(java.util.Locale.US, workshopText('script.d5041df09b5a', 'Toplam hücre       : %,d%n'), overallTotal)
 body << "\n"
 
 if (hasMicrons) {
-    body << "Sınıf                      Adet         %       hücre/mm²\n"
+    body << workshopText('script.94662e3886bf', 'Sınıf                      Adet        (%)      hücre/mm²\n')
     body << "──────────────────────────────────────────────────────────────\n"
     overallCounts.each { cls, cnt ->
         double pct = overallTotal > 0 ? (100.0 * cnt / overallTotal) : 0.0
@@ -351,26 +348,26 @@ if (hasMicrons) {
         body << String.format(java.util.Locale.US, "%-24s %8d %9.2f %% %11.1f%n", cls, cnt, pct, dens)
     }
     body << "──────────────────────────────────────────────────────────────\n"
-    body << String.format(java.util.Locale.US, "%-24s %8d %9.2f %%%n", "TOPLAM", overallTotal, 100.0)
+    body << String.format(java.util.Locale.US, "%-24s %8d %9.2f %%%n", workshopText('script.1c54e7a8b22c', 'TOPLAM'), overallTotal, 100.0)
 } else {
-    body << "Sınıf                      Adet         %\n"
+    body << workshopText('script.769cde3cb2a6', 'Sınıf                      Adet         %\n')
     body << "─────────────────────────────────────────────────\n"
     overallCounts.each { cls, cnt ->
         double pct = overallTotal > 0 ? (100.0 * cnt / overallTotal) : 0.0
         body << String.format(java.util.Locale.US, "%-24s %8d %9.2f %%%n", cls, cnt, pct)
     }
     body << "─────────────────────────────────────────────────\n"
-    body << String.format(java.util.Locale.US, "%-24s %8d %9.2f %%%n", "TOPLAM", overallTotal, 100.0)
+    body << String.format(java.util.Locale.US, "%-24s %8d %9.2f %%%n", workshopText('script.1c54e7a8b22c', 'TOPLAM'), overallTotal, 100.0)
 }
 body << "\n"
-body << "Bu bir SAYIM/DAĞILIMdır — klinik skor, eşik veya yorum DEĞİL.\n"
-body << "Sınıflandırma kullanıcının tespit/sınıflandırma adımından gelir.\n"
+body << workshopText('script.4745c8bba86a', 'Bu bir SAYIM/DAĞILIMdır — klinik skor, eşik veya yorum DEĞİL.\n')
+body << workshopText('script.8d4899d28858', 'Sınıflandırma kullanıcının tespit/sınıflandırma adımından gelir.\n')
 body << "(FS2K Session 6–8 / CellClassPct — Sara McArdle; Bankhead 2017)\n\n"
 def noteText = modeNote(sumRes)
 if (noteText) body << noteText << "\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("Sınıf bazlı hücre sayımı", body.toString())
+showResultWindow(workshopText('script.d63c1faa01e1', 'Sınıf bazlı hücre sayımı'), body.toString())
 println "✓ Sınıf bazlı sayım yazıldı (her anotasyon + '${summaryName}')."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

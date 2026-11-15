@@ -140,8 +140,8 @@ if (isHeadless) {
 // ── 2) GeoJSON dosyasını seç ─────────────────────────────────────────
 // qupath.fx.dialogs.Dialogs'ta promptForFile YOK (0.6/0.7'de doğrulandı) → FileChoosers kullanılır.
 def geojsonFile = qupath.fx.dialogs.FileChoosers.promptForFile(
-    "AI tahmin GeoJSON dosyasını seçin",
-    qupath.fx.dialogs.FileChoosers.createExtensionFilter("AI Tahmin GeoJSON (*.geojson, *.json)", "*.geojson", "*.json"))
+    workshopText('script.b4986060f7a7', 'AI tahmin GeoJSON dosyasını seçin'),
+    qupath.fx.dialogs.FileChoosers.createExtensionFilter(workshopText('script.e5c0d47eb3d1', 'AI Tahmin GeoJSON (*.geojson, *.json)'), "*.geojson", "*.json"))
 if (geojsonFile == null) {
     println "İptal edildi — dosya seçilmedi."
     return
@@ -261,8 +261,8 @@ if (newAnnotations.isEmpty()) {
 // bu yardımcının kendi anotasyonları kaldırılır, altlarındaki nesneler korunur.
 def oldImports = QP.getAnnotationObjects().findAll { it.getName() == importSentinelName }
 if (!oldImports.isEmpty()) {
-    def optAdd = "Ekle — hiçbir şeyi silme"
-    def optRep = "Önceki içe aktarımı değiştir"
+    def optAdd = workshopText('script.eb621546d054', 'Ekle — hiçbir şeyi silme')
+    def optRep = workshopText('script.27c4071a15db', 'Önceki içe aktarımı değiştir')
     def ch = Dialogs.showChoiceDialog(workshopText('script.dd2c102cce23', "Önceki içe aktarım bulundu"),
         workshopText('script.cb9ed0395ead', "Bu görüntüde önceki bir içe aktarımdan ") + oldImports.size() + workshopText('script.465be7ff125b', " anotasyon var (\"") + importSentinelName + "\").\n\n" +
         workshopText('script.732bf5e9932d', "• Ekle: hiçbir şey silinmez; yeni poligonlar öncekilerin yanına eklenir (aynı dosyayı\n") +
@@ -270,7 +270,7 @@ if (!oldImports.isEmpty()) {
         workshopText('script.51a408148751', "• Değiştir: yalnız bu önceki anotasyonlar kaldırılır (elle düzelttiğiniz sınırlar dahil);\n") +
         workshopText('script.4d12c7800032', "  altlarındaki tespitler ve diğer anotasyonlar korunur."),
         [optAdd, optRep], optAdd)
-    if (ch == null) { println "İptal edildi — hiçbir şey değiştirilmedi."; return }
+    if (ch == null) { println workshopText('script.0472f7e8ca47', 'İptal edildi — hiçbir şey değiştirilmedi.'); return }
     if (ch == optRep) QP.removeObjects(oldImports, true)
 }
 QP.addObjects(newAnnotations)
@@ -278,24 +278,24 @@ QP.fireHierarchyUpdate()
 
 // ── 5) Özet ─────────────────────────────────────────────────────────
 def body = new StringBuilder()
-body << "AI TAHMİN MASKELERİ — İÇE AKTARMA\n"
+body << workshopText('script.298646c0f8f1', 'AI TAHMİN MASKELERİ — İÇE AKTARMA\n')
 body << "═════════════════════════════════\n\n"
-body << "Dosya: ${geojsonFile.getName()}\n\n"
-body << String.format(java.util.Locale.US, "İçe aktarılan anotasyon : %,d%n", newAnnotations.size())
-body << String.format(java.util.Locale.US, "Atlanan özellik         : %,d%n", skipped)
+body << String.format(java.util.Locale.US, workshopText('script.fde1bc72bd76', 'Dosya: %s\n\n'), geojsonFile.getName())
+body << String.format(java.util.Locale.US, workshopText('script.e58a2079e30f', 'İçe aktarılan anotasyon : %,d%n'), newAnnotations.size())
+body << String.format(java.util.Locale.US, workshopText('script.6500d3fb558d', 'Atlanan özellik         : %,d%n'), skipped)
 if (holesDropped > 0)
-    body << String.format(java.util.Locale.US, "Atlanan iç halka (delik) : %,d  (yalnız dış sınır alındı; delikler dolu görünür)%n", holesDropped)
-body << "\nSınıf dökümü:\n"
+    body << String.format(java.util.Locale.US, workshopText('script.321dcb69a4eb', 'Atlanan iç halka (delik) : %,d  (yalnız dış sınır alındı; delikler dolu görünür)%n'), holesDropped)
+body << workshopText('script.322fceed5409', '\nSınıf dökümü:\n')
 classCounts.each { cls, n ->
     body << String.format(java.util.Locale.US, "  %-20s : %,d%n", cls, n)
 }
-body << "\nTüm tahminler"
-body << (lockImported ? " kilitli" : "")
-body << " anotasyon olarak eklendi.\n"
-body << "Model tahminleri görsel olarak doğrulanmalıdır; klinik kategori veya yorum üretilmez.\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar."
+body << workshopText('script.1fe484a2f469', '\nTüm tahminler')
+body << (lockImported ? workshopText('script.180b8b7836a5', ' kilitli') : "")
+body << workshopText('script.58e7c13f8f04', ' anotasyon olarak eklendi.\n')
+body << workshopText('script.54097e7b2d14', 'Model tahminleri görsel olarak doğrulanmalıdır; klinik kategori veya yorum üretilmez.\n')
+body << workshopText('script.625c43e2ff2e', '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.')
 
-showResultWindow("AI tahmin maskesi içe aktarma", body.toString())
+showResultWindow(workshopText('script.841e476d5d10', 'AI tahmin maskesi içe aktarma'), body.toString())
 println "✓ AI tahmin içe aktarımı tamamlandı (${newAnnotations.size()} anotasyon, ${skipped} atlandı)."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

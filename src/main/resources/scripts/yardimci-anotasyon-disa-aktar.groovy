@@ -64,12 +64,12 @@ import java.time.format.DateTimeFormatter
 def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
-def DISCLAIMER = '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.'
+def DISCLAIMER = workshopText('script.625c43e2ff2e', '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.')
 
 // ── Biçimler ve sütunlar ─────────────────────────────────────────────────────
 def FORMAT_KEYS = ['geojson', 'imagescope', 'asap', 'coco', 'csv']
-def FORMAT_LABELS = [geojson: 'GeoJSON (QuPath; kayıpsız)', imagescope: 'Aperio ImageScope XML',
-                     asap: 'ASAP XML', coco: 'COCO JSON (makine öğrenmesi)', csv: 'Merkez tablosu (TSV/CSV)']
+def FORMAT_LABELS = [geojson: workshopText('script.d992ed340060', 'GeoJSON (QuPath; kayıpsız)'), imagescope: 'Aperio ImageScope XML',
+                     asap: 'ASAP XML', coco: workshopText('script.88cd0f2b6841', 'COCO JSON (makine öğrenmesi)'), csv: workshopText('script.d9ee983125fb', 'Merkez tablosu (TSV/CSV)')]
 def UNCLASSIFIED = '(sınıfsız)'
 def EXCLUSION_RGB = ColorTools.packRGB(128, 128, 128)
 def DEFAULT_RGB = ColorTools.packRGB(255, 0, 0)
@@ -367,7 +367,7 @@ def runExport = { Map cfg, List targets, Closure onProgress, java.util.concurren
         }
         for (t in targets) {
             idx++
-            if (cancelled.get()) { res.cancelled = true; res.lines.add('⏹ İptal edildi — kalan görüntüler işlenmedi.'); break }
+            if (cancelled.get()) { res.cancelled = true; res.lines.add(workshopText('script.89846f127ccf', '⏹ İptal edildi — kalan görüntüler işlenmedi.')); break }
             res.images++
             onProgress(idx, targets.size(), (String) t.name)
             def data = t.live
@@ -441,13 +441,13 @@ def runExport = { Map cfg, List targets, Closure onProgress, java.util.concurren
                     res.failed++
                 } else {
                     res.ok++
-                    res.lines.add('✓ ' + t.name + ' — ' + objs.size() + ' nesne')
+                    res.lines.add('✓ ' + t.name + ' — ' + objs.size() + workshopText('script.05d01f4ee15c', ' nesne'))
                 }
             } catch (Throwable e) {
                 res.failed++
                 String msg = e.getMessage() ?: e.getClass().getSimpleName()
                 FORMAT_KEYS.findAll { fmts.contains(it) }.each { String fmt -> mrow(fmt, '', 0, 0, 0, 0, 'hata', msg) }
-                res.lines.add('✗ ' + t.name + ' — okunamadı: ' + msg)
+                res.lines.add('✗ ' + t.name + workshopText('script.470c58e291c1', ' — okunamadı: ') + msg)
             } finally {
                 if (opened && data != null) { try { data.getServer().close() } catch (Throwable ignore) {} }
             }
@@ -459,7 +459,7 @@ def runExport = { Map cfg, List targets, Closure onProgress, java.util.concurren
                 cocoWrite(new File(outDir, 'coco.json'), coco); res.fileSet.add('coco.json')
             } catch (Throwable e) {
                 res.failed++
-                res.lines.add('✗ coco.json yazılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName()))
+                res.lines.add(workshopText('script.1c3a9af681b6', '✗ coco.json yazılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName()))
             }
         }
         if (fmts.contains('csv')) res.fileSet.add(csvName)
@@ -467,7 +467,7 @@ def runExport = { Map cfg, List targets, Closure onProgress, java.util.concurren
             new File(outDir, '_manifest.tsv').setText(manifest.toString(), 'UTF-8')
         } catch (Throwable e) {
             res.failed++
-            res.lines.add('✗ _manifest.tsv yazılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName()))
+            res.lines.add(workshopText('script.dde61bdb4aae', '✗ _manifest.tsv yazılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName()))
         }
     }
     return res
@@ -475,22 +475,22 @@ def runExport = { Map cfg, List targets, Closure onProgress, java.util.concurren
 
 def summaryText = { Map res ->
     def sb = new StringBuilder()
-    sb << 'TOPLU ANOTASYON DIŞA AKTARMA — ÖZET' << (res.cancelled ? ' (İPTAL EDİLDİ)' : '') << '\n'
+    sb << workshopText('script.394a3925426d', 'TOPLU ANOTASYON DIŞA AKTARMA — ÖZET') << (res.cancelled ? workshopText('script.0f71a2452bcb', ' (İPTAL EDİLDİ)') : '') << '\n'
     sb << '════════════════════════════════════\n\n'
-    sb << String.format(java.util.Locale.US, 'Görüntü: %,d   başarılı: %,d   hatalı: %,d   nesne: %,d%n',
+    sb << String.format(java.util.Locale.US, workshopText('script.8caf321c391b', 'Görüntü: %,d   başarılı: %,d   hatalı: %,d   nesne: %,d%n'),
                         (int) res.images, (int) res.ok, (int) res.failed, (int) res.objects)
-    sb << 'Klasör : ' << ((File) res.outDir).getAbsolutePath() << '\n'
-    sb << 'Dosya  : ' << res.fileSet.size() << ' (+ _manifest.tsv)\n'
+    sb << workshopText('script.134e3cd19570', 'Klasör : ') << ((File) res.outDir).getAbsolutePath() << '\n'
+    sb << workshopText('script.b9509dc4dbf9', 'Dosya  : ') << res.fileSet.size() << ' (+ _manifest.tsv)\n'
     res.skipped.each { String fk, Map sk ->
         if (sk.points > 0 || sk.polylines > 0)
-            sb << String.format(java.util.Locale.US, '%s — biçimin taşıyamadığı: %,d nokta, %,d çoklu çizgi (görüntü başına sayım: _manifest.tsv)%n',
+            sb << String.format(java.util.Locale.US, workshopText('script.c822ed4a28b3', '%s — biçimin taşıyamadığı: %,d nokta, %,d çoklu çizgi (görüntü başına sayım: _manifest.tsv)%n'),
                                 (String) FORMAT_LABELS.get(fk), (int) sk.points, (int) sk.polylines)
     }
     if (res.cocoHoleObjects > 0)
-        sb << String.format(java.util.Locale.US, 'COCO: %,d delikli nesnenin deliği çokgende yok (alan doğru yazıldı)%n', (int) res.cocoHoleObjects)
+        sb << String.format(java.util.Locale.US, workshopText('script.2cc4febf3cde', 'COCO: %,d delikli nesnenin deliği çokgende yok (alan doğru yazıldı)%n'), (int) res.cocoHoleObjects)
     sb << '\n'
     res.lines.each { sb << it << '\n' }
-    sb << '\nKoordinatlar taban (level-0) piksel uzayındadır; y ekseni aşağı doğrudur.\n'
+    sb << workshopText('script.971a47eed70c', '\nKoordinatlar taban (level-0) piksel uzayındadır; y ekseni aşağı doğrudur.\n')
     sb << DISCLAIMER
     return sb.toString()
 }
@@ -572,7 +572,7 @@ def step          = new java.util.concurrent.atomic.AtomicReference('CONFIG')
 def alwaysTop     = new java.util.concurrent.atomic.AtomicBoolean(true)
 def cancelledRef  = new java.util.concurrent.atomic.AtomicBoolean(false)
 def resultTextRef = new java.util.concurrent.atomic.AtomicReference('')
-def resultTitleRef = new java.util.concurrent.atomic.AtomicReference('Tamamlandı ✅')
+def resultTitleRef = new java.util.concurrent.atomic.AtomicReference(workshopText('script.92c17020894f', 'Tamamlandı ✅'))
 def lastProjectPath = new java.util.concurrent.atomic.AtomicReference(null)   // proje değişince işaretli görüntüleri sıfırla
 def errorTextRef  = new java.util.concurrent.atomic.AtomicReference('')
 def classNamesRef = new java.util.concurrent.atomic.AtomicReference(null)     // CONFIG sınıf adı önbelleği (List)
@@ -630,20 +630,20 @@ def startExport = {
     String scope = scopeRef.get()
     if (scope == 'selected' && QP.getProject()?.getPath()?.toString() != lastProjectPath.get()) {
         checkedImages.clear()
-        errorTextRef.set('Proje değişti; görüntüleri yeniden seçin.')
+        errorTextRef.set(workshopText('script.d8110ac7df8c', 'Proje değişti; görüntüleri yeniden seçin.'))
         step.set('ERROR'); render(); return
     }
     def targets = buildTargets(scope)
     if (targets.isEmpty()) {
-        errorTextRef.set(scope == 'selected' ? 'Hiç görüntü işaretlenmedi.' : 'Dışa aktarılacak görüntü yok (proje ya da açık görüntü yok).')
+        errorTextRef.set(scope == 'selected' ? workshopText('script.7ba2c8ac2522', 'Hiç görüntü işaretlenmedi.') : workshopText('script.7f1c4870a3e9', 'Dışa aktarılacak görüntü yok (proje ya da açık görüntü yok).'))
         step.set('ERROR'); render(); return
     }
     def fmts = new LinkedHashSet(((String) prefs.get('formats', 'geojson')).split(',').findAll { FORMAT_KEYS.contains(it) })
-    if (fmts.isEmpty()) { errorTextRef.set('En az bir biçim seçin.'); step.set('ERROR'); render(); return }
+    if (fmts.isEmpty()) { errorTextRef.set(workshopText('script.66d4a823015c', 'En az bir biçim seçin.')); step.set('ERROR'); render(); return }
     Set classes = null
     if (prefs.getBoolean('classFilter', false)) {
         classes = new LinkedHashSet(((String) prefs.get('classes', '')).split(';').findAll { it })
-        if (classes.isEmpty()) { errorTextRef.set('Sınıf filtresi açık ama hiçbir sınıf işaretli değil.'); step.set('ERROR'); render(); return }
+        if (classes.isEmpty()) { errorTextRef.set(workshopText('script.56c52ca27e43', 'Sınıf filtresi açık ama hiçbir sınıf işaretli değil.')); step.set('ERROR'); render(); return }
     }
     boolean withDet = prefs.getBoolean('detections', false)
     if (withDet && targets.size() > 1) {
@@ -668,11 +668,11 @@ def startExport = {
                 }
             }, cancelledRef)
             String txt = summaryText(res)
-            String ttl = res.cancelled ? 'İptal edildi' : ((res.failed ?: 0) > 0 ? 'Tamamlandı (hatalarla) ⚠' : 'Tamamlandı ✅')
+            String ttl = res.cancelled ? workshopText('script.dbd417da03e1', 'İptal edildi') : ((res.failed ?: 0) > 0 ? workshopText('script.1f99131663f1', 'Tamamlandı (hatalarla) ⚠') : workshopText('script.92c17020894f', 'Tamamlandı ✅'))
             javafx.application.Platform.runLater { resultTextRef.set(txt); resultTitleRef.set(ttl); step.set('RESULT'); render() }
         } catch (Throwable t) {
             javafx.application.Platform.runLater {
-                errorTextRef.set('Dışa aktarma başarısız:\n' + (t.getMessage() ?: t.getClass().getSimpleName()))
+                errorTextRef.set(workshopText('script.51cfb7ded9ad', 'Dışa aktarma başarısız:\n') + (t.getMessage() ?: t.getClass().getSimpleName()))
                 step.set('ERROR'); render()
             }
         }
@@ -724,9 +724,9 @@ render = { ->
             rb.setDisable(disabled); rb.setSelected(key == sc); return rb
         }
         def scopeRow = new javafx.scene.layout.HBox(16,
-            mkRadio('Bu görüntü', 'current', imageData == null),
-            mkRadio('Seçili proje görüntüleri', 'selected', project == null),
-            mkRadio('Tüm proje', 'project', project == null))
+            mkRadio(workshopText('script.6979608deb32', 'Bu görüntü'), 'current', imageData == null),
+            mkRadio(workshopText('script.9d0d8a40f55d', 'Seçili proje görüntüleri'), 'selected', project == null),
+            mkRadio(workshopText('script.3080d2dc7199', 'Tüm proje'), 'project', project == null))
         center.getChildren().add(scopeRow)
         tg.selectedToggleProperty().addListener(onChange { n -> if (n != null) { scopeRef.set((String) n.getUserData()); render() } })
         if (project != null && sc == 'selected') {

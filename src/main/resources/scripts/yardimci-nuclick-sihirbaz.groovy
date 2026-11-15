@@ -102,8 +102,8 @@ final int    TILE        = 128        // NuClick yama boyu — DEĞİŞTİRMEYİ
 def SENTINEL   = 'NuClick çekirdekleri'
 // "Önceki sonuçlar ne olsun?" kipleri — varsayılan HİÇBİR ŞEY SİLMEZ (ev kuralı:
 // içe aktarma/tahmin yazan sihirbazlar sorar, varsayılan silmemektir).
-def MODE_ADD     = 'Önceki NuClick sonucuna dokunma — yeni bir katman olarak ekle (varsayılan)'
-def MODE_REPLACE = 'Önceki NuClick sonucunu değiştir (bu sihirbazın ürettikleri silinir)'
+def MODE_ADD     = workshopText('script.e7f5180008ac', 'Önceki NuClick sonucuna dokunma — yeni bir katman olarak ekle (varsayılan)')
+def MODE_REPLACE = workshopText('script.7d8eb157541f', 'Önceki NuClick sonucunu değiştir (bu sihirbazın ürettikleri silinir)')
 def NUC_CLASS  = 'NuClick çekirdek'
 def AREA_UM    = 'NuClick: Alan (µm²)'
 def AREA_PX    = 'NuClick: Alan (piksel²)'
@@ -193,8 +193,8 @@ def loadConfig = { ->
 }
 def configMissing = { cfg ->
     def miss = []
-    if (!cfg.python?.trim())  miss << "Python yorumlayıcısı ('nuclick' ortamının python.exe yolu)"
-    if (!cfg.bridge?.trim())  miss << 'nuclick_bridge.py yolu'
+    if (!cfg.python?.trim())  miss << workshopText('script.9de650a723bc', 'Python yorumlayıcısı (\'nuclick\' ortamının python.exe yolu)')
+    if (!cfg.bridge?.trim())  miss << workshopText('script.e8c9a1772936', 'nuclick_bridge.py yolu')
     return miss
 }
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
@@ -222,12 +222,12 @@ def effectiveDownsample = { cfg, imageData ->
 def scaleWarning = { cfg, imageData ->
     double mpp = slideMpp(imageData)
     if (Double.isNaN(mpp))
-        return '⚠ Lam KALİBRE DEĞİL (µm/px yok). NuClick 40× (~0,25 µm/px) bekler; ölçek doğrulanamıyor — sonuçlar sessizce yanlış olabilir.'
+        return workshopText('script.476bd310eea7', '⚠ Lam KALİBRE DEĞİL (µm/px yok). NuClick 40× (~0,25 µm/px) bekler; ölçek doğrulanamıyor — sonuçlar sessizce yanlış olabilir.')
     double ds = effectiveDownsample(cfg, imageData)
     double eff = mpp * ds
     if (Math.abs(eff - NUCLICK_MPP) > (NUCLICK_MPP * 0.25d))
         return String.format(java.util.Locale.US,
-            '⚠ Etkin çözünürlük %.3f µm/px — NuClick %.2f µm/px (40×) ile eğitildi. Downsample\'ı boş bırakın (otomatik) ya da düzeltin.', eff, NUCLICK_MPP)
+            workshopText('script.375bae73cc84', '⚠ Etkin çözünürlük %.3f µm/px — NuClick %.2f µm/px (40×) ile eğitildi. Downsample\'ı boş bırakın (otomatik) ya da düzeltin.'), eff, NUCLICK_MPP)
     return null
 }
 
@@ -317,14 +317,14 @@ def exportPatches = { imageData, File workDir, cfg, Closure appendLine ->
     def col = collectPoints(imageData)
     def pts = col.points
     if (pts.isEmpty())
-        return [ok: false, error: 'Hiç NOKTA işareti bulunamadı.\n\nAraç çubuğundan "Points" aracını seçip saymak istediğiniz\nçekirdeklerin ortasına tıklayın, sonra yeniden çalıştırın.']
+        return [ok: false, error: workshopText('script.ec5b32ea17a3', 'Hiç NOKTA işareti bulunamadı.\n\nAraç çubuğundan "Points" aracını seçip saymak istediğiniz\nçekirdeklerin ortasına tıklayın, sonra yeniden çalıştırın.')]
     if (phys > sw || phys > sh)
-        return [ok: false, error: 'Lam 128×128 yama için çok küçük (downsample çok yüksek).']
+        return [ok: false, error: workshopText('script.76330bd691c0', 'Lam 128×128 yama için çok küçük (downsample çok yüksek).')]
 
     int maxPoints = parseIntOr(cfg.maxPoints, 2000)
     boolean capped = (maxPoints > 0 && pts.size() > maxPoints)
     if (capped) {
-        appendLine('UYARI: ' + pts.size() + ' nokta var; ilk ' + maxPoints + ' tanesi işlenecek ("Maks. nokta" ayarı).')
+        appendLine(workshopText('script.6f67cbb611a0', 'UYARI: ') + pts.size() + workshopText('script.407b17719313', ' nokta var; ilk ') + maxPoints + workshopText('script.5bb8450b8292', ' tanesi işlenecek ("Maks. nokta" ayarı).'))
         pts = pts.subList(0, maxPoints)
     }
 
@@ -382,10 +382,10 @@ def exportPatches = { imageData, File workDir, cfg, Closure appendLine ->
     }
 
     if (items.isEmpty())
-        return [ok: false, error: 'Hiçbir yama okunamadı (lam erişilemez olabilir).']
+        return [ok: false, error: workshopText('script.5cf0fd8ef6f6', 'Hiçbir yama okunamadı (lam erişilemez olabilir).')]
 
     writeJson([tile_size: TILE, items: items], new File(workDir, 'points.json'))
-    appendLine('Yama yazıldı: ' + items.size() + (skipped > 0 ? (' (atlanan: ' + skipped + ')') : ''))
+    appendLine(workshopText('script.944c000e8daa', 'Yama yazıldı: ') + items.size() + (skipped > 0 ? (workshopText('script.20728cd7f5c3', ' (atlanan: ') + skipped + ')') : ''))
     return [ok: true, n: items.size(), skipped: skipped, geom: geom, ds: ds,
             capped: capped, nTotal: col.points.size(), fromSelection: col.fromSelection]
 }
@@ -442,7 +442,7 @@ def copyToClipboard = { String txt ->
 def importResults = { File workDir, imageData, exp, String mode ->
     def predsFile = new File(workDir, 'predictions.json')
     if (!predsFile.isFile())
-        return [ok: false, error: 'predictions.json bulunamadı:\n' + predsFile.getAbsolutePath()]
+        return [ok: false, error: workshopText('script.4a44d0192289', 'predictions.json bulunamadı:\n') + predsFile.getAbsolutePath()]
 
     def records = []
     try {
@@ -544,44 +544,44 @@ def importResults = { File workDir, imageData, exp, String mode ->
 // ── Özet metni ──────────────────────────────────────────────────────────────
 def buildResultText = { exp, imp, cfg, imageData ->
     def sb = new StringBuilder()
-    sb << "NuClick — ÇEKİRDEK SINIRLARI\n"
+    sb << workshopText('script.9b4d0dfba408', 'NuClick — ÇEKİRDEK SINIRLARI\n')
     sb << "═══════════════════════════\n\n"
-    sb << "Lam          : " << imageNameOf(imageData) << "\n"
-    sb << "Kaynak noktalar: " << exp.nTotal << (exp.fromSelection ? "  (seçili anotasyonlardan)" : "  (lamdaki tüm nokta anotasyonları)") << "\n"
-    if (exp.capped) sb << "                 ⚠ sınır nedeniyle yalnız " << exp.n << " tanesi işlendi\n"
+    sb << workshopText('script.c482c0d5e596', 'Lam          : ') << imageNameOf(imageData) << "\n"
+    sb << workshopText('script.5de90c98c6a3', 'Kaynak noktalar: ') << exp.nTotal << (exp.fromSelection ? workshopText('script.c38d2799c85a', '  (seçili anotasyonlardan)') : workshopText('script.13cd19623e3f', '  (lamdaki tüm nokta anotasyonları)')) << "\n"
+    if (exp.capped) sb << workshopText('script.0c60d34a602b', '                 ⚠ sınır nedeniyle yalnız ') << exp.n << workshopText('script.685557d3a0bb', ' tanesi işlendi\n')
     double mpp = slideMpp(imageData)
     if (!Double.isNaN(mpp))
-        sb << String.format(java.util.Locale.US, "Ölçek          : %.3f µm/px × downsample %.2f = %.3f µm/px (hedef %.2f)\n",
+        sb << String.format(java.util.Locale.US, workshopText('script.ab5f611c9fa7', 'Ölçek          : %.3f µm/px × downsample %.2f = %.3f µm/px (hedef %.2f)\n'),
                 mpp, (double) exp.ds, mpp * ((double) exp.ds), NUCLICK_MPP)
     else
-        sb << "Ölçek          : lam KALİBRE DEĞİL — ölçek doğrulanamadı\n"
+        sb << workshopText('script.1d011f15816f', 'Ölçek          : lam KALİBRE DEĞİL — ölçek doğrulanamadı\n')
     sb << "\n"
-    sb << "Sınırlandırılan: " << imp.nOk << " / " << exp.n << "\n"
-    if (imp.nFail > 0)  sb << "Başarısız      : " << imp.nFail << "  (boş maske — eşiği düşürmeyi deneyin)\n"
-    if (imp.nDrift > 0) sb << "⚠ Şüpheli      : " << imp.nDrift << "  (tıklama maskenin dışında kaldı — gözle doğrulayın)\n"
+    sb << workshopText('script.577d67b15f93', 'Sınırlandırılan: ') << imp.nOk << " / " << exp.n << "\n"
+    if (imp.nFail > 0)  sb << workshopText('script.50d204e91ef2', 'Başarısız      : ') << imp.nFail << workshopText('script.f6b758fc97ae', '  (boş maske — eşiği düşürmeyi deneyin)\n')
+    if (imp.nDrift > 0) sb << workshopText('script.1ad6f1cc8204', '⚠ Şüpheli      : ') << imp.nDrift << workshopText('script.0818e23ee7b3', '  (tıklama maskenin dışında kaldı — gözle doğrulayın)\n')
     if (imp.nOk > 0) {
-        sb << String.format(java.util.Locale.US, "Ortalama alan  : %.1f %s\n",
-                (double) imp.meanArea, imp.calibrated ? "µm²" : "piksel²")
+        sb << String.format(java.util.Locale.US, workshopText('script.428daa30322a', 'Ortalama alan  : %.1f %s\n'),
+                (double) imp.meanArea, imp.calibrated ? "µm²" : workshopText('script.e8d88b0e0c11', 'piksel²'))
     }
-    sb << "\nNesneler \"" << (imp.sentinelName ?: SENTINEL) << "\" anotasyonunun altına yazıldı.\n"
+    sb << workshopText('script.a964cd28d397', '\nNesneler "') << (imp.sentinelName ?: SENTINEL) << workshopText('script.3b9bf11fab2a', '" anotasyonunun altına yazıldı.\n')
     if (imp.replaced) {
         sb << String.format(java.util.Locale.US,
-                "Önceki NuClick sonucu DEĞİŞTİRİLDİ (%,d çekirdek silindi — sizin seçiminizle).\n",
+                workshopText('script.05d833fbffb4', 'Önceki NuClick sonucu DEĞİŞTİRİLDİ (%,d çekirdek silindi — sizin seçiminizle).\n'),
                 (int) (imp.nRemoved ?: 0))
     } else {
-        sb << "Önceki NuClick sonucu KORUNDU — hiçbir şey silinmedi.\n"
-        sb << "Bu, aynı çekirdeklerin ikinci bir kopyası olabilir; gerekmiyorsa eski\n"
-        sb << "katmanı elle silin ya da bir sonraki çalıştırmada \"Değiştir\"i seçin.\n"
+        sb << workshopText('script.7d3fc36507c5', 'Önceki NuClick sonucu KORUNDU — hiçbir şey silinmedi.\n')
+        sb << workshopText('script.887ef4541977', 'Bu, aynı çekirdeklerin ikinci bir kopyası olabilir; gerekmiyorsa eski\n')
+        sb << workshopText('script.19810bf127a8', 'katmanı elle silin ya da bir sonraki çalıştırmada "Değiştir"i seçin.\n')
     }
-    sb << "Nokta işaretlerinize dokunulmadı; onlar daima kaynaktır.\n"
-    sb << "\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n"
+    sb << workshopText('script.de8e2bb47b48', 'Nokta işaretlerinize dokunulmadı; onlar daima kaynaktır.\n')
+    sb << workshopText('script.1d54884eee5e', '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.\n')
     return sb.toString()
 }
 
 // ── Ortam yöneticisine dönüş kancası ────────────────────────────────────────
 def envReturnHook = [
     envId   : 'nuclick',
-    wizard  : 'NuClick (tıkla → çekirdek sınırı)',
+    wizard  : workshopText('script.934042665bd3', 'NuClick (tıkla → çekirdek sınırı)'),
     onReturn: { reopen ->
         javafx.application.Platform.runLater {
             if (stage == null || (!stage.isShowing() && !reopen)) return
@@ -662,7 +662,7 @@ def startSimple = { String phase, List cmd, String okStep ->
     persistFields()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
-    if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!miss.isEmpty()) { errorTextRef.set(workshopText('script.59d7792abf1b', 'Önce yapılandırmayı tamamlayın:\n  • ') + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false)
     busyLabelRef.set(phase)
     step.set('BUSY'); render()
@@ -671,12 +671,12 @@ def startSimple = { String phase, List cmd, String okStep ->
         try {
             rc = runProcess(cmd, null, { String ln -> appendLog(ln) })
         } catch (Throwable t) {
-            appendLog('HATA: ' + (t.getMessage() ?: t.getClass().getSimpleName()))
+            appendLog(workshopText('script.2ee9d3b72fd1', 'HATA: ') + (t.getMessage() ?: t.getClass().getSimpleName()))
         }
         final int frc = rc
         javafx.application.Platform.runLater {
             if (cancelledRef.get()) { step.set('READY'); render(); return }
-            if (frc == 0) { step.set(okStep) } else { errorTextRef.set(phase + ' başarısız (çıkış kodu ' + frc + '). Ayrıntı için günlüğe bakın.'); step.set('ERROR') }
+            if (frc == 0) { step.set(okStep) } else { errorTextRef.set(phase + workshopText('script.cf2e3c5bb7d6', ' başarısız (çıkış kodu ') + frc + workshopText('script.40dffb615ff9', '). Ayrıntı için günlüğe bakın.')); step.set('ERROR') }
             render()
         }
     } as Runnable).start()
@@ -686,9 +686,9 @@ def startRun = {
     persistFields()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
-    if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!miss.isEmpty()) { errorTextRef.set(workshopText('script.59d7792abf1b', 'Önce yapılandırmayı tamamlayın:\n  • ') + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Önce bir lam açın.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.12204d6dbab7', 'Önce bir lam açın.')); step.set('ERROR'); render(); return }
 
     // ── Önceki sonuçlar için kullanıcıya SOR ────────────────────────────────
     //   Çıkarımdan ÖNCE sorulur: İptal'de GPU/CPU geçişi hiç çalıştırılmaz ve
@@ -701,15 +701,15 @@ def startRun = {
     if (nPrevLayers > 0) {
         def sb = new StringBuilder()
         sb << String.format(java.util.Locale.US,
-            'Bu lamda zaten %,d NuClick katmanı ve içinde %,d çekirdek var.',
+            workshopText('script.6527f2d035e6', 'Bu lamda zaten %,d NuClick katmanı ve içinde %,d çekirdek var.'),
             nPrevLayers, nPrevDets)
-        sb << '\n\n"Ekle" seçilirse hiçbir şey silinmez; sonuç yeni bir katman olur. '
-        sb << 'Her çalıştırma TÜM noktalardan yeniden ürettiği için aynı çekirdeklerin '
-        sb << 'ikinci bir kopyasını göreceksiniz.'
-        sb << '\n\n"Değiştir" seçilirse önceki NuClick katmanları silinir — '
-        sb << 'o konturlarda ELLE yaptığınız düzeltmeler de gider. '
-        sb << 'Nokta işaretlerinize ve kendi anotasyonlarınıza hiçbir kipte dokunulmaz.'
-        sb << '\n\nÖnceki NuClick sonucu ne olsun?'
+        sb << workshopText('script.a80d00ddce42', '\n\n"Ekle" seçilirse hiçbir şey silinmez; sonuç yeni bir katman olur. ')
+        sb << workshopText('script.b7b0e6995e35', 'Her çalıştırma TÜM noktalardan yeniden ürettiği için aynı çekirdeklerin ')
+        sb << workshopText('script.1b7b8e7b1f3e', 'ikinci bir kopyasını göreceksiniz.')
+        sb << workshopText('script.f0dbe8e6ac1b', '\n\n"Değiştir" seçilirse önceki NuClick katmanları silinir — ')
+        sb << workshopText('script.6434ef118eb2', 'o konturlarda ELLE yaptığınız düzeltmeler de gider. ')
+        sb << workshopText('script.7ea5ca43ebd4', 'Nokta işaretlerinize ve kendi anotasyonlarınıza hiçbir kipte dokunulmaz.')
+        sb << workshopText('script.532b7f6bd738', '\n\nÖnceki NuClick sonucu ne olsun?')
         def pick = Dialogs.showChoiceDialog(workshopText('script.27c0b5f4898a', 'Önceki NuClick sonucu'), sb.toString(),
                 [MODE_ADD, MODE_REPLACE], MODE_ADD)
         if (pick == null) return                       // İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz
@@ -725,13 +725,13 @@ def startRun = {
     final String runMode = mode
 
     cancelledRef.set(false)
-    busyLabelRef.set('Çalıştırılıyor')
+    busyLabelRef.set(workshopText('script.53b100c3e097', 'Çalıştırılıyor'))
     step.set('BUSY'); render()
     new Thread({
         try {
             def workDir = resolveWorkDir(cfg, imageData)
             workDir.mkdirs()
-            appendLog('Çalışma dizini: ' + workDir.getAbsolutePath())
+            appendLog(workshopText('script.8fba4a8a6457', 'Çalışma dizini: ') + workDir.getAbsolutePath())
             def exp = exportPatches(imageData, workDir, cfg, { String l -> appendLog(l) })
             if (!exp.ok) {
                 javafx.application.Platform.runLater { errorTextRef.set(exp.error); step.set('ERROR'); render() }
@@ -742,7 +742,7 @@ def startRun = {
             if (cancelledRef.get()) { javafx.application.Platform.runLater { step.set('READY'); render() }; return }
             if (rc != 0) {
                 javafx.application.Platform.runLater {
-                    errorTextRef.set('Python köprüsü başarısız (çıkış kodu ' + rc + ').\nGünlüğe bakın; ortam ya da ağırlık eksik olabilir (② ③ düğmeleri).')
+                    errorTextRef.set(workshopText('script.5377e8f0294b', 'Python köprüsü başarısız (çıkış kodu ') + rc + workshopText('script.afa6e5b0daa5', ').\nGünlüğe bakın; ortam ya da ağırlık eksik olabilir (② ③ düğmeleri).'))
                     step.set('ERROR'); render()
                 }
                 return
@@ -825,8 +825,8 @@ render = {
         }
 
         actions.add(navButton(workshopText('script.56f53642a3b8', '② Ortamı kur'), { launchEnvManager() }, workshopText('script.f732946648b5', 'Atölye Python ortam yöneticisini açar ve "nuclick" kaydını vurgular')))
-        actions.add(navButton(workshopText('script.83b406a90097', '③ Model ağırlıklarını indir'), { startSimple('Ağırlık indirme', downloadCmd(cfg), 'DL_DONE') }, workshopText('script.c7b79268334a', '~255 MB, bir kez')))
-        actions.add(navButton(workshopText('script.9679be2279c4', 'Bağımlılıkları denetle'), { startSimple('Ortam denetimi', selftestCmd(cfg), 'CHECK_DONE') }))
+        actions.add(navButton(workshopText('script.83b406a90097', '③ Model ağırlıklarını indir'), { startSimple(workshopText('script.8fdf0f842d06', 'Ağırlık indirme'), downloadCmd(cfg), 'DL_DONE') }, workshopText('script.c7b79268334a', '~255 MB, bir kez')))
+        actions.add(navButton(workshopText('script.9679be2279c4', 'Bağımlılıkları denetle'), { startSimple(workshopText('script.502d3c98934c', 'Ortam denetimi'), selftestCmd(cfg), 'CHECK_DONE') }))
         actions.add(navButton(workshopText('script.3efe57ecbec5', 'Yapılandır ▶'), { step.set('CONFIG'); render() }))
         def runBtn = navButton(workshopText('script.79ef801ff99f', 'Çalıştır'), { startRun() })
         runBtn.setDefaultButton(true)
@@ -861,9 +861,9 @@ render = {
             })
         }
         int r = 0
-        grid.add(new javafx.scene.control.Label(workshopText('script.6a31b6bde327', 'Python (nuclick ortamı):')), 0, r); grid.add(pyField, 1, r); grid.add(browse(pyField, 'python.exe seçin', false), 2, r); r++
-        grid.add(new javafx.scene.control.Label('nuclick_bridge.py:'), 0, r); grid.add(brField, 1, r); grid.add(browse(brField, 'nuclick_bridge.py seçin', false), 2, r); r++
-        grid.add(new javafx.scene.control.Label(workshopText('script.982e5d872667', 'Çalışma dizini (boş = proje yanı):')), 0, r); grid.add(wdField, 1, r); grid.add(browse(wdField, 'Klasör seçin', true), 2, r); r++
+        grid.add(new javafx.scene.control.Label(workshopText('script.6a31b6bde327', 'Python (nuclick ortamı):')), 0, r); grid.add(pyField, 1, r); grid.add(browse(pyField, workshopText('script.174717d20e0d', 'python.exe seçin'), false), 2, r); r++
+        grid.add(new javafx.scene.control.Label('nuclick_bridge.py:'), 0, r); grid.add(brField, 1, r); grid.add(browse(brField, workshopText('script.c311a94898f1', 'nuclick_bridge.py seçin'), false), 2, r); r++
+        grid.add(new javafx.scene.control.Label(workshopText('script.982e5d872667', 'Çalışma dizini (boş = proje yanı):')), 0, r); grid.add(wdField, 1, r); grid.add(browse(wdField, workshopText('script.54a42e00afe4', 'Klasör seçin'), true), 2, r); r++
         grid.add(new javafx.scene.control.Label(workshopText('script.998faaff6f85', 'Downsample (boş = otomatik):')), 0, r); grid.add(dsField, 1, r); r++
         grid.add(new javafx.scene.control.Label(workshopText('script.99683b43ae05', 'Maks. nokta:')), 0, r); grid.add(mpField, 1, r); r++
         grid.add(new javafx.scene.control.Label(workshopText('script.ef6f2a61fc33', 'Eşik (0-1, varsayılan 0,33):')), 0, r); grid.add(thField, 1, r); r++

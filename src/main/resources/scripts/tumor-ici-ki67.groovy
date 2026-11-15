@@ -69,7 +69,7 @@ def launchBundled = { String name ->
     return true
 }
 def menuHint = { String where ->
-    Dialogs.showMessageDialog('Eklenti gerekli',
+    Dialogs.showMessageDialog(workshopText('script.97fb26fec49d', 'Eklenti gerekli'),
         "${workshopText('script.2da9535b4302', 'Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\n')}${where}")
 }
 
@@ -113,17 +113,17 @@ def ki67OwnDetections = { summaryObj ->
 // ──────────────────────────────────────────────────────────────
 def runDetection = { double nuclear1, double nuclear2, double nuclear3, String mode = 'add' ->
     if (!(nuclear1 < nuclear2 && nuclear2 < nuclear3))
-        return [ok:false, error:'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.']
+        return [ok:false, error:workshopText('script.80e3c67757b9', 'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.')]
 
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) return [ok:false, error:'Görüntü açık değil.']
+    if (imageData == null) return [ok:false, error:workshopText('script.da80fab350d1', 'Görüntü açık değil.')]
     String typeName = (imageData.getImageType()?.toString() ?: '').toUpperCase(java.util.Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
-    if (!typeName.contains('H_DAB')) return [ok:false, error:'Image type Brightfield (H-DAB) olmalı (Yardımcılar → Temel araçlar → Görüntü tipi ayarla).']
+    if (!typeName.contains('H_DAB')) return [ok:false, error:workshopText('script.1722dd52fbea', 'Image type Brightfield (H-DAB) olmalı (Yardımcılar → Temel araçlar → Görüntü tipi ayarla).')]
     def calibration = imageData.getServer().getPixelCalibration()
     double pixelWidth  = calibration.getPixelWidthMicrons()
     double pixelHeight = calibration.getPixelHeightMicrons()
     if (!(pixelWidth > 0) || !(pixelHeight > 0))
-        return [ok:false, error:'Piksel kalibrasyonu yok; alan ve yoğunluk hesaplanamaz.']
+        return [ok:false, error:workshopText('script.f698f6e76e77', 'Piksel kalibrasyonu yok; alan ve yoğunluk hesaplanamaz.')]
 
     // Seçili Tumor anotasyonlarını doğrula — her çalıştırmada kontrol edilir.
     def tumorObjects = QP.getSelectedObjects().findAll {
@@ -131,13 +131,13 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3, String m
     }
     if (tumorObjects.isEmpty())
         return [ok:false, error:
-            'Ki-67 lamında ölçülecek tümör epitelini anotasyonla çevreleyin, sınıfını tam\n' +
-            'olarak "Tumor" yapın ve bu anotasyon(lar)ı SEÇİN. Betik yalnız seçili Tumor\n' +
-            'anotasyonlarını ölçer; H&E sınıflandırıcısı bu İHK lamına otomatik uygulanmaz.']
+            workshopText('script.4c2fa3719e46', 'Ki-67 lamında ölçülecek tümör epitelini anotasyonla çevreleyin, sınıfını tam\n') +
+            workshopText('script.59ba296ebaa9', 'olarak "Tumor" yapın ve bu anotasyon(lar)ı SEÇİN. Betik yalnız seçili Tumor\n') +
+            workshopText('script.b1e40d99cc9b', 'anotasyonlarını ölçer; H&E sınıflandırıcısı bu İHK lamına otomatik uygulanmaz.')]
 
     def tumorUnion = RoiTools.union(tumorObjects.collect { it.getROI() })
     if (tumorUnion == null || tumorUnion.isEmpty())
-        return [ok:false, error:'Tumor anotasyonları geçerli bir alan oluşturmuyor.']
+        return [ok:false, error:workshopText('script.a878e901b66d', 'Tumor anotasyonları geçerli bir alan oluşturmuyor.')]
 
     // Önceki sonuç (bu betiğin özetleri: tam ad ya da "(N)") SORULMADAN silinmez. Kip çağırandan gelir:
     //   ekle     → hiçbir şey silinmez; yeni özet sıradaki adı alır ("Ki-67 Tümör Özet (2)" …).
@@ -188,7 +188,7 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3, String m
         // Bu çalıştırmanın KENDİ özeti (yukarıda referansla oluşturuldu) — başka nesne değil.
         QP.removeObjects([summary], true)
         QP.fireHierarchyUpdate()
-        return [ok:false, error:'Tumor ROI içinde çekirdek tespit edilmedi. Tespit ve boya vektörü ayarlarını kontrol edin.']
+        return [ok:false, error:workshopText('script.707036f9e4ff', 'Tumor ROI içinde çekirdek tespit edilmedi. Tespit ve boya vektörü ayarlarını kontrol edin.')]
     }
     summary.setLocked(true)
 
@@ -257,30 +257,30 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3, String m
 
     def percent = { int count, int total2 -> total2 > 0 ? 100.0 * count / total2 : Double.NaN }
     def fmt = { double value, String pattern ->
-        Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : 'hesaplanamadı'
+        Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : workshopText('script.77fa6502fb41', 'hesaplanamadı')
     }
 
     def body = new StringBuilder()
-    body << 'TÜMÖR ROI İÇİNDE Kİ-67 ÖLÇÜMÜ (Yol A)\n'
+    body << workshopText('script.e9d0bafc74b9', 'TÜMÖR ROI İÇİNDE Kİ-67 ÖLÇÜMÜ (Yol A)\n')
     body << '════════════════════════════════════════\n\n'
-    body << String.format(java.util.Locale.US, 'Tumor ROI sayısı       : %,d%n', tumorObjects.size())
-    body << String.format(java.util.Locale.US, 'Birleşik alan          : %.3f mm²%n', aggregate.area)
-    body << String.format(java.util.Locale.US, 'Toplam çekirdek        : %,d%n', aggregate.total)
-    body << String.format(java.util.Locale.US, 'Pozitif çekirdek       : %,d%n', aggregate.positive)
-    body << "Ki-67 pozitif (%)     : ${fmt(aggregate.positivePct, '%.2f%%')}\n"
-    body << "Çekirdek yoğunluğu    : ${fmt(aggregate.density, '%.1f hücre/mm²')}\n\n"
-    body << 'YOĞUNLUK GRUPLARI\n'
+    body << String.format(java.util.Locale.US, workshopText('script.f21d46de7a2b', 'Tumor ROI sayısı       : %,d%n'), tumorObjects.size())
+    body << String.format(java.util.Locale.US, workshopText('script.782fc19ac8a2', 'Birleşik alan          : %.3f mm²%n'), aggregate.area)
+    body << String.format(java.util.Locale.US, workshopText('script.1e4302402623', 'Toplam çekirdek        : %,d%n'), aggregate.total)
+    body << String.format(java.util.Locale.US, workshopText('script.8e7693cd4b12', 'Pozitif çekirdek       : %,d%n'), aggregate.positive)
+    body << String.format(java.util.Locale.US, workshopText('script.7c8070bef3ce', 'Ki-67 pozitif (%%)     : %s\n'), fmt(aggregate.positivePct, '%.2f%%'))
+    body << String.format(java.util.Locale.US, workshopText('script.7c807b9543f4', 'Çekirdek yoğunluğu    : %s\n\n'), fmt(aggregate.density, workshopText('script.e32c42e5aa69', '%.1f hücre/mm²')))
+    body << workshopText('script.3156a7b031ec', 'YOĞUNLUK GRUPLARI\n')
     body << '────────────────────────────────────────\n'
-    body << String.format(java.util.Locale.US, 'Negatif : %,d  (%s)%n', aggregate.n0, fmt(percent(aggregate.n0, aggregate.total), '%.2f%%'))
+    body << String.format(java.util.Locale.US, workshopText('script.44e074b5ff66', 'Negatif : %,d  (%s)%n'), aggregate.n0, fmt(percent(aggregate.n0, aggregate.total), '%.2f%%'))
     body << String.format(java.util.Locale.US, '1+      : %,d  (%s)%n', aggregate.n1, fmt(percent(aggregate.n1, aggregate.total), '%.2f%%'))
     body << String.format(java.util.Locale.US, '2+      : %,d  (%s)%n', aggregate.n2, fmt(percent(aggregate.n2, aggregate.total), '%.2f%%'))
     body << String.format(java.util.Locale.US, '3+      : %,d  (%s)%n', aggregate.n3, fmt(percent(aggregate.n3, aggregate.total), '%.2f%%'))
-    body << '\nTEKNİK KAYIT\n'
+    body << workshopText('script.053d248a7fca', '\nTEKNİK KAYIT\n')
     body << '────────────────────────────────────────\n'
-    body << "Tespit kanalı          : ${detectionChannel}\n"
-    body << String.format(java.util.Locale.US, 'DAB eşikleri           : %.2f / %.2f / %.2f%n', nuclear1, nuclear2, nuclear3)
-    body << String.format(java.util.Locale.US, 'İşlem süresi           : %.1f sn%n', elapsed)
-    body << 'Analiz sınırı           : patolog tarafından seçilen Tumor ROI birleşimi\n\n'
+    body << String.format(java.util.Locale.US, workshopText('script.b4dd70f97eb5', 'Tespit kanalı          : %s\n'), detectionChannel)
+    body << String.format(java.util.Locale.US, workshopText('script.4dcafdb87f8a', 'DAB eşikleri           : %.2f / %.2f / %.2f%n'), nuclear1, nuclear2, nuclear3)
+    body << String.format(java.util.Locale.US, workshopText('script.0ee0600585c1', 'İşlem süresi           : %.1f sn%n'), elapsed)
+    body << workshopText('script.468d54b87488', 'Analiz sınırı           : patolog tarafından seçilen Tumor ROI birleşimi\n\n')
     if (!prevSummaries.isEmpty() && !replaceRun) {
         // Ekle: önceki özet duruyor; Tumor anotasyonlarına yazılan ölçümler BU çalıştırmayı gösterir.
         body << String.format(java.util.Locale.US, workshopText('script.c4402f967aba', 'Özet anotasyonu: %s. Bu lamda önceki Ki-67 sonucu da duruyor: %s. Hiçbir şey silinmedi; eski özeti kaldırmak için o addaki anotasyonu seçip silin ya da bir sonraki çalıştırmada "Değiştir"i seçin. Tumor anotasyonlarınıza yazılan ölçümler (ROI alanı, çekirdek sayıları, Ki-67 pozitif yüzdesi ve yoğunluk) BU çalıştırmayı gösterir; önceki özet anotasyonu eski değerleri göstermeye devam eder.'), summaryName,
@@ -288,8 +288,8 @@ def runDetection = { double nuclear1, double nuclear2, double nuclear3, String m
     } else if (replaceRun) {
         body << String.format(java.util.Locale.US, workshopText('script.46f3c5cb9752', 'Önceki sonuç değiştirildi: %,d özet anotasyonu ve doğrudan içlerindeki %,d hücre tespiti silindi (özetlerin içindeki anotasyonlar korundu).'), removedSummaries, removedDetections) << '\n\n'
     }
-    body << 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.\n'
-    body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
+    body << workshopText('script.89893f30f3c3', 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.\n')
+    body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
     println String.format(java.util.Locale.US, 'Tümör içi Ki-67 modülü Yol A tamamlandı: n=%d, Ki-67 pozitif=%s',
         aggregate.total, fmt(aggregate.positivePct, '%.2f%%'))
@@ -366,7 +366,7 @@ def runCellDetection = { regionAnno, String mode = 'add' ->
         def cells = regionAnno.getChildObjects().findAll { it.isDetection() }
         if (cells.isEmpty()) {
             if (!removedExisting.isEmpty()) { regionAnno.addChildObjects(removedExisting); QP.fireHierarchyUpdate() }
-            return [ok:false, error:'ROI içinde çekirdek tespit edilmedi. Boya vektörü/ayarlarını kontrol edin.']
+            return [ok:false, error:workshopText('script.b9dd85030b05', 'ROI içinde çekirdek tespit edilmedi. Boya vektörü/ayarlarını kontrol edin.')]
         }
         println String.format(java.util.Locale.US, 'Tümör içi Ki-67 modülü Yol B tespit: %,d çekirdek (%.1f sn)', cells.size(), elapsed)
         return [ok:true, count:cells.size(), removed:removedExisting.size()]
@@ -392,7 +392,7 @@ def addSmoothedFeatures = { regionAnno ->
 def applyClassifier = { regionAnno, String name ->
     try {
         def cells = regionAnno.getChildObjects().findAll { it.isDetection() }
-        if (cells.isEmpty()) return [ok:false, error:'Uygulanacak tespit yok.']
+        if (cells.isEmpty()) return [ok:false, error:workshopText('script.2c1fbae30053', 'Uygulanacak tespit yok.')]
         QP.selectObjects(cells)
         QP.runObjectClassifier(name)
         QP.fireHierarchyUpdate()
@@ -415,12 +415,12 @@ def applyClassifier = { regionAnno, String name ->
 // Yol B — INTENSITY: yalnız Tumor hücrelerini DAB eşiğiyle derecele → Ki-67 LI.
 def scoreIntensity = { regionAnno, double n1, double n2, double n3 ->
     if (!(n1 < n2 && n2 < n3))
-        return [ok:false, error:'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.']
+        return [ok:false, error:workshopText('script.80e3c67757b9', 'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.')]
     try {
         def cells = regionAnno.getChildObjects().findAll { it.isDetection() }
         def tumorCells = cells.findAll(isTumorCell)
         if (tumorCells.isEmpty())
-            return [ok:false, error:'Tumor sınıfında hücre yok — önce sınıflandırıcıyı uygulayın.']
+            return [ok:false, error:workshopText('script.a3d267fa0604', 'Tumor sınıfında hücre yok — önce sınıflandırıcıyı uygulayın.')]
         QP.setIntensityClassifications(tumorCells, 'Nucleus: DAB OD mean', n1, n2, n3)
         QP.fireHierarchyUpdate()
 
@@ -458,28 +458,28 @@ def scoreIntensity = { regionAnno, double n1, double n2, double n3 ->
             QP.fireHierarchyUpdate()
         }
 
-        def fmt = { double v, String p -> Double.isFinite(v) ? String.format(java.util.Locale.US, p, v) : 'hesaplanamadı' }
+        def fmt = { double v, String p -> Double.isFinite(v) ? String.format(java.util.Locale.US, p, v) : workshopText('script.77fa6502fb41', 'hesaplanamadı') }
         def body = new StringBuilder()
-        body << 'TÜMÖR HÜCRELERİNDE Kİ-67 (Yol B — nesne sınıflandırıcı)\n'
+        body << workshopText('script.c86732d4e1a9', 'TÜMÖR HÜCRELERİNDE Kİ-67 (Yol B — nesne sınıflandırıcı)\n')
         body << '══════════════════════════════════════════════════\n\n'
-        body << String.format(java.util.Locale.US, 'Tumor hücresi toplamı  : %,d%n', total)
-        body << String.format(java.util.Locale.US, 'Pozitif Tumor hücre    : %,d%n', positive)
+        body << String.format(java.util.Locale.US, workshopText('script.8fab87944a80', 'Tumor hücresi toplamı  : %,d%n'), total)
+        body << String.format(java.util.Locale.US, workshopText('script.c958b7331fa5', 'Pozitif Tumor hücre    : %,d%n'), positive)
         body << "Ki-67 LI (Tumor)       : ${fmt(li, '%.2f%%')}\n"
-        if (Double.isFinite(areaMm2)) body << String.format(java.util.Locale.US, 'Tespit ROI alanı       : %.3f mm²%n', areaMm2)
-        body << '\nYOĞUNLUK GRUPLARI (yalnız Tumor)\n'
+        if (Double.isFinite(areaMm2)) body << String.format(java.util.Locale.US, workshopText('script.0c6d10bc7dc5', 'Tespit ROI alanı       : %.3f mm²%n'), areaMm2)
+        body << workshopText('script.c99284aabef5', '\nYOĞUNLUK GRUPLARI (yalnız Tumor)\n')
         body << '──────────────────────────────────────\n'
-        body << String.format(java.util.Locale.US, 'Negatif : %,d%n', tNeg)
+        body << String.format(java.util.Locale.US, workshopText('script.75e14a9969e8', 'Negatif : %,d%n'), tNeg)
         body << String.format(java.util.Locale.US, '1+      : %,d%n', t1)
         body << String.format(java.util.Locale.US, '2+      : %,d%n', t2)
         body << String.format(java.util.Locale.US, '3+      : %,d%n', t3)
-        body << '\n' + String.format(java.util.Locale.US, 'DAB eşikleri: %.2f / %.2f / %.2f%n', n1, n2, n3)
+        body << '\n' + String.format(java.util.Locale.US, workshopText('script.9b36511ec315', 'DAB eşikleri: %.2f / %.2f / %.2f%n'), n1, n2, n3)
         if (regionAnno != null && isOwnSetName(regionAnno.getName(), KI67_REGION_BASE)) {
             // Önceki tespitli bölgede "Ekle": ölçümler kopya bölgeye yazıldı, özgün bölge değişmedi.
             body << '\n' + String.format(java.util.Locale.US, workshopText('script.6ed907313908', 'Bu ölçümler "%s" anotasyonuna yazıldı. Özgün bölgedeki önceki tespitler ve ölçümler değişmedi; bu sayılar yalnız bu çalıştırmayı gösterir.'), regionAnno.getName()) + '\n'
         }
-        body << '\nLI yalnız nesne sınıflandırıcının Tumor dediği hücreleri kapsar;\n'
-        body << 'Ki-67+ lenfositler/stromal hücreler paydadan çıkarılmıştır.\n'
-        body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
+        body << workshopText('script.dade924bbf5c', '\nLI yalnız nesne sınıflandırıcının Tumor dediği hücreleri kapsar;\n')
+        body << workshopText('script.ad3143aae009', 'Ki-67+ lenfositler/stromal hücreler paydadan çıkarılmıştır.\n')
+        body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
         println String.format(java.util.Locale.US, 'Tümör içi Ki-67 modülü Yol B tamamlandı: Tumor n=%d, Ki-67 LI=%s',
             total, fmt(li, '%.2f%%'))
@@ -520,14 +520,14 @@ def suggestStainVectors = { ->
     if (!svS2.contains('dab')) return
     boolean svDefault = svClose(svVecOf(svStains.getStain(1)), SV_DEF_HEMA) &&
                         svClose(svVecOf(svStains.getStain(2)), SV_DEF_DAB)
-    if (!svDefault) { println '✓ Boya vektörleri bu lamdan tahmin/kalibre edilmiş görünüyor.'; return }
+    if (!svDefault) { println workshopText('script.b4c549f13fee', '✓ Boya vektörleri bu lamdan tahmin/kalibre edilmiş görünüyor.'); return }
     def svMsg =
-        '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu lamdan tahmin EDİLMEMİŞ.\n\n' +
-        'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n' +
-        'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n' +
-        'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n' +
-        '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n' +
-        '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et'
+        workshopText('script.f3f75b6ee2d7', '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu lamdan tahmin EDİLMEMİŞ.\n\n') +
+        workshopText('script.0236cb297d65', 'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n') +
+        workshopText('script.06d512ead76b', 'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n') +
+        workshopText('script.41b8026c8dbe', 'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n') +
+        workshopText('script.61c29a66c32b', '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n') +
+        workshopText('script.e6ac9add601c', '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et')
     if (isHeadless) { println svMsg; return }
     if (!qupath.fx.dialogs.Dialogs.showConfirmDialog(workshopText('script.cb5b26abe800', 'Boya vektörleri — öneri'), svMsg)) return
     def svSel = QP.getSelectedObjects().findAll { it.hasROI() && it.getROI().isArea() }
@@ -894,11 +894,11 @@ render = { ->
             workshopText('script.ff94ab283b7b', "\nEksikleri düzeltip 'Yenile'."))
         def fixType = navButton(workshopText('script.bbf6fba1e891', 'Görüntü tipini ayarla'), {
             if (stage != null) stage.setAlwaysOnTop(false)
-            if (!launchBundled('yardimci-image-type.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla')
+            if (!launchBundled('yardimci-image-type.groovy')) menuHint(workshopText('script.c2c8bba69355', 'Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla'))
         })
-        def fixCal = navButton('Kalibrasyonu ayarla', {
+        def fixCal = navButton(workshopText('script.c43c68f554a0', 'Kalibrasyonu ayarla'), {
             if (stage != null) stage.setAlwaysOnTop(false)
-            if (!launchBundled('yardimci-kalibrasyon.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)')
+            if (!launchBundled('yardimci-kalibrasyon.groovy')) menuHint(workshopText('script.e3dc2534d6aa', 'Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)'))
         })
         content.getChildren().add(new javafx.scene.layout.HBox(8, fixType, fixCal))
         boolean ready = s.image && s.hDab && s.calib && (!needProject || s.project)
@@ -908,7 +908,7 @@ render = { ->
     } else if (cur == 'RUN_A') {
         title.setText(workshopText('script.5f7e4a504cc0', 'Hızlı Ki-67 — tümör bölgesini seçin'))
         buildScorePanel(content, buttons,
-            'Sınıfı "Tumor" olan anotasyon(lar)ı çizip SEÇİN (kenarı sarı), sonra "Çalıştır".\n' +
+            workshopText('script.f3ba2cfbd41a', 'Sınıfı "Tumor" olan anotasyon(lar)ı çizip SEÇİN (kenarı sarı), sonra "Çalıştır".\n') +
             workshopText('script.c48f60adadd6', 'Bu lamda önceki bir "Ki-67 Tümör Özet" varsa, çalıştırmadan önce ne yapılacağı sorulur (varsayılan: hiçbir şey silinmez). Eşikleri değiştirip tekrar çalıştırabilirsiniz.'),
             false,
             { a, b, c, m -> runDetection(a, b, c, m) },
@@ -971,22 +971,22 @@ render = { ->
     } else if (cur == 'TRAIN_GUIDE') {
         title.setText(workshopText('script.292c4d20e93e', "4/5 — Sınıflandırıcıyı QuPath'te eğitin"))
         def instr = new javafx.scene.control.TextArea(
-            '1. Üst menü:  Classify → Object classification → Train object classifier\n' +
-            '2. Sınıflandırıcı türü: Random Trees (varsayılan)\n' +
-            '3. "Live update" kutusunu işaretleyin — hücreler Tumor/Other renklerine boyanmalı\n' +
-            '4. Sınıflandırma kararlı görünene dek Tumor/Other örnekleri eklemeye devam edin\n' +
-            '5. Bir AD girip "Save" ile kaydedin (ör. ki67-tumor-other)\n' +
-            '6. Kaydettiğiniz adı aşağıya yazıp "Kaydedildi ▶"')
+            workshopText('script.43280ffc341a', '1. Üst menü:  Classify → Object classification → Train object classifier\n') +
+            workshopText('script.6f58d5c1ddd0', '2. Sınıflandırıcı türü: Random Trees (varsayılan)\n') +
+            workshopText('script.74f85439823f', '3. "Live update" kutusunu işaretleyin — hücreler Tumor/Other renklerine boyanmalı\n') +
+            workshopText('script.f3c6ddd93a91', '4. Sınıflandırma kararlı görünene dek Tumor/Other örnekleri eklemeye devam edin\n') +
+            workshopText('script.872acb055c86', '5. Bir AD girip "Save" ile kaydedin (ör. ki67-tumor-other)\n') +
+            workshopText('script.be34f96054cc', '6. Kaydettiğiniz adı aşağıya yazıp "Kaydedildi ▶"'))
         instr.setEditable(false); instr.setWrapText(true); instr.setPrefRowCount(7)
         def nameField = new javafx.scene.control.TextField('ki67-tumor-other'); nameField.setPrefColumnCount(24)
-        content.getChildren().addAll(instr, new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Kaydedilen ad:'), nameField))
+        content.getChildren().addAll(instr, new javafx.scene.layout.HBox(8, new javafx.scene.control.Label(workshopText('script.1ef9521ebe51', 'Kaydedilen ad:')), nameField))
         content.getChildren().add(menuHighlightToggle('Classify'))   // #3: Classify menüsünü göster
         buttons.getChildren().addAll(
             navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('OTHER_EXAMPLES'); render() }),
             navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }),
-            navButton('Kaydedildi ▶', {
+            navButton(workshopText('script.ef7a831c83cd', 'Kaydedildi ▶'), {
                 String nm = nameField.getText()?.trim()
-                if (!nm) { Dialogs.showWarningNotification('Ad gerekli', workshopText('script.6c7b6f3bc12d', 'Kaydettiğiniz sınıflandırıcının adını girin.')); return }
+                if (!nm) { Dialogs.showWarningNotification(workshopText('script.45df3b41f998', 'Ad gerekli'), workshopText('script.6c7b6f3bc12d', 'Kaydettiğiniz sınıflandırıcının adını girin.')); return }
                 def known = QP.getProject()?.getObjectClassifiers()?.getNames() ?: []
                 if (!known.contains(nm)) {
                     if (stage != null) stage.setAlwaysOnTop(false)
@@ -1005,11 +1005,11 @@ render = { ->
     } else if (cur == 'INTENSITY') {
         def ar = applyResult.get()
         title.setText(workshopText('script.0d5823625cb1', '5/5 — Tümör hücrelerinde Ki-67 yoğunluğu'))
-        String applyLine = (ar?.ok) ? "Sınıflandırma: Tumor=${ar.tumorCount}, Other=${ar.otherCount}, sınıfsız=${ar.unclassified}\n" : ''
+        String applyLine = (ar?.ok) ? String.format(java.util.Locale.US, workshopText('script.d01cb06fac6c', 'Sınıflandırma: Tumor=%s, Other=%s, sınıfsız=%s\n'), ar.tumorCount, ar.otherCount, ar.unclassified) : ''
         buildScorePanel(content, buttons,
             applyLine +
-            'DAB eşiklerini ayarlayıp "Çalıştır": yalnız Tumor hücreleri 0/1+/2+/3+ derecelenir.\n' +
-            'Ki-67 LI = pozitif Tumor hücreleri / tüm Tumor hücreleri. Eşikleri değiştirip tekrar çalıştırabilirsiniz.',
+            workshopText('script.ca365abb904a', 'DAB eşiklerini ayarlayıp "Çalıştır": yalnız Tumor hücreleri 0/1+/2+/3+ derecelenir.\n') +
+            workshopText('script.c770446ab1b7', 'Ki-67 LI = pozitif Tumor hücreleri / tüm Tumor hücreleri. Eşikleri değiştirip tekrar çalıştırabilirsiniz.'),
             true,
             { a, b, c, m -> scoreIntensity(summaryAnnotation.get(), a, b, c) },
             pathBResult,

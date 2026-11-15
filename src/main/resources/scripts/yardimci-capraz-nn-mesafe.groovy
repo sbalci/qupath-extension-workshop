@@ -234,10 +234,10 @@ def allDetections = QP.getDetectionObjects().findAll { it.getROI() != null && it
 def classNames = allDetections.collect { it.getPathClass().toString() }.unique().sort()
 
 if (classNames.size() < 2) {
-    def msg = "Çapraz NN için en az İKİ farklı sınıfta tespit gerekir.\n" +
-              "Mevcut sınıf(lar): " + (classNames.join(', ') ?: '(yok)') + "\n\n" +
-              "Önce Hücre Tespiti / Nükleer Boya / Membran Boya / Sitoplazmik Boya / " +
-              "Tümör İçi Ki-67 modülleriyle sınıflı hücre tespiti yapın."
+    def msg = workshopText('script.06f5b2df1234', 'Çapraz NN için en az İKİ farklı sınıfta tespit gerekir.\n') +
+              workshopText('script.b74458cb3bc3', 'Mevcut sınıf(lar): ') + (classNames.join(', ') ?: workshopText('script.715392eca0f8', '(yok)')) + "\n\n" +
+              workshopText('script.1c01597cce97', 'Önce Hücre Tespiti / Nükleer Boya / Membran Boya / Sitoplazmik Boya / ') +
+              workshopText('script.73fe01b8e3b4', 'Tümör İçi Ki-67 modülleriyle sınıflı hücre tespiti yapın.')
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.f34b330b89e2', "Yetersiz sınıf"), msg)
     return
 }
@@ -296,7 +296,7 @@ def poolB = QP.getDetectionObjects().findAll { it.getROI() != null && it.getPath
 
 if (poolA.isEmpty() || poolB.isEmpty()) {
     def msg = String.format(java.util.Locale.US,
-        "Seçilen sınıflarda tespit yok (A='%s': %d, B='%s': %d).",
+        workshopText('script.0074da06b5a9', 'Seçilen sınıflarda tespit yok (A=\'%s\': %d, B=\'%s\': %d).'),
         classA, poolA.size(), classB, poolB.size())
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.4277b763a640', "Tespit yok"), msg)
     return
@@ -427,33 +427,33 @@ QP.fireHierarchyUpdate()
 
 // ── 9) Sonucu sun ────────────────────────────────────────────────────────────
 def body = new StringBuilder()
-body << "ÇAPRAZ-TİP EN YAKIN KOMŞU MESAFESİ\n"
+body << workshopText('script.22a84aba1916', 'ÇAPRAZ-TİP EN YAKIN KOMŞU MESAFESİ\n')
 body << "═══════════════════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "A sınıfı (kaynak)  : %s (%,d hücre)%n", classA, na)
-body << String.format(java.util.Locale.US, "B sınıfı (hedef)   : %s (%,d hücre)%n", classB, nb)
-body << String.format(java.util.Locale.US, "Yarıçap eşiği      : %.0f µm%n", radiusUm)
+body << String.format(java.util.Locale.US, workshopText('script.178a35d95759', 'A sınıfı (kaynak)  : %s (%,d hücre)%n'), classA, na)
+body << String.format(java.util.Locale.US, workshopText('script.ecc1a42f8e18', 'B sınıfı (hedef)   : %s (%,d hücre)%n'), classB, nb)
+body << String.format(java.util.Locale.US, workshopText('script.16a130d8daab', 'Yarıçap eşiği      : %.0f µm%n'), radiusUm)
 body << "\n"
-body << String.format(java.util.Locale.US, "Ortalama NN        : %.1f µm%n", meanNN)
-body << String.format(java.util.Locale.US, "SS (std) NN        : %.1f µm%n", sdNN)
-body << String.format(java.util.Locale.US, "Medyan NN          : %.1f µm%n", medianNN)
+body << String.format(java.util.Locale.US, workshopText('script.c83eae2a7467', 'Ortalama NN        : %.1f µm%n'), meanNN)
+body << String.format(java.util.Locale.US, workshopText('script.89af05112c75', 'SS (std) NN        : %.1f µm%n'), sdNN)
+body << String.format(java.util.Locale.US, workshopText('script.7f6f9cd27c5e', 'Medyan NN          : %.1f µm%n'), medianNN)
 body << String.format(java.util.Locale.US, "MAD NN             : %.1f µm%n", madNN)
 body << String.format(java.util.Locale.US, "Minimum NN         : %.1f µm%n", minNN)
-body << String.format(java.util.Locale.US, "Maksimum NN        : %.1f µm%n", maxNN)
+body << String.format(java.util.Locale.US, workshopText('script.ed621e57a104', 'Maksimum NN        : %.1f µm%n'), maxNN)
 body << "───────────────────────────────────────────\n"
 body << String.format(java.util.Locale.US,
-    "Yarıçap içinde A   : %,d / %,d  (%.1f %%)%n", withinRad, na, withinPct)
+    workshopText('script.2461ceccad53', 'Yarıçap içinde A   : %,d / %,d  (%.1f %%)%n'), withinRad, na, withinPct)
 body << "\n"
-body << "Her A hücresine '${measName}'\n"
-body << "ölçümü yazıldı (Veri Dışa Aktarma modülü ile dışa aktarılır).\n"
-body << "Ölçüme göre renklendirmek için: Measure → Show measurement maps.\n\n"
-body << "Not: Mesafe merkez-merkez piksel mesafesi × µm/px kalibrasyon faktörüdür.\n"
-body << "Bu bir UZAMSAL MESAFE ölçümüdür — klinik skor veya yorum DEĞİL.\n"
+body << String.format(java.util.Locale.US, workshopText('script.5ff219f6aabe', 'Her A hücresine \'%s\'\n'), measName)
+body << workshopText('script.4c6dc6a88956', 'ölçümü yazıldı (Veri Dışa Aktarma modülü ile dışa aktarılır).\n')
+body << workshopText('script.ee6121eddd6c', 'Ölçüme göre renklendirmek için: Measure → Show measurement maps.\n\n')
+body << workshopText('script.d1d8a5cf3c12', 'Not: Mesafe merkez-merkez piksel mesafesi × µm/px kalibrasyon faktörüdür.\n')
+body << workshopText('script.0c1fdcd61859', 'Bu bir UZAMSAL MESAFE ölçümüdür — klinik skor veya yorum DEĞİL.\n')
 body << "(Summers 2022; Bankhead 2017)\n\n"
 def noteText = modeNote(sumRes, measName)
 if (noteText) body << noteText << "\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("Çapraz NN mesafesi (${classA}→${classB})", body.toString())
+showResultWindow(String.format(java.util.Locale.US, workshopText('script.5b8016637e4c', 'Çapraz NN mesafesi (%s→%s)'), classA, classB), body.toString())
 println String.format(java.util.Locale.US,
     "✓ Çapraz NN yazıldı: '%s'→'%s', ortalama %.1f µm, medyan %.1f µm, yarıçap içinde %,d/%,d (%.1f%%).",
     classA, classB, meanNN, medianNN, withinRad, na, withinPct)

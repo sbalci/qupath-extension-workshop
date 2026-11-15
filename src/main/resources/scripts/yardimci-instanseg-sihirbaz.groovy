@@ -93,23 +93,23 @@ def nThreadsDefault = { -> Math.max(1, Runtime.getRuntime().availableProcessors(
 def buildResultText = { String slideName, int n, double areaMm2, double density, double secs,
                         String modelDir, String device, boolean calOk ->
     def sb = new StringBuilder()
-    sb << "INSTANSEG — TESPİT\n"
+    sb << workshopText('script.10dd46e2fae7', 'INSTANSEG — TESPİT\n')
     sb << "═══════════════════════════════\n\n"
-    sb << "Lam          : " << slideName << "\n"
-    sb << "Model klasörü  : " << modelDir << "\n"
-    sb << "Cihaz          : " << device << "\n"
+    sb << workshopText('script.c482c0d5e596', 'Lam          : ') << slideName << "\n"
+    sb << workshopText('script.57d4d4a2f421', 'Model klasörü  : ') << modelDir << "\n"
+    sb << workshopText('script.3b7d627f2bc5', 'Cihaz          : ') << device << "\n"
     sb << "\n"
-    sb << String.format(java.util.Locale.US, "Tespit sayısı   : %,d%n", n)
+    sb << String.format(java.util.Locale.US, workshopText('script.f8bf9bffd093', 'Tespit sayısı   : %,d%n'), n)
     if (calOk) {
-        sb << String.format(java.util.Locale.US, "ROI alanı       : %.4f mm²%n", areaMm2)
-        sb << String.format(java.util.Locale.US, "Yoğunluk        : %,.1f tespit/mm²%n", density)
+        sb << String.format(java.util.Locale.US, workshopText('script.10c9c0da7f5e', 'ROI alanı       : %.4f mm²%n'), areaMm2)
+        sb << String.format(java.util.Locale.US, workshopText('script.da59405b9a68', 'Yoğunluk        : %,.1f tespit/mm²%n'), density)
     } else {
-        sb << "ROI alanı       : (piksel kalibrasyonu yok — alan/yoğunluk hesaplanamadı)\n"
+        sb << workshopText('script.b11b186bd3e3', 'ROI alanı       : (piksel kalibrasyonu yok — alan/yoğunluk hesaplanamadı)\n')
     }
-    sb << String.format(java.util.Locale.US, "Süre            : %.1f sn%n", secs)
-    sb << "\nŞekil + yoğunluk ölçümleri her tespite yazıldı (Measurements paneli).\n"
-    sb << "InstanSeg çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki).\n"
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    sb << String.format(java.util.Locale.US, workshopText('script.d0170048c6e5', 'Süre            : %.1f sn%n'), secs)
+    sb << workshopText('script.1cbbe7ce1e74', '\nŞekil + yoğunluk ölçümleri her tespite yazıldı (Measurements paneli).\n')
+    sb << workshopText('script.826b30f639e2', 'InstanSeg çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki).\n')
+    sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
@@ -158,7 +158,7 @@ def copyToClipboard = { String txt ->
 def pickDir = {
     try { return qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.97b90d3618a9', 'InstanSeg model klasörünü seç'), null) }
     catch (Throwable t) {
-        try { return qupath.fx.dialogs.FileChoosers.promptForDirectory('InstanSeg model klasörünü seç', (File) null) }
+        try { return qupath.fx.dialogs.FileChoosers.promptForDirectory(workshopText('script.97b90d3618a9', 'InstanSeg model klasörünü seç'), (File) null) }
         catch (Throwable t2) { return null }
     }
 }
@@ -170,17 +170,17 @@ def redetectCount = { ann ->
 
 // ── Tespit akışı (arka plan iş parçacığı) ───────────────────────────────────
 def startDetection = {
-    if (!instansegInstalled()) { errorTextRef.set('InstanSeg eklentisi yüklü değil.\nExtensions → Manage extensions → InstanSeg (bkz. InstanSeg eki).'); step.set('ERROR'); render(); return }
+    if (!instansegInstalled()) { errorTextRef.set(workshopText('script.cae04f716cdd', 'InstanSeg eklentisi yüklü değil.\nExtensions → Manage extensions → InstanSeg (bkz. InstanSeg eki).')); step.set('ERROR'); render(); return }
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.da80fab350d1', 'Görüntü açık değil.')); step.set('ERROR'); render(); return }
     def selected = QP.getSelectedObject()
     if (selected == null || !(selected instanceof PathAnnotationObject) || !selected.hasROI() || !selected.getROI().isArea()) {
-        errorTextRef.set('Önce bir ALAN anotasyonu çizip seçin.\n  1. [P] → Polygon/Brush aracı\n  2. Ölçülecek bölgenin çevresini çizin\n  3. Anotasyon seçiliyken "Tespit".'); step.set('ERROR'); render(); return
+        errorTextRef.set(workshopText('script.cbf3e835694e', 'Önce bir ALAN anotasyonu çizip seçin.\n  1. [P] → Polygon/Brush aracı\n  2. Ölçülecek bölgenin çevresini çizin\n  3. Anotasyon seçiliyken "Tespit".')); step.set('ERROR'); render(); return
     }
     String modelDir = textOf(modelFieldRef)
     String device   = textOf(deviceFieldRef) ?: 'cpu'
     if (!isValidModelDir(modelDir)) {
-        errorTextRef.set('Geçerli bir InstanSeg model klasörü seçin.\nKlasör instanseg.pt + rdf.yaml içermeli.\nModel indirmek için: InstanSeg arayüzü (Extensions → InstanSeg).'); step.set('ERROR'); render(); return
+        errorTextRef.set(workshopText('script.032629bbd32a', 'Geçerli bir InstanSeg model klasörü seçin.\nKlasör instanseg.pt + rdf.yaml içermeli.\nModel indirmek için: InstanSeg arayüzü (Extensions → InstanSeg).')); step.set('ERROR'); render(); return
     }
     // Mevcut hücre varsa tespitten ÖNCE sor (FX iş parçacığında, işçi iş parçacığı başlamadan; Hayır → hiçbir şey çalışmaz).
     int redetectPrev = redetectCount(selected)
@@ -198,21 +198,21 @@ def startDetection = {
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('InstanSeg çalışıyor…'); step.set('RUNNING'); render()
+    runPhaseRef.set(workshopText('script.2a40822b1141', 'InstanSeg çalışıyor…')); step.set('RUNNING'); render()
 
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
-        appendLine('Lam: ' + imageNameOf(imageData))
-        appendLine('Model: ' + modelDir)
-        appendLine('Cihaz: ' + device)
+        appendLine(workshopText('script.36b3b9339589', 'Lam: ') + imageNameOf(imageData))
+        appendLine(workshopText('script.33f4e5313c6b', 'Model: ') + modelDir)
+        appendLine(workshopText('script.7acaa4980f77', 'Cihaz: ') + device)
 
-        if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
+        if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.fee85e45842b', 'İptal edildi.')); step.set('ERROR'); render() }; return }
 
-        appendLine('InstanSeg tespiti çalışıyor (büyük ROI\'de / CPU\'da birkaç dakika sürebilir)…')
+        appendLine(workshopText('script.fd6e5414b098', 'InstanSeg tespiti çalışıyor (büyük ROI\'de / CPU\'da birkaç dakika sürebilir)…'))
         def t0 = System.currentTimeMillis()
         try {
             def oldDetections = selected.getChildObjects().findAll { it.isDetection() }
-            if (!oldDetections.isEmpty()) { selected.removePathObjects(oldDetections); appendLine('  Önceki ' + oldDetections.size() + ' tespit temizlendi.') }
+            if (!oldDetections.isEmpty()) { selected.removePathObjects(oldDetections); appendLine(String.format(java.util.Locale.US, workshopText('script.b4c80356f36a', '  Önceki %d tespit temizlendi.'), oldDetections.size())) }
 
             int nThreads = nThreadsDefault()
             def b = qupath.ext.instanseg.core.InstanSeg.builder()
@@ -228,7 +228,7 @@ def startDetection = {
             QP.selectObjects(selected)
             instanseg.detectObjects(imageData, [selected])
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { errorTextRef.set('InstanSeg tespiti başarısız:\n' + (t.getMessage() ?: t.getClass().getSimpleName()) + '\n\nOlası nedenler: model/kanal uyuşmazlığı (model H&E RGB bekliyor olabilir), eksik DJL motoru, GPU/cihaz adı ya da bellek. Konsolu kontrol edin (View → Show log).'); step.set('ERROR'); render() }
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.04a2dce6c925', 'InstanSeg tespiti başarısız:\n') + (t.getMessage() ?: t.getClass().getSimpleName()) + workshopText('script.6025ba58a0c2', '\n\nOlası nedenler: model/kanal uyuşmazlığı (model H&E RGB bekliyor olabilir), eksik DJL motoru, GPU/cihaz adı ya da bellek. Konsolu kontrol edin (View → Show log).')); step.set('ERROR'); render() }
             return
         }
         def secs = (System.currentTimeMillis() - t0) / 1000.0d
@@ -381,10 +381,10 @@ render = { ->
             boolean selOk = (selected != null && selected instanceof PathAnnotationObject && selected.hasROI() && selected.getROI().isArea())
             boolean modelOk = isValidModelDir(loadModelDir())
             def sb = new StringBuilder()
-            sb << "Lam           : " << imageNameOf(imageData) << "\n"
-            sb << "Seçili anotasyon: " << (selOk ? 'var (alan ROI)' : 'YOK — bir alan anotasyonu seçin') << "\n"
-            sb << "InstanSeg        : yüklü ✓\n"
-            sb << "Model klasörü    : " << (modelOk ? 'geçerli ✓' : 'ayarlanmadı/geçersiz — aşağıdan seçin') << "\n"
+            sb << workshopText('script.c89414a10800', 'Lam           : ') << imageNameOf(imageData) << "\n"
+            sb << workshopText('script.6a58b63587a2', 'Seçili anotasyon: ') << (selOk ? workshopText('script.2560cad7fb3a', 'var (alan ROI)') : workshopText('script.d1396e90398e', 'YOK — bir alan anotasyonu seçin')) << "\n"
+            sb << workshopText('script.93514a89e45c', 'InstanSeg        : yüklü ✓\n')
+            sb << workshopText('script.8140decf55cf', 'Model klasörü    : ') << (modelOk ? workshopText('script.caa586c4362f', 'geçerli ✓') : workshopText('script.fbe4394362b4', 'ayarlanmadı/geçersiz — aşağıdan seçin')) << "\n"
             addMonoArea(sb.toString())
             addParamGrid(center)
             addGuidance(workshopText('script.f882f9e32bc9', 'Çıktı yalnız tespit SAYISI + alan + yoğunluktur; sınıflandırma/yorum üretmez. ' +

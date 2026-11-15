@@ -101,9 +101,9 @@ def loadConfig = { ->
 def configMissing = { cfg ->
     def miss = []
     if (!cfg.python?.trim() || !(new File(cfg.python)).isFile())
-        miss << 'Python yürütülebilir (python.exe) — ortam yöneticisinden "DICOMtoSVS" ortamını kurun'
+        miss << workshopText('script.4a9d92b29a49', 'Python yürütülebilir (python.exe) — ortam yöneticisinden "DICOMtoSVS" ortamını kurun')
     if (!cfg.script?.trim() || !(new File(cfg.script)).isFile())
-        miss << 'DICOMtoSVS.py betiği — "İndir/Güncelle" ile indirin (ya da elle indirip seçin)'
+        miss << workshopText('script.fb20eaccce2a', 'DICOMtoSVS.py betiği — "İndir/Güncelle" ile indirin (ya da elle indirip seçin)')
     return miss
 }
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
@@ -132,11 +132,11 @@ def downloadScript = { ->
             .timeout(java.time.Duration.ofSeconds(120)).GET().build()
         def resp = client.send(req, java.net.http.HttpResponse.BodyHandlers.ofByteArray())
         if (resp.statusCode() != 200)
-            return [ok: false, error: 'İndirme başarısız: HTTP ' + resp.statusCode() + '\n' + RAW_URL]
+            return [ok: false, error: workshopText('script.49867570e5a3', 'İndirme başarısız: HTTP ') + resp.statusCode() + '\n' + RAW_URL]
         byte[] bytes = resp.body()
         def text = new String(bytes, java.nio.charset.StandardCharsets.UTF_8)
         if (!text.contains('def from_DICOM_to_SVS'))
-            return [ok: false, error: 'İndirilen dosya beklenen işlevi (from_DICOM_to_SVS) içermiyor — sabitlenmiş sürüm bozulmuş olabilir.']
+            return [ok: false, error: workshopText('script.5735d70a0d20', 'İndirilen dosya beklenen işlevi (from_DICOM_to_SVS) içermiyor — sabitlenmiş sürüm bozulmuş olabilir.')]
         def dest = defaultScriptFile()
         dest.getParentFile().mkdirs()
         def tmp = new File(dest.getParentFile(), dest.getName() + '.tmp')
@@ -145,8 +145,8 @@ def downloadScript = { ->
             java.nio.file.StandardCopyOption.REPLACE_EXISTING)
         return [ok: true, size: bytes.length, dest: dest.getAbsolutePath()]
     } catch (Throwable t) {
-        return [ok: false, error: 'İndirme hatası: ' + (t.getMessage() ?: t.getClass().getSimpleName()) +
-            '\nİnternet yoksa betiği elle indirip "Yapılandır" ekranından seçin:\n' + REPO_URL]
+        return [ok: false, error: workshopText('script.2937c24a8d58', 'İndirme hatası: ') + (t.getMessage() ?: t.getClass().getSimpleName()) +
+            workshopText('script.82bca52bd6f6', '\nİnternet yoksa betiği elle indirip "Yapılandır" ekranından seçin:\n') + REPO_URL]
     }
 }
 
@@ -261,7 +261,7 @@ def runPython = { List cmd, Closure onLine ->
     pb.redirectErrorStream(true)
     def proc
     try { proc = pb.start() }
-    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.f0e1e3289660', 'Python başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     processRef.set(proc)
     def last = new java.util.ArrayDeque()
     try {
@@ -276,9 +276,9 @@ def runPython = { List cmd, Closure onLine ->
     } catch (Throwable ignore) {}
     boolean finished
     try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
-    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
+    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: String.format(java.util.Locale.US, workshopText('script.959c500322fd', 'Zaman aşımı (%s sn)'), PYTHON_TIMEOUT_SECONDS)] }
+    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
     int code = proc.exitValue()
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
@@ -294,7 +294,7 @@ def startSelftest = {
     persistConfigFields()
     def cfg = loadConfig()
     if (!cfg.python?.trim() || !(new File(cfg.python)).isFile()) {
-        errorTextRef.set('Önce Python ortamını kurun/seçin (ortam yöneticisi → "DICOMtoSVS").'); step.set('ERROR'); render(); return
+        errorTextRef.set(workshopText('script.c5ce1656033f', 'Önce Python ortamını kurun/seçin (ortam yöneticisi → "DICOMtoSVS").')); step.set('ERROR'); render(); return
     }
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
@@ -317,11 +317,11 @@ def startDownload = {
     step.set('CHECK_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
-        appendLine('DICOMtoSVS.py indiriliyor (sabitlenmiş sürüm ' + PIN_SHA.substring(0, 7) + ', 2026-08-15)…')
+        appendLine(String.format(java.util.Locale.US, workshopText('script.4d1b3b46efcc', 'DICOMtoSVS.py indiriliyor (sabitlenmiş sürüm %s, 2026-08-15)…'), PIN_SHA.substring(0, 7)))
         appendLine(RAW_URL)
         def r = downloadScript()
         if (r.ok) {
-            appendLine('✓ İndirildi: ' + r.dest + '  (' + r.size + ' bayt)')
+            appendLine(String.format(java.util.Locale.US, workshopText('script.b53b1c9a8ca8', '✓ İndirildi: %s  (%s bayt)'), r.dest, r.size))
             prefs.remove(PREF_SCRIPT)   // öntanımlı konuma dönüldü
             try { prefs.flush() } catch (Throwable ignore) {}
         } else {
@@ -337,13 +337,13 @@ def startRun = {
     persistRunFields()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
-    if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!miss.isEmpty()) { errorTextRef.set(workshopText('script.59d7792abf1b', 'Önce yapılandırmayı tamamlayın:\n  • ') + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     def inDirTxt = cfg.inputDir?.trim()
-    if (!inDirTxt) { errorTextRef.set('Girdi klasörü seçilmedi.'); step.set('ERROR'); render(); return }
+    if (!inDirTxt) { errorTextRef.set(workshopText('script.d6c5230a8d70', 'Girdi klasörü seçilmedi.')); step.set('ERROR'); render(); return }
     def inDir = new File(inDirTxt)
-    if (!inDir.isDirectory()) { errorTextRef.set('Girdi klasörü bulunamadı:\n' + inDirTxt); step.set('ERROR'); render(); return }
+    if (!inDir.isDirectory()) { errorTextRef.set(workshopText('script.99b371b137af', 'Girdi klasörü bulunamadı:\n') + inDirTxt); step.set('ERROR'); render(); return }
     def kids = inDir.listFiles()
-    if (kids == null || kids.length == 0) { errorTextRef.set('Girdi klasörü boş:\n' + inDirTxt); step.set('ERROR'); render(); return }
+    if (kids == null || kids.length == 0) { errorTextRef.set(workshopText('script.77aa661e716b', 'Girdi klasörü boş:\n') + inDirTxt); step.set('ERROR'); render(); return }
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
@@ -353,12 +353,11 @@ def startRun = {
         def driver
         try { driver = writeDriver() }
         catch (Throwable t) {
-            javafx.application.Platform.runLater { errorTextRef.set('Sürücü betiği yazılamadı:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }; return
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.e542dd726e2f', 'Sürücü betiği yazılamadı:\n') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }; return
         }
-        appendLine('Girdi  : ' + inDir.getAbsolutePath())
-        appendLine('Çıktı  : ' + outputDirOf(inDirTxt).getAbsolutePath())
-        appendLine('Seçenekler: zip=' + cfg.isZipped + ' etiket=' + cfg.label + ' makro=' + cfg.macro +
-            ' anonim=' + cfg.anonymize + ' DICOM-etiketleri=' + cfg.addTags)
+        appendLine(workshopText('script.a18121897d56', 'Girdi  : ') + inDir.getAbsolutePath())
+        appendLine(workshopText('script.e6abf4f8630f', 'Çıktı  : ') + outputDirOf(inDirTxt).getAbsolutePath())
+        appendLine(String.format(java.util.Locale.US, workshopText('script.3cf939ceb0a6', 'Seçenekler: zip=%s etiket=%s makro=%s anonim=%s DICOM-etiketleri=%s'), cfg.isZipped, cfg.label, cfg.macro, cfg.anonymize, cfg.addTags))
         appendLine('─'.multiply(60))
         // '-u': Python stdout arabelleğini kapat → ilerleme satırları canlı aksın.
         def cmd = [cfg.python, '-u', driver.getAbsolutePath(), cfg.script, inDir.getAbsolutePath(),
@@ -369,22 +368,22 @@ def startRun = {
         def converted = listConverted(outDir)
         javafx.application.Platform.runLater {
             if (!r.ok && converted.isEmpty()) {
-                errorTextRef.set('Dönüştürme başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: ''))
+                errorTextRef.set(workshopText('script.572986101f53', 'Dönüştürme başarısız (çıkış: ') + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: ''))
                 step.set('ERROR'); render()
             } else {
                 def sb = new StringBuilder()
-                sb << 'DICOM → SVS DÖNÜŞTÜRME — ÖZET\n'
+                sb << workshopText('script.e4aaebb15a6c', 'DICOM → SVS DÖNÜŞTÜRME — ÖZET\n')
                 sb << '═══════════════════════════════\n\n'
-                sb << 'Girdi klasörü : ' << inDir.getAbsolutePath() << '\n'
-                sb << 'Çıktı klasörü : ' << outDir.getAbsolutePath() << '\n'
-                sb << 'Dönüştürülen  : ' << converted.size() << ' dosya\n'
+                sb << workshopText('script.2fa2041e11c4', 'Girdi klasörü : ') << inDir.getAbsolutePath() << '\n'
+                sb << workshopText('script.b28116177df1', 'Çıktı klasörü : ') << outDir.getAbsolutePath() << '\n'
+                sb << workshopText('script.b99732d0b445', 'Dönüştürülen  : ') << converted.size() << workshopText('script.5993d6ba3cb8', ' dosya\n')
                 if (!r.ok)
-                    sb << '\n⚠ Süreç ' << r.exitCode << ' koduyla bitti — bazı lamlar atlanmış/başarısız olabilir (konsola bakın).\n'
-                sb << '\nDosyalar:\n'
+                    sb << String.format(java.util.Locale.US, workshopText('script.7db8eba7fac2', '\n⚠ Süreç %s koduyla bitti — bazı lamlar atlanmış/başarısız olabilir (konsola bakın).\n'), r.exitCode)
+                sb << workshopText('script.39e246546e3e', '\nDosyalar:\n')
                 converted.take(30).each { f -> sb << '  • ' << f.getName() << '\n' }
-                if (converted.size() > 30) sb << '  … (+' << (converted.size() - 30) << ' dosya)\n'
-                sb << '\nDesteklenmeyen lamlar (multipleks, z-stack, JPEG/J2K dışı) araç tarafından atlanır.\n'
-                sb << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
+                if (converted.size() > 30) sb << '  … (+' << (converted.size() - 30) << workshopText('script.e85ffe81c21a', ' dosya)\n')
+                sb << workshopText('script.0d3ba614f151', '\nDesteklenmeyen lamlar (multipleks, z-stack, JPEG/J2K dışı) araç tarafından atlanır.\n')
+                sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
                 resultTextRef.set(sb.toString())
                 resultDirRef.set(outDir)
                 step.set('RESULT'); render()
@@ -505,10 +504,10 @@ render = { ->
     } else if (cur == 'READY') {
         title.setText(workshopText('script.2e23374c0592', 'DICOM → SVS dönüştürme — hazır'))
         def sb = new StringBuilder()
-        sb << 'Python  : ' << (cfg.python ?: '(ayarsız)') << '\n'
+        sb << 'Python  : ' << (cfg.python ?: workshopText('script.a2bfafb27517', '(ayarsız)')) << '\n'
         def scF = new File(cfg.script ?: '')
-        sb << 'Betik   : ' << (scF.isFile() ? cfg.script : '(indirilmedi)') << '\n'
-        sb << 'Sürüm   : sabitlenmiş ' << PIN_SHA.substring(0, 7) << ' (2026-08-15) — ' << REPO_URL << '\n'
+        sb << workshopText('script.5501a569d721', 'Betik   : ') << (scF.isFile() ? cfg.script : workshopText('script.48eee38d64a5', '(indirilmedi)')) << '\n'
+        sb << workshopText('script.589045a4d51c', 'Sürüm   : sabitlenmiş ') << PIN_SHA.substring(0, 7) << ' (2026-08-15) — ' << REPO_URL << '\n'
         addMonoArea(sb.toString())
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(8); grid.setVgap(8)
         def inField = new javafx.scene.control.TextField(cfg.inputDir ?: '')

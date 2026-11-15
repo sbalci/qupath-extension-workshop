@@ -200,9 +200,7 @@ if (tiles.isEmpty()) {
     usedFallback = true
 }
 if (tiles.isEmpty()) {
-    def msg = "WSInfer karosu bulunamadı.\n\n" +
-              "Önce [Extensions → WSInfer] ile bir model çalıştırın;\n" +
-              "karolar sınıflandırıldıktan sonra bu yardımcıyı yeniden çağırın."
+    def msg = workshopText('script.185b94f0cf22', 'WSInfer karosu bulunamadı.\n\nÖnce [Extensions → WSInfer] ile bir model çalıştırın;\nkarolar sınıflandırıldıktan sonra bu yardımcıyı yeniden çağırın.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.ab46e48d894b', "Karo yok"), msg)
     return
 }
@@ -216,7 +214,7 @@ if (!selAnns.isEmpty()) {
     }
 }
 if (tiles.isEmpty()) {
-    def msg = "Seçili bölgede WSInfer karosu yok.\n\nSeçimi kaldırın (tüm görüntü) ya da karo içeren bir bölge seçin."
+    def msg = workshopText('script.45c7aa5cd452', 'Seçili bölgede WSInfer karosu yok.\n\nSeçimi kaldırın (tüm görüntü) ya da karo içeren bir bölge seçin.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.ab46e48d894b', "Karo yok"), msg)
     return
 }
@@ -325,26 +323,26 @@ if (!appliedMode.prevNames.isEmpty()) {
     modeNotes << "\n" << String.format(java.util.Locale.US, workshopText('script.bc31ff876c31', 'Önceki sonuç değiştirildi: %,d özet anotasyonu silindi (içlerindeki diğer nesneler korundu).'), appliedMode.removed) << "\n"
 }
 def body = new StringBuilder()
-body << "WSInfer KARO ÖZETİ (sınıf alanı / %)\n"
+body << workshopText('script.cdb5ec948870', 'WSInfer KARO ÖZETİ (sınıf alanı / %)\n')
 body << "═════════════════════════════════════════\n\n"
 if (usedFallback) {
-    body << "Not: karo (tile) nesnesi bulunamadı; sınıflı tüm tespitler kullanıldı.\n\n"
+    body << workshopText('script.6ebfc6a01dac', 'Not: karo (tile) nesnesi bulunamadı; sınıflı tüm tespitler kullanıldı.\n\n')
 }
 if (!selAnns.isEmpty()) {
-    body << String.format(java.util.Locale.US, "Kapsam             : %d seçili anotasyon%n", selAnns.size())
+    body << String.format(java.util.Locale.US, workshopText('script.015d5f764303', 'Kapsam             : %d seçili anotasyon%n'), selAnns.size())
 } else {
-    body << "Kapsam             : tüm görüntü\n"
+    body << workshopText('script.fd54fa626c8f', 'Kapsam             : tüm görüntü\n')
 }
-body << String.format(java.util.Locale.US, "Toplam karo        : %,d%n", totalTiles)
+body << String.format(java.util.Locale.US, workshopText('script.4c25affcc695', 'Toplam karo        : %,d%n'), totalTiles)
 if (hasMicrons) {
-    body << String.format(java.util.Locale.US, "Analiz edilen alan : %.3f mm²%n", totalAreaMm2)
+    body << String.format(java.util.Locale.US, workshopText('script.b8fbb76d0c68', 'Analiz edilen alan : %.3f mm²%n'), totalAreaMm2)
 } else {
-    body << "Analiz edilen alan : kalibrasyon (µm/px) yok → alan atlandı, % karo sayısına göre\n"
+    body << workshopText('script.2c9f58ace22e', 'Analiz edilen alan : kalibrasyon (µm/px) yok → alan atlandı, % karo sayısına göre\n')
 }
 body << "\n"
 
 if (hasMicrons) {
-    body << "Sınıf                      Karo        mm²          %\n"
+    body << workshopText('script.5e7612d941e5', 'Sınıf                      Karo        mm²          %\n')
     body << "──────────────────────────────────────────────────────────────\n"
     counts.each { cls, cnt ->
         double aMm2 = areas[cls]
@@ -352,27 +350,27 @@ if (hasMicrons) {
         body << String.format(java.util.Locale.US, "%-24s %8d %10.4f %9.2f %%%n", cls, cnt, aMm2, pct)
     }
     body << "──────────────────────────────────────────────────────────────\n"
-    body << String.format(java.util.Locale.US, "%-24s %8d %10.4f %9.2f %%%n", "TOPLAM", totalTiles, totalAreaMm2, 100.0)
+    body << String.format(java.util.Locale.US, "%-24s %8d %10.4f %9.2f %%%n", workshopText('script.1c54e7a8b22c', 'TOPLAM'), totalTiles, totalAreaMm2, 100.0)
 } else {
-    body << "Sınıf                      Karo          %\n"
+    body << workshopText('script.aa61ff5a22be', 'Sınıf                      Karo          %\n')
     body << "─────────────────────────────────────────────────\n"
     counts.each { cls, cnt ->
         double pct = totalTiles > 0 ? (100.0 * cnt / totalTiles) : 0.0
         body << String.format(java.util.Locale.US, "%-24s %8d %9.2f %%%n", cls, cnt, pct)
     }
     body << "─────────────────────────────────────────────────\n"
-    body << String.format(java.util.Locale.US, "%-24s %8d %9.2f %%%n", "TOPLAM", totalTiles, 100.0)
+    body << String.format(java.util.Locale.US, "%-24s %8d %9.2f %%%n", workshopText('script.1c54e7a8b22c', 'TOPLAM'), totalTiles, 100.0)
 }
 body << "\n"
 if (mergedClasses > 0) {
-    body << String.format(java.util.Locale.US, "Birleştirilen sınıf anotasyonu: %d%n", mergedClasses)
+    body << String.format(java.util.Locale.US, workshopText('script.c831f94b652f', 'Birleştirilen sınıf anotasyonu: %d%n'), mergedClasses)
 }
 body << modeNotes.toString()
-body << "Bu bir ALAN ÖLÇÜMÜdür — klinik skor, eşik veya yorum DEĞİL.\n"
-body << "Sınıflandırma WSInfer modelinden gelir (Kaczmarzyk 2024; Bankhead 2017).\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.722d12b3d710', 'Bu bir ALAN ÖLÇÜMÜdür — klinik skor, eşik veya yorum DEĞİL.\n')
+body << workshopText('script.4f997e1df2d0', 'Sınıflandırma WSInfer modelinden gelir (Kaczmarzyk 2024; Bankhead 2017).\n\n')
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("WSInfer karo özeti", body.toString())
+showResultWindow(workshopText('script.a07e2c171157', 'WSInfer karo özeti'), body.toString())
 println "✓ WSInfer alan özeti yazıldı ('${appliedMode.setName}')."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

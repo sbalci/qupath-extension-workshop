@@ -153,8 +153,8 @@ def loadConfig = { ->
 }
 def configMissing = { cfg ->
     def miss = []
-    if (!cfg.python?.trim() || !(new File(cfg.python)).isFile()) miss << 'Python yürütülebilir (sanofi-eftd venv)'
-    if (!cfg.runner?.trim() || !(new File(cfg.runner)).isFile()) miss << 'Köprü betiği (eftd_runner.py)'
+    if (!cfg.python?.trim() || !(new File(cfg.python)).isFile()) miss << workshopText('script.7b164e30cd9a', 'Python yürütülebilir (sanofi-eftd venv)')
+    if (!cfg.runner?.trim() || !(new File(cfg.runner)).isFile()) miss << workshopText('script.26de6450d1e7', 'Köprü betiği (eftd_runner.py)')
     return miss
 }
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
@@ -210,7 +210,7 @@ def exportRegionImage = { imageData, File workDir, double targetMpp, List region
     try { g.setColor(java.awt.Color.WHITE); g.fillRect(0, 0, rgb.getWidth(), rgb.getHeight()); g.drawImage(img, 0, 0, null) } finally { g.dispose() }
     def f = new File(workDir, 'atipik_roi.png'); if (f.getParentFile() != null) f.getParentFile().mkdirs()
     javax.imageio.ImageIO.write(rgb, 'PNG', f)
-    appendLine(String.format(java.util.Locale.US, 'ROI görüntüsü: %s (%d × %d px, downsample %.3f, köken %d,%d)', f.getName(), rgb.getWidth(), rgb.getHeight(), downsample, x, y))
+    appendLine(String.format(java.util.Locale.US, workshopText('script.2aa17c952d0e', 'ROI görüntüsü: %s (%d × %d px, downsample %.3f, köken %d,%d)'), f.getName(), rgb.getWidth(), rgb.getHeight(), downsample, x, y))
     return [ok: true, file: f, originX: x, originY: y, downsample: downsample]
 }
 // Girdi noktalarını GeoJSON (taban-piksel) olarak yaz.
@@ -284,7 +284,7 @@ def saveLogInteractive = {
     def txt = logSnapshot(); if (!txt?.trim()) { Dialogs.showInfoNotification(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.6d25a44e68f7', 'Kaydedilecek günlük yok.')); return }
     try {
         def suggested = logFileRef.get() ?: new File(System.getProperty('user.home'), 'mitoz-atipik_run.log')
-        def f = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, workshopText('script.ae2303e91c93', 'Çalışma günlüğünü kaydet'), suggested, new javafx.stage.FileChooser.ExtensionFilter('Günlük (*.log, *.txt)', '*.log', '*.txt'))
+        def f = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, workshopText('script.ae2303e91c93', 'Çalışma günlüğünü kaydet'), suggested, new javafx.stage.FileChooser.ExtensionFilter(workshopText('script.c0f44ce4fc46', 'Günlük (*.log, *.txt)'), '*.log', '*.txt'))
         if (f != null) { f.setText(txt, 'UTF-8'); Dialogs.showInfoNotification(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.cbe9b591564d', 'Kaydedildi: ') + f.getAbsolutePath()) }
     } catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.a0f73789f289', 'Kaydedilemedi: ') + (t.getMessage() ?: t.getClass().getSimpleName())) }
 }
@@ -299,7 +299,7 @@ def persistFields = {
 def runPython = { List cmd, Closure onLine ->
     def pb = new ProcessBuilder(cmd); pb.redirectErrorStream(true); applyCacheEnv(pb)
     def proc
-    try { proc = pb.start() } catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    try { proc = pb.start() } catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.f0e1e3289660', 'Python başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     processRef.set(proc)
     def last = new java.util.ArrayDeque()
     try {
@@ -309,19 +309,19 @@ def runPython = { List cmd, Closure onLine ->
         reader.close()
     } catch (Throwable ignore) {}
     boolean finished
-    try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) } catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: 'Zaman aşımı'] }
-    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) } catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
+    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: workshopText('script.f87dda747be8', 'Zaman aşımı')] }
+    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
     int code = proc.exitValue()
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
 
 def startSelftest = {
     persistFields(); def cfg = loadConfig(); def miss = configMissing(cfg)
-    if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!miss.isEmpty()) { errorTextRef.set(workshopText('script.59d7792abf1b', 'Önce yapılandırmayı tamamlayın:\n  • ') + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO); logAreaRef.set(la)
-    runPhaseRef.set('Bağımlılık kontrolü'); step.set('CHECK_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.8369fe631575', 'Bağımlılık kontrolü')); step.set('CHECK_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def r = runPython([cfg.python, cfg.runner, 'selftest'], appendLine)
@@ -331,10 +331,10 @@ def startSelftest = {
 }
 def startModelDownload = {
     persistFields(); def cfg = loadConfig(); def miss = configMissing(cfg)
-    if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!miss.isEmpty()) { errorTextRef.set(workshopText('script.59d7792abf1b', 'Önce yapılandırmayı tamamlayın:\n  • ') + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO); logAreaRef.set(la)
-    runPhaseRef.set('Model indiriliyor…'); step.set('DL_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.4177a3b67263', 'Model indiriliyor…')); step.set('DL_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def r = runPython([cfg.python, cfg.runner, 'download'], appendLine)
@@ -346,13 +346,13 @@ def startModelDownload = {
 // ── Sınıflama akışı ──
 def startRun = {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.da80fab350d1', 'Görüntü açık değil.')); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
     def regions = selectedRegions(imageData)
-    if (regions.isEmpty()) { errorTextRef.set('Bölge yok.\nÖnce bir alan anotasyonu çizin/seçin.'); step.set('ERROR'); render(); return }
+    if (regions.isEmpty()) { errorTextRef.set(workshopText('script.adcdc59914b9', 'Bölge yok.\nÖnce bir alan anotasyonu çizin/seçin.')); step.set('ERROR'); render(); return }
     def regionRois = regions.collect { it.getROI() }
     def points = mitosisPointsIn(imageData, regionRois)
-    if (points.isEmpty()) { errorTextRef.set('Sınıflanacak mitoz noktası yok.\nÖnce bir mitoz DEDEKTÖRÜ çalıştırın (KongNet / FCOS / RetinaNet ya da Karşılaştır).'); step.set('ERROR'); render(); return }
+    if (points.isEmpty()) { errorTextRef.set(workshopText('script.b218e822da52', 'Sınıflanacak mitoz noktası yok.\nÖnce bir mitoz DEDEKTÖRÜ çalıştırın (KongNet / FCOS / RetinaNet ya da Karşılaştır).')); step.set('ERROR'); render(); return }
     def cal = pixelMicrons(imageData)
     double targetMpp = cfg.targetMpp?.trim() ? parseDoubleOr(cfg.targetMpp, TARGET_MPP) : TARGET_MPP
     double patchUm = cfg.patchUm?.trim() ? parseDoubleOr(cfg.patchUm, PATCH_UM) : PATCH_UM
@@ -363,34 +363,34 @@ def startRun = {
     def outGeo = new File(workDir, base + '_atipik_out.geojson')
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO); logAreaRef.set(la)
-    runPhaseRef.set('Hazırlanıyor…'); step.set('RUN_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.074e464dc790', 'Hazırlanıyor…')); step.set('RUN_RUNNING'); render()
 
     def worker = new Thread({
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def setPhase = { String ph -> javafx.application.Platform.runLater { runPhaseRef.set(ph); render() } }
         try {
-            appendLine('Model: ' + MODEL + '  ·  sınıflanacak nokta: ' + points.size() + '  ·  yama: ' + patchPx + ' px (' + String.format(java.util.Locale.US, '%.1f µm @ %.2f µm/px', patchUm, targetMpp) + ')')
-            if (cal == null) appendLine('⚠ Piksel boyutu kalibre değil — yama boyutu hedef-mpp varsayımıyla hesaplandı.')
-            setPhase('ROI + nokta listesi dışa aktarılıyor (1/2)…')
+            appendLine('Model: ' + MODEL + workshopText('script.2a60e3747a97', '  ·  sınıflanacak nokta: ') + points.size() + workshopText('script.44abb14197d9', '  ·  yama: ') + patchPx + ' px (' + String.format(java.util.Locale.US, '%.1f µm @ %.2f µm/px', patchUm, targetMpp) + ')')
+            if (cal == null) appendLine(workshopText('script.76d33521bf92', '⚠ Piksel boyutu kalibre değil — yama boyutu hedef-mpp varsayımıyla hesaplandı.'))
+            setPhase(workshopText('script.f77bc98d9b54', 'ROI + nokta listesi dışa aktarılıyor (1/2)…'))
             // ROI centroid'leri değişmezdir → worker thread'den güvenle yazılır.
             writePointsGeoJson(ptsGeo, points)
             def exp = exportRegionImage(imageData, workDir, targetMpp, regionRois, cal, appendLine)
             if (!exp.ok) { javafx.application.Platform.runLater { errorTextRef.set(exp.error); step.set('ERROR'); render() }; return }
-            if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
+            if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.fee85e45842b', 'İptal edildi.')); step.set('ERROR'); render() }; return }
             def cmd = [cfg.python, cfg.runner, 'classify', '--roi', exp.file.getAbsolutePath(), '--points', ptsGeo.getAbsolutePath(),
                        '--out', outGeo.getAbsolutePath(), '--origin', (exp.originX + ',' + exp.originY),
                        '--downsample', String.format(java.util.Locale.US, '%.6f', (double) exp.downsample),
                        '--patch-px', String.valueOf(patchPx), '--device', (cfg.device ?: 'cuda')]
-            setPhase('EFTD (DINOv3) sınıflaması çalışıyor (2/2)…')
+            setPhase(workshopText('script.1818bc66f42c', 'EFTD (DINOv3) sınıflaması çalışıyor (2/2)…'))
             def r = runPython(cmd, appendLine)
-            appendLine('# Çıkış kodu: ' + r.exitCode)
+            appendLine(workshopText('script.3510e56b50f2', '# Çıkış kodu: ') + r.exitCode)
             def savedLog = autoSaveLog(workDir, base)
-            if (savedLog != null) appendLine('# Günlük kaydedildi: ' + savedLog.getAbsolutePath())
+            if (savedLog != null) appendLine(workshopText('script.f93ecddd706d', '# Günlük kaydedildi: ') + savedLog.getAbsolutePath())
             // Kapılı omurgaya erişim yoksa ham çıktının üstüne yapılacak adımları yaz.
             def gateText = ((r.error ?: '') + '\n' + (r.lastLines ?: ''))
             boolean gateLikely = (gateText =~ /(?i)KAPILI|gated|GatedRepo|401|403|access to model|huggingface-cli login/).find()
             String gateHelp = gateLikely ? (String.format(java.util.Locale.US, workshopText('script.53ec67e56b06', 'Model omurgasına erişim izniniz yok gibi görünüyor. Bu model Hugging Face\'te kapılıdır; erişim otomatik verilmez.\n\nYapılacaklar:\n  1. huggingface.co/facebook/dinov3-vith16plus-pretrain-lvd1689m sayfasını açın, oturum açın ve lisans koşullarını kabul edin.\n  2. Erişim onayını bekleyin (süresi Meta\'ya bağlıdır).\n  3. Hugging Face hesabınızda Settings → Access Tokens bölümünden "read" türünde bir jeton oluşturun.\n  4. Bir komut penceresi açın (Windows: Başlat → "cmd"), şu komutu çalıştırın ve jetonu yapıştırın:\n       %s\n  5. Sihirbazı yeniden çalıştırın.\n\nErişim gelene kadar "Atipik sınıflandırma — MIDOG25 EffNetV2" girişini kullanabilirsiniz; o model kapılı değildir.'), hfLoginCommand(cfg.python)) + '\n\n') : ''
-            if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set(gateHelp + 'Sınıflama başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '') + (savedLog != null ? ('\n\nGünlük: ' + savedLog.getAbsolutePath()) : '')); step.set('ERROR'); render() }; return }
+            if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set(gateHelp + workshopText('script.465f4c5819e4', 'Sınıflama başarısız (çıkış: ') + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '') + (savedLog != null ? (workshopText('script.f8ae995ffb5b', '\n\nGünlük: ') + savedLog.getAbsolutePath()) : '')); step.set('ERROR'); render() }; return }
             def geo = outGeo
             try { def m = (r.lastLines ?: '') =~ /RESULT geojson=(.+)/; if (m.find()) { def gp = new File(m.group(1).trim()); if (gp.isFile()) geo = gp } } catch (Throwable ignore) {}
             javafx.application.Platform.runLater {
@@ -426,20 +426,20 @@ def startRun = {
                     try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {}
                     int tot = nAtyp + nTyp
                     def sb = new StringBuilder()
-                    sb << "ATİPİK MİTOZ SINIFLAMA (Sanofi EFTD · DINOv3-H+)\n═══════════════════════════════════════════════\n\n"
-                    sb << "Lam        : " << imageNameOf(imageData) << "\n"
-                    sb << "Sınıflanan   : " << tot << " mitoz noktası\n"
-                    sb << "  • Atipik   : " << nAtyp << (tot > 0 ? String.format(java.util.Locale.US, "  (%.0f%%)", 100.0 * nAtyp / tot) : "") << "\n"
-                    sb << "  • Tipik    : " << nTyp << "\n\n"
-                    sb << "Noktalar yeniden sınıflandırıldı: KIRMIZI = atipik, YEŞİL = tipik; 'Atipik olasılık' ölçümü yazıldı.\n"
-                    sb << "Tahminleri görsel doğrulayın; klinik derece/yorum üretilmez.\n"
-                    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
-                    if (savedLog != null) sb << "\n\nÇalışma günlüğü: " << savedLog.getAbsolutePath()
+                    sb << workshopText('script.ac3858673b15', 'ATİPİK MİTOZ SINIFLAMA (Sanofi EFTD · DINOv3-H+)\n═══════════════════════════════════════════════\n\n')
+                    sb << workshopText('script.13db0a0038b7', 'Lam        : ') << imageNameOf(imageData) << "\n"
+                    sb << workshopText('script.d445d704109f', 'Sınıflanan   : ') << tot << workshopText('script.322f42480491', ' mitoz noktası\n')
+                    sb << workshopText('script.6189e3826684', '  • Atipik   : ') << nAtyp << (tot > 0 ? String.format(java.util.Locale.US, "  (%.0f%%)", 100.0 * nAtyp / tot) : "") << "\n"
+                    sb << workshopText('script.e862e3042554', '  • Tipik    : ') << nTyp << "\n\n"
+                    sb << workshopText('script.ba3fc2922c90', 'Noktalar yeniden sınıflandırıldı: KIRMIZI = atipik, YEŞİL = tipik; \'Atipik olasılık\' ölçümü yazıldı.\n')
+                    sb << workshopText('script.f93ccb62b791', 'Tahminleri görsel doğrulayın; klinik derece/yorum üretilmez.\n')
+                    sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
+                    if (savedLog != null) sb << workshopText('script.98abd255a614', '\n\nÇalışma günlüğü: ') << savedLog.getAbsolutePath()
                     resultTextRef.set(sb.toString()); step.set('RESULT'); render()
-                } catch (Throwable t) { errorTextRef.set('Sonuç işleme hatası: ' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
+                } catch (Throwable t) { errorTextRef.set(workshopText('script.cd62cf56dc30', 'Sonuç işleme hatası: ') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
             }
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { errorTextRef.set('Beklenmeyen hata:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.6af403a9fc32', 'Beklenmeyen hata:\n') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
         }
     }, 'AtolyeEftd-Run')
     worker.setDaemon(true); worker.start()
@@ -452,7 +452,7 @@ def startRun = {
 // sürerken ekran değiştirilmez; yalnız pencere öne gelir.
 def envReturnHook = [
     envId   : ENV_ID,
-    wizard  : 'Atipik sınıflandırma (Sanofi EFTD)',
+    wizard  : workshopText('script.313456533c0e', 'Atipik sınıflandırma (Sanofi EFTD)'),
     onReturn: { reopen ->
         javafx.application.Platform.runLater {
             if (stage == null || (!stage.isShowing() && !reopen)) return
@@ -588,13 +588,13 @@ render = { ->
             title.setText(workshopText('script.f68587ece9ad', 'Atipik mitoz sınıflama — Sanofi EFTD (DINOv3-H+)'))
             addWarnLabel(workshopText('script.2aa8ab711207', '⚠ KAPILI OMURGA: DINOv3-H+ için Meta lisansı + hf login gerekir (otomatik değil). Erişim yoksa çalışmaz. Menüde varsayılan olarak devre dışıdır.'))
             def sb = new StringBuilder()
-            sb << "Lam          : " << imageNameOf(imageData) << "\n"
+            sb << workshopText('script.c482c0d5e596', 'Lam          : ') << imageNameOf(imageData) << "\n"
             sb << "Model          : " << MODEL << "\n"
-            sb << "Cihaz          : " << (cfg.device ?: 'cuda') << "\n"
-            sb << "Yerel model    : " << (modelCacheFile().isFile() ? 'VAR' : 'yok — "Modeli yerel indir"') << "\n"
-            sb << String.format(java.util.Locale.US, "Seçili bölge   : %,d alan anotasyonu%n", regions.size())
-            sb << String.format(java.util.Locale.US, "Sınıflanacak   : %,d mitoz noktası%n", points.size())
-            sb << "Kalibrasyon    : " << (cal != null ? String.format(java.util.Locale.US, '%.3f µm/px', (cal.pw + cal.ph) / 2.0) : 'KALİBRE DEĞİL') << "\n"
+            sb << workshopText('script.3b7d627f2bc5', 'Cihaz          : ') << (cfg.device ?: 'cuda') << "\n"
+            sb << workshopText('script.d07fd70da9fc', 'Yerel model    : ') << (modelCacheFile().isFile() ? workshopText('script.b0398cdfc1c0', 'VAR') : workshopText('script.c8fae458bc81', 'yok — "Modeli yerel indir"')) << "\n"
+            sb << String.format(java.util.Locale.US, workshopText('script.0f30470dbbba', 'Seçili bölge   : %,d alan anotasyonu%n'), regions.size())
+            sb << String.format(java.util.Locale.US, workshopText('script.896b06e338c3', 'Sınıflanacak   : %,d mitoz noktası%n'), points.size())
+            sb << workshopText('script.5f3a7bf05b28', 'Kalibrasyon    : ') << (cal != null ? String.format(java.util.Locale.US, '%.3f µm/px', (cal.pw + cal.ph) / 2.0) : workshopText('script.167d3bfed570', 'KALİBRE DEĞİL')) << "\n"
             addMonoArea(sb.toString())
             addGuidance(workshopText('script.50a3d37ce892', 'Bu bir DEDEKTÖR değildir: seçili bölgedeki mevcut mitoz noktalarını (dedektör çıktısı / konsensüs) tipik vs atipik olarak sınıflar. Sonuç: noktalar (ve çevrelerindeki etiketli görüntü halkaları) KIRMIZI (atipik) / YEŞİL (tipik) yeniden renklenir + "Atipik olasılık" ölçümü (noktada; halka yalnız görüntüdür).'))
             if (points.isEmpty()) addWarnLabel(workshopText('script.a2477cfc9755', '⚠ Sınıflanacak mitoz noktası yok — önce bir mitoz dedektörü (KongNet / FCOS / RetinaNet ya da Karşılaştır) çalıştırın.'))

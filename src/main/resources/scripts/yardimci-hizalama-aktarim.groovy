@@ -169,27 +169,7 @@ def openUrl = { String url ->
     }, 'OpenUrl').start()
 }
 def showAlignInstall = {
-    def steps = 'AFİN HİZALAMA — (A) otomatik vs (B) elle:\n\n' +
-        '⚠ ÖNEMLİ: Sihirbazın (A) OTOMATİK yolu, Align\'ın "AutoAligner" sınıfını İÇEREN bir derlemesini ister.\n' +
-        '   YAYINLANMIŞ 0.5.0 sürümü bunu İÇERMEZ (AutoAligner yalnız geliştirme/main dalındadır). Yani Align\'ı\n' +
-        '   kursanız bile 0.5.0\'da (A) KAPALI kalır — bu normaldir. O sürümde:\n' +
-        '     • [Analyze → Alignment → Interactive image alignment] ile hizalayın (Align KURULU olmalı),\n' +
-        '     • gösterilen 6 sayıyı (B) Elle matris kutusuna yapıştırıp "Elle matrisle aktar" deyin.\n' +
-        '   (A) yalnız AutoAligner içeren bir Align derlemesi kurulursa otomatik etkinleşir.\n\n' +
-        'qupath-extension-align KURULUMU (Interactive image alignment için — (B) yolu ve GUI hizalama):\n\n' +
-        'EN İYİSİ — resmî KATALOGDAN kurun (sürümünüzle EŞLEŞEN derlemeyi verir):\n' +
-        '  Extensions → Manage extensions → Manage extension catalogs → resmî QuPath kataloğu → Align → kur.\n\n' +
-        'Elle .jar ile:\n' +
-        '  1. GitHub sürüm sayfasını açın (aşağıda), QuPath SÜRÜMÜNÜZLE uyumlu en son sürümü bulun.\n' +
-        '  2. "qupath-extension-align-X.Y.Z.jar" indirin — "-javadoc"/"-sources" ya da kaynak (zip/tar.gz) DEĞİL; düz .jar (~48 KB).\n' +
-        '  3. .jar\'ı QuPath penceresine SÜRÜKLEYİP BIRAKIN.\n' +
-        '  4. QuPath\'i YENİDEN BAŞLATIN; bu sihirbazı tekrar açın.\n\n' +
-        'ZATEN KURDUYSANIZ AMA TANINMIYORSA (Analyze → Alignment menüsü de YOKSA):\n' +
-        '  Büyük olasılıkla SÜRÜM UYUMSUZLUĞU — QuPath uyumsuz eklentiyi yükleMEZ (menü çıkmaz, sınıfları görünmez).\n' +
-        '  • QuPath sürümünüzü kontrol edin (Help → About).\n' +
-        '  • Log\'a bakın (View → Show log; "align" arayın) — uyumsuzluk/yükleme hatası orada yazar.\n' +
-        '  • Elle .jar yerine KATALOGDAN, sürümünüzle eşleşen Align\'ı kurun (0.5.0 bazı 0.6/0.7 sürümlerinde yüklenmeyebilir).\n\n' +
-        'GitHub sürüm sayfasını şimdi açayım mı?'
+    def steps = workshopText('script.08b4993f18ec', 'AFİN HİZALAMA — (A) otomatik vs (B) elle:\n\n⚠ ÖNEMLİ: Sihirbazın (A) OTOMATİK yolu, Align\'ın "AutoAligner" sınıfını İÇEREN bir derlemesini ister.\n   YAYINLANMIŞ 0.5.0 sürümü bunu İÇERMEZ (AutoAligner yalnız geliştirme/main dalındadır). Yani Align\'ı\n   kursanız bile 0.5.0\'da (A) KAPALI kalır — bu normaldir. O sürümde:\n     • [Analyze → Alignment → Interactive image alignment] ile hizalayın (Align KURULU olmalı),\n     • gösterilen 6 sayıyı (B) Elle matris kutusuna yapıştırıp "Elle matrisle aktar" deyin.\n   (A) yalnız AutoAligner içeren bir Align derlemesi kurulursa otomatik etkinleşir.\n\nqupath-extension-align KURULUMU (Interactive image alignment için — (B) yolu ve GUI hizalama):\n\nEN İYİSİ — resmî KATALOGDAN kurun (sürümünüzle EŞLEŞEN derlemeyi verir):\n  Extensions → Manage extensions → Manage extension catalogs → resmî QuPath kataloğu → Align → kur.\n\nElle .jar ile:\n  1. GitHub sürüm sayfasını açın (aşağıda), QuPath SÜRÜMÜNÜZLE uyumlu en son sürümü bulun.\n  2. "qupath-extension-align-X.Y.Z.jar" indirin — "-javadoc"/"-sources" ya da kaynak (zip/tar.gz) DEĞİL; düz .jar (~48 KB).\n  3. .jar\'ı QuPath penceresine SÜRÜKLEYİP BIRAKIN.\n  4. QuPath\'i YENİDEN BAŞLATIN; bu sihirbazı tekrar açın.\n\nZATEN KURDUYSANIZ AMA TANINMIYORSA (Analyze → Alignment menüsü de YOKSA):\n  Büyük olasılıkla SÜRÜM UYUMSUZLUĞU — QuPath uyumsuz eklentiyi yükleMEZ (menü çıkmaz, sınıfları görünmez).\n  • QuPath sürümünüzü kontrol edin (Help → About).\n  • Log\'a bakın (View → Show log; "align" arayın) — uyumsuzluk/yükleme hatası orada yazar.\n  • Elle .jar yerine KATALOGDAN, sürümünüzle eşleşen Align\'ı kurun (0.5.0 bazı 0.6/0.7 sürümlerinde yüklenmeyebilir).\n\nGitHub sürüm sayfasını şimdi açayım mı?')
     if (Dialogs.showConfirmDialog(workshopText('script.b9087b724a59', 'Align eklentisi nasıl kurulur?'), steps)) openUrl(ALIGN_RELEASES_URL)
 }
 
@@ -262,18 +242,18 @@ def applyTransferred = { List srcAnns, AffineTransform finalTf, boolean copyMeas
 def doTransferManual = { String sourceName, List<Double> m, boolean inv, boolean copyMeas, boolean lock, String mode = 'add' ->
     try {
         def entry = project.getImageList().find { it.getImageName() == sourceName }
-        if (entry == null) return [ok:false, error:"Kaynak lam bulunamadı: ${sourceName}"]
+        if (entry == null) return [ok:false, error:String.format(java.util.Locale.US, workshopText('script.946205c2d40a', 'Kaynak lam bulunamadı: %s'), sourceName)]
         def srcHier
         try { srcHier = entry.readHierarchy() }
-        catch (Throwable t) { return [ok:false, error:"Kaynak hiyerarşi okunamadı (${t.getClass().getSimpleName()}). Kaynak lamı projede bir kez açıp kaydetmeyi deneyin."] }
+        catch (Throwable t) { return [ok:false, error:String.format(java.util.Locale.US, workshopText('script.20e5b381a4ff', 'Kaynak hiyerarşi okunamadı (%s). Kaynak lamı projede bir kez açıp kaydetmeyi deneyin.'), t.getClass().getSimpleName())] }
         def srcAnns = srcHier.getRootObject().getChildObjectsAsArray().findAll { it.isAnnotation() }
-        if (srcAnns.isEmpty()) return [ok:false, error:"Kaynak lamda üst düzey anotasyon yok: ${sourceName}"]
+        if (srcAnns.isEmpty()) return [ok:false, error:String.format(java.util.Locale.US, workshopText('script.e9c1a0050994', 'Kaynak lamda üst düzey anotasyon yok: %s'), sourceName)]
 
         // Matris sırası: dialog m00 m01 m02 / m10 m11 m12 → AffineTransform(m00,m10,m01,m11,m02,m12)
         def tf = new AffineTransform(m[0], m[3], m[1], m[4], m[2], m[5])
         if (inv) {
             try { tf = tf.createInverse() }
-            catch (Throwable t) { return [ok:false, error:"Matrisin tersi alınamadı (tekil matris). 'Ters çevir' kutusunu kapatmayı deneyin."] }
+            catch (Throwable t) { return [ok:false, error:workshopText('script.287cf7360c03', 'Matrisin tersi alınamadı (tekil matris). \'Ters çevir\' kutusunu kapatmayı deneyin.')] }
         }
         def tr = applyTransferred(srcAnns, tf, copyMeas, lock, mode)
         return [ok:true, count:tr.count, source:sourceName, setName:tr.setName, prevNames:tr.prevNames, removed:tr.removed]
@@ -285,9 +265,9 @@ def doTransferManual = { String sourceName, List<Double> m, boolean inv, boolean
 // ── (A) OTOMATİK: AutoAligner ile afin hesapla → TERSİ ile kaynağı hedefe taşı ───
 def doTransferAuto = { String sourceName, String typeName, String transformName, Integer userDs, boolean copyMeas, boolean lock, String mode = 'add' ->
     def A = alignerClass()
-    if (A == null) return [ok:false, kind:'noclass', error:"Align eklentisi (qupath-extension-align) kurulu değil; otomatik hizalama yok. Resmî katalogdan kurun ya da (B) elle matris yolunu kullanın."]
+    if (A == null) return [ok:false, kind:'noclass', error:workshopText('script.c05bc5deff33', 'Align eklentisi (qupath-extension-align) kurulu değil; otomatik hizalama yok. Resmî katalogdan kurun ya da (B) elle matris yolunu kullanın.')]
     def entry = project.getImageList().find { it.getImageName() == sourceName }
-    if (entry == null) return [ok:false, error:"Kaynak lam bulunamadı: ${sourceName}"]
+    if (entry == null) return [ok:false, error:String.format(java.util.Locale.US, workshopText('script.946205c2d40a', 'Kaynak lam bulunamadı: %s'), sourceName)]
     def srcImageData = null
     try {
         def base = QP.getCurrentImageData()          // HEDEF (şu anki) = base; KAPATMA (açık görüntü)
@@ -300,14 +280,14 @@ def doTransferAuto = { String sourceName, String typeName, String transformName,
         // Piksel bütçesi: aşırı küçük downsample bellek patlatır ("takıldı" gibi görünür).
         double mp = ((double) w / ds) * ((double) h / ds) / 1.0e6d
         if (mp > 50.0d) return [ok:false, kind:'budget', error:String.format(java.util.Locale.US,
-            "Downsample çok küçük (işlenen ~%.0f MP > 50 MP sınırı). En az %d kullanın (boş = otomatik %d).", mp, autoDs, autoDs)]
+            workshopText('script.036d0ab7e8dc', 'Downsample çok küçük (işlenen ~%.0f MP > 50 MP sınırı). En az %d kullanın (boş = otomatik %d).'), mp, autoDs, autoDs)]
 
         def alignType, transformType
         try {
             alignType     = enumVal('qupath.ext.align.core.AutoAligner$AlignmentType', typeName)
             transformType = enumVal('qupath.ext.align.core.AutoAligner$TransformationTypes', transformName)
         } catch (Throwable t) {
-            return [ok:false, kind:'nomethod', error:"AutoAligner enum'ları çözülemedi (sürüm uyumsuzluğu): " + (t.getMessage() ?: t.getClass().getSimpleName())]
+            return [ok:false, kind:'nomethod', error:workshopText('script.00b90764fec6', 'AutoAligner enum\'ları çözülemedi (sürüm uyumsuzluğu): ') + (t.getMessage() ?: t.getClass().getSimpleName())]
         }
 
         def T
@@ -316,22 +296,22 @@ def doTransferAuto = { String sourceName, String typeName, String transformName,
             T = InvokerHelper.invokeStaticMethod(A, 'getAlignTransformation',
                 [base, srcImageData, new AffineTransform(), alignType, transformType, (double) ds] as Object[])
         } catch (groovy.lang.MissingMethodException | NoSuchMethodException nsme) {
-            return [ok:false, kind:'nomethod', error:"AutoAligner API imzası beklenenden farklı (sürüm uyumsuzluğu): " + nsme.getMessage()]
+            return [ok:false, kind:'nomethod', error:workshopText('script.042ccc1f4ff5', 'AutoAligner API imzası beklenenden farklı (sürüm uyumsuzluğu): ') + nsme.getMessage()]
         } catch (Throwable t) {
             def cause = (t.getCause() != null) ? t.getCause() : t
-            return [ok:false, kind:'compute', error:"Otomatik hizalama başarısız: " + cause.getClass().getSimpleName() + ': ' + (cause.getMessage() ?: '') +
-                "\nYoğunluk (INTENSITY) modu benzer görünümlü görüntülerde iyi çalışır; farklı boyalarda (B) elle matris ya da Warpy'yi deneyin."]
+            return [ok:false, kind:'compute', error:workshopText('script.a97e90448a7c', 'Otomatik hizalama başarısız: ') + cause.getClass().getSimpleName() + ': ' + (cause.getMessage() ?: '') +
+                workshopText('script.34c9c0f2e0d5', '\nYoğunluk (INTENSITY) modu benzer görünümlü görüntülerde iyi çalışır; farklı boyalarda (B) elle matris ya da Warpy\'yi deneyin.')]
         }
         if (T == null || !(T instanceof AffineTransform))
-            return [ok:false, kind:'compute', error:"Otomatik hizalama bir dönüşüm üretmedi (görüntüler yeterince örtüşmüyor olabilir)."]
+            return [ok:false, kind:'compute', error:workshopText('script.dd39f583dd6e', 'Otomatik hizalama bir dönüşüm üretmedi (görüntüler yeterince örtüşmüyor olabilir).')]
 
         // YÖN: T = base→toAlign (hedef→kaynak). Kaynak anotasyonunu HEDEF'e taşımak için TERSİ gerekir.
         def finalTf
         try { finalTf = ((AffineTransform) T).createInverse() }
-        catch (Throwable t) { return [ok:false, kind:'compute', error:"Hesaplanan dönüşümün tersi alınamadı (tekil): " + (t.getMessage() ?: '')] }
+        catch (Throwable t) { return [ok:false, kind:'compute', error:workshopText('script.b3d9c811e8f0', 'Hesaplanan dönüşümün tersi alınamadı (tekil): ') + (t.getMessage() ?: '')] }
 
         def srcAnns = srcImageData.getHierarchy().getRootObject().getChildObjectsAsArray().findAll { it.isAnnotation() }
-        if (srcAnns.isEmpty()) return [ok:false, error:"Kaynak lamda üst düzey anotasyon yok: ${sourceName}"]
+        if (srcAnns.isEmpty()) return [ok:false, error:String.format(java.util.Locale.US, workshopText('script.e9c1a0050994', 'Kaynak lamda üst düzey anotasyon yok: %s'), sourceName)]
         def tr = applyTransferred(srcAnns, finalTf, copyMeas, lock, mode)
         return [ok:true, count:tr.count, source:sourceName, ds:ds, setName:tr.setName, prevNames:tr.prevNames, removed:tr.removed]
     } catch (Throwable t) {
@@ -400,8 +380,8 @@ javafx.application.Platform.runLater {
                 status.setStyle(''); status.setText(String.format(java.util.Locale.US,
                     workshopText('script.bfcc323dc363', 'Tamamlandı ✅ — %,d anotasyon aktarıldı. Örtüşmeyi gözle doğrulayın.'), r.count))
                 def msg = new StringBuilder()
-                msg << String.format(java.util.Locale.US, 'Kaynak: %s%n', r.source)
-                msg << String.format(java.util.Locale.US, 'Aktarılan anotasyon: %,d (kilitli; ad "%s")%n', r.count, (r.setName ?: SENTINEL))
+                msg << String.format(java.util.Locale.US, workshopText('script.b3989cbb3bf6', 'Kaynak: %s%n'), r.source)
+                msg << String.format(java.util.Locale.US, workshopText('script.8cad3cea7582', 'Aktarılan anotasyon: %,d (kilitli; ad "%s")%n'), r.count, (r.setName ?: SENTINEL))
                 if (r.prevNames) {
                     def stillMsg = String.format(java.util.Locale.US, workshopText('script.2d499cfac317', 'DİKKAT — bu lamda önceki hizalama aktarımı da duruyor: %1$s. Hiçbir şey silinmedi; yeni set "%2$s" adıyla eklendi. Eski seti kaldırmak için o addaki anotasyonları seçip silin ya da yeniden aktarırken "Öncekini değiştir"i seçin. Dışa aktarım ve ölçümler iki seti de görür.'), r.prevNames.join(', '), r.setName)
                     msg << '\n' << stillMsg << '\n'
@@ -412,9 +392,9 @@ javafx.application.Platform.runLater {
                     status.setText(status.getText() + '\n' + replMsg)
                 }
                 if (r.ds) msg << String.format(java.util.Locale.US, 'Otomatik hizalama downsample: %d%n', r.ds)
-                msg << '\nAktarılan sınır seri kesitte YAKLAŞIK aynı bölgeyi gösterir; örtüşmeyi\n'
-                msg << 'opaklık kaydırıcısıyla doğrulayın. Hücre-hücre kesinlik için Warpy kullanın.\n'
-                msg << '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.'
+                msg << workshopText('script.b100d0fba2ef', '\nAktarılan sınır seri kesitte YAKLAŞIK aynı bölgeyi gösterir; örtüşmeyi\n')
+                msg << workshopText('script.c6eb27d579b4', 'opaklık kaydırıcısıyla doğrulayın. Hücre-hücre kesinlik için Warpy kullanın.\n')
+                msg << workshopText('script.625c43e2ff2e', '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.')
                 Dialogs.showMessageDialog(workshopText('script.c97bb2b11831', 'Hizalama aktarımı tamamlandı'), msg.toString())
             } else {
                 status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText('⚠ ' + (r.error ?: workshopText('script.da001998a5bd', 'Bilinmeyen hata')))

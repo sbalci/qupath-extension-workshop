@@ -83,7 +83,7 @@ def launchBundled = { String name ->
     return true
 }
 def menuHint = { String where ->
-    Dialogs.showMessageDialog('Eklenti gerekli',
+    Dialogs.showMessageDialog(workshopText('script.97fb26fec49d', 'Eklenti gerekli'),
         "${workshopText('script.2da9535b4302', 'Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\n')}${where}")
 }
 
@@ -106,7 +106,7 @@ def makeProgressStage = { String msg ->
             def stage = new javafx.stage.Stage()
             stage.initModality(javafx.stage.Modality.NONE)
             stage.setAlwaysOnTop(true)
-            stage.setTitle("StarDist modeli")
+            stage.setTitle(workshopText('script.ecf8bee2027c', 'StarDist modeli'))
             def bar = new javafx.scene.control.ProgressBar()
             bar.setPrefWidth(300)
             bar.setProgress(javafx.scene.control.ProgressIndicator.INDETERMINATE_PROGRESS)
@@ -215,7 +215,7 @@ String redetectReplacedFmt = workshopText('script.784fe373ea77', 'Önceki %,d h�
 def runStarDist = { regionAnno ->
     try {
         def imageData = QP.getCurrentImageData()
-        if (imageData == null) return [ok:false, error:'Görüntü açık değil.']
+        if (imageData == null) return [ok:false, error:workshopText('script.da80fab350d1', 'Görüntü açık değil.')]
 
         // Önceki tespitleri temizle (yeniden çalıştırılabilirlik).
         // Çağıranlar bu noktadan ÖNCE sordu (GUI: redetectConfirm, başsız: mevcut=degistir); buradaki silme onaylı yerine koymadır.
@@ -228,16 +228,16 @@ def runStarDist = { regionAnno ->
             // Model çöz — yoksa otomatik indir.
             def mf = new File(modelPath)
             if (!mf.exists()) {
-                def progress = makeProgressStage('StarDist modeli indiriliyor…\n(he_heavy_augment.pb, ~5.7 MB)')
+                def progress = makeProgressStage(workshopText('script.d10189e939fc', 'StarDist modeli indiriliyor…\n(he_heavy_augment.pb, ~5.7 MB)'))
                 boolean dok = false
                 try { downloadModel(mf); dok = true; println '  ✓ Model indirildi ve doğrulandı.' }
                 catch (Throwable t) { println "  ✗ Otomatik indirme başarısız: ${t.message}" }
                 finally { if (progress != null) javafx.application.Platform.runLater { progress.close() } }
                 if (!dok) return [ok:false, error:
-                    'StarDist modeli bulunamadı ve indirilemedi.\n' +
-                    "Beklenen yol:\n  ${modelPath}\n\n" +
-                    'İnternet bağlıyken tekrar deneyin ya da he_heavy_augment.pb dosyasını\n' +
-                    'bu konuma elle kopyalayın (kaynaklar.qmd § ileri kurulumlar).']
+                    workshopText('script.663e0c5821bb', 'StarDist modeli bulunamadı ve indirilemedi.\n') +
+                    String.format(java.util.Locale.US, workshopText('script.94ab60c479fb', 'Beklenen yol:\n  %s\n\n'), modelPath) +
+                    workshopText('script.efc85d0105ff', 'İnternet bağlıyken tekrar deneyin ya da he_heavy_augment.pb dosyasını\n') +
+                    workshopText('script.e08e1539dffb', 'bu konuma elle kopyalayın (kaynaklar.qmd § ileri kurulumlar).')]
             }
             def stardist = qupath.ext.stardist.StarDist2D
                     .builder(modelPath)
@@ -298,7 +298,7 @@ def runStarDist = { regionAnno ->
 
         def cells = regionAnno.getChildObjects().findAll { it.isDetection() }
         if (cells.isEmpty())
-            return [ok:false, error:'TCR içinde çekirdek tespit edilmedi. Eşik veya boya vektörü ayarlarını kontrol edin.']
+            return [ok:false, error:workshopText('script.7dc1f02061a8', 'TCR içinde çekirdek tespit edilmedi. Eşik veya boya vektörü ayarlarını kontrol edin.')]
 
         regionAnno.setName('TCR')
         def viewer = qupath.lib.gui.QuPathGUI.getInstance()?.getViewer()
@@ -316,7 +316,7 @@ def runStarDist = { regionAnno ->
 //   diğer her şey (Stroma/Other/sınıfsız) → Ignore (cTCF paydasından dışlanır). Geri çevirmeyin.
 def applyClassifier = { regionAnno, String name ->
     def cells = regionAnno.getChildObjects().findAll { it.isDetection() }
-    if (cells.isEmpty()) return [ok:false, error:'Uygulanacak tespit yok.']
+    if (cells.isEmpty()) return [ok:false, error:workshopText('script.2c1fbae30053', 'Uygulanacak tespit yok.')]
     try {
         QP.selectObjects(cells)
         QP.runObjectClassifier(name)
@@ -348,7 +348,7 @@ def computeResult = { regionAnno, int tumorCount, int nonNeoCount, int ignoreCou
         cTCF = 100.0 * tumorCount / validTotal
         cTCFtext = String.format(java.util.Locale.US, '%.1f%%', cTCF)
     } else {
-        cTCFtext = 'Tumor/Non-neoplastic hücre yok — cTCF hesaplanamadı'
+        cTCFtext = workshopText('script.a0a798370b4c', 'Tumor/Non-neoplastic hücre yok — cTCF hesaplanamadı')
     }
 
     double tcrAreaMm2 = 0.0
@@ -371,22 +371,22 @@ def computeResult = { regionAnno, int tumorCount, int nonNeoCount, int ignoreCou
     QP.fireHierarchyUpdate()
 
     def body = new StringBuilder()
-    body << 'QuANTUM cTCF — Sonuç\n'
+    body << workshopText('script.85fe5f8834a3', 'QuANTUM cTCF — Sonuç\n')
     body << '════════════════════════════\n\n'
-    body << String.format(java.util.Locale.US, 'TCR alanı              : %.2f mm²%n', tcrAreaMm2)
-    body << String.format(java.util.Locale.US, 'Toplam nükleus          : %,d%n', totalNuclei)
-    body << String.format(java.util.Locale.US, 'Tumor sınıfı            : %,d%n', tumorCount)
-    body << String.format(java.util.Locale.US, 'Non-neoplastic sınıfı   : %,d%n', nonNeoCount)
+    body << String.format(java.util.Locale.US, workshopText('script.03fb4d599514', 'TCR alanı              : %.2f mm²%n'), tcrAreaMm2)
+    body << String.format(java.util.Locale.US, workshopText('script.1a565d4b146d', 'Toplam nükleus          : %,d%n'), totalNuclei)
+    body << String.format(java.util.Locale.US, workshopText('script.973c1ba8869b', 'Tumor sınıfı            : %,d%n'), tumorCount)
+    body << String.format(java.util.Locale.US, workshopText('script.9a05ad931ce9', 'Non-neoplastic sınıfı   : %,d%n'), nonNeoCount)
     body << String.format(java.util.Locale.US, 'Ignore                  : %,d%n', ignoreCount)
     body << '\n'
-    body << "🧬 ANA SONUÇ: cTCF = ${cTCFtext}\n"
+    body << String.format(java.util.Locale.US, workshopText('script.f3d8a07cbfe2', '🧬 ANA SONUÇ: cTCF = %s\n'), cTCFtext)
     body << '════════════════════════════\n\n'
-    body << 'cTCF = Tumor ÷ (Tumor + Non-neoplastic) × 100; Ignore paydadan dışlanır.\n\n'
-    body << "Yöntem bağlamı (L'Imperio ve ark., Virchows Archiv 2025): özgün çalışmada 121\n"
-    body << 'NSCLC olgusunda manuel TCF %52±19 iken cTCF %30±10 ölçülmüş. Bu sayılar yöntemin\n'
-    body << 'bağlamıdır; sizin lamınıza/laboratuvarınıza taşınmaz (yerel validasyon gerekir).\n\n'
-    body << 'Bu çıktı betimsel bir ölçümdür; yeterlilik, tedavi ya da başka bir klinik karar üretmez.\n'
-    body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
+    body << workshopText('script.c6eabfd304c8', 'cTCF = Tumor ÷ (Tumor + Non-neoplastic) × 100; Ignore paydadan dışlanır.\n\n')
+    body << workshopText('script.025be6600d27', 'Yöntem bağlamı (L\'Imperio ve ark., Virchows Archiv 2025): özgün çalışmada 121\n')
+    body << workshopText('script.04c3a6134675', 'NSCLC olgusunda manuel TCF %52±19 iken cTCF %30±10 ölçülmüş. Bu sayılar yöntemin\n')
+    body << workshopText('script.64e4617cfa59', 'bağlamıdır; sizin lamınıza/laboratuvarınıza taşınmaz (yerel validasyon gerekir).\n\n')
+    body << workshopText('script.90c2c4ee1e02', 'Bu çıktı betimsel bir ölçümdür; yeterlilik, tedavi ya da başka bir klinik karar üretmez.\n')
+    body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return [cTCF:cTCF, text:body.toString()]
 }
 
@@ -584,16 +584,16 @@ render = { ->
             "  ${s.heType ? '✓' : '✗'}${workshopText('script.5b9dcb71c2a7', ' Görüntü tipi Brightfield (H&E)\n')}" +
             "  ${s.calib ? '✓' : '✗'}${workshopText('script.d93396f804f2', ' Piksel kalibrasyonu (µm/px)\n')}" +
             "  ${s.project ? '✓' : '✗'}${workshopText('script.023b402ca7ac', ' Açık proje (sınıflandırıcı kaydı için)\n')}" +
-            "  ${s.stardist ? '✓' : '⚠'} StarDist eklentisi " + (s.stardist ? workshopText('script.5543213e9c58', '(hazır)') : workshopText('script.bc86f45f1ab0', '(kurulu değil — klasik Watershed yedeği kullanılacak)')) + '\n' +
-            "  ${s.model ? '✓' : '⏳'} StarDist modeli " + (s.model ? workshopText('script.5543213e9c58', '(hazır)') : '(StarDist varsa ilk tespitte indirilecek, ~5.7 MB)') + '\n' +
+            String.format(java.util.Locale.US, workshopText('script.f07b00be7ed3', '  %s StarDist eklentisi '), s.stardist ? '✓' : '⚠') + (s.stardist ? workshopText('script.5543213e9c58', '(hazır)') : workshopText('script.bc86f45f1ab0', '(kurulu değil — klasik Watershed yedeği kullanılacak)')) + '\n' +
+            String.format(java.util.Locale.US, workshopText('script.5d55688d2a13', '  %s StarDist modeli '), s.model ? '✓' : '⏳') + (s.model ? workshopText('script.5543213e9c58', '(hazır)') : workshopText('script.920050b42875', '(StarDist varsa ilk tespitte indirilecek, ~5.7 MB)')) + '\n' +
             workshopText('script.ff94ab283b7b', "\nEksikleri düzeltip 'Yenile'."))
         def fixType = navButton(workshopText('script.bbf6fba1e891', 'Görüntü tipini ayarla'), {
             if (stage != null) stage.setAlwaysOnTop(false)
-            if (!launchBundled('yardimci-image-type.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla')
+            if (!launchBundled('yardimci-image-type.groovy')) menuHint(workshopText('script.c2c8bba69355', 'Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla'))
         })
-        def fixCal = navButton('Kalibrasyonu ayarla', {
+        def fixCal = navButton(workshopText('script.c43c68f554a0', 'Kalibrasyonu ayarla'), {
             if (stage != null) stage.setAlwaysOnTop(false)
-            if (!launchBundled('yardimci-kalibrasyon.groovy')) menuHint('Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)')
+            if (!launchBundled('yardimci-kalibrasyon.groovy')) menuHint(workshopText('script.e3dc2534d6aa', 'Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)'))
         })
         content.getChildren().add(new javafx.scene.layout.HBox(8, fixType, fixCal))
         boolean ready = s.image && s.heType && s.calib && s.project
@@ -657,24 +657,24 @@ render = { ->
     } else if (cur == 'TRAIN_GUIDE') {
         title.setText(workshopText('script.292c4d20e93e', "4/5 — Sınıflandırıcıyı QuPath'te eğitin"))
         def instr = new javafx.scene.control.TextArea(
-            '1. Üst menü:  Classify → Object classification → Train object classifier\n' +
-            '2. Sınıflandırıcı türü: Random Trees (varsayılan)\n' +
-            '3. "Live update" kutusunu işaretleyin — hücreler Tumor / Non-neoplastic / Ignore\n' +
-            '   renklerine boyanmalı\n' +
-            '4. Sınıflandırma kararlı görünene dek her sınıftan örnek eklemeye devam edin\n' +
-            '5. Sınıf adları tam şöyle olmalı: Tumor · Non-neoplastic · Ignore\n' +
-            '6. Bir AD girip "Save" ile kaydedin (ör. he-tumor-nonneo)\n' +
-            '7. Kaydettiğiniz adı aşağıya yazıp "Kaydedildi ▶"')
+            workshopText('script.43280ffc341a', '1. Üst menü:  Classify → Object classification → Train object classifier\n') +
+            workshopText('script.6f58d5c1ddd0', '2. Sınıflandırıcı türü: Random Trees (varsayılan)\n') +
+            workshopText('script.44d73cf8a596', '3. "Live update" kutusunu işaretleyin — hücreler Tumor / Non-neoplastic / Ignore\n') +
+            workshopText('script.14380d3a6ce2', '   renklerine boyanmalı\n') +
+            workshopText('script.19ecb594baa8', '4. Sınıflandırma kararlı görünene dek her sınıftan örnek eklemeye devam edin\n') +
+            workshopText('script.73b396ad9e59', '5. Sınıf adları tam şöyle olmalı: Tumor · Non-neoplastic · Ignore\n') +
+            workshopText('script.db0f93c4229d', '6. Bir AD girip "Save" ile kaydedin (ör. he-tumor-nonneo)\n') +
+            workshopText('script.bcea204913e5', '7. Kaydettiğiniz adı aşağıya yazıp "Kaydedildi ▶"'))
         instr.setEditable(false); instr.setWrapText(true); instr.setPrefRowCount(8)
         def nameField = new javafx.scene.control.TextField('he-tumor-nonneo'); nameField.setPrefColumnCount(24)
-        content.getChildren().addAll(instr, new javafx.scene.layout.HBox(8, new javafx.scene.control.Label('Kaydedilen ad:'), nameField))
+        content.getChildren().addAll(instr, new javafx.scene.layout.HBox(8, new javafx.scene.control.Label(workshopText('script.1ef9521ebe51', 'Kaydedilen ad:')), nameField))
         content.getChildren().add(menuHighlightToggle('Classify'))   // #3: Classify menüsünü göster
         buttons.getChildren().addAll(
             navButton(workshopText('script.7dfd804d8334', '◀ Geri'), { step.set('NONNEO_EXAMPLES'); render() }),
             navButton(workshopText('script.e8e5dcb69dea', '⟳ Yenile'), { render() }),
-            navButton('Kaydedildi ▶', {
+            navButton(workshopText('script.ef7a831c83cd', 'Kaydedildi ▶'), {
                 String nm = nameField.getText()?.trim()
-                if (!nm) { Dialogs.showWarningNotification('Ad gerekli', workshopText('script.6c7b6f3bc12d', 'Kaydettiğiniz sınıflandırıcının adını girin.')); return }
+                if (!nm) { Dialogs.showWarningNotification(workshopText('script.45df3b41f998', 'Ad gerekli'), workshopText('script.6c7b6f3bc12d', 'Kaydettiğiniz sınıflandırıcının adını girin.')); return }
                 def known = QP.getProject()?.getObjectClassifiers()?.getNames() ?: []
                 if (!known.contains(nm)) {
                     if (stage != null) stage.setAlwaysOnTop(false)
@@ -694,7 +694,7 @@ render = { ->
         def ar = applyResultRef.get()
         def a = ar?.apply
         def res = ar?.result
-        title.setText('5/5 — cTCF Sonucu')
+        title.setText(workshopText('script.58a3cf5c2546', '5/5 — cTCF Sonucu'))
         if (a?.ok) {
             def summaryLbl = new javafx.scene.control.Label(
                 String.format(java.util.Locale.US, workshopText('script.c525977d89b0', 'Sınıflandırma: Tumor=%,d, Non-neoplastic=%,d, Ignore=%,d'),

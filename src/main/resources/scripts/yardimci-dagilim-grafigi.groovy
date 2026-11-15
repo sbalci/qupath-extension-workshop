@@ -98,7 +98,7 @@ def openChart = {
     try {
         Charts.scatterChart()
             .viewer(gui.getViewer())
-            .title("Dağılım: ${xName} — ${yName}")
+            .title(String.format(java.util.Locale.US, workshopText('script.9981602c7908', 'Dağılım: %s — %s'), xName, yName))
             .measurements(dets, xName, yName)
             .show()
     } catch (Throwable t) {

@@ -116,7 +116,7 @@ def smoothPolylineROI = { ROI polyline ->
 // ── 1) Uygun seçili nesneleri topla (poligon / poliline anotasyonlar) ───────
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    def msg = "Önce bir görüntü açın."
+    def msg = workshopText('script.2822e3e9b3cd', 'Önce bir görüntü açın.')
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), msg)
     return
 }
@@ -126,8 +126,8 @@ def candidates = QP.getSelectedObjects().findAll {
         (it.getROI() instanceof PolygonROI || it.getROI() instanceof PolylineROI)
 }
 if (candidates.isEmpty()) {
-    def msg = "Önce poligon ya da poliline anotasyon(lar) çizip SEÇİN.\n" +
-              "(Dikdörtgen / elips / nokta ROI'leri yumuşatılamaz.)"
+    def msg = workshopText('script.af16293ae49d', 'Önce poligon ya da poliline anotasyon(lar) çizip SEÇİN.\n') +
+              workshopText('script.9589d110a53f', '(Dikdörtgen / elips / nokta ROI\'leri yumuşatılamaz.)')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.7a4be4011db1', "Uygun seçim yok"), msg)
     return
 }
@@ -144,7 +144,7 @@ candidates.each { PathObject src ->
 }
 
 if (smoothed.isEmpty()) {
-    def msg = "Seçili nesneler ImageJ poligonuna çevrilemedi; hiçbiri yumuşatılmadı."
+    def msg = workshopText('script.02763ba56d92', 'Seçili nesneler ImageJ poligonuna çevrilemedi; hiçbiri yumuşatılmadı.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.1dc2ed4a181f', "Yumuşatma yapılamadı"), msg)
     return
 }
@@ -154,18 +154,18 @@ QP.fireHierarchyUpdate()
 
 // ── 3) Özet ─────────────────────────────────────────────────────────────────
 def body = new StringBuilder()
-body << "IMAGEJ — SINIR YUMUŞATMA (spline)\n"
+body << workshopText('script.ad95ada51b56', 'IMAGEJ — SINIR YUMUŞATMA (spline)\n')
 body << "═══════════════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Seçili uygun nesne : %d%n", candidates.size())
-body << String.format(java.util.Locale.US, "Yumuşatılan kopya  : %d%n", smoothed.size())
+body << String.format(java.util.Locale.US, workshopText('script.3c933133103c', 'Seçili uygun nesne : %d%n'), candidates.size())
+body << String.format(java.util.Locale.US, workshopText('script.8f191e553b24', 'Yumuşatılan kopya  : %d%n'), smoothed.size())
 if (skipped > 0)
-    body << String.format(java.util.Locale.US, "Atlanan            : %d (poligona çevrilemedi)%n", skipped)
+    body << String.format(java.util.Locale.US, workshopText('script.f1204b9ff327', 'Atlanan            : %d (poligona çevrilemedi)%n'), skipped)
 body << "\n"
-body << "Her kopyaya 'Smoothed' etiketi eklendi; orijinaller korundu.\n"
-body << "Beğenirseniz orijinalleri silin; beğenmezseniz 'Smoothed' kopyaları silin.\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.bc0811e9cad8', 'Her kopyaya \'Smoothed\' etiketi eklendi; orijinaller korundu.\n')
+body << workshopText('script.769b03239e57', 'Beğenirseniz orijinalleri silin; beğenmezseniz \'Smoothed\' kopyaları silin.\n\n')
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("ImageJ sınır yumuşatma", body.toString())
+showResultWindow(workshopText('script.f2d73e22a1c2', 'ImageJ sınır yumuşatma'), body.toString())
 println "✓ ${smoothed.size()} yumuşatılmış kopya eklendi ('Smoothed' etiketi)."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

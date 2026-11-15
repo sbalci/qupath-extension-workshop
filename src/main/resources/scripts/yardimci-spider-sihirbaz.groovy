@@ -60,7 +60,7 @@ long PYTHON_TIMEOUT_SECONDS = 3600L          // Hibou-L (ViT-L) CPU'da yavaş �
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
 def DEVICE_OPTIONS = ['auto', 'cpu', 'cuda']
 def ORGAN_OPTIONS  = ['colorectal', 'skin', 'thorax', 'breast']
-def GRAN_LABELS    = ['annotation': 'Anotasyon düzeyi', 'tile-grid': 'Karo ızgarası (ısı haritası)']
+def GRAN_LABELS    = ['annotation': workshopText('script.d03cad6fc481', 'Anotasyon düzeyi'), 'tile-grid': workshopText('script.b5366d7608b3', 'Karo ızgarası (ısı haritası)')]
 def granLabelToKey = { String lbl -> def k = GRAN_LABELS.find { it.value == lbl }?.key; return (k ?: 'annotation') }
 def CONF_MEAS = 'SPIDER: Güven'
 
@@ -168,9 +168,9 @@ def loadConfig = { ->
 def configMissing = { cfg ->
     def miss = []
     if (!cfg.python?.trim() || !(new File(cfg.python)).isFile())
-        miss << 'Python yürütülebilir (python.exe)'
+        miss << workshopText('script.5623a3de03e1', 'Python yürütülebilir (python.exe)')
     if (!cfg.bridge?.trim() || !(new File(cfg.bridge)).isFile())
-        miss << 'SPIDER köprüsü (spider_bridge.py)'
+        miss << workshopText('script.9339b33cb60c', 'SPIDER köprüsü (spider_bridge.py)')
     return miss
 }
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
@@ -280,17 +280,17 @@ def exportTiles = { imageData, File workDir, cfg, Closure appendLine ->
     double downsample
     if ((cfg.downsample ?: '').toString().trim().isEmpty()) {
         downsample = (Double.isFinite(mppDs) && mppDs > 0) ? Math.max(1.0d, 0.5d / mppDs) : 1.0d
-        appendLine(String.format(java.util.Locale.US, 'Downsample otomatik: %.3f%s', downsample,
-            Double.isFinite(mppDs) ? String.format(java.util.Locale.US, ' (lam %.3f µm/px → karo %.3f µm/px)', mppDs, mppDs * downsample) : ' (lam kalibre değil; ölçek bilinmiyor)'))
+        appendLine(String.format(java.util.Locale.US, workshopText('script.80805ed9e8d1', 'Downsample otomatik: %.3f%s'), downsample,
+            Double.isFinite(mppDs) ? String.format(java.util.Locale.US, workshopText('script.14eae5f345b0', ' (lam %.3f µm/px → karo %.3f µm/px)'), mppDs, mppDs * downsample) : workshopText('script.e58e27369149', ' (lam kalibre değil; ölçek bilinmiyor)')))
     } else {
         downsample = parseDoubleOr(cfg.downsample, 1.0d)
         if (!(downsample > 0)) downsample = 1.0d
-        if (Double.isFinite(mppDs)) appendLine(String.format(java.util.Locale.US, 'Downsample %.3f (lam %.3f µm/px → karo %.3f µm/px)', downsample, mppDs, mppDs * downsample))
+        if (Double.isFinite(mppDs)) appendLine(String.format(java.util.Locale.US, workshopText('script.fa912abc9125', 'Downsample %.3f (lam %.3f µm/px → karo %.3f µm/px)'), downsample, mppDs, mppDs * downsample))
     }
     if (Double.isFinite(mppDs) && Math.abs(mppDs * downsample - 0.5d) > 0.1d)
-        appendLine(String.format(java.util.Locale.US, '⚠ Karo çözünürlüğü %.3f µm/px. SPIDER 20x (~0.5 µm/px) karolarla eğitildi; bu ölçekte tahminler güvenilmez olabilir.', mppDs * downsample))
+        appendLine(String.format(java.util.Locale.US, workshopText('script.19f984d4ed78', '⚠ Karo çözünürlüğü %.3f µm/px. SPIDER 20x (~0.5 µm/px) karolarla eğitildi; bu ölçekte tahminler güvenilmez olabilir.'), mppDs * downsample))
     else if (!Double.isFinite(mppDs))
-        appendLine('⚠ Lam kalibre değil: karo ölçeği denetlenemedi. SPIDER 20x (~0.5 µm/px) karolarla eğitildi.')
+        appendLine(workshopText('script.8218a93c0c11', '⚠ Lam kalibre değil: karo ölçeği denetlenemedi. SPIDER 20x (~0.5 µm/px) karolarla eğitildi.'))
     int maxTiles = parseIntOr(cfg.maxTiles, 0)
     String mode = (cfg.granularity == 'tile-grid') ? 'tile-grid' : 'annotation'
     def tilesRoot = new File(workDir, 'tiles')
@@ -316,7 +316,7 @@ def exportTiles = { imageData, File workDir, cfg, Closure appendLine ->
                                 parent_id: null, mode: 'annotation']
             }
             totalTiles += n
-            appendLine('  karolar: anotasyon ' + i + '/' + anns.size() + ' (' + n + ')')
+            appendLine(workshopText('script.5462ffb21d1a', '  karolar: anotasyon ') + i + '/' + anns.size() + ' (' + n + ')')
         } else {
             int n = gridTiles(server, ann.getROI(), downsample, tileSize, 0, { x, y, phys, img ->
                 def outDir = new File(tilesRoot, annId + '/x' + x + '_y' + y); outDir.mkdirs()
@@ -327,7 +327,7 @@ def exportTiles = { imageData, File workDir, cfg, Closure appendLine ->
                                 parent_id: annId, mode: 'tile-grid']
             })
             totalTiles += n
-            appendLine('  ızgara karoları: anotasyon ' + i + '/' + anns.size() + ' (' + n + ')')
+            appendLine(workshopText('script.5bbdc37cd313', '  ızgara karoları: anotasyon ') + i + '/' + anns.size() + ' (' + n + ')')
         }
     }
     writeJson(predictList, new File(workDir, 'predict_annotations.json'))
@@ -401,7 +401,7 @@ def copyToClipboard = { String txt ->
 def importPredictions = { File workDir, imageData, String granularity ->
     def predsFile = new File(workDir, 'predictions.json')
     if (!predsFile.isFile())
-        return [ok: false, error: 'predictions.json bulunamadı:\n' + predsFile.getAbsolutePath()]
+        return [ok: false, error: workshopText('script.4a44d0192289', 'predictions.json bulunamadı:\n') + predsFile.getAbsolutePath()]
     def records = []
     try {
         def reader = new java.io.InputStreamReader(
@@ -506,32 +506,32 @@ def importPredictions = { File workDir, imageData, String granularity ->
 // ── Özet metni ──────────────────────────────────────────────────────────────
 def buildResultText = { File workDir, exp, imp ->
     def sb = new StringBuilder()
-    sb << "SPIDER — ÖZET\n"
+    sb << workshopText('script.d92fed7b7896', 'SPIDER — ÖZET\n')
     sb << "═════════════════\n\n"
-    sb << "Organ modeli : " << (exp?.organ ?: '?') << "\n"
-    sb << "Granülarite  : " << ((imp?.mode == 'tile-grid') ? 'Karo ızgarası (alt-tespit)' : 'Anotasyon düzeyi') << "\n"
-    sb << String.format(java.util.Locale.US, "Anotasyon    : %,d   ·   karo: %,d%n", (int) (exp?.nAnns ?: 0), (int) (exp?.nTiles ?: 0))
-    sb << "\nSınıf dağılımı:\n"
+    sb << workshopText('script.64fdc4c4f06c', 'Organ modeli : ') << (exp?.organ ?: '?') << "\n"
+    sb << workshopText('script.bcb85642bd73', 'Granülarite  : ') << ((imp?.mode == 'tile-grid') ? workshopText('script.8492c794ce4e', 'Karo ızgarası (alt-tespit)') : workshopText('script.d03cad6fc481', 'Anotasyon düzeyi')) << "\n"
+    sb << String.format(java.util.Locale.US, workshopText('script.d788029cc6ad', 'Anotasyon    : %,d   ·   karo: %,d%n'), (int) (exp?.nAnns ?: 0), (int) (exp?.nTiles ?: 0))
+    sb << workshopText('script.ac7cf25eea75', '\nSınıf dağılımı:\n')
     if (imp != null && imp.ok && !imp.predDist.isEmpty()) {
         int total = 0
         imp.predDist.each { cn, n -> sb << String.format(java.util.Locale.US, "  %-26s : %,d%n", cn, n); total += n }
-        sb << String.format(java.util.Locale.US, "  %-26s : %,d%n", ((imp.mode == 'tile-grid') ? '(toplam karo)' : '(sınıflandırılan)'), total)
-        if (imp.skipped > 0) sb << String.format(java.util.Locale.US, "  %-26s : %,d%n", '(karo yok, atlanan)', imp.skipped)
-        if (!Double.isNaN(imp.meanConf)) sb << String.format(java.util.Locale.US, "  %-26s : %.3f%n", 'ortalama güven', imp.meanConf)
+        sb << String.format(java.util.Locale.US, "  %-26s : %,d%n", ((imp.mode == 'tile-grid') ? workshopText('script.1dcc7c0d131a', '(toplam karo)') : workshopText('script.52c7bcf3e82c', '(sınıflandırılan)')), total)
+        if (imp.skipped > 0) sb << String.format(java.util.Locale.US, "  %-26s : %,d%n", workshopText('script.09ee209917e4', '(karo yok, atlanan)'), imp.skipped)
+        if (!Double.isNaN(imp.meanConf)) sb << String.format(java.util.Locale.US, "  %-26s : %.3f%n", workshopText('script.525c16f78229', 'ortalama güven'), imp.meanConf)
     } else {
-        sb << "  (sonuç yok)\n"
+        sb << workshopText('script.2729239daa83', '  (sonuç yok)\n')
     }
-    sb << "\n'" << CONF_MEAS << "' ve sınıf olasılığı ölçümleri " <<
-        ((imp?.mode == 'tile-grid') ? 'her alt-tespite' : 'her anotasyona') << " yazıldı (Measurements paneli).\n"
-    sb << "\nSPIDER çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki).\n"
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    sb << "\n'" << CONF_MEAS << workshopText('script.bed6a7e6430a', '\' ve sınıf olasılığı ölçümleri ') <<
+        ((imp?.mode == 'tile-grid') ? workshopText('script.ea191229da37', 'her alt-tespite') : workshopText('script.3693313a7d82', 'her anotasyona')) << workshopText('script.1dcdbbbcb39b', ' yazıldı (Measurements paneli).\n')
+    sb << workshopText('script.34ab39b25657', '\nSPIDER çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki).\n')
+    sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
 // ── Headless: yapılandırmayı raporla, etkileşim yok ─────────────────────────
 if (isHeadless) {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { println "Önce bir lam açın."; return }
+    if (imageData == null) { println workshopText('script.12204d6dbab7', 'Önce bir lam açın.'); return }
     def cfg = loadConfig()
     def miss = configMissing(cfg)
     println "SPIDER yapılandırması: python=${cfg.python ?: '(ayarsız)'} köprü=${cfg.bridge ?: '(ayarsız)'} model=${cfg.modelDir ?: '(HF hub — KAPILI)'} organ=${cfg.organ} granülarite=${cfg.granularity} aygıt=${cfg.device}"
@@ -566,7 +566,7 @@ def runPython = { List cmd, Closure onLine ->
     applyCacheEnv(pb)
     def proc
     try { proc = pb.start() }
-    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.f0e1e3289660', 'Python başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     processRef.set(proc)
     def last = new java.util.ArrayDeque()
     try {
@@ -581,9 +581,9 @@ def runPython = { List cmd, Closure onLine ->
     } catch (Throwable ignore) {}
     boolean finished
     try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
-    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
+    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: workshopText('script.e6b0c32aaae9', 'Zaman aşımı (') + PYTHON_TIMEOUT_SECONDS + workshopText('script.2ccf3f4af0dd', ' sn)')] }
+    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
     int code = proc.exitValue()
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
@@ -593,11 +593,11 @@ def startSelftest = {
     persistFields()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
-    if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!miss.isEmpty()) { errorTextRef.set(workshopText('script.59d7792abf1b', 'Önce yapılandırmayı tamamlayın:\n  • ') + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Bağımlılık kontrolü'); step.set('CHECK_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.8369fe631575', 'Bağımlılık kontrolü')); step.set('CHECK_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def r = runPython(selftestCmd(cfg), appendLine)
@@ -609,31 +609,31 @@ def startSelftest = {
 // ── Sınıflandırma akışı (tek eylem; eğitim yok) ─────────────────────────────
 def startRun = {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.da80fab350d1', 'Görüntü açık değil.')); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
     def workDir = resolveWorkDir(cfg, imageData)
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Karo dışa aktarılıyor (1/2)…'); step.set('RUN_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.d6da1ef0ca9e', 'Karo dışa aktarılıyor (1/2)…')); step.set('RUN_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
-        appendLine('Çalışma dizini: ' + workDir.getAbsolutePath())
+        appendLine(workshopText('script.8fba4a8a6457', 'Çalışma dizini: ') + workDir.getAbsolutePath())
         def exp
         try { exp = exportTiles(imageData, workDir, cfg, appendLine) }
         catch (Throwable t) {
-            javafx.application.Platform.runLater { errorTextRef.set('Karo dışa aktarma hatası:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }; return
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.eeffc5532cd3', 'Karo dışa aktarma hatası:\n') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }; return
         }
-        if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
+        if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.fee85e45842b', 'İptal edildi.')); step.set('ERROR'); render() }; return }
         if (exp.nEntries == 0) {
-            javafx.application.Platform.runLater { errorTextRef.set('Sınıflandırılacak karo üretilemedi.\nEn az 1 alan anotasyonu çizin (çok küçük ya da tamamen arka plan olabilir).'); step.set('ERROR'); render() }; return
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.555c6ec187de', 'Sınıflandırılacak karo üretilemedi.\nEn az 1 alan anotasyonu çizin (çok küçük ya da tamamen arka plan olabilir).')); step.set('ERROR'); render() }; return
         }
-        javafx.application.Platform.runLater { runPhaseRef.set('SPIDER tahmini (2/2)…'); render() }
+        javafx.application.Platform.runLater { runPhaseRef.set(workshopText('script.2dd81b4fd79d', 'SPIDER tahmini (2/2)…')); render() }
         def r = runPython(predictCmd(cfg, workDir), appendLine)
         if (!r.ok) {
-            javafx.application.Platform.runLater { errorTextRef.set('Tahmin başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.9b6cf1767fab', 'Tahmin başarısız (çıkış: ') + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return
         }
-        javafx.application.Platform.runLater { busyLabelRef.set('SPIDER sonuçları QuPath\'e aktarılıyor…'); step.set('BUSY'); render() }
+        javafx.application.Platform.runLater { busyLabelRef.set(workshopText('script.42dce1398d7d', 'SPIDER sonuçları QuPath\'e aktarılıyor…')); step.set('BUSY'); render() }
         def imp = importPredictions(workDir, imageData, exp.mode)   /* çalıştırma başlarken yakalanan görüntü — sonuç başka lama yazılmasın */
         javafx.application.Platform.runLater {
             if (!imp.ok) { errorTextRef.set(imp.error); step.set('ERROR'); render() }
@@ -759,12 +759,12 @@ render = { ->
             def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() }
             title.setText(workshopText('script.79892e25adf7', 'SPIDER — hazır'))
             def sb = new StringBuilder()
-            sb << "Lam          : " << imageNameOf(imageData) << "\n"
-            sb << "Çalışma dizini : " << workDir.getAbsolutePath() << "\n"
-            sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
-            sb << "Model          : " << (cfg.modelDir?.trim() ? cfg.modelDir : ('HuggingFace (histai/SPIDER-' + (cfg.organ ?: 'colorectal') + '-model, KAPILI)')) << "\n"
-            sb << "Aygıt          : " << cfg.device << "\n"
-            sb << String.format(java.util.Locale.US, "Alan anotasyonu: %,d%n", anns.size())
+            sb << workshopText('script.c482c0d5e596', 'Lam          : ') << imageNameOf(imageData) << "\n"
+            sb << workshopText('script.8506b05b84b7', 'Çalışma dizini : ') << workDir.getAbsolutePath() << "\n"
+            sb << "Python         : " << (cfg.python ?: workshopText('script.a2bfafb27517', '(ayarsız)')) << "\n"
+            sb << "Model          : " << (cfg.modelDir?.trim() ? cfg.modelDir : ('HuggingFace (histai/SPIDER-' + (cfg.organ ?: 'colorectal') + workshopText('script.ac4abc28a12f', '-model, KAPILI)'))) << "\n"
+            sb << workshopText('script.5bbbc6e5a551', 'Aygıt          : ') << cfg.device << "\n"
+            sb << String.format(java.util.Locale.US, workshopText('script.9ca54d48a490', 'Alan anotasyonu: %,d%n'), anns.size())
             addMonoArea(sb.toString())
             addGuidance(workshopText('script.6a2ae0e96800', 'SPIDER ÖN-EĞİTİMLİDİR — kendi etiketlerinize gerek yok; sadece organ + granülarite seçip "Sınıflandır" deyin.'))
 

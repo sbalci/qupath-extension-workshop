@@ -222,7 +222,7 @@ if (copiesArg != null && copiesArg != 'hepsi' && copiesArg != 'enyeni') {
 // ── 1) Ön kontrol: açık proje zorunlu ────────────────────────────────────────
 def project = QP.getProject()
 if (project == null) {
-    def msg = "Önce bir QuPath projesi açın. (Dosya → Proje aç…)\nBu betik tek lam modunda çalışmaz."
+    def msg = workshopText('script.3fa7ab791c90', 'Önce bir QuPath projesi açın. (Dosya → Proje aç…)\nBu betik tek lam modunda çalışmaz.')
     if (isHeadless) { println msg; return }
     Dialogs.showErrorMessage(workshopText('script.a38d0e6adac0', "Proje açık değil"), msg)
     return
@@ -230,7 +230,7 @@ if (project == null) {
 
 def entries = project.getImageList()
 if (entries == null || entries.isEmpty()) {
-    def msg = "Projede görüntü bulunamadı."
+    def msg = workshopText('script.87ae843447a4', 'Projede görüntü bulunamadı.')
     if (isHeadless) { println msg; return }
     Dialogs.showErrorMessage(workshopText('script.cb3ed2211f0a', "Boş proje"), msg)
     return
@@ -294,7 +294,7 @@ entries.eachWithIndex { entry, idx ->
 }
 
 if (recs.isEmpty()) {
-    def msg = "Hiçbir görüntüden kilitli anotasyon okunamadı.\nÖnce Tümör/Stroma modülünün piksel sınıflandırıcısını çalıştırıp sonuç anotasyonunu kilitleyin."
+    def msg = workshopText('script.3816a6162572', 'Hiçbir görüntüden kilitli anotasyon okunamadı.\nÖnce Tümör/Stroma modülünün piksel sınıflandırıcısını çalıştırıp sonuç anotasyonunu kilitleyin.')
     if (isHeadless) { println msg; return }
     Dialogs.showWarningNotification(workshopText('script.527be9b53936', "Kohort özet toplayıcı"), msg)
     return
@@ -348,7 +348,7 @@ try {
         }
     }
 } catch (Throwable t) {
-    def msg = "TSV yazılamadı: ${t.getMessage() ?: t.getClass().getSimpleName()}\nHedef: ${tsvFile.getAbsolutePath()}"
+    def msg = String.format(java.util.Locale.US, workshopText('script.85a43ea5543c', 'TSV yazılamadı: %s\nHedef: %s'), (t.getMessage() ?: t.getClass().getSimpleName()), tsvFile.getAbsolutePath())
     if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage(workshopText('script.540d5d46fe47', "Yazma hatası"), msg)
     return
 }
@@ -358,16 +358,16 @@ int colCount = colList.size() - 1 - (copiesChoice != null ? 1 : 0)   // image_na
 def previewCols = colList.drop(1).take(15)
 
 def body = new StringBuilder()
-body << "KOHORT ÖZET TOPLAYICI\n"
+body << workshopText('script.c1a1c97bb3ea', 'KOHORT ÖZET TOPLAYICI\n')
 body << "═══════════════════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Görüntü sayısı   : %,d  (atlanan: %,d)%n", rows.size(), skipped)
-body << String.format(java.util.Locale.US, "Ölçüm sütunu     : %,d%n", colCount)
-body << "\nTSV dosyası:\n  " + tsvFile.getAbsolutePath() + "\n"
-body << "\nİlk " + previewCols.size() + " sütun:\n"
+body << String.format(java.util.Locale.US, workshopText('script.e4329c4e2a28', 'Görüntü sayısı   : %,d  (atlanan: %,d)%n'), rows.size(), skipped)
+body << String.format(java.util.Locale.US, workshopText('script.51098563fa77', 'Ölçüm sütunu     : %,d%n'), colCount)
+body << workshopText('script.d4e41942ccc5', '\nTSV dosyası:\n  ') + tsvFile.getAbsolutePath() + "\n"
+body << String.format(java.util.Locale.US, workshopText('script.54a7b1cd01c7', '\nİlk %d sütun:\n'), previewCols.size())
 previewCols.each { c -> body << "  • " + c + "\n" }
-if (colList.size() - 1 > 15) body << String.format(java.util.Locale.US, "  … ve %,d sütun daha%n", colList.size() - 1 - 15)
+if (colList.size() - 1 > 15) body << String.format(java.util.Locale.US, workshopText('script.15469a7d4563', '  … ve %,d sütun daha%n'), colList.size() - 1 - 15)
 if (!duplicateImages.isEmpty()) {
-    body << String.format(java.util.Locale.US, "\nAynı adlı birden çok kilitli anotasyon: %,d görüntü. İkinci ve sonrakiler \"<ad> (2)\", \"<ad> (3)\" sütunlarında.%n", duplicateImages.size())
+    body << String.format(java.util.Locale.US, workshopText('script.b62b4634823d', '\nAynı adlı birden çok kilitli anotasyon: %,d görüntü. İkinci ve sonrakiler "<ad> (2)", "<ad> (3)" sütunlarında.%n'), duplicateImages.size())
     duplicateImages.take(5).each { n -> body << "  • " + n + "\n" }
 }
 if (copiesChoice != null) {
@@ -381,12 +381,12 @@ if (copiesChoice != null) {
     copiesLines.take(15).each { l -> body << "  • " + l + "\n" }
     if (copiesLines.size() > 15) body << String.format(java.util.Locale.US, "  … +%,d%n", copiesLines.size() - 15)
 }
-body << "\nSütun adı formatı: \"<anotasyon adı veya sınıfı> · <ölçüm adı>\"\n"
-body << "Eksik değerler TSV'de boş hücre olarak bırakıldı (Excel/R doğrudan okur).\n"
-body << "Veri dışa aktarma modülünde üretilen uzun-format tablosu ile birleştirilebilir.\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.5a80bd4eaa5f', '\nSütun adı formatı: "<anotasyon adı veya sınıfı> · <ölçüm adı>"\n')
+body << workshopText('script.5faebd8185ae', 'Eksik değerler TSV\'de boş hücre olarak bırakıldı (Excel/R doğrudan okur).\n')
+body << workshopText('script.0a1d0b2be7a7', 'Veri dışa aktarma modülünde üretilen uzun-format tablosu ile birleştirilebilir.\n\n')
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("Kohort Özet Toplayıcı", body.toString())
+showResultWindow(workshopText('script.9d0592d107dc', 'Kohort Özet Toplayıcı'), body.toString())
 println String.format(java.util.Locale.US,
     "✓ TSV yazıldı: %d görüntü, %d sütun → %s",
     rows.size(), colCount, tsvFile.getAbsolutePath())

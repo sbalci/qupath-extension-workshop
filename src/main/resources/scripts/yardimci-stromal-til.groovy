@@ -198,9 +198,7 @@ if (imageData == null) {
 
 def stromaAnnotations = QP.getAnnotationObjects().findAll { it.getPathClass()?.getName() == "Stroma" }
 if (stromaAnnotations.isEmpty()) {
-    def msg = "Bu lamda 'Stroma' anotasyonu yok.\n\n" +
-              "Önce Tümör/Stroma modülünü (Tümör vs stroma sınıflandırıcı) çalıştırın; o betik\n" +
-              "tümör/stroma alanlarını ayırır. Sonra bu betiği tekrar çalıştırın."
+    def msg = workshopText('script.e0cd7745392a', 'Bu lamda \'Stroma\' anotasyonu yok.\n\nÖnce Tümör/Stroma modülünü (Tümör vs stroma sınıflandırıcı) çalıştırın; o betik\ntümör/stroma alanlarını ayırır. Sonra bu betiği tekrar çalıştırın.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.8094a507868c', "Stroma bulunamadı"), msg)
     return
 }
@@ -338,10 +336,7 @@ double overallLymphoDensity = totalStromaMm2 > 0 ? totalLympho / totalStromaMm2 
 
 // Hiç hücre çıkmadıysa sessiz "0" sonucu yanıltıcıdır — nedenini söyle.
 if (totalCells == 0) {
-    def zmsg = "Stroma alanında hiç hücre tespit edilmedi.\n" +
-        "Olası nedenler: yanlış boya vektörü / Image type (ör. H&E yerine DAB ya da tersi), " +
-        "çok yüksek tespit eşiği, ya da 'Stroma' anotasyonunun hücresiz boş alana denk gelmesi.\n" +
-        "Boya vektörlerini ve eşiği kontrol edip yeniden çalıştırın."
+    def zmsg = workshopText('script.f0815698cae7', 'Stroma alanında hiç hücre tespit edilmedi.\nOlası nedenler: yanlış boya vektörü / Image type (ör. H&E yerine DAB ya da tersi), çok yüksek tespit eşiği, ya da \'Stroma\' anotasyonunun hücresiz boş alana denk gelmesi.\nBoya vektörlerini ve eşiği kontrol edip yeniden çalıştırın.')
     if (isHeadless) println "UYARI: ${zmsg}" else Dialogs.showWarningNotification(workshopText('script.b2d0e9e97b0d', "Hücre bulunamadı"), zmsg)
 }
 
@@ -363,7 +358,7 @@ QP.addObjects([summary])
 QP.fireHierarchyUpdate()
 
 def areaNote = areaKnown == 0
-    ? "\n⚠️ Çekirdek alan ölçümü bulunamadı → lenfosit adayı boyut filtresi uygulanamadı;\n   tüm stromal çekirdekler sayıldı. (Tespit ayarlarını kontrol edin.)"
+    ? workshopText('script.e42ab9a2ec28', '\n⚠️ Çekirdek alan ölçümü bulunamadı → lenfosit adayı boyut filtresi uygulanamadı;\n   tüm stromal çekirdekler sayıldı. (Tespit ayarlarını kontrol edin.)')
     : ""
 
 // ── 5) Sonucu sun ───────────────────────────────────────────────────
@@ -378,20 +373,20 @@ if (!appliedMode.prevNames.isEmpty()) {
     modeNotes << "\n" << String.format(java.util.Locale.US, workshopText('script.bc31ff876c31', 'Önceki sonuç değiştirildi: %,d özet anotasyonu silindi (içlerindeki diğer nesneler korundu).'), appliedMode.removed) << "\n"
 }
 def body = new StringBuilder()
-body << "STROMAL TIL YOĞUNLUĞU (morfolojik vekil)\n"
+body << workshopText('script.5c8c2c8f4331', 'STROMAL TIL YOĞUNLUĞU (morfolojik vekil)\n')
 body << "════════════════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Stroma alanı            : %.3f mm²%n", totalStromaMm2)
-body << String.format(java.util.Locale.US, "Stromal hücre (toplam)  : %,d  →  %.0f hücre/mm²%n", totalCells, overallCellDensity)
-body << String.format(java.util.Locale.US, "Lenfosit adayı (≤%.0f µm²): %,d  →  %.0f hücre/mm²%n",
+body << String.format(java.util.Locale.US, workshopText('script.b5d7b6b61870', 'Stroma alanı            : %.3f mm²%n'), totalStromaMm2)
+body << String.format(java.util.Locale.US, workshopText('script.10197b9b48bf', 'Stromal hücre (toplam)  : %,d  →  %.0f hücre/mm²%n'), totalCells, overallCellDensity)
+body << String.format(java.util.Locale.US, workshopText('script.324d73a35367', 'Lenfosit adayı (≤%.0f µm²): %,d  →  %.0f hücre/mm²%n'),
         lymphocyteMaxAreaUm2, totalLympho, overallLymphoDensity)
 body << areaNote << "\n"
 body << modeNotes.toString() << "\n"
-body << "Yöntem: stromada çekirdek tespiti; küçük yuvarlak çekirdek = lenfosit vekili.\n"
-body << "Bu bir SAYIM/YOĞUNLUKtur — IIOBWG görsel TIL%'i, klinik eşik veya yorum DEĞİL.\n"
-body << "Lenfosit kimliği için CD3/CD8 İHK doğrulaması gerekir (Salgado 2015; Thagaard 2021).\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.753ccd219817', 'Yöntem: stromada çekirdek tespiti; küçük yuvarlak çekirdek = lenfosit vekili.\n')
+body << workshopText('script.749ec2e20515', 'Bu bir SAYIM/YOĞUNLUKtur — IIOBWG görsel TIL%\'i, klinik eşik veya yorum DEĞİL.\n')
+body << workshopText('script.24d4053f99c7', 'Lenfosit kimliği için CD3/CD8 İHK doğrulaması gerekir (Salgado 2015; Thagaard 2021).\n\n')
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("Stromal TIL yoğunluğu", body.toString())
+showResultWindow(workshopText('script.434679a6b743', 'Stromal TIL yoğunluğu'), body.toString())
 println "✓ Stromal TIL yoğunluğu yazıldı (her Stroma anotasyonu + '${appliedMode.setName}')."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

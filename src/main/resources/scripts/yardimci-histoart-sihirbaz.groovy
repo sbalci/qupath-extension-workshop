@@ -75,8 +75,8 @@ def isHeadless = gui == null
 long PYTHON_TIMEOUT_SECONDS = 3600L
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
 def DEVICE_OPTIONS  = ['auto', 'cpu', 'cuda']
-def VARIANT_LABELS  = ['dla': 'DLA — ResNet50 (açık, CC0, ~94 MB)',
-                       'fma': 'FMA — ince ayarlı UNI (🔒 KAPILI, ~1,2 GB)']
+def VARIANT_LABELS  = ['dla': workshopText('script.161186f62366', 'DLA — ResNet50 (açık, CC0, ~94 MB)'),
+                       'fma': workshopText('script.f147cc865d38', 'FMA — ince ayarlı UNI (🔒 KAPILI, ~1,2 GB)')]
 def variantLabelToKey = { String lbl -> def k = VARIANT_LABELS.find { it.value == lbl }?.key; return (k ?: 'dla') }
 
 // HistoART eğitim yaması: 224×224 @ 40× (~0,25 µm/px). Bu iki sayı modelin
@@ -214,9 +214,9 @@ def loadConfig = { ->
 def configMissing = { cfg ->
     def miss = []
     if (!cfg.python?.trim() || !(new File(cfg.python)).isFile())
-        miss << 'Python yürütülebilir (python.exe) — ② ile ortamı kurun'
+        miss << workshopText('script.43fc09c3bd6a', 'Python yürütülebilir (python.exe) — ② ile ortamı kurun')
     if (!cfg.bridge?.trim() || !(new File(cfg.bridge)).isFile())
-        miss << 'HistoART köprüsü (histoart_bridge.py)'
+        miss << workshopText('script.02e39724cc1a', 'HistoART köprüsü (histoart_bridge.py)')
     return miss
 }
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
@@ -246,12 +246,12 @@ def effectiveDownsample = { cfg, imageData ->
 def scaleWarning = { cfg, imageData ->
     double mpp = slideMpp(imageData)
     if (Double.isNaN(mpp))
-        return '⚠ Lam KALİBRE DEĞİL (µm/px yok). HistoART 40× (~0,25 µm/px) bekler; ölçek doğrulanamıyor — sonuçlar sessizce yanlış olabilir.'
+        return workshopText('script.510e2ff5625f', '⚠ Lam KALİBRE DEĞİL (µm/px yok). HistoART 40× (~0,25 µm/px) bekler; ölçek doğrulanamıyor — sonuçlar sessizce yanlış olabilir.')
     double ds = effectiveDownsample(cfg, imageData)
     double eff = mpp * ds
     if (Math.abs(eff - HISTOART_MPP) > (HISTOART_MPP * 0.25d))
         return String.format(java.util.Locale.US,
-            '⚠ Etkin çözünürlük %.3f µm/px — HistoART %.2f µm/px (40×) ile eğitildi. Downsample\'ı boş bırakın (otomatik) ya da düzeltin.', eff, HISTOART_MPP)
+            workshopText('script.8a7fe0e46fb3', '⚠ Etkin çözünürlük %.3f µm/px — HistoART %.2f µm/px (40×) ile eğitildi. Downsample\'ı boş bırakın (otomatik) ya da düzeltin.'), eff, HISTOART_MPP)
     return null
 }
 
@@ -366,11 +366,11 @@ def exportTiles = { imageData, File workDir, cfg, Closure appendLine ->
     if (wholeSlide) {
         def plane = qupath.lib.regions.ImagePlane.getDefaultPlane()
         def full = qupath.lib.roi.ROIs.createRectangleROI(0, 0, server.getWidth(), server.getHeight(), plane)
-        appendLine('Anotasyon yok — tüm lam örnekleniyor (maks. ' + maxTiles + ' karo).')
+        appendLine(workshopText('script.3d34e7ceddc7', 'Anotasyon yok — tüm lam örnekleniyor (maks. ') + maxTiles + workshopText('script.8d3ab13bb2e8', ' karo).'))
         total = gridTiles(server, full, downsample, HISTOART_PATCH, maxTiles, { x, y, phys, img ->
             emit(null, x, y, phys, img)
         })
-        appendLine('  karolar: ' + total)
+        appendLine(workshopText('script.073a02f8be31', '  karolar: ') + total)
     } else {
         int i = 0
         anns.each { ann ->
@@ -380,7 +380,7 @@ def exportTiles = { imageData, File workDir, cfg, Closure appendLine ->
                 emit(annId, x, y, phys, img)
             })
             total += n
-            appendLine('  karolar: anotasyon ' + i + '/' + anns.size() + ' (' + n + ')')
+            appendLine(workshopText('script.5462ffb21d1a', '  karolar: anotasyon ') + i + '/' + anns.size() + ' (' + n + ')')
         }
     }
     writeJson(manifest, new File(workDir, 'tiles.json'))
@@ -453,7 +453,7 @@ def copyToClipboard = { String txt ->
 def importPredictions = { File workDir, imageData, exp, String mode = 'add' ->
     def predsFile = new File(workDir, 'predictions.json')
     if (!predsFile.isFile())
-        return [ok: false, error: 'predictions.json bulunamadı:\n' + predsFile.getAbsolutePath()]
+        return [ok: false, error: workshopText('script.4a44d0192289', 'predictions.json bulunamadı:\n') + predsFile.getAbsolutePath()]
     def manFile = new File(workDir, 'tiles.json')
 
     // Karo geometrisi manifestten (tahmin dosyası yalnız id taşır)
@@ -562,31 +562,31 @@ def importPredictions = { File workDir, imageData, exp, String mode = 'add' ->
 // ── Özet metni (kalite karnesi) ─────────────────────────────────────────────
 def buildResultText = { File workDir, exp, imp, cfg, imageData ->
     def sb = new StringBuilder()
-    sb << "HistoART — KALİTE KARNESİ\n"
+    sb << workshopText('script.e40cf41486fc', 'HistoART — KALİTE KARNESİ\n')
     sb << "═════════════════════════\n\n"
-    sb << "Lam        : " << imageNameOf(imageData) << "\n"
-    sb << "Varyant      : " << ((exp?.variant == 'fma') ? 'FMA (UNI)' : 'DLA (ResNet50)') << "\n"
-    sb << "Eşik         : " << (cfg.threshold ?: '0.5') << "\n"
-    sb << "Kapsam       : " << (exp?.wholeSlide ? 'tüm lam (örneklem)' : ('anotasyon (' + (exp?.nAnns ?: 0) + ')')) << "\n"
+    sb << workshopText('script.13db0a0038b7', 'Lam        : ') << imageNameOf(imageData) << "\n"
+    sb << workshopText('script.b7722520e5bf', 'Varyant      : ') << ((exp?.variant == 'fma') ? 'FMA (UNI)' : 'DLA (ResNet50)') << "\n"
+    sb << workshopText('script.b1bc22e66c22', 'Eşik         : ') << (cfg.threshold ?: '0.5') << "\n"
+    sb << workshopText('script.403f715955b9', 'Kapsam       : ') << (exp?.wholeSlide ? workshopText('script.833140918363', 'tüm lam (örneklem)') : (workshopText('script.8947452d6acb', 'anotasyon (') + (exp?.nAnns ?: 0) + ')')) << "\n"
     double mpp = slideMpp(imageData)
-    sb << String.format(java.util.Locale.US, "Ölçek        : downsample %.3f", (double) (exp?.downsample ?: 1.0d))
-    if (!Double.isNaN(mpp)) sb << String.format(java.util.Locale.US, "  ·  etkin %.3f µm/px (hedef %.2f)", mpp * (double) (exp?.downsample ?: 1.0d), HISTOART_MPP)
-    else sb << "  ·  lam KALİBRE DEĞİL"
+    sb << String.format(java.util.Locale.US, workshopText('script.96a31ef51454', 'Ölçek        : downsample %.3f'), (double) (exp?.downsample ?: 1.0d))
+    if (!Double.isNaN(mpp)) sb << String.format(java.util.Locale.US, workshopText('script.65cb6799a7a4', '  ·  etkin %.3f µm/px (hedef %.2f)'), mpp * (double) (exp?.downsample ?: 1.0d), HISTOART_MPP)
+    else sb << workshopText('script.faf31046973a', '  ·  lam KALİBRE DEĞİL')
     sb << "\n\n"
     if (imp != null && imp.ok) {
         int scored = (int) imp.nScored
         double cleanPct = (scored > 0) ? (100.0d * imp.nClean / scored) : 0.0d
-        sb << String.format(java.util.Locale.US, "Değerlendirilen karo : %,d%n", scored)
-        sb << String.format(java.util.Locale.US, "Temiz                : %,d  (%.1f%%)%n", (int) imp.nClean, cleanPct)
-        sb << String.format(java.util.Locale.US, "Artefaktlı           : %,d  (%.1f%%)%n", (int) imp.nArtifact, 100.0d - cleanPct)
-        if (imp.nSkipped > 0) sb << String.format(java.util.Locale.US, "Atlanan              : %,d%n", (int) imp.nSkipped)
-        sb << "\nSınıf dağılımı (karo):\n"
+        sb << String.format(java.util.Locale.US, workshopText('script.1e399b1e596c', 'Değerlendirilen karo : %,d%n'), scored)
+        sb << String.format(java.util.Locale.US, workshopText('script.6093103524f0', 'Temiz                : %,d  (%.1f%%)%n'), (int) imp.nClean, cleanPct)
+        sb << String.format(java.util.Locale.US, workshopText('script.602287447411', 'Artefaktlı           : %,d  (%.1f%%)%n'), (int) imp.nArtifact, 100.0d - cleanPct)
+        if (imp.nSkipped > 0) sb << String.format(java.util.Locale.US, workshopText('script.f73aa16744c6', 'Atlanan              : %,d%n'), (int) imp.nSkipped)
+        sb << workshopText('script.5fc7c451d5a5', '\nSınıf dağılımı (karo):\n')
         imp.dist.each { cn, n ->
             double pct = (scored > 0) ? (100.0d * n / scored) : 0.0d
             sb << String.format(java.util.Locale.US, "  %-18s : %,7d  (%.1f%%)%n", cn, (int) n, pct)
         }
     } else {
-        sb << "  (sonuç yok)\n"
+        sb << workshopText('script.2729239daa83', '  (sonuç yok)\n')
     }
     sb << "\n" << String.format(java.util.Locale.US, workshopText('script.8a4dae7d669e', 'Her karo, sınıfına göre renkli ve kilitli bir ALT-TESPİT olarak, tek bir \'%s\' anotasyonunun altına yazıldı. \'%s\' ve tür olasılıkları Measurements panelinde.'), (imp?.setName ?: HISTOART_SENTINEL), PROB_MEAS) << "\n"
     if (imp != null && imp.ok) {
@@ -596,11 +596,11 @@ def buildResultText = { File workDir, exp, imp, cfg, imageData ->
             sb << "\n" << String.format(java.util.Locale.US, workshopText('script.efe4b0cffe78', 'Önceki HistoART sonucu değiştirildi: %,d set ve %,d karo tespiti silindi (setlerin altındaki başka nesneler korundu).'), (int) imp.removed, (int) (imp.removedTiles ?: 0)) << "\n"
         }
     }
-    sb << "\nKabul/ret KARARI üretilmez — eşiği lab protokolünüze göre siz seçersiniz\n"
-    sb << "(Ek → WSI Kalite Kontrol Metrikleri § 4).\n"
-    sb << "HistoART FDA'nın RST kataloğunda yer almaz ve piksel maskesi ÜRETMEZ — 'temiz doku' zinciri için\n"
-    sb << "GrandQC'yi kullanın (§ 7.5). Çıktı bir derin öğrenme tahminidir; görsel doğrulama gerekir.\n"
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    sb << workshopText('script.162021e3b262', '\nKabul/ret KARARI üretilmez — eşiği lab protokolünüze göre siz seçersiniz\n')
+    sb << workshopText('script.898d12f5ed39', '(Ek → WSI Kalite Kontrol Metrikleri § 4).\n')
+    sb << workshopText('script.92bce35a6e1d', 'HistoART FDA\'nın RST kataloğunda yer almaz ve piksel maskesi ÜRETMEZ — \'temiz doku\' zinciri için\n')
+    sb << workshopText('script.158608ab47ad', 'GrandQC\'yi kullanın (§ 7.5). Çıktı bir derin öğrenme tahminidir; görsel doğrulama gerekir.\n')
+    sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
@@ -660,7 +660,7 @@ def runPython = { List cmd, Closure onLine ->
     applyCacheEnv(pb)
     def proc
     try { proc = pb.start() }
-    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.f0e1e3289660', 'Python başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     processRef.set(proc)
     def last = new java.util.ArrayDeque()
     try {
@@ -675,9 +675,9 @@ def runPython = { List cmd, Closure onLine ->
     } catch (Throwable ignore) {}
     boolean finished
     try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-    if (!finished) { killTree(proc); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
-    if (cancelledRef.get()) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    catch (InterruptedException ie) { killTree(proc); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
+    if (!finished) { killTree(proc); return [ok: false, exitCode: -2, error: String.format(java.util.Locale.US, workshopText('script.959c500322fd', 'Zaman aşımı (%s sn)'), PYTHON_TIMEOUT_SECONDS)] }
+    if (cancelledRef.get()) { killTree(proc); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
     int code = proc.exitValue()
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
@@ -733,11 +733,11 @@ def startSelftest = {
     persistFields()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
-    if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!miss.isEmpty()) { errorTextRef.set(workshopText('script.59d7792abf1b', 'Önce yapılandırmayı tamamlayın:\n  • ') + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Bağımlılık kontrolü'); step.set('CHECK_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.8369fe631575', 'Bağımlılık kontrolü')); step.set('CHECK_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def r = runPython(selftestCmd(cfg), appendLine)
@@ -751,14 +751,14 @@ def startDownload = {
     persistFields()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
-    if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!miss.isEmpty()) { errorTextRef.set(workshopText('script.59d7792abf1b', 'Önce yapılandırmayı tamamlayın:\n  • ') + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Model ağırlıkları indiriliyor'); step.set('DL_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.fcabb6e31bce', 'Model ağırlıkları indiriliyor')); step.set('DL_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
-        appendLine('Model dizini: ' + cfg.modelDir)
+        appendLine(workshopText('script.7cef60bf04d9', 'Model dizini: ') + cfg.modelDir)
         def r = runPython(downloadCmd(cfg), appendLine)
         javafx.application.Platform.runLater { downloadOkRef.set(r.ok); step.set('DL_DONE'); render() }
     }, 'AtolyeHistoART-Download')
@@ -789,7 +789,7 @@ def askExisting = { hierarchy ->
 // ── Çalıştırma akışı ────────────────────────────────────────────────────────
 def startRun = {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.da80fab350d1', 'Görüntü açık değil.')); step.set('ERROR'); render(); return }
     // Başsız kipte sihirbaz hiç çalışmaz (yukarıdaki başsız blok döner); yine de pencere yoksa
     // soru sorulamaz → hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.
     if (isHeadless) return
@@ -801,35 +801,35 @@ def startRun = {
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Karo dışa aktarılıyor (1/2)…'); step.set('RUN_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.d6da1ef0ca9e', 'Karo dışa aktarılıyor (1/2)…')); step.set('RUN_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
-        appendLine('Çalışma dizini: ' + workDir.getAbsolutePath())
+        appendLine(workshopText('script.8fba4a8a6457', 'Çalışma dizini: ') + workDir.getAbsolutePath())
         def exp
         try { exp = exportTiles(imageData, workDir, cfg, appendLine) }
         catch (Throwable t) {
-            javafx.application.Platform.runLater { errorTextRef.set('Karo dışa aktarma hatası:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }; return
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.eeffc5532cd3', 'Karo dışa aktarma hatası:\n') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }; return
         }
-        if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
+        if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.fee85e45842b', 'İptal edildi.')); step.set('ERROR'); render() }; return }
         if (exp.nTiles == 0) {
-            javafx.application.Platform.runLater { errorTextRef.set('Sınıflandırılacak karo üretilemedi.\nBölge çok küçük ya da tamamen arka plan olabilir.'); step.set('ERROR'); render() }; return
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.e341e6e4aad3', 'Sınıflandırılacak karo üretilemedi.\nBölge çok küçük ya da tamamen arka plan olabilir.')); step.set('ERROR'); render() }; return
         }
-        javafx.application.Platform.runLater { runPhaseRef.set('HistoART tahmini (2/2) — ikili → tür…'); render() }
+        javafx.application.Platform.runLater { runPhaseRef.set(workshopText('script.8dd1eef143c6', 'HistoART tahmini (2/2) — ikili → tür…')); render() }
         def r = runPython(predictCmd(cfg, workDir), appendLine)
         if (!r.ok) {
-            javafx.application.Platform.runLater { errorTextRef.set('Tahmin başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.9b6cf1767fab', 'Tahmin başarısız (çıkış: ') + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return
         }
-        javafx.application.Platform.runLater { busyLabelRef.set('HistoART sonuçları QuPath\'e aktarılıyor…'); step.set('BUSY'); render() }
+        javafx.application.Platform.runLater { busyLabelRef.set(workshopText('script.4b26921ad652', 'HistoART sonuçları QuPath\'e aktarılıyor…')); step.set('BUSY'); render() }
         // Sonuçlar, çalıştırma BAŞLARKEN yakalanan görüntüye yazılır: dakikalar süren tahmin
         // sırasında başka bir lam açılırsa A'nın karoları B'ye yazılmasın. Hata BUSY'de takılı bırakmaz.
         def imp
         try { imp = importPredictions(workDir, imageData, exp, runMode) }
-        catch (Throwable t) { imp = [ok: false, error: 'İçe aktarma hatası:\n' + (t.getMessage() ?: t.getClass().getSimpleName())] }
+        catch (Throwable t) { imp = [ok: false, error: workshopText('script.ac05b642d437', 'İçe aktarma hatası:\n') + (t.getMessage() ?: t.getClass().getSimpleName())] }
         javafx.application.Platform.runLater {
             if (!imp.ok) { errorTextRef.set(imp.error); step.set('ERROR'); render() }
             else {
                 try { resultTextRef.set(buildResultText(workDir, exp, imp, cfg, imageData)); step.set('RESULT') }
-                catch (Throwable t) { errorTextRef.set('Sonuç özeti üretilemedi:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR') }
+                catch (Throwable t) { errorTextRef.set(workshopText('script.fb2fc035ea97', 'Sonuç özeti üretilemedi:\n') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR') }
                 render()
             }
         }
@@ -961,15 +961,15 @@ render = { ->
             double mpp = slideMpp(imageData)
             title.setText(workshopText('script.a4359ba88c20', 'HistoART — hazır'))
             def sb = new StringBuilder()
-            sb << "Lam          : " << imageNameOf(imageData) << "\n"
-            sb << "Çalışma dizini : " << workDir.getAbsolutePath() << "\n"
-            sb << "Model dizini   : " << cfg.modelDir << "\n"
-            sb << "Varyant        : " << ((cfg.variant == 'fma') ? 'FMA (UNI, KAPILI)' : 'DLA (ResNet50, açık)') << "\n"
-            sb << "Eşik / aygıt   : " << (cfg.threshold ?: '0.5') << "  /  " << cfg.device << "\n"
-            sb << String.format(java.util.Locale.US, "Karo           : %d px  ·  downsample %.3f%n", HISTOART_PATCH, ds)
-            if (!Double.isNaN(mpp)) sb << String.format(java.util.Locale.US, "Çözünürlük     : lam %.3f µm/px  →  etkin %.3f µm/px (hedef %.2f)%n", mpp, mpp * ds, HISTOART_MPP)
-            else sb << "Çözünürlük     : lam KALİBRE DEĞİL\n"
-            sb << String.format(java.util.Locale.US, "Kapsam         : %s%n", anns.isEmpty() ? ('tüm lam (maks. ' + (cfg.maxTiles ?: '2000') + ' karo)') : ('alan anotasyonu: ' + anns.size()))
+            sb << workshopText('script.c482c0d5e596', 'Lam          : ') << imageNameOf(imageData) << "\n"
+            sb << workshopText('script.8506b05b84b7', 'Çalışma dizini : ') << workDir.getAbsolutePath() << "\n"
+            sb << workshopText('script.a35673a24ece', 'Model dizini   : ') << cfg.modelDir << "\n"
+            sb << workshopText('script.940fa3a8dd9e', 'Varyant        : ') << ((cfg.variant == 'fma') ? workshopText('script.4c45d667044a', 'FMA (UNI, KAPILI)') : workshopText('script.8fb939742830', 'DLA (ResNet50, açık)')) << "\n"
+            sb << workshopText('script.e12a67f97fe8', 'Eşik / aygıt   : ') << (cfg.threshold ?: '0.5') << "  /  " << cfg.device << "\n"
+            sb << String.format(java.util.Locale.US, workshopText('script.4e79b8d1d9ef', 'Karo           : %d px  ·  downsample %.3f%n'), HISTOART_PATCH, ds)
+            if (!Double.isNaN(mpp)) sb << String.format(java.util.Locale.US, workshopText('script.fc76d35aa18f', 'Çözünürlük     : lam %.3f µm/px  →  etkin %.3f µm/px (hedef %.2f)%n'), mpp, mpp * ds, HISTOART_MPP)
+            else sb << workshopText('script.8e6e48ed6a97', 'Çözünürlük     : lam KALİBRE DEĞİL\n')
+            sb << String.format(java.util.Locale.US, workshopText('script.793d7f155668', 'Kapsam         : %s%n'), anns.isEmpty() ? (workshopText('script.824304e06d2c', 'tüm lam (maks. ') + (cfg.maxTiles ?: '2000') + workshopText('script.6f5d5c46f249', ' karo)')) : (workshopText('script.c4b01970c5f1', 'alan anotasyonu: ') + anns.size()))
             addMonoArea(sb.toString())
 
             def sw = scaleWarning(cfg, imageData)

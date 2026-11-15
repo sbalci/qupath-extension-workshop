@@ -148,7 +148,7 @@ def readJackluConfig = { ->
     def envNames = [enableScripts: 'QUPATH_MCP_ENABLE_SCRIPTS', enablePlugins: 'QUPATH_MCP_ENABLE_PLUGINS',
                     enableFileAccess: 'QUPATH_MCP_ENABLE_FILE_ACCESS', enableCaptureView: 'QUPATH_MCP_ENABLE_CAPTURE_VIEW',
                     host: 'QUPATH_MCP_HOST', port: 'QUPATH_MCP_PORT']
-    def sources = new LinkedHashSet<String>(["varsayılan"])
+    def sources = new LinkedHashSet<String>([workshopText('script.a3f9433d247e', 'varsayılan')])
     String home = System.getProperty("user.home")
     def file = [new File(home, ".qupath/mcp.properties"), new File(home, "qupath-mcp.properties"),
                 new File("qupath-mcp.properties")].find { it.isFile() }
@@ -162,12 +162,12 @@ def readJackluConfig = { ->
             sources.clear()
             sources << file.getPath()
         } catch (Throwable t) {
-            sources << ("okunamadı: " + file.getPath())
+            sources << (workshopText('script.9df4e710a75e', 'okunamadı: ') + file.getPath())
         }
     }
     cfg.keySet().toList().each { key ->
         String env = System.getenv(envNames[key])
-        if (env != null) { cfg[key] = env.trim(); sources << "ortam değişkeni" }
+        if (env != null) { cfg[key] = env.trim(); sources << workshopText('script.fdbad05e5b56', 'ortam değişkeni') }
         String sys = System.getProperty("qupath.mcp." + key)
         if (sys != null) { cfg[key] = sys.trim(); sources << "-D" }
     }
@@ -194,7 +194,7 @@ def readEarthmoverPrefs = { ->
 
 def warnings = []
 def body = new StringBuilder()
-body << "PYTHON VE YAPAY ZEKÂ AJANI KÖPRÜ DENETİMİ (salt okunur)\n"
+body << workshopText('script.24afc288dca4', 'PYTHON VE YAPAY ZEKÂ AJANI KÖPRÜ DENETİMİ (salt okunur)\n')
 body << "═══════════════════════════════════════════════════════\n\n"
 
 // ── 2) QuPath sürümü ────────────────────────────────────────────────
@@ -202,29 +202,29 @@ String version = qupath.lib.common.GeneralTools.getVersion()
 boolean atLeast07 = version != null &&
     qupath.lib.common.Version.parse(version).compareTo(qupath.lib.common.Version.parse("0.7.0")) >= 0
 
-body << "1) QUPATH SÜRÜMÜ\n"
+body << workshopText('script.ce33e064a6d9', '1) QUPATH SÜRÜMÜ\n')
 body << "────────────────\n"
-body << "   Çalışan sürüm: ${version}\n"
+body << String.format(java.util.Locale.US, workshopText('script.bb0a01859187', '   Çalışan sürüm: %s\n'), version)
 body << (atLeast07
-    ? "   Py4J, paquo ve iki MCP eklentisi de bu sürümde kurulabilir.\n\n"
-    : "   Py4J ve paquo kurulabilir. İki MCP eklentisi QuPath 0.7.0 ister; bu sürüme kurulamaz.\n\n")
+    ? workshopText('script.14c13388b69d', '   Py4J, paquo ve iki MCP eklentisi de bu sürümde kurulabilir.\n\n')
+    : workshopText('script.16de2ccbcd68', '   Py4J ve paquo kurulabilir. İki MCP eklentisi QuPath 0.7.0 ister; bu sürüme kurulamaz.\n\n'))
 
 // ── 3) Py4J ─────────────────────────────────────────────────────────
 boolean py4jInstalled = classPresent('qupath.ext.py4j.core.GatewayManager')
 boolean py4jOpen = portOpen(PORT_PY4J)
 
-body << "2) PY4J (QuBaLab'in bağlandığı resmî eklenti)\n"
+body << workshopText('script.be9508e25d03', '2) PY4J (QuBaLab\'in bağlandığı resmî eklenti)\n')
 body << "─────────────────────────────────────────────\n"
 body << (py4jInstalled
-    ? "   ✓ Eklenti yüklü.\n"
-    : "   ✗ Eklenti BULUNAMADI. Kurulum: [Extensions → Manage extensions] → QuPath Py4J extension.\n")
+    ? workshopText('script.d9654b3c3022', '   ✓ Eklenti yüklü.\n')
+    : workshopText('script.bb35785343f9', '   ✗ Eklenti BULUNAMADI. Kurulum: [Extensions → Manage extensions] → QuPath Py4J extension.\n'))
 if (py4jOpen) {
-    body << "   ⚠ Port ${PORT_PY4J} DİNLİYOR (ağ geçidi açık ya da porttaki başka bir program).\n"
-    body << "     Token kullanılıp kullanılmadığı buradan görülemez. Tokensiz ağ geçidine bu\n"
-    body << "     bilgisayardaki her süreç bağlanıp QuPath içinde kod çalıştırabilir.\n"
-    warnings << "Py4J portu ${PORT_PY4J} açık: ağ geçidini token ile başlattığınızı doğrulayın."
+    body << String.format(java.util.Locale.US, workshopText('script.ae55e52c8baa', '   ⚠ Port %s DİNLİYOR (ağ geçidi açık ya da porttaki başka bir program).\n'), PORT_PY4J)
+    body << workshopText('script.b2ec1b030f56', '     Token kullanılıp kullanılmadığı buradan görülemez. Tokensiz ağ geçidine bu\n')
+    body << workshopText('script.96e966ac73a4', '     bilgisayardaki her süreç bağlanıp QuPath içinde kod çalıştırabilir.\n')
+    warnings << String.format(java.util.Locale.US, workshopText('script.15594eae417e', 'Py4J portu %s açık: ağ geçidini token ile başlattığınızı doğrulayın.'), PORT_PY4J)
 } else {
-    body << "   Port ${PORT_PY4J} kapalı. Farklı bir port seçtiyseniz bu denetim onu göremez.\n"
+    body << String.format(java.util.Locale.US, workshopText('script.ab23d74780ed', '   Port %s kapalı. Farklı bir port seçtiyseniz bu denetim onu göremez.\n'), PORT_PY4J)
 }
 body << "\n"
 
@@ -235,27 +235,27 @@ int jackluPort = (jacklu.port as String).isInteger() ? (jacklu.port as Integer) 
 boolean jackluOpen = portOpen(jackluPort)
 def isOn = { String key -> Boolean.parseBoolean(jacklu[key] as String) }
 
-body << "3) MCP — 00JackLu/qupath-mcp (üçüncü taraf, GPL-3.0)\n"
+body << workshopText('script.034d48e6fe13', '3) MCP — 00JackLu/qupath-mcp (üçüncü taraf, GPL-3.0)\n')
 body << "────────────────────────────────────────────────────\n"
-body << (jackluInstalled ? "   ⚠ Eklenti YÜKLÜ.\n" : "   Eklenti yüklü değil.\n")
+body << (jackluInstalled ? workshopText('script.5e5c27a86a16', '   ⚠ Eklenti YÜKLÜ.\n') : workshopText('script.e4c557b29151', '   Eklenti yüklü değil.\n'))
 body << (jackluOpen
-    ? "   ⚠ Port ${jackluPort} DİNLİYOR.\n"
-    : "   Port ${jackluPort} kapalı.\n")
+    ? String.format(java.util.Locale.US, workshopText('script.d19a9c967aef', '   ⚠ Port %s DİNLİYOR.\n'), jackluPort)
+    : String.format(java.util.Locale.US, workshopText('script.da550863d565', '   Port %s kapalı.\n'), jackluPort))
 if (jackluOpen && !jackluInstalled) {
-    body << "   Eklenti bulunamadığı için portu başka bir program kullanıyor olabilir.\n"
-    warnings << "Port ${jackluPort} açık; sahibi bilinmiyor."
+    body << workshopText('script.e119e65b0c81', '   Eklenti bulunamadığı için portu başka bir program kullanıyor olabilir.\n')
+    warnings << String.format(java.util.Locale.US, workshopText('script.0990d5e3edf4', 'Port %s açık; sahibi bilinmiyor.'), jackluPort)
 }
 if (jackluInstalled) {
-    body << "   Ayar kaynağı: ${jacklu.source}\n"
-    body << "   Betik çalıştırma: ${isOn('enableScripts') ? 'AÇIK' : 'kapalı'}  ·  Eklenti: ${isOn('enablePlugins') ? 'AÇIK' : 'kapalı'}"
-    body << "  ·  Dosya: ${isOn('enableFileAccess') ? 'AÇIK' : 'kapalı'}  ·  Ekran görüntüsü: ${isOn('enableCaptureView') ? 'AÇIK' : 'kapalı'}\n"
+    body << String.format(java.util.Locale.US, workshopText('script.7b21259c4259', '   Ayar kaynağı: %s\n'), jacklu.source)
+    body << String.format(java.util.Locale.US, workshopText('script.db3ebf9be18a', '   Betik çalıştırma: %s  ·  Eklenti: %s'), isOn('enableScripts') ? workshopText('script.061aa921c22d', 'AÇIK') : workshopText('script.358e18ead1a3', 'kapalı'), isOn('enablePlugins') ? workshopText('script.061aa921c22d', 'AÇIK') : workshopText('script.358e18ead1a3', 'kapalı'))
+    body << String.format(java.util.Locale.US, workshopText('script.4881005c605b', '  ·  Dosya: %s  ·  Ekran görüntüsü: %s\n'), isOn('enableFileAccess') ? workshopText('script.061aa921c22d', 'AÇIK') : workshopText('script.358e18ead1a3', 'kapalı'), isOn('enableCaptureView') ? workshopText('script.061aa921c22d', 'AÇIK') : workshopText('script.358e18ead1a3', 'kapalı'))
     if (!(jacklu.host in [LOOPBACK, 'localhost', '::1'])) {
-        body << "   ⚠ Bağlama adresi ${jacklu.host}: sunucu bu bilgisayarın dışından erişilebilir olabilir.\n"
-        warnings << "00JackLu MCP yerel olmayan adrese bağlı (${jacklu.host})."
+        body << String.format(java.util.Locale.US, workshopText('script.9ac2258ab550', '   ⚠ Bağlama adresi %s: sunucu bu bilgisayarın dışından erişilebilir olabilir.\n'), jacklu.host)
+        warnings << String.format(java.util.Locale.US, workshopText('script.208a41cfa03f', '00JackLu MCP yerel olmayan adrese bağlı (%s).'), jacklu.host)
     }
-    body << "   Kimlik doğrulama yok. v0.2.0 kaynağında web sayfalarından gelen istekleri\n"
-    body << "   ayıklayan Origin/Host denetimi de yok (2026-10-30). Kullanmadığınızda kapatın.\n"
-    if (isOn('enableScripts')) warnings << "00JackLu MCP'de betik çalıştırma açık: enableScripts=false ile kapatın."
+    body << workshopText('script.e658e8938f77', '   Kimlik doğrulama yok. v0.2.0 kaynağında web sayfalarından gelen istekleri\n')
+    body << workshopText('script.4dac3aab0d9f', '   ayıklayan Origin/Host denetimi de yok (2026-10-30). Kullanmadığınızda kapatın.\n')
+    if (isOn('enableScripts')) warnings << workshopText('script.736515ae1e80', '00JackLu MCP\'de betik çalıştırma açık: enableScripts=false ile kapatın.')
 }
 body << "\n"
 
@@ -264,58 +264,58 @@ boolean earthmoverInstalled = classPresent('io.earthmover.qupath.driver.GuiDrive
 def earthmover = readEarthmoverPrefs()
 boolean earthmoverOpen = portOpen(earthmover.port as int)
 
-body << "4) MCP — earthmover-support/qupath-mcp (üçüncü taraf, Apache-2.0)\n"
+body << workshopText('script.dd7fbbfd67af', '4) MCP — earthmover-support/qupath-mcp (üçüncü taraf, Apache-2.0)\n')
 body << "─────────────────────────────────────────────────────────────────\n"
-body << (earthmoverInstalled ? "   ⚠ Eklenti YÜKLÜ.\n" : "   Eklenti yüklü değil.\n")
+body << (earthmoverInstalled ? workshopText('script.5e5c27a86a16', '   ⚠ Eklenti YÜKLÜ.\n') : workshopText('script.e4c557b29151', '   Eklenti yüklü değil.\n'))
 body << (earthmoverOpen
-    ? "   ⚠ Port ${earthmover.port} DİNLİYOR.\n"
-    : "   Port ${earthmover.port} kapalı.\n")
+    ? String.format(java.util.Locale.US, workshopText('script.d19a9c967aef', '   ⚠ Port %s DİNLİYOR.\n'), earthmover.port)
+    : String.format(java.util.Locale.US, workshopText('script.da550863d565', '   Port %s kapalı.\n'), earthmover.port))
 if (earthmoverOpen && !earthmoverInstalled) {
-    body << "   Eklenti bulunamadığı için portu başka bir program kullanıyor olabilir.\n"
-    warnings << "Port ${earthmover.port} açık; sahibi bilinmiyor."
+    body << workshopText('script.e119e65b0c81', '   Eklenti bulunamadığı için portu başka bir program kullanıyor olabilir.\n')
+    warnings << String.format(java.util.Locale.US, workshopText('script.0990d5e3edf4', 'Port %s açık; sahibi bilinmiyor.'), earthmover.port)
 }
 if (earthmoverInstalled) {
-    body << "   Sunucu tercihi: ${earthmover.enabled ? 'AÇIK' : 'kapalı'}"
-    body << "  (Kapatmak için: [Extensions → MCP server → Enabled])\n"
-    body << "   Ajan QuPath içinde her kodu çalıştırabilir; bu yetenek kapatılamaz.\n"
-    if (earthmoverOpen) warnings << "earthmover MCP açık: kullanmadığınızda [Extensions → MCP server → Enabled] ile kapatın."
+    body << String.format(java.util.Locale.US, workshopText('script.d68c4a97877a', '   Sunucu tercihi: %s'), earthmover.enabled ? workshopText('script.061aa921c22d', 'AÇIK') : workshopText('script.358e18ead1a3', 'kapalı'))
+    body << workshopText('script.4f8dfb50ed55', '  (Kapatmak için: [Extensions → MCP server → Enabled])\n')
+    body << workshopText('script.9a68dc996935', '   Ajan QuPath içinde her kodu çalıştırabilir; bu yetenek kapatılamaz.\n')
+    if (earthmoverOpen) warnings << workshopText('script.5c36aef53e7e', 'earthmover MCP açık: kullanmadığınızda [Extensions → MCP server → Enabled] ile kapatın.')
 }
 def logFiles = (earthmover.logDir as File).listFiles()?.findAll { it.isFile() && it.getName().endsWith(".jsonl") } ?: []
 if (!logFiles.isEmpty()) {
     double logMb = logFiles.sum { it.length() } / (1024.0d * 1024.0d)
-    body << String.format(java.util.Locale.US, "   ⚠ Eylem günlüğü: %d dosya, %.1f MB%n", logFiles.size(), logMb)
+    body << String.format(java.util.Locale.US, workshopText('script.b08e5be98eb8', '   ⚠ Eylem günlüğü: %d dosya, %.1f MB%n'), logFiles.size(), logMb)
     body << "     ${earthmover.logDir}\n"
-    body << "     Çalışan Groovy kodunu, dosya yollarını ve iletişim kutusu metinlerini içerebilir.\n"
-    warnings << "Ajan eylem günlüğü var: proje verisi gibi koruyun."
+    body << workshopText('script.fea9a4b2dac4', '     Çalışan Groovy kodunu, dosya yollarını ve iletişim kutusu metinlerini içerebilir.\n')
+    warnings << workshopText('script.9a7f82fc1642', 'Ajan eylem günlüğü var: proje verisi gibi koruyun.')
 }
 body << "\n"
 
 // ── 6) Açık görüntü ─────────────────────────────────────────────────
 def imageData = QP.getCurrentImageData()
 
-body << "5) AÇIK GÖRÜNTÜDE AJANA GİDEBİLECEK KİMLİKLENDİRİCİLER\n"
+body << workshopText('script.8bc56078f6ac', '5) AÇIK GÖRÜNTÜDE AJANA GİDEBİLECEK KİMLİKLENDİRİCİLER\n')
 body << "─────────────────────────────────────────────────────\n"
 if (imageData == null) {
-    body << "   Açık görüntü yok; bu başlık atlandı.\n"
+    body << workshopText('script.1cca9c7272a6', '   Açık görüntü yok; bu başlık atlandı.\n')
 } else {
     def server = imageData.getServer()
     String name = server.getMetadata().getName()
-    body << "   Görüntü adı: ${name}\n"
+    body << String.format(java.util.Locale.US, workshopText('script.9198b57d2ea2', '   Görüntü adı: %s\n'), name)
     if (name != null && name ==~ /(?s).*\d{2,}[-_\/]\d{2,}.*/) {
-        body << "   ⚠ Adda vaka numarasına benzeyen bir örüntü var (olası; siz doğrulayın).\n"
-        warnings << "Dosya adı vaka numarası içeriyor olabilir."
+        body << workshopText('script.d69b38aebbda', '   ⚠ Adda vaka numarasına benzeyen bir örüntü var (olası; siz doğrulayın).\n')
+        warnings << workshopText('script.b4eaaed8a749', 'Dosya adı vaka numarası içeriyor olabilir.')
     }
     def associated = server.getAssociatedImageList() ?: []
     def identifying = associated.findAll { String item ->
         def lower = item.toLowerCase(java.util.Locale.ROOT)
         lower.contains("label") || lower.contains("macro")
     }
-    body << "   Gömülü görüntüler: ${associated.isEmpty() ? '(yok)' : associated.join(', ')}\n"
+    body << String.format(java.util.Locale.US, workshopText('script.161978325f01', '   Gömülü görüntüler: %s\n'), associated.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : associated.join(', '))
     if (!identifying.isEmpty()) {
-        body << "   ⚠ Etiket/makro görüntüsü var; hasta bilgisi taşıyabilir.\n"
-        warnings << "Lamda etiket/makro görüntüsü var."
+        body << workshopText('script.1144aa3c047b', '   ⚠ Etiket/makro görüntüsü var; hasta bilgisi taşıyabilir.\n')
+        warnings << workshopText('script.49f5aa0cd59a', 'Lamda etiket/makro görüntüsü var.')
     }
-    body << "   Kesin denetim için: [Yardımcılar → Klinik ve kohort → WSI anonimleştirme sihirbazı → Denetle].\n"
+    body << workshopText('script.775c4882e170', '   Kesin denetim için: [Yardımcılar → Klinik ve kohort → WSI anonimleştirme sihirbazı → Denetle].\n')
 }
 body << "\n"
 
@@ -329,30 +329,30 @@ String qupathDir = (appFile == null)
     ? "QUPATH_KURULUM_KLASORU"
     : (appFile.getName().endsWith(".app") ? appFile : appFile.getParentFile()).getPath().replace('\\', '/')
 
-body << "6) BAĞLANTI ÖRNEKLERİ\n"
+body << workshopText('script.351a4afb8239', '6) BAĞLANTI ÖRNEKLERİ\n')
 body << "─────────────────────\n"
-body << "   QuBaLab (Python 3.11+; önce [Extensions → Py4J → Start Py4J Gateway], Random ile token):\n\n"
+body << workshopText('script.e497916a2048', '   QuBaLab (Python 3.11+; önce [Extensions → Py4J → Start Py4J Gateway], Random ile token):\n\n')
 body << "     from qubalab.qupath import qupath_gateway\n"
 body << "     gateway = qupath_gateway.create_gateway(auth_token=\"TOKEN\", port=${PORT_PY4J})\n"
 body << "     print(gateway.entry_point.getCurrentImageName())\n\n"
-body << "   paquo (.paquo.toml; yazarken QuPath'te o proje açık OLMAMALI):\n\n"
+body << workshopText('script.2134de0f1e48', '   paquo (.paquo.toml; yazarken QuPath\'te o proje açık OLMAMALI):\n\n')
 body << "     qupath_dir = \"${qupathDir}\"\n\n"
 
 // ── 8) Özet ─────────────────────────────────────────────────────────
-body << "ÖZET\n"
+body << workshopText('script.c4837fa78bf0', 'ÖZET\n')
 body << "────\n"
 if (warnings.isEmpty()) {
-    body << "   Bu denetimin baktığı yerlerde açık bir köprü görünmüyor.\n"
-    body << "   Farklı portlardaki ya da başka araçlara ait sunucular buradan görülemez.\n"
+    body << workshopText('script.d0e6c56c1ead', '   Bu denetimin baktığı yerlerde açık bir köprü görünmüyor.\n')
+    body << workshopText('script.1319508f03fe', '   Farklı portlardaki ya da başka araçlara ait sunucular buradan görülemez.\n')
 } else {
     warnings.each { body << "   ⚠ ${it}\n" }
 }
 body << "\n"
-body << "Bu bir DENETİM raporudur — nesne oluşturmaz, değiştirmez, kaydetmez; ayar yazmaz.\n"
-body << "Ayrıntı: Ekler → Yapay Zekâ Ajanları ve MCP.\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.7fed5462fae4', 'Bu bir DENETİM raporudur — nesne oluşturmaz, değiştirmez, kaydetmez; ayar yazmaz.\n')
+body << workshopText('script.ebae2a19a4d9', 'Ayrıntı: Ekler → Yapay Zekâ Ajanları ve MCP.\n\n')
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("Python ve yapay zekâ ajanı köprü denetimi", body.toString())
+showResultWindow(workshopText('script.fbbd917efd10', 'Python ve yapay zekâ ajanı köprü denetimi'), body.toString())
 println "✓ Köprü denetimi tamamlandı (salt okunur)."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

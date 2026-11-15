@@ -1593,13 +1593,13 @@ def writeRunner = { cfg ->
 def configMissing = { cfg ->
     def miss = []
     if (cfg.mode == 'native') {
-        if (!cfg.python?.trim() || !(new File(cfg.python)).isFile()) miss << 'Native mod: python.exe (VALIS venv)'
+        if (!cfg.python?.trim() || !(new File(cfg.python)).isFile()) miss << workshopText('script.08fd2804e956', 'Native mod: python.exe (VALIS venv)')
     }
     if (cfg.mode == 'wsl') {
         // WSL yolu Windows'tan güvenilir doğrulanamaz (dosya WSL kök fs'inde olabilir); yalnız boş olmasın.
-        if (!cfg.wslPython?.trim()) miss << 'WSL mod: WSL python yolu (ör. /root/.valis-venv/bin/python)'
+        if (!cfg.wslPython?.trim()) miss << workshopText('script.d2b1a16dbd8a', 'WSL mod: WSL python yolu (ör. /root/.valis-venv/bin/python)')
     }
-    if (!cfg.workDir?.trim()) miss << 'Çalışma klasörü'
+    if (!cfg.workDir?.trim()) miss << workshopText('script.7220fd7fc19f', 'Çalışma klasörü')
     return miss
 }
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
@@ -1761,7 +1761,7 @@ def exportAnnotations = { imageData, File outFile, anns ->
         if (outFile.getParentFile() != null) outFile.getParentFile().mkdirs()
         def list = (anns != null && !anns.isEmpty()) ? anns : imageData.getHierarchy().getAnnotationObjects()
         if (list == null || list.isEmpty())
-            return [ok: false, error: 'Kaynak lamda anotasyon yok — warp için önce bir bölge/anotasyon çizin (ve seçin).']
+            return [ok: false, error: workshopText('script.529e560e8ad7', 'Kaynak lamda anotasyon yok — warp için önce bir bölge/anotasyon çizin (ve seçin).')]
         PathIO.exportObjectsAsGeoJSON(outFile, list,
             PathIO.GeoJsonExportOptions.FEATURE_COLLECTION, PathIO.GeoJsonExportOptions.PRETTY_JSON)
         return [ok: true, file: outFile, count: list.size()]
@@ -1840,14 +1840,14 @@ def askExisting = { int prevCount, int nTargets ->
 // ölçek/piramit-seviyesi karışıklığı gibi kaba hataları yakalayan bir tutarlılık kontrolüdür.
 def importWarpedToTarget = { project, targetEntry, File warpedFile, double srcAreaUm2 = 0.0d, String mode = 'add' ->
     if (warpedFile == null || !warpedFile.isFile())
-        return [ok: false, error: 'Warp\'lı GeoJSON bulunamadı:\n' + (warpedFile?.getAbsolutePath() ?: '-')]
+        return [ok: false, error: workshopText('script.39909cd44a8c', 'Warp\'lı GeoJSON bulunamadı:\n') + (warpedFile?.getAbsolutePath() ?: '-')]
     def objs = null
     try {
         def ins = new java.io.FileInputStream(warpedFile)
         try { objs = PathIO.readObjectsFromGeoJSON(ins) } finally { ins.close() }
     } catch (Throwable t) { return [ok: false, error: String.format(java.util.Locale.US, workshopText('script.57c3b4c3f2ef', 'Aracın ürettiği hizalanmış GeoJSON dosyası okunamadı. Dosyanın tam yazıldığını ve başka bir programda açık olmadığını denetleyin; gerekirse sihirbazda hizalama adımını yeniden çalıştırın.\n\nTeknik ayrıntı: %s'), (t.getMessage() ?: t.getClass().getSimpleName()))] }
-    if (objs == null || objs.isEmpty()) return [ok: false, error: 'Warp\'lı GeoJSON\'da nesne yok.']
-    if (isTransformedEntry(targetEntry)) return [ok: false, error: 'Hedef kırpılmış ya da dönüştürülmüş bir proje girdisi; koordinatlar uymaz, içe aktarılmadı.']
+    if (objs == null || objs.isEmpty()) return [ok: false, error: workshopText('script.28a63e8a41b3', 'Warp\'lı GeoJSON\'da nesne yok.')]
+    if (isTransformedEntry(targetEntry)) return [ok: false, error: workshopText('script.a0c8cd0b7b6e', 'Hedef kırpılmış ya da dönüştürülmüş bir proje girdisi; koordinatlar uymaz, içe aktarılmadı.')]
     objs.each { try { it.setLocked(true) } catch (Throwable ignore) {} }
     def curData = QP.getCurrentImageData()
     def curEntry = null
@@ -1890,8 +1890,7 @@ def importWarpedToTarget = { project, targetEntry, File warpedFile, double srcAr
                         double ratio = tgtAreaUm2 / srcAreaUm2
                         if (ratio < WARP_SCALE_RATIO_MIN || ratio > WARP_SCALE_RATIO_MAX)
                             scaleWarn = String.format(java.util.Locale.US,
-                                'Ölçek tutarsızlığı olabilir: hedef/kaynak alan oranı %.2f (beklenen ~%.1f–%.1f). ' +
-                                'Bu bir örtüşme/doğruluk ölçüsü DEĞİL, kaba ölçek/seviye karışıklığı kontrolüdür — GÖRSEL doğrulayın.',
+                                workshopText('script.37a53beab275', 'Ölçek tutarsızlığı olabilir: hedef/kaynak alan oranı %.2f (beklenen ~%.1f–%.1f). Bu bir örtüşme/doğruluk ölçüsü DEĞİL, kaba ölçek/seviye karışıklığı kontrolüdür — GÖRSEL doğrulayın.'),
                                 ratio, WARP_SCALE_RATIO_MIN, WARP_SCALE_RATIO_MAX)
                     }
                 }
@@ -1931,10 +1930,10 @@ def addOmeToProject = { project, List omeFiles, qupath.lib.images.ImageData.Imag
         } catch (Throwable ignore) {}
         omeFiles.each { String p ->
             def f = new File(p)
-            if (!f.isFile()) { failed++; notes << ('  • yok: ' + f.getName()); return }
+            if (!f.isFile()) { failed++; notes << (workshopText('script.d595fcf30a96', '  • yok: ') + f.getName()); return }
             String fUri = null
             try { fUri = f.toURI().toString() } catch (Throwable ignore) {}
-            if (fUri != null && existingUris.contains(fUri)) { skipped++; notes << ('  = zaten projede: ' + f.getName()); return }
+            if (fUri != null && existingUris.contains(fUri)) { skipped++; notes << (workshopText('script.613635daacd6', '  = zaten projede: ') + f.getName()); return }
             def server = null
             try {
                 server = qupath.lib.images.servers.ImageServers.buildServer(f.toURI())
@@ -1950,14 +1949,14 @@ def addOmeToProject = { project, List omeFiles, qupath.lib.images.ImageData.Imag
                     finally { try { d2?.getServer()?.close() } catch (Throwable ignore) {} }
                 }
                 added++
-                notes << ('  ✓ eklendi: ' + f.getName() + (typeOk ? (' (Tür: ' + type + ')') : ' (Tür ayarlanamadı — elle seçin)'))
+                notes << (workshopText('script.248e4bcc62b0', '  ✓ eklendi: ') + f.getName() + (typeOk ? (workshopText('script.a03e850b8db9', ' (Tür: ') + type + ')') : workshopText('script.6393f81cd5da', ' (Tür ayarlanamadı — elle seçin)')))
                 if (withPreview) {
                     def chans = []
                     java.awt.image.BufferedImage qc = null
                     try {
                         server.getMetadata().getChannels().each { ch ->
                             def rgb = ch.getColor()
-                            if (rgb == null) chans << (ch.getName() + ' — UYARI: kanal rengi okunamadı')
+                            if (rgb == null) chans << (ch.getName() + workshopText('script.49939dcbe9ce', ' — UYARI: kanal rengi okunamadı'))
                             else {
                                 def col = new java.awt.Color(rgb)
                                 chans << String.format(java.util.Locale.US, '%s — RGB(%d,%d,%d)', ch.getName(), col.getRed(), col.getGreen(), col.getBlue())
@@ -1987,13 +1986,13 @@ def addOmeToProject = { project, List omeFiles, qupath.lib.images.ImageData.Imag
                     perFile << [file: f, channels: chans, qc: qc]
                 }
             } catch (Throwable t) {
-                failed++; notes << ('  ✗ eklenemedi: ' + f.getName() + ' — ' + (t.getMessage() ?: t.getClass().getSimpleName()))
+                failed++; notes << (workshopText('script.3fe7b3d7643a', '  ✗ eklenemedi: ') + f.getName() + ' — ' + (t.getMessage() ?: t.getClass().getSimpleName()))
             } finally { try { server?.close() } catch (Throwable ignore) {} }
         }
         javafx.application.Platform.runLater {
             boolean syncOk = true
             try { project.syncChanges() }
-            catch (Throwable t) { syncOk = false; notes << ('  ✗ proje diske KAYDEDİLEMEDİ (syncChanges): ' + (t.getMessage() ?: t.getClass().getSimpleName())) }
+            catch (Throwable t) { syncOk = false; notes << (workshopText('script.865afbabc3e4', '  ✗ proje diske KAYDEDİLEMEDİ (syncChanges): ') + (t.getMessage() ?: t.getClass().getSimpleName())) }
             try { gui.refreshProject() } catch (Throwable ignore) {}
             onDone([added: added, skipped: skipped, failed: failed, syncOk: syncOk, notes: notes, perFile: perFile])
         }
@@ -2044,7 +2043,7 @@ def runProcess = { List cmd, java.util.concurrent.atomic.AtomicReference procRef
     applyCacheEnv(pb)
     def proc
     try { proc = pb.start() }
-    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.71f0bfaced36', 'Başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     procRef.set(proc)
     def last = new java.util.ArrayDeque()
     def resultJson = new java.util.concurrent.atomic.AtomicReference(null)
@@ -2066,12 +2065,12 @@ def runProcess = { List cmd, java.util.concurrent.atomic.AtomicReference procRef
     long waitSeconds = cancelledRef.get() ? 20L : PYTHON_TIMEOUT_SECONDS
     boolean finished
     try { finished = proc.waitFor(waitSeconds, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { try { proc.destroyForcibly() } catch (Throwable ignore) {}; return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    catch (InterruptedException ie) { try { proc.destroyForcibly() } catch (Throwable ignore) {}; return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
     if (cancelledRef.get()) {
         if (!finished) { try { proc.destroyForcibly() } catch (Throwable ignore) {} }
-        return [ok: false, exitCode: -3, error: 'İptal edildi']
+        return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')]
     }
-    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
+    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: workshopText('script.e6b0c32aaae9', 'Zaman aşımı (') + PYTHON_TIMEOUT_SECONDS + workshopText('script.2ccf3f4af0dd', ' sn)')] }
     int code = proc.exitValue()
     // RESULT_JSON zaten yakalanıyordu ama 'error' alanı hiç OKUNMUYORDU — Python'un kendi except
     // Exception as e: result["error"]=str(e) çıktısı 60 satırlık günlük tamponunu desen-eşlemekten
@@ -2210,8 +2209,8 @@ def saveConfig = {
 // Parlak-alan lamları QuPath'te RGB'dir; merge'de ANLAMLI kanallar ayrıştırılmış boyalardır.
 // İHK → Hematoksilen+DAB, H&E → Hematoksilen+Eozin. H&E lamını H-DAB vektörleriyle ayrıştırmak
 // SAHTE bir 'DAB' kanalı üretir. Ad "HE"/"H&E" gibiyse H&E çıkarılır; aksi halde global mod kullanılır.
-def STAIN_LABEL_TO_CODE = ['H-DAB (Hem+DAB)': 'hed', 'H&E (Hem+Eozin)': 'he', 'Yalnız DAB': 'dab', 'Ham RGB': 'rgb']
-def STAIN_CODE_TO_LABEL = ['hed': 'H-DAB (Hem+DAB)', 'he': 'H&E (Hem+Eozin)', 'dab': 'Yalnız DAB', 'rgb': 'Ham RGB']
+def STAIN_LABEL_TO_CODE = ['H-DAB (Hem+DAB)': 'hed', (workshopText('script.f6cabbacbb7f', 'H&E (Hem+Eozin)')): 'he', (workshopText('script.99c869b0bd85', 'Yalnız DAB')): 'dab', (workshopText('script.6182fb432ce0', 'Ham RGB')): 'rgb']
+def STAIN_CODE_TO_LABEL = ['hed': 'H-DAB (Hem+DAB)', 'he': workshopText('script.f6cabbacbb7f', 'H&E (Hem+Eozin)'), 'dab': workshopText('script.99c869b0bd85', 'Yalnız DAB'), 'rgb': workshopText('script.6182fb432ce0', 'Ham RGB')]
 def inferStainType = { String stem ->
     def s = (stem ?: '').toLowerCase(java.util.Locale.ROOT).trim()
     if (s == 'he' || s == 'h&e' || s == 'hande' || s.contains('h&e') ||
@@ -2238,13 +2237,13 @@ def hexToColor = { String hex -> try { javafx.scene.paint.Color.web('#' + (hex ?
 // EKLEMEZ, --images HİÇ verilmez, merge/OME zorla KAPALI). Bkz. doWarpOnlyTransfer.
 def prepareRun = { cfg, boolean reuseRegistrar = false, boolean warpOnly = false ->
     def project = QP.getProject()
-    if (project == null) return [ok: false, error: 'Proje açık değil — lamları AYNI projeye ekleyin.']
+    if (project == null) return [ok: false, error: workshopText('script.b4461b997cfc', 'Proje açık değil — lamları AYNI projeye ekleyin.')]
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) return [ok: false, error: 'Kaynak/referans lam açık değil — açın, sonra "⟳ Yenile".']
+    if (imageData == null) return [ok: false, error: workshopText('script.8476c96fd0ba', 'Kaynak/referans lam açık değil — açın, sonra "⟳ Yenile".')]
     def srcFile = slideFileOf(imageData)
-    if (srcFile == null) return [ok: false, error: 'Kaynak lam yerel dosya değil (VALIS yerel dosya gerektirir).']
+    if (srcFile == null) return [ok: false, error: workshopText('script.110e583ed983', 'Kaynak lam yerel dosya değil (VALIS yerel dosya gerektirir).')]
     def srcDir = srcFile.getParentFile()
-    if (srcDir == null) return [ok: false, error: 'Kaynak lamın klasörü çözülemedi (sürücü kökünde olamaz).']
+    if (srcDir == null) return [ok: false, error: workshopText('script.5c06d88c6405', 'Kaynak lamın klasörü çözülemedi (sürücü kökünde olamaz).')]
     def srcEntry = null
     try { srcEntry = project.getEntry(imageData) } catch (Throwable ignore) {}
     def srcId = srcEntry?.getID()?.toString()
@@ -2271,14 +2270,14 @@ def prepareRun = { cfg, boolean reuseRegistrar = false, boolean warpOnly = false
         }
     }
     if (selectedEntries.isEmpty() && !warpOnly)
-        return [ok: false, error: 'En az bir EK lam seçin ("Hizalanacak lamlar" listesinden işaretleyin) — VALIS ≥2 lamı birlikte hizalar.']
+        return [ok: false, error: workshopText('script.32dde0f10800', 'En az bir EK lam seçin ("Hizalanacak lamlar" listesinden işaretleyin) — VALIS ≥2 lamı birlikte hizalar.')]
 
     // Her seçilinin yerel dosyasını çöz + KAYNAKLA AYNI klasör doğrula (karışık klasör/büyütme = extract_area hatası).
     def selFiles = []
     def badFolder = []
     for (e in selectedEntries) {
         def f = entrySlideFileVia(e)
-        if (f == null) return [ok: false, error: 'Seçili lamın yerel dosyası çözülemedi: ' + (e.getImageName() ?: '?')]
+        if (f == null) return [ok: false, error: workshopText('script.4eb9b6fc2ca7', 'Seçili lamın yerel dosyası çözülemedi: ') + (e.getImageName() ?: '?')]
         try {
             if (f.getParentFile() == null || srcDir == null || f.getParentFile().getCanonicalPath() != srcDir.getCanonicalPath())
                 badFolder << (e.getImageName() ?: f.getName())
@@ -2286,13 +2285,13 @@ def prepareRun = { cfg, boolean reuseRegistrar = false, boolean warpOnly = false
         selFiles << [entry: e, file: f]
     }
     if (!badFolder.isEmpty())
-        return [ok: false, error: 'Tüm seçili lamlar KAYNAKLA AYNI klasörde olmalı (VALIS bir klasördeki lamları birlikte hizalar).\n  kaynak klasörü: ' + srcDir?.getAbsolutePath() + '\n  farklı klasör : ' + badFolder.join(', ')]
+        return [ok: false, error: workshopText('script.cb634c39684d', 'Tüm seçili lamlar KAYNAKLA AYNI klasörde olmalı (VALIS bir klasördeki lamları birlikte hizalar).\n  kaynak klasörü: ') + srcDir?.getAbsolutePath() + workshopText('script.1dd06c4ffacd', '\n  farklı klasör : ') + badFolder.join(', ')]
 
     def workRoot = workRootOf(cfg)
     if (cfg.mode == 'docker' && toContainer(srcDir.getAbsolutePath(), workRoot) == null)
-        return [ok: false, error: 'Docker modu TEK KÖK gerektirir: lam klasörü çalışma klasörünün ALTINDA olmalı.\n  lamlar     : ' + srcDir.getAbsolutePath() + '\n  çalışma kökü : ' + workRoot.getAbsolutePath() + '\nWSL ya da native modu kullanın (bu kısıt yok) ya da lamları çalışma klasörü altına taşıyın.']
+        return [ok: false, error: workshopText('script.3fd6bbb5e622', 'Docker modu TEK KÖK gerektirir: lam klasörü çalışma klasörünün ALTINDA olmalı.\n  lamlar     : ') + srcDir.getAbsolutePath() + workshopText('script.0005b7a2ec0f', '\n  çalışma kökü : ') + workRoot.getAbsolutePath() + workshopText('script.e1518d7bf6c2', '\nWSL ya da native modu kullanın (bu kısıt yok) ya da lamları çalışma klasörü altına taşıyın.')]
     if (cfg.mode == 'docker' && toContainer(outRootOf(cfg).getAbsolutePath(), workRoot) == null)
-        return [ok: false, error: 'Docker modu TEK KÖK gerektirir: çıktı klasörü de çalışma klasörünün ALTINDA olmalı.\n  çıktı kökü   : ' + outRootOf(cfg).getAbsolutePath() + '\n  çalışma kökü : ' + workRoot.getAbsolutePath() + '\nWSL/native modu kullanın ya da çıktı klasörünü boş bırakın (= çalışma klasörü).']
+        return [ok: false, error: workshopText('script.b84ec257ee11', 'Docker modu TEK KÖK gerektirir: çıktı klasörü de çalışma klasörünün ALTINDA olmalı.\n  çıktı kökü   : ') + outRootOf(cfg).getAbsolutePath() + workshopText('script.0005b7a2ec0f', '\n  çalışma kökü : ') + workRoot.getAbsolutePath() + workshopText('script.228ae2300941', '\nWSL/native modu kullanın ya da çıktı klasörünü boş bırakın (= çalışma klasörü).')]
 
     def resultsDir = resultsDirOf(cfg); resultsDir.mkdirs()
     def omeDir = omeDirOf(cfg); omeDir.mkdirs()
@@ -2334,14 +2333,14 @@ def prepareRun = { cfg, boolean reuseRegistrar = false, boolean warpOnly = false
     boolean wantMicroFocus = microFocusRef.get() && microRef.get() && !reuseRegistrar && !warpOnly && !rigidOnlyRef.get()
     if (!targetEntries.isEmpty() || wantMicroFocus) {
         if (targetEntries.any { it.getID()?.toString() == srcId })
-            return [ok: false, error: 'Warp hedefi kaynakla aynı olamaz — farklı bir hedef seçin ya da hedefi kaldırın.']
+            return [ok: false, error: workshopText('script.0abb88e4618e', 'Warp hedefi kaynakla aynı olamaz — farklı bir hedef seçin ya da hedefi kaldırın.')]
         if (isTransformedEntry(srcEntry))
-            return [ok: false, error: 'Kaynak, kırpılmış ya da dönüştürülmüş bir proje girdisi. Anotasyon koordinatları tam lam dosyasına uymaz; aktarım yapılmadı. Tam lam girdisini açıp yeniden deneyin.']
+            return [ok: false, error: workshopText('script.0684f1d4b724', 'Kaynak, kırpılmış ya da dönüştürülmüş bir proje girdisi. Anotasyon koordinatları tam lam dosyasına uymaz; aktarım yapılmadı. Tam lam girdisini açıp yeniden deneyin.')]
         def badTargets = targetEntries.findAll { isTransformedEntry(it) }
         if (!badTargets.isEmpty())
-            return [ok: false, error: 'Şu hedefler kırpılmış ya da dönüştürülmüş proje girdisi; aktarılan nesneler kırpma kökeni kadar kayardı, aktarım yapılmadı:\n  ' + badTargets.collect { it.getImageName() ?: '?' }.join('\n  ') + '\nTam lam girdilerini hedef seçin.']
+            return [ok: false, error: workshopText('script.f26cdea81905', 'Şu hedefler kırpılmış ya da dönüştürülmüş proje girdisi; aktarılan nesneler kırpma kökeni kadar kayardı, aktarım yapılmadı:\n  ') + badTargets.collect { it.getImageName() ?: '?' }.join('\n  ') + workshopText('script.5e7f5374b36c', '\nTam lam girdilerini hedef seçin.')]
         if (wantMicroFocus && imageData.getHierarchy().getAnnotationObjects().isEmpty())
-            return [ok: false, error: 'Bölge odağı için açık (kaynak) lamda en az bir ANOTASYON çizili olmalı — bölgeyi çizin ya da "Bölge odağı" kutusunu kapatın.']
+            return [ok: false, error: workshopText('script.43a4b2fc9a8d', 'Bölge odağı için açık (kaynak) lamda en az bir ANOTASYON çizili olmalı — bölgeyi çizin ya da "Bölge odağı" kutusunu kapatın.')]
         def sanitize = { String s -> (s ?: 'x').replaceAll('[^A-Za-z0-9._-]', '_') }
         def sel = imageData.getHierarchy().getSelectionModel().getSelectedObjects().findAll { it.isAnnotation() }
         def expObjs = (sel != null && !sel.isEmpty()) ? sel : imageData.getHierarchy().getAnnotationObjects()
@@ -2353,7 +2352,7 @@ def prepareRun = { cfg, boolean reuseRegistrar = false, boolean warpOnly = false
         srcAreaUm2 = roiAreaUm2(imageData, expObjs)
         for (te in targetEntries) {
             def tf = entrySlideFileVia(te)
-            if (tf == null) return [ok: false, error: 'Warp hedefi yerel dosyası çözülemedi: ' + (te.getImageName() ?: '?')]
+            if (tf == null) return [ok: false, error: workshopText('script.bf3793eeb891', 'Warp hedefi yerel dosyası çözülemedi: ') + (te.getImageName() ?: '?')]
             def pairKey = srcDir.getAbsolutePath() + '|' + srcFile.getName() + '|' + tf.getName()
             def pairId = sanitize(srcFile.getName()) + '__' + sanitize(tf.getName()) + '__' + Integer.toHexString(pairKey.hashCode())
             def gjo = new File(gjDir, 'warp_' + pairId + '.geojson')
@@ -2363,7 +2362,7 @@ def prepareRun = { cfg, boolean reuseRegistrar = false, boolean warpOnly = false
     }
 
     def wr = writeRunner(cfg)
-    if (!wr.ok) return [ok: false, error: 'Köprü betiği yazılamadı: ' + wr.error]
+    if (!wr.ok) return [ok: false, error: workshopText('script.337ae8577738', 'Köprü betiği yazılamadı: ') + wr.error]
 
     // ── Merge seçenekleri ── warpOnly'de HER ZAMAN kapalı (hızlı yol yalnız anotasyon warp'ı yapar; --images
     // hiç verilmediğinden merge/OME zaten çalışamaz — bu, o niyeti mergeOutFile/writeOme'e de yansıtır).
@@ -2381,15 +2380,15 @@ def prepareRun = { cfg, boolean reuseRegistrar = false, boolean warpOnly = false
     // merge ya da yalnız warp; aynı kilit tuzağı + gereksiz).
     boolean writeOme = (reuseRegistrar || warpOnly) ? false : writeOmeRef.get()
     def _maxProc = (maxProcDimRef.get() ?: '').toString().trim()
-    if (_maxProc && !(_maxProc ==~ /\d+/)) return [ok: false, error: 'Kayıt için maks. kenar SAYI olmalı (px) ya da boş: "' + _maxProc + '"']
+    if (_maxProc && !(_maxProc ==~ /\d+/)) return [ok: false, error: workshopText('script.e6747ccf19ae', 'Kayıt için maks. kenar SAYI olmalı (px) ya da boş: "') + _maxProc + '"']
     def _microDim = (microDimRef.get() ?: '').toString().trim()
-    if (_microDim && !(_microDim ==~ /\d+/)) return [ok: false, error: 'İnce hizalama kenarı SAYI olmalı (px) ya da boş: "' + _microDim + '"']
+    if (_microDim && !(_microDim ==~ /\d+/)) return [ok: false, error: workshopText('script.235256752018', 'İnce hizalama kenarı SAYI olmalı (px) ya da boş: "') + _microDim + '"']
     // register_micro kenarı, başlangıç non-rigid kenarından (VALIS varsayılanı 2048) BÜYÜK olmalı; değilse
     // VALIS sessizce (hiçbir şey yapmadan) döner → sessiz-yanlış önlenir. Boş = 4096 (>2048) güvenli.
     if (microRef.get() && _microDim && (_microDim as int) <= 2048)
-        return [ok: false, error: 'İnce hizalama kenarı (register_micro) başlangıç non-rigid çözünürlüğünden (2048) BÜYÜK olmalı. En az 2049 (önerilen 4096) girin ya da boş bırakın.']
+        return [ok: false, error: workshopText('script.fae70ac6ba20', 'İnce hizalama kenarı (register_micro) başlangıç non-rigid çözünürlüğünden (2048) BÜYÜK olmalı. En az 2049 (önerilen 4096) girin ya da boş bırakın.')]
     if (microRef.get() && rigidOnlyRef.get())
-        return [ok: false, error: 'İnce hizalama (register_micro) non-rigid gerektirir; "Yalnız rigid kayıt" ile birlikte kullanılamaz. Birini kapatın.']
+        return [ok: false, error: workshopText('script.4a519b3d42a7', 'İnce hizalama (register_micro) non-rigid gerektirir; "Yalnız rigid kayıt" ile birlikte kullanılamaz. Birini kapatın.')]
 
     def buildArgs = { String kind ->
         def conv = { File f ->
@@ -2455,8 +2454,8 @@ def updateProgressLabel = { ->
     def ss = stageStartRef.get(); def rs = runStartRef.get()
     long stageMs = (ss != null) ? (now - (ss as long)) : 0L
     long totalMs = (rs != null) ? (now - (rs as long)) : 0L
-    def txt = (label ? ('Aşama: ' + label) : 'Başlıyor…') + '\n' +
-              'Bu aşamada geçen süre: ' + fmtDur(stageMs) + '   ·   Toplam geçen süre: ' + fmtDur(totalMs)
+    def txt = (label ? (workshopText('script.fe735a698c2d', 'Aşama: ') + label) : workshopText('script.8478d83dc156', 'Başlıyor…')) + '\n' +
+              workshopText('script.c435add3353b', 'Bu aşamada geçen süre: ') + fmtDur(stageMs) + workshopText('script.ad3b2c294e0e', '   ·   Toplam geçen süre: ') + fmtDur(totalMs)
     lbl.setText(txt)
 }
 // Günlük klasörünü Gezgin'de aç — RUNNING/ERROR/RESULT ekranlarında ortak buton.
@@ -2484,31 +2483,22 @@ def explainFailure = { Map r, String flowKind ->
     // 0xC0000005 (Windows erişim ihlali) imzasız 3221225477 = işaretli 32-bit -1073741819; native çökmede
     // (faulthandler traceback basar ama HEX KODU ASLA basmaz) tek güvenilir sinyal çıkış koduDUR.
     if (hay.contains('0xc0000005') || hay.contains('access violation') || code == 139 || code == -1073741819) {
-        return 'Olası neden: yerli (native) çökme — bellek erişim ihlali (0xC0000005 / segfault). Genelde libvips/JVM ' +
-               'DLL çakışması ya da çok büyük bir görüntünün belleğe materyalize edilmesinden kaynaklanır.\n' +
-               'Öneri: WSL modunu deneyin (Windows\'ta önerilen yol), "Yalnız rigid kayıt" işaretleyin ya da ' +
-               '"maks. işlenen boyut (px)" değerini küçültün.'
+        return workshopText('script.3a8ffbde40a5', 'Olası neden: yerli (native) çökme — bellek erişim ihlali (0xC0000005 / segfault). Genelde libvips/JVM DLL çakışması ya da çok büyük bir görüntünün belleğe materyalize edilmesinden kaynaklanır.\nÖneri: WSL modunu deneyin (Windows\'ta önerilen yol), "Yalnız rigid kayıt" işaretleyin ya da "maks. işlenen boyut (px)" değerini küçültün.')
     }
     if (hay.contains('killed') || hay.contains('out of memory') || hay.contains('cannot allocate memory') || code == 137) {
-        return 'Olası neden: bellek yetersizliği (OOM) — süreç sistem tarafından sonlandırılmış olabilir.\n' +
-               'Öneri: WSL kullanıyorsanız .wslconfig içindeki bellek sınırını artırın; "maks. işlenen boyut (px)" ' +
-               'değerini küçültün ya da aynı anda daha az lamla çalışın.'
+        return workshopText('script.a149d2f1d931', 'Olası neden: bellek yetersizliği (OOM) — süreç sistem tarafından sonlandırılmış olabilir.\nÖneri: WSL kullanıyorsanız .wslconfig içindeki bellek sınırını artırın; "maks. işlenen boyut (px)" değerini küçültün ya da aynı anda daha az lamla çalışın.')
     }
     if (hay.contains('no space left on device') || hay.contains('errno 28')) {
-        return 'Olası neden: disk dolu.\n' +
-               'Öneri: çalışma/çıktı klasöründe yer açın; WSL modundaysanız WSL sanal diskinin (vhdx) boyutunu da kontrol edin.'
+        return workshopText('script.33d3b03e1046', 'Olası neden: disk dolu.\nÖneri: çalışma/çıktı klasöründe yer açın; WSL modundaysanız WSL sanal diskinin (vhdx) boyutunu da kontrol edin.')
     }
     if (hay.contains('modulenotfounderror') && hay.contains('valis')) {
-        return 'Olası neden: VALIS Python ortamı (venv) bulunamadı ya da yanlış yapılandırılmış.\n' +
-               'Öneri: "Yapılandır" ekranındaki Python yolunu doğrulayın; kurulum adımları için Kaynaklar → İleri kurulumlar § VALIS.'
+        return workshopText('script.f068046f297e', 'Olası neden: VALIS Python ortamı (venv) bulunamadı ya da yanlış yapılandırılmış.\nÖneri: "Yapılandır" ekranındaki Python yolunu doğrulayın; kurulum adımları için Kaynaklar → İleri kurulumlar § VALIS.')
     }
     if (hay.contains('no such file or directory') && (hay.contains('.svs') || hay.contains('.ndpi') || hay.contains('.tif') || hay.contains('.czi'))) {
-        return 'Olası neden: bir lam dosyası taşınmış/silinmiş/erişilemiyor.\n' +
-               'Öneri: proje lam yollarını doğrulayın; gerekirse QuPath\'te "⟳ Yenile" ile yeniden bağlayın.'
+        return workshopText('script.f58570c6722d', 'Olası neden: bir lam dosyası taşınmış/silinmiş/erişilemiyor.\nÖneri: proje lam yollarını doğrulayın; gerekirse QuPath\'te "⟳ Yenile" ile yeniden bağlayın.')
     }
     if (hay.contains('bio-formats') || hay.contains('loci') || (hay.contains('jvm') && hay.contains('java'))) {
-        return 'Olası neden: Java/Bio-Formats motoruyla ilgili bir sorun.\n' +
-               'Öneri: WSL modunu deneyin; sorun sürerse günlük dosyasının tamamını inceleyin ("Günlük klasörünü aç").'
+        return workshopText('script.56b8677ee6dc', 'Olası neden: Java/Bio-Formats motoruyla ilgili bir sorun.\nÖneri: WSL modunu deneyin; sorun sürerse günlük dosyasının tamamını inceleyin ("Günlük klasörünü aç").')
     }
     return null
 }
@@ -2625,15 +2615,15 @@ def startRun = { List cmd, String busyLabel, String flowKind, Closure onSuccess,
         javafx.application.Platform.runLater {
             def logPath = logFileRef.get()?.getAbsolutePath() ?: '-'
             if (timedOut.get()) {
-                errorTextRef.set('Zaman aşımı (' + (timeoutSeconds / 3600) + ' saat) — süreç durduruldu' + (dockerNameRef.get() ? ' (docker stop denendi).' : '.') +
-                    '\n\nGünlük dosyası: ' + logPath)
+                errorTextRef.set(workshopText('script.e6b0c32aaae9', 'Zaman aşımı (') + (timeoutSeconds / 3600) + workshopText('script.7daaf1382232', ' saat) — süreç durduruldu') + (dockerNameRef.get() ? workshopText('script.4e7ee929c416', ' (docker stop denendi).') : '.') +
+                    workshopText('script.726cef36935e', '\n\nGünlük dosyası: ') + logPath)
                 step.set('ERROR'); render(); return
             }
             if (!r.ok) {
                 def hint = explainFailure(r, flowKind)
-                def sb = new StringBuilder('VALIS başarısız / iptal (çıkış kodu: ' + r.exitCode + ')\n\n')
+                def sb = new StringBuilder(workshopText('script.2b7cc8d6fb50', 'VALIS başarısız / iptal (çıkış kodu: ') + r.exitCode + ')\n\n')
                 if (hint) sb << hint << '\n\n'
-                sb << (r.error ?: '') << '\n' << (r.lastLines ?: '') << '\n\nGünlük dosyası: ' << logPath
+                sb << (r.error ?: '') << '\n' << (r.lastLines ?: '') << workshopText('script.726cef36935e', '\n\nGünlük dosyası: ') << logPath
                 errorTextRef.set(sb.toString())
                 step.set('ERROR'); render(); return
             }
@@ -2650,28 +2640,28 @@ def startRun = { List cmd, String busyLabel, String flowKind, Closure onSuccess,
 // KAPALIYSA (ör. "↻ Yeniden birleştir" ile hızlı deneme-yanılma — her deneme ayrı zaman damgalı
 // dosya üretir, otomatik eklemek projeyi şişirir) eski davranış: yalnız rapor, elle "ekle" düğmesi.
 def startDirectRun = { List cmd ->
-    startRun(cmd, 'VALIS çalışıyor', 'run', {
+    startRun(cmd, workshopText('script.56eff9571256', 'VALIS çalışıyor'), 'run', {
         def mo = lastMergeOutRef.get(); boolean isComp = lastCompositeRef.get()
         def wp = lastWarpPlanRef.get() ?: []
         def buildResultText = { List extraNotes ->
             def sb = new StringBuilder()
-            sb << "VALIS TAMAMLANDI\n═══════════════════════════════\n\n"
-            sb << (isComp ? "Doğal-renk bileşik (RGB): " : "Çok-kanallı multipleks  : ") << (mo?.getAbsolutePath() ?: '(üretilmedi)') << "\n"
+            sb << workshopText('script.37a97b3144b4', 'VALIS TAMAMLANDI\n═══════════════════════════════\n\n')
+            sb << (isComp ? workshopText('script.1b77f3f44dd4', 'Doğal-renk bileşik (RGB): ') : workshopText('script.770a2ae19c33', 'Çok-kanallı multipleks  : ')) << (mo?.getAbsolutePath() ?: workshopText('script.576d6ae579b7', '(üretilmedi)')) << "\n"
             if (extraNotes) extraNotes.each { sb << it << "\n" }
             if (wp.isEmpty()) {
-                sb << "Warp'lı GeoJSON        : - (hedef seçilmedi)\n\n"
+                sb << workshopText('script.c496baebf818', 'Warp\'lı GeoJSON        : - (hedef seçilmedi)\n\n')
             } else {
-                sb << "Warp'lı GeoJSON (" << wp.size() << " hedef):\n"
+                sb << workshopText('script.994119533da9', 'Warp\'lı GeoJSON (') << wp.size() << workshopText('script.adfe1b015897', ' hedef):\n')
                 wp.each { p -> def gj = p.geojsonOut; boolean got = (gj instanceof File && gj.isFile()); sb << "  " << (got ? '✓ ' : '✗ ') << (p.targetName ?: '?') << " → " << (gj?.getAbsolutePath() ?: '-') << "\n" }
                 sb << "\n"
             }
-            sb << "Aşağıdan sonuçları QuPath'e aktarın:\n"
+            sb << workshopText('script.4b2703d9bafa', 'Aşağıdan sonuçları QuPath\'e aktarın:\n')
             sb << (isComp
-                ? " • \"Birleşik multipleksi ekle\" → doğal-renk RGB'yi projeye ekler. Tür: BRIGHTFIELD; tek görünüm, kanal seçilemez (\"lam gibi\").\n"
-                : " • \"Birleşik multipleksi ekle\" → çok kanallı hizalı görüntüyü ekler. Tür: FLUORESCENCE; Brightness/Contrast (Shift+C) ile 2–3 kanalı aç/kapat.\n")
-            sb << " • \"Warp'lı anotasyonu içe aktar\" → hedef lam(lar)a (VALIS adlı, kilitli) anotasyon ekler.\n\n"
-            sb << "Çıktı türleri: Ekler → Görüntü Hizalama § 7.2 (hangisini ne zaman/hangi tür).\n"
-            sb << "Hizalamayı GÖRSEL doğrulayın.\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+                ? workshopText('script.4dd85a792d54', ' • "Birleşik multipleksi ekle" → doğal-renk RGB\'yi projeye ekler. Tür: BRIGHTFIELD; tek görünüm, kanal seçilemez ("lam gibi").\n')
+                : workshopText('script.2c55ba535629', ' • "Birleşik multipleksi ekle" → çok kanallı hizalı görüntüyü ekler. Tür: FLUORESCENCE; Brightness/Contrast (Shift+C) ile 2–3 kanalı aç/kapat.\n'))
+            sb << workshopText('script.9eed2a5762a4', ' • "Warp\'lı anotasyonu içe aktar" → hedef lam(lar)a (VALIS adlı, kilitli) anotasyon ekler.\n\n')
+            sb << workshopText('script.2af3ece1b24d', 'Çıktı türleri: Ekler → Görüntü Hizalama § 7.2 (hangisini ne zaman/hangi tür).\n')
+            sb << workshopText('script.43c8a9d2bb8a', 'Hizalamayı GÖRSEL doğrulayın.\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
             return sb.toString()
         }
         // perFile (varsa): kanal adı/rengi metne eklenir, QC önizlemesi qcThumbRef'e yazılır (RESULT'ta gösterilir).
@@ -2682,7 +2672,7 @@ def startDirectRun = { List cmd ->
                 def withCh = perFile.find { it.channels && !it.channels.isEmpty() }
                 if (withCh != null) {
                     def sb2 = new StringBuilder(txt)
-                    sb2 << "\nKanallar (" << withCh.file.getName() << "):\n"
+                    sb2 << workshopText('script.52919e393c28', '\nKanallar (') << withCh.file.getName() << "):\n"
                     withCh.channels.each { sb2 << "  " << it << "\n" }
                     txt = sb2.toString()
                 }
@@ -2698,9 +2688,9 @@ def startDirectRun = { List cmd ->
         if (autoAdd && project != null && mo instanceof File && mo.isFile()) {
             def type = isComp ? qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_OTHER : qupath.lib.images.ImageData.ImageType.FLUORESCENCE
             addOmeToProject(project, [mo.getAbsolutePath()], type, true, { res ->
-                def msg = String.format(java.util.Locale.US, 'Otomatik ekleme: %d eklendi, %d zaten vardı, %d hata.', (res.added ?: 0), (res.skipped ?: 0), (res.failed ?: 0))
+                def msg = String.format(java.util.Locale.US, workshopText('script.8409bfbbf253', 'Otomatik ekleme: %d eklendi, %d zaten vardı, %d hata.'), (res.added ?: 0), (res.skipped ?: 0), (res.failed ?: 0))
                 def extra = ['', msg]
-                if ((res.failed ?: 0) > 0 && res.notes) extra << ('Ayrıntı: ' + res.notes.join('; '))
+                if ((res.failed ?: 0) > 0 && res.notes) extra << (workshopText('script.1e2d2459e71b', 'Ayrıntı: ') + res.notes.join('; '))
                 finishWithPreview(extra, res.perFile)
             })
         } else {
@@ -2726,14 +2716,14 @@ def doPrefetch = { cfg ->
     def wr = writeRunner(cfg)
     if (!wr.ok) { Dialogs.showErrorMessage(workshopText('script.b313e2d662a9', 'Model ağırlıkları'), workshopText('script.337ae8577738', 'Köprü betiği yazılamadı: ') + (wr.error ?: '?')); return }
     def ck = new File(new File(new File(new File(atolyeDataRoot(), 'cache'), 'torch'), 'hub'), 'checkpoints')
-    startRun(nativeCmd(cfg, ['prefetch']), 'Model ağırlıkları indiriliyor', 'prefetch', {
+    startRun(nativeCmd(cfg, ['prefetch']), workshopText('script.fcabb6e31bce', 'Model ağırlıkları indiriliyor'), 'prefetch', {
         def sb = new StringBuilder()
-        sb << "MODEL AĞIRLIKLARI HAZIR ✅\n═══════════════════════════════\n\n"
-        sb << "VALIS varsayılan modelleri (DISK + LightGlue) yerel önbelleğe indirildi/doğrulandı.\n"
-        sb << "Önbellek (native): " << ck.getAbsolutePath() << "\n\n"
-        sb << "Ayrıntılı önce/sonra dökümü yukarıdaki çalışma günlüğünde gösterildi.\n"
-        sb << "Sonraki hizalamalar bu ağırlıkları çevrimdışı kullanır (native mod).\n"
-        sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+        sb << workshopText('script.369866f262b6', 'MODEL AĞIRLIKLARI HAZIR ✅\n═══════════════════════════════\n\n')
+        sb << workshopText('script.b76b5975f074', 'VALIS varsayılan modelleri (DISK + LightGlue) yerel önbelleğe indirildi/doğrulandı.\n')
+        sb << workshopText('script.0a982a580f37', 'Önbellek (native): ') << ck.getAbsolutePath() << "\n\n"
+        sb << workshopText('script.956e03067444', 'Ayrıntılı önce/sonra dökümü yukarıdaki çalışma günlüğünde gösterildi.\n')
+        sb << workshopText('script.04e2baae0092', 'Sonraki hizalamalar bu ağırlıkları çevrimdışı kullanır (native mod).\n')
+        sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
         resultKindRef.set('prefetch'); resultTextRef.set(sb.toString()); step.set('RESULT'); render()
     })
 }
@@ -2759,13 +2749,13 @@ def doImportWarped = { String presetMode = null ->
     plan.each { p ->
         def gj = p.geojsonOut
         if (gj == null || !(gj instanceof File) || !gj.isFile()) {
-            fail++; notes << ('  ✗ ' + (p.targetName ?: '?') + ': warp\'lı GeoJSON henüz yok')
+            fail++; notes << ('  ✗ ' + (p.targetName ?: '?') + workshopText('script.e10578009cd0', ': warp\'lı GeoJSON henüz yok'))
             return
         }
         def r = importWarpedToTarget(project, p.entry, gj, srcAreaUm2, importMode)
         if (r.ok) {
             ok++
-            notes << ('  ✓ ' + (p.targetName ?: '?') + ': ' + r.count + ' nesne' + (r.live ? ' (açık lam)' : ' (diske kaydedildi)'))
+            notes << ('  ✓ ' + (p.targetName ?: '?') + ': ' + r.count + workshopText('script.05d01f4ee15c', ' nesne') + (r.live ? workshopText('script.2ed00fdb2ca2', ' (açık lam)') : workshopText('script.2460500d986f', ' (diske kaydedildi)')))
             if (r.prevNames) notes << ('      ' + String.format(java.util.Locale.US, workshopText('script.b2d8f3f095c9', 'DİKKAT — önceki VALIS sonucu lamda duruyor: %1$s. Hiçbir şey silinmedi; yeni set "%2$s" adını aldı. Eskisini kaldırmak için o addaki anotasyonları seçip silin ya da yeniden aktarırken "Öncekini değiştir"i seçin.'), r.prevNames.join(', '), r.setName))
             else if ((r.removed ?: 0) > 0) notes << ('      ' + String.format(java.util.Locale.US, workshopText('script.600a7fca5a26', 'Önceki VALIS sonucu değiştirildi: %,d anotasyon silindi ve onlarla aktarılmış nesneler (sonradan eklediğiniz nesneler korundu).'), r.removed))
             if (r.scaleWarn) warns << (p.targetName + ' — ' + r.scaleWarn)
@@ -2773,7 +2763,7 @@ def doImportWarped = { String presetMode = null ->
             fail++; notes << ('  ✗ ' + (p.targetName ?: '?') + ': ' + (r.error ?: '?'))
         }
     }
-    def head = String.format(java.util.Locale.US, '%d/%d hedefe aktarıldı.', ok, plan.size())
+    def head = String.format(java.util.Locale.US, workshopText('script.592314f18c9c', '%d/%d hedefe aktarıldı.'), ok, plan.size())
     def full = head + '\n' + notes.join('\n') + (warns.isEmpty() ? '' : ('\n\n' + warns.join('\n')))
     if (fail > 0 || !warns.isEmpty()) Dialogs.showWarningNotification(workshopText('script.95ab5a716bdc', 'Warp\'lı anotasyon'), full)
     else Dialogs.showInfoNotification(workshopText('script.95ab5a716bdc', 'Warp\'lı anotasyon'), full)
@@ -2789,7 +2779,7 @@ def applyAddPreview = { Map res ->
     def curTxt = resultTextRef.get() ?: ''
     if (withCh != null && !curTxt.contains('Kanallar (')) {
         def sb = new StringBuilder(curTxt)
-        sb << "\nKanallar (" << withCh.file.getName() << "):\n"
+        sb << workshopText('script.52919e393c28', '\nKanallar (') << withCh.file.getName() << "):\n"
         withCh.channels.each { sb << "  " << it << "\n" }
         resultTextRef.set(sb.toString()); changed = true
     }
@@ -2841,7 +2831,7 @@ def doAddOme = {
             added += (res.added ?: 0); skipped += (res.skipped ?: 0); failed += (res.failed ?: 0)
             if (res.notes) allNotes.addAll(res.notes)
             if (pending.decrementAndGet() == 0) {
-                def msg = String.format(java.util.Locale.US, '%d eklendi, %d zaten vardı, %d hata.', added, skipped, failed)
+                def msg = String.format(java.util.Locale.US, workshopText('script.140416614af9', '%d eklendi, %d zaten vardı, %d hata.'), added, skipped, failed)
                 if (failed > 0) Dialogs.showErrorMessage(workshopText('script.c80a736b2524', 'OME-TIFF — kısmen/hata'), msg + '\n\n' + allNotes.join('\n'))
                 else Dialogs.showInfoNotification(workshopText('script.aa4e3755a7b6', 'OME-TIFF (ayrı hizalı lamlar)'), msg)
             }
@@ -2858,11 +2848,11 @@ def doAddMergeOut = {
     boolean isComp = lastCompositeRef.get()
     def type = isComp ? qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_OTHER : qupath.lib.images.ImageData.ImageType.FLUORESCENCE
     addOmeToProject(project, [mf.getAbsolutePath()], type, true, { res ->
-        def msg = String.format(java.util.Locale.US, '%d eklendi, %d zaten vardı, %d hata.', (res.added ?: 0), (res.skipped ?: 0), (res.failed ?: 0))
+        def msg = String.format(java.util.Locale.US, workshopText('script.140416614af9', '%d eklendi, %d zaten vardı, %d hata.'), (res.added ?: 0), (res.skipped ?: 0), (res.failed ?: 0))
         boolean bad = ((res.failed ?: 0) > 0) || (res.syncOk == false)
         def hint = isComp
-            ? '\nDoğal-renk parlak alan bileşiği → tür OTOMATİK "Brightfield" olarak ayarlandı. Tek pişmiş RGB görüntüdür; kanal seçilemez ("lam gibi" görünüm).'
-            : '\nÇok kanallı → tür OTOMATİK "Fluorescence" olarak ayarlandı. Brightness/Contrast (Shift+C) ile 2–3 kanalı (ör. marker-DAB + marker-Hematoksilen) "Göster" ile aç/kapat; beyaz zemin için "Invert background".'
+            ? workshopText('script.84dd9ea1d157', '\nDoğal-renk parlak alan bileşiği → tür OTOMATİK "Brightfield" olarak ayarlandı. Tek pişmiş RGB görüntüdür; kanal seçilemez ("lam gibi" görünüm).')
+            : workshopText('script.0006924f3ea6', '\nÇok kanallı → tür OTOMATİK "Fluorescence" olarak ayarlandı. Brightness/Contrast (Shift+C) ile 2–3 kanalı (ör. marker-DAB + marker-Hematoksilen) "Göster" ile aç/kapat; beyaz zemin için "Invert background".')
         applyAddPreview(res)
         if (bad) Dialogs.showErrorMessage(workshopText('script.fb91c2cadd62', 'Birleşik görüntü — kısmen/hata'), msg + '\n\n' + ((res.notes) ? res.notes.join('\n') : ''))
         else Dialogs.showInfoNotification(workshopText('script.87cd22005b3e', 'Birleşik görüntü'), msg + hint)
@@ -2876,13 +2866,13 @@ def doAddMergeOut = {
 // aktarır (importWarpedToTarget/addOmeToProject mantığını yeniden kullanır; değiştirmez).
 def importGeojsonToCurrent = { File gjFile, String mode = 'add' ->
     def data = QP.getCurrentImageData()
-    if (data == null) return [ok: false, error: 'Açık lam yok — warp\'lı anotasyonun ait olduğu (hedef) lamı açın, sonra tekrar deneyin.']
+    if (data == null) return [ok: false, error: workshopText('script.aa2cf11f4f37', 'Açık lam yok — warp\'lı anotasyonun ait olduğu (hedef) lamı açın, sonra tekrar deneyin.')]
     def objs = null
     try {
         def ins = new java.io.FileInputStream(gjFile)
         try { objs = PathIO.readObjectsFromGeoJSON(ins) } finally { ins.close() }
     } catch (Throwable t) { return [ok: false, error: String.format(java.util.Locale.US, workshopText('script.57c3b4c3f2ef', 'Aracın ürettiği hizalanmış GeoJSON dosyası okunamadı. Dosyanın tam yazıldığını ve başka bir programda açık olmadığını denetleyin; gerekirse sihirbazda hizalama adımını yeniden çalıştırın.\n\nTeknik ayrıntı: %s'), (t.getMessage() ?: t.getClass().getSimpleName()))] }
-    if (objs == null || objs.isEmpty()) return [ok: false, error: 'GeoJSON\'da nesne yok.']
+    if (objs == null || objs.isEmpty()) return [ok: false, error: workshopText('script.a09ea410b407', 'GeoJSON\'da nesne yok.')]
     objs.each { try { it.setLocked(true) } catch (Throwable ignore) {} }
     try {
         def hier = data.getHierarchy()
@@ -2931,7 +2921,7 @@ def doAddOmeFromFile = {
     }
     // Elle disk-seçimi: çalıştırma bağlamı yok (hangi tip olduğu bilinmiyor) → UNSET, kullanıcı QuPath'te seçer.
     addOmeToProject(project, [f.getAbsolutePath()], qupath.lib.images.ImageData.ImageType.UNSET, false, { res ->
-        def msg = String.format(java.util.Locale.US, '%d eklendi, %d zaten vardı, %d hata.', (res.added ?: 0), (res.skipped ?: 0), (res.failed ?: 0))
+        def msg = String.format(java.util.Locale.US, workshopText('script.140416614af9', '%d eklendi, %d zaten vardı, %d hata.'), (res.added ?: 0), (res.skipped ?: 0), (res.failed ?: 0))
         boolean bad = ((res.failed ?: 0) > 0) || (res.syncOk == false)
         if (bad) Dialogs.showErrorMessage(workshopText('script.c80a736b2524', 'OME-TIFF — kısmen/hata'), msg + '\n\n' + ((res.notes) ? res.notes.join('\n') : ''))
         else Dialogs.showInfoNotification('OME-TIFF', msg + workshopText('script.bfa2b9e7fbec', '\nÇok kanallı birleşik görüntü ise tür sorulur → "Fluorescence" seçin; sonra Brightness/Contrast (Shift+C) ile kanallara renk atayın.'))
@@ -2956,23 +2946,23 @@ def doWarpOnlyTransfer = { cfg ->
     final String warpMode = askExisting(prevTotalW, prevTargetsW)
     if (warpMode == null) return
     def cmd = (cfg.mode == 'wsl') ? plan.wslCmd : ((cfg.mode == 'native') ? plan.nativeCmd : plan.dockerCmd)
-    startRun(cmd, 'Anotasyon warp ediliyor (kayıtlı hizalamadan)', 'run', {
+    startRun(cmd, workshopText('script.bb6582d2e33d', 'Anotasyon warp ediliyor (kayıtlı hizalamadan)'), 'run', {
         def wp = lastWarpPlanRef.get() ?: []
         boolean anyOk = wp.any { p -> p.geojsonOut instanceof File && p.geojsonOut.isFile() }
         if (!anyOk) {
             def tail = ''
             try { tail = logAreaRef.get()?.getText() ?: '' } catch (Throwable ignore) {}
-            errorTextRef.set('Hızlı warp: hiçbir hedef için warp\'lı GeoJSON üretilmedi.\n\n' + tail)
+            errorTextRef.set(workshopText('script.57946533c25f', 'Hızlı warp: hiçbir hedef için warp\'lı GeoJSON üretilmedi.\n\n') + tail)
             step.set('ERROR'); render(); return
         }
         doImportWarped(warpMode)
         def sb = new StringBuilder()
-        sb << "HIZLI WARP TAMAMLANDI ✅\n═══════════════════════════════\n\n"
-        sb << "Kayıtlı hizalamadan (yeniden KAYIT yok) " << wp.size() << " hedef için anotasyon warp edildi ve içe aktarıldı:\n\n"
+        sb << workshopText('script.3bbe9f037c94', 'HIZLI WARP TAMAMLANDI ✅\n═══════════════════════════════\n\n')
+        sb << workshopText('script.c46f5a55842f', 'Kayıtlı hizalamadan (yeniden KAYIT yok) ') << wp.size() << workshopText('script.528a6d9b472a', ' hedef için anotasyon warp edildi ve içe aktarıldı:\n\n')
         wp.each { p -> def gj = p.geojsonOut; boolean got = (gj instanceof File && gj.isFile()); sb << "  " << (got ? '✓ ' : '✗ ') << (p.targetName ?: '?') << "\n" }
-        sb << "\nKoordinat uzayı: taban (level-0) piksel, köşe sol-üst, yeniden ölçekleme yapılmaz.\n"
-        sb << "Seri kesitler AYNI hücreleri İÇERMEZ — bu bir YAKLAŞIK VEKİLDİR, hücre düzeyinde birebir eşleşme değildir; her hedefte GÖRSEL doğrulayın.\n"
-        sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+        sb << workshopText('script.b8df24833d62', '\nKoordinat uzayı: taban (level-0) piksel, köşe sol-üst, yeniden ölçekleme yapılmaz.\n')
+        sb << workshopText('script.e91f4bee2f79', 'Seri kesitler AYNI hücreleri İÇERMEZ — bu bir YAKLAŞIK VEKİLDİR, hücre düzeyinde birebir eşleşme değildir; her hedefte GÖRSEL doğrulayın.\n')
+        sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
         resultKindRef.set('run'); resultTextRef.set(sb.toString()); step.set('RESULT'); render()
     })
 }
@@ -2985,8 +2975,8 @@ def addRemergeAction = { cfg, actions ->
     try { def d = QP.getCurrentImageData(); def sf = (d != null) ? slideFileOf(d) : null; srcDirForCheck = sf?.getParentFile() } catch (Throwable ignore) {}
     def pkl = registrarPickleFor(resultsDirOf(cfg), srcDirForCheck)
     def tip = (pkl != null)
-        ? ('Kayıtlı hizalamayı KULLANIR (yeniden KAYIT yok, ~5 dk): mevcut boya/renk/seviye/composite ile SADECE yeniden birleştirir [' + pkl.getName() + ']')
-        : 'Henüz kayıtlı hizalama yok — önce "Doğrudan çalıştır" ile bir kez tam kayıt yapın.'
+        ? (workshopText('script.417028f54cc6', 'Kayıtlı hizalamayı KULLANIR (yeniden KAYIT yok, ~5 dk): mevcut boya/renk/seviye/composite ile SADECE yeniden birleştirir [') + pkl.getName() + ']')
+        : workshopText('script.fde0610c9793', 'Henüz kayıtlı hizalama yok — önce "Doğrudan çalıştır" ile bir kez tam kayıt yapın.')
     def runBtn = navButton(workshopText('script.8bf1e524aec3', '↻ Yeniden birleştir (kayıtlı hizalamadan)'), {
         def plan = prepareRun(cfg, true)
         if (!plan.ok) { errorTextRef.set(plan.error); step.set('ERROR'); render(); return }
@@ -3027,15 +3017,15 @@ def discoverBatchCases = { File root ->
 // Manifest (JSON) kurar + moda göre (container/wsl/host) yolları çevirir; startBatch bunu ÇAĞIRIR.
 // reuseRegistrar=true: TÜM vakalar için kayıtlı registrar kullanılır (toplu "↻ yeniden birleştir").
 def prepareBatchRun = { cfg, List caseDirs, boolean reuseRegistrar ->
-    if (caseDirs == null || caseDirs.isEmpty()) return [ok: false, error: 'En az bir vaka klasörü işaretleyin.']
+    if (caseDirs == null || caseDirs.isEmpty()) return [ok: false, error: workshopText('script.9ff24608a54c', 'En az bir vaka klasörü işaretleyin.')]
     def workRoot = workRootOf(cfg)
     if (cfg.mode == 'docker') {
         def badCase = caseDirs.find { toContainer(it.getAbsolutePath(), workRoot) == null }
         if (badCase != null || toContainer(outRootOf(cfg).getAbsolutePath(), workRoot) == null)
-            return [ok: false, error: 'Docker modu TEK KÖK gerektirir: TÜM vaka klasörleri VE çıktı kökü çalışma klasörünün ALTINDA olmalı.\n  çalışma kökü: ' + workRoot.getAbsolutePath() + '\nWSL ya da native modu kullanın (bu kısıt yok).']
+            return [ok: false, error: workshopText('script.7104ffb92da2', 'Docker modu TEK KÖK gerektirir: TÜM vaka klasörleri VE çıktı kökü çalışma klasörünün ALTINDA olmalı.\n  çalışma kökü: ') + workRoot.getAbsolutePath() + workshopText('script.06670028750d', '\nWSL ya da native modu kullanın (bu kısıt yok).')]
     }
     def wr = writeRunner(cfg)
-    if (!wr.ok) return [ok: false, error: 'Köprü betiği yazılamadı: ' + wr.error]
+    if (!wr.ok) return [ok: false, error: workshopText('script.337ae8577738', 'Köprü betiği yazılamadı: ') + wr.error]
 
     def refPattern = (batchReferencePatternRef.get() ?: '').toString().trim().toLowerCase(java.util.Locale.ROOT)
     def mergeMode = mergeModeRef.get() ?: 'hed'
@@ -3100,7 +3090,7 @@ def startBatch = { cfg, List caseDirs, boolean reuseRegistrar ->
     def kind = (cfg.mode == 'wsl') ? 'wsl' : (cfg.mode == 'native' ? 'host' : 'container')
     def manifest = plan.buildManifest(kind)
     try { plan.manifestFile.setText(qupath.lib.io.GsonTools.getInstance().toJson(manifest), 'UTF-8') }
-    catch (Throwable t) { errorTextRef.set('Manifest yazılamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render(); return }
+    catch (Throwable t) { errorTextRef.set(workshopText('script.f60fd6a07d26', 'Manifest yazılamadı: ') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render(); return }
     def manifestArg = (kind == 'container') ? toContainer(plan.manifestFile.getAbsolutePath(), workRootOf(cfg))
         : (kind == 'wsl') ? toWsl(plan.manifestFile.getAbsolutePath()) : plan.manifestFile.getAbsolutePath()
     def batchArgs = ['batch', '--manifest', manifestArg]
@@ -3112,7 +3102,7 @@ def startBatch = { cfg, List caseDirs, boolean reuseRegistrar ->
     def cmd = (cfg.mode == 'wsl') ? wslCmd(cfg, batchArgs)
         : (cfg.mode == 'native') ? nativeCmd(cfg, batchArgs)
         : dockerCmd(cfg, workRootOf(cfg), dockerName, batchArgs)
-    startRun(cmd, 'Toplu işlem çalışıyor (' + plan.caseCount + ' vaka)', 'batch', {
+    startRun(cmd, workshopText('script.17b001c06373', 'Toplu işlem çalışıyor (') + plan.caseCount + workshopText('script.d66447a20af4', ' vaka)'), 'batch', {
         def rj = lastResultJsonRef.get()
         def parsed = null
         try { parsed = rj ? qupath.lib.io.GsonTools.getInstance().fromJson(rj, Map.class) : null } catch (Throwable ignore) {}
@@ -3168,8 +3158,8 @@ render = { ->
         def browseDir = { f, ttl -> def x = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, ttl, null); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.e79a63f3a487', 'Mod:')), modeChoice)
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.6747ff0ac85b', 'Çalışma klasörü (tek kök):')), wfField, navButton('…', { browseDir(wfField, 'Çalışma klasörü seç') }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.3d4e179760f5', 'Çıktı klasörü (boş = çalışma klasörü):')), outField, navButton('…', { browseDir(outField, 'Çıktı klasörü seç') }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.6747ff0ac85b', 'Çalışma klasörü (tek kök):')), wfField, navButton('…', { browseDir(wfField, workshopText('script.e5d11e572b83', 'Çalışma klasörü seç')) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.3d4e179760f5', 'Çıktı klasörü (boş = çalışma klasörü):')), outField, navButton('…', { browseDir(outField, workshopText('script.9c8f655f3669', 'Çıktı klasörü seç')) }))
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('python.exe (native):'), pyField, navButton('…', { browseFile(pyField) }))
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.dc34b45f56be', 'WSL python (wsl mod):')), wslPyField)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.4efc4cf35add', 'Docker bellek (GB):')), memField)
@@ -3197,15 +3187,15 @@ render = { ->
             def stemOfName = { String nm -> if (nm == null) return 'lam'; def i = nm.toLowerCase(java.util.Locale.ROOT).indexOf('.'); (i > 0 ? nm.substring(0, i) : nm) }
             int selAnn = 0; try { selAnn = imageData.getHierarchy().getSelectionModel().getSelectedObjects().findAll { it.isAnnotation() }.size() } catch (Throwable ignore) {}
             def sb = new StringBuilder()
-            sb << "Kaynak/referans (açık): " << srcName << (srcFile != null ? ("   [" + srcFile.getParentFile()?.getName() + "]") : "  (yerel değil!)") << "\n"
-            sb << "Mod          : " << cfg.mode << (cfg.mode == 'wsl' ? "  (Windows'ta önerilen)" : (cfg.mode == 'native' ? "  (Windows'ta çökebilir → WSL önerilir)" : "")) << "\n"
-            sb << "Çıktı kökü   : " << outRootOf(cfg).getAbsolutePath() << (cfg.outDir?.trim() ? "" : "  (= çalışma kökü)") << "\n"
+            sb << workshopText('script.7aada4d9018e', 'Kaynak/referans (açık): ') << srcName << (srcFile != null ? ("   [" + srcFile.getParentFile()?.getName() + "]") : workshopText('script.7c29c71d2d3a', '  (yerel değil!)')) << "\n"
+            sb << workshopText('script.0faa69f2759d', 'Mod          : ') << cfg.mode << (cfg.mode == 'wsl' ? workshopText('script.6c3b18fdea13', '  (Windows\'ta önerilen)') : (cfg.mode == 'native' ? workshopText('script.d2ba82f20159', '  (Windows\'ta çökebilir → WSL önerilir)') : "")) << "\n"
+            sb << workshopText('script.dd00dc28683c', 'Çıktı kökü   : ') << outRootOf(cfg).getAbsolutePath() << (cfg.outDir?.trim() ? "" : workshopText('script.a0124aee8743', '  (= çalışma kökü)')) << "\n"
             def mc = valisModelsCached()
-            sb << "Model ağırlıkları: " << ((cfg.mode == 'docker') ? "Docker konteynerinde yönetilir"
-                : ((cfg.mode == 'wsl') ? "WSL ortamında yönetilir (ilk çalıştırmada iner)"
-                : (mc.cached ? "✅ yerelde hazır (DISK + LightGlue)"
-                             : "⬇ indirilmemiş — \"Model ağırlıklarını indir\""))) << "\n"
-            sb << "Warp anotasyon: " << (selAnn > 0 ? (selAnn + " seçili") : "seçili yok → TÜM anotasyonlar") << "\n"
+            sb << workshopText('script.fc6d76fbf8bc', 'Model ağırlıkları: ') << ((cfg.mode == 'docker') ? workshopText('script.c38fe67478a1', 'Docker konteynerinde yönetilir')
+                : ((cfg.mode == 'wsl') ? workshopText('script.5aa53090e285', 'WSL ortamında yönetilir (ilk çalıştırmada iner)')
+                : (mc.cached ? workshopText('script.304972652e48', '✅ yerelde hazır (DISK + LightGlue)')
+                             : workshopText('script.1ee7f2212f78', '⬇ indirilmemiş — "Model ağırlıklarını indir"')))) << "\n"
+            sb << workshopText('script.78e75d4c341a', 'Warp anotasyon: ') << (selAnn > 0 ? (selAnn + workshopText('script.267323b25c37', ' seçili')) : workshopText('script.e0430040d9af', 'seçili yok → TÜM anotasyonlar')) << "\n"
             addMono(sb.toString())
 
             // ── Hizalanacak lamlar (çok-seçim) + marker adı + boya tipi ──
@@ -3217,7 +3207,7 @@ render = { ->
             def stainMap = stainMapRef.get()
             def stainBoxFor = { String id, String stem ->
                 def box = new javafx.scene.control.ChoiceBox()
-                ['H-DAB (Hem+DAB)', 'H&E (Hem+Eozin)', 'Yalnız DAB', 'Ham RGB'].each { box.getItems().add(it) }
+                ['H-DAB (Hem+DAB)', workshopText('script.f6cabbacbb7f', 'H&E (Hem+Eozin)'), workshopText('script.99c869b0bd85', 'Yalnız DAB'), workshopText('script.6182fb432ce0', 'Ham RGB')].each { box.getItems().add(it) }
                 def code = effectiveStain(id, stem, mergeModeRef.get())
                 box.setValue(STAIN_CODE_TO_LABEL[code] ?: 'H-DAB (Hem+DAB)')
                 box.valueProperty().addListener({ o, ov, nv -> if (id != null && nv != null) stainMap.put(id, STAIN_LABEL_TO_CODE[nv.toString()] ?: 'hed') } as javafx.beans.value.ChangeListener)
@@ -3254,7 +3244,7 @@ render = { ->
             def srcStainBox = stainBoxFor(srcId0, stemOfName(srcName)); srcStainBox.setPrefWidth(140)
             rowsBox.getChildren().add(new javafx.scene.layout.HBox(8, srcCb, srcLbl, srcMk, srcStainBox, colorBoxFor(srcId0, stemOfName(srcName))))
             others.each { e ->
-                def id = e.getID()?.toString(); def nm = e.getImageName() ?: '(adsız)'
+                def id = e.getID()?.toString(); def nm = e.getImageName() ?: workshopText('script.2966ac6511d8', '(adsız)')
                 if (id != null && !markerMap.containsKey(id)) markerMap.put(id, stemOfName(nm))
                 def cb = new javafx.scene.control.CheckBox(); cb.setSelected(includeIds.contains(id))
                 cb.selectedProperty().addListener({ o, ov, nv -> if (id != null) { if (nv) includeIds.add(id) else includeIds.remove(id) } } as javafx.beans.value.ChangeListener)
@@ -3304,7 +3294,7 @@ render = { ->
                 def openCal = imageData?.getServer()?.getPixelCalibration()
                 def sel = []
                 sel << [name: srcName, cal: openCal, entry: null]
-                others.each { e -> def id = e.getID()?.toString(); if (id != null && includeIds.contains(id)) sel << [name: (e.getImageName() ?: '(adsız)'), cal: null, entry: e] }
+                others.each { e -> def id = e.getID()?.toString(); if (id != null && includeIds.contains(id)) sel << [name: (e.getImageName() ?: workshopText('script.2966ac6511d8', '(adsız)')), cal: null, entry: e] }
                 new Thread({
                     def out = []; def vals = []
                     sel.each { s ->
@@ -3323,7 +3313,7 @@ render = { ->
                     String warn = ''
                     if (vals.size() >= 2) {
                         def lo = vals.min(); def hi = vals.max()
-                        if ((hi / lo) > 1.02) warn = '  ⚠ Farklı µm/px (~%' + String.format(java.util.Locale.US, '%.1f', (hi / lo - 1.0) * 100.0) + ' fark) — "Ölçek/µm-px farkını düzelt"i açın.'
+                        if ((hi / lo) > 1.02) warn = workshopText('script.4ac245cbbdfa', '  ⚠ Farklı µm/px (~%') + String.format(java.util.Locale.US, '%.1f', (hi / lo - 1.0) * 100.0) + workshopText('script.c39c6e74d7de', ' fark) — "Ölçek/µm-px farkını düzelt"i açın.')
                     }
                     def txt = 'µm/px — ' + out.join(' · ') + warn
                     javafx.application.Platform.runLater({ mppLabel.setText(txt); mppBtn.setDisable(false) })
@@ -3422,14 +3412,14 @@ render = { ->
                 (sidecarNames == null && pklCandidate != null ? workshopText('script.185c28d9c2a8', ' (Not: kayıtlı hizalama eski bir çalışmadan — hangi hedeflerin içinde olduğu doğrulanamıyor.)') : ''))
             def tgtRowsBox = new javafx.scene.layout.VBox(4)
             others.each { e ->
-                def id = e.getID()?.toString(); def nm = e.getImageName() ?: '(adsız)'
+                def id = e.getID()?.toString(); def nm = e.getImageName() ?: workshopText('script.2966ac6511d8', '(adsız)')
                 def cb = new javafx.scene.control.CheckBox()
                 cb.setSelected(id != null && targetIds.contains(id))
                 cb.selectedProperty().addListener({ o, ov, nv -> if (id != null) { if (nv) targetIds.add(id) else targetIds.remove(id) }; refreshWarpOnlyBtn() } as javafx.beans.value.ChangeListener)
                 def warnTxt = ''
                 if (sidecarNames != null) {
                     def fn = entryFileNameCheap(e)
-                    if (fn != null && !sidecarNames.contains(fn)) warnTxt = '   ⚠ kayıtlı hizalamada yok'
+                    if (fn != null && !sidecarNames.contains(fn)) warnTxt = workshopText('script.77708e660acf', '   ⚠ kayıtlı hizalamada yok')
                 }
                 def lbl = new javafx.scene.control.Label(nm + warnTxt); lbl.setWrapText(true); lbl.setMaxWidth(Double.MAX_VALUE)
                 def row = new javafx.scene.layout.HBox(8, cb, lbl); row.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
@@ -3467,38 +3457,35 @@ render = { ->
                 def wrPath  = workRootOf(cfg).getAbsolutePath()
                 def srcPath = plan.srcDir?.getAbsolutePath() ?: '(bilinmiyor)'
                 def outPath = outRootOf(cfg).getAbsolutePath()
-                def naHead  = 'Docker BU YAPILANDIRMADA kullanılamaz.\n\n' +
-                    'NEDEN: Docker konteynerine yalnızca TEK klasör bağlanır (çalışma klasörü → /work) ve konteyner\n' +
-                    'yalnızca o klasörün ALTINDAKİ dosyaları görebilir/oraya yazabilir. Farklı bir sürücüdeki (ör. E:\\)\n' +
-                    'ya da çalışma klasörü dışındaki yollar konteynere ULAŞMAZ — bu yüzden Docker komutu üretilmedi.\n\n'
+                def naHead  = workshopText('script.0ba92ee7f638', 'Docker BU YAPILANDIRMADA kullanılamaz.\n\nNEDEN: Docker konteynerine yalnızca TEK klasör bağlanır (çalışma klasörü → /work) ve konteyner\nyalnızca o klasörün ALTINDAKİ dosyaları görebilir/oraya yazabilir. Farklı bir sürücüdeki (ör. E:\\)\nya da çalışma klasörü dışındaki yollar konteynere ULAŞMAZ — bu yüzden Docker komutu üretilmedi.\n\n')
                 def naMsg
                 if (plan.dockerBlock == 'out')
                     naMsg = naHead +
-                        'SORUN: çıktı klasörü çalışma klasörünün altında değil.\n' +
-                        '  • çıktı klasörü   : ' + outPath + '\n' +
-                        '  • çalışma klasörü : ' + wrPath + '   (→ /work)\n\n' +
-                        'ÇÖZÜM (birini seçin):\n' +
-                        '  1) NATIVE komutu kullanın — bu kısıt yoktur; çıktı herhangi bir sürücüde olabilir.\n' +
-                        '  2) Çıktı klasörünü BOŞ bırakın (= çalışma klasörü) ya da çalışma klasörünün altına alın (Yapılandır → Çıktı klasörü).'
+                        workshopText('script.992ab0503232', 'SORUN: çıktı klasörü çalışma klasörünün altında değil.\n') +
+                        workshopText('script.fa5682ab763b', '  • çıktı klasörü   : ') + outPath + '\n' +
+                        workshopText('script.df27cc95a5ca', '  • çalışma klasörü : ') + wrPath + '   (→ /work)\n\n' +
+                        workshopText('script.7aa7d17f7db1', 'ÇÖZÜM (birini seçin):\n') +
+                        workshopText('script.f35cc9102b20', '  1) NATIVE komutu kullanın — bu kısıt yoktur; çıktı herhangi bir sürücüde olabilir.\n') +
+                        workshopText('script.790092197337', '  2) Çıktı klasörünü BOŞ bırakın (= çalışma klasörü) ya da çalışma klasörünün altına alın (Yapılandır → Çıktı klasörü).')
                 else if (plan.dockerBlock == 'both')
                     naMsg = naHead +
-                        'SORUN: hem lam hem çıktı klasörü çalışma klasörünün dışında.\n' +
-                        '  • lam klasörü    : ' + srcPath + '\n' +
-                        '  • çıktı klasörü     : ' + outPath + '\n' +
-                        '  • çalışma klasörü   : ' + wrPath + '   (→ /work)\n\n' +
-                        'ÇÖZÜM (birini seçin):\n' +
-                        '  1) NATIVE komutu kullanın — bu kısıt yoktur.\n' +
-                        '  2) Çalışma klasörünü İKİSİNİ DE içeren bir üst klasör yapın (Yapılandır → Çalışma klasörü).\n' +
-                        '  3) Lamları + çıktıyı çalışma klasörünün altına taşıyın.'
+                        workshopText('script.488b8c6d585d', 'SORUN: hem lam hem çıktı klasörü çalışma klasörünün dışında.\n') +
+                        workshopText('script.ed7877bff6f5', '  • lam klasörü    : ') + srcPath + '\n' +
+                        workshopText('script.d773fda7ddd3', '  • çıktı klasörü     : ') + outPath + '\n' +
+                        workshopText('script.ae85e915c382', '  • çalışma klasörü   : ') + wrPath + '   (→ /work)\n\n' +
+                        workshopText('script.7aa7d17f7db1', 'ÇÖZÜM (birini seçin):\n') +
+                        workshopText('script.a9eb1c6dd4a9', '  1) NATIVE komutu kullanın — bu kısıt yoktur.\n') +
+                        workshopText('script.cf6c7435145b', '  2) Çalışma klasörünü İKİSİNİ DE içeren bir üst klasör yapın (Yapılandır → Çalışma klasörü).\n') +
+                        workshopText('script.156613bc4429', '  3) Lamları + çıktıyı çalışma klasörünün altına taşıyın.')
                 else
                     naMsg = naHead +
-                        'SORUN: lamlar çalışma klasörünün altında değil.\n' +
-                        '  • lam klasörü   : ' + srcPath + '\n' +
-                        '  • çalışma klasörü : ' + wrPath + '   (→ /work)\n\n' +
-                        'ÇÖZÜM (birini seçin):\n' +
-                        '  1) NATIVE komutu kullanın — bu kısıt yoktur; lamlar herhangi bir sürücüde olabilir.\n' +
-                        '  2) Çalışma klasörünü lamları İÇEREN bir üst klasör yapın (Yapılandır → Çalışma klasörü).\n' +
-                        '  3) Lamları çalışma klasörünün altına kopyalayın.'
+                        workshopText('script.07ec8b2fc35a', 'SORUN: lamlar çalışma klasörünün altında değil.\n') +
+                        workshopText('script.a9af75d55354', '  • lam klasörü   : ') + srcPath + '\n' +
+                        workshopText('script.df27cc95a5ca', '  • çalışma klasörü : ') + wrPath + '   (→ /work)\n\n' +
+                        workshopText('script.7aa7d17f7db1', 'ÇÖZÜM (birini seçin):\n') +
+                        workshopText('script.32095cb27492', '  1) NATIVE komutu kullanın — bu kısıt yoktur; lamlar herhangi bir sürücüde olabilir.\n') +
+                        workshopText('script.2a70d70ce8b2', '  2) Çalışma klasörünü lamları İÇEREN bir üst klasör yapın (Yapılandır → Çalışma klasörü).\n') +
+                        workshopText('script.2e3ad61a40d7', '  3) Lamları çalışma klasörünün altına kopyalayın.')
                 dockerTextRef.set(plan.dockerUsable ? cmdToText(plan.dockerCmd) : naMsg)
                 wslTextRef.set(cmdToText(plan.wslCmd))
                 lastCmdRef.set(cfg.mode == 'wsl' ? plan.wslCmd : (cfg.mode == 'native' ? plan.nativeCmd : plan.dockerCmd))
@@ -3521,9 +3508,9 @@ render = { ->
             workshopText('script.7c4ec29e7764', 'WSL, Windows\'ta önerilen yoldur (yerel VALIS bu makinede 0xC0000005 ile çökebilir). ') +
             (dockerOk ? '' : workshopText('script.e879c81182ee', 'Docker BU konumda kullanılamaz (girdi/çıktı çalışma klasörü dışında → tek-kök mount\'a sığmıyor; ayrıntı aşağıda).')))
         def parts = []
-        def wslBlock    = '# WSL (Windows\'ta önerilen):\n' + wslTextRef.get()
+        def wslBlock    = workshopText('script.c3551d232f60', '# WSL (Windows\'ta önerilen):\n') + wslTextRef.get()
         def nativeBlock = '# Native venv:\n' + nativeTextRef.get()
-        def dockerBlock = dockerOk ? ('# Docker:\n' + dockerTextRef.get()) : ('# Docker (bu konumda kullanılamaz):\n' + dockerTextRef.get())
+        def dockerBlock = dockerOk ? ('# Docker:\n' + dockerTextRef.get()) : (workshopText('script.c25b8b6e49cf', '# Docker (bu konumda kullanılamaz):\n') + dockerTextRef.get())
         if (cfg.mode == 'wsl')        { parts << wslBlock; parts << nativeBlock; parts << dockerBlock }
         else if (cfg.mode == 'native'){ parts << nativeBlock; parts << wslBlock; parts << dockerBlock }
         else                          { parts << dockerBlock; parts << wslBlock; parts << nativeBlock }
@@ -3615,7 +3602,7 @@ render = { ->
         def root = batchCasesRootRef.get()
         def found = batchCaseDirsRef.get() ?: []
         if (root != null) {
-            addMono('Kök: ' + root.getAbsolutePath() + '\nBulunan vaka klasörü: ' + found.size())
+            addMono(workshopText('script.b37af55c5d2f', 'Kök: ') + root.getAbsolutePath() + workshopText('script.b23d57af6371', '\nBulunan vaka klasörü: ') + found.size())
         }
         if (root != null && found.isEmpty()) {
             addGuidance(workshopText('script.085009c4f3d7', 'Bu kökün altında ≥2 lam içeren alt-klasör bulunamadı. Beklenen düzen: kök/vaka-adı/{lam1, lam2, ...}.'))
@@ -3670,24 +3657,24 @@ render = { ->
         int okN = cases.count { it?.ok }
         int totalN = cases.size()
         def sb = new StringBuilder()
-        sb << 'TOPLU İŞLEM TAMAMLANDI\n═══════════════════════════════\n\n'
-        sb << String.format(java.util.Locale.US, '%d/%d vaka başarılı.\n\n', okN, totalN)
+        sb << workshopText('script.fce01e567b36', 'TOPLU İŞLEM TAMAMLANDI\n═══════════════════════════════\n\n')
+        sb << String.format(java.util.Locale.US, workshopText('script.f1ab9ccdc937', '%d/%d vaka başarılı.\n\n'), okN, totalN)
         cases.each { c ->
-            def status = c?.skipped ? 'atlandı (önceden tamam)' : (c?.ok ? 'tamam' : 'HATA')
+            def status = c?.skipped ? workshopText('script.c974ba9969a8', 'atlandı (önceden tamam)') : (c?.ok ? workshopText('script.946b8a7467b4', 'tamam') : workshopText('script.1a6b99320832', 'HATA'))
             sb << '  ' << (c?.ok ? '✓ ' : '✗ ') << (c?.name ?: '?') << '  [' << status << ']'
-            if (c?.reference_used) sb << '  referans: ' << c.reference_used
-            if (c?.elapsed_sec) sb << String.format(java.util.Locale.US, '  (%.1f sn)', (c.elapsed_sec as double))
+            if (c?.reference_used) sb << workshopText('script.e01a18ecb567', '  referans: ') << c.reference_used
+            if (c?.elapsed_sec) sb << String.format(java.util.Locale.US, workshopText('script.2fbe68b9fece', '  (%.1f sn)'), (c.elapsed_sec as double))
             sb << '\n'
-            if (!c?.ok && !c?.skipped && c?.error) sb << '      hata: ' << c.error << '\n'
+            if (!c?.ok && !c?.skipped && c?.error) sb << workshopText('script.f721c8dabc56', '      hata: ') << c.error << '\n'
             // Python'un bildirdiği (kind'e göre WSL/container FORMUNDA olabilecek) yol yerine HOST yolu
             // burada yeniden hesapla (bkz. batchCaseMergeOutFile) — Windows'ta doğrudan açılabilir olsun.
             if (c?.ok && c?.name) {
                 def hf = batchCaseMergeOutFile(cfg, c.name.toString())
-                if (hf.isFile()) sb << '      çıktı: ' << hf.getAbsolutePath() << '\n'
+                if (hf.isFile()) sb << workshopText('script.79605f7ca198', '      çıktı: ') << hf.getAbsolutePath() << '\n'
             }
         }
-        sb << '\nHer vaka klasörü kendi çıktısını taşır (çalışma kökü/batch/<vaka adı>/). ' +
-            'Hizalamayı GÖRSEL doğrulayın.\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
+        sb << workshopText('script.fd0caf61bb1a', '\nHer vaka klasörü kendi çıktısını taşır (çalışma kökü/batch/<vaka adı>/). ') +
+            workshopText('script.43c8a9d2bb8a', 'Hizalamayı GÖRSEL doğrulayın.\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
         addMono(sb.toString())
         actions.add(navButton(workshopText('script.9ae04c1cb83b', 'Tümünü projeye ekle'), {
             def project = QP.getProject()

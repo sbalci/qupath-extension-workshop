@@ -88,12 +88,12 @@ def suggestStainVectors = { ->
                         svClose(svVecOf(svStains.getStain(2)), SV_DEF_DAB)
     if (!svDefault) { println '✓ Boya vektörleri bu lamdan tahmin/kalibre edilmiş görünüyor.'; return }
     def svMsg =
-        '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu lamdan tahmin EDİLMEMİŞ.\n\n' +
-        'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n' +
-        'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n' +
-        'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n' +
-        '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n' +
-        '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et'
+        workshopText('script.f3f75b6ee2d7', '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu lamdan tahmin EDİLMEMİŞ.\n\n') +
+        workshopText('script.0236cb297d65', 'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n') +
+        workshopText('script.06d512ead76b', 'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n') +
+        workshopText('script.41b8026c8dbe', 'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n') +
+        workshopText('script.61c29a66c32b', '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n') +
+        workshopText('script.e6ac9add601c', '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et')
     if (isHeadless) { println svMsg; return }
     if (!qupath.fx.dialogs.Dialogs.showConfirmDialog(workshopText('script.cb5b26abe800', 'Boya vektörleri — öneri'), svMsg)) return
     def svSel = QP.getSelectedObjects().findAll { it.hasROI() && it.getROI().isArea() }
@@ -282,7 +282,7 @@ if (!(pw > 0) || !(ph > 0)) {
 def selected = QP.getSelectedObjects().findAll { it.isAnnotation() && !isOwnSetName(it.getName(), summaryName) }
 def targets = selected
 if (targets.isEmpty()) {
-    def msg = "Ölçülecek anotasyon yok.\n\nÖnce ilgilendiğiniz bölgeyi anotasyon olarak çizin (ve seçin)."
+    def msg = workshopText('script.971118766cab', 'Ölçülecek anotasyon yok.\n\nÖnce ilgilendiğiniz bölgeyi anotasyon olarak çizin (ve seçin).')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.469472ee53f3', "Anotasyon yok"), msg)
     return
 }
@@ -428,21 +428,21 @@ if (!appliedMode.prevNames.isEmpty()) {
     modeNotes << "\n" << String.format(java.util.Locale.US, workshopText('script.bc31ff876c31', 'Önceki sonuç değiştirildi: %,d özet anotasyonu silindi (içlerindeki diğer nesneler korundu).'), appliedMode.removed) << "\n"
 }
 def body = new StringBuilder()
-body << "İMMÜN HÜCRE YOĞUNLUĞU (DAB)\n"
+body << workshopText('script.e57dc00d8e2e', 'İMMÜN HÜCRE YOĞUNLUĞU (DAB)\n')
 body << "════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Ölçülen alan          : %.3f mm²%n", totalAreaMm2)
-body << String.format(java.util.Locale.US, "Toplam hücre          : %,d%n", totalCells)
-body << String.format(java.util.Locale.US, "Pozitif hücre         : %,d  (%.1f %%)%n", totalPos, overallPct)
-body << String.format(java.util.Locale.US, "Pozitif yoğunluk      : %.0f hücre/mm²%n", overallDensity)
+body << String.format(java.util.Locale.US, workshopText('script.2b77df24cdb0', 'Ölçülen alan          : %.3f mm²%n'), totalAreaMm2)
+body << String.format(java.util.Locale.US, workshopText('script.15055b8c6dc2', 'Toplam hücre          : %,d%n'), totalCells)
+body << String.format(java.util.Locale.US, workshopText('script.5e248f593c80', 'Pozitif hücre         : %,d  (%.1f %%)%n'), totalPos, overallPct)
+body << String.format(java.util.Locale.US, workshopText('script.01a38b723352', 'Pozitif yoğunluk      : %.0f hücre/mm²%n'), overallDensity)
 body << "\n"
-body << String.format(java.util.Locale.US, "DAB eşiği: %.2f (kalibre edilebilir başlangıç değeri)%n", dabThreshold)
+body << String.format(java.util.Locale.US, workshopText('script.c349203931c3', 'DAB eşiği: %.2f (kalibre edilebilir başlangıç değeri)%n'), dabThreshold)
 body << modeNotes.toString()
 body << "\n"
-body << "Bu bir SAYIM/YOĞUNLUKtur — klinik immün skor, eşik veya yorum DEĞİL.\n"
-body << "Belirteç kimliği ve eşik kalibrasyonu kullanıcıya aittir (de Ruiter 2022; Russell 2023).\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.63ba61231a78', 'Bu bir SAYIM/YOĞUNLUKtur — klinik immün skor, eşik veya yorum DEĞİL.\n')
+body << workshopText('script.87489a2e5c25', 'Belirteç kimliği ve eşik kalibrasyonu kullanıcıya aittir (de Ruiter 2022; Russell 2023).\n\n')
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("İmmün hücre yoğunluğu (DAB)", body.toString())
+showResultWindow(workshopText('script.18296bca9161', 'İmmün hücre yoğunluğu (DAB)'), body.toString())
 println "✓ İmmün hücre yoğunluğu yazıldı (her anotasyon + '${appliedMode.setName}')."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

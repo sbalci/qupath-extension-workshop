@@ -211,9 +211,7 @@ def targets = QP.getSelectedObjects().findAll {
     it.isAnnotation() && it.getROI()?.isArea() && it.getPathClass()?.toString() != BAND_CLASS
 }
 if (targets.isEmpty()) {
-    def msg = "Kaynak yapı seçili değil.\n\n" +
-              "Etrafında bant oluşturulacak yapıyı (tümör, bez, lezyon vb.)\n" +
-              "ALAN anotasyonu olarak çizin ve SEÇİN, sonra betiği tekrar çalıştırın."
+    def msg = workshopText('script.56788b39ff7d', 'Kaynak yapı seçili değil.\n\nEtrafında bant oluşturulacak yapıyı (tümör, bez, lezyon vb.)\nALAN anotasyonu olarak çizin ve SEÇİN, sonra betiği tekrar çalıştırın.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.584f0675ba8a', "Yapı seçili değil"), msg)
     return
 }
@@ -333,8 +331,7 @@ targets.eachWithIndex { t, i ->
 }
 
 if (created.isEmpty()) {
-    def msg = "Bant üretilemedi (seçili yapıların geometrisi bant için uygun değil).\n" +
-              "Genişliği küçültmeyi ya da 'Dışa' yönünü deneyin."
+    def msg = workshopText('script.750f7da1978f', 'Bant üretilemedi (seçili yapıların geometrisi bant için uygun değil).\nGenişliği küçültmeyi ya da \'Dışa\' yönünü deneyin.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.cc7d90585cd5', "Bant yok"), msg)
     return
 }
@@ -355,21 +352,21 @@ QP.fireHierarchyUpdate()
 double totalBandUm2 = rows.collect { it.area as double }.sum() as double
 
 def body = new StringBuilder()
-body << "PERİTÜMÖRAL BANT (kenar halkası)\n"
+body << workshopText('script.b8b65bc95f26', 'PERİTÜMÖRAL BANT (kenar halkası)\n')
 body << "════════════════════════════════════════════\n\n"
-body << "Yön                : ${direction}\n"
-body << String.format(java.util.Locale.US, "Bant genişliği     : %.0f µm%n", widthUm)
-body << String.format(java.util.Locale.US, "Üretilen bant      : %,d  (atlanan: %,d)%n", created.size(), skipped)
-body << String.format(java.util.Locale.US, "Toplam bant alanı  : %,.0f µm²%n", totalBandUm2)
+body << String.format(java.util.Locale.US, workshopText('script.35213e37777b', 'Yön                : %s\n'), direction)
+body << String.format(java.util.Locale.US, workshopText('script.9411ac235cf3', 'Bant genişliği     : %.0f µm%n'), widthUm)
+body << String.format(java.util.Locale.US, workshopText('script.b43b676e595e', 'Üretilen bant      : %,d  (atlanan: %,d)%n'), created.size(), skipped)
+body << String.format(java.util.Locale.US, workshopText('script.a1eb00b127ed', 'Toplam bant alanı  : %,.0f µm²%n'), totalBandUm2)
 if (ringGeoms.size() > 1) {
     try {
         double unionUm2 = org.locationtech.jts.operation.union.UnaryUnionOp.union(ringGeoms).getArea() * pw * ph
         if (unionUm2 < totalBandUm2 * 0.999d)
-            body << String.format(java.util.Locale.US, "  Bantlar birbiriyle örtüşüyor: örtüşme bir kez sayılırsa %,.0f µm².%n", unionUm2)
+            body << String.format(java.util.Locale.US, workshopText('script.c376a5735de4', '  Bantlar birbiriyle örtüşüyor: örtüşme bir kez sayılırsa %,.0f µm².%n'), unionUm2)
     } catch (Throwable ignore) {}
 }
 if (trimmed > 0)
-    body << String.format(java.util.Locale.US, "Kırpılan bant      : %,d  (komşu kaynak yapının içi ya da görüntü dışı çıkarıldı)%n", trimmed)
+    body << String.format(java.util.Locale.US, workshopText('script.7f5f277f0ddf', 'Kırpılan bant      : %,d  (komşu kaynak yapının içi ya da görüntü dışı çıkarıldı)%n'), trimmed)
 if (runIdx > 1)
     body << String.format(java.util.Locale.US, workshopText('script.500fc52c8b85', 'Bant seti          : %d  (önceki set duruyor)'), runIdx) << "\n"
 if (writeMode == MODE_ADD && !prevNames.isEmpty()) {
@@ -384,15 +381,15 @@ rows.each { r ->
         (r.name.length() > 28 ? r.name.substring(0, 27) + "…" : r.name), r.area as double)
 }
 body << "\n"
-body << "Bantlar '${BAND_CLASS}' sınıfıyla eklendi (kilitli değil).\n"
-body << "İçlerinde hücre tespiti / piksel sınıflandırıcı çalıştırabilir,\n"
-body << "'Yapıya uzaklık' yardımcısıyla birlikte kullanabilirsiniz.\n\n"
-body << "Not: JTS geometri alanı piksel² döner; µm²'ye pw·ph ile ölçeklenir.\n"
-body << "Bu bir GEOMETRİ üretimidir — klinik skor, eşik veya yorum DEĞİL.\n"
-body << "(Teknik esin: Crichton/Exeter 2025; Bankhead 2017)\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı geometri üretir."
+body << String.format(java.util.Locale.US, workshopText('script.5a752a77b5a6', 'Bantlar \'%s\' sınıfıyla eklendi (kilitli değil).\n'), BAND_CLASS)
+body << workshopText('script.4603d1491ba1', 'İçlerinde hücre tespiti / piksel sınıflandırıcı çalıştırabilir,\n')
+body << workshopText('script.000277a0a699', '\'Yapıya uzaklık\' yardımcısıyla birlikte kullanabilirsiniz.\n\n')
+body << workshopText('script.e3c2c8f536a4', 'Not: JTS geometri alanı piksel² döner; µm²\'ye pw·ph ile ölçeklenir.\n')
+body << workshopText('script.2550cce16d41', 'Bu bir GEOMETRİ üretimidir — klinik skor, eşik veya yorum DEĞİL.\n')
+body << workshopText('script.b76ab34dd1f8', '(Teknik esin: Crichton/Exeter 2025; Bankhead 2017)\n\n')
+body << workshopText('script.4a3b575b62de', '⚠️ Yalnızca araştırma/eğitim amaçlı geometri üretir.')
 
-showResultWindow("Peritümöral bant", body.toString())
+showResultWindow(workshopText('script.28c908cb2604', 'Peritümöral bant'), body.toString())
 println String.format(java.util.Locale.US,
     "✓ %,d peritümöral bant üretildi (%s, %.0f µm; toplam %,.0f µm²).",
     created.size(), dirShort, widthUm, totalBandUm2)

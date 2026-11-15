@@ -167,7 +167,7 @@ def downloadModel = { File target ->
         tmp.delete(); throw new IOException("HTTP ${resp.statusCode()}")
     }
     if (tmp.length() != MODEL_BYTES) {
-        tmp.delete(); throw new IOException("Boyut uyuşmuyor: ${tmp.length()} != ${MODEL_BYTES}")
+        tmp.delete(); throw new IOException(String.format(java.util.Locale.US, workshopText('script.cc6e990bfc71', 'Boyut uyuşmuyor: %d != %d'), tmp.length(), MODEL_BYTES))
     }
     def md = java.security.MessageDigest.getInstance("SHA-256")
     tmp.withInputStream { is ->
@@ -176,7 +176,7 @@ def downloadModel = { File target ->
     }
     def hex = md.digest().collect { String.format(java.util.Locale.US, "%02x", it & 0xFF) }.join()
     if (hex != MODEL_SHA256) {
-        tmp.delete(); throw new IOException("SHA-256 uyuşmuyor")
+        tmp.delete(); throw new IOException(workshopText('script.042b153266a5', 'SHA-256 uyuşmuyor'))
     }
     java.nio.file.Files.move(tmp.toPath(), target.toPath(),
         java.nio.file.StandardCopyOption.REPLACE_EXISTING)
@@ -190,24 +190,24 @@ def imageNameOf = { imageData -> def nm = imageData.getServer().getMetadata().ge
 def buildResultText = { String slideName, int n, double areaMm2, double density, double secs,
                         double thr, double px, double exp, boolean calOk ->
     def sb = new StringBuilder()
-    sb << "STARDIST — ÇEKİRDEK TESPİTİ\n"
+    sb << workshopText('script.f7fd56346b74', 'STARDIST — ÇEKİRDEK TESPİTİ\n')
     sb << "═══════════════════════════════\n\n"
-    sb << "Lam          : " << slideName << "\n"
-    sb << String.format(java.util.Locale.US, "Eşik           : %.2f%n", thr)
-    sb << String.format(java.util.Locale.US, "Piksel boyutu  : %.2f µm/px%n", px)
-    sb << String.format(java.util.Locale.US, "Hücre genişletme: %s%n", (exp > 0 ? String.format(java.util.Locale.US, "%.1f µm", exp) : "yok (yalnız çekirdek)"))
+    sb << workshopText('script.c482c0d5e596', 'Lam          : ') << slideName << "\n"
+    sb << String.format(java.util.Locale.US, workshopText('script.b48b83fa9909', 'Eşik           : %.2f%n'), thr)
+    sb << String.format(java.util.Locale.US, workshopText('script.f02d37b367f9', 'Piksel boyutu  : %.2f µm/px%n'), px)
+    sb << String.format(java.util.Locale.US, workshopText('script.039d04727570', 'Hücre genişletme: %s%n'), (exp > 0 ? String.format(java.util.Locale.US, "%.1f µm", exp) : workshopText('script.8fca7c64761b', 'yok (yalnız çekirdek)')))
     sb << "\n"
-    sb << String.format(java.util.Locale.US, "Çekirdek sayısı : %,d%n", n)
+    sb << String.format(java.util.Locale.US, workshopText('script.33bff533e6fa', 'Çekirdek sayısı : %,d%n'), n)
     if (calOk) {
-        sb << String.format(java.util.Locale.US, "ROI alanı       : %.4f mm²%n", areaMm2)
-        sb << String.format(java.util.Locale.US, "Yoğunluk        : %,.1f çekirdek/mm²%n", density)
+        sb << String.format(java.util.Locale.US, workshopText('script.10c9c0da7f5e', 'ROI alanı       : %.4f mm²%n'), areaMm2)
+        sb << String.format(java.util.Locale.US, workshopText('script.4257ab01e462', 'Yoğunluk        : %,.1f çekirdek/mm²%n'), density)
     } else {
-        sb << "ROI alanı       : (piksel kalibrasyonu yok — alan/yoğunluk hesaplanamadı)\n"
+        sb << workshopText('script.b11b186bd3e3', 'ROI alanı       : (piksel kalibrasyonu yok — alan/yoğunluk hesaplanamadı)\n')
     }
-    sb << String.format(java.util.Locale.US, "Süre            : %.1f sn%n", secs)
-    sb << "\nŞekil + yoğunluk ölçümleri her hücreye yazıldı (Measurements paneli).\n"
-    sb << "StarDist çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki).\n"
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    sb << String.format(java.util.Locale.US, workshopText('script.d0170048c6e5', 'Süre            : %.1f sn%n'), secs)
+    sb << workshopText('script.209f89a32883', '\nŞekil + yoğunluk ölçümleri her hücreye yazıldı (Measurements paneli).\n')
+    sb << workshopText('script.9220039068ac', 'StarDist çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki).\n')
+    sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
@@ -266,20 +266,20 @@ def redetectCount = { ann ->
 
 // ── Tespit akışı (arka plan iş parçacığı) ───────────────────────────────────
 def startDetection = {
-    if (!stardistInstalled()) { errorTextRef.set('StarDist eklentisi yüklü değil.\nExtensions → Manage extensions → StarDist (bkz. StarDist eki).'); step.set('ERROR'); render(); return }
+    if (!stardistInstalled()) { errorTextRef.set(workshopText('script.1e400ad8c2eb', 'StarDist eklentisi yüklü değil.\nExtensions → Manage extensions → StarDist (bkz. StarDist eki).')); step.set('ERROR'); render(); return }
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.da80fab350d1', 'Görüntü açık değil.')); step.set('ERROR'); render(); return }
     def selected = QP.getSelectedObject()
     if (selected == null || !(selected instanceof PathAnnotationObject) || !selected.hasROI() || !selected.getROI().isArea()) {
-        errorTextRef.set('Önce bir ALAN anotasyonu çizip seçin.\n  1. [P] → Polygon/Brush aracı\n  2. Ölçülecek bölgenin çevresini çizin\n  3. Anotasyon seçiliyken "Çekirdek tespiti".'); step.set('ERROR'); render(); return
+        errorTextRef.set(workshopText('script.874b0ac563bb', 'Önce bir ALAN anotasyonu çizip seçin.\n  1. [P] → Polygon/Brush aracı\n  2. Ölçülecek bölgenin çevresini çizin\n  3. Anotasyon seçiliyken "Çekirdek tespiti".')); step.set('ERROR'); render(); return
     }
     // Parametreleri alanlardan oku, doğrula, kalıcılaştır
     double thr = parseDoubleOr(textOf(thrFieldRef), loadThreshold())
     double px  = parseDoubleOr(textOf(pxFieldRef),  loadPixelSize())
     double exp = parseDoubleOr(textOf(expFieldRef), loadCellExp())
-    if (!(thr > 0.0d && thr <= 1.0d)) { errorTextRef.set('Eşik 0 ile 1 arasında olmalı (örn. 0.5).'); step.set('ERROR'); render(); return }
-    if (!(px > 0.0d))                 { errorTextRef.set('Piksel boyutu pozitif olmalı (örn. 0.5).'); step.set('ERROR'); render(); return }
-    if (exp < 0.0d)                   { errorTextRef.set('Hücre genişletme negatif olamaz (0 = yalnız çekirdek).'); step.set('ERROR'); render(); return }
+    if (!(thr > 0.0d && thr <= 1.0d)) { errorTextRef.set(workshopText('script.84d89bd35ec0', 'Eşik 0 ile 1 arasında olmalı (örn. 0.5).')); step.set('ERROR'); render(); return }
+    if (!(px > 0.0d))                 { errorTextRef.set(workshopText('script.03ff11078987', 'Piksel boyutu pozitif olmalı (örn. 0.5).')); step.set('ERROR'); render(); return }
+    if (exp < 0.0d)                   { errorTextRef.set(workshopText('script.e2898cbfb3dc', 'Hücre genişletme negatif olamaz (0 = yalnız çekirdek).')); step.set('ERROR'); render(); return }
     def mp = textOf(modelFieldRef)
     def clsName = textOf(clsFieldRef)
     def falseName = textOf(falseClsFieldRef)
@@ -302,21 +302,21 @@ def startDetection = {
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('StarDist çalışıyor…'); step.set('RUNNING'); render()
+    runPhaseRef.set(workshopText('script.bdba5a5edc6f', 'StarDist çalışıyor…')); step.set('RUNNING'); render()
 
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         appendLine('Lam: ' + imageNameOf(imageData))
-        appendLine(String.format(java.util.Locale.US, 'Parametreler: eşik %.2f · px %.2f µm · genişletme %.1f µm', thr, px, exp))
+        appendLine(String.format(java.util.Locale.US, workshopText('script.dc5e7ce5c1b6', 'Parametreler: eşik %.2f · px %.2f µm · genişletme %.1f µm'), thr, px, exp))
 
         // 1) Model dosyası (otomatik indir → SHA-256 → gerekirse elle seç)
         def modelFile = new File(modelPathToUse)
         if (!modelFile.exists()) {
-            appendLine('Model indiriliyor: he_heavy_augment.pb (~5.7 MB)…')
-            def progress = makeProgressStage("StarDist modeli indiriliyor…\n(he_heavy_augment.pb, ~5.7 MB)")
+            appendLine(workshopText('script.654790b296bd', 'Model indiriliyor: he_heavy_augment.pb (~5.7 MB)…'))
+            def progress = makeProgressStage(workshopText('script.d10189e939fc', 'StarDist modeli indiriliyor…\n(he_heavy_augment.pb, ~5.7 MB)'))
             boolean ok = false
-            try { downloadModel(modelFile); ok = true; appendLine('  ✓ indirildi ve SHA-256 doğrulandı: ' + modelFile.getAbsolutePath()) }
-            catch (Throwable t) { appendLine('  ✗ otomatik indirme başarısız: ' + (t.message ?: t.getClass().getSimpleName())) }
+            try { downloadModel(modelFile); ok = true; appendLine(workshopText('script.df3d29443326', '  ✓ indirildi ve SHA-256 doğrulandı: ') + modelFile.getAbsolutePath()) }
+            catch (Throwable t) { appendLine(workshopText('script.971e19e0910d', '  ✗ otomatik indirme başarısız: ') + (t.message ?: t.getClass().getSimpleName())) }
             finally { if (progress != null) javafx.application.Platform.runLater { progress.close() } }
             if (!ok) {
                 // Dosya seçici JavaFX uygulama iş parçacığında açılmalı (arka planda
@@ -326,8 +326,8 @@ def startDetection = {
                 javafx.application.Platform.runLater {
                     try {
                         if (stage != null) stage.setAlwaysOnTop(false)
-                        pickedRef.set(qupath.fx.dialogs.FileChoosers.promptForFile("StarDist modelini seç (.pb)",
-                            qupath.fx.dialogs.FileChoosers.createExtensionFilter("StarDist Model (*.pb)", "*.pb")))   // Dialogs.promptForFile yok (0.6/0.7)
+                        pickedRef.set(qupath.fx.dialogs.FileChoosers.promptForFile(workshopText('script.289836a37feb', 'StarDist modelini seç (.pb)'),
+                            qupath.fx.dialogs.FileChoosers.createExtensionFilter(workshopText('script.918b5c12df82', 'StarDist Model (*.pb)'), "*.pb")))   // Dialogs.promptForFile yok (0.6/0.7)
                     } catch (Throwable ig) {
                     } finally {
                         if (stage != null) stage.setAlwaysOnTop(alwaysTop.get())
@@ -336,20 +336,20 @@ def startDetection = {
                 }
                 pickLatch.await()
                 def picked = pickedRef.get()
-                if (picked == null) { javafx.application.Platform.runLater { errorTextRef.set('Model yok ve elle seçim iptal edildi.\nİnternet bağlıyken tekrar deneyin ya da modeli ~/.qupath/stardist/ içine koyun (bkz. StarDist eki).'); step.set('ERROR'); render() }; return }
+                if (picked == null) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.4f8c76d24ead', 'Model yok ve elle seçim iptal edildi.\nİnternet bağlıyken tekrar deneyin ya da modeli ~/.qupath/stardist/ içine koyun (bkz. StarDist eki).')); step.set('ERROR'); render() }; return }
                 modelFile = picked
             }
         } else {
             appendLine('Model: ' + modelFile.getAbsolutePath())
         }
-        if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
+        if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.fee85e45842b', 'İptal edildi.')); step.set('ERROR'); render() }; return }
 
         // 2) StarDist tespiti
-        appendLine('StarDist çekirdek tespiti çalışıyor (büyük ROI\'de birkaç dakika sürebilir)…')
+        appendLine(workshopText('script.ac50abad6dad', 'StarDist çekirdek tespiti çalışıyor (büyük ROI\'de birkaç dakika sürebilir)…'))
         def t0 = System.currentTimeMillis()
         try {
             def oldDetections = selected.getChildObjects().findAll { it.isDetection() }
-            if (!oldDetections.isEmpty()) { selected.removePathObjects(oldDetections); appendLine('  Önceki ' + oldDetections.size() + ' tespit temizlendi.') }
+            if (!oldDetections.isEmpty()) { selected.removePathObjects(oldDetections); appendLine(workshopText('script.447c63492078', '  Önceki ') + oldDetections.size() + workshopText('script.1f14576672cf', ' tespit temizlendi.')) }
 
             def stardist = qupath.ext.stardist.StarDist2D
                     .builder(modelFile.getAbsolutePath())
@@ -375,7 +375,7 @@ def startDetection = {
                 try { stardist.close() } catch (Throwable ignore) {}
             }
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { errorTextRef.set('StarDist tespiti başarısız:\n' + (t.getMessage() ?: t.getClass().getSimpleName()) + '\n\nMODEL_URL/SHA uyuşmazlığı, eksik DJL motoru (SavedModel modelleri için) ya da bellek olabilir. Konsolu kontrol edin.'); step.set('ERROR'); render() }
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.23932e4fe2b9', 'StarDist tespiti başarısız:\n') + (t.getMessage() ?: t.getClass().getSimpleName()) + workshopText('script.b98ee1e81bd1', '\n\nMODEL_URL/SHA uyuşmazlığı, eksik DJL motoru (SavedModel modelleri için) ya da bellek olabilir. Konsolu kontrol edin.')); step.set('ERROR'); render() }
             return
         }
 
@@ -388,10 +388,10 @@ def startDetection = {
                 if (falseName) {
                     def fpc = QP.getPathClass(falseName)
                     def bad = selected.getChildObjects().findAll { it.isDetection() }.findAll { it.getPathClass() == fpc }
-                    if (!bad.isEmpty()) { selected.removePathObjects(bad); appendLine('  Filtre: "' + falseName + '" sınıfından ' + bad.size() + ' yanlış-pozitif silindi.') }
-                    else { appendLine('  Filtre: "' + falseName + '" sınıfında silinecek tespit yok.') }
+                    if (!bad.isEmpty()) { selected.removePathObjects(bad); appendLine(workshopText('script.9f06a4344667', '  Filtre: "') + falseName + workshopText('script.d61b6f0ead31', '" sınıfından ') + bad.size() + workshopText('script.1987449407b6', ' yanlış-pozitif silindi.')) }
+                    else { appendLine(workshopText('script.9f06a4344667', '  Filtre: "') + falseName + workshopText('script.ab9e2aaf2d3d', '" sınıfında silinecek tespit yok.')) }
                 }
-            } catch (Throwable ct) { appendLine('  ⚠ Sınıflandırıcı filtresi atlandı: ' + (ct.getMessage() ?: ct.getClass().getSimpleName())) }
+            } catch (Throwable ct) { appendLine(workshopText('script.8c5fc43520d7', '  ⚠ Sınıflandırıcı filtresi atlandı: ') + (ct.getMessage() ?: ct.getClass().getSimpleName())) }
         }
         def secs = (System.currentTimeMillis() - t0) / 1000.0d
 
@@ -415,7 +415,7 @@ def startDetection = {
         if (n == 0) {
             javafx.application.Platform.runLater {
                 errorTextRef.set(String.format(java.util.Locale.US,
-                    'StarDist 0 çekirdek buldu.\nOlası nedenler:\n  • Eşik çok yüksek (%.2f) — düşürmeyi deneyin (%.2f)\n  • ROI çok küçük\n  • Lam H&E için tipik boyama aralığında değil',
+                    workshopText('script.137daaad04c7', 'StarDist 0 çekirdek buldu.\nOlası nedenler:\n  • Eşik çok yüksek (%.2f) — düşürmeyi deneyin (%.2f)\n  • ROI çok küçük\n  • Lam H&E için tipik boyama aralığında değil'),
                     thr, thr * 0.6d))
                 step.set('ERROR'); render()
             }
@@ -534,7 +534,7 @@ render = { ->
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.88ad247a7ada', 'Hücre genişletme (µm, 0=yok):')), expField)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model (.pb):'), mdField, browse)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0,
-            'İsteğe bağlı: tespitten sonra kayıtlı bir nesne sınıflandırıcısını çalıştırıp aşağıdaki sınıfı siler (yanlış-pozitif temizliği). Boş = atla.',
+            workshopText('script.d969429cda79', 'İsteğe bağlı: tespitten sonra kayıtlı bir nesne sınıflandırıcısını çalıştırıp aşağıdaki sınıfı siler (yanlış-pozitif temizliği). Boş = atla.'),
             new javafx.scene.control.Label(workshopText('script.6db611fe714e', 'Filtre sınıflandırıcısı (ops.):')), clsField)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.e2f2fc2a1ea5', 'Silinecek "yanlış" sınıf:')), falseField)
         center.getChildren().add(grid)
@@ -559,9 +559,9 @@ render = { ->
             def modelFile = new File(loadModelPath())
             def sb = new StringBuilder()
             sb << "Lam           : " << imageNameOf(imageData) << "\n"
-            sb << "Seçili anotasyon: " << (selOk ? 'var (alan ROI)' : 'YOK — bir alan anotasyonu seçin') << "\n"
-            sb << "StarDist        : yüklü ✓\n"
-            sb << "Model           : " << (modelFile.exists() ? (modelFile.getName() + ' (mevcut)') : 'eksik — tespitte otomatik iner') << "\n"
+            sb << workshopText('script.6a58b63587a2', 'Seçili anotasyon: ') << (selOk ? workshopText('script.2560cad7fb3a', 'var (alan ROI)') : workshopText('script.d1396e90398e', 'YOK — bir alan anotasyonu seçin')) << "\n"
+            sb << workshopText('script.96dd6923fa19', 'StarDist        : yüklü ✓\n')
+            sb << "Model           : " << (modelFile.exists() ? (modelFile.getName() + workshopText('script.31d1ee35f0f1', ' (mevcut)')) : workshopText('script.ba41f602ac48', 'eksik — tespitte otomatik iner')) << "\n"
             addMonoArea(sb.toString())
             addParamGrid()
             addGuidance(workshopText('script.1bebfb8daabc', 'Çıktı yalnız çekirdek SAYISI + alan + yoğunluktur; sınıflandırma/yorum üretmez. ' +

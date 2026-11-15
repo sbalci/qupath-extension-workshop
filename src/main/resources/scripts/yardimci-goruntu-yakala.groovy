@@ -137,7 +137,7 @@ javafx.application.Platform.runLater {
         nameField.setPromptText(workshopText('script.4249586073a4', 'temel dosya adı (uzantısız)'))
 
         def formatBox = new javafx.scene.control.ChoiceBox()
-        formatBox.getItems().addAll('PNG', 'JPEG (yüksek kalite)')
+        formatBox.getItems().addAll('PNG', workshopText('script.752de0871812', 'JPEG (yüksek kalite)'))
         formatBox.getSelectionModel().select(0)
 
         def cbUnique = new javafx.scene.control.CheckBox(workshopText('script.64ed98f848ce', 'Benzersiz isim (üzerine yazma)'))
@@ -241,10 +241,10 @@ javafx.application.Platform.runLater {
         def form = new javafx.scene.layout.VBox(10)
         form.setPadding(new javafx.geometry.Insets(14))
         form.getChildren().addAll(
-            mk('Yakalama türü'),
+            mk(workshopText('script.9fc3420579f5', 'Yakalama türü')),
             new javafx.scene.layout.VBox(4, rbViewer, rbWindow),
             new javafx.scene.control.Separator(),
-            mk('Çıktı'),
+            mk(workshopText('script.9ecfaa1a2e77', 'Çıktı')),
             new javafx.scene.layout.HBox(12, rbSave, rbClip),
             saveBox,
             new javafx.scene.control.Separator(),

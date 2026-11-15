@@ -64,7 +64,7 @@ def applyMeta = { imgData, double px ->
 def runApply = { double px ->
     try {
         def imageData = QP.getCurrentImageData()
-        if (imageData == null) return [ok:false, error:'Görüntü açık değil.']
+        if (imageData == null) return [ok:false, error:workshopText('script.da80fab350d1', 'Görüntü açık değil.')]
         applyMeta(imageData, px)
         boolean persisted = false
         def project = QP.getProject()
@@ -75,7 +75,7 @@ def runApply = { double px ->
         }
         return [ok:true, persisted:persisted, hasProject:(project != null)]
     } catch (Throwable t) {
-        return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(mesaj yok)')]
+        return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.5c099e44e889', '(mesaj yok)'))]
     }
 }
 
@@ -84,7 +84,7 @@ def runBatch = { double px ->
     int updated = 0, skipped = 0
     try {
         def project = QP.getProject()
-        if (project == null) return [ok:false, error:'Proje yok.']
+        if (project == null) return [ok:false, error:workshopText('script.68f3ac6e4037', 'Proje yok.')]
         def currentEntry = QP.getProjectEntry()
         for (entry in project.getImageList()) {
             try {
@@ -100,13 +100,13 @@ def runBatch = { double px ->
         }
         return [ok:true, updated:updated, skipped:skipped]
     } catch (Throwable t) {
-        return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(mesaj yok)')]
+        return [ok:false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.5c099e44e889', '(mesaj yok)'))]
     }
 }
 
 // Her render'da görüntü/proje/kalibrasyon durumunu tazeler.
 def computeState = { ->
-    def st = [image:false, project:false, calibrated:false, curPx:0.0d, curStr:'tanımsız (NaN)']
+    def st = [image:false, project:false, calibrated:false, curPx:0.0d, curStr:workshopText('script.9975ef479ae0', 'tanımsız (NaN)')]
     def imageData = QP.getCurrentImageData()
     st.image = imageData != null
     if (imageData != null) {
@@ -114,7 +114,7 @@ def computeState = { ->
         double px = cal.getPixelWidthMicrons()
         st.calibrated = (px > 0)
         st.curPx = px
-        st.curStr = st.calibrated ? String.format(java.util.Locale.US, "%.4f µm/px", px) : "tanımsız (NaN)"
+        st.curStr = st.calibrated ? String.format(java.util.Locale.US, "%.4f µm/px", px) : workshopText('script.9975ef479ae0', 'tanımsız (NaN)')
     }
     st.project = QP.getProject() != null
     return st
@@ -158,20 +158,20 @@ def findLine = { ->
 // Sonuç özet metni (RESULT TextArea'sında gösterilir).
 def buildSummary = { ->
     def b = new StringBuilder()
-    b << "Kalibrasyon güncellendi.\n\n"
-    b << "  Yöntem        : ${methodNoteRef.get()}\n"
-    b << "  Önceki        : ${prevStrRef.get()}\n"
-    b << String.format(java.util.Locale.US, "  Yeni          : %.4f µm/px\n", (double) newPxRef.get())
+    b << workshopText('script.46227bd8a0d2', 'Kalibrasyon güncellendi.\n\n')
+    b << String.format(java.util.Locale.US, workshopText('script.df8f23a4f294', '  Yöntem        : %s\n'), methodNoteRef.get())
+    b << String.format(java.util.Locale.US, workshopText('script.80a1ffc08367', '  Önceki        : %s\n'), prevStrRef.get())
+    b << String.format(java.util.Locale.US, workshopText('script.bd29cac2241e', '  Yeni          : %.4f µm/px\n'), (double) newPxRef.get())
     def ar = applyResultRef.get()
     boolean persisted = (ar != null && ar.persisted)
     boolean hasProject = (ar != null && ar.hasProject)
-    b << "  Diske yazıldı : " + (persisted ? "evet (proje)" : (hasProject ? "hayır" : "proje yok — yalnız bellek")) + "\n"
+    b << workshopText('script.596f90c0462a', '  Diske yazıldı : ') + (persisted ? workshopText('script.b4dc4a6fdf54', 'evet (proje)') : (hasProject ? workshopText('script.5935eed908c4', 'hayır') : workshopText('script.df6e3427c119', 'proje yok — yalnız bellek'))) + "\n"
     def br = batchResultRef.get()
     if (br != null && br.ok) {
-        b << String.format(java.util.Locale.US, "  Proje geneli  : %d güncellendi, %d zaten kalibre\n", (int) br.updated, (int) br.skipped)
+        b << String.format(java.util.Locale.US, workshopText('script.d6515821cda5', '  Proje geneli  : %d güncellendi, %d zaten kalibre\n'), (int) br.updated, (int) br.skipped)
     }
-    b << "\nDoğrulama: Line (çizgi, L) aracıyla tipik bir tümör çekirdeği çapı ~8–12 µm görünmeli.\n"
-    b << "\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    b << workshopText('script.0b2a4fc0b1cf', '\nDoğrulama: Line (çizgi, L) aracıyla tipik bir tümör çekirdeği çapı ~8–12 µm görünmeli.\n')
+    b << workshopText('script.0a96d0aa4dbc', '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return b.toString()
 }
 
@@ -283,7 +283,7 @@ render = { ->
                     workshopText('script.b21d18036299', '⚠ %.4f µm/px tipik patoloji aralığının (0.05–2.0) dışında. Yine de uygulamak için "Uygula"ya tekrar basın.'), px))
                 return
             }
-            newPxRef.set((Double) px); methodNoteRef.set('Doğrudan giriş'); prevStrRef.set(s.curStr)
+            newPxRef.set((Double) px); methodNoteRef.set(workshopText('script.bdcbc4a8cef1', 'Doğrudan giriş')); prevStrRef.set(s.curStr)
             startApply()
         }
         field.setOnAction({ applyDirect() })
@@ -294,10 +294,10 @@ render = { ->
         title.setText(workshopText('script.cd700d7a6086', 'Cetvel — çizgi çizin'))
         bodyLbl.setText(
             workshopText('script.5310d6be54dc', "Çizgi (Line) aracı seçili olmalı — değilse araç çubuğundan seçin.\n\n" +
-            "1. Bilinen uzunlukta bir yapının üzerine bir çizgi çizin\n" +
-            "   (ör. gömülü ölçek çubuğu ya da bilinen çaplı bir yapı)\n" +
-            "2. Aşağıdan 'Ölç ▶'e basın\n\n" +
-            "Çizgiyi yeniden çizebilirsiniz; en son/seçili çizgi kullanılır."))
+            '1. Bilinen uzunlukta bir yapının üzerine bir çizgi çizin\n' +
+            '   (ör. gömülü ölçek çubuğu ya da bilinen çaplı bir yapı)\n' +
+            '2. Aşağıdan \'Ölç ▶\'e basın\n\n' +
+            'Çizgiyi yeniden çizebilirsiniz; en son/seçili çizgi kullanılır.'))
         def statusLbl = new javafx.scene.control.Label(); statusLbl.setWrapText(true)
         content.getChildren().add(statusLbl)
         buttons.getChildren().addAll(
@@ -328,15 +328,15 @@ render = { ->
             double measuredUm = lenPx * (s.curPx as double)
             defaultLen = String.format(java.util.Locale.US, '%.1f', measuredUm)
             bodyTxt = String.format(java.util.Locale.US,
-                "Çizgi uzunluğu: %.1f piksel.\n" +
-                "Bu görüntü zaten kalibre (%s), bu da bu çizgi için yaklaşık %.1f µm demek.\n\n" +
-                "Mevcut kalibrasyon doğruysa değeri olduğu gibi bırakıp 'Uygula'ya basın (değişmez).\n" +
-                "Düzeltmek isterseniz çizginin gerçek uzunluğunu (µm) girin.",
+                workshopText('script.ca997f0d2e51', 'Çizgi uzunluğu: %.1f piksel.\n') +
+                workshopText('script.b2e6f7736fbc', 'Bu görüntü zaten kalibre (%s), bu da bu çizgi için yaklaşık %.1f µm demek.\n\n') +
+                workshopText('script.ccb04c250eb2', 'Mevcut kalibrasyon doğruysa değeri olduğu gibi bırakıp \'Uygula\'ya basın (değişmez).\n') +
+                workshopText('script.ea143aec2514', 'Düzeltmek isterseniz çizginin gerçek uzunluğunu (µm) girin.'),
                 lenPx, s.curStr, measuredUm)
         } else {
             bodyTxt = String.format(java.util.Locale.US,
-                "Çizgi uzunluğu: %.1f piksel.\n\nBu çizginin gerçek uzunluğu kaç µm?\n" +
-                "(ör. 100 µm'lik bir ölçek çubuğu için 100)", lenPx)
+                workshopText('script.9b7137af1566', 'Çizgi uzunluğu: %.1f piksel.\n\nBu çizginin gerçek uzunluğu kaç µm?\n') +
+                workshopText('script.696ce1aff51e', '(ör. 100 µm\'lik bir ölçek çubuğu için 100)'), lenPx)
         }
         title.setText(workshopText('script.df12f33c5acf', 'Cetvel — gerçek uzunluk'))
         bodyLbl.setText(bodyTxt)

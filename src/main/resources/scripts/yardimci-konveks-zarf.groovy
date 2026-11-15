@@ -226,8 +226,8 @@ if (source == SEL_OPT) {
     srcLabel = source
 }
 if (objs.size() < 3) {
-    def msg = "Dış bükey zarf için en az 3 nesne gerekir (bulunan: ${objs.size()}).\n" +
-              (source == SEL_OPT ? "Önce zarfını istediğiniz nesneleri SEÇİN." : "Bu sınıfta yeterli nesne yok.")
+    def msg = String.format(java.util.Locale.US, workshopText('script.7c21d3aea81a', 'Dış bükey zarf için en az 3 nesne gerekir (bulunan: %d).\n'), objs.size()) +
+              (source == SEL_OPT ? workshopText('script.f57f74df23e9', 'Önce zarfını istediğiniz nesneleri SEÇİN.') : workshopText('script.f1aa80941e5a', 'Bu sınıfta yeterli nesne yok.'))
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.1cdff0f34508', "Yetersiz nesne"), msg)
     return
 }
@@ -254,7 +254,7 @@ if (!prevOwn.isEmpty()) {
 def plane = objs[0].getROI().getImagePlane()
 def geoms = objs.collect { it.getROI().getGeometry() }.findAll { it != null && !it.isEmpty() }
 if (geoms.isEmpty()) {
-    def msg = "Nesnelerden geçerli geometri elde edilemedi."
+    def msg = workshopText('script.4e85ead83daa', 'Nesnelerden geçerli geometri elde edilemedi.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.53cb8e0abe69', "Geometri yok"), msg)
     return
 }
@@ -262,7 +262,7 @@ def union = (geoms.size() == 1) ? geoms[0] : org.locationtech.jts.operation.unio
 def hull = union.convexHull()
 def hullRoi = qupath.lib.roi.GeometryTools.geometryToROI(hull, plane)
 if (hullRoi == null || hullRoi.isEmpty() || !hullRoi.isArea()) {
-    def msg = "Zarf bir alan poligonu oluşturmadı (nesneler eşdoğrusal olabilir)."
+    def msg = workshopText('script.78f9fa117371', 'Zarf bir alan poligonu oluşturmadı (nesneler eşdoğrusal olabilir).')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.131e5a40a612', "Zarf yok"), msg)
     return
 }
@@ -293,14 +293,14 @@ QP.fireHierarchyUpdate()
 
 // ── 6) Sonucu sun ───────────────────────────────────────────────────
 def body = new StringBuilder()
-body << "DIŞ BÜKEY ZARF (convex hull)\n"
+body << workshopText('script.4908bf5d4b28', 'DIŞ BÜKEY ZARF (convex hull)\n')
 body << "════════════════════════════════════════════\n\n"
-body << "Kaynak            : ${srcLabel}\n"
-body << String.format(java.util.Locale.US, "Kapsanan nesne    : %,d%n", objs.size())
+body << String.format(java.util.Locale.US, workshopText('script.35e8d6b6bc55', 'Kaynak            : %s\n'), srcLabel)
+body << String.format(java.util.Locale.US, workshopText('script.e5df6a30f2a1', 'Kapsanan nesne    : %,d%n'), objs.size())
 if (!Double.isNaN(hullAreaUm2))
-    body << String.format(java.util.Locale.US, "Zarf alanı        : %,.0f µm²%n", hullAreaUm2)
+    body << String.format(java.util.Locale.US, workshopText('script.1f1a91c7022a', 'Zarf alanı        : %,.0f µm²%n'), hullAreaUm2)
 else
-    body << "Zarf alanı        : (kalibrasyon yok — µm² hesaplanamadı)\n"
+    body << workshopText('script.a571c4e54ff7', 'Zarf alanı        : (kalibrasyon yok — µm² hesaplanamadı)\n')
 body << String.format(java.util.Locale.US, workshopText('script.eacfcadb7333', 'Zarf adı          : %s'), thisHullName) << "\n"
 if (writeMode == MODE_ADD && !prevNames.isEmpty()) {
     body << "\n" << String.format(java.util.Locale.US, workshopText('script.2e6a78aa3dfd', 'DİKKAT — bu lamda önceki zarf da duruyor: %s\nHiçbir şey silinmedi. Eskisini kaldırmak için o addaki anotasyonu seçip silin ya da yardımcıyı yeniden çalıştırırken "Öncekini değiştir"i seçin.'), prevNames.join(', ')) << "\n"
@@ -308,14 +308,14 @@ if (writeMode == MODE_ADD && !prevNames.isEmpty()) {
     body << "\n" << String.format(java.util.Locale.US, workshopText('script.6c1a190e218d', 'Önceki zarf değiştirildi: %,d anotasyon silindi (içindeki nesneler korundu).'), removedPrev) << "\n"
 }
 body << "\n"
-body << "'${HULL_CLASS}' sınıflı bir anotasyon eklendi. İçinde hücre tespiti/piksel\n"
-body << "sınıflandırıcı çalıştırabilir, uzamsal yardımcılarla (Uzamsal Komşuluk Analizi eki) birlikte kullanabilirsiniz.\n\n"
-body << "Not: JTS geometri alanı piksel² döner; µm²'ye pw·ph ile ölçeklenir.\n"
-body << "Bu bir GEOMETRİ üretimidir — klinik skor, eşik veya yorum DEĞİL.\n"
-body << "(Teknik esin: Bankhead/image.sc #76833; MRI BioCampus 2026)\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı geometri üretir."
+body << String.format(java.util.Locale.US, workshopText('script.4b538954e0f4', '\'%s\' sınıflı bir anotasyon eklendi. İçinde hücre tespiti/piksel\n'), HULL_CLASS)
+body << workshopText('script.9f6fae7280f0', 'sınıflandırıcı çalıştırabilir, uzamsal yardımcılarla (Uzamsal Komşuluk Analizi eki) birlikte kullanabilirsiniz.\n\n')
+body << workshopText('script.e3c2c8f536a4', 'Not: JTS geometri alanı piksel² döner; µm²\'ye pw·ph ile ölçeklenir.\n')
+body << workshopText('script.2550cce16d41', 'Bu bir GEOMETRİ üretimidir — klinik skor, eşik veya yorum DEĞİL.\n')
+body << workshopText('script.ae12e11a8de3', '(Teknik esin: Bankhead/image.sc #76833; MRI BioCampus 2026)\n\n')
+body << workshopText('script.4a3b575b62de', '⚠️ Yalnızca araştırma/eğitim amaçlı geometri üretir.')
 
-showResultWindow("Dış bükey zarf", body.toString())
+showResultWindow(workshopText('script.f012b5aa73f5', 'Dış bükey zarf'), body.toString())
 println String.format(java.util.Locale.US,
     "✓ Dış bükey zarf oluşturuldu — kaynak '%s', %,d nesne%s.",
     srcLabel, objs.size(),

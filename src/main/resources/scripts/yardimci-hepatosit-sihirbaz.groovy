@@ -142,11 +142,11 @@ def loadConfig = { ->
 def configMissing = { cfg ->
     def miss = []
     if (!cfg.python?.trim() || !(new File(cfg.python)).isFile())
-        miss << 'Python yürütülebilir (python.exe)'
+        miss << workshopText('script.5623a3de03e1', 'Python yürütülebilir (python.exe)')
     if (!cfg.bridge?.trim() || !(new File(cfg.bridge)).isFile())
-        miss << 'Köprü betiği (hepatocyte_qupath_inference.py)'
+        miss << workshopText('script.901a1f3aef5f', 'Köprü betiği (hepatocyte_qupath_inference.py)')
     if (!cfg.model?.trim() || !(new File(cfg.model)).isFile())
-        miss << 'Model ağırlığı (.pth — 🔒 talep üzerine)'
+        miss << workshopText('script.764974ad70e5', 'Model ağırlığı (.pth — 🔒 talep üzerine)')
     return miss
 }
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
@@ -224,7 +224,7 @@ def writeJson = { obj, File f ->
 // ── GeoJSON içe aktar (PathIO) + sınıf başı sayım ölçümleri ─────────────────
 def importResult = { File outputFile, imageData, List targetAnns ->
     if (outputFile == null || !outputFile.isFile())
-        return [ok: false, error: 'Çıktı GeoJSON bulunamadı:\n' + (outputFile?.getAbsolutePath() ?: '(yol yok)')]
+        return [ok: false, error: workshopText('script.1efa0e354f20', 'Çıktı GeoJSON bulunamadı:\n') + (outputFile?.getAbsolutePath() ?: workshopText('script.7732453089e4', '(yol yok)'))]
     def imported = []
     try { outputFile.withInputStream { is -> imported = PathIO.readObjectsFromGeoJSON(is) } }
     catch (Throwable t) { return [ok: false, error: String.format(java.util.Locale.US, workshopText('script.a94ce369adb2', 'GeoJSON dosyası okunamadı. Aracın Python adımı çıktı dosyasını eksiksiz yazmamış olabilir: çalışma günlüğünü ve çıktı klasörünü denetleyin, sonra sihirbazda çalıştırmayı yeniden yapın.\n\nTeknik ayrıntı: %s'), (t.getMessage() ?: t.getClass().getSimpleName()))] }
@@ -276,26 +276,26 @@ def importResult = { File outputFile, imageData, List targetAnns ->
 // ── Özet metni ──────────────────────────────────────────────────────────────
 def buildResultText = { slideName, exp, imp, File reportFile ->
     def sb = new StringBuilder()
-    sb << "HEPATOSİT SEGMENTASYONU — ÖZET\n"
+    sb << workshopText('script.95f678cfe2a2', 'HEPATOSİT SEGMENTASYONU — ÖZET\n')
     sb << "════════════════════════════════\n\n"
-    sb << "Lam      : " << (slideName ?: '?') << "\n"
-    sb << String.format(java.util.Locale.US, "Anotasyon  : %,d   ·   işlenen ROI: %,d%n", (int) (exp?.nAnns ?: 0), (int) (exp?.nRois ?: 0))
+    sb << workshopText('script.f73b98dfeed8', 'Lam      : ') << (slideName ?: '?') << "\n"
+    sb << String.format(java.util.Locale.US, workshopText('script.453caca29d07', 'Anotasyon  : %,d   ·   işlenen ROI: %,d%n'), (int) (exp?.nAnns ?: 0), (int) (exp?.nRois ?: 0))
     if ((exp?.skippedSmall ?: 0) > 0)
-        sb << String.format(java.util.Locale.US, "Atlanan    : %,d (bbox < min ROI, tek yamadan küçük)%n", (int) exp.skippedSmall)
-    sb << String.format(java.util.Locale.US, "Poligon    : %,d%n", (int) (imp?.nImported ?: 0))
-    sb << "\nSınıf dağılımı (hücre sayısı):\n"
+        sb << String.format(java.util.Locale.US, workshopText('script.9c4581cafe74', 'Atlanan    : %,d (bbox < min ROI, tek yamadan küçük)%n'), (int) exp.skippedSmall)
+    sb << String.format(java.util.Locale.US, workshopText('script.003f6aa0ce1b', 'Poligon    : %,d%n'), (int) (imp?.nImported ?: 0))
+    sb << workshopText('script.dda2893031b4', '\nSınıf dağılımı (hücre sayısı):\n')
     if (imp != null && imp.ok && !imp.classTotals.isEmpty()) {
         int total = 0
         imp.classTotals.each { cn, n -> sb << String.format(java.util.Locale.US, "  %-26s : %,d%n", cn, (int) n); total += (int) n }
-        sb << String.format(java.util.Locale.US, "  %-26s : %,d%n", '(toplam)', total)
+        sb << String.format(java.util.Locale.US, "  %-26s : %,d%n", workshopText('script.24d37979974f', '(toplam)'), total)
     } else {
-        sb << "  (sınıf sayımı yok — model bu bölgede yalnız arka plan tahmin etmiş olabilir)\n"
+        sb << workshopText('script.c1e4ae94ba37', '  (sınıf sayımı yok — model bu bölgede yalnız arka plan tahmin etmiş olabilir)\n')
     }
-    sb << "\n'Hepatocyte: <sınıf>' ve 'Hepatocyte: total' ölçümleri her ana anotasyona yazıldı (Measurements paneli).\n"
+    sb << workshopText('script.3b83494c8ac9', '\n\'Hepatocyte: <sınıf>\' ve \'Hepatocyte: total\' ölçümleri her ana anotasyona yazıldı (Measurements paneli).\n')
     if (reportFile != null && reportFile.isFile())
-        sb << "Excel raporu: " << reportFile.getAbsolutePath() << "\n"
-    sb << "\nÇıktı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki).\n"
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+        sb << workshopText('script.c7b5718e68cb', 'Excel raporu: ') << reportFile.getAbsolutePath() << "\n"
+    sb << workshopText('script.774c59d76530', '\nÇıktı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki).\n')
+    sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
@@ -368,7 +368,7 @@ def runPython = { List cmd, Closure onLine ->
     applyCacheEnv(pb)
     def proc
     try { proc = pb.start() }
-    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.f0e1e3289660', 'Python başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     processRef.set(proc)
     def last = new java.util.ArrayDeque()
     try {
@@ -383,9 +383,9 @@ def runPython = { List cmd, Closure onLine ->
     } catch (Throwable ignore) {}
     boolean finished
     try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
-    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
+    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: String.format(java.util.Locale.US, workshopText('script.959c500322fd', 'Zaman aşımı (%s sn)'), PYTHON_TIMEOUT_SECONDS)] }
+    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
     int code = proc.exitValue()
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
@@ -437,10 +437,10 @@ def httpDownload = { String urlStr, File dest ->
     if (dest.getParentFile() != null) dest.getParentFile().mkdirs()
     String cur = urlStr; int hops = 0
     while (true) {
-        if (hops++ > 8) throw new RuntimeException('Çok fazla yönlendirme')
+        if (hops++ > 8) throw new RuntimeException(workshopText('script.88523abfcd5f', 'Çok fazla yönlendirme'))
         def base = new java.net.URL(cur)
         if (!'https'.equalsIgnoreCase(base.getProtocol()))
-            throw new RuntimeException('Güvensiz (https değil) bağlantı reddedildi: ' + cur)
+            throw new RuntimeException(workshopText('script.668b99e2bdca', 'Güvensiz (https değil) bağlantı reddedildi: ') + cur)
         def conn = (java.net.HttpURLConnection) base.openConnection()
         conn.setInstanceFollowRedirects(false)
         conn.setConnectTimeout(30000); conn.setReadTimeout(120000)
@@ -449,7 +449,7 @@ def httpDownload = { String urlStr, File dest ->
         try { code = conn.getResponseCode() } catch (Throwable t) { conn.disconnect(); throw t }
         if (code >= 300 && code < 400) {
             def loc = conn.getHeaderField('Location'); conn.disconnect()
-            if (!loc) throw new RuntimeException('Yönlendirme konumu yok')
+            if (!loc) throw new RuntimeException(workshopText('script.d08139f58fa2', 'Yönlendirme konumu yok'))
             cur = new java.net.URL(base, loc).toString()
             continue
         }
@@ -470,7 +470,7 @@ def httpDownload = { String urlStr, File dest ->
                     }
                 } finally { os.close() }
                 if (total > 0 && done != total)
-                    throw new RuntimeException('Eksik indirme (' + done + '/' + total + ' bayt): ' + dest.getName())
+                    throw new RuntimeException(workshopText('script.165aa70cc164', 'Eksik indirme (') + done + '/' + total + workshopText('script.8b280e10d6ac', ' bayt): ') + dest.getName())
                 ok = true
             } finally { ins.close() }
         } finally {
@@ -490,7 +490,7 @@ def unzipTo = { File zipFile, File destDir ->
         while ((e = zis.getNextEntry()) != null) {
             def out = new File(destDir, e.getName())
             def oc = out.getCanonicalPath()
-            if (oc != destCanon && !oc.startsWith(destCanon + File.separator)) throw new RuntimeException('Güvensiz zip girdisi: ' + e.getName())
+            if (oc != destCanon && !oc.startsWith(destCanon + File.separator)) throw new RuntimeException(workshopText('script.cf1c6041c841', 'Güvensiz zip girdisi: ') + e.getName())
             if (e.isDirectory()) out.mkdirs()
             else {
                 if (out.getParentFile() != null) out.getParentFile().mkdirs()
@@ -500,30 +500,30 @@ def unzipTo = { File zipFile, File destDir ->
             }
             zis.closeEntry()
         }
-        appendInstallLog('    ' + cnt + ' dosya açıldı')
+        appendInstallLog('    ' + cnt + workshopText('script.ba06fabdeb9f', ' dosya açıldı'))
     } finally { zis.close() }
 }
 // ② hepatocyte-app deposunu indir + çıkar + köprü yolunu otomatik ayarla
 def installRepo = {
-    if (installBusyRef.getAndSet(true)) { appendInstallLog('(Kurulum sürüyor — bekleyin.)'); return }
+    if (installBusyRef.getAndSet(true)) { appendInstallLog(workshopText('script.4e8eb942c7c8', '(Kurulum sürüyor — bekleyin.)')); return }
     new Thread({
         try {
-            appendInstallLog(''); appendInstallLog('② hepatocyte-app deposu indiriliyor…'); appendInstallLog('    ' + HEPATO_REPO_ZIP)
+            appendInstallLog(''); appendInstallLog(workshopText('script.0eb171d17d2e', '② hepatocyte-app deposu indiriliyor…')); appendInstallLog('    ' + HEPATO_REPO_ZIP)
             def base = hepatoBase(); base.mkdirs()
             def zipF = new File(base, 'hepatocyte-app-main.zip')
             httpDownload(HEPATO_REPO_ZIP, zipF)
-            appendInstallLog('    açılıyor → ' + base.getAbsolutePath())
+            appendInstallLog(workshopText('script.ab3a137baee6', '    açılıyor → ') + base.getAbsolutePath())
             unzipTo(zipF, base)
             try { zipF.delete() } catch (Throwable t) {}
             def bf = hepatoBridgeFile()
             if (bf.isFile()) {
                 prefs.put(PREF_BRIDGE, bf.getAbsolutePath()); try { prefs.flush() } catch (Throwable t) {}
-                appendInstallLog('✓ Köprü betiği ayarlandı: ' + bf.getAbsolutePath())
-            } else appendInstallLog('⚠ Köprü betiği beklenen yerde yok: ' + bf.getAbsolutePath())
+                appendInstallLog(workshopText('script.e6ef3a3991d6', '✓ Köprü betiği ayarlandı: ') + bf.getAbsolutePath())
+            } else appendInstallLog(workshopText('script.ac2855fa76ba', '⚠ Köprü betiği beklenen yerde yok: ') + bf.getAbsolutePath())
             javafx.application.Platform.runLater { if (step.get() == 'CONFIG_INCOMPLETE') { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() } }
         } catch (Throwable t) {
-            appendInstallLog('✗ Depo indirilemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName()))
-            appendInstallLog('   Elle indirin: ' + HEPATO_REPO_ZIP)
+            appendInstallLog(workshopText('script.07eff7ccd3d6', '✗ Depo indirilemedi: ') + (t.getMessage() ?: t.getClass().getSimpleName()))
+            appendInstallLog(workshopText('script.caf5f858402d', '   Elle indirin: ') + HEPATO_REPO_ZIP)
         } finally { installBusyRef.set(false) }
     } as Runnable).start()
 }
@@ -531,17 +531,17 @@ def installRepo = {
 def selectModel = {
     def cfg = loadConfig()
     if (cfg.modelUrl?.trim()) {
-        if (installBusyRef.getAndSet(true)) { appendInstallLog('(Kurulum sürüyor — bekleyin.)'); return }
+        if (installBusyRef.getAndSet(true)) { appendInstallLog(workshopText('script.4e8eb942c7c8', '(Kurulum sürüyor — bekleyin.)')); return }
         new Thread({
             try {
-                appendInstallLog(''); appendInstallLog('③ Model indiriliyor…'); appendInstallLog('    ' + cfg.modelUrl.trim())
+                appendInstallLog(''); appendInstallLog(workshopText('script.fde5b5cc8976', '③ Model indiriliyor…')); appendInstallLog('    ' + cfg.modelUrl.trim())
                 def dest = new File(new File(hepatoBase(), 'weights'), 'baseline-1-jit.pth')
                 httpDownload(cfg.modelUrl.trim(), dest)
                 prefs.put(PREF_MODEL, dest.getAbsolutePath()); try { prefs.flush() } catch (Throwable t) {}
-                appendInstallLog('✓ Model ayarlandı: ' + dest.getAbsolutePath())
+                appendInstallLog(workshopText('script.ed0c78e74183', '✓ Model ayarlandı: ') + dest.getAbsolutePath())
                 javafx.application.Platform.runLater { if (step.get() == 'CONFIG_INCOMPLETE') { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() } }
             } catch (Throwable t) {
-                appendInstallLog('✗ Model indirilemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName()))
+                appendInstallLog(workshopText('script.5645e9f88c45', '✗ Model indirilemedi: ') + (t.getMessage() ?: t.getClass().getSimpleName()))
             } finally { installBusyRef.set(false) }
         } as Runnable).start()
         return
@@ -550,7 +550,7 @@ def selectModel = {
     def x = FileChoosers.promptForFile(stage, workshopText('script.f9c019eb4512', 'Model ağırlığı (.pth) seç'))
     if (x != null) {
         prefs.put(PREF_MODEL, x.getAbsolutePath()); try { prefs.flush() } catch (Throwable t) {}
-        appendInstallLog('✓ Model seçildi: ' + x.getAbsolutePath())
+        appendInstallLog(workshopText('script.d35675a18089', '✓ Model seçildi: ') + x.getAbsolutePath())
         if (step.get() == 'CONFIG_INCOMPLETE') { step.set(configComplete(loadConfig()) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }
     }
 }
@@ -574,12 +574,12 @@ def startSelftest = {
     persistFields()
     def cfg = loadConfig()
     if (!cfg.python?.trim() || !(new File(cfg.python)).isFile()) {
-        errorTextRef.set('Önce Python ortamını ayarlayın (①).'); step.set('ERROR'); render(); return
+        errorTextRef.set(workshopText('script.8ab66655e32a', 'Önce Python ortamını ayarlayın (①).')); step.set('ERROR'); render(); return
     }
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Bağımlılık kontrolü'); step.set('CHECK_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.8369fe631575', 'Bağımlılık kontrolü')); step.set('CHECK_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def r = runPython(selftestCmd(cfg), appendLine)
@@ -591,11 +591,11 @@ def startSelftest = {
 // ── Segmentasyon akışı ────────────────────────────────────────────────────────
 def startRun = {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.da80fab350d1', 'Görüntü açık değil.')); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
     def slidePath = resolveSlidePath(imageData)
     if (slidePath == null) {
-        errorTextRef.set('Lam yerel bir dosya değil — Python (openslide) açamaz.\nYerel diskteki bir SVS/TIFF lamı açın.'); step.set('ERROR'); render(); return
+        errorTextRef.set(workshopText('script.8d091fddcc17', 'Lam yerel bir dosya değil — Python (openslide) açamaz.\nYerel diskteki bir SVS/TIFF lamı açın.')); step.set('ERROR'); render(); return
     }
     // Çalışma dizini + Excel rapor yolu
     def project = QP.getProject()
@@ -617,26 +617,26 @@ def startRun = {
 
     def built = buildRequest(imageData, slidePath, cfg, reportFile)
     if (built.nRois == 0) {
-        errorTextRef.set('Segmentlenecek alan anotasyonu yok ya da hepsi çok küçük (bbox < ' + cfg.minRoi + ' px = bir yama).\nEn az bir yama boyu (≥' + cfg.minRoi + '×' + cfg.minRoi + ') alan anotasyonu çizin.'); step.set('ERROR'); render(); return
+        errorTextRef.set(String.format(java.util.Locale.US, workshopText('script.000b0339a5f1', 'Segmentlenecek alan anotasyonu yok ya da hepsi çok küçük (bbox < %s px = bir yama).\nEn az bir yama boyu (≥%s×%s) alan anotasyonu çizin.'), cfg.minRoi, cfg.minRoi, cfg.minRoi)); step.set('ERROR'); render(); return
     }
     def targetAnns = targetAnnotations(imageData)
     try { writeJson(built.request, requestFile) }
-    catch (Throwable t) { errorTextRef.set('İstek yazılamadı:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render(); return }
+    catch (Throwable t) { errorTextRef.set(workshopText('script.1dbcfb0dd95e', 'İstek yazılamadı:\n') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render(); return }
 
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Hepatosit segmentasyonu çalışıyor…'); step.set('RUN_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.96b51f6f518f', 'Hepatosit segmentasyonu çalışıyor…')); step.set('RUN_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
-        appendLine('Lam: ' + slidePath)
-        appendLine('İşlenen ROI: ' + built.nRois + (built.skippedSmall > 0 ? ('  (atlanan küçük: ' + built.skippedSmall + ')') : ''))
+        appendLine(workshopText('script.36b3b9339589', 'Lam: ') + slidePath)
+        appendLine(workshopText('script.5751b0a97a00', 'İşlenen ROI: ') + built.nRois + (built.skippedSmall > 0 ? (workshopText('script.e5430786dc18', '  (atlanan küçük: ') + built.skippedSmall + ')') : ''))
         def cmd = [cfg.python, cfg.bridge, requestFile.getAbsolutePath(), outputFile.getAbsolutePath()]*.toString()
         def r = runPython(cmd, appendLine)
         if (!r.ok) {
-            javafx.application.Platform.runLater { errorTextRef.set('Segmentasyon başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.6a770b479e2f', 'Segmentasyon başarısız (çıkış: ') + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return
         }
-        javafx.application.Platform.runLater { busyLabelRef.set('Sonuçlar QuPath\'e aktarılıyor…'); step.set('BUSY'); render() }
+        javafx.application.Platform.runLater { busyLabelRef.set(workshopText('script.1860f0ba937c', 'Sonuçlar QuPath\'e aktarılıyor…')); step.set('BUSY'); render() }
         def imp = importResult(outputFile, imageData, targetAnns)   /* çalıştırma başlarken yakalanan görüntü — sonuç başka lama yazılmasın */
         javafx.application.Platform.runLater {
             try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {}
@@ -735,14 +735,14 @@ render = { ->
         addGuidance(workshopText('script.fd46286592b5', 'Bu köprü ÜÇ ayrı kurulum adımı gerektirir; aşağıdaki ①②③ butonları bu adımları ÇALIŞTIRIR ' +
             '(terminal gerekmez). Eksik/geçersiz:\n  • ') + (miss.isEmpty() ? workshopText('script.715392eca0f8', '(yok)') : miss.join('\n  • ')))
         def resArea = new javafx.scene.control.TextArea(
-            'KAYNAKLAR — ne · nereden · nereye:\n' +
-            '① Python ortamı : ' + (cfg.python?.trim() ? (cfg.python + '  (kurulu)') :
-                'uv venv + paketler → ' + new File(new File(atolyeDataRoot(), 'runtimes'), 'hepatocyte/.venv').getAbsolutePath()) + '\n' +
-            '   (buton Atölye Python ortam yöneticisini açar; "Hepatocyte"yi kurun — python otomatik algılanır)\n' +
-            '② hepatocyte-app deposu: ' + HEPATO_REPO_ZIP + '\n' +
+            workshopText('script.8e5d789c9c31', 'KAYNAKLAR — ne · nereden · nereye:\n') +
+            workshopText('script.d4c0c98d3165', '① Python ortamı : ') + (cfg.python?.trim() ? (cfg.python + workshopText('script.973c6b0f374a', '  (kurulu)')) :
+                workshopText('script.7f1745079cf3', 'uv venv + paketler → ') + new File(new File(atolyeDataRoot(), 'runtimes'), 'hepatocyte/.venv').getAbsolutePath()) + '\n' +
+            workshopText('script.4f335d370be1', '   (buton Atölye Python ortam yöneticisini açar; "Hepatocyte"yi kurun — python otomatik algılanır)\n') +
+            workshopText('script.bc82bcc6749e', '② hepatocyte-app deposu: ') + HEPATO_REPO_ZIP + '\n' +
             '   → ' + hepatoBridgeFile().getAbsolutePath() + '\n' +
-            '③ Model (🔒 talep üzerine): baseline-1-jit.pth (~180 MB)\n' +
-            '   → bakımcıdan edinin, sonra "③ Model seç" ile gösterin (genel indirme yok).')
+            workshopText('script.66ebcd5fc385', '③ Model (🔒 talep üzerine): baseline-1-jit.pth (~180 MB)\n') +
+            workshopText('script.44561b5f2ac2', '   → bakımcıdan edinin, sonra "③ Model seç" ile gösterin (genel indirme yok).'))
         resArea.setEditable(false); resArea.setWrapText(false); resArea.setStyle(MONO); resArea.setPrefRowCount(8); resArea.setMaxHeight(180)
         center.getChildren().add(resArea)
         actions.add(navButton(workshopText('script.d6bef5796014', '① Python ortamı'), { launchEnvManager() },
@@ -777,8 +777,8 @@ render = { ->
         def browseFile = { f, cap -> def x = FileChoosers.promptForFile(stage, cap); if (x != null) f.setText(x.getAbsolutePath()) }
         int row = 0
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Python (python.exe):'), pyField, navButton('…', { browseFile(pyField, 'python.exe seç') }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.71a3f82d2be5', 'Köprü (hepatocyte_qupath_inference.py):')), brField, navButton('…', { browseFile(brField, 'Köprü betiği seç') }))
-        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model (.pth — 🔒):'), mdField, navButton('…', { browseFile(mdField, 'Model ağırlığı seç') }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.71a3f82d2be5', 'Köprü (hepatocyte_qupath_inference.py):')), brField, navButton('…', { browseFile(brField, workshopText('script.292f377a10e1', 'Köprü betiği seç')) }))
+        qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Model (.pth — 🔒):'), mdField, navButton('…', { browseFile(mdField, workshopText('script.35eb9ea756e1', 'Model ağırlığı seç')) }))
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.72e0fecf25c7', 'Aygıt:')), deviceChoice)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.fd67989a5dba', 'Yama boyu (px):')), psField)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label(workshopText('script.91d9b4a86bc6', 'Min. poligon alanı (px²):')), maField)
@@ -815,12 +815,12 @@ render = { ->
             int usable = anns.count { def r = it.getROI(); (int) Math.ceil(r.getBoundsWidth()) >= minRoi && (int) Math.ceil(r.getBoundsHeight()) >= minRoi }
             title.setText(workshopText('script.dffce2d4f356', 'Hepatosit segmentasyonu — hazır'))
             def sb = new StringBuilder()
-            sb << "Lam          : " << imageNameOf(imageData) << "\n"
-            sb << "Lam yolu     : " << (slidePath ?: '(yerel dosya değil — openslide açamaz)') << "\n"
-            sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
-            sb << "Model          : " << (cfg.model ?: '(ayarsız — 🔒 talep üzerine)') << "\n"
-            sb << "Aygıt          : " << cfg.device << "\n"
-            sb << String.format(java.util.Locale.US, "Alan anotasyonu: %,d   ·   uygun (≥%d px): %,d%n", anns.size(), minRoi, usable)
+            sb << workshopText('script.c482c0d5e596', 'Lam          : ') << imageNameOf(imageData) << "\n"
+            sb << workshopText('script.75a9c6ddd954', 'Lam yolu     : ') << (slidePath ?: workshopText('script.7efe7e0063af', '(yerel dosya değil — openslide açamaz)')) << "\n"
+            sb << "Python         : " << (cfg.python ?: workshopText('script.a2bfafb27517', '(ayarsız)')) << "\n"
+            sb << "Model          : " << (cfg.model ?: workshopText('script.c256c3191190', '(ayarsız — 🔒 talep üzerine)')) << "\n"
+            sb << workshopText('script.5bbbc6e5a551', 'Aygıt          : ') << cfg.device << "\n"
+            sb << String.format(java.util.Locale.US, workshopText('script.ba4a351672c2', 'Alan anotasyonu: %,d   ·   uygun (≥%d px): %,d%n'), anns.size(), minRoi, usable)
             addMonoArea(sb.toString())
             addGuidance(workshopText('script.70538ad6bde8', 'Seçili alan anotasyonları işlenir (hiç seçili yoksa tüm alan anotasyonları). Model KENDİ eğitilmiş TorchScript modelidir; yalnız tahmin yapar.'))
             if (slidePath == null) addWarnLabel(workshopText('script.21ae84824347', '⚠ Lam yerel bir dosya değil — Python (openslide) açamaz. Yerel SVS/TIFF açın.'))

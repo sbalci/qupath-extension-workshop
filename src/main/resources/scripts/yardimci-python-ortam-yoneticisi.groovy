@@ -80,86 +80,86 @@ def runtimesDir = { -> new File(atolyeDataRoot(), 'runtimes') }
 // ── Ortam kataloğu ───────────────────────────────────────────────────────────
 // torchBackend: uv --torch-backend (auto = CUDA sürümünü tespit et); null = torch yok.
 def CATALOG = [
-    [id:'tiatoolbox-region', label:'TIA Toolbox — bölge modelleri (KongNet / MapDe)', python:'3.11',
+    [id:'tiatoolbox-region', label:workshopText('script.6c0695506dcb', 'TIA Toolbox — bölge modelleri (KongNet / MapDe)'), python:'3.11',
      packages:['tiatoolbox>=2.1.2','torch','torchvision'], torchBackend:'auto', reuseOfficial:'tiatoolbox-runtime',
-     note:'Bölge sihirbazı. Resmî TIAToolbox eklentisi kuruluysa onun ortamı kullanılır (ayrı kuruluma gerek yok).'],
-    [id:'tiatoolbox-stain', label:'TIA Toolbox — boyama normalizasyonu / doku maskesi', python:'3.11',
+     note:workshopText('script.ebe126fc6158', 'Bölge sihirbazı. Resmî TIAToolbox eklentisi kuruluysa onun ortamı kullanılır (ayrı kuruluma gerek yok).')],
+    [id:'tiatoolbox-stain', label:workshopText('script.0222999b0a3d', 'TIA Toolbox — boyama normalizasyonu / doku maskesi'), python:'3.11',
      packages:['tiatoolbox>=2.0','numpy','pillow'], torchBackend:null, reuseOfficial:null,
-     note:'Hafif (torch gerekmez). Boya-normalizasyonu / doku-maskesi sihirbazı.'],
-    [id:'grandqc', label:'GrandQC — doku & artefakt segmentasyonu', python:'3.10',
+     note:workshopText('script.2254f20baf4a', 'Hafif (torch gerekmez). Boya-normalizasyonu / doku-maskesi sihirbazı.')],
+    [id:'grandqc', label:workshopText('script.5ea9ba75b46b', 'GrandQC — doku & artefakt segmentasyonu'), python:'3.10',
      packages:['torch>=2.0','torchvision','segmentation-models-pytorch==0.3.1','timm','six','opencv-python','numpy','Pillow','scipy','scikit-image','tifffile','tqdm','zarr','rasterio','imagecodecs','openslide-python','openslide-bin'],
      torchBackend:'auto', reuseOfficial:null,
-     note:'⚠️ Yalnızca Python ortamı. GrandQC betikleri + model ağırlıkları AYRICA gerekir (GrandQC sihirbazının ②③ butonları). openslide-bin, OpenSlide ikililerini pip ile getirir (conda gerekmez). smp 0.3.1 GrandQC kodunun beklediği sürümdür. six: pretrainedmodels (smp 0.3.1 bağımlılığı) six\'i bildirmeden kullanır — açıkça eklenir.'],
-    [id:'kaiko', label:'Kaiko Midnight — denetimli FM sınıflandırıcı', python:'3.11',
+     note:workshopText('script.310f509b76ae', '⚠️ Yalnızca Python ortamı. GrandQC betikleri + model ağırlıkları AYRICA gerekir (GrandQC sihirbazının ②③ butonları). openslide-bin, OpenSlide ikililerini pip ile getirir (conda gerekmez). smp 0.3.1 GrandQC kodunun beklediği sürümdür. six: pretrainedmodels (smp 0.3.1 bağımlılığı) six\'i bildirmeden kullanır — açıkça eklenir.')],
+    [id:'kaiko', label:workshopText('script.c5ea6feb84c9', 'Kaiko Midnight — denetimli FM sınıflandırıcı'), python:'3.11',
      packages:['torch>=2.1','torchvision>=0.16','transformers>=4.38','safetensors>=0.4','scikit-learn>=1.3','Pillow>=10.0','numpy>=1.24'],
-     torchBackend:'auto', reuseOfficial:null, note:'Kaiko sınıflandırıcı sihirbazı (eğit → tahmin).'],
-    [id:'spider', label:'SPIDER — organ doku sınıflandırıcı', python:'3.11',
+     torchBackend:'auto', reuseOfficial:null, note:workshopText('script.cca815375605', 'Kaiko sınıflandırıcı sihirbazı (eğit → tahmin).')],
+    [id:'spider', label:workshopText('script.5e97014bf2b5', 'SPIDER — organ doku sınıflandırıcı'), python:'3.11',
      packages:['torch>=2.1','transformers>=4.40.0','huggingface_hub>=0.23','Pillow>=10.0','numpy>=1.24'],
-     torchBackend:'auto', reuseOfficial:null, note:'⚠️ Model ağırlıkları KAPILI — ayrıca HF girişi gerekir.'],
-    [id:'histoart', label:'HistoART — artefakt tespiti (WSI kalite kontrol)', python:'3.11',
+     torchBackend:'auto', reuseOfficial:null, note:workshopText('script.d4a1bb4ffef2', '⚠️ Model ağırlıkları KAPILI — ayrıca HF girişi gerekir.')],
+    [id:'histoart', label:workshopText('script.168ae77dcf81', 'HistoART — artefakt tespiti (WSI kalite kontrol)'), python:'3.11',
      packages:['torch>=2.1','torchvision>=0.16','timm>=1.0.16','huggingface_hub>=0.23','Pillow>=10.0','numpy>=1.24'],
      torchBackend:'auto', reuseOfficial:null,
-     note:'Yalnızca Python ortamı. Ağırlıklar (didsr/HistoArt, AÇIK) sihirbazın ③ "Modeli indir" düğmesiyle ayrıca çekilir. DLA varyantı açık/CC0 (~94 MB); FMA varyantı ince ayarlı UNI\'dir ve omurgası (MahmoodLab/uni) KAPILIDIR (CC-BY-NC-ND 4.0 + HF erişim onayı) — timm yalnız FMA için gerekir. Upstream requirements.txt\'teki nvidia-*/triton tekerlekleri BİLEREK alınmaz (Linux kilit dosyası; CUDA torchBackend ile çözülür).'],
-    [id:'nuclick', label:'NuClick — tıkla → çekirdek sınırı', python:'3.11',
+     note:workshopText('script.71a4bb03610a', 'Yalnızca Python ortamı. Ağırlıklar (didsr/HistoArt, AÇIK) sihirbazın ③ "Modeli indir" düğmesiyle ayrıca çekilir. DLA varyantı açık/CC0 (~94 MB); FMA varyantı ince ayarlı UNI\'dir ve omurgası (MahmoodLab/uni) KAPILIDIR (CC-BY-NC-ND 4.0 + HF erişim onayı) — timm yalnız FMA için gerekir. Upstream requirements.txt\'teki nvidia-*/triton tekerlekleri BİLEREK alınmaz (Linux kilit dosyası; CUDA torchBackend ile çözülür).')],
+    [id:'nuclick', label:workshopText('script.f45346430f41', 'NuClick — tıkla → çekirdek sınırı'), python:'3.11',
      packages:['tiatoolbox>=2.1.2','torch>=2.5','torchvision','scikit-image>=0.26','numpy','Pillow'],
      torchBackend:'auto', reuseOfficial:null,
-     note:'Yalnızca Python ortamı. Ağırlık (nuclick_original-pannuke, ~255 MB) sihirbazın ③ düğmesiyle ayrıca çekilir; PanNuke ile eğitildiği için CC BY-NC-SA 4.0\'dır (ticari kullanım yok). Ağ, TIA Toolbox\'ın BSD-3-Clause yeniden uygulamasıdır — upstream nuclick_torch (CC BY-NC-SA) paketlenmez. scikit-image>=0.26: NuClick.postproc `remove_small_objects(..., max_size=)` çağırır; bu kwarg 0.26 ile geldi (tiatoolbox 2.1.3 zaten sabitler, taban açıkça yazılır).'],
-    [id:'sectra', label:'Sectra PACS — DICOM → GeoJSON', python:'3.11',
+     note:workshopText('script.bd9a4f9844ab', 'Yalnızca Python ortamı. Ağırlık (nuclick_original-pannuke, ~255 MB) sihirbazın ③ düğmesiyle ayrıca çekilir; PanNuke ile eğitildiği için CC BY-NC-SA 4.0\'dır (ticari kullanım yok). Ağ, TIA Toolbox\'ın BSD-3-Clause yeniden uygulamasıdır — upstream nuclick_torch (CC BY-NC-SA) paketlenmez. scikit-image>=0.26: NuClick.postproc `remove_small_objects(..., max_size=)` çağırır; bu kwarg 0.26 ile geldi (tiatoolbox 2.1.3 zaten sabitler, taban açıkça yazılır).')],
+    [id:'sectra', label:workshopText('script.2093608ed22a', 'Sectra PACS — DICOM → GeoJSON'), python:'3.11',
      packages:['pydicom>=2.4','shapely','numpy'], torchBackend:null, reuseOfficial:null,
-     note:'Hafif. Sectra PACS içe-aktarma sihirbazı.'],
-    [id:'dicomtosvs', label:'DICOMtoSVS — DICOM → SVS dönüştürme', python:'3.11',
+     note:workshopText('script.846a1d9df148', 'Hafif. Sectra PACS içe-aktarma sihirbazı.')],
+    [id:'dicomtosvs', label:workshopText('script.04d7ddd29f78', 'DICOMtoSVS — DICOM → SVS dönüştürme'), python:'3.11',
      packages:['pydicom==2.4.5','tifffile','imagecodecs','pylibjpeg','natsort','numpy==1.26.4','pillow'],
      torchBackend:null, reuseOfficial:null,
-     note:'Hafif (torch gerekmez). DICOM → SVS sihirbazı; DICOMtoSVS.py betiği AYRICA çalışma anında indirilir (depo LİSANSSIZ → paketlenmez). Sürümler yazarın README\'sine sabitlenmiştir (pydicom 2.4.5, numpy 1.26.4).'],
-    [id:'hepatocyte', label:'Hepatocyte — karaciğer segmentasyon köprüsü', python:'3.11',
+     note:workshopText('script.3270e96f1d5e', 'Hafif (torch gerekmez). DICOM → SVS sihirbazı; DICOMtoSVS.py betiği AYRICA çalışma anında indirilir (depo LİSANSSIZ → paketlenmez). Sürümler yazarın README\'sine sabitlenmiştir (pydicom 2.4.5, numpy 1.26.4).')],
+    [id:'hepatocyte', label:workshopText('script.58e78baba98b', 'Hepatocyte — karaciğer segmentasyon köprüsü'), python:'3.11',
      packages:['torch==2.7.0','numpy~=2.2.6','pandas==2.2.3','pillow==11.2.1',
                'openslide-python==1.4.3','openslide-bin==4.0.0.13','opencv-python-headless==4.13.0.92',
                'albumentations~=2.0.8','shapely==2.1.2','openpyxl==3.1.5'],
      torchBackend:'auto', reuseOfficial:null,
-     note:'⚠️ Yalnızca Python ortamı. hepatocyte-app deposu + model ağırlığı (🔒 talep üzerine) AYRICA gerekir — Hepatosit sihirbazının ②③ butonları. openslide-bin, OpenSlide ikililerini pip ile getirir (conda gerekmez).'],
-    [id:'midog-fcos', label:'MIDOG25 FCOS — mitoz dedektörü (torchvision)', python:'3.11',
+     note:workshopText('script.74211811727e', '⚠️ Yalnızca Python ortamı. hepatocyte-app deposu + model ağırlığı (🔒 talep üzerine) AYRICA gerekir — Hepatosit sihirbazının ②③ butonları. openslide-bin, OpenSlide ikililerini pip ile getirir (conda gerekmez).')],
+    [id:'midog-fcos', label:workshopText('script.7d83676a4c70', 'MIDOG25 FCOS — mitoz dedektörü (torchvision)'), python:'3.11',
      packages:['torch>=2.1','torchvision>=0.16','numpy','Pillow','tifffile','SimpleITK','pyyaml','tqdm'],
      torchBackend:'auto', reuseOfficial:null,
-     note:'⚠️ Yalnızca Python ortamı. FCOS_x101.ckpt ağırlığı + MIDOG25 T1 referans KODU AYRICA gerekir — mitoz sihirbazının "Modeli yerel indir" butonu ikisini de çalışma anında çeker (ağırlık: v1.0.0 yayını; kod: sabit commit; paketlenmez, LİSANS dosyası yok → araştırma/eğitim, kullanıcı sorumluluğunda). SimpleITK + pyyaml + tqdm referans kodunun import ettikleridir — bu ortamı daha önce kurduysanız YENİDEN KURUN.'],
-    [id:'midog-retinanet-legacy', label:'MIDOG DA-RetinaNet (eski, DOĞRULANMAMIŞ)', python:'3.8',
+     note:workshopText('script.7515de6c07f2', '⚠️ Yalnızca Python ortamı. FCOS_x101.ckpt ağırlığı + MIDOG25 T1 referans KODU AYRICA gerekir — mitoz sihirbazının "Modeli yerel indir" butonu ikisini de çalışma anında çeker (ağırlık: v1.0.0 yayını; kod: sabit commit; paketlenmez, LİSANS dosyası yok → araştırma/eğitim, kullanıcı sorumluluğunda). SimpleITK + pyyaml + tqdm referans kodunun import ettikleridir — bu ortamı daha önce kurduysanız YENİDEN KURUN.')],
+    [id:'midog-retinanet-legacy', label:workshopText('script.f9a631d7b789', 'MIDOG DA-RetinaNet (eski, DOĞRULANMAMIŞ)'), python:'3.8',
      packages:['fastai==1.0.61','torch>=1.6,<1.10','torchvision>=0.10,<0.11','opencv-python==4.5.1.48','scikit-learn','scipy','tqdm','numpy','Pillow'],
      torchBackend:'auto', reuseOfficial:null,
-     note:'⚠️ ESKİ/DOĞRULANMAMIŞ ortam. fastai 1.0.61 + modern torch bilinen bir kırılgan kombinasyondur; çözülmeyebilir ya da import hatası verebilir. Referans depo kodu + ağırlık çalışma anında indirilir (paketlenmez, LİSANS yok). Aşılmış — bunun yerine MIDOG25 FCOS önerilir.'],
-    [id:'midog-atypical', label:'MIDOG25 EffNetV2 — atipik sınıflandırıcı (timm)', python:'3.11',
+     note:workshopText('script.2aeedb5adbab', '⚠️ ESKİ/DOĞRULANMAMIŞ ortam. fastai 1.0.61 + modern torch bilinen bir kırılgan kombinasyondur; çözülmeyebilir ya da import hatası verebilir. Referans depo kodu + ağırlık çalışma anında indirilir (paketlenmez, LİSANS yok). Aşılmış — bunun yerine MIDOG25 FCOS önerilir.')],
+    [id:'midog-atypical', label:workshopText('script.cddfaa600bd9', 'MIDOG25 EffNetV2 — atipik sınıflandırıcı (timm)'), python:'3.11',
      packages:['torch>=2.1','torchvision>=0.16','timm>=1.0','numpy','Pillow'],
      torchBackend:'auto', reuseOfficial:null,
-     note:'⚠️ Yalnızca Python ortamı. Tipik/atipik SINIFLANDIRICI (dedektör değil — önce bir mitoz dedektörü çalıştırın). efficientnetv2_m_fold3_best.pth çalışma anında v1.0.0 yayınından indirilir (paketlenmez, LİSANS yok → araştırma/eğitim).'],
-    [id:'sanofi-eftd', label:'Sanofi EFTD — atipik sınıflandırıcı (DINOv3-H+, KAPILI)', python:'3.11',
+     note:workshopText('script.dbd64be69c2f', '⚠️ Yalnızca Python ortamı. Tipik/atipik SINIFLANDIRICI (dedektör değil — önce bir mitoz dedektörü çalıştırın). efficientnetv2_m_fold3_best.pth çalışma anında v1.0.0 yayınından indirilir (paketlenmez, LİSANS yok → araştırma/eğitim).')],
+    [id:'sanofi-eftd', label:workshopText('script.387eb0379c6b', 'Sanofi EFTD — atipik sınıflandırıcı (DINOv3-H+, KAPILI)'), python:'3.11',
      packages:['torch>=2.1','torchvision>=0.16','transformers>=4.56','peft>=0.11','safetensors>=0.4','omegaconf','huggingface_hub>=0.23','numpy','Pillow'],
      torchBackend:'auto', reuseOfficial:null,
-     note:'⚠️ Tipik/atipik SINIFLANDIRICI (MIDOG25 T2 birincisi). KISMEN KAPILI: LoRA adaptörleri açık ama DINOv3-H+ omurgası (facebook/dinov3-vith16plus) HF\'te KAPILIDIR — Meta lisansı + `huggingface-cli login` gerekir (otomatik DEĞİL). QuPath menüsünde varsayılan DEVRE DIŞI. Ticari-olmayan araştırma lisansı.'],
-    [id:'hovernext', label:'HoVer-NeXt — çekirdek segmentasyon + 7 sınıf (Lizard; NVIDIA GPU)', python:'3.11',
+     note:workshopText('script.f32fefe9dc21', '⚠️ Tipik/atipik SINIFLANDIRICI (MIDOG25 T2 birincisi). KISMEN KAPILI: LoRA adaptörleri açık ama DINOv3-H+ omurgası (facebook/dinov3-vith16plus) HF\'te KAPILIDIR — Meta lisansı + `huggingface-cli login` gerekir (otomatik DEĞİL). QuPath menüsünde varsayılan DEVRE DIŞI. Ticari-olmayan araştırma lisansı.')],
+    [id:'hovernext', label:workshopText('script.2f1de9594a30', 'HoVer-NeXt — çekirdek segmentasyon + 7 sınıf (Lizard; NVIDIA GPU)'), python:'3.11',
      packages:['torch==2.1.1','torchvision==0.16.1','timm==0.9.6','segmentation-models-pytorch==0.1.0','six','numpy<2',
                'zarr==2.16.1','numcodecs==0.12.1','scikit-image==0.22.0','scipy==1.11.4','opencv-python==4.8.1.78','Pillow',
                'openslide-python==1.4.6','openslide-bin==4.0.1.2','geojson==3.1.0','shapely==2.0.2','toml==0.10.2',
                'requests','tqdm','pylibCZIrw==4.1.3'],
      torchBackend:'cu121', reuseOfficial:null,
-     note:'⚠️ NVIDIA CUDA GPU ZORUNLU (HoVer-NeXt CPU\'da çalışmaz). Yalnızca Python ortamı: HoVer-NeXt KODU (GPL-3.0, sabit commit) ve Lizard AĞIRLIKLARI (Zenodo 10635618, CC BY-NC-SA 4.0 — ticari olmayan) sihirbazın "Modeli yerel indir" butonuyla çalışma anında indirilir; paketlenmez, kod ayrı süreç olarak çalıştırılır. Sürümler upstream\'e sabitlenmiştir (torch 2.1.1 + CUDA 12.1, smp 0.1.0, timm 0.9.6, zarr 2.16 → numpy<2); çok yeni GPU mimarileri (ör. RTX 50xx) bu torch sürümüyle desteklenmeyebilir. Cihaz seçimi CPU ise kurulum yapılır ama HoVer-NeXt çalışmaz.'],
-    [id:'classpose', label:'Classpose — H&E hücre fenotipleme (Cellpose-SAM)', python:'3.13',
+     note:workshopText('script.019fbf70e1c3', '⚠️ NVIDIA CUDA GPU ZORUNLU (HoVer-NeXt CPU\'da çalışmaz). Yalnızca Python ortamı: HoVer-NeXt KODU (GPL-3.0, sabit commit) ve Lizard AĞIRLIKLARI (Zenodo 10635618, CC BY-NC-SA 4.0 — ticari olmayan) sihirbazın "Modeli yerel indir" butonuyla çalışma anında indirilir; paketlenmez, kod ayrı süreç olarak çalıştırılır. Sürümler upstream\'e sabitlenmiştir (torch 2.1.1 + CUDA 12.1, smp 0.1.0, timm 0.9.6, zarr 2.16 → numpy<2); çok yeni GPU mimarileri (ör. RTX 50xx) bu torch sürümüyle desteklenmeyebilir. Cihaz seçimi CPU ise kurulum yapılır ama HoVer-NeXt çalışmaz.')],
+    [id:'classpose', label:workshopText('script.2d34aca978cc', 'Classpose — H&E hücre fenotipleme (Cellpose-SAM)'), python:'3.13',
      packages:['classpose @ https://github.com/sohmandal/classpose/archive/f6aeadd54729f6b9e50db620af68616f202d7a72.zip',
                'cellpose==4.0.8', 'torch', 'torchvision'],
      torchBackend:'auto', reuseOfficial:null,
-     note:'⚠️ Yalnızca Python ortamı (~6 GB; GPU torch). Classpose KODU (CC BY-NC 4.0, sabit commit f6aeadd) bu ortama çalışma anında kurulur — atölyede paketlenmez; sihirbaz onu ayrı süreç olarak çalıştırır. Model dosyaları (Hugging Face classpose/classpose, ~1.2 GB/model) ve isteğe bağlı GrandQC ağırlıkları sihirbazdan indirilir ya da yerel klasörden kullanılır. Python 3.13 gerekir (uv kendisi indirir). Windows\'ta GPU için sihirbaz TORCHDYNAMO_DISABLE=1 ayarlar (Triton yok). cellpose 4.0.8\'e sabitlenir (bu commit yeni cellpose ile açılmaz); yayımlanan paket alt modülleri atladığından her ortam kurulumundan sonra sihirbazın ① adımında bir kez "Kurulumu tamamla" gerekir.'],
-    [id:'cytoformer', label:'CytoFormer — H&E hücre tipi sınıflama (ViT-g; NVIDIA GPU önerilir)', python:'3.11',
+     note:workshopText('script.1c51a56a3693', '⚠️ Yalnızca Python ortamı (~6 GB; GPU torch). Classpose KODU (CC BY-NC 4.0, sabit commit f6aeadd) bu ortama çalışma anında kurulur — atölyede paketlenmez; sihirbaz onu ayrı süreç olarak çalıştırır. Model dosyaları (Hugging Face classpose/classpose, ~1.2 GB/model) ve isteğe bağlı GrandQC ağırlıkları sihirbazdan indirilir ya da yerel klasörden kullanılır. Python 3.13 gerekir (uv kendisi indirir). Windows\'ta GPU için sihirbaz TORCHDYNAMO_DISABLE=1 ayarlar (Triton yok). cellpose 4.0.8\'e sabitlenir (bu commit yeni cellpose ile açılmaz); yayımlanan paket alt modülleri atladığından her ortam kurulumundan sonra sihirbazın ① adımında bir kez "Kurulumu tamamla" gerekir.')],
+    [id:'cytoformer', label:workshopText('script.e0c715b1ff8f', 'CytoFormer — H&E hücre tipi sınıflama (ViT-g; NVIDIA GPU önerilir)'), python:'3.11',
      packages:['torch>=2.1','torchvision>=0.16','timm>=1.0.9,<1.1','numpy>=1.24','pandas>=2.0','pyarrow>=12.0','Pillow>=9.5','huggingface_hub>=0.23'],
      torchBackend:'auto', reuseOfficial:null,
-     note:'⚠️ Yalnızca Python ortamı (~5 GB; GPU torch). CytoFormer KODU (PENN Academic Software License — yalnız dahili araştırma/ticari olmayan kullanım, yeniden dağıtım yok) sihirbazda lisans onayından SONRA sabit commit\'ten (36b667e) veri köküne indirilir; atölyede paketlenmez, ayrı süreç olarak çalışır. Ağırlık (Hugging Face zhihuanglab/CytoFormer, KAPILI, CC BY-NC 4.0, 2.7 GB) yerel klasörden kullanılır ya da HF girişiyle indirilir. torchvision>=0.16 BİLEREK açıktır: upstream requirements.txt torchvision\'ı listelemez, timm onu sınırsız çeker ve uv 0.2.0\'a (2018) çözebilir → "torchvision.ops" hatası. timm 1.1 altında tutulur (mimariyi timm kurar; 1.0.29 doğrulandı). NVIDIA GPU yoksa ortamı cihaz = CPU ile kurun: CUDA torch\'u CPU kipine zorlamak Windows\'ta 0xC0000005 ile çöktü; CPU tekerleği sorunsuz (~1.5–2 hücre/sn).'],
-    [id:'histoplus', label:'HistoPLUS — H&E hücre segmentasyonu + 13 (+1) sınıf (CellViT/H0-mini; NVIDIA GPU önerilir)', python:'3.12',
+     note:workshopText('script.0c062d406eb1', '⚠️ Yalnızca Python ortamı (~5 GB; GPU torch). CytoFormer KODU (PENN Academic Software License — yalnız dahili araştırma/ticari olmayan kullanım, yeniden dağıtım yok) sihirbazda lisans onayından SONRA sabit commit\'ten (36b667e) veri köküne indirilir; atölyede paketlenmez, ayrı süreç olarak çalışır. Ağırlık (Hugging Face zhihuanglab/CytoFormer, KAPILI, CC BY-NC 4.0, 2.7 GB) yerel klasörden kullanılır ya da HF girişiyle indirilir. torchvision>=0.16 BİLEREK açıktır: upstream requirements.txt torchvision\'ı listelemez, timm onu sınırsız çeker ve uv 0.2.0\'a (2018) çözebilir → "torchvision.ops" hatası. timm 1.1 altında tutulur (mimariyi timm kurar; 1.0.29 doğrulandı). NVIDIA GPU yoksa ortamı cihaz = CPU ile kurun: CUDA torch\'u CPU kipine zorlamak Windows\'ta 0xC0000005 ile çöktü; CPU tekerleği sorunsuz (~1.5–2 hücre/sn).')],
+    [id:'histoplus', label:workshopText('script.33f0312f3c7c', 'HistoPLUS — H&E hücre segmentasyonu + 13 (+1) sınıf (CellViT/H0-mini; NVIDIA GPU önerilir)'), python:'3.12',
      packages:['histoplus @ https://github.com/owkin/histoplus/archive/576b94e528791c9f22c4d755bee01ec9a5743558.zip',
                'torch==2.7.1','torchvision==0.22.1','xformers==0.0.31.post1','timm==1.0.8',
                'numpy==2.2.6','pandas==2.3.1','opencv-python-headless==4.12.0.88','scikit-image==0.25.2','shapely==2.1.1',
                'huggingface-hub==0.33.4','joblib==1.5.1','scipy==1.15.3','pillow==11.3.0',
                'openslide-python==1.4.2','openslide-bin==4.0.0.8','typer==0.16.0','pyyaml==6.0.2','tqdm==4.67.1','loguru==0.7.3'],
      torchBackend:'auto', cpuStandardWheel:true, reuseOfficial:null,
-     note:'⚠️ Yalnızca Python ortamı (~6 GB; GPU torch). HistoPLUS KODU (Owkin, CC BY-NC-ND 4.0 — ticari olmayan, türev PAYLAŞILMAZ) sabit commit\'ten (576b94e) bu ortama çalışma anında kurulur; atölyede paketlenmez ve DEĞİŞTİRİLMEZ. Ağırlıklar (Hugging Face Owkin-Bioptimus/histoplus, KAPILI, ~285 MB × 2) sihirbazın ② adımından kendi HF hesabınızla indirilir ya da yerel klasörden kullanılır. Sürümler upstream uv.lock\'a SABİTTİR (sabitlenmezse uv pandas 3 / OpenCV 5 çözer; upstream kodu bunlarla denenmedi). xformers torch 2.7.1\'e bağlıdır: CUDA 12.6/12.8 indeksinde var, CUDA 11.8\'de YOK (eski NVIDIA sürücüsü → sürücüyü güncelleyin ya da cihaz = CPU ile kurun). Cihaz = CPU ise standart PyPI tekerleği kullanılır (CPU indeksinde xformers yok). CPU çıkarımı çalışır ama çok yavaştır (~7 dk/mm²); GPU (RTX A4000) ~12 sn/mm².'],
-    [id:'valis', label:'VALIS — WSI hizalama (native; JDK/Java AYRICA gerekir)', python:'3.10',
+     note:workshopText('script.92019aaeec71', '⚠️ Yalnızca Python ortamı (~6 GB; GPU torch). HistoPLUS KODU (Owkin, CC BY-NC-ND 4.0 — ticari olmayan, türev PAYLAŞILMAZ) sabit commit\'ten (576b94e) bu ortama çalışma anında kurulur; atölyede paketlenmez ve DEĞİŞTİRİLMEZ. Ağırlıklar (Hugging Face Owkin-Bioptimus/histoplus, KAPILI, ~285 MB × 2) sihirbazın ② adımından kendi HF hesabınızla indirilir ya da yerel klasörden kullanılır. Sürümler upstream uv.lock\'a SABİTTİR (sabitlenmezse uv pandas 3 / OpenCV 5 çözer; upstream kodu bunlarla denenmedi). xformers torch 2.7.1\'e bağlıdır: CUDA 12.6/12.8 indeksinde var, CUDA 11.8\'de YOK (eski NVIDIA sürücüsü → sürücüyü güncelleyin ya da cihaz = CPU ile kurun). Cihaz = CPU ise standart PyPI tekerleği kullanılır (CPU indeksinde xformers yok). CPU çıkarımı çalışır ama çok yavaştır (~7 dk/mm²); GPU (RTX A4000) ~12 sn/mm².')],
+    [id:'valis', label:workshopText('script.020227967a6f', 'VALIS — WSI hizalama (native; JDK/Java AYRICA gerekir)'), python:'3.10',
      packages:['valis-wsi', 'pyvips[binary]', 'openslide-python', 'openslide-bin'], torchBackend:'auto', reuseOfficial:null,
-     note:'⚠️ Yalnız NATIVE mod içindir. valis-wsi + pyvips[binary] (libvips ikilisi) + openslide-python & openslide-bin (OpenSlide ikilisi → .svs/.ndpi HIZLI okunur; yoksa VALIS yavaş Bio-Formats yoluna düşer) pip ile kurulur; torch CUDA wheel\'i --torch-backend=auto ile otomatik seçilir (RTX A4000; GPU özellik-eşleştirmeyi hızlandırır — LAM OKUMA/DÖNÜŞTÜRME ise disk/IO bağımlıdır, GPU kullanmaz). AYRICA bir JDK (Bio-Formats/JPype) gerekir — sistemde Java varsa yeterlidir. ÖNERİLEN yol: Docker (cdgatenbee/valis-wsi; tüm bağımlılıklar hazır). Bkz. Kaynaklar → İleri kurulumlar → VALIS. Lisans: VALIS = MIT.'],
+     note:workshopText('script.651fd7a2f468', '⚠️ Yalnız NATIVE mod içindir. valis-wsi + pyvips[binary] (libvips ikilisi) + openslide-python & openslide-bin (OpenSlide ikilisi → .svs/.ndpi HIZLI okunur; yoksa VALIS yavaş Bio-Formats yoluna düşer) pip ile kurulur; torch CUDA wheel\'i --torch-backend=auto ile otomatik seçilir (RTX A4000; GPU özellik-eşleştirmeyi hızlandırır — LAM OKUMA/DÖNÜŞTÜRME ise disk/IO bağımlıdır, GPU kullanmaz). AYRICA bir JDK (Bio-Formats/JPype) gerekir — sistemde Java varsa yeterlidir. ÖNERİLEN yol: Docker (cdgatenbee/valis-wsi; tüm bağımlılıklar hazır). Bkz. Kaynaklar → İleri kurulumlar → VALIS. Lisans: VALIS = MIT.')],
 ]
 def specById = { String id -> CATALOG.find { it.id == id } }
 
@@ -286,7 +286,7 @@ def runProc = { List cmd, Closure onLine ->
         env.put('UV_CACHE_DIR', cacheDir.getAbsolutePath())
         env.put('PIP_CACHE_DIR', new File(atolyeDataRoot(), 'pip-cache').getAbsolutePath())
     } catch (Throwable ignore) {}
-    def proc; try { proc = pb.start() } catch (Throwable e) { return [ok:false, exitCode:-1, error:'Başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    def proc; try { proc = pb.start() } catch (Throwable e) { return [ok:false, exitCode:-1, error:workshopText('script.71f0bfaced36', 'Başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     processRef.set(proc)
     def last = new java.util.ArrayDeque()
     try {
@@ -297,9 +297,9 @@ def runProc = { List cmd, Closure onLine ->
     } catch (Throwable ignore) {}
     boolean fin
     try { fin = proc.waitFor(UV_TIMEOUT, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok:false, exitCode:-3, error:'İptal edildi'] }
-    if (!fin) { proc.destroyForcibly(); return [ok:false, exitCode:-2, error:'Zaman aşımı (' + UV_TIMEOUT + ' sn)'] }
-    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok:false, exitCode:-3, error:'İptal edildi'] }
+    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok:false, exitCode:-3, error:workshopText('script.dbd417da03e1', 'İptal edildi')] }
+    if (!fin) { proc.destroyForcibly(); return [ok:false, exitCode:-2, error:workshopText('script.e6b0c32aaae9', 'Zaman aşımı (') + UV_TIMEOUT + workshopText('script.2ccf3f4af0dd', ' sn)')] }
+    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok:false, exitCode:-3, error:workshopText('script.dbd417da03e1', 'İptal edildi')] }
     int code = proc.exitValue(); return [ok: code == 0, exitCode: code, lastLines: last.join('\n')]
 }
 
@@ -316,9 +316,9 @@ def findUv = { ->
 }
 def ensureUv = { Closure appendLine ->
     def existing = findUv()
-    if (existing) { appendLine('uv bulundu: ' + existing); return [ok:true, uv:existing] }
+    if (existing) { appendLine(workshopText('script.fc63b1dc0092', 'uv bulundu: ') + existing); return [ok:true, uv:existing] }
     def asset = uvAsset()
-    appendLine('uv indiriliyor: ' + UV_BASE + asset)
+    appendLine(workshopText('script.3e02575de325', 'uv indiriliyor: ') + UV_BASE + asset)
     def ud = uvDir(); ud.mkdirs()
     def dl = new File(ud, asset)
     try {
@@ -327,8 +327,8 @@ def ensureUv = { Closure appendLine ->
             .connectTimeout(java.time.Duration.ofSeconds(30)).build()
         def req = java.net.http.HttpRequest.newBuilder(java.net.URI.create(UV_BASE + asset)).GET().build()
         def resp = client.send(req, java.net.http.HttpResponse.BodyHandlers.ofFile(dl.toPath()))
-        if (resp.statusCode() != 200) return [ok:false, error:'uv indirilemedi (HTTP ' + resp.statusCode() + '). Çevrimdışıysanız uv\'yi elle ' + ud.getAbsolutePath() + ' içine koyun.']
-    } catch (Throwable t) { return [ok:false, error:'uv indirme hatası: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
+        if (resp.statusCode() != 200) return [ok:false, error:String.format(java.util.Locale.US, workshopText('script.7c39556c4fd4', 'uv indirilemedi (HTTP %d). Çevrimdışıysanız uv\'yi elle %s içine koyun.'), resp.statusCode(), ud.getAbsolutePath())]
+    } catch (Throwable t) { return [ok:false, error:workshopText('script.f34a01259ab7', 'uv indirme hatası: ') + (t.getMessage() ?: t.getClass().getSimpleName())] }
     try {
         if (asset.endsWith('.zip')) {
             def zf = new java.util.zip.ZipFile(dl)
@@ -347,11 +347,11 @@ def ensureUv = { Closure appendLine ->
             def p = new ProcessBuilder(['tar','-xzf', dl.getAbsolutePath(), '-C', ud.getAbsolutePath(), '--strip-components=1']).redirectErrorStream(true).start()
             p.getInputStream().getText('UTF-8'); p.waitFor()
         }
-    } catch (Throwable t) { return [ok:false, error:'uv açma hatası: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
+    } catch (Throwable t) { return [ok:false, error:workshopText('script.e3cc1a23f120', 'uv açma hatası: ') + (t.getMessage() ?: t.getClass().getSimpleName())] }
     def uv = new File(ud, uvExeName)
-    if (!uv.isFile()) return [ok:false, error:'uv açıldı ama bulunamadı: ' + uv.getAbsolutePath()]
+    if (!uv.isFile()) return [ok:false, error:workshopText('script.422186e8271e', 'uv açıldı ama bulunamadı: ') + uv.getAbsolutePath()]
     if (!IS_WIN) { try { uv.setExecutable(true) } catch (Throwable ignore) {} }
-    appendLine('uv hazır: ' + uv.getAbsolutePath())
+    appendLine(workshopText('script.dd43b83e357f', 'uv hazır: ') + uv.getAbsolutePath())
     return [ok:true, uv:uv.getAbsolutePath()]
 }
 
@@ -373,7 +373,7 @@ def importNameOf = { String pkg ->
 
 def installEnv = { spec, String uvPath, Closure appendLine ->
     def venv = venvDirOf(spec.id); venv.getParentFile().mkdirs()
-    appendLine(''); appendLine('── ' + spec.id + ' — venv oluşturuluyor (Python ' + spec.python + ') ──')
+    appendLine(''); appendLine(String.format(java.util.Locale.US, workshopText('script.0fbbebc82ace', '── %s — venv oluşturuluyor (Python %s) ──'), spec.id, spec.python))
     // Güncel uv, VAR OLAN bir venv üzerinde `uv venv` çalıştırılınca hata (çıkış 2) verir →
     // "Onar / güncelle" ve yarım kalmış kurulumun yeniden denenmesi ilk adımda düşüyordu.
     // --allow-existing mevcut ortamı korur ve devam eder.
@@ -381,15 +381,15 @@ def installEnv = { spec, String uvPath, Closure appendLine ->
     if (venv.isDirectory() && new File(venv, 'pyvenv.cfg').isFile()) venvCmd << '--allow-existing'
     def r1 = runProc(venvCmd, appendLine)
     if (!r1.ok) return r1
-    if (cancelledRef.get()) return [ok:false, error:'İptal edildi']
+    if (cancelledRef.get()) return [ok:false, error:workshopText('script.dbd417da03e1', 'İptal edildi')]
     def py = venvPython(spec.id).getAbsolutePath()
     def base = [uvPath, 'pip', 'install', '--python', py]
     // Seçilen cihaza göre torch-backend: cuda→'auto', cpu→'cpu', mps→null (mac wheel).
     def bk = effectiveTorchBackend(spec)
     def devSel = selectedDeviceRef.get() ?: 'auto'
     def devEff = (devSel == 'auto') ? detectAccelerator() : devSel
-    appendLine(''); appendLine('── paketler kuruluyor: ' + spec.packages.join(', ') +
-        (spec.torchBackend != null ? ('  [cihaz=' + devEff + (bk ? (', torch-backend=' + bk) : ', standart wheel') + ']') : '') + ' ──')
+    appendLine(''); appendLine(workshopText('script.b0bef6c4115d', '── paketler kuruluyor: ') + spec.packages.join(', ') +
+        (spec.torchBackend != null ? (workshopText('script.c5c8a8b6e944', '  [cihaz=') + devEff + (bk ? (', torch-backend=' + bk) : workshopText('script.99791a107787', ', standart wheel')) + ']') : '') + ' ──')
     def r2
     if (bk) {
         // 1) uv --torch-backend. Eski uv tanımazsa cihaza uygun --extra-index-url'e düş.
@@ -400,7 +400,7 @@ def installEnv = { spec, String uvPath, Closure appendLine ->
             if (ll.contains('torch-backend') && (ll.contains('unexpected') || ll.contains('unrecognized') || ll.contains('invalid value') || ll.contains('found argument'))) {
                 def idxName = (bk == 'cpu') ? 'cpu' : (bk == 'auto' ? 'cu128' : bk)   // açık arka uç (ör. cu121) korunur
                 def idx = 'https://download.pytorch.org/whl/' + idxName
-                appendLine(''); appendLine('uv bu sürüm --torch-backend desteklemiyor; --extra-index-url (' + idxName + ') ile yeniden deneniyor…')
+                appendLine(''); appendLine(String.format(java.util.Locale.US, workshopText('script.15de4c41fb2d', 'uv bu sürüm --torch-backend desteklemiyor; --extra-index-url (%s) ile yeniden deneniyor…'), idxName))
                 def cmd2 = new ArrayList(base)
                 cmd2.add('--index-strategy'); cmd2.add('unsafe-best-match')
                 cmd2.add('--extra-index-url'); cmd2.add(idx)
@@ -417,7 +417,7 @@ def installEnv = { spec, String uvPath, Closure appendLine ->
     def imports = spec.packages.collect { importNameOf(it) }.unique()
     boolean verifyOk = true; String verifyMsg = ''
     if (!imports.isEmpty() && !cancelledRef.get()) {
-        appendLine(''); appendLine('── doğrulama: import ' + imports.join(', ') + ' ──')
+        appendLine(''); appendLine(workshopText('script.9ac2a8f950cd', '── doğrulama: import ') + imports.join(', ') + ' ──')
         // NOT: Python tek-satırında ÇİFT tırnak kullanma. Windows'ta Java ProcessBuilder,
         // boşluk içeren argümanı "..." ile sarar ve içteki çift tırnakları KAÇIRMAZ; böylece
         // print("VERIFY_OK") → print(VERIFY_OK) olur (NameError). Tek tırnak güvenlidir.
@@ -444,38 +444,38 @@ def startInstall = { spec ->
         try { rtDir.mkdirs() } catch (Throwable ignore) {}
         long freeBytes = 0L; try { freeBytes = rtDir.getUsableSpace() } catch (Throwable ignore) {}
         double freeGB = freeBytes / (1024.0d * 1024.0d * 1024.0d)
-        def msg = spec.label + ' ortamı torch + CUDA içerir → yaklaşık 3–5 GB indirilir ve kurulur.\n\n' +
-            String.format(java.util.Locale.US, 'Hedef    : %s%nBoş alan : %.1f GB%s%n%nDevam edilsin mi?',
-                rtDir.getAbsolutePath(), freeGB, (freeGB > 0 && freeGB < 6.0d ? '  ⚠ düşük (≥6 GB önerilir)' : ''))
+        def msg = spec.label + workshopText('script.3660f91f9a89', ' ortamı torch + CUDA içerir → yaklaşık 3–5 GB indirilir ve kurulur.\n\n') +
+            String.format(java.util.Locale.US, workshopText('script.2790dec6086b', 'Hedef    : %s%nBoş alan : %.1f GB%s%n%nDevam edilsin mi?'),
+                rtDir.getAbsolutePath(), freeGB, (freeGB > 0 && freeGB < 6.0d ? workshopText('script.4f8829f7c825', '  ⚠ düşük (≥6 GB önerilir)') : ''))
         if (!Dialogs.showConfirmDialog(workshopText('script.4b9fa7c7f11c', 'Disk alanı — ') + spec.id, msg)) return
     }
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set(spec.label + ' kuruluyor…'); step.set('RUNNING'); render()
+    runPhaseRef.set(spec.label + workshopText('script.199730d07c80', ' kuruluyor…')); step.set('RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         try {
             def u = ensureUv(appendLine)
             if (!u.ok) { javafx.application.Platform.runLater { errorTextRef.set(u.error); step.set('ERROR'); render() }; return }
-            if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
+            if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.fee85e45842b', 'İptal edildi.')); step.set('ERROR'); render() }; return }
             def r = installEnv(spec, u.uv, appendLine)
             javafx.application.Platform.runLater {
-                if (!r.ok) { errorTextRef.set('Kurulum başarısız (çıkış: ' + (r.exitCode ?: '?') + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }
+                if (!r.ok) { errorTextRef.set(workshopText('script.ab28a12df1b5', 'Kurulum başarısız (çıkış: ') + (r.exitCode ?: '?') + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }
                 else {
                     def sb = new StringBuilder()
-                    sb << 'ORTAM KURULDU ✅\n══════════════\n\n'
-                    sb << 'Ortam   : ' << spec.label << ' (' << spec.id << ')\n'
-                    sb << 'Python  : ' << r.python << '\n'
-                    sb << 'Paketler: ' << spec.packages.join(', ') << '\n'
-                    sb << 'Doğrulama: ' << (r.verifyOk ? ('import OK — ' + (r.imports ? r.imports.join(', ') : '')) : ('⚠ BAŞARISIZ:\n' + (r.verifyMsg ?: ''))) << '\n'
-                    if (spec.note) sb << '\nNot: ' << spec.note << '\n'
-                    sb << '\nİlgili sihirbaz artık bu ortamı otomatik bulur.\n⚠️ Yalnızca araştırma/eğitim amaçlıdır.'
+                    sb << workshopText('script.8f4d46bf4631', 'ORTAM KURULDU ✅\n══════════════\n\n')
+                    sb << workshopText('script.e98230a62c29', 'Ortam   : ') << spec.label << ' (' << spec.id << ')\n'
+                    sb << workshopText('script.f29279f64470', 'Python  : ') << r.python << '\n'
+                    sb << workshopText('script.eab789b1b897', 'Paketler: ') << spec.packages.join(', ') << '\n'
+                    sb << workshopText('script.7ef2bd801a3a', 'Doğrulama: ') << (r.verifyOk ? (workshopText('script.83683c92bbae', 'import OK — ') + (r.imports ? r.imports.join(', ') : '')) : (workshopText('script.e72f06373c60', '⚠ BAŞARISIZ:\n') + (r.verifyMsg ?: ''))) << '\n'
+                    if (spec.note) sb << workshopText('script.1c6626275c2e', '\nNot: ') << spec.note << '\n'
+                    sb << workshopText('script.0540f3c2e7d6', '\nİlgili sihirbaz artık bu ortamı otomatik bulur.\n⚠️ Yalnızca araştırma/eğitim amaçlıdır.')
                     resultTextRef.set(sb.toString()); step.set('RESULT'); render()
                 }
             }
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { errorTextRef.set('Beklenmeyen hata:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.6af403a9fc32', 'Beklenmeyen hata:\n') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
         }
     }, 'AtolyeEnv-Install')
     worker.setDaemon(true); worker.start()
@@ -518,7 +518,7 @@ render = { ->
     if (cur == 'LIST') {
         title.setText(workshopText('script.60371b636d3f', 'Atölye Python ortam yöneticisi'))
         def uvFound = findUv()
-        def uvLbl = new javafx.scene.control.Label('uv: ' + (uvFound ?: '(yok — ilk kurulumda otomatik indirilecek)'))
+        def uvLbl = new javafx.scene.control.Label('uv: ' + (uvFound ?: workshopText('script.7950c42fa329', '(yok — ilk kurulumda otomatik indirilecek)')))
         uvLbl.setStyle('-fx-opacity: 0.8;'); center.getChildren().add(uvLbl)
 
         // ── Veri kökü (venv/uv/model) — C: dolmasın diye başka sürücü seçilebilir ──
@@ -528,7 +528,7 @@ render = { ->
         long drFree = 0L; try { drFree = dataRoot.exists() ? dataRoot.getUsableSpace() : (dataRoot.getParentFile()?.getUsableSpace() ?: 0L) } catch (Throwable ignore) {}
         double drFreeGB = drFree / (1024.0d * 1024.0d * 1024.0d)
         def rootLbl = new javafx.scene.control.Label(String.format(java.util.Locale.US,
-            workshopText('script.5559b201977a', 'Veri kökü: %s%s   (boş alan: %.1f GB)'), dataRoot.getAbsolutePath(), (isCustom ? '' : '  [varsayılan]'), drFreeGB))
+            workshopText('script.5559b201977a', 'Veri kökü: %s%s   (boş alan: %.1f GB)'), dataRoot.getAbsolutePath(), (isCustom ? '' : workshopText('script.3df35642de06', '  [varsayılan]')), drFreeGB))
         rootLbl.setStyle('-fx-opacity: 0.85; -fx-font-weight: bold;'); rootLbl.setWrapText(true)
         def chooseRoot = navButton(workshopText('script.18b5fd32f00e', 'Değiştir…'), {
             def start = dataRoot.exists() ? dataRoot : dataRoot.getParentFile()
@@ -575,10 +575,10 @@ render = { ->
         def detected = detectAccelerator()
         def isMac = System.getProperty('os.name', '').toLowerCase(java.util.Locale.ROOT).contains('mac')
         def devOpts = []
-        devOpts << ['auto', 'Otomatik (algılanan: ' + detected.toUpperCase(java.util.Locale.ROOT) + ')']
+        devOpts << ['auto', workshopText('script.9da8faf54d93', 'Otomatik (algılanan: ') + detected.toUpperCase(java.util.Locale.ROOT) + ')']
         if (isMac) devOpts << ['mps', 'MPS — Apple GPU']
         else devOpts << ['cuda', 'CUDA — NVIDIA GPU']
-        devOpts << ['cpu', 'CPU — GPU yok (yavaş)']
+        devOpts << ['cpu', workshopText('script.b39fc37f7246', 'CPU — GPU yok (yavaş)')]
         def devBox = new javafx.scene.control.ComboBox(javafx.collections.FXCollections.observableArrayList(devOpts.collect { it[1] }))
         int curIdx = devOpts.findIndexOf { it[0] == (selectedDeviceRef.get() ?: 'auto') }; if (curIdx < 0) curIdx = 0
         devBox.getSelectionModel().select(curIdx)

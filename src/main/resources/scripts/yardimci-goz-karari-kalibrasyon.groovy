@@ -109,7 +109,7 @@ if (isHeadless && mevcutArg != null && !['ekle', 'degistir'].contains(mevcutArg)
 
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    def msg = "Açık sanal lam bulunamadı.\n\nÖnce sınıflandırılmış hücre tespitleri içeren bir lam açın."
+    def msg = workshopText('script.2b6a784e6187', 'Açık sanal lam bulunamadı.\n\nÖnce sınıflandırılmış hücre tespitleri içeren bir lam açın.')
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), msg)
     return
 }
@@ -118,9 +118,7 @@ def selectedAreas = QP.getSelectedObjects().findAll {
     it.isAnnotation() && !isOwnSetName(it.getName(), GRID_NAME) && it.getROI() != null && it.getROI().isArea() && it.getROI().getArea() > 0
 }
 if (selectedAreas.isEmpty()) {
-    def msg = "Geçerli bir kapalı alan (ROI) seçili değil.\n\n" +
-              "Nokta veya çizgi yerine dikdörtgen/poligon/fırça aracıyla kapalı bir bölge çizin\n" +
-              "ve kenarı sarı olana kadar içine tıklayın."
+    def msg = workshopText('script.9db69af9f36c', 'Geçerli bir kapalı alan (ROI) seçili değil.\n\nNokta veya çizgi yerine dikdörtgen/poligon/fırça aracıyla kapalı bir bölge çizin\nve kenarı sarı olana kadar içine tıklayın.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.9cd15cfae93e', "Bölge seçilmedi"), msg)
     return
 }
@@ -134,9 +132,7 @@ def insideDetections = QP.getDetectionObjects().findAll { d ->
 }
 
 if (insideDetections.isEmpty()) {
-    def msg = "Seçili bölge içinde hücre tespiti bulunamadı.\n\n" +
-              "Önce Nükleer boya (Ki-67), ER/PR H-score, Membran boya (HER2),\n" +
-              "Sitoplazmik boya (CD68) veya Tümör içi Ki-67 modüllerinden birini çalıştırın."
+    def msg = workshopText('script.f6a12e074eaa', 'Seçili bölge içinde hücre tespiti bulunamadı.\n\nÖnce Nükleer boya (Ki-67), ER/PR H-score, Membran boya (HER2),\nSitoplazmik boya (CD68) veya Tümör içi Ki-67 modüllerinden birini çalıştırın.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.4277b763a640', "Tespit yok"), msg)
     return
 }
@@ -167,14 +163,13 @@ int tumorClassified = insideDetections.count { d ->
 }
 
 if (ihcClassified == 0 && tumorClassified == 0) {
-    def msg = "Seçili bölgedeki tespitler henüz sınıflandırılmamış (yalnız sınıfsız çekirdekler var).\n\n" +
-              "Önce pozitif/negatif veya hücre tipi sınıflandırması üreten bir modül çalıştırın."
+    def msg = workshopText('script.ef5f5e7143a3', 'Seçili bölgedeki tespitler henüz sınıflandırılmamış (yalnız sınıfsız çekirdekler var).\n\nÖnce pozitif/negatif veya hücre tipi sınıflandırması üreten bir modül çalıştırın.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.db4f107ceebc', "Sınıflandırma yok"), msg)
     return
 }
 
 boolean ihcMode = ihcClassified > 0
-String metricLabel = ihcMode ? "Pozitif hücre oranı (1+/2+/3+/Positive)" : "Tümör hücre oranı (Tumor / tüm sınıflı hücreler)"
+String metricLabel = ihcMode ? workshopText('script.9203f6a8c5e2', 'Pozitif hücre oranı (1+/2+/3+/Positive)') : workshopText('script.411970b94b84', 'Tümör hücre oranı (Tumor / tüm sınıflı hücreler)')
 
 List denominatorCells = insideDetections.findAll { d ->
     String c = normClass(d)
@@ -366,7 +361,7 @@ javafx.application.Platform.runLater {
     titleLbl.setWrapText(true)
     titleLbl.setMaxWidth(Double.MAX_VALUE)
 
-    String areaInfo = hasMicrons ? String.format(Locale.US, "%.3f mm²", roiAreaMm2) : "kalibrasyonsuz (piksel)"
+    String areaInfo = hasMicrons ? String.format(Locale.US, "%.3f mm²", roiAreaMm2) : workshopText('script.d35b1ea7787f', 'kalibrasyonsuz (piksel)')
     def infoLbl = new javafx.scene.control.Label(
         workshopText('script.339ded07b50a', "Seçili bölgedeki renkli tespit halkaları KÖR TAHMİN için geçici olarak gizlendi.\n" +
         "Bölge: ") + roiName + " (" + areaInfo + workshopText('script.18213d127497', ") · Hedef oran: ") + metricLabel
@@ -428,11 +423,7 @@ javafx.application.Platform.runLater {
     form.add(areaGuessTf, 1, 1)
 
     def resultArea = new javafx.scene.control.TextArea(
-        "Adımlar:\n" +
-        "  1) Mikroskop görünümünde seçili bölgeyi inceleyin (isterseniz 4×4 ızgarayı açıp 16 alt karenin ortalamasını alın).\n" +
-        "  2) Yukarıya göz kararı yüzde tahmininizi yazın.\n" +
-        "  3) 'QuPath Ölçümünü Açıkla' düğmesine basın: gizlenen hücre halkaları açılır, hücre sayısı oranı ile\n" +
-        "     hücre alanı oranı yan yana gösterilir ve kişisel Bland–Altman sapma özetiniz güncellenir."
+        workshopText('script.318224c92600', 'Adımlar:\n  1) Mikroskop görünümünde seçili bölgeyi inceleyin (isterseniz 4×4 ızgarayı açıp 16 alt karenin ortalamasını alın).\n  2) Yukarıya göz kararı yüzde tahmininizi yazın.\n  3) \'QuPath Ölçümünü Açıkla\' düğmesine basın: gizlenen hücre halkaları açılır, hücre sayısı oranı ile\n     hücre alanı oranı yan yana gösterilir ve kişisel Bland–Altman sapma özetiniz güncellenir.')
     )
     resultArea.setEditable(false)
     resultArea.setWrapText(false)
@@ -480,45 +471,45 @@ javafx.application.Platform.runLater {
         double relErr = 100.0 * absErr / Math.max(trueCellPct, 0.5)
         double sizeIllusionGap = trueAreaPct - trueCellPct
 
-        def stats = [path: "(kaydedilemedi)", n: 1, mae: absErr, bias: signedBias, loaLow: signedBias, loaHigh: signedBias]
+        def stats = [path: workshopText('script.9d5c35fa340a', '(kaydedilemedi)'), n: 1, mae: absErr, bias: signedBias, loaLow: signedBias, loaHigh: signedBias]
         try {
             stats = appendAndSummarizeLog(guessCell, guessArea, signedBias, absErr, relErr)
         } catch (Exception ex) {
-            stats.path = "Kayıt yazılamadı: " + ex.getMessage()
+            stats.path = workshopText('script.cdcd1b6e631c', 'Kayıt yazılamadı: ') + ex.getMessage()
         }
 
         def sb = new StringBuilder()
-        sb << "GÖZ KARARI KALİBRASYON KARŞILAŞTIRMASI\n"
+        sb << workshopText('script.99e8a70e9bd9', 'GÖZ KARARI KALİBRASYON KARŞILAŞTIRMASI\n')
         sb << "══════════════════════════════════════════════════════════════\n"
         if (gridNoteRef.get()) sb << gridNoteRef.get() << "\n\n"
-        sb << String.format(Locale.US, "Sanal lam / Bölge             : %s / %s (%s)%n", imageName, roiName, areaInfo)
-        sb << String.format(Locale.US, "Ölçülen oran tanımı           : %s%n", metricLabel)
-        sb << String.format(Locale.US, "Sınıflandırılmış hücre        : %,d (hedef: %,d)%n%n", totalCount, posCount)
-        sb << String.format(Locale.US, "  • Göz kararı hücre tahmini  : %6.2f %%%n", guessCell)
-        sb << String.format(Locale.US, "  • QuPath HÜCRE sayısı oranı : %6.2f %%%n", trueCellPct)
-        sb << String.format(Locale.US, "  • QuPath HÜCRE ALANI oranı  : %6.2f %%  (Alan − Sayı farkı: %+.2f puan)%n", trueAreaPct, sizeIllusionGap)
+        sb << String.format(Locale.US, workshopText('script.0c237d184054', 'Sanal lam / Bölge             : %s / %s (%s)%n'), imageName, roiName, areaInfo)
+        sb << String.format(Locale.US, workshopText('script.189f65e8729e', 'Ölçülen oran tanımı           : %s%n'), metricLabel)
+        sb << String.format(Locale.US, workshopText('script.65c997819c8c', 'Sınıflandırılmış hücre        : %,d (hedef: %,d)%n%n'), totalCount, posCount)
+        sb << String.format(Locale.US, workshopText('script.b28a70f4ad9c', '  • Göz kararı hücre tahmini  : %6.2f %%%n'), guessCell)
+        sb << String.format(Locale.US, workshopText('script.6b47da694ea7', '  • QuPath HÜCRE sayısı oranı : %6.2f %%%n'), trueCellPct)
+        sb << String.format(Locale.US, workshopText('script.92fc0b8e3631', '  • QuPath HÜCRE ALANI oranı  : %6.2f %%  (Alan − Sayı farkı: %+.2f puan)%n'), trueAreaPct, sizeIllusionGap)
         if (guessArea != null) {
-            sb << String.format(Locale.US, "  • Göz kararı alan tahmini   : %6.2f %%  (Alan hatası: %+.2f puan)%n", guessArea, guessArea - trueAreaPct)
+            sb << String.format(Locale.US, workshopText('script.e268100c245a', '  • Göz kararı alan tahmini   : %6.2f %%  (Alan hatası: %+.2f puan)%n'), guessArea, guessArea - trueAreaPct)
         }
         sb << "──────────────────────────────────────────────────────────────\n"
-        sb << String.format(Locale.US, "  • Yönlü sapma (Tahmin−Sayı) : %+6.2f yüzde puan (%s)%n",
-            signedBias, signedBias > 0.5 ? "olduğundan yüksek tahmin" : (signedBias < -0.5 ? "olduğundan düşük tahmin" : "çok yakın kalibrasyon"))
-        sb << String.format(Locale.US, "  • Mutlak hata               : %6.2f yüzde puan%n", absErr)
-        sb << String.format(Locale.US, "  • Göreli hata               : %6.1f %%%n%n", relErr)
+        sb << String.format(Locale.US, workshopText('script.18a2ac06c327', '  • Yönlü sapma (Tahmin−Sayı) : %+6.2f yüzde puan (%s)%n'),
+            signedBias, signedBias > 0.5 ? workshopText('script.6e8a239cbd5d', 'olduğundan yüksek tahmin') : (signedBias < -0.5 ? workshopText('script.63c78a7e99b0', 'olduğundan düşük tahmin') : workshopText('script.c9d5198b3a1d', 'çok yakın kalibrasyon')))
+        sb << String.format(Locale.US, workshopText('script.62c70d09e9ee', '  • Mutlak hata               : %6.2f yüzde puan%n'), absErr)
+        sb << String.format(Locale.US, workshopText('script.8a9ac55022cf', '  • Göreli hata               : %6.1f %%%n%n'), relErr)
 
         if (Math.abs(sizeIllusionGap) >= 3.0 && Math.abs(guessCell - trueAreaPct) < Math.abs(guessCell - trueCellPct)) {
-            sb << "💡 Algısal Not (Hücre Boyutu Yanılgısı): Tahmininiz hücre SAYISI oranından çok pozitif ALAN oranına\n"
-            sb << "   yakın düştü. Geniş tümör hücreleri mikroskop alanında küçük lenfositlerden daha fazla piksel kaplar!\n\n"
+            sb << workshopText('script.dc50cc389e09', '💡 Algısal Not (Hücre Boyutu Yanılgısı): Tahmininiz hücre SAYISI oranından çok pozitif ALAN oranına\n')
+            sb << workshopText('script.6e75ce6480b1', '   yakın düştü. Geniş tümör hücreleri mikroskop alanında küçük lenfositlerden daha fazla piksel kaplar!\n\n')
         }
 
-        sb << String.format(Locale.US, "OTURUM ÖZETİ (Toplam N = %d deneme)%n", stats.n)
-        sb << String.format(Locale.US, "  • Ortalama mutlak hata (MAE): %.2f puan%n", stats.mae)
-        sb << String.format(Locale.US, "  • Bland–Altman ortalama fark: %+.2f puan%n", stats.bias)
+        sb << String.format(Locale.US, workshopText('script.57a59592f878', 'OTURUM ÖZETİ (Toplam N = %d deneme)%n'), stats.n)
+        sb << String.format(Locale.US, workshopText('script.eaaaa36fc200', '  • Ortalama mutlak hata (MAE): %.2f puan%n'), stats.mae)
+        sb << String.format(Locale.US, workshopText('script.b3ec98d4aec8', '  • Bland–Altman ortalama fark: %+.2f puan%n'), stats.bias)
         if (stats.n > 1) {
-            sb << String.format(Locale.US, "  • Bland–Altman ±1.96 SD LoA : [%+.2f , %+.2f] puan%n", stats.loaLow, stats.loaHigh)
+            sb << String.format(Locale.US, workshopText('script.86299267606d', '  • Bland–Altman ±1.96 SD LoA : [%+.2f , %+.2f] puan%n'), stats.loaLow, stats.loaHigh)
         }
-        sb << "  • Kayıt dosyası             : " + stats.path + "\n\n"
-        sb << "⚠️ Yalnızca araştırma ve eğitim amaçlı kalibrasyon çıktısıdır; klinik tanı kararı üretmez."
+        sb << workshopText('script.95ec43931b8d', '  • Kayıt dosyası             : ') + stats.path + "\n\n"
+        sb << workshopText('script.b2443a6ac989', '⚠️ Yalnızca araştırma ve eğitim amaçlı kalibrasyon çıktısıdır; klinik tanı kararı üretmez.')
 
         resultArea.setText(sb.toString())
     })

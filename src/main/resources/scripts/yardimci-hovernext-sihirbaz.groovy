@@ -68,8 +68,8 @@ def isHeadless = gui == null
 long PYTHON_TIMEOUT_SECONDS = 3600L
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
 def SUMMARY_NAME = 'HoVer-NeXt çekirdek sınıfları özeti'
-def MODE_ADD     = 'Önceki HoVer-NeXt sonucuna dokunma — yeni özet olarak ekle (varsayılan)'
-def MODE_REPLACE = 'Önceki HoVer-NeXt sonucunu değiştir (bu bölgedeki HoVer-NeXt nesneleri silinir)'
+def MODE_ADD     = workshopText('script.ce8dfda77310', 'Önceki HoVer-NeXt sonucuna dokunma — yeni özet olarak ekle (varsayılan)')
+def MODE_REPLACE = workshopText('script.c3bf293dae57', 'Önceki HoVer-NeXt sonucunu değiştir (bu bölgedeki HoVer-NeXt nesneleri silinir)')
 def ENV_ID       = 'hovernext'
 def RUNNER_REL   = 'python/hovernext/hovernext_runner.py'
 def CLASS_SUFFIX = ' (HoVer-NeXt)'
@@ -87,13 +87,11 @@ def CLASSES = [
     [key:'mitosis',                tr:'Mitoz',              rgb:[255, 0, 255]],
 ]
 def MODELS = [
-    [id:'lizard_convnextv2_large', label:'Large — ConvNeXtV2-L (~745 MB; en yüksek doğruluk)'],
+    [id:'lizard_convnextv2_large', label:workshopText('script.4087c7cae915', 'Large — ConvNeXtV2-L (~745 MB; en yüksek doğruluk)')],
     [id:'lizard_convnextv2_base',  label:'Base — ConvNeXtV2-B (~346 MB)'],
-    [id:'lizard_convnextv2_tiny',  label:'Tiny — ConvNeXtV2-T (~128 MB; en hızlı)'],
+    [id:'lizard_convnextv2_tiny',  label:workshopText('script.a301cf0bc819', 'Tiny — ConvNeXtV2-T (~128 MB; en hızlı)')],
 ]
-def CAVEAT = 'Lizard modeli KOLOREKTAL H&E ile eğitildi; diğer dokulara genelleme doğrulanmadı. ' +
-             'Mitoz sınıfı pHH3 destekli etiketlerle eğitildi ama yayımlanmış mitoza-özel başarım metriği YOK — ' +
-             'mitoz sayımı için Modüller → Mitoz tespiti dedektörlerini esas alın.'
+def CAVEAT = workshopText('script.4e3549eafe20', 'Lizard modeli KOLOREKTAL H&E ile eğitildi; diğer dokulara genelleme doğrulanmadı. Mitoz sınıfı pHH3 destekli etiketlerle eğitildi ama yayımlanmış mitoza-özel başarım metriği YOK — mitoz sayımı için Modüller → Mitoz tespiti dedektörlerini esas alın.')
 def classByKey = [:]
 CLASSES.each { classByKey[it.key] = it }
 def ourClassNames = CLASSES.collect { it.tr + CLASS_SUFFIX } as Set
@@ -203,9 +201,9 @@ def loadConfig = { ->
 def configMissing = { cfg ->
     def miss = []
     if (!cfg.python?.trim() || !(new File(cfg.python)).isFile())
-        miss << 'Python yürütülebilir (hovernext venv)'
+        miss << workshopText('script.4659713f3bbf', 'Python yürütülebilir (hovernext venv)')
     if (!cfg.runner?.trim() || !(new File(cfg.runner)).isFile())
-        miss << 'Köprü betiği (hovernext_runner.py)'
+        miss << workshopText('script.fcff208c23c8', 'Köprü betiği (hovernext_runner.py)')
     return miss
 }
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
@@ -252,24 +250,24 @@ def calibrationInfo = { imageData ->
     String warn = null
     double mpp = (cal != null) ? (cal.pw + cal.ph) / 2.0d : Double.NaN
     if (cal == null) {
-        block = 'Piksel boyutu tanımlı DEĞİL. HoVer-NeXt 0.5 µm/px için eğitildi; kalibrasyonsuz görüntüde sessizce yanlış ölçekte çalışır. Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu) ile piksel boyutunu girin.'
+        block = workshopText('script.cc7ca4a30d48', 'Piksel boyutu tanımlı DEĞİL. HoVer-NeXt 0.5 µm/px için eğitildi; kalibrasyonsuz görüntüde sessizce yanlış ölçekte çalışır. Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu) ile piksel boyutunu girin.')
     } else if (!(mpp > 0.0d)) {
-        block = 'Piksel boyutu geçersiz (≤ 0).'
+        block = workshopText('script.a4238c285b1b', 'Piksel boyutu geçersiz (≤ 0).')
     } else if (Math.abs(mpp - 1.0d) < 1e-6) {
-        block = 'Piksel boyutu tam 1.000 µm/px — bu genelde QuPath\'in KALİBRESİZ varsayılanıdır. Tarayıcının gerçek değerini girin (tipik: 0.25 @40x, 0.50 @20x).'
+        block = workshopText('script.2a18b7c77c6a', 'Piksel boyutu tam 1.000 µm/px — bu genelde QuPath\'in KALİBRESİZ varsayılanıdır. Tarayıcının gerçek değerini girin (tipik: 0.25 @40x, 0.50 @20x).')
     } else if (Math.max(mpp, MODEL_MPP) > MODEL_MPP * (1.0d + MPP_TOL)) {
-        block = String.format(java.util.Locale.US, 'Lam çözünürlüğü %.3f µm/px — modelin 0.5 µm/px çözünürlüğünden kaba (izin ≤ %.2f µm/px). Daha yüksek büyütmeli tarama gerekir.', mpp, MODEL_MPP * (1.0d + MPP_TOL))
+        block = String.format(java.util.Locale.US, workshopText('script.d3dfa39dd33d', 'Lam çözünürlüğü %.3f µm/px — modelin 0.5 µm/px çözünürlüğünden kaba (izin ≤ %.2f µm/px). Daha yüksek büyütmeli tarama gerekir.'), mpp, MODEL_MPP * (1.0d + MPP_TOL))
     } else if (mpp < 0.10d) {
-        warn = String.format(java.util.Locale.US, 'Piksel boyutu %.3f µm/px H&E WSI için sıra dışı — kalibrasyonu doğrulayın.', mpp)
+        warn = String.format(java.util.Locale.US, workshopText('script.9822803e34ad', 'Piksel boyutu %.3f µm/px H&E WSI için sıra dışı — kalibrasyonu doğrulayın.'), mpp)
     }
     return [cal: cal, mag: mag, mpp: mpp, block: block, warn: warn, scaleOk: (block == null)]
 }
 def resampleNote = { double mpp ->
     if (!Double.isFinite(mpp) || mpp <= 0) return ''
     double ratio = MODEL_MPP / mpp
-    if (Math.abs(ratio - 1.0d) < 0.05d) return 'lam zaten ~0.5 µm/px — yeniden örnekleme yok.'
-    if (ratio > 1.0d) return String.format(java.util.Locale.US, 'ROI ~%.1f× AŞAĞI örneklenerek 0.5 µm/px çözünürlüğe getirilir.', ratio)
-    return 'lam 0.5 µm/px çözünürlükten biraz kaba — native beslenir (izin bandı içinde).'
+    if (Math.abs(ratio - 1.0d) < 0.05d) return workshopText('script.7bcf117f82ba', 'lam zaten ~0.5 µm/px — yeniden örnekleme yok.')
+    if (ratio > 1.0d) return String.format(java.util.Locale.US, workshopText('script.4e028934c29f', 'ROI ~%.1f× AŞAĞI örneklenerek 0.5 µm/px çözünürlüğe getirilir.'), ratio)
+    return workshopText('script.c3c62dfc8a76', 'lam 0.5 µm/px çözünürlükten biraz kaba — native beslenir (izin bandı içinde).')
 }
 
 // Seçili (yoksa tüm) alan anotasyonları — çekirdekleri YALNIZ bunların içinde sayarız.
@@ -303,7 +301,7 @@ def exportRegionImage = { imageData, File workDir, double targetMpp, List region
     int outW = (int) Math.max(1, Math.round(w / downsample))
     int outH = (int) Math.max(1, Math.round(h / downsample))
     if (outW > warnPx || outH > warnPx)
-        appendLine(String.format(java.util.Locale.US, '⚠ Büyük ROI (%d × %d px @ hedef çözünürlük) — bellek/süre yoğun. Daha küçük bir bölge seçmeyi düşünün.', outW, outH))
+        appendLine(String.format(java.util.Locale.US, workshopText('script.1abf77a10718', '⚠ Büyük ROI (%d × %d px @ hedef çözünürlük) — bellek/süre yoğun. Daha küçük bir bölge seçmeyi düşünün.'), outW, outH))
     def request = RegionRequest.createInstance(server.getPath(), downsample, x, y, w, h)
     def img = server.readRegion(request)
     if (img == null) return [ok: false, error: workshopText('script.2e7a6ab0b16e', 'Seçili bölgenin pikselleri okunamadı. Bölgeyi daha küçük çizip yeniden çalıştırın; sürerse görüntü dosyasına erişilebildiğini denetleyin (taşınmış dosya, bağlantısı kopmuş ağ sürücüsü).\n\nTeknik ayrıntı: readRegion null döndü.')]
@@ -314,7 +312,7 @@ def exportRegionImage = { imageData, File workDir, double targetMpp, List region
     if (f.getParentFile() != null) f.getParentFile().mkdirs()
     javax.imageio.ImageIO.write(rgb, 'PNG', f)
     double effMpp = baseMpp * downsample
-    appendLine(String.format(java.util.Locale.US, 'ROI görüntüsü: %s (%d × %d px, downsample %.3f, etkin %.3f µm/px, köken %d,%d)', f.getName(), rgb.getWidth(), rgb.getHeight(), downsample, effMpp, x, y))
+    appendLine(String.format(java.util.Locale.US, workshopText('script.787437c34c23', 'ROI görüntüsü: %s (%d × %d px, downsample %.3f, etkin %.3f µm/px, köken %d,%d)'), f.getName(), rgb.getWidth(), rgb.getHeight(), downsample, effMpp, x, y))
     return [ok: true, file: f, originX: x, originY: y, downsample: downsample, effMpp: effMpp]
 }
 
@@ -356,12 +354,12 @@ def nextSummaryName = { hier, List bounds ->
 // ── GeoJSON içe al: bölge içi çekirdekleri sınıflı TESPİT olarak ekle ──
 def importNuclei = { File geojson, imageData, List regionRois, cal, boolean replacePrev = true ->
     if (geojson == null || !geojson.isFile())
-        return [ok: false, error: 'GeoJSON çıktısı bulunamadı:\n' + (geojson?.getAbsolutePath() ?: '(yol yok)')]
+        return [ok: false, error: workshopText('script.8798754ae006', 'GeoJSON çıktısı bulunamadı:\n') + (geojson?.getAbsolutePath() ?: workshopText('script.7732453089e4', '(yol yok)'))]
     def root
     try { root = JsonParser.parseString(geojson.getText('UTF-8')).getAsJsonObject() }
     catch (Throwable t) { return [ok: false, error: String.format(java.util.Locale.US, workshopText('script.1a93ae5e5aa7', 'GeoJSON çıktısı ayrıştırılamadı. HoVer-NeXt adımı çıktı dosyasını eksiksiz yazmamış olabilir: çalışma günlüğünü ve çıktı klasörünü denetleyin, sonra sihirbazda çalıştırmayı yeniden yapın.\n\nTeknik ayrıntı: %s'), (t.getMessage() ?: t.getClass().getSimpleName()))] }
     def feats = root.has('features') ? root.getAsJsonArray('features') : null
-    if (feats == null) return [ok: false, error: 'GeoJSON "features" içermiyor.']
+    if (feats == null) return [ok: false, error: workshopText('script.9481e4c52092', 'GeoJSON "features" içermiyor.')]
     def bounds = regionBounds(regionRois)
     def plane = ImagePlane.getDefaultPlane()
     def pcs = [:]
@@ -466,28 +464,28 @@ def writeCounts = { imageData, List targets, List nuclei, cal, boolean writeTarg
 // ── Sonuç metni ─────────────────────────────────────────────────────────────
 def resultText = { imageData, cfg, imp, dens, cal ->
     def sb = new StringBuilder()
-    sb << "HoVer-NeXt (Lizard) — BÖLGEDE ÇEKİRDEK SINIFLARI\n"
+    sb << workshopText('script.814673506a8e', 'HoVer-NeXt (Lizard) — BÖLGEDE ÇEKİRDEK SINIFLARI\n')
     sb << "═══════════════════════════════════════════════\n\n"
-    sb << "Lam   : " << imageNameOf(imageData) << "\n"
+    sb << workshopText('script.a0858f037ccf', 'Lam   : ') << imageNameOf(imageData) << "\n"
     sb << "Model   : " << modelLabelOf(cfg.model) << "\n"
     int tot = (imp?.inside ?: 0) as int
-    sb << String.format(java.util.Locale.US, "Çekirdek: BÖLGE İÇİ %,d%n", tot)
+    sb << String.format(java.util.Locale.US, workshopText('script.42a9060a091f', 'Çekirdek: BÖLGE İÇİ %,d%n'), tot)
     double a = (dens != null && dens.areaMm2 != null) ? (dens.areaMm2 as double) : Double.NaN
     boolean haveArea = cal != null && Double.isFinite(a) && a > 0
-    if (haveArea) sb << String.format(java.util.Locale.US, "Ölçülen alan : %.3f mm²%n", a)
-    sb << "\n" << String.format(java.util.Locale.US, "%-22s %8s %8s %12s%n", 'Sınıf', 'n', '%', 'çekirdek/mm²')
+    if (haveArea) sb << String.format(java.util.Locale.US, workshopText('script.819c6f195412', 'Ölçülen alan : %.3f mm²%n'), a)
+    sb << "\n" << String.format(java.util.Locale.US, "%-22s %8s %8s %12s%n", workshopText('script.75c4ae45637f', 'Sınıf'), 'n', '%', workshopText('script.f996addcb4e4', 'çekirdek/mm²'))
     CLASSES.each { c ->
         int n = imp.nuclei.count { it[2] == c.key } as int
         String pct = tot > 0 ? String.format(java.util.Locale.US, '%.1f', 100.0d * n / tot) : '—'
         String dm = haveArea ? String.format(java.util.Locale.US, '%.1f', n / a) : '—'
         sb << String.format(java.util.Locale.US, "%-22s %8d %8s %12s%n", c.tr, n, pct, dm)
     }
-    if (tot == 0) sb << "\n⚠ Bölgede çekirdek bulunamadı — bölgenin doku içerdiğini ve kalibrasyonu doğrulayın.\n"
-    sb << "\n⚠ SINIRLAMA: " << CAVEAT << "\n"
-    sb << "\nÇekirdekler '<Sınıf> (HoVer-NeXt)' sınıflı poligon TESPİTLERİ olarak eklendi; seçili anotasyonlara\n"
-    sb << "sınıf başına sayım + % + yoğunluk yazıldı; kilitli özet: '" << SUMMARY_NAME << "'.\n"
-    sb << "Sınıflar modelin tahminidir; görsel doğrulayın. Klinik kategori/yorum üretilmez.\n"
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    if (tot == 0) sb << workshopText('script.a09242cc0af7', '\n⚠ Bölgede çekirdek bulunamadı — bölgenin doku içerdiğini ve kalibrasyonu doğrulayın.\n')
+    sb << workshopText('script.b0fc1bf2a336', '\n⚠ SINIRLAMA: ') << CAVEAT << "\n"
+    sb << workshopText('script.ca44d27951ba', '\nÇekirdekler \'<Sınıf> (HoVer-NeXt)\' sınıflı poligon TESPİTLERİ olarak eklendi; seçili anotasyonlara\n')
+    sb << workshopText('script.c3485f9cf5b4', 'sınıf başına sayım + % + yoğunluk yazıldı; kilitli özet: \'') << SUMMARY_NAME << "'.\n"
+    sb << workshopText('script.848cf6eb4113', 'Sınıflar modelin tahminidir; görsel doğrulayın. Klinik kategori/yorum üretilmez.\n')
+    sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
@@ -602,7 +600,7 @@ def saveLogInteractive = {
     try {
         def suggested = logFileRef.get() ?: new File(System.getProperty('user.home'), 'hovernext_run.log')
         def f = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, workshopText('script.ae2303e91c93', 'Çalışma günlüğünü kaydet'), suggested,
-            new javafx.stage.FileChooser.ExtensionFilter('Günlük (*.log, *.txt)', '*.log', '*.txt'))
+            new javafx.stage.FileChooser.ExtensionFilter(workshopText('script.c0f44ce4fc46', 'Günlük (*.log, *.txt)'), '*.log', '*.txt'))
         if (f != null) { f.setText(txt, 'UTF-8'); Dialogs.showInfoNotification(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.cbe9b591564d', 'Kaydedildi: ') + f.getAbsolutePath()) }
     } catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.a0f73789f289', 'Kaydedilemedi: ') + (t.getMessage() ?: t.getClass().getSimpleName())) }
 }
@@ -635,7 +633,7 @@ def runPython = { List cmd, Closure onLine ->
     applyCacheEnv(pb)
     def proc
     try { proc = pb.start() }
-    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.f0e1e3289660', 'Python başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     processRef.set(proc)
     def last = new java.util.ArrayDeque()
     try {
@@ -650,9 +648,9 @@ def runPython = { List cmd, Closure onLine ->
     } catch (Throwable ignore) {}
     boolean finished
     try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-    if (!finished) { killTree(proc); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
-    if (cancelledRef.get()) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    catch (InterruptedException ie) { killTree(proc); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
+    if (!finished) { killTree(proc); return [ok: false, exitCode: -2, error: String.format(java.util.Locale.US, workshopText('script.959c500322fd', 'Zaman aşımı (%s sn)'), PYTHON_TIMEOUT_SECONDS)] }
+    if (cancelledRef.get()) { killTree(proc); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
     int code = proc.exitValue()
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
@@ -662,11 +660,11 @@ def startSelftest = {
     persistFields()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
-    if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!miss.isEmpty()) { errorTextRef.set(workshopText('script.59d7792abf1b', 'Önce yapılandırmayı tamamlayın:\n  • ') + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Bağımlılık kontrolü'); step.set('CHECK_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.8369fe631575', 'Bağımlılık kontrolü')); step.set('CHECK_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def r = runPython([cfg.python, cfg.runner, 'selftest'], appendLine)
@@ -680,11 +678,11 @@ def startModelDownload = {
     persistFields()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
-    if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!miss.isEmpty()) { errorTextRef.set(workshopText('script.59d7792abf1b', 'Önce yapılandırmayı tamamlayın:\n  • ') + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Model indiriliyor (yerel)…'); step.set('DL_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.741afd173b71', 'Model indiriliyor (yerel)…')); step.set('DL_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def r = runPython([cfg.python, cfg.runner, 'download', '--model', cfg.model], appendLine)
@@ -696,12 +694,12 @@ def startModelDownload = {
 // ── Çalıştırma akışı — seçili bölgede HoVer-NeXt ──────────────────────────────
 def startRun = {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.da80fab350d1', 'Görüntü açık değil.')); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
     def targets = regionAnnotationsOf(imageData)
-    if (targets.isEmpty()) { errorTextRef.set('Bölge yok.\nÖnce bir alan anotasyonu çizin/seçin.'); step.set('ERROR'); render(); return }
+    if (targets.isEmpty()) { errorTextRef.set(workshopText('script.adcdc59914b9', 'Bölge yok.\nÖnce bir alan anotasyonu çizin/seçin.')); step.set('ERROR'); render(); return }
     def ci = calibrationInfo(imageData)
-    if (!ci.scaleOk) { errorTextRef.set('Ölçek uygun değil — çalıştırılmadı:\n' + ci.block); step.set('ERROR'); render(); return }
+    if (!ci.scaleOk) { errorTextRef.set(workshopText('script.e998d46d2e4a', 'Ölçek uygun değil — çalıştırılmadı:\n') + ci.block); step.set('ERROR'); render(); return }
     def cal = ci.cal
     def regionRois = targets.collect { it.getROI() }
     def boundsNow = regionBounds(regionRois)
@@ -712,9 +710,7 @@ def startRun = {
     boolean replacePrev = false
     if (hadPrev && !isHeadless) {
         def msg = String.format(java.util.Locale.US,
-            'Seçili bölgede zaten %,d HoVer-NeXt özeti ve HoVer-NeXt sınıflı %,d tespit var.\n\n' +
-            '"Ekle" seçilirse önceki tespitler korunur ve sonuç "%s (2)" gibi yeni bir özet olarak eklenir.\n' +
-            '"Değiştir" seçilirse yalnız bu bölgedeki HoVer-NeXt tespitleri ve özetleri yeni sonuçlarla değiştirilir (diğer bölgelere dokunulmaz).',
+            workshopText('script.96b9cd055550', 'Seçili bölgede zaten %,d HoVer-NeXt özeti ve HoVer-NeXt sınıflı %,d tespit var.\n\n"Ekle" seçilirse önceki tespitler korunur ve sonuç "%s (2)" gibi yeni bir özet olarak eklenir.\n"Değiştir" seçilirse yalnız bu bölgedeki HoVer-NeXt tespitleri ve özetleri yeni sonuçlarla değiştirilir (diğer bölgelere dokunulmaz).'),
             nPrevSummaries, nPrevDets, SUMMARY_NAME)
         def pick = Dialogs.showChoiceDialog(workshopText('script.ed9f501e4958', 'Önceki HoVer-NeXt sonucu'), msg, [MODE_ADD, MODE_REPLACE], MODE_ADD)
         if (pick == null) return
@@ -733,21 +729,21 @@ def startRun = {
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Hazırlanıyor…'); step.set('RUN_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.074e464dc790', 'Hazırlanıyor…')); step.set('RUN_RUNNING'); render()
 
     def worker = new Thread({
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def setPhase   = { String ph -> javafx.application.Platform.runLater { runPhaseRef.set(ph); render() } }
         try {
-            appendLine('Model: HoVer-NeXt ' + cfg.model + '  ·  cihaz: CUDA (zorunlu)  ·  hedef çözünürlük: 0.500 µm/px')
-            appendLine('Kapsam: seçili bölge (' + targets.size() + ' anotasyon)')
-            appendLine(String.format(java.util.Locale.US, 'Kalibrasyon: %.4f × %.4f µm/px%s  →  %s', cal.pw, cal.ph,
+            appendLine('Model: HoVer-NeXt ' + cfg.model + workshopText('script.140ace2f9ae7', '  ·  cihaz: CUDA (zorunlu)  ·  hedef çözünürlük: 0.500 µm/px'))
+            appendLine(workshopText('script.46a89cb68c5a', 'Kapsam: seçili bölge (') + targets.size() + workshopText('script.0d8ff1115871', ' anotasyon)'))
+            appendLine(String.format(java.util.Locale.US, workshopText('script.40bd5661ecb0', 'Kalibrasyon: %.4f × %.4f µm/px%s  →  %s'), cal.pw, cal.ph,
                 (Double.isFinite(ci.mag) && ci.mag > 0 ? String.format(java.util.Locale.US, ' (~%.0fx)', ci.mag) : ''), resampleNote(ci.mpp)))
-            if (ci.warn != null) appendLine('⚠ Kalibrasyon: ' + ci.warn)
-            setPhase('ROI görüntüsü dışa aktarılıyor (1/3)…')
+            if (ci.warn != null) appendLine(workshopText('script.b3316a28e086', '⚠ Kalibrasyon: ') + ci.warn)
+            setPhase(workshopText('script.f3549e6db047', 'ROI görüntüsü dışa aktarılıyor (1/3)…'))
             def exp = exportRegionImage(imageData, workDir, MODEL_MPP, regionRois, cal, ROI_WARN_PX, appendLine)
             if (!exp.ok) { javafx.application.Platform.runLater { errorTextRef.set(exp.error); step.set('ERROR'); render() }; return }
-            if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
+            if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.fee85e45842b', 'İptal edildi.')); step.set('ERROR'); render() }; return }
             def cmd = [cfg.python, cfg.runner, 'detect',
                        '--roi', exp.file.getAbsolutePath(),
                        '--out', outGeo.getAbsolutePath(),
@@ -758,23 +754,23 @@ def startRun = {
                        '--batch-size', String.valueOf(parseIntOr(cfg.batchSize, 16)),
                        '--tta', String.valueOf(parseIntOr(cfg.tta, 4)),
                        '--device', 'cuda', '--work', workDir.getAbsolutePath()]
-            setPhase('HoVer-NeXt çıkarımı + son-işleme çalışıyor (2/3)…')
+            setPhase(workshopText('script.6092dbfa62f2', 'HoVer-NeXt çıkarımı + son-işleme çalışıyor (2/3)…'))
             def r = runPython(cmd, appendLine)
-            appendLine('# Çıkış kodu: ' + r.exitCode)
+            appendLine(workshopText('script.3510e56b50f2', '# Çıkış kodu: ') + r.exitCode)
             def savedLog = autoSaveLog(workDir, base)
-            if (savedLog != null) appendLine('# Günlük kaydedildi: ' + savedLog.getAbsolutePath())
-            if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set('HoVer-NeXt başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '') + (savedLog != null ? ('\n\nÇalışma günlüğü: ' + savedLog.getAbsolutePath()) : '')); step.set('ERROR'); render() }; return }
+            if (savedLog != null) appendLine(workshopText('script.f93ecddd706d', '# Günlük kaydedildi: ') + savedLog.getAbsolutePath())
+            if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.6c5d6cfbc850', 'HoVer-NeXt başarısız (çıkış: ') + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '') + (savedLog != null ? (workshopText('script.98abd255a614', '\n\nÇalışma günlüğü: ') + savedLog.getAbsolutePath()) : '')); step.set('ERROR'); render() }; return }
             def geo = outGeo
             try { def m = (r.lastLines ?: '') =~ /RESULT geojson=(.+)/; if (m.find()) { def gp = new File(m.group(1).trim()); if (gp.isFile()) geo = gp } } catch (Throwable ignore) {}
 
             // Uzun çıkarımdan SONRA QP.getCurrentImageData()'yı YENİDEN ALMA (TOCTOU);
             // çalıştırmayı başlatan captured `imageData`ya yaz.
-            javafx.application.Platform.runLater { busyLabelRef.set('Çekirdekler içe aktarılıyor (3/3)…'); step.set('BUSY'); render() }
+            javafx.application.Platform.runLater { busyLabelRef.set(workshopText('script.9bff09825fea', 'Çekirdekler içe aktarılıyor (3/3)…')); step.set('BUSY'); render() }
             if (cancelledRef.get()) { javafx.application.Platform.runLater { step.set('READY'); render() }; return }
             def summaryName = runReplacePrev ? SUMMARY_NAME : nextSummaryName(imageData.getHierarchy(), regionBounds(regionRois))
             def imp = importNuclei(geo, imageData, regionRois, cal, runReplacePrev)
             if (!imp.ok) { javafx.application.Platform.runLater { errorTextRef.set(imp.error); step.set('ERROR'); render() }; return }
-            if (imp.unknown > 0) appendLine('⚠ Tanınmayan sınıflı ' + imp.unknown + ' özellik atlandı.')
+            if (imp.unknown > 0) appendLine(workshopText('script.a3a25099a9e6', '⚠ Tanınmayan sınıflı ') + imp.unknown + workshopText('script.cb68741460da', ' özellik atlandı.'))
             def dens = writeCounts(imageData, targets, imp.nuclei, cal, runWriteTargets, summaryName)
             mitosisCoordsRef.set(new ArrayList(imp.nuclei.findAll { it[2] == 'mitosis' }.collect { [it[0], it[1]] }))
             navIdxRef.set(-1)
@@ -783,7 +779,7 @@ def startRun = {
                 resultTextRef.set(resultText(imageData, cfg, imp, dens, cal)); step.set('RESULT'); render()
             }
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { errorTextRef.set('Beklenmeyen hata:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.6af403a9fc32', 'Beklenmeyen hata:\n') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
         }
     }, 'AtolyeHoverNext-Run')
     worker.setDaemon(true); worker.start()
@@ -953,19 +949,19 @@ render = { ->
             boolean localReady = codeReady() && weightsReady(cfg.model)
             title.setText(workshopText('script.1634793498a8', 'HoVer-NeXt — çekirdek segmentasyonu + 7 sınıf (bölgede)'))
             def sb = new StringBuilder()
-            sb << "Lam            : " << imageNameOf(imageData) << "\n"
+            sb << workshopText('script.a7b2c7d1451e', 'Lam            : ') << imageNameOf(imageData) << "\n"
             sb << "Model            : " << modelLabelOf(cfg.model) << "\n"
-            sb << "Python           : " << (cfg.python ?: '(ayarsız)') << "\n"
-            sb << "Cihaz            : CUDA GPU (zorunlu)\n"
+            sb << "Python           : " << (cfg.python ?: workshopText('script.a2bfafb27517', '(ayarsız)')) << "\n"
+            sb << workshopText('script.ddc45d7b498d', 'Cihaz            : CUDA GPU (zorunlu)\n')
             sb << "Batch / TTA      : " << (cfg.batchSize ?: '16') << " / " << (cfg.tta ?: '4') << "\n"
-            sb << "Yerel kod+ağırlık: " << (localReady ? 'VAR' : 'eksik — Yapılandır → "Modeli yerel indir"') << "\n"
-            sb << String.format(java.util.Locale.US, "Seçili bölge     : %,d alan anotasyonu%n", targets.size())
+            sb << workshopText('script.427942ef380f', 'Yerel kod+ağırlık: ') << (localReady ? workshopText('script.b0398cdfc1c0', 'VAR') : workshopText('script.c165f9ffbeee', 'eksik — Yapılandır → "Modeli yerel indir"')) << "\n"
+            sb << String.format(java.util.Locale.US, workshopText('script.92b1efd71cde', 'Seçili bölge     : %,d alan anotasyonu%n'), targets.size())
             if (ci.cal != null) {
-                sb << String.format(java.util.Locale.US, "Piksel boyutu    : %.4f × %.4f µm/px%s%n", ci.cal.pw, ci.cal.ph,
+                sb << String.format(java.util.Locale.US, workshopText('script.71e84224066c', 'Piksel boyutu    : %.4f × %.4f µm/px%s%n'), ci.cal.pw, ci.cal.ph,
                     (Double.isFinite(ci.mag) && ci.mag > 0 ? String.format(java.util.Locale.US, '   (~%.0f×)', ci.mag) : ''))
-                sb << "Yeniden örnek.   : " << resampleNote(ci.mpp) << "\n"
+                sb << workshopText('script.6f459d7a4334', 'Yeniden örnek.   : ') << resampleNote(ci.mpp) << "\n"
             } else {
-                sb << "Piksel boyutu    : KALİBRE DEĞİL — çalıştırılamaz\n"
+                sb << workshopText('script.a3052398fb78', 'Piksel boyutu    : KALİBRE DEĞİL — çalıştırılamaz\n')
             }
             addMonoArea(sb.toString())
             addGuidance(workshopText('script.515a8dbc96e1', 'HoVer-NeXt YALNIZ seçili/çizili alan anotasyon(lar)ı içinde çalışır. Sonuç: her çekirdek için "<Sınıf> (HoVer-NeXt)" sınıflı renkli poligon TESPİTİ + her anotasyona sınıf başına sayım, % ve yoğunluk (çekirdek/mm²).'))

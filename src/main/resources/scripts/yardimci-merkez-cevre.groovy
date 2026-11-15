@@ -209,9 +209,9 @@ def targets = QP.getSelectedObjects().findAll {
     it.isAnnotation() && it.getROI()?.isArea() && !REGION_CLASSES.contains(it.getPathClass()?.toString())
 }
 if (targets.isEmpty()) {
-    def msg = "Kaynak alan seçili değil.\n\n" +
-              "Merkez/çevreye bölünecek alanı (tümör yuvası, hidrojel, lezyon vb.)\n" +
-              "ALAN anotasyonu olarak çizin ve SEÇİN, sonra betiği tekrar çalıştırın."
+    def msg = workshopText('script.201ac1a763e2', 'Kaynak alan seçili değil.\n\n') +
+              workshopText('script.d61ca07415a4', 'Merkez/çevreye bölünecek alanı (tümör yuvası, hidrojel, lezyon vb.)\n') +
+              workshopText('script.37aff5b8a2d8', 'ALAN anotasyonu olarak çizin ve SEÇİN, sonra betiği tekrar çalıştırın.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.22e7e0edca91', "Alan seçili değil"), msg)
     return
 }
@@ -362,8 +362,8 @@ targets.eachWithIndex { t, si ->
 }
 
 if (created.isEmpty()) {
-    def msg = "Eşit-alan bölge üretilemedi (seçili alanların geometrisi bölme için uygun değil).\n" +
-              "Bölge sayısını azaltmayı ya da daha kompakt/geniş bir alan seçmeyi deneyin."
+    def msg = workshopText('script.6ae9a357f094', 'Eşit-alan bölge üretilemedi (seçili alanların geometrisi bölme için uygun değil).\n') +
+              workshopText('script.06cc1d412311', 'Bölge sayısını azaltmayı ya da daha kompakt/geniş bir alan seçmeyi deneyin.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.62605099298f', "Bölge yok"), msg)
     return
 }
@@ -382,12 +382,12 @@ QP.fireHierarchyUpdate()
 
 // ── 6) Sonucu sun ───────────────────────────────────────────────────
 def body = new StringBuilder()
-body << "EŞİT-ALAN MERKEZ / ÇEVRE\n"
+body << workshopText('script.6aee7c38e8ac', 'EŞİT-ALAN MERKEZ / ÇEVRE\n')
 body << "════════════════════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Kaynak alan sayısı : %,d  (atlanan: %,d)%n", targets.size() - skippedSrc, skippedSrc)
-body << String.format(java.util.Locale.US, "Bölge / kaynak     : %d%n", numRegions)
-body << String.format(java.util.Locale.US, "Üretilen bölge     : %,d%n", created.size())
-body << (countDets ? "Tespit sayımı      : açık\n" : "Tespit sayımı      : kapalı (tespit yok veya >${String.format(java.util.Locale.US, "%,d", DET_CAP)})\n")
+body << String.format(java.util.Locale.US, workshopText('script.b11a2462bf0b', 'Kaynak alan sayısı : %,d  (atlanan: %,d)%n'), targets.size() - skippedSrc, skippedSrc)
+body << String.format(java.util.Locale.US, workshopText('script.8e82a299b629', 'Bölge / kaynak     : %d%n'), numRegions)
+body << String.format(java.util.Locale.US, workshopText('script.3eedc991e4df', 'Üretilen bölge     : %,d%n'), created.size())
+body << (countDets ? workshopText('script.3b43f05397c6', 'Tespit sayımı      : açık\n') : String.format(java.util.Locale.US, workshopText('script.6aeb5c63db5c', 'Tespit sayımı      : kapalı (tespit yok veya >%s)\n'), String.format(java.util.Locale.US, "%,d", DET_CAP)))
 if (runIdx > 1)
     body << String.format(java.util.Locale.US, workshopText('script.6d16aa739502', 'Bölge seti         : %d  (önceki set duruyor)'), runIdx) << "\n"
 if (writeMode == MODE_ADD && !prevNames.isEmpty()) {
@@ -402,7 +402,7 @@ bySrc.each { src, rs ->
     body << "▸ ${src.length() > 40 ? src.substring(0, 39) + "…" : src}\n"
     rs.each { r ->
         if (r.det >= 0)
-            body << String.format(java.util.Locale.US, "    %-10s %,12.0f µm²  %5.1f%%   %,d tespit%n", r.label, r.area as double, r.pct as double, r.det as int)
+            body << String.format(java.util.Locale.US, workshopText('script.c1c752173439', '    %-10s %,12.0f µm²  %5.1f%%   %,d tespit%n'), r.label, r.area as double, r.pct as double, r.det as int)
         else
             body << String.format(java.util.Locale.US, "    %-10s %,12.0f µm²  %5.1f%%%n", r.label, r.area as double, r.pct as double)
     }
@@ -410,21 +410,21 @@ bySrc.each { src, rs ->
 if (!srcAccuracy.isEmpty()) {
     double worst = srcAccuracy.collect { it.diff as double }.max() as double
     body << "──────────────────────────────────────────────\n"
-    body << String.format(java.util.Locale.US, "Eşit-alan doğruluğu: bölgeler-arası maks. fark %.2f%%%n", worst)
-    body << "(DANEELpath makalesinde 48 WSI'de bu fark <%0,4)\n"
+    body << String.format(java.util.Locale.US, workshopText('script.8d2d409ddfd2', 'Eşit-alan doğruluğu: bölgeler-arası maks. fark %.2f%%%n'), worst)
+    body << workshopText('script.76e47b42940d', '(DANEELpath makalesinde 48 WSI\'de bu fark <%0,4)\n')
 }
 body << "\n"
-body << "Bölgeler '${CLS_CENTER}' / '${CLS_PERIPH}'"
-body << (numRegions > 2 ? " / '${CLS_MIDDLE}'" : "") << " sınıflarıyla eklendi.\n"
-body << "İçlerinde hücre tespiti / piksel sınıflandırıcı çalıştırabilir,\n"
-body << "merkez↔çevre farkını (ör. TIL/immün gradyan) karşılaştırabilirsiniz.\n\n"
-body << "Yöntem: içe-buffer(−d) + ikili arama ile eşit alanlı sınırı (JTS).\n"
-body << "Esin: DANEELpath (Vieco-Martí 2026, Sci Rep; doi:10.1038/s41598-026-37134-5) —\n"
-body << "makalede tarif edilen algoritmanın temiz-oda yeniden yazımı (GPL koddan aktarım yok).\n"
-body << "Bu bir GEOMETRİ/ölçüm üretimidir — klinik skor, eşik veya yorum DEĞİL.\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı geometri/ölçüm üretir."
+body << String.format(java.util.Locale.US, workshopText('script.0e2dba2da950', 'Bölgeler \'%s\' / \'%s\''), CLS_CENTER, CLS_PERIPH)
+body << (numRegions > 2 ? " / '${CLS_MIDDLE}'" : "") << workshopText('script.1c8b0beee59e', ' sınıflarıyla eklendi.\n')
+body << workshopText('script.4603d1491ba1', 'İçlerinde hücre tespiti / piksel sınıflandırıcı çalıştırabilir,\n')
+body << workshopText('script.c4d024aa3ffa', 'merkez↔çevre farkını (ör. TIL/immün gradyan) karşılaştırabilirsiniz.\n\n')
+body << workshopText('script.c5ba0c047d2e', 'Yöntem: içe-buffer(−d) + ikili arama ile eşit alanlı sınırı (JTS).\n')
+body << workshopText('script.078b977cbd70', 'Esin: DANEELpath (Vieco-Martí 2026, Sci Rep; doi:10.1038/s41598-026-37134-5) —\n')
+body << workshopText('script.489d9e9793d1', 'makalede tarif edilen algoritmanın temiz-oda yeniden yazımı (GPL koddan aktarım yok).\n')
+body << workshopText('script.77cbe8b99948', 'Bu bir GEOMETRİ/ölçüm üretimidir — klinik skor, eşik veya yorum DEĞİL.\n\n')
+body << workshopText('script.e061d3eb2a32', '⚠️ Yalnızca araştırma/eğitim amaçlı geometri/ölçüm üretir.')
 
-showResultWindow("Eşit-alan merkez/çevre", body.toString())
+showResultWindow(workshopText('script.827e93b4fcce', 'Eşit-alan merkez/çevre'), body.toString())
 println String.format(java.util.Locale.US,
     "✓ %,d eşit alanlı bölge üretildi (%d bölge/kaynak, %,d kaynak).",
     created.size(), numRegions, targets.size() - skippedSrc)

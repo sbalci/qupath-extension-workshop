@@ -251,7 +251,7 @@ if (mode == null) {
     return
 }
 // qupath.fx.dialogs.Dialogs'ta promptForFile YOK (0.6/0.7'de doğrulandı) → FileChoosers kullanılır.
-def geojsonFile = qupath.fx.dialogs.FileChoosers.promptForFile("KongNet mitoz GeoJSON dosyasını seçin",
+def geojsonFile = qupath.fx.dialogs.FileChoosers.promptForFile(workshopText('script.fb8328cd27cc', 'KongNet mitoz GeoJSON dosyasını seçin'),
     qupath.fx.dialogs.FileChoosers.createExtensionFilter("KongNet GeoJSON (*.geojson, *.json)", "*.geojson", "*.json"))
 if (geojsonFile == null) {
     println "İptal edildi — dosya seçilmedi."
@@ -371,33 +371,33 @@ QP.addObjects([summary])
 QP.fireHierarchyUpdate()
 
 def fmt = { double value, String pattern ->
-    Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : 'hesaplanamadı'
+    Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : workshopText('script.77fa6502fb41', 'hesaplanamadı')
 }
 def body = new StringBuilder()
-body << "KONGNET H&E MİTOZ TESPİTİ\n"
+body << workshopText('script.e4ad87a7577d', 'KONGNET H&E MİTOZ TESPİTİ\n')
 body << "═════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Seçili ROI           : %,d%n", targets.size())
-body << String.format(java.util.Locale.US, "GeoJSON noktası      : %,d%n", points.size())
-body << String.format(java.util.Locale.US, "ROI içi mitoz        : %,d%n", totalMitosis)
-body << String.format(java.util.Locale.US, "Birleşik alan        : %.3f mm²%n", totalAreaMm2)
-body << "Mitoz yoğunluğu      : ${fmt(overallDensity, '%.1f mitoz/mm²')}\n"
+body << String.format(java.util.Locale.US, workshopText('script.8ec9aa01b7d3', 'Seçili ROI           : %,d%n'), targets.size())
+body << String.format(java.util.Locale.US, workshopText('script.22a76051b61f', 'GeoJSON noktası      : %,d%n'), points.size())
+body << String.format(java.util.Locale.US, workshopText('script.80b6116b8369', 'ROI içi mitoz        : %,d%n'), totalMitosis)
+body << String.format(java.util.Locale.US, workshopText('script.a3a204900acb', 'Birleşik alan        : %.3f mm²%n'), totalAreaMm2)
+body << String.format(java.util.Locale.US, workshopText('script.782408fb4314', 'Mitoz yoğunluğu      : %s\n'), fmt(overallDensity, workshopText('script.ec62604c2fee', '%.1f mitoz/mm²')))
 if (Double.isFinite(observedPerWhoArea))
-    body << String.format(java.util.Locale.US, "Mitoz / %.0f mm² (gözlenen): %.0f%n", whoAreaMm2, observedPerWhoArea)
+    body << String.format(java.util.Locale.US, workshopText('script.831c565d21ef', 'Mitoz / %.0f mm² (gözlenen): %.0f%n'), whoAreaMm2, observedPerWhoArea)
 else
-    body << String.format(java.util.Locale.US, "Mitoz / %.0f mm²: hesaplanmadı (alan %.3f mm²; tolerans ±%.2f)%n", whoAreaMm2, totalAreaMm2, areaToleranceMm2)
+    body << String.format(java.util.Locale.US, workshopText('script.de61cbe22dd1', 'Mitoz / %.0f mm²: hesaplanmadı (alan %.3f mm²; tolerans ±%.2f)%n'), whoAreaMm2, totalAreaMm2, areaToleranceMm2)
 body << "\n" << String.format(java.util.Locale.US, workshopText('script.9bb2e191ad74', 'Özet adı             : %s'), setName) << "\n"
 if (hadPrev && mode == MODE_ADD) {
     body << "\n" << String.format(java.util.Locale.US, workshopText('script.3b56d23e7de4', 'DİKKAT — bu alanda önceki KongNet sonucu da duruyor (özet: %s; %,d mitoz noktası). Hiçbir şey silinmedi ve seçili anotasyonların ölçümleri değiştirilmedi. Eskisini kaldırmak için o adlı özeti ve KongNet mitoz noktalarını (etiket halkalarıyla) silin ya da yeniden içe aktarırken "Öncekini değiştir"i seçin.'), prevSumNames.isEmpty() ? '-' : prevSumNames.join(', '), prevPts.size()) << "\n"
 } else if (removedPts + removedRings + removedSums > 0) {
     body << "\n" << String.format(java.util.Locale.US, workshopText('script.fd1ddf2819cb', 'Önceki KongNet sonucu değiştirildi: %,d mitoz noktası, %,d etiket halkası ve %,d özet silindi (özetlerin içindeki diğer nesneler korundu).'), removedPts, removedRings, removedSums) << "\n"
 }
-body << "\nBirleşik özet örtüşen ROI alanlarını ve noktaları yalnız bir kez sayar.\n"
-body << "Yalnız seçili birleşik ROI içindeki GeoJSON noktaları QuPath'e eklenir; her noktanın\n"
-body << "çevresinde etiketli bir görüntü halkası var (mitoz ortada açık kalır; veri noktadadır).\n"
-body << "KongNet çıktısı görsel olarak doğrulanmalıdır; klinik kategori veya yorum üretilmez.\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.65defae77eb1', '\nBirleşik özet örtüşen ROI alanlarını ve noktaları yalnız bir kez sayar.\n')
+body << workshopText('script.2201e2d6fc38', 'Yalnız seçili birleşik ROI içindeki GeoJSON noktaları QuPath\'e eklenir; her noktanın\n')
+body << workshopText('script.f9e1ba4b89ca', 'çevresinde etiketli bir görüntü halkası var (mitoz ortada açık kalır; veri noktadadır).\n')
+body << workshopText('script.b434841bc636', 'KongNet çıktısı görsel olarak doğrulanmalıdır; klinik kategori veya yorum üretilmez.\n')
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("KongNet H&E mitoz tespiti", body.toString())
+showResultWindow(workshopText('script.9c7dadd1c7cb', 'KongNet H&E mitoz tespiti'), body.toString())
 println "✓ KongNet mitoz içe aktarımı tamamlandı (${totalMitosis} ROI-içi mitoz)."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

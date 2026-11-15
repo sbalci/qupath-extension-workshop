@@ -120,7 +120,7 @@ if (imageData == null) {
 def selected = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getName() != summaryName }
 def targets = selected
 if (targets.isEmpty()) {
-    def msg = "Ölçülecek anotasyon yok.\n\nÖnce bölgeyi anotasyon olarak çizin (ve seçin)."
+    def msg = workshopText('script.b01d7ce7f65a', 'Ölçülecek anotasyon yok.\n\nÖnce bölgeyi anotasyon olarak çizin (ve seçin).')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.469472ee53f3', "Anotasyon yok"), msg)
     return
 }
@@ -133,12 +133,12 @@ try {
     classifier = null
 }
 if (classifier == null) {
-    def msg = "Eşik sınıflandırıcısı bulunamadı: \"${classifierName}\"\n\n" +
-              "Bir kez oluşturmanız gerekir:\n" +
+    def msg = String.format(java.util.Locale.US, workshopText('script.eb522099263d', 'Eşik sınıflandırıcısı bulunamadı: "%s"\n\n'), classifierName) +
+              workshopText('script.7e76e0e94a55', 'Bir kez oluşturmanız gerekir:\n') +
               "  [Classify → Pixel classification → Create thresholder]\n" +
-              "  • Channel: DAB, eşik-üstü sınıf adı: \"${positiveClass}\"\n" +
+              String.format(java.util.Locale.US, workshopText('script.96e6e78742cf', '  • Channel: DAB, eşik-üstü sınıf adı: "%s"\n'), positiveClass) +
               "  • [Save] → ad: \"${classifierName}\"\n\n" +
-              "Ayrıntı: Alan-bazlı pozitiflik eki."
+              workshopText('script.4f15dfc6222b', 'Ayrıntı: Alan-bazlı pozitiflik eki.')
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.9b963a692abd', "Sınıflandırıcı yok"), msg)
     return
 }
@@ -192,9 +192,9 @@ targets.each { ann ->
 QP.fireHierarchyUpdate()
 
 if (withData == 0) {
-    def msg = "Sınıflandırıcı çalıştı ama beklenen alan ölçümleri bulunamadı.\n\n" +
-              "Eşik sınıflandırıcısının eşik-üstü sınıf adının \"${positiveClass}\" olduğundan\n" +
-              "emin olun (Alan-bazlı Pozitiflik eki). Sınıflandırıcıyı yeniden kaydedip tekrar deneyin."
+    def msg = workshopText('script.270de2c387c6', 'Sınıflandırıcı çalıştı ama beklenen alan ölçümleri bulunamadı.\n\n') +
+              String.format(java.util.Locale.US, workshopText('script.4f725be33621', 'Eşik sınıflandırıcısının eşik-üstü sınıf adının "%s" olduğundan\n'), positiveClass) +
+              workshopText('script.a2ab6619a0b5', 'emin olun (Alan-bazlı Pozitiflik eki). Sınıflandırıcıyı yeniden kaydedip tekrar deneyin.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.e3dc9a444a25', "Ölçüm yok"), msg)
     return
 }
@@ -203,19 +203,19 @@ double overallPct = totalAllArea > 0 ? (100.0 * totalPosArea / totalAllArea) : 0
 
 // ── 5) Sonucu sun ───────────────────────────────────────────────────
 def body = new StringBuilder()
-body << "ALAN-BAZLI POZİTİFLİK (% positivity)\n"
+body << workshopText('script.8161fc9039bd', 'ALAN-BAZLI POZİTİFLİK (% positivity)\n')
 body << "═════════════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Anotasyon (ölçülen)  : %d%n", withData)
-body << String.format(java.util.Locale.US, "Pozitif alan         : %.4f µm²%n", totalPosArea)
-body << String.format(java.util.Locale.US, "Toplam sınıflı alan  : %.4f µm²%n", totalAllArea)
-body << String.format(java.util.Locale.US, "%% pozitif alan       : %.2f %%%n", overallPct)
+body << String.format(java.util.Locale.US, workshopText('script.32b388a2a684', 'Anotasyon (ölçülen)  : %d%n'), withData)
+body << String.format(java.util.Locale.US, workshopText('script.2d90c28ea9e3', 'Pozitif alan         : %.4f µm²%n'), totalPosArea)
+body << String.format(java.util.Locale.US, workshopText('script.35ee81bc2252', 'Toplam sınıflı alan  : %.4f µm²%n'), totalAllArea)
+body << String.format(java.util.Locale.US, workshopText('script.592c1314e95a', '%% pozitif alan       : %.2f %%%n'), overallPct)
 body << "\n"
-body << "Sınıflandırıcı: \"" << classifierName << "\" (eşikleri Alan temelli pozitiflik ekine göre kalibre edin)\n"
-body << "Bu bir ORAN/ALANdır — klinik skor, H-score veya yorum DEĞİL.\n"
+body << workshopText('script.d191f2d163c9', 'Sınıflandırıcı: "') << classifierName << workshopText('script.c68433f46e82', '" (eşikleri Alan temelli pozitiflik ekine göre kalibre edin)\n')
+body << workshopText('script.683e74e5677e', 'Bu bir ORAN/ALANdır — klinik skor, H-score veya yorum DEĞİL.\n')
 body << "(Gonzalez 2025; Finney 2021; Bankhead 2017)\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("Alan temelli pozitiflik", body.toString())
+showResultWindow(workshopText('script.19c0e0429cf2', 'Alan temelli pozitiflik'), body.toString())
 println "✓ % pozitif alan yazıldı (her anotasyon)."
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

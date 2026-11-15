@@ -127,16 +127,16 @@ def showResultWindow = { String windowTitle, String windowBody ->
 // ── 1) Ön kontroller ───────────────────────────────────────────────
 def project = QP.getProject()
 if (project == null) {
-    def msg = "Proje açık değil.\n\n" +
-              "Kırpılmış girdiler bir PROJEYE eklenir. Önce [File → Project... → Create project]\n" +
-              "ile bir proje oluşturun (ya da mevcut projeyi açın), lamı projeden açın."
+    def msg = workshopText('script.a650805dda51', 'Proje açık değil.\n\n') +
+              workshopText('script.e6ea55bd3fcd', 'Kırpılmış girdiler bir PROJEYE eklenir. Önce [File → Project... → Create project]\n') +
+              workshopText('script.f40fc499b150', 'ile bir proje oluşturun (ya da mevcut projeyi açın), lamı projeden açın.')
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.979211f17202', "Proje gerekli"), msg)
     return
 }
 
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    def msg = "Görüntü açık değil. Önce projedeki bir lamı açın ve dikdörtgen anotasyon(lar) çizin."
+    def msg = workshopText('script.4500c9282af2', 'Görüntü açık değil. Önce projedeki bir lamı açın ve dikdörtgen anotasyon(lar) çizin.')
     if (isHeadless) println msg else Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), msg)
     return
 }
@@ -155,10 +155,10 @@ def selRects = hierarchy.getSelectionModel().getSelectedObjects()
         .findAll { it.isAnnotation() && isRect(it) } as List
 
 if (allRects.isEmpty()) {
-    def msg = "Bu lamda dikdörtgen anotasyon yok.\n\n" +
-              "Dikdörtgen aracıyla (R) bir ya da daha çok bölge çizin; girdiye ad vermek için\n" +
-              "anotasyona sağ tık → [Annotations → Set properties] ile ad yazın, sonra bu betiği\n" +
-              "tekrar çalıştırın. (Elips/poligon/fırça şekilleri bu betikte kullanılmaz.)"
+    def msg = workshopText('script.548df2a5ec52', 'Bu lamda dikdörtgen anotasyon yok.\n\n') +
+              workshopText('script.e9d27725dbd9', 'Dikdörtgen aracıyla (R) bir ya da daha çok bölge çizin; girdiye ad vermek için\n') +
+              workshopText('script.6c2bba7309af', 'anotasyona sağ tık → [Annotations → Set properties] ile ad yazın, sonra bu betiği\n') +
+              workshopText('script.6a69e66c5a49', 'tekrar çalıştırın. (Elips/poligon/fırça şekilleri bu betikte kullanılmaz.)')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.6608dc8525a8', "Dikdörtgen yok"), msg)
     return
 }
@@ -220,12 +220,12 @@ def showOptionsForm = { int selCount, int allCount, List<String> classChoices ->
             int r = 0
             grid.add(new javafx.scene.control.Label(workshopText('script.832662034af3', "Kapsam:")), 0, r)
             grid.add(scopeBox, 1, r)
-            grid.add(help("Seçili: yalnız seçtiğiniz dikdörtgen anotasyonlar. Tüm: lamdaki her dikdörtgen anotasyon."), 2, r); r++
+            grid.add(help(workshopText('script.ab0c1d163d9a', 'Seçili: yalnız seçtiğiniz dikdörtgen anotasyonlar. Tüm: lamdaki her dikdörtgen anotasyon.')), 2, r); r++
             grid.add(new javafx.scene.control.Label(workshopText('script.6f482c6086cc', "Sınıf filtresi:")), 0, r)
             grid.add(classBox, 1, r)
-            grid.add(help("Yalnız bu sınıfa atanmış dikdörtgenler kullanılır. Orijinal betik (Zindy, image.sc) 'ROI' sınıfını kullanır."), 2, r); r++
+            grid.add(help(workshopText('script.36db8113ea92', 'Yalnız bu sınıfa atanmış dikdörtgenler kullanılır. Orijinal betik (Zindy, image.sc) \'ROI\' sınıfını kullanır.')), 2, r); r++
             grid.add(copyCheck, 0, r, 2, 1)
-            grid.add(help("Dikdörtgenle örtüşen anotasyonlar kesişim alınarak kopyalanır; sınıf ve ad korunur, ölçümler kopyalanmaz."), 2, r); r++
+            grid.add(help(workshopText('script.53c557b2e778', 'Dikdörtgenle örtüşen anotasyonlar kesişim alınarak kopyalanır; sınıf ve ad korunur, ölçümler kopyalanmaz.')), 2, r); r++
 
             def okBtn = new javafx.scene.control.Button(workshopText('script.b7652a839342', "Girdileri oluştur"))
             okBtn.setDefaultButton(true)
@@ -276,8 +276,8 @@ if (opts.classFilter != null)
     rects = rects.findAll { it.getPathClass()?.toString() == opts.classFilter }
 
 if (rects.isEmpty()) {
-    def msg = "Seçilen kapsam ve sınıf filtresiyle eşleşen dikdörtgen anotasyon yok.\n" +
-              "Kapsamı ya da sınıf filtresini değiştirip yeniden deneyin."
+    def msg = workshopText('script.a10c481d5e83', 'Seçilen kapsam ve sınıf filtresiyle eşleşen dikdörtgen anotasyon yok.\n') +
+              workshopText('script.f8d0953428ce', 'Kapsamı ya da sınıf filtresini değiştirip yeniden deneyin.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.a7585060e74b', "Eşleşen dikdörtgen yok"), msg)
     return
 }
@@ -304,11 +304,11 @@ rects.each { rectAnn ->
     int x1 = Math.min(serverOriginal.getWidth(),  (int) Math.ceil(roi.getBoundsX() + roi.getBoundsWidth()))
     int y1 = Math.min(serverOriginal.getHeight(), (int) Math.ceil(roi.getBoundsY() + roi.getBoundsHeight()))
     if (x1 - x0 < 1 || y1 - y0 < 1) {
-        skipped << [entryName, "dikdörtgen görüntü sınırlarının dışında"]
+        skipped << [entryName, workshopText('script.52d992ec0341', 'dikdörtgen görüntü sınırlarının dışında')]
         return
     }
     if (existingNames.contains(entryName)) {
-        skipped << [entryName, "aynı adlı proje girdisi zaten var"]
+        skipped << [entryName, workshopText('script.b281b46f23a7', 'aynı adlı proje girdisi zaten var')]
         return
     }
 
@@ -320,7 +320,7 @@ rects.each { rectAnn ->
         croppedServer = new CroppedImageServer(serverOriginal, region)
         entry = ProjectCommands.addSingleImageToProject(project, croppedServer, imageType)
         if (entry == null)
-            throw new IllegalStateException("girdi projeye eklenemedi (addSingleImageToProject null döndü)")
+            throw new IllegalStateException(workshopText('script.62eddd3b072f', 'girdi projeye eklenemedi (addSingleImageToProject null döndü)'))
         entry.setImageName(entryName)
         // Ad hemen kaydedilir (saveImageData'dan ÖNCE): aynı ada sahip ikinci bir
         // dikdörtgen, ilki daha sonra başarısız olsa bile bu çalıştırmada yakalanır.
@@ -377,9 +377,9 @@ rects.each { rectAnn ->
         }
         if (rolledBack && nameRecorded)
             existingNames.remove(entryName)
-        skipped << [entryName, "hata: ${t.getMessage()}" +
-            (rolledBack ? " (yarım girdi geri alındı)"
-                        : " (yarım girdi projede kalmış olabilir — Project panelinden silebilirsiniz)")]
+        skipped << [entryName, String.format(java.util.Locale.US, workshopText('script.6c536724a163', 'hata: %s'), t.getMessage()) +
+            (rolledBack ? workshopText('script.675094431328', ' (yarım girdi geri alındı)')
+                        : workshopText('script.437a1560aa21', ' (yarım girdi projede kalmış olabilir — Project panelinden silebilirsiniz)'))]
     } finally {
         // Kırpılmış sunucunun KENDİ karo önbelleğini temizler; sarmaladığı orijinal
         // sunucu (açık görüntüleyicininki) kapatılmaz (TransformingImageServer close
@@ -400,31 +400,31 @@ if (gui != null)
 
 // ── 5) Sonucu sun ───────────────────────────────────────────────────
 def body = new StringBuilder()
-body << "SEÇİMLERDEN OLUŞTURULAN ALANLAR\n"
+body << workshopText('script.67a57fe790ee', 'SEÇİMLERDEN OLUŞTURULAN ALANLAR\n')
 body << "═══════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Kaynak görüntü      : %s%n", baseName)
-body << String.format(java.util.Locale.US, "Oluşturulan girdi   : %d%n", created.size())
-body << String.format(java.util.Locale.US, "Atlanan dikdörtgen  : %d%n", skipped.size())
+body << String.format(java.util.Locale.US, workshopText('script.79834cc8538d', 'Kaynak görüntü      : %s%n'), baseName)
+body << String.format(java.util.Locale.US, workshopText('script.48e001937b99', 'Oluşturulan girdi   : %d%n'), created.size())
+body << String.format(java.util.Locale.US, workshopText('script.61fe877c0300', 'Atlanan dikdörtgen  : %d%n'), skipped.size())
 if (!created.isEmpty()) {
-    body << "\nOluşturulanlar:\n"
+    body << workshopText('script.b4c772beafa7', '\nOluşturulanlar:\n')
     created.each { c ->
-        body << String.format(java.util.Locale.US, "  ✓ %s  (%d×%d px, %d anotasyon kopyalandı)%n",
+        body << String.format(java.util.Locale.US, workshopText('script.097fe677e18b', '  ✓ %s  (%d×%d px, %d anotasyon kopyalandı)%n'),
             c[0], c[1] as int, c[2] as int, c[3] as int)
     }
 }
 if (!skipped.isEmpty()) {
-    body << "\nAtlananlar:\n"
+    body << workshopText('script.fa216ff75fc3', '\nAtlananlar:\n')
     skipped.each { s ->
         body << String.format(java.util.Locale.US, "  • %s — %s%n", s[0], s[1])
     }
 }
-body << "\nPiksel verisi KOPYALANMADI: yeni girdiler orijinal dosyaya başvurur\n"
-body << "(CroppedImageServer). Kaynak dosyayı taşır/silerseniz girdiler açılamaz.\n"
-body << "Bağımsız bir dosya gerekiyorsa: Yardımcılar → İçe ve dışa aktarma / veri → Görüntü alanı çıkart (Extract Region).\n\n"
-body << "Kaynak: Egor Zindy (image.sc #109554); kırpma deseni ym.lim (#66681).\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.3f445b3dc4d6', '\nPiksel verisi KOPYALANMADI: yeni girdiler orijinal dosyaya başvurur\n')
+body << workshopText('script.ae638aca9779', '(CroppedImageServer). Kaynak dosyayı taşır/silerseniz girdiler açılamaz.\n')
+body << workshopText('script.f51d0e20a8d4', 'Bağımsız bir dosya gerekiyorsa: Yardımcılar → İçe ve dışa aktarma / veri → Görüntü alanı çıkart (Extract Region).\n\n')
+body << workshopText('script.a5cba99f3330', 'Kaynak: Egor Zindy (image.sc #109554); kırpma deseni ym.lim (#66681).\n\n')
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("Seçimlerden oluşturulan alanlar", body.toString())
+showResultWindow(workshopText('script.73d18eea0a2f', 'Seçimlerden oluşturulan alanlar'), body.toString())
 println String.format(java.util.Locale.US, "✓ Kırpılmış proje girdileri: %d oluşturuldu, %d atlandı.",
     created.size(), skipped.size())
 

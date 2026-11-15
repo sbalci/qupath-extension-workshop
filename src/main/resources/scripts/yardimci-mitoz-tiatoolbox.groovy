@@ -67,8 +67,8 @@ long PYTHON_TIMEOUT_SECONDS = 3600L
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
 def SENTINEL_PREFIX = 'Mitoz (KongNet MIDOG) · '
 def SUMMARY_NAME    = 'KongNet MIDOG mitoz özeti'
-def MODE_ADD        = 'Önceki KongNet sonucuna dokunma — yeni özet olarak ekle (varsayılan)'
-def MODE_REPLACE    = 'Önceki KongNet sonucunu değiştir (bu bölgedeki KongNet mitozları silinir)'
+def MODE_ADD        = workshopText('script.66c7fef7a1d0', 'Önceki KongNet sonucuna dokunma — yeni özet olarak ekle (varsayılan)')
+def MODE_REPLACE    = workshopText('script.bed206374eb9', 'Önceki KongNet sonucunu değiştir (bu bölgedeki KongNet mitozları silinir)')
 // ── Model (mitoz-özel, sabit) ────────────────────────────────────────────────
 // KongNet-Det (MIDOG 2025 birincisi) TIA Toolbox'ta H&E mitoz için TEK uygun
 // modeldir; kaydın diğer nucleus_detector modelleri (PanNuke/CoNIC/MONKEY/MapDe)
@@ -242,9 +242,9 @@ def loadConfig = { ->
 def configMissing = { cfg ->
     def miss = []
     if (!cfg.python?.trim() || !(new File(cfg.python)).isFile())
-        miss << 'Python yürütülebilir (tiatoolbox-runtime/.venv)'
+        miss << workshopText('script.de30363e22be', 'Python yürütülebilir (tiatoolbox-runtime/.venv)')
     if (!cfg.runner?.trim() || !(new File(cfg.runner)).isFile())
-        miss << 'Köprü betiği (region_runner.py)'
+        miss << workshopText('script.df608342ad41', 'Köprü betiği (region_runner.py)')
     return miss
 }
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
@@ -300,12 +300,12 @@ def calibrationInfo = { imageData ->
     try { mag = imageData.getServer().getMetadata().getMagnification() } catch (Throwable ignore) {}
     def warn = null
     if (cal == null) {
-        warn = 'Piksel boyutu tanımlı DEĞİL — yoğunluk hesaplanamaz VE KongNet yanlış ölçekte çalışabilir (0 tespit olası). Kalibrasyon yardımcısını çalıştırın.'
+        warn = workshopText('script.fb98d71ff1de', 'Piksel boyutu tanımlı DEĞİL — yoğunluk hesaplanamaz VE KongNet yanlış ölçekte çalışabilir (0 tespit olası). Kalibrasyon yardımcısını çalıştırın.')
     } else {
         double p = (cal.pw + cal.ph) / 2.0
-        if (p <= 0.0) warn = 'Piksel boyutu geçersiz (≤ 0).'
-        else if (Math.abs(p - 1.0) < 1e-6) warn = 'Piksel boyutu tam 1.000 µm/px — bu genelde QuPath\'in KALİBRESİZ varsayılanıdır. Tarayıcının gerçek değerini girin (Kalibrasyon); yanlışsa KongNet mitoz bulamayabilir.'
-        else if (p < 0.10 || p > 1.5) warn = String.format(java.util.Locale.US, 'Piksel boyutu %.3f µm/px H&E WSI için sıra dışı — kalibrasyonu doğrulayın (tipik: 0.25 @40x, 0.50 @20x). Yanlış ölçek → 0 tespit.', p)
+        if (p <= 0.0) warn = workshopText('script.a4238c285b1b', 'Piksel boyutu geçersiz (≤ 0).')
+        else if (Math.abs(p - 1.0) < 1e-6) warn = workshopText('script.ca397fd8bce2', 'Piksel boyutu tam 1.000 µm/px — bu genelde QuPath\'in KALİBRESİZ varsayılanıdır. Tarayıcının gerçek değerini girin (Kalibrasyon); yanlışsa KongNet mitoz bulamayabilir.')
+        else if (p < 0.10 || p > 1.5) warn = String.format(java.util.Locale.US, workshopText('script.508662240abf', 'Piksel boyutu %.3f µm/px H&E WSI için sıra dışı — kalibrasyonu doğrulayın (tipik: 0.25 @40x, 0.50 @20x). Yanlış ölçek → 0 tespit.'), p)
     }
     return [cal: cal, mag: mag, warn: warn, mpp: (cal != null ? (cal.pw + cal.ph) / 2.0 : Double.NaN)]
 }
@@ -313,9 +313,9 @@ def calibrationInfo = { imageData ->
 def resampleNote = { double mpp ->
     if (!Double.isFinite(mpp) || mpp <= 0) return ''
     double ratio = MODEL_MPP / mpp
-    if (Math.abs(ratio - 1.0) < 0.05) return 'lam zaten ~0.5 µm/px — yeniden örnekleme yok.'
-    if (ratio > 1.0) return String.format(java.util.Locale.US, 'lamınız daha yüksek çözünürlükte; KongNet ~%.1f× AŞAĞI örnekler (normal).', ratio)
-    return String.format(java.util.Locale.US, 'lamınız daha düşük çözünürlükte; KongNet ~%.1f× YUKARI örnekler (mitoz kaçırabilir).', 1.0 / ratio)
+    if (Math.abs(ratio - 1.0) < 0.05) return workshopText('script.7bcf117f82ba', 'lam zaten ~0.5 µm/px — yeniden örnekleme yok.')
+    if (ratio > 1.0) return String.format(java.util.Locale.US, workshopText('script.ca1f6795db9e', 'lamınız daha yüksek çözünürlükte; KongNet ~%.1f× AŞAĞI örnekler (normal).'), ratio)
+    return String.format(java.util.Locale.US, workshopText('script.59ef8e013a6a', 'lamınız daha düşük çözünürlükte; KongNet ~%.1f× YUKARI örnekler (mitoz kaçırabilir).'), 1.0 / ratio)
 }
 
 // Seçili (yoksa tüm) alan anotasyonları — mitozu YALNIZ bunların içinde sayarız.
@@ -346,7 +346,7 @@ def exportRegionMask = { imageData, File workDir, double downsample, List region
     def f = new File(workDir, 'mitoz_region_mask.png')
     if (f.getParentFile() != null) f.getParentFile().mkdirs()
     javax.imageio.ImageIO.write(img, 'PNG', f)
-    appendLine('Bölge maskesi: ' + f.getName() + ' (' + mw + ' × ' + mh + ' px, downsample ' + downsample + ')')
+    appendLine(workshopText('script.f76889ef649b', 'Bölge maskesi: ') + f.getName() + ' (' + mw + ' × ' + mh + ' px, downsample ' + downsample + ')')
     return [ok: true, file: f, w: mw, h: mh]
 }
 
@@ -382,12 +382,12 @@ def nextSummaryName = { hier, List regionRois ->
 // ── GeoJSON içe al: bölge içi noktaları çıkar + nokta-anotasyonu olarak ekle ──
 def importMitoses = { File geojson, imageData, List regionRois, boolean replacePrev = true ->
     if (geojson == null || !geojson.isFile())
-        return [ok: false, error: 'GeoJSON çıktısı bulunamadı:\n' + (geojson?.getAbsolutePath() ?: '(yol yok)')]
+        return [ok: false, error: workshopText('script.8798754ae006', 'GeoJSON çıktısı bulunamadı:\n') + (geojson?.getAbsolutePath() ?: workshopText('script.7732453089e4', '(yol yok)'))]
     def root
     try { root = JsonParser.parseString(geojson.getText('UTF-8')).getAsJsonObject() }
-    catch (Throwable t) { return [ok: false, error: 'GeoJSON ayrıştırılamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
+    catch (Throwable t) { return [ok: false, error: workshopText('script.7876f6e33e69', 'GeoJSON ayrıştırılamadı: ') + (t.getMessage() ?: t.getClass().getSimpleName())] }
     def feats = root.has('features') ? root.getAsJsonArray('features') : null
-    if (feats == null) return [ok: false, error: 'GeoJSON "features" içermiyor.']
+    if (feats == null) return [ok: false, error: workshopText('script.9481e4c52092', 'GeoJSON "features" içermiyor.')]
     def plane = ImagePlane.getDefaultPlane()
     def coords = new ArrayList()
     int total = 0
@@ -470,37 +470,37 @@ def writeCounts = { imageData, List targets, List coords, cal, boolean writeTarg
 
 // ── Sonuç metni ─────────────────────────────────────────────────────────────
 def resultText = { imageData, cfg, imp, dens, cal ->
-    def fmt = { double v, String p -> Double.isFinite(v) ? String.format(java.util.Locale.US, p, v) : 'hesaplanamadı' }
+    def fmt = { double v, String p -> Double.isFinite(v) ? String.format(java.util.Locale.US, p, v) : workshopText('script.77fa6502fb41', 'hesaplanamadı') }
     def sb = new StringBuilder()
-    sb << "KONGNET MIDOG — BÖLGEDE MİTOZ\n"
+    sb << workshopText('script.f628e3407e42', 'KONGNET MIDOG — BÖLGEDE MİTOZ\n')
     sb << "═════════════════════════════\n\n"
-    sb << "Lam   : " << imageNameOf(imageData) << "\n"
-    sb << "Model   : " << MODEL << "  (H&E mitoz, 0.5 µm/px)\n"
-    sb << "Cihaz   : " << (cfg.device ?: 'cuda') << "\n"
-    sb << String.format(java.util.Locale.US, "Tespit  : toplam %,d   ·   BÖLGE İÇİ %,d%n", (int)(imp?.total ?: 0), (int)(imp?.inside ?: 0))
+    sb << workshopText('script.a0858f037ccf', 'Lam   : ') << imageNameOf(imageData) << "\n"
+    sb << "Model   : " << MODEL << workshopText('script.8f452879514d', '  (H&E mitoz, 0.5 µm/px)\n')
+    sb << workshopText('script.76e969a2aac0', 'Cihaz   : ') << (cfg.device ?: 'cuda') << "\n"
+    sb << String.format(java.util.Locale.US, workshopText('script.548fe3c11949', 'Tespit  : toplam %,d   ·   BÖLGE İÇİ %,d%n'), (int)(imp?.total ?: 0), (int)(imp?.inside ?: 0))
     if (cal != null && dens != null) {
-        sb << String.format(java.util.Locale.US, "Ölçülen alan : %.3f mm²%n", (double)(dens.unionAreaMm2 ?: 0.0))
-        sb << "Yoğunluk     : " << fmt((double)(dens.density ?: Double.NaN), '%.1f mitoz/mm²') << "\n"
+        sb << String.format(java.util.Locale.US, workshopText('script.819c6f195412', 'Ölçülen alan : %.3f mm²%n'), (double)(dens.unionAreaMm2 ?: 0.0))
+        sb << workshopText('script.43010ff303f6', 'Yoğunluk     : ') << fmt((double)(dens.density ?: Double.NaN), workshopText('script.ec62604c2fee', '%.1f mitoz/mm²')) << "\n"
         double a = (double)(dens.unionAreaMm2 ?: 0.0)
         if (Math.abs(a - WHO_AREA_MM2) <= AREA_TOL_MM2)
-            sb << String.format(java.util.Locale.US, "Mitoz / %.0f mm² (gözlenen): %,d%n", WHO_AREA_MM2, (int)(dens.inside ?: 0))
+            sb << String.format(java.util.Locale.US, workshopText('script.408bcc19e5fc', 'Mitoz / %.0f mm² (gözlenen): %,d%n'), WHO_AREA_MM2, (int)(dens.inside ?: 0))
         else
-            sb << String.format(java.util.Locale.US, "Mitoz / %.0f mm²: hesaplanmadı (alan %.3f mm²; ROI'yi ~2 mm² yapın)%n", WHO_AREA_MM2, a)
+            sb << String.format(java.util.Locale.US, workshopText('script.0dcc9d4b99c7', 'Mitoz / %.0f mm²: hesaplanmadı (alan %.3f mm²; ROI\'yi ~2 mm² yapın)%n'), WHO_AREA_MM2, a)
     } else {
-        sb << "Yoğunluk     : hesaplanmadı — piksel boyutu (µm/px) kalibre değil (Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)).\n"
+        sb << workshopText('script.85e0c115eca2', 'Yoğunluk     : hesaplanmadı — piksel boyutu (µm/px) kalibre değil (Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)).\n')
     }
     if ((int)(imp?.inside ?: 0) == 0) {
-        sb << "\n⚠ Bölgede 0 mitoz — model çalıştı ama eşiği geçen tespit yok.\n"
+        sb << workshopText('script.1a41197db92c', '\n⚠ Bölgede 0 mitoz — model çalıştı ama eşiği geçen tespit yok.\n')
         if (!cfg.threshold?.trim())
-            sb << "  KongNet varsayılan eşiği 0.99 ÇOK TUTUCUdur. Yapılandır → 'Duyarlılık eşiği'ni\n  düşürüp (ör. 0.5) yeniden çalıştırın; kalibrasyonu da doğrulayın.\n"
+            sb << workshopText('script.556d33ca1777', '  KongNet varsayılan eşiği 0.99 ÇOK TUTUCUdur. Yapılandır → \'Duyarlılık eşiği\'ni\n  düşürüp (ör. 0.5) yeniden çalıştırın; kalibrasyonu da doğrulayın.\n')
         else
-            sb << "  Eşiği (" << cfg.threshold.trim() << ") daha da düşürmeyi ve/veya kalibrasyonu doğrulamayı deneyin.\n"
+            sb << workshopText('script.8440aede9fe7', '  Eşiği (') << cfg.threshold.trim() << workshopText('script.0e3fcd74b1fe', ') daha da düşürmeyi ve/veya kalibrasyonu doğrulamayı deneyin.\n')
     }
-    sb << "\nTespitler '" << MITOSIS_CLASS << "' sınıflı KIRMIZI nokta-anotasyonları olarak eklendi (her birinin çevresinde\n"
-    sb << "etiketli bir görüntü halkası var — mitoz ortada açık kalır); seçili anotasyonlara\n"
-    sb << "sayım + yoğunluk ölçümü yazıldı; kilitli özet: '" << SUMMARY_NAME << "'.\n"
-    sb << "Tahminleri görsel doğrulayın; klinik kategori/yorum üretilmez.\n"
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    sb << workshopText('script.1126f01e931b', '\nTespitler \'') << MITOSIS_CLASS << workshopText('script.e28e2a473aeb', '\' sınıflı KIRMIZI nokta-anotasyonları olarak eklendi (her birinin çevresinde\n')
+    sb << workshopText('script.0f26a1e40998', 'etiketli bir görüntü halkası var — mitoz ortada açık kalır); seçili anotasyonlara\n')
+    sb << workshopText('script.da55f0e7a814', 'sayım + yoğunluk ölçümü yazıldı; kilitli özet: \'') << SUMMARY_NAME << "'.\n"
+    sb << workshopText('script.6892a85f97d2', 'Tahminleri görsel doğrulayın; klinik kategori/yorum üretilmez.\n')
+    sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
@@ -611,7 +611,7 @@ def saveLogInteractive = {
     try {
         def suggested = logFileRef.get() ?: new File(System.getProperty('user.home'), 'mitoz_run.log')
         def f = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, workshopText('script.ae2303e91c93', 'Çalışma günlüğünü kaydet'), suggested,
-            new javafx.stage.FileChooser.ExtensionFilter('Günlük (*.log, *.txt)', '*.log', '*.txt'))
+            new javafx.stage.FileChooser.ExtensionFilter(workshopText('script.c0f44ce4fc46', 'Günlük (*.log, *.txt)'), '*.log', '*.txt'))
         if (f != null) { f.setText(txt, 'UTF-8'); Dialogs.showInfoNotification(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.cbe9b591564d', 'Kaydedildi: ') + f.getAbsolutePath()) }
     } catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.a0f73789f289', 'Kaydedilemedi: ') + (t.getMessage() ?: t.getClass().getSimpleName())) }
 }
@@ -640,7 +640,7 @@ def runPython = { List cmd, Closure onLine, boolean offline = false ->
     applyCacheEnv(pb, offline)
     def proc
     try { proc = pb.start() }
-    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.f0e1e3289660', 'Python başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     processRef.set(proc)
     def last = new java.util.ArrayDeque()
     try {
@@ -655,9 +655,9 @@ def runPython = { List cmd, Closure onLine, boolean offline = false ->
     } catch (Throwable ignore) {}
     boolean finished
     try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-    if (!finished) { killTree(proc); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
-    if (cancelledRef.get()) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    catch (InterruptedException ie) { killTree(proc); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
+    if (!finished) { killTree(proc); return [ok: false, exitCode: -2, error: workshopText('script.e6b0c32aaae9', 'Zaman aşımı (') + PYTHON_TIMEOUT_SECONDS + workshopText('script.2ccf3f4af0dd', ' sn)')] }
+    if (cancelledRef.get()) { killTree(proc); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
     int code = proc.exitValue()
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
@@ -667,11 +667,11 @@ def startSelftest = {
     persistFields()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
-    if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!miss.isEmpty()) { errorTextRef.set(workshopText('script.59d7792abf1b', 'Önce yapılandırmayı tamamlayın:\n  • ') + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Bağımlılık kontrolü'); step.set('CHECK_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.8369fe631575', 'Bağımlılık kontrolü')); step.set('CHECK_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def r = runPython([cfg.python, cfg.runner, 'selftest'], appendLine)
@@ -685,11 +685,11 @@ def startModelDownload = {
     persistFields()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
-    if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!miss.isEmpty()) { errorTextRef.set(workshopText('script.59d7792abf1b', 'Önce yapılandırmayı tamamlayın:\n  • ') + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Model indiriliyor (yerel)…'); step.set('DL_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.741afd173b71', 'Model indiriliyor (yerel)…')); step.set('DL_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         // İndirme HER ZAMAN çevrimiçi (offline=false); cmd_download offline env'i zaten kaldırır.
@@ -702,12 +702,12 @@ def startModelDownload = {
 // ── Çalıştırma akışı — seçili bölgede canlı KongNet MIDOG ────────────────────
 def startRun = {
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.da80fab350d1', 'Görüntü açık değil.')); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
     def wsi = wsiPathOf(imageData)
-    if (wsi == null) { errorTextRef.set('Lamın yerel dosya yolu yok (WSI tiatoolbox tarafından açılamaz).\nSlaytı OpenSlide ile açın.'); step.set('ERROR'); render(); return }
+    if (wsi == null) { errorTextRef.set(workshopText('script.fac926165a45', 'Lamın yerel dosya yolu yok (WSI tiatoolbox tarafından açılamaz).\nSlaytı OpenSlide ile açın.')); step.set('ERROR'); render(); return }
     def targets = regionAnnotationsOf(imageData)
-    if (targets.isEmpty()) { errorTextRef.set('Bölge yok.\nÖnce bir alan anotasyonu çizin/seçin.'); step.set('ERROR'); render(); return }
+    if (targets.isEmpty()) { errorTextRef.set(workshopText('script.adcdc59914b9', 'Bölge yok.\nÖnce bir alan anotasyonu çizin/seçin.')); step.set('ERROR'); render(); return }
     def regionRois = targets.collect { it.getROI() }
     def hierNow = imageData.getHierarchy()
     int nPrevSummaries = prevSummariesIn(hierNow, regionRois).size()
@@ -716,9 +716,9 @@ def startRun = {
     boolean replacePrev = false
     if (hadPrev && !isHeadless) {
         def msg = String.format(java.util.Locale.US,
-            'Seçili bölgede zaten %,d KongNet özeti ve %,d KongNet mitoz işareti var.\n\n' +
-            '"Ekle" seçilirse önceki işaretler korunur ve sonuç "%s (2)" gibi yeni bir özet olarak eklenir.\n' +
-            '"Değiştir" seçilirse yalnız bu bölgedeki KongNet mitoz işaretleri ve özetleri yeni sonuçlarla değiştirilir (diğer bölgelere dokunulmaz).',
+            workshopText('script.064192567f2c', 'Seçili bölgede zaten %,d KongNet özeti ve %,d KongNet mitoz işareti var.\n\n') +
+            workshopText('script.71d86a75a2de', '"Ekle" seçilirse önceki işaretler korunur ve sonuç "%s (2)" gibi yeni bir özet olarak eklenir.\n') +
+            workshopText('script.26eac1955966', '"Değiştir" seçilirse yalnız bu bölgedeki KongNet mitoz işaretleri ve özetleri yeni sonuçlarla değiştirilir (diğer bölgelere dokunulmaz).'),
             nPrevSummaries, nPrevMitoses, SUMMARY_NAME)
         def pick = Dialogs.showChoiceDialog(workshopText('script.bc3c8c3a345a', 'Önceki KongNet sonucu'), msg, [MODE_ADD, MODE_REPLACE], MODE_ADD)
         if (pick == null) return
@@ -739,25 +739,25 @@ def startRun = {
     cancelledRef.set(false); resetLog(); logFileRef.set(null)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Hazırlanıyor…'); step.set('RUN_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.074e464dc790', 'Hazırlanıyor…')); step.set('RUN_RUNNING'); render()
 
     def worker = new Thread({
         // appendLine: hem canlı TextArea'ya hem de kalıcı günlük tamponuna yazar.
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def setPhase   = { String ph -> javafx.application.Platform.runLater { runPhaseRef.set(ph); render() } }
         try {
-            appendLine('Model: ' + MODEL + '  ·  cihaz: ' + (cfg.device ?: 'cuda') + '  ·  maske downsample: ' + cfg.maskDownsample)
-            appendLine('Kapsam: seçili bölge (' + targets.size() + ' anotasyon)')
+            appendLine('Model: ' + MODEL + workshopText('script.74ba070e3234', '  ·  cihaz: ') + (cfg.device ?: 'cuda') + workshopText('script.5d56b3c6ac83', '  ·  maske downsample: ') + cfg.maskDownsample)
+            appendLine(workshopText('script.46a89cb68c5a', 'Kapsam: seçili bölge (') + targets.size() + workshopText('script.0d8ff1115871', ' anotasyon)'))
             def ci0 = calibrationInfo(imageData)
-            if (ci0.cal != null) appendLine(String.format(java.util.Locale.US, 'Kalibrasyon: %.4f × %.4f µm/px%s  →  KongNet %.2f µm/px (%s)',
+            if (ci0.cal != null) appendLine(String.format(java.util.Locale.US, workshopText('script.75bac1f2c421', 'Kalibrasyon: %.4f × %.4f µm/px%s  →  KongNet %.2f µm/px (%s)'),
                 ci0.cal.pw, ci0.cal.ph, (Double.isFinite(ci0.mag) && ci0.mag > 0 ? String.format(java.util.Locale.US, ' (~%.0fx)', ci0.mag) : ''), MODEL_MPP, resampleNote(ci0.mpp)))
-            if (ci0.warn != null) appendLine('⚠ Kalibrasyon: ' + ci0.warn)
-            if (cal == null) appendLine('⚠ Piksel boyutu kalibre değil — yoğunluk (mitoz/mm²) hesaplanmayacak.')
+            if (ci0.warn != null) appendLine(workshopText('script.b3316a28e086', '⚠ Kalibrasyon: ') + ci0.warn)
+            if (cal == null) appendLine(workshopText('script.8e05acbdca3a', '⚠ Piksel boyutu kalibre değil — yoğunluk (mitoz/mm²) hesaplanmayacak.'))
             double mds = parseDoubleOr(cfg.maskDownsample, 16.0d)
-            setPhase('Bölge maskesi yazılıyor (1/2)…')
+            setPhase(workshopText('script.39b15cb4cff1', 'Bölge maskesi yazılıyor (1/2)…'))
             def exp = exportRegionMask(imageData, workDir, mds, regionRois, appendLine)
             if (!exp.ok) { javafx.application.Platform.runLater { errorTextRef.set(exp.error); step.set('ERROR'); render() }; return }
-            if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
+            if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.fee85e45842b', 'İptal edildi.')); step.set('ERROR'); render() }; return }
             def cmd = [cfg.python, cfg.runner, 'detect',
                        '--wsi', wsi,
                        '--mask', exp.file.getAbsolutePath(),
@@ -771,17 +771,17 @@ def startRun = {
             // Duyarlılık: kullanıcı bir eşik girdiyse modelin tutucu threshold_abs'ini geçersiz kıl.
             if (cfg.threshold?.trim()) {
                 double thr = parseDoubleOr(cfg.threshold, -1.0d)
-                if (thr >= 0.0d && thr <= 1.0d) { cmd.add('--threshold'); cmd.add(String.format(java.util.Locale.US, '%.4f', thr)); appendLine('Duyarlılık eşiği: ' + String.format(java.util.Locale.US, '%.3f', thr) + ' (model varsayılanı 0.99)') }
+                if (thr >= 0.0d && thr <= 1.0d) { cmd.add('--threshold'); cmd.add(String.format(java.util.Locale.US, '%.4f', thr)); appendLine(workshopText('script.b5d77fbca047', 'Duyarlılık eşiği: ') + String.format(java.util.Locale.US, '%.3f', thr) + workshopText('script.b36a88d4ba37', ' (model varsayılanı 0.99)')) }
             }
             boolean offlineOn = (cfg.offline == 'true')
-            if (offlineOn) appendLine('Çevrimdışı mod: HF_HUB_OFFLINE=1 (yalnız yerel model; ağa çıkılmaz)')
-            setPhase('KongNet MIDOG çıkarımı çalışıyor (2/2)…')
+            if (offlineOn) appendLine(workshopText('script.c48e2461e83e', 'Çevrimdışı mod: HF_HUB_OFFLINE=1 (yalnız yerel model; ağa çıkılmaz)'))
+            setPhase(workshopText('script.5874caf9f449', 'KongNet MIDOG çıkarımı çalışıyor (2/2)…'))
             def r = runPython(cmd, appendLine, offlineOn)
             // Çıktı ne olursa olsun günlüğü çalışma dizinine YAZ — kullanıcı hep bulabilsin.
-            appendLine('# Çıkış kodu: ' + r.exitCode)
+            appendLine(workshopText('script.3510e56b50f2', '# Çıkış kodu: ') + r.exitCode)
             def savedLog = autoSaveLog(workDir, base)
-            if (savedLog != null) appendLine('# Günlük kaydedildi: ' + savedLog.getAbsolutePath())
-            if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set('Çıkarım başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '') + (savedLog != null ? ('\n\nÇalışma günlüğü: ' + savedLog.getAbsolutePath()) : '')); step.set('ERROR'); render() }; return }
+            if (savedLog != null) appendLine(workshopText('script.f93ecddd706d', '# Günlük kaydedildi: ') + savedLog.getAbsolutePath())
+            if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.07269218fcb7', 'Çıkarım başarısız (çıkış: ') + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '') + (savedLog != null ? (workshopText('script.98abd255a614', '\n\nÇalışma günlüğü: ') + savedLog.getAbsolutePath()) : '')); step.set('ERROR'); render() }; return }
             def geo = outGeo
             try { def m = (r.lastLines ?: '') =~ /RESULT geojson=(.+)/; if (m.find()) { def gp = new File(m.group(1).trim()); if (gp.isFile()) geo = gp } } catch (Throwable ignore) {}
 
@@ -789,7 +789,7 @@ def startRun = {
             // YENİDEN ALMA — pencere kipsiz; kullanıcı arada görüntü değiştirebilir/kapatabilir.
             // Çalıştırmayı başlatan `imageData` bu yolda hiç kapatılmaz; hep onu kullan (yabancı
             // görüntüye yazma / null NPE önlenir).
-            javafx.application.Platform.runLater { busyLabelRef.set('Sonuçlar içe aktarılıyor…'); step.set('BUSY'); render() }
+            javafx.application.Platform.runLater { busyLabelRef.set(workshopText('script.ff0f7b5fd393', 'Sonuçlar içe aktarılıyor…')); step.set('BUSY'); render() }
             if (cancelledRef.get()) { javafx.application.Platform.runLater { step.set('READY'); render() }; return }
             def summaryName = runReplacePrev ? SUMMARY_NAME : nextSummaryName(imageData.getHierarchy(), regionRois)
             def imp = importMitoses(geo, imageData, regionRois, runReplacePrev)
@@ -802,7 +802,7 @@ def startRun = {
                 if (!imp.coords.isEmpty()) goToMitosis(0)   // ilk mitoza ortala (görünür olsun)
             }
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { errorTextRef.set('Beklenmeyen hata:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.6af403a9fc32', 'Beklenmeyen hata:\n') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
         }
     }, 'AtolyeMitoz-Run')
     worker.setDaemon(true); worker.start()
@@ -815,7 +815,7 @@ def startRun = {
 // sürerken ekran değiştirilmez; yalnız pencere öne gelir.
 def envReturnHook = [
     envId   : 'tiatoolbox-region',
-    wizard  : 'Mitoz tespiti (KongNet MIDOG)',
+    wizard  : workshopText('script.00aa8ba2e7db', 'Mitoz tespiti (KongNet MIDOG)'),
     onReturn: { reopen ->
         javafx.application.Platform.runLater {
             if (stage == null || (!stage.isShowing() && !reopen)) return
@@ -994,20 +994,20 @@ render = { ->
             boolean isHE = typeName.contains('BRIGHTFIELD_H_E')
             title.setText(workshopText('script.cd858ce8c04f', 'Mitoz tespiti — KongNet MIDOG (bölgede)'))
             def sb = new StringBuilder()
-            sb << "Lam          : " << imageNameOf(imageData) << "\n"
-            sb << "Model          : " << MODEL << "  (H&E mitoz)\n"
-            sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
-            sb << "Cihaz          : " << (cfg.device ?: 'cuda') << "\n"
-            sb << "Duyarlılık eşiği: " << (cfg.threshold?.trim() ? cfg.threshold.trim() : '0.99 (model varsayılanı — tutucu)') << "\n"
-            sb << "Ağ / model     : " << ((cfg.offline == 'true') ? 'ÇEVRİMDIŞI (yalnız yerel)' : 'çevrimiçi') << (modelCacheFile().isFile() ? '  ·  yerel model: VAR' : '  ·  yerel model: yok') << "\n"
-            sb << String.format(java.util.Locale.US, "Seçili bölge   : %,d alan anotasyonu%n", targets.size())
+            sb << workshopText('script.c482c0d5e596', 'Lam          : ') << imageNameOf(imageData) << "\n"
+            sb << "Model          : " << MODEL << workshopText('script.8b1bc4b94757', '  (H&E mitoz)\n')
+            sb << "Python         : " << (cfg.python ?: workshopText('script.a2bfafb27517', '(ayarsız)')) << "\n"
+            sb << workshopText('script.3b7d627f2bc5', 'Cihaz          : ') << (cfg.device ?: 'cuda') << "\n"
+            sb << workshopText('script.b5d77fbca047', 'Duyarlılık eşiği: ') << (cfg.threshold?.trim() ? cfg.threshold.trim() : workshopText('script.30c8f245bbf1', '0.99 (model varsayılanı — tutucu)')) << "\n"
+            sb << workshopText('script.a262f494dca8', 'Ağ / model     : ') << ((cfg.offline == 'true') ? workshopText('script.087a9f3ce692', 'ÇEVRİMDIŞI (yalnız yerel)') : workshopText('script.47e27080f9ac', 'çevrimiçi')) << (modelCacheFile().isFile() ? workshopText('script.13c7b8176bc7', '  ·  yerel model: VAR') : workshopText('script.4707fb03ffc7', '  ·  yerel model: yok')) << "\n"
+            sb << String.format(java.util.Locale.US, workshopText('script.0f30470dbbba', 'Seçili bölge   : %,d alan anotasyonu%n'), targets.size())
             // ── Kalibrasyon bilgisi (ÇALIŞTIRMADAN ÖNCE) ──
             if (cal != null) {
-                sb << String.format(java.util.Locale.US, "Piksel boyutu  : %.4f × %.4f µm/px%s%n", cal.pw, cal.ph,
+                sb << String.format(java.util.Locale.US, workshopText('script.671233eb8fe3', 'Piksel boyutu  : %.4f × %.4f µm/px%s%n'), cal.pw, cal.ph,
                     (Double.isFinite(ci.mag) && ci.mag > 0 ? String.format(java.util.Locale.US, '   (~%.0f×)', ci.mag) : ''))
-                sb << String.format(java.util.Locale.US, "KongNet çözün. : %.2f µm/px — %s%n", MODEL_MPP, resampleNote(ci.mpp))
+                sb << String.format(java.util.Locale.US, workshopText('script.4639e9193fce', 'KongNet çözün. : %.2f µm/px — %s%n'), MODEL_MPP, resampleNote(ci.mpp))
             } else {
-                sb << "Piksel boyutu  : KALİBRE DEĞİL — yoğunluk hesaplanmaz, KongNet yanlış ölçekte çalışabilir\n"
+                sb << workshopText('script.3b9f6ba42187', 'Piksel boyutu  : KALİBRE DEĞİL — yoğunluk hesaplanmaz, KongNet yanlış ölçekte çalışabilir\n')
             }
             addMonoArea(sb.toString())
             addGuidance(workshopText('script.9335e05e1707', 'KongNet MIDOG YALNIZ seçili/çizili alan anotasyon(lar)ı içinde çalışır. Sonuç: "Mitosis" nokta-anotasyonları (etiketli görüntü halkalarıyla) + her anotasyona mitoz sayısı ve yoğunluğu (mitoz/mm²); ROI ~2 mm² ise WHO birimi (mitoz/2 mm²).'))

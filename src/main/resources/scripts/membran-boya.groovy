@@ -103,13 +103,13 @@ def imageTypeOk = { ->
     n.contains('H_DAB')
 }
 def imageTypeGuidance = { ->
-    "Bu lam 'Brightfield (H-DAB)' olarak ayarlı değil.\n" +
-    "Şu anki tip: ${imageData.getImageType()?.toString() ?: ''}\n\n" +
-    "Çözüm:\n" +
-    "  • Penceredeki \"Görüntü tipini 'Brightfield (H-DAB)' olarak ayarla\" düğmesine tıklayın, VEYA\n" +
-    "  1. Image panelini açın (sol-üst)\n" +
-    "  2. 'Image type' → 'Brightfield (H-DAB)' seçin (DAB ayrımı için gerekli)\n" +
-    "  3. Yukarıdaki 'Çalıştır' düğmesine tekrar basın"
+    workshopText('script.415a5e83cd58', 'Bu lam \'Brightfield (H-DAB)\' olarak ayarlı değil.\n') +
+    String.format(java.util.Locale.US, workshopText('script.a53dc88cdb8c', 'Şu anki tip: %s\n\n'), imageData.getImageType()?.toString() ?: '') +
+    workshopText('script.c92b22ac3c2b', 'Çözüm:\n') +
+    workshopText('script.dd4d6557261d', '  • Penceredeki "Görüntü tipini \'Brightfield (H-DAB)\' olarak ayarla" düğmesine tıklayın, VEYA\n') +
+    workshopText('script.e3cf68f1032b', '  1. Image panelini açın (sol-üst)\n') +
+    workshopText('script.a1477e685c9d', '  2. \'Image type\' → \'Brightfield (H-DAB)\' seçin (DAB ayrımı için gerekli)\n') +
+    workshopText('script.1b9856c27353', '  3. Yukarıdaki \'Çalıştır\' düğmesine tekrar basın')
 }
 
 // "Hematoxylin OD" kanalı yalnızca H-DAB boya vektörleri ayarlanmışsa görünür.
@@ -194,12 +194,12 @@ def suggestStainVectors = { ->
                         svClose(svVecOf(svStains.getStain(2)), SV_DEF_DAB)
     if (!svDefault) { println '✓ Boya vektörleri bu lamdan tahmin/kalibre edilmiş görünüyor.'; return }
     def svMsg =
-        '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu lamdan tahmin EDİLMEMİŞ.\n\n' +
-        'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n' +
-        'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n' +
-        'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n' +
-        '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n' +
-        '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et'
+        workshopText('script.f3f75b6ee2d7', '⚠ Boya vektörleri QuPath VARSAYILANI görünüyor — bu lamdan tahmin EDİLMEMİŞ.\n\n') +
+        workshopText('script.0236cb297d65', 'Eşikler mutlak DAB OD üzerinden çalışır; doğru vektör olmadan skorlar kayar.\n') +
+        workshopText('script.06d512ead76b', 'Tarayıcı/boyama partisi başına bir kez tahmin yeterlidir.\n\n') +
+        workshopText('script.41b8026c8dbe', 'Şimdi SEÇİLİ alandan tahmin edilsin mi?\n') +
+        workshopText('script.61c29a66c32b', '(İki boya + biraz arka plan içeren temsilî bir alan anotasyonu seçili olmalı.)\n\n') +
+        workshopText('script.e6ac9add601c', '[Tamam] = tahmin et ve uygula      [İptal] = yine de devam et')
     if (isHeadless) { println svMsg; return }
     if (!qupath.fx.dialogs.Dialogs.showConfirmDialog(workshopText('script.cb5b26abe800', 'Boya vektörleri — öneri'), svMsg)) return
     def svSel = QP.getSelectedObjects().findAll { it.hasROI() && it.getROI().isArea() }
@@ -253,20 +253,20 @@ try {
 // ──────────────────────────────────────────────────────────────
 def runDetection = { double m1, double m2, double m3, double pd1, double pd2, double pd3, double ph, boolean reuseCells = false ->
     if (!(m1 < m2 && m2 < m3) || !(pd1 < pd2 && pd2 < pd3))
-        return [ok:false, error:'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.']
+        return [ok:false, error:workshopText('script.80e3c67757b9', 'Eşik sırası hatalı: 1+ < 2+ < 3+ olmalıdır.')]
     if (!imageTypeOk())
         return [ok:false, error: imageTypeGuidance(), imageTypeIssue:true]
 
     def selected = QP.getSelectedObject()
     if (selected == null || !(selected instanceof PathAnnotationObject))
-        return [ok:false, error:'Önce bir TÜMÖR (epitel) bölgesini anotasyonla çevreleyip SEÇİN (kenarı sarı görünür).']
+        return [ok:false, error:workshopText('script.750d3c68cdb1', 'Önce bir TÜMÖR (epitel) bölgesini anotasyonla çevreleyip SEÇİN (kenarı sarı görünür).')]
 
     def targetAnnotation = selected
 
     def existingDetections = targetAnnotation.getChildObjects().findAll { it.isDetection() }
     if (reuseCells) {
         if (existingDetections.isEmpty())
-            return [ok:false, error:'Bu anotasyonda hücre tespiti yok. Önce "Çalıştır" ile tespit yapın, sonra "Eşikleri yeniden uygula (hızlı)" kullanın.']
+            return [ok:false, error:workshopText('script.27bd1bf32d02', 'Bu anotasyonda hücre tespiti yok. Önce "Çalıştır" ile tespit yapın, sonra "Eşikleri yeniden uygula (hızlı)" kullanın.')]
     } else if (!existingDetections.isEmpty()) {
         // RE-RUN SAFETY: mevcut child detections temizle (birikim önlenir)
         QP.removeObjects(existingDetections, false)
@@ -288,7 +288,7 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
 
     def imgData  = QP.getCurrentImageData()
     if (imgData == null)
-        return [ok:false, error:'Açık görüntü bulunamadı.']
+        return [ok:false, error:workshopText('script.9afad86282e0', 'Açık görüntü bulunamadı.')]
     def cal      = imgData.getServer().getPixelCalibration()
     def pixStains = imgData.getColorDeconvolutionStains()
     if (pixStains == null)
@@ -353,10 +353,10 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
         : Double.NaN
     double LARGE_ROI_MM2 = 25.0  // sezgisel; kalibre değil
     def roiWarnStr = (pixCalibrated && areaMm2 > LARGE_ROI_MM2)
-        ? "\n⚠ Büyük ROI uyarısı: seçili alan ${String.format(java.util.Locale.US, '%.1f', areaMm2)} mm²" +
-          " (eşik ${String.format(java.util.Locale.US, '%.0f', LARGE_ROI_MM2)} mm²).\n" +
-          "  Stroma içeren büyük alanlar piksel H-score'u seyreltebilir.\n" +
-          "  Daha güvenilir sonuç için yalnızca tümör (epitel) bölgesini seçin.\n"
+        ? String.format(java.util.Locale.US, workshopText('script.a76b466ece5a', '\n⚠ Büyük ROI uyarısı: seçili alan %s mm²'), String.format(java.util.Locale.US, '%.1f', areaMm2)) +
+          String.format(java.util.Locale.US, workshopText('script.a215fa0d97cc', ' (eşik %s mm²).\n'), String.format(java.util.Locale.US, '%.0f', LARGE_ROI_MM2)) +
+          workshopText('script.d861211dd85d', '  Stroma içeren büyük alanlar piksel H-score\'u seyreltebilir.\n') +
+          workshopText('script.537b7b7f4b99', '  Daha güvenilir sonuç için yalnızca tümör (epitel) bölgesini seçin.\n')
         : ""
 
     println "  Piksel H-score: ${String.format(java.util.Locale.US, '%.0f', pixelHScore)} / 300  (süre: ${String.format(java.util.Locale.US, '%.1f', pixElapsed)} sn)"
@@ -388,14 +388,14 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
     try {
         def t0 = System.currentTimeMillis()
         if (reuseCells) {
-            detector = "Mevcut hücreler (yeniden sınıflandırıldı)"
+            detector = workshopText('script.1b1b94bb4406', 'Mevcut hücreler (yeniden sınıflandırıldı)')
         } else {
             def cellposeAvailable = cellposeHere
             if (!cellposeAvailable) {
                 println "Cellpose eklentisi bulunamadı → WatershedCellMembraneDetection'a düşülüyor."
             }
 
-            detector = cellposeAvailable ? "Cellpose (cyto3, DAB + H OD)" : "WatershedCellMembraneDetection (DAB-temelli)"
+            detector = cellposeAvailable ? "Cellpose (cyto3, DAB + H OD)" : workshopText('script.b6d2559996ac', 'WatershedCellMembraneDetection (DAB-temelli)')
             println "Hücre bazlı tespit başlatılıyor (ikincil)..."
             println "  • Dedektör: ${detector}"
             println "  • Grup eşikleri (Membrane: DAB OD mean): ${m1} / ${m2} / ${m3}"
@@ -463,7 +463,7 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
                         javafx.application.Platform.runLater { qupath.fx.dialogs.Dialogs.showWarningNotification(workshopText('script.a8c1a833bf41', 'Cellpose çalıştırılamadı'), cpMsg) }
                     }
                     cellposeAvailable = false
-                    detector = "WatershedCellMembraneDetection (Cellpose başarısız oldu)"
+                    detector = workshopText('script.d4ac7dfb91fc', 'WatershedCellMembraneDetection (Cellpose başarısız oldu)')
                     def partial = targetAnnotation.getChildObjects().findAll { it.isDetection() }
                     if (!partial.isEmpty()) {
                         QP.removeObjects(partial, true)
@@ -520,58 +520,58 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
 
     // Piksel bazlı blok (her zaman)
     def pixBlock =
-        "HER2 / Membran İHK skorlaması bitti.\n\n" +
+        workshopText('script.ee874f14704c', 'HER2 / Membran İHK skorlaması bitti.\n\n') +
         "═══════════════════════════════════════════════════════════\n" +
-        "  PİKSEL-BAZLI H-SCORE  (birincil · segmentasyon-bağımsız)\n" +
+        workshopText('script.28cb55b4a16c', '  PİKSEL-BAZLI H-SCORE  (birincil · segmentasyon-bağımsız)\n') +
         "═══════════════════════════════════════════════════════════\n" +
         "  H-score          : ${String.format(java.util.Locale.US, '%.0f', pixelHScore)} / 300\n" +
         "  Negatif          : %${String.format(java.util.Locale.US, '%.1f', pxPctNeg)}\n" +
-        "  1+ (zayıf)       : %${String.format(java.util.Locale.US, '%.1f', pxPct1)}\n" +
+        String.format(java.util.Locale.US, workshopText('script.f5d9547793d2', '  1+ (zayıf)       : %%%s\n'), String.format(java.util.Locale.US, '%.1f', pxPct1)) +
         "  2+ (orta)        : %${String.format(java.util.Locale.US, '%.1f', pxPct2)}\n" +
-        "  3+ (güçlü)       : %${String.format(java.util.Locale.US, '%.1f', pxPct3)}\n" +
-        "  Toplam pozitif   : %${String.format(java.util.Locale.US, '%.1f', (pxPct1 + pxPct2 + pxPct3))}\n\n" +
-        "  Eşikler: DAB [${String.format(java.util.Locale.US, '%.2f', pixDABthresholds[0])} / " +
+        String.format(java.util.Locale.US, workshopText('script.22f669af1cf0', '  3+ (güçlü)       : %%%s\n'), String.format(java.util.Locale.US, '%.1f', pxPct3)) +
+        String.format(java.util.Locale.US, workshopText('script.43677599f30b', '  Toplam pozitif   : %%%s\n\n'), String.format(java.util.Locale.US, '%.1f', (pxPct1 + pxPct2 + pxPct3))) +
+        String.format(java.util.Locale.US, workshopText('script.aa5a4cb20e8a', '  Eşikler: DAB [%s / '), String.format(java.util.Locale.US, '%.2f', pixDABthresholds[0])) +
                         "${String.format(java.util.Locale.US, '%.2f', pixDABthresholds[1])} / " +
                         "${String.format(java.util.Locale.US, '%.2f', pixDABthresholds[2])}] OD," +
                   "  H mask ${String.format(java.util.Locale.US, '%.2f', pixHthreshold)} OD\n" +
-        "  Alan (boyalı)    : ${String.format(java.util.Locale.US, '%,.0f', pxAreaDenom)} µm²\n" +
-        "  Bölge            : seçili ROI · " + (pixCalibrated ? "${String.format(java.util.Locale.US, '%.2f', areaMm2)} mm²" : "kalibre değil") +
-                            "  (süre: ${String.format(java.util.Locale.US, '%.1f', pixElapsed)} sn)\n\n"
+        String.format(java.util.Locale.US, workshopText('script.7bb486751399', '  Alan (boyalı)    : %s µm²\n'), String.format(java.util.Locale.US, '%,.0f', pxAreaDenom)) +
+        workshopText('script.0ab1c9e7a7c9', '  Bölge            : seçili ROI · ') + (pixCalibrated ? "${String.format(java.util.Locale.US, '%.2f', areaMm2)} mm²" : workshopText('script.cbb528582308', 'kalibre değil')) +
+                            String.format(java.util.Locale.US, workshopText('script.74b8a02c36f7', '  (süre: %s sn)\n\n'), String.format(java.util.Locale.US, '%.1f', pixElapsed))
 
     // Hücre bazlı blok (koşullu)
     def cellBlock
     if (cellBasedOk) {
         def uyari = totalCells < warnCount
-            ? "\n  Not: ${String.format(java.util.Locale.US, '%,d', totalCells)} hücre < ${String.format(java.util.Locale.US, '%,d', warnCount)}" +
-              " — küçük örneklem; istatistiksel güvenilirlik sınırlı."
+            ? String.format(java.util.Locale.US, workshopText('script.5f6e404b4f57', '\n  Not: %s hücre < %s'), String.format(java.util.Locale.US, '%,d', totalCells), String.format(java.util.Locale.US, '%,d', warnCount)) +
+              workshopText('script.11becc090344', ' — küçük örneklem; istatistiksel güvenilirlik sınırlı.')
             : ""
         cellBlock =
             "═══════════════════════════════════════════════════════════\n" +
-            "  Hücre bazlı  (karşılaştırma · ring) — ${detector}\n" +
+            String.format(java.util.Locale.US, workshopText('script.70544f9f3e4d', '  Hücre bazlı  (karşılaştırma · ring) — %s\n'), detector) +
             "═══════════════════════════════════════════════════════════\n" +
             "  H-score          : ${String.format(java.util.Locale.US, '%.0f', hScore)} / 300\n" +
-            "  Toplam hücre     : ${String.format(java.util.Locale.US, '%,d', totalCells)}\n" +
+            String.format(java.util.Locale.US, workshopText('script.6adfbf38aec8', '  Toplam hücre     : %s\n'), String.format(java.util.Locale.US, '%,d', totalCells)) +
             "  0  (negatif)     : ${String.format(java.util.Locale.US, '%,d', n0)}  (%${String.format(java.util.Locale.US, '%.1f', pct0Cell)})\n" +
-            "  1+ (zayıf)       : ${String.format(java.util.Locale.US, '%,d', n1)}  (%${String.format(java.util.Locale.US, '%.1f', pct1Cell)})\n" +
+            String.format(java.util.Locale.US, workshopText('script.73726edf6fd2', '  1+ (zayıf)       : %s  (%%%s)\n'), String.format(java.util.Locale.US, '%,d', n1), String.format(java.util.Locale.US, '%.1f', pct1Cell)) +
             "  2+ (orta)        : ${String.format(java.util.Locale.US, '%,d', n2)}  (%${String.format(java.util.Locale.US, '%.1f', pct2Cell)})\n" +
-            "  3+ (güçlü)       : ${String.format(java.util.Locale.US, '%,d', n3)}  (%${String.format(java.util.Locale.US, '%.1f', pct3Cell)})\n" +
-            "  Süre             : ${String.format(java.util.Locale.US, '%.1f', cellElapsed)} sn${uyari}\n" +
-            "  ⓘ İki yöntem farklıysa: ring sitoplazma/eksik membranı yanlış örnekleyebilir.\n\n"
+            String.format(java.util.Locale.US, workshopText('script.009f9b9bee52', '  3+ (güçlü)       : %s  (%%%s)\n'), String.format(java.util.Locale.US, '%,d', n3), String.format(java.util.Locale.US, '%.1f', pct3Cell)) +
+            String.format(java.util.Locale.US, workshopText('script.f8a1024f6cd7', '  Süre             : %s sn%s\n'), String.format(java.util.Locale.US, '%.1f', cellElapsed), uyari) +
+            workshopText('script.37547b709511', '  ⓘ İki yöntem farklıysa: ring sitoplazma/eksik membranı yanlış örnekleyebilir.\n\n')
     } else {
-        cellBlock = "Hücre bazlı karşılaştırma atlandı (Cellpose/Watershed yok ya da hata).\n\n"
+        cellBlock = workshopText('script.c48f93f399d1', 'Hücre bazlı karşılaştırma atlandı (Cellpose/Watershed yok ya da hata).\n\n')
     }
 
     // Bütünlük notu (her zaman)
     def completenessNote =
         "───────────────────────────────────────────────────────────\n" +
-        "Not: Bu betik membran boyamasının GÜCÜNÜ ölçer; membranın\n" +
-        "kaç hücrede TAM çevrelendiğini (bütünlük) ÖLÇMEZ. (Sode 2023)\n\n"
+        workshopText('script.9b038f83e1b5', 'Not: Bu betik membran boyamasının GÜCÜNÜ ölçer; membranın\n') +
+        workshopText('script.bbaa63537a0d', 'kaç hücrede TAM çevrelendiğini (bütünlük) ÖLÇMEZ. (Sode 2023)\n\n')
 
     // Büyük ROI uyarısı (koşullu — boş string ise eklenmez)
     def roiWarn = roiWarnStr.isEmpty() ? "" : roiWarnStr + "\n"
 
     // Son uyarı satırı
-    def finalDisclaimer = "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    def finalDisclaimer = workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
     def fullText = pixBlock + cellBlock + completenessNote + roiWarn + finalDisclaimer
 

@@ -140,7 +140,7 @@ def showExportOptions = { Map d ->
             cbDet.setSelected(d.det as boolean)
             def cbAnn = new javafx.scene.control.CheckBox(workshopText('script.7a31191cc20c', "Anotasyon ölçümleri (TSV/CSV)"))
             cbAnn.setSelected(d.ann as boolean)
-            def cbGeo = new javafx.scene.control.CheckBox("Anotasyon geometrisi (GeoJSON)")
+            def cbGeo = new javafx.scene.control.CheckBox(workshopText('script.1f0f6ec587bc', 'Anotasyon geometrisi (GeoJSON)'))
             cbGeo.setSelected(d.geo as boolean)
             def typesBox = new javafx.scene.layout.VBox(4, cbDet, cbAnn, cbGeo)
 
@@ -190,7 +190,7 @@ def showExportOptions = { Map d ->
                     def cur = (locField.getText() ?: "").trim()
                     def init = cur ? new File(cur) : (d.defaultBaseDir ? new File(d.defaultBaseDir as String) : null)
                     def initDir = (init != null && init.isDirectory()) ? init : null
-                    def chosen = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, "Çıktı klasörü seçin", initDir)
+                    def chosen = qupath.fx.dialogs.FileChoosers.promptForDirectory(stage, workshopText('script.cc9187efabde', 'Çıktı klasörü seçin'), initDir)
                     if (chosen != null) locField.setText(chosen.getAbsolutePath())
                 } catch (Throwable ignored) { }
             })
@@ -202,15 +202,15 @@ def showExportOptions = { Map d ->
             def form = new javafx.scene.layout.VBox(10)
             form.setStyle("-fx-padding: 12px;")
             form.getChildren().addAll(
-                mk("Kapsam"), scopeBox,
+                mk(workshopText('script.7b0d5cffae67', 'Kapsam')), scopeBox,
                 new javafx.scene.control.Separator(),
-                mk("Çıktı stili — ayraç"), sepBox,
-                mk("Çıktı stili — içerik"), typesBox,
-                mk("Çıktı stili — sütunlar"), colBox,
+                mk(workshopText('script.7ae68d5863b0', 'Çıktı stili — ayraç')), sepBox,
+                mk(workshopText('script.52de85bb63d1', 'Çıktı stili — içerik')), typesBox,
+                mk(workshopText('script.1c9d40ba6180', 'Çıktı stili — sütunlar')), colBox,
                 new javafx.scene.control.Separator(),
-                mk("İsimlendirme"), prefixField, cbDate,
+                mk(workshopText('script.1b4d02061eed', 'İsimlendirme')), prefixField, cbDate,
                 new javafx.scene.control.Separator(),
-                mk("Kayıt yeri"), locBox, locHint
+                mk(workshopText('script.b556149f07f9', 'Kayıt yeri')), locBox, locHint
             )
             def scrollPane = new javafx.scene.control.ScrollPane(form)
             scrollPane.setFitToWidth(true)
@@ -701,7 +701,7 @@ def exportEntry = { entry, imageDataForGeo ->
             me.exportMeasurements(detFile)
             if (detFile.length() > 0) filesWritten << detFile.getName()
         } catch (Throwable t) {
-            errors << "${entry.getImageName()} → tespitler: ${t.getMessage()}"
+            errors << String.format(java.util.Locale.US, workshopText('script.8e2b390995c2', '%s → tespitler: %s'), entry.getImageName(), t.getMessage())
         }
     }
 
@@ -718,7 +718,7 @@ def exportEntry = { entry, imageDataForGeo ->
             me.exportMeasurements(annFile)
             if (annFile.length() > 0) filesWritten << annFile.getName()
         } catch (Throwable t) {
-            errors << "${entry.getImageName()} → anotasyonlar: ${t.getMessage()}"
+            errors << String.format(java.util.Locale.US, workshopText('script.7cea736480b6', '%s → anotasyonlar: %s'), entry.getImageName(), t.getMessage())
         }
     }
 
@@ -827,43 +827,43 @@ def elapsed = (System.currentTimeMillis() - t0) / 1000.0
 def fileList = filesWritten.size() <= 20
     ? filesWritten.collect { "  • ${it}" }.join("\n")
     : (filesWritten.take(20).collect { "  • ${it}" }.join("\n") +
-       "\n  ... ve ${filesWritten.size() - 20} dosya daha")
-if (filesWritten.isEmpty()) fileList = "  (dosya yazılmadı)"
+       String.format(java.util.Locale.US, workshopText('script.43c20a2342d0', '\n  ... ve %s dosya daha'), filesWritten.size() - 20))
+if (filesWritten.isEmpty()) fileList = workshopText('script.9dbe4123ceaf', '  (dosya yazılmadı)')
 
 def errSection = errors.isEmpty()
     ? ""
-    : "\n\n⚠️  Bazı dosyalar yazılamadı:\n" + errors.take(10).collect { "  • ${it}" }.join("\n") +
-      (errors.size() > 10 ? "\n  ... ve ${errors.size() - 10} hata daha" : "")
+    : workshopText('script.c2b270d6f651', '\n\n⚠️  Bazı dosyalar yazılamadı:\n') + errors.take(10).collect { "  • ${it}" }.join("\n") +
+      (errors.size() > 10 ? String.format(java.util.Locale.US, workshopText('script.1b822ccc5e47', '\n  ... ve %s hata daha'), errors.size() - 10) : "")
 
 def saveStatusLine
 if (currentSaved) {
-    saveStatusLine = "✓ Açık lam diske kaydedildi (anotasyon/tespitler dahildir)"
+    saveStatusLine = workshopText('script.1b0277cb2ab8', '✓ Açık lam diske kaydedildi (anotasyon/tespitler dahildir)')
 } else if (currentSaveError != null) {
-    saveStatusLine = "⚠ Açık lam KAYDEDİLEMEDİ — son değişiklikler dışa aktarımda görünmeyebilir.\n" +
-                     "  Detay: " + currentSaveError + "\n" +
-                     "  Çözüm: QuPath ana penceresinde [Ctrl+S] basın, betiği tekrar çalıştırın."
+    saveStatusLine = workshopText('script.70e4605dd9aa', '⚠ Açık lam KAYDEDİLEMEDİ — son değişiklikler dışa aktarımda görünmeyebilir.\n') +
+                     workshopText('script.27fb888c505d', '  Detay: ') + currentSaveError + "\n" +
+                     workshopText('script.4cf55b646e9e', '  Çözüm: QuPath ana penceresinde [Ctrl+S] basın, betiği tekrar çalıştırın.')
 } else {
-    saveStatusLine = "(Açık lam yok — projedeki tüm lamlar son kayıtlı halinden okundu.)"
+    saveStatusLine = workshopText('script.b17b5deeb81e', '(Açık lam yok — projedeki tüm lamlar son kayıtlı halinden okundu.)')
 }
 if (locFallbackNote != null) saveStatusLine = saveStatusLine + "\n" + locFallbackNote
 
 // Eğer dışa aktarım toplamları sıfırsa — çoğunlukla kaydedilmemiş slayt göstergesi
 def emptyHint = ""
 if (annotationsTotal == 0 && detectionsTotal == 0 && currentSaveError == null) {
-    emptyHint = "\n\n💡 Çıktıda 0 anotasyon / 0 tespit görünüyor. Olası nedenler:\n" +
-                "  1. Bu lamda gerçekten hiç anotasyon / tespit yoktu — önce ilgili modüllerden birini çalıştırın.\n" +
-                "  2. Lam betikten ÖNCE QuPath dışında değiştirildi ve .qpdata kaydedilmedi.\n" +
-                "  3. ROI seçilip içinde tespit üretildi ama anotasyon kaydedilmedi.\n" +
-                "QuPath'te [Ctrl+S] ile lamı kaydedin ve betiği tekrar çalıştırın."
+    emptyHint = workshopText('script.90d535ea55eb', '\n\n💡 Çıktıda 0 anotasyon / 0 tespit görünüyor. Olası nedenler:\n') +
+                workshopText('script.57824e6c6c66', '  1. Bu lamda gerçekten hiç anotasyon / tespit yoktu — önce ilgili modüllerden birini çalıştırın.\n') +
+                workshopText('script.4ef61f56b391', '  2. Lam betikten ÖNCE QuPath dışında değiştirildi ve .qpdata kaydedilmedi.\n') +
+                workshopText('script.18704ecc384a', '  3. ROI seçilip içinde tespit üretildi ama anotasyon kaydedilmedi.\n') +
+                workshopText('script.7a6d7f406246', 'QuPath\'te [Ctrl+S] ile lamı kaydedin ve betiği tekrar çalıştırın.')
 }
 
-def fmtName = (ext == "tsv") ? "TSV (TAB)" : "CSV (virgül)"
+def fmtName = (ext == "tsv") ? "TSV (TAB)" : workshopText('script.4586ff54d18d', 'CSV (virgül)')
 def typesSummary = [
-    (opt.det as boolean) ? "tespit ${ext.toUpperCase(java.util.Locale.ROOT)}" : null,
-    (opt.ann as boolean) ? "anotasyon ${ext.toUpperCase(java.util.Locale.ROOT)}" : null,
-    (opt.geo as boolean) ? "anotasyon GeoJSON" : null
+    (opt.det as boolean) ? String.format(java.util.Locale.US, workshopText('script.2f7f284bf1e6', 'tespit %s'), ext.toUpperCase(java.util.Locale.ROOT)) : null,
+    (opt.ann as boolean) ? String.format(java.util.Locale.US, workshopText('script.d1dcbb719213', 'anotasyon %s'), ext.toUpperCase(java.util.Locale.ROOT)) : null,
+    (opt.geo as boolean) ? workshopText('script.fbf8a880addf', 'anotasyon GeoJSON') : null
 ].findAll { it != null }.join(", ")
-def colsSummary = useSubset ? "seçili ${subsetCols.length} sütun" : "tüm sütunlar"
+def colsSummary = useSubset ? String.format(java.util.Locale.US, workshopText('script.c5cc8ab9b998', 'seçili %s sütun'), subsetCols.length) : workshopText('script.94d1e9d12a29', 'tüm sütunlar')
 def elapsedStr = String.format(java.util.Locale.US, "%.1f", elapsed)
 
 def copiesBlock = ""
@@ -879,32 +879,32 @@ if (copiesChoice != null) {
 }
 
 def resultBody =
-    "Kapsam: ${projectMode ? 'Tüm proje' : 'Sadece bu görüntü'}\n" +
-    "Çıktı stili: ${fmtName} · ${colsSummary}\n" +
-    "İçerik: ${typesSummary}\n" +
-    "Önek: ${opt.prefix ? opt.prefix : '(yok)'}    Tarihli alt klasör: ${(opt.dateSubfolder as boolean) ? 'evet' : 'hayır'}\n" +
-    "Çıktı klasörü:\n  ${outDir.getAbsolutePath()}\n\n" +
-    "💾 Kaydetme durumu\n" +
+    String.format(java.util.Locale.US, workshopText('script.3d65600467c6', 'Kapsam: %s\n'), projectMode ? workshopText('script.3080d2dc7199', 'Tüm proje') : workshopText('script.70fdd47a1816', 'Sadece bu görüntü')) +
+    String.format(java.util.Locale.US, workshopText('script.af80aa273645', 'Çıktı stili: %s · %s\n'), fmtName, colsSummary) +
+    String.format(java.util.Locale.US, workshopText('script.3608c8bc5a4b', 'İçerik: %s\n'), typesSummary) +
+    String.format(java.util.Locale.US, workshopText('script.ce4dd33eb405', 'Önek: %s    Tarihli alt klasör: %s\n'), opt.prefix ? opt.prefix : workshopText('script.715392eca0f8', '(yok)'), (opt.dateSubfolder as boolean) ? workshopText('script.23f31d553dea', 'evet') : workshopText('script.5935eed908c4', 'hayır')) +
+    String.format(java.util.Locale.US, workshopText('script.110db99d0987', 'Çıktı klasörü:\n  %s\n\n'), outDir.getAbsolutePath()) +
+    workshopText('script.5c7edb12f789', '💾 Kaydetme durumu\n') +
     "──────────────────\n" +
     "  ${saveStatusLine}\n\n" +
-    "📊 Özet\n" +
+    workshopText('script.10e7d671084f', '📊 Özet\n') +
     "──────\n" +
-    "  Lam sayısı         : ${imagesProcessed}\n" +
-    "  Toplam anotasyon     : ${annotationsTotal}\n" +
-    "  Toplam tespit        : ${detectionsTotal}\n" +
-    "  Yazılan dosya sayısı : ${filesWritten.size()}\n" +
-    "  Süre                 : ${elapsedStr} sn\n\n" +
+    String.format(java.util.Locale.US, workshopText('script.ecba696b4c65', '  Lam sayısı         : %s\n'), imagesProcessed) +
+    String.format(java.util.Locale.US, workshopText('script.718e7b910302', '  Toplam anotasyon     : %s\n'), annotationsTotal) +
+    String.format(java.util.Locale.US, workshopText('script.d8847928dc87', '  Toplam tespit        : %s\n'), detectionsTotal) +
+    String.format(java.util.Locale.US, workshopText('script.854f1098a071', '  Yazılan dosya sayısı : %s\n'), filesWritten.size()) +
+    String.format(java.util.Locale.US, workshopText('script.18213cc654a0', '  Süre                 : %s sn\n\n'), elapsedStr) +
     copiesBlock +
-    "📁 Yazılan dosyalar:\n${fileList}${errSection}${emptyHint}\n\n" +
-    "📝 Sonraki adım:\n" +
-    "  • R / Python / Excel ile yukarıdaki klasördeki ${fmtName} dosyalarını okuyun.\n" +
-    "  • GeoJSON dosyaları geopandas / sf paketleriyle açılır (anotasyon\n" +
-    "    geometrisini başka araçlara taşımak için).\n" +
-    "  • Veri dışa aktarma modülünün web sayfasında format karşılaştırması ve örnek R/Python\n" +
-    "    kodları var.\n\n" +
-    "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    String.format(java.util.Locale.US, workshopText('script.9dc079d18a26', '📁 Yazılan dosyalar:\n%s%s%s\n\n'), fileList, errSection, emptyHint) +
+    workshopText('script.bccb206f399a', '📝 Sonraki adım:\n') +
+    String.format(java.util.Locale.US, workshopText('script.e13769c47ff0', '  • R / Python / Excel ile yukarıdaki klasördeki %s dosyalarını okuyun.\n'), fmtName) +
+    workshopText('script.5664d0fbee4d', '  • GeoJSON dosyaları geopandas / sf paketleriyle açılır (anotasyon\n') +
+    workshopText('script.89a9dbc6cc1e', '    geometrisini başka araçlara taşımak için).\n') +
+    workshopText('script.65f4e999505f', '  • Veri dışa aktarma modülünün web sayfasında format karşılaştırması ve örnek R/Python\n') +
+    workshopText('script.88b1baedc81c', '    kodları var.\n\n') +
+    workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("Veri dışa aktarma — Tamamlandı 📤", resultBody)
+showResultWindow(workshopText('script.5de4e7997199', 'Veri dışa aktarma — Tamamlandı 📤'), resultBody)
 
 println "─────────────────────────────────────"
 println String.format(java.util.Locale.US, "Tamamlandı: %d lam, %d dosya, %.1f sn",

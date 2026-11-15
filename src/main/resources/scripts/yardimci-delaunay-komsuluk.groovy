@@ -215,7 +215,7 @@ if (imageData == null) {
 }
 def cells = QP.getDetectionObjects().findAll { it.getROI() != null }
 if (cells.size() < 3) {
-    def msg = "Delaunay üçgenlemesi için en az 3 hücre gerekir.\nÖnce Hücre Tespiti, Nükleer Boya, Sitoplazmik Boya veya Tümör İçi Ki-67 modüllerinden biriyle tespit yapın."
+    def msg = workshopText('script.58ecef12b4c3', 'Delaunay üçgenlemesi için en az 3 hücre gerekir.\nÖnce Hücre Tespiti, Nükleer Boya, Sitoplazmik Boya veya Tümör İçi Ki-67 modüllerinden biriyle tespit yapın.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.bd9ad9944f29', "Yetersiz hücre"), msg)
     return
 }
@@ -289,27 +289,27 @@ def sumRes = commitSummary(imageData.getHierarchy(), "Delaunay Özet", summarySi
 QP.fireHierarchyUpdate()
 
 def body = new StringBuilder()
-body << "DELAUNAY KOMŞULUK\n"
+body << workshopText('script.e5dbc68993e1', 'DELAUNAY KOMŞULUK\n')
 body << "════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Hücre sayısı          : %,d%n", cells.size())
-body << String.format(java.util.Locale.US, "Ortalama komşu sayısı : %.2f%n", meanNeighbors)
+body << String.format(java.util.Locale.US, workshopText('script.439cc27833b7', 'Hücre sayısı          : %,d%n'), cells.size())
+body << String.format(java.util.Locale.US, workshopText('script.ba255791a418', 'Ortalama komşu sayısı : %.2f%n'), meanNeighbors)
 if (!Double.isNaN(meanDistOverall)) {
-    body << String.format(java.util.Locale.US, "Ortalama komşu mesafe : %.1f µm%n", meanDistOverall)
+    body << String.format(java.util.Locale.US, workshopText('script.a388ce10cd42', 'Ortalama komşu mesafe : %.1f µm%n'), meanDistOverall)
 }
 if (limitByDist) {
-    body << String.format(java.util.Locale.US, "Maks kenar eşiği      : %.0f µm (uzun kenarlar budandı)%n", maxEdgeMicrons)
+    body << String.format(java.util.Locale.US, workshopText('script.9294c1bea302', 'Maks kenar eşiği      : %.0f µm (uzun kenarlar budandı)%n'), maxEdgeMicrons)
 }
 body << "\n"
-body << "Her hücreye 'Delaunay: Num neighbors'"
+body << workshopText('script.2896e40397be', 'Her hücreye \'Delaunay: Num neighbors\'')
 body << (hasMicrons ? " + 'Delaunay: Mean neighbor distance (µm)'" : "")
-body << " yazıldı.\n"
-body << "Yüksek komşu sayısı / küçük komşu mesafesi → sıkı doku (kümelenme).\n"
-body << "Veri Dışa Aktarma modülü ile dışa aktarılır.\n\n"
+body << workshopText('script.2717387d2b6e', ' yazıldı.\n')
+body << workshopText('script.c74fe62d4972', 'Yüksek komşu sayısı / küçük komşu mesafesi → sıkı doku (kümelenme).\n')
+body << workshopText('script.a198b78cfd4b', 'Veri Dışa Aktarma modülü ile dışa aktarılır.\n\n')
 def noteText = modeNote(sumRes)
 if (noteText) body << noteText << "\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("Delaunay komşuluk", body.toString())
+showResultWindow(workshopText('script.30a9112c0c22', 'Delaunay komşuluk'), body.toString())
 println String.format(java.util.Locale.US, "✓ Delaunay özeti yazıldı (ortalama %.2f komşu).", meanNeighbors)
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

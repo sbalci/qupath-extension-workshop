@@ -72,15 +72,15 @@ import java.time.format.DateTimeFormatter
 def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
-def DISCLAIMER = '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.'
+def DISCLAIMER = workshopText('script.625c43e2ff2e', '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.')
 
 // ── Sabitler ────────────────────────────────────────────────────────────────
 def TAG_KEY = 'atolye_iceaktarim'
 def UNCLASSIFIED = '(sınıfsız)'
-def FORMAT_LABELS = [otomatik: 'Otomatik (içeriğe göre)', geojson: 'GeoJSON', imagescope: 'Aperio ImageScope XML', asap: 'ASAP XML']
-def MODE_LABELS = [ekle : 'Mevcut anotasyonlara dokunma — yalnız ekle (varsayılan)',
-                   dosya: 'Aynı dosyadan önceki içe aktarımı değiştir (yalnız bu dosyadan gelenler; elle çizilenler ve başka dosyalar korunur)',
-                   tumu : 'Tüm anotasyonları sil ve değiştir (tespitler korunur)']
+def FORMAT_LABELS = [otomatik: workshopText('script.6e7d9ba85c1e', 'Otomatik (içeriğe göre)'), geojson: 'GeoJSON', imagescope: 'Aperio ImageScope XML', asap: 'ASAP XML']
+def MODE_LABELS = [ekle : workshopText('script.0316403ac711', 'Mevcut anotasyonlara dokunma — yalnız ekle (varsayılan)'),
+                   dosya: workshopText('script.939ba313a1b6', 'Aynı dosyadan önceki içe aktarımı değiştir (yalnız bu dosyadan gelenler; elle çizilenler ve başka dosyalar korunur)'),
+                   tumu : workshopText('script.8100fb356f4b', 'Tüm anotasyonları sil ve değiştir (tespitler korunur)')]
 def SUBDIRS = ['geojson', 'imagescope', 'asap']
 double BOUNDS_TOL = 0.01d
 def plane = ImagePlane.getDefaultPlane()
@@ -581,7 +581,7 @@ def runImport = { List rows, Map cfg, Closure onProgress, java.util.concurrent.a
                 res.skipped++
                 addRow(rest, 'atlandı', 0, 0, 0, 'iptal edildi — işlenmedi')
             }
-            res.lines.add('⏹ İptal edildi — kalan görüntüler işlenmedi.')
+            res.lines.add(workshopText('script.89846f127ccf', '⏹ İptal edildi — kalan görüntüler işlenmedi.'))
             break
         }
         if (cfg.stillValid != null) {
@@ -655,22 +655,22 @@ def runImport = { List rows, Map cfg, Closure onProgress, java.util.concurrent.a
         rf.setText(report.toString(), 'UTF-8')
         res.reportFile = rf
     } catch (Throwable e) {
-        res.lines.add('⚠ Rapor yazılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName()))
+        res.lines.add(workshopText('script.760e619dbc51', '⚠ Rapor yazılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName()))
     }
     return res
 }
 
 def resultText = { Map res, String modeLabel ->
     def sb = new StringBuilder()
-    sb << 'TOPLU ANOTASYON İÇE AKTARMA — ÖZET' << (res.cancelled ? ' (İPTAL EDİLDİ)' : '') << ((!res.cancelled && res.stopped) ? (res.stopUnverified ? ' (DURDURULDU — proje doğrulanamadı)' : ' (DURDURULDU — proje değişti)') : '') << '\n'
+    sb << workshopText('script.2145d25c968a', 'TOPLU ANOTASYON İÇE AKTARMA — ÖZET') << (res.cancelled ? workshopText('script.0f71a2452bcb', ' (İPTAL EDİLDİ)') : '') << ((!res.cancelled && res.stopped) ? (res.stopUnverified ? workshopText('script.a72431fdde2f', ' (DURDURULDU — proje doğrulanamadı)') : workshopText('script.048449691876', ' (DURDURULDU — proje değişti)')) : '') << '\n'
     sb << '═══════════════════════════════════\n\n'
-    sb << String.format(java.util.Locale.US, 'İçe aktarılan görüntü: %,d   atlanan: %,d   hata: %,d%n', (int) res.ok, (int) res.skipped, (int) res.failed)
-    sb << String.format(java.util.Locale.US, 'Nesne: +%,d eklendi, −%,d silindi, %,d atlandı%n', (int) res.added, (int) res.removed, (int) res.skippedObjects)
-    sb << 'Kip    : ' << modeLabel << '\n'
-    sb << 'Rapor  : ' << (res.reportFile != null ? ((File) res.reportFile).getAbsolutePath() : '-') << '\n\n'
+    sb << String.format(java.util.Locale.US, workshopText('script.96fc1a424f45', 'İçe aktarılan görüntü: %,d   atlanan: %,d   hata: %,d%n'), (int) res.ok, (int) res.skipped, (int) res.failed)
+    sb << String.format(java.util.Locale.US, workshopText('script.1becec26a9c6', 'Nesne: +%,d eklendi, −%,d silindi, %,d atlandı%n'), (int) res.added, (int) res.removed, (int) res.skippedObjects)
+    sb << workshopText('script.ca046ba632a2', 'Kip    : ') << modeLabel << '\n'
+    sb << workshopText('script.7a9c865cd2b9', 'Rapor  : ') << (res.reportFile != null ? ((File) res.reportFile).getAbsolutePath() : '-') << '\n\n'
     res.lines.each { sb << it << '\n' }
-    if (res.liveUnsaved) sb << '\nAçık görüntü bir projede değil: değişiklikleri saklamak için File → Save kullanın.\n'
-    sb << '\nYeni sınıflar sınıf listesinde görünmüyorsa: Annotations sekmesi → sınıf listesi menüsü → Populate from existing objects.\n'
+    if (res.liveUnsaved) sb << workshopText('script.772b7b12bb7f', '\nAçık görüntü bir projede değil: değişiklikleri saklamak için File → Save kullanın.\n')
+    sb << workshopText('script.f856c779c3f1', '\nYeni sınıflar sınıf listesinde görünmüyorsa: Annotations sekmesi → sınıf listesi menüsü → Populate from existing objects.\n')
     sb << DISCLAIMER
     return sb.toString()
 }
@@ -745,7 +745,7 @@ def stage = null
 def step          = new java.util.concurrent.atomic.AtomicReference('SOURCE')
 def alwaysTop     = new java.util.concurrent.atomic.AtomicBoolean(true)
 def cancelledRef  = new java.util.concurrent.atomic.AtomicBoolean(false)
-def scopeRef      = new java.util.concurrent.atomic.AtomicReference(prefs.get('scope', 'project'))
+def scopeRef      = new java.util.concurrent.atomic.AtomicReference(prefs.get('scope', workshopText('script.244210e48437', 'project')))
 def sourceRef     = new java.util.concurrent.atomic.AtomicReference(null)   // File: klasör ya da dosya
 def previewRef    = new java.util.concurrent.atomic.AtomicReference(null)   // [rows, unmatched, files, dir]
 def resultTextRef = new java.util.concurrent.atomic.AtomicReference('')
@@ -845,12 +845,12 @@ def summarizeRow = { Map r, Set knownClasses = null ->
 }
 
 def startPreview = {
-    if (projectChanged()) { showError('Proje değişti; önizlemeyi yeniden oluşturun.'); return }
+    if (projectChanged()) { showError(workshopText('script.528168bd44d5', 'Proje değişti; önizlemeyi yeniden oluşturun.')); return }
     previewRef.set(null)     // yeni önizleme başlıyor: eski önizleme geçersiz (hata → "Geri" kaynağa döner)
     File chosen = sourceRef.get()
-    if (chosen == null || !chosen.exists()) { showError('Önce bir kaynak klasör (ya da dosya) seçin.'); return }
+    if (chosen == null || !chosen.exists()) { showError(workshopText('script.eafd1e2699f8', 'Önce bir kaynak klasör (ya da dosya) seçin.')); return }
     def targets = buildTargets(scopeRef.get())
-    if (targets.isEmpty()) { showError(scopeRef.get() == 'selected' ? 'Hiç görüntü işaretlenmedi.' : 'İçe aktarılacak görüntü yok (proje ya da açık görüntü yok).'); return }
+    if (targets.isEmpty()) { showError(scopeRef.get() == 'selected' ? workshopText('script.7ba2c8ac2522', 'Hiç görüntü işaretlenmedi.') : workshopText('script.056c16bc32fa', 'İçe aktarılacak görüntü yok (proje ya da açık görüntü yok).')); return }
     String fmt = prefs.get('format', 'otomatik')
     prefs.put('scope', scopeRef.get())
     try { prefs.flush() } catch (Throwable ignore) {}
@@ -867,7 +867,7 @@ def startPreview = {
     def worker = new Thread({
         try {
             def src = resolveSource(chosen, fmt)
-            if (src.files.isEmpty()) throw new IllegalStateException('Kaynakta okunabilir GeoJSON / ImageScope / ASAP dosyası bulunamadı:\n' + chosen.getAbsolutePath())
+            if (src.files.isEmpty()) throw new IllegalStateException(workshopText('script.3fee457e5461', 'Kaynakta okunabilir GeoJSON / ImageScope / ASAP dosyası bulunamadı:\n') + chosen.getAbsolutePath())
             def m = buildMatches(targets, src.files, readManifest((File) src.dir), projPathNow)
             if (chosen.isFile() && targets.size() == 1) forceSingle(m, src.files[0])
             int i = 0
@@ -884,27 +884,27 @@ def startPreview = {
                 step.set('PREVIEW'); render()
             }
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { showError('Önizleme hazırlanamadı:\n' + (t.getMessage() ?: t.getClass().getSimpleName())) }
+            javafx.application.Platform.runLater { showError(workshopText('script.b771c4719487', 'Önizleme hazırlanamadı:\n') + (t.getMessage() ?: t.getClass().getSimpleName())) }
         }
     }, 'AtolyeAnotasyonIce-Preview')
     worker.setDaemon(true); worker.start()
 }
 
 def startImport = {
-    if (projectChanged()) { showError('Proje değişti; önizlemeyi yeniden oluşturun.'); return }
+    if (projectChanged()) { showError(workshopText('script.528168bd44d5', 'Proje değişti; önizlemeyi yeniden oluşturun.')); return }
     def pv = previewRef.get()
-    if (pv == null) { showError('Önce bir önizleme oluşturun.'); return }
+    if (pv == null) { showError(workshopText('script.ca7e79953206', 'Önce bir önizleme oluşturun.')); return }
     boolean lock = prefs.getBoolean('lock', false)
     def todo = pv.rows.findAll { it.include && it.file != null }
-    if (todo.isEmpty()) { showError('İçe aktarılacak işaretli satır yok.'); return }
+    if (todo.isEmpty()) { showError(workshopText('script.0e2169857880', 'İçe aktarılacak işaretli satır yok.')); return }
     // Aynı dosya birden çok işaretli satıra seçilmişse (önizlemedeki açılır listeler serbesttir) hiçbir şey yazılmaz
     if (todo.groupBy { it.file.getPath() }.any { k, v -> v.size() > 1 }) {
-        showError('Aynı dosya birden çok görüntü için seçili; önizlemede düzeltin.'); return
+        showError(workshopText('script.ceed455be1e2', 'Aynı dosya birden çok görüntü için seçili; önizlemede düzeltin.')); return
     }
     // Projesiz tek görüntü: önizlemedeki açık görüntü hâlâ geçerli görüntü olmalı (aksi hâlde yanlış görüntüye yazılırdı)
     def curData = QP.getCurrentImageData()
     if (todo.any { it.target.entry == null && !(curData != null && curData.is(it.target.live)) }) {
-        showError('Açık görüntü değişti; önizlemeyi yeniden oluşturun.'); return
+        showError(workshopText('script.5ce999ef0c80', 'Açık görüntü değişti; önizlemeyi yeniden oluşturun.')); return
     }
     // Pencere kalıcıdır: önizlemeden sonra bir hedef lam açılmış olabilir → açık lamların sayımlarını ŞİMDİ tazele
     def projNow = QP.getProject()
@@ -928,11 +928,11 @@ def startImport = {
     int nSame = (todo.collect { (it.existingSameFile ?: 0) as int }.sum() ?: 0) as int
     if (anyUnknown || nAnn > 0) {
         def sb = new StringBuilder()
-        if (nAnn > 0) sb << String.format(java.util.Locale.US, '%,d hedef görüntüde zaten %,d anotasyon var.', nImg, nAnn)
-        else sb << 'Hedef görüntülerin bazılarında mevcut anotasyonlar olabilir (elle seçilen dosyalar önizlenmedi).'
+        if (nAnn > 0) sb << String.format(java.util.Locale.US, workshopText('script.7a0588351e93', '%,d hedef görüntüde zaten %,d anotasyon var.'), nImg, nAnn)
+        else sb << workshopText('script.0f7ada5715d9', 'Hedef görüntülerin bazılarında mevcut anotasyonlar olabilir (elle seçilen dosyalar önizlenmedi).')
         if (nSame > 0) sb << String.format(java.util.Locale.US,
-            '\n%,d nesne bu dosyalardan daha önce içe aktarılmış; ImageScope/ASAP dosyalarında "yalnız ekle" bunların ikinci kopyasını oluşturur (GeoJSON\'da aynı UUID yeniden eklenmez).\n"Aynı dosyadan önceki içe aktarımı değiştir" seçeneği bu nesnelerde sonradan yaptığınız düzeltmeleri de siler.', nSame)
-        sb << '\n\nÖnceki anotasyonlar ne olsun?'
+            workshopText('script.4caa5176cde3', '\n%,d nesne bu dosyalardan daha önce içe aktarılmış; ImageScope/ASAP dosyalarında "yalnız ekle" bunların ikinci kopyasını oluşturur (GeoJSON\'da aynı UUID yeniden eklenmez).\n"Aynı dosyadan önceki içe aktarımı değiştir" seçeneği bu nesnelerde sonradan yaptığınız düzeltmeleri de siler.'), nSame)
+        sb << workshopText('script.d58cea62bc55', '\n\nÖnceki anotasyonlar ne olsun?')
         def pick = Dialogs.showChoiceDialog(workshopText('script.4374a936df93', 'Önceki anotasyonlar'), sb.toString(), (MODE_LABELS.values() as List), MODE_LABELS.ekle)
         if (pick == null) return                                   // İptal → hiçbir şey yazılmaz
         mode = (String) MODE_LABELS.find { k, v -> v == pick }.key
@@ -961,13 +961,13 @@ def startImport = {
                                       liveResolver: { e -> onFx(10) { liveDataForStrict(projAtRun, e) } },
                                       stillValid: { -> onFx(30) { QP.getProject().is(projAtRun) } }], setProgress, cancelledRef)
             String txt = resultText(res, (String) MODE_LABELS[mode])
-            String ttl = res.cancelled ? 'İptal edildi' : res.stopped ? (res.stopUnverified ? 'Durduruldu ⚠' : 'Durduruldu — proje değişti ⚠') : (res.reportFile == null ? 'Tamamlandı (rapor yazılamadı) ⚠' : ((res.failed as int) > 0 ? 'Tamamlandı (hatalarla) ⚠' : 'Tamamlandı ✅'))
+            String ttl = res.cancelled ? workshopText('script.dbd417da03e1', 'İptal edildi') : res.stopped ? (res.stopUnverified ? workshopText('script.b97dbbb1f43c', 'Durduruldu ⚠') : workshopText('script.560b1bc399da', 'Durduruldu — proje değişti ⚠')) : (res.reportFile == null ? workshopText('script.bb0038c6bf4f', 'Tamamlandı (rapor yazılamadı) ⚠') : ((res.failed as int) > 0 ? workshopText('script.1f99131663f1', 'Tamamlandı (hatalarla) ⚠') : workshopText('script.92c17020894f', 'Tamamlandı ✅')))
             javafx.application.Platform.runLater {
                 if (res.liveTouched) { try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {} }
                 resultTextRef.set(txt); resultTitleRef.set(ttl); step.set('RESULT'); render()
             }
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { showError('İçe aktarma başarısız:\n' + (t.getMessage() ?: t.getClass().getSimpleName())) }
+            javafx.application.Platform.runLater { showError(workshopText('script.ad2a75b67f32', 'İçe aktarma başarısız:\n') + (t.getMessage() ?: t.getClass().getSimpleName())) }
         }
     }, 'AtolyeAnotasyonIce-Run')
     worker.setDaemon(true); worker.start()
@@ -1023,9 +1023,9 @@ render = { ->
             rb.setDisable(disabled); rb.setSelected(key == sc); return rb
         }
         center.getChildren().add(new javafx.scene.layout.HBox(16,
-            mkRadio('Bu görüntü', 'current', imageData == null),
-            mkRadio('Seçili proje görüntüleri', 'selected', project == null),
-            mkRadio('Tüm proje', 'project', project == null)))
+            mkRadio(workshopText('script.6979608deb32', 'Bu görüntü'), 'current', imageData == null),
+            mkRadio(workshopText('script.9d0d8a40f55d', 'Seçili proje görüntüleri'), 'selected', project == null),
+            mkRadio(workshopText('script.3080d2dc7199', 'Tüm proje'), 'project', project == null)))
         tg.selectedToggleProperty().addListener(onChange { n -> if (n != null) { scopeRef.set((String) n.getUserData()); render() } })
         if (project != null && sc == 'selected') {
             def list = new javafx.scene.layout.VBox(4)
@@ -1052,7 +1052,7 @@ render = { ->
         }, workshopText('script.afe1718557ae', 'Dışa aktarma kökü (geojson/ imagescope/ asap/ alt klasörlü) ya da dosyaların durduğu klasör'))
         def pickFile = navButton(workshopText('script.48ffcfdc093e', 'Dosya seç…'), {
             def f = FileChoosers.promptForFile(stage, workshopText('script.fb352f8ff06c', 'Anotasyon dosyasını seçin'),
-                FileChoosers.createExtensionFilter('Anotasyon (*.geojson, *.json, *.xml)', '*.geojson', '*.json', '*.xml'),
+                FileChoosers.createExtensionFilter(workshopText('script.45025504830b', 'Anotasyon (*.geojson, *.json, *.xml)'), '*.geojson', '*.json', '*.xml'),
                 FileChoosers.FILTER_ALL_FILES)
             if (f != null) { sourceRef.set(f); render() }
         }, workshopText('script.83757e5671ea', 'Yalnız "Bu görüntü" kapsamında: tek dosyayı açık görüntüye aktarır'))
@@ -1082,7 +1082,7 @@ render = { ->
         actions.add(go)
     } else if (cur == 'LOADING') {
         title.setText(workshopText('script.7a692507f114', 'Önizleme hazırlanıyor…'))
-        addProgress('Dosyalar eşleniyor…')
+        addProgress(workshopText('script.fce426c805ee', 'Dosyalar eşleniyor…'))
         addGuidance(workshopText('script.8b0573d6d8f7', 'Her eşleşen dosya okunur ve görüntü boyutuyla karşılaştırılır; henüz hiçbir şey yazılmaz.'))
         actions.add(navButton(workshopText('script.3f6920a9ead3', 'İptal et'), { cancelledRef.set(true) }))
     } else if (cur == 'PREVIEW') {
@@ -1100,11 +1100,11 @@ render = { ->
         pv.files.each { fe -> byName.put(fe.file.getName(), fe) }
         def grid = new javafx.scene.layout.GridPane()
         grid.setHgap(10); grid.setVgap(6)
-        ['İçe aktar', 'Görüntü', 'Dosya', 'Eşleşme', 'Durum / içerik'].eachWithIndex { String h, int c ->
+        [workshopText('script.ef53d675ddaa', 'İçe aktar'), workshopText('script.461af90e2417', 'Görüntü'), workshopText('script.9cecd7340f24', 'Dosya'), workshopText('script.5a326ab53522', 'Eşleşme'), workshopText('script.0dd59832b6d0', 'Durum / içerik')].eachWithIndex { String h, int c ->
             def l = new javafx.scene.control.Label(h); l.setStyle('-fx-font-weight: bold;'); grid.add(l, c, 0)
         }
         // Aynı dosya birden çok İŞARETLİ satırda seçiliyse o satırların durumu 'belirsiz' gösterilir (otomatik işaret kaldırma yok; "İçe aktar" yine de engeller)
-        def DUP_TXT = 'belirsiz — aynı dosya birden çok görüntüde seçili'
+        def DUP_TXT = workshopText('script.f2feb6edb69c', 'belirsiz — aynı dosya birden çok görüntüde seçili')
         def stLabels = []
         def refreshDup = { ->
             def cnt = [:]
@@ -1136,7 +1136,7 @@ render = { ->
                 r.include = (pick != null)
                 inc.setSelected((boolean) r.include); inc.setDisable(pick == null)
                 r.status = (pick == null) ? 'dosya yok' : 'elle seçildi'
-                r.summary = (pick == null) ? '' : '(çalıştırmada okunacak)'
+                r.summary = (pick == null) ? '' : workshopText('script.b202cf51a3e0', '(çalıştırmada okunacak)')
                 st.setText(r.status + (r.summary ? (' — ' + r.summary) : ''))
                 refreshDup()
             })

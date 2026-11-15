@@ -380,36 +380,36 @@ hierarchy.addObjects(newTiles)
 hierarchy.addObjects([summary])
 QP.fireHierarchyUpdate(hierarchy)
 
-def fmt = { double value, String pattern -> Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : 'hesaplanamadı' }
+def fmt = { double value, String pattern -> Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : workshopText('script.77fa6502fb41', 'hesaplanamadı') }
 def body = new StringBuilder()
-body << 'Kİ-67 HETEROJENLİK IZGARASI\n'
+body << workshopText('script.84827b298e22', 'Kİ-67 HETEROJENLİK IZGARASI\n')
 body << '════════════════════════════════\n\n'
 if (!keptSetNames.isEmpty()) {
     body << String.format(java.util.Locale.US, workshopText('script.b880deb01e0a', 'DİKKAT — önceki sonuç hâlâ lamda duruyor: %s. Hiçbir şey silinmedi. Eski seti kaldırmak için o addaki anotasyonları seçip silin ya da betiği yeniden çalıştırıp "Öncekini değiştir"i seçin. Dışa aktarım ve özetler iki seti de görür.\nBu çalıştırmanın özeti: %s'), keptSetNames.join(', '), summary.getName()) << '\n\n'
 } else if (removedCount > 0) {
     body << String.format(java.util.Locale.US, workshopText('script.d0cc14f27b20', 'Önceki sonuç değiştirildi: %,d anotasyon silindi (içlerindeki nesneler korundu).'), removedCount) << '\n\n'
 }
-body << String.format(java.util.Locale.US, 'Tumor ROI sayısı       : %,d%n', tumorObjects.size())
-body << String.format(java.util.Locale.US, 'Toplam hücre           : %,d%n', totalCells)
-body << String.format(java.util.Locale.US, 'Pozitif hücre          : %,d%n', totalPositive)
-body << "Ağırlıklı genel LI    : ${fmt(overallLI, '%.2f%%')}\n"
-body << String.format(java.util.Locale.US, 'ROI-kesişimli karo     : %,d%n', newTiles.size())
-body << String.format(java.util.Locale.US, 'Sıfır hücreli karo     : %,d%n', zeroCellTiles)
-body << String.format(java.util.Locale.US, 'LI için geçerli karo   : %,d (karo başına ≥%d hücre)%n', validTileLI.size(), minCellsPerTile)
+body << String.format(java.util.Locale.US, workshopText('script.f21d46de7a2b', 'Tumor ROI sayısı       : %,d%n'), tumorObjects.size())
+body << String.format(java.util.Locale.US, workshopText('script.60b742a569db', 'Toplam hücre           : %,d%n'), totalCells)
+body << String.format(java.util.Locale.US, workshopText('script.ad6ce95a35ef', 'Pozitif hücre          : %,d%n'), totalPositive)
+body << String.format(java.util.Locale.US, workshopText('script.80e10f09ed14', 'Ağırlıklı genel LI    : %s\n'), fmt(overallLI, '%.2f%%'))
+body << String.format(java.util.Locale.US, workshopText('script.7c7655aafe10', 'ROI-kesişimli karo     : %,d%n'), newTiles.size())
+body << String.format(java.util.Locale.US, workshopText('script.aacc6c91eafe', 'Sıfır hücreli karo     : %,d%n'), zeroCellTiles)
+body << String.format(java.util.Locale.US, workshopText('script.40ab979a7ed1', 'LI için geçerli karo   : %,d (karo başına ≥%d hücre)%n'), validTileLI.size(), minCellsPerTile)
 body << '────────────────────────────────\n'
-body << "Karo LI ortalaması    : ${fmt(meanTileLI, '%.2f%%')}\n"
-body << "Karo LI SD (n−1)      : ${fmt(sdTileLI, '%.2f%%')}\n"
-body << "Karo LI CV (n−1)      :${fmt(cvTileLI, '%.2f%%')}\n"
+body << String.format(java.util.Locale.US, workshopText('script.019f07d85bf4', 'Karo LI ortalaması    : %s\n'), fmt(meanTileLI, '%.2f%%'))
+body << String.format(java.util.Locale.US, workshopText('script.a870b3c14eef', 'Karo LI SD (n−1)      : %s\n'), fmt(sdTileLI, '%.2f%%'))
+body << String.format(java.util.Locale.US, workshopText('script.1e0fa23d6d29', 'Karo LI CV (n−1)      :%s\n'), fmt(cvTileLI, '%.2f%%'))
 body << "Morisita Iδ           : ${fmt(morisita, '%.4f')}\n"
-body << String.format(java.util.Locale.US, 'Morisita quadratları   : %,d tam alanlı karo%n', quadrats)
-body << String.format(java.util.Locale.US, 'Dışlanan kenar karosu  : %,d kısmi karo%n', partialTiles)
-body << '\nAğırlıklı genel LI, tüm hücrelerin birleşik oranıdır.\n'
-body << 'Karo ortalaması her geçerli karoya eşit ağırlık verir ve ayrı raporlanır.\n'
-body << 'Morisita hesabı eşit alan varsayımı için yalnız tam karoları kullanır; sıfır quadratlar dahildir.\n\n'
-body << 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.\n'
-body << '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'
+body << String.format(java.util.Locale.US, workshopText('script.f505608a72f5', 'Morisita quadratları   : %,d tam alanlı karo%n'), quadrats)
+body << String.format(java.util.Locale.US, workshopText('script.2d920d7623e6', 'Dışlanan kenar karosu  : %,d kısmi karo%n'), partialTiles)
+body << workshopText('script.95d8c15d2ce7', '\nAğırlıklı genel LI, tüm hücrelerin birleşik oranıdır.\n')
+body << workshopText('script.c4480a3ef49a', 'Karo ortalaması her geçerli karoya eşit ağırlık verir ve ayrı raporlanır.\n')
+body << workshopText('script.5564564d35a9', 'Morisita hesabı eşit alan varsayımı için yalnız tam karoları kullanır; sıfır quadratlar dahildir.\n\n')
+body << workshopText('script.89893f30f3c3', 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.\n')
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow('Ki-67 heterojenlik', body.toString())
+showResultWindow(workshopText('script.56821367a541', 'Ki-67 heterojenlik'), body.toString())
 println String.format(java.util.Locale.US, 'Ki-67 heterojenlik: %d karo, genel LI %s', newTiles.size(), fmt(overallLI, '%.2f%%'))
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

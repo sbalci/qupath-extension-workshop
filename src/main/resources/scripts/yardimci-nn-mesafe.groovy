@@ -220,8 +220,8 @@ if (!(ph > 0)) ph = pw
 def cells = QP.getDetectionObjects().findAll { it.getROI() != null }
 int n = cells.size()
 if (n < 2) {
-    def msg = "En yakın komşu için en az 2 hücre gerekir.\n" +
-              "Önce Hücre Tespiti / Nükleer Boya / Sitoplazmik Boya / Tümör İçi Ki-67 modüllerinden biriyle hücre tespiti yapın."
+    def msg = workshopText('script.f09687dd2c79', 'En yakın komşu için en az 2 hücre gerekir.\n') +
+              workshopText('script.c7de50a7d78a', 'Önce Hücre Tespiti / Nükleer Boya / Sitoplazmik Boya / Tümör İçi Ki-67 modüllerinden biriyle hücre tespiti yapın.')
     if (isHeadless) println msg else Dialogs.showWarningNotification(workshopText('script.bd9ad9944f29', "Yetersiz hücre"), msg)
     return
 }
@@ -332,24 +332,24 @@ QP.fireHierarchyUpdate()
 
 // ── 6) Sonucu sun ───────────────────────────────────────────────────
 def body = new StringBuilder()
-body << "EN YAKIN KOMŞU MESAFESİ\n"
+body << workshopText('script.373848344143', 'EN YAKIN KOMŞU MESAFESİ\n')
 body << "════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Hücre sayısı     : %,d%n", n)
-body << String.format(java.util.Locale.US, "Ortalama NN      : %.1f µm%n", meanNN)
-body << String.format(java.util.Locale.US, "SS (std) NN      : %.1f µm%n", sdNN)
-body << String.format(java.util.Locale.US, "Medyan NN        : %.1f µm%n", medianNN)
+body << String.format(java.util.Locale.US, workshopText('script.c854224e6666', 'Hücre sayısı     : %,d%n'), n)
+body << String.format(java.util.Locale.US, workshopText('script.5433ed5b5ffd', 'Ortalama NN      : %.1f µm%n'), meanNN)
+body << String.format(java.util.Locale.US, workshopText('script.dc50ba1e07c3', 'SS (std) NN      : %.1f µm%n'), sdNN)
+body << String.format(java.util.Locale.US, workshopText('script.a5c6642d60db', 'Medyan NN        : %.1f µm%n'), medianNN)
 body << String.format(java.util.Locale.US, "MAD NN           : %.1f µm%n", madNN)
 body << String.format(java.util.Locale.US, "Minimum NN       : %.1f µm%n", minNN)
-body << String.format(java.util.Locale.US, "Maksimum NN      : %.1f µm%n", maxNN)
+body << String.format(java.util.Locale.US, workshopText('script.486a93a1c61d', 'Maksimum NN      : %.1f µm%n'), maxNN)
 body << "\n"
-body << "Küçük NN mesafesi → hücreler sıkı (yüksek yoğunluk/kümelenme).\n"
-body << "Her hücreye 'En yakın komşu (µm)' ölçümü yazıldı; ölçüme göre\n"
-body << "renklendirilince yerel sıkışıklık haritası görünür.\n\n"
+body << workshopText('script.e7c56b43e0b1', 'Küçük NN mesafesi → hücreler sıkı (yüksek yoğunluk/kümelenme).\n')
+body << workshopText('script.153ea5b552f7', 'Her hücreye \'En yakın komşu (µm)\' ölçümü yazıldı; ölçüme göre\n')
+body << workshopText('script.6bcef526b271', 'renklendirilince yerel sıkışıklık haritası görünür.\n\n')
 def noteText = modeNote(sumRes)
 if (noteText) body << noteText << "\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("En yakın komşu mesafesi", body.toString())
+showResultWindow(workshopText('script.20cf2f842c0b', 'En yakın komşu mesafesi'), body.toString())
 println String.format(java.util.Locale.US, "✓ NN mesafesi yazıldı (ortalama %.1f µm, medyan %.1f µm).", meanNN, medianNN)
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

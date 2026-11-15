@@ -138,9 +138,9 @@ def loadConfig = { ->
 def configMissing = { cfg ->
     def miss = []
     if (!cfg.python?.trim() || !(new File(cfg.python)).isFile())
-        miss << 'Python yürütülebilir (python.exe)'
+        miss << workshopText('script.5623a3de03e1', 'Python yürütülebilir (python.exe)')
     if (!cfg.bridge?.trim() || !(new File(cfg.bridge)).isFile())
-        miss << 'Kaiko köprüsü (kaiko_bridge.py)'
+        miss << workshopText('script.9829a5736981', 'Kaiko köprüsü (kaiko_bridge.py)')
     return miss
 }
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
@@ -260,12 +260,12 @@ def exportTiles = { imageData, File workDir, cfg, Closure appendLine, boolean in
     double downsample
     if ((cfg.downsample ?: '').toString().trim().isEmpty()) {
         downsample = (Double.isFinite(mppDs) && mppDs > 0) ? Math.max(1.0d, 0.5d / mppDs) : 1.0d
-        appendLine(String.format(java.util.Locale.US, 'Downsample otomatik: %.3f%s', downsample,
-            Double.isFinite(mppDs) ? String.format(java.util.Locale.US, ' (lam %.3f µm/px → karo %.3f µm/px)', mppDs, mppDs * downsample) : ' (lam kalibre değil; ölçek bilinmiyor)'))
+        appendLine(String.format(java.util.Locale.US, workshopText('script.80805ed9e8d1', 'Downsample otomatik: %.3f%s'), downsample,
+            Double.isFinite(mppDs) ? String.format(java.util.Locale.US, workshopText('script.14eae5f345b0', ' (lam %.3f µm/px → karo %.3f µm/px)'), mppDs, mppDs * downsample) : workshopText('script.e58e27369149', ' (lam kalibre değil; ölçek bilinmiyor)')))
     } else {
         downsample = parseDoubleOr(cfg.downsample, 1.0d)
         if (!(downsample > 0)) downsample = 1.0d
-        if (Double.isFinite(mppDs)) appendLine(String.format(java.util.Locale.US, 'Downsample %.3f (lam %.3f µm/px → karo %.3f µm/px)', downsample, mppDs, mppDs * downsample))
+        if (Double.isFinite(mppDs)) appendLine(String.format(java.util.Locale.US, workshopText('script.fa912abc9125', 'Downsample %.3f (lam %.3f µm/px → karo %.3f µm/px)'), downsample, mppDs, mppDs * downsample))
     }
     int maxTiles = parseIntOr(cfg.maxTiles, 20)
     def tilesRoot = new File(workDir, 'tiles')
@@ -291,7 +291,7 @@ def exportTiles = { imageData, File workDir, cfg, Closure appendLine, boolean in
                               tile_folder: outDir.getAbsolutePath(), roi: roiMap(ann.getROI())]
                 classCounts[cn] = (classCounts.getOrDefault(cn, 0)) + 1
             }
-            appendLine('  eğitim karoları: ' + cn + ' (' + n + ') [' + i + '/' + classified.size() + ']')
+            appendLine(String.format(java.util.Locale.US, workshopText('script.d97ea818ed60', '  eğitim karoları: %s (%d) [%d/%d]'), cn, n, i, classified.size()))
         }
     }
     int j = 0
@@ -303,7 +303,7 @@ def exportTiles = { imageData, File workDir, cfg, Closure appendLine, boolean in
         if (n > 0)
             predictList << [id: annId, image_name: imageName,
                             tile_folder: outDir.getAbsolutePath(), roi: roiMap(ann.getROI())]
-        appendLine('  tahmin karoları: anotasyon ' + j + '/' + unclassified.size() + ' (' + n + ')')
+        appendLine(String.format(java.util.Locale.US, workshopText('script.418e78600bc8', '  tahmin karoları: anotasyon %d/%d (%d)'), j, unclassified.size(), n))
     }
     writeJson(trainList, new File(workDir, 'train_annotations.json'))
     writeJson(predictList, new File(workDir, 'predict_annotations.json'))
@@ -384,7 +384,7 @@ def copyToClipboard = { String txt ->
 def importPredictions = { File workDir, imageData ->
     def predsFile = new File(workDir, 'predictions.json')
     if (!predsFile.isFile())
-        return [ok: false, error: 'predictions.json bulunamadı:\n' + predsFile.getAbsolutePath()]
+        return [ok: false, error: workshopText('script.4a44d0192289', 'predictions.json bulunamadı:\n') + predsFile.getAbsolutePath()]
     def predMap = [:]
     try {
         def reader = new java.io.InputStreamReader(
@@ -437,7 +437,7 @@ def importPredictions = { File workDir, imageData ->
 // ── Özet metni ──────────────────────────────────────────────────────────────
 def buildResultText = { File workDir, exp, imp, boolean trained ->
     def sb = new StringBuilder()
-    sb << "KAIKO MIDNIGHT — ÖZET\n"
+    sb << workshopText('script.22385accc9cf', 'KAIKO MIDNIGHT — ÖZET\n')
     sb << "═════════════════════════\n\n"
     if (trained) {
         def sumFile = new File(workDir, 'training_summary.json')
@@ -447,33 +447,33 @@ def buildResultText = { File workDir, exp, imp, boolean trained ->
                     new java.io.FileInputStream(sumFile), java.nio.charset.StandardCharsets.UTF_8)
                 def o = com.google.gson.JsonParser.parseReader(reader).getAsJsonObject()
                 reader.close()
-                sb << "Eğitim:\n"
+                sb << workshopText('script.223c354ed613', 'Eğitim:\n')
                 if (o.has('class_counts') && o.get('class_counts').isJsonObject())
                     o.getAsJsonObject('class_counts').entrySet().each { e ->
-                        sb << String.format(java.util.Locale.US, "  %-24s : %,d anotasyon%n", e.getKey(), e.getValue().getAsInt())
+                        sb << String.format(java.util.Locale.US, workshopText('script.743880983d9a', '  %-24s : %,d anotasyon%n'), e.getKey(), e.getValue().getAsInt())
                     }
-                if (o.has('n_tiles'))       sb << String.format(java.util.Locale.US, "  %-24s : %,d%n", '(toplam karo)', o.get('n_tiles').getAsInt())
-                if (o.has('embedding_dim')) sb << String.format(java.util.Locale.US, "  %-24s : %,d%n", 'gömme boyutu', o.get('embedding_dim').getAsInt())
-                if (o.has('train_accuracy'))sb << String.format(java.util.Locale.US, "  %-24s : %.3f%n", 'eğitim doğruluğu (set üstü)', o.get('train_accuracy').getAsDouble())
+                if (o.has('n_tiles'))       sb << String.format(java.util.Locale.US, "  %-24s : %,d%n", workshopText('script.1dcc7c0d131a', '(toplam karo)'), o.get('n_tiles').getAsInt())
+                if (o.has('embedding_dim')) sb << String.format(java.util.Locale.US, "  %-24s : %,d%n", workshopText('script.cf075ac69023', 'gömme boyutu'), o.get('embedding_dim').getAsInt())
+                if (o.has('train_accuracy'))sb << String.format(java.util.Locale.US, "  %-24s : %.3f%n", workshopText('script.17572e5430c6', 'eğitim doğruluğu (set üstü)'), o.get('train_accuracy').getAsDouble())
                 sb << "\n"
             } catch (Throwable ignore) {}
         }
     }
-    sb << "Tahmin:\n"
+    sb << workshopText('script.7f72c2c2beaa', 'Tahmin:\n')
     if (imp != null && imp.ok) {
         int total = 0
         imp.predDist.each { cn, n ->
-            sb << String.format(java.util.Locale.US, "  %-24s : %,d anotasyon%n", cn, n); total += n
+            sb << String.format(java.util.Locale.US, workshopText('script.743880983d9a', '  %-24s : %,d anotasyon%n'), cn, n); total += n
         }
-        sb << String.format(java.util.Locale.US, "  %-24s : %,d%n", '(sınıflandırılan)', total)
-        if (imp.skipped > 0) sb << String.format(java.util.Locale.US, "  %-24s : %,d%n", '(karo yok, atlanan)', imp.skipped)
-        if (!Double.isNaN(imp.meanConf)) sb << String.format(java.util.Locale.US, "  %-24s : %.3f%n", 'ortalama güven', imp.meanConf)
-        sb << "\nHer anotasyona '" << CONF_MEAS << "' ve sınıf olasılığı ölçümleri yazıldı (Measurements paneli).\n"
+        sb << String.format(java.util.Locale.US, "  %-24s : %,d%n", workshopText('script.52c7bcf3e82c', '(sınıflandırılan)'), total)
+        if (imp.skipped > 0) sb << String.format(java.util.Locale.US, "  %-24s : %,d%n", workshopText('script.09ee209917e4', '(karo yok, atlanan)'), imp.skipped)
+        if (!Double.isNaN(imp.meanConf)) sb << String.format(java.util.Locale.US, "  %-24s : %.3f%n", workshopText('script.525c16f78229', 'ortalama güven'), imp.meanConf)
+        sb << workshopText('script.4a53d47c9306', '\nHer anotasyona \'') << CONF_MEAS << workshopText('script.1c62e63cea28', '\' ve sınıf olasılığı ölçümleri yazıldı (Measurements paneli).\n')
     } else {
-        sb << "  (tahmin uygulanamadı)\n"
+        sb << workshopText('script.fb648de64fe5', '  (tahmin uygulanamadı)\n')
     }
-    sb << "\nMidnight çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki).\n"
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    sb << workshopText('script.b10bc710ad3b', '\nMidnight çıktısı bir derin öğrenme tahminidir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki).\n')
+    sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
     return sb.toString()
 }
 
@@ -518,7 +518,7 @@ def runPython = { List cmd, Closure onLine ->
     applyCacheEnv(pb)
     def proc
     try { proc = pb.start() }
-    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.f0e1e3289660', 'Python başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     processRef.set(proc)
     def last = new java.util.ArrayDeque()
     try {
@@ -533,9 +533,9 @@ def runPython = { List cmd, Closure onLine ->
     } catch (Throwable ignore) {}
     boolean finished
     try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
-    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
+    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: workshopText('script.e6b0c32aaae9', 'Zaman aşımı (') + PYTHON_TIMEOUT_SECONDS + workshopText('script.2ccf3f4af0dd', ' sn)')] }
+    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
     int code = proc.exitValue()
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
@@ -578,7 +578,7 @@ def ensureWorker = { cfg, Closure appendLine ->
     applyCacheEnv(pb)
     def proc
     try { proc = pb.start() }
-    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Kalıcı çalışan başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.b8b00e74dc94', 'Kalıcı çalışan başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     workerProcRef.set(proc); workerSigRef.set(workerSig(cfg)); workerReadyRef.set(false); workerRespQueue.clear()
     def writer = new java.io.BufferedWriter(new java.io.OutputStreamWriter(proc.getOutputStream(), java.nio.charset.StandardCharsets.UTF_8))
     workerWriterRef.set(writer)
@@ -597,33 +597,33 @@ def ensureWorker = { cfg, Closure appendLine ->
         workerReadyRef.set(false)
     }, 'AtolyeKaiko-Worker')
     readerThread.setDaemon(true); readerThread.start()
-    appendLine('Kalıcı çalışan başlatıldı; model yükleniyor (ilk seferde uzun sürebilir)…')
+    appendLine(workshopText('script.82ab689de16e', 'Kalıcı çalışan başlatıldı; model yükleniyor (ilk seferde uzun sürebilir)…'))
     long deadline = System.currentTimeMillis() + PYTHON_TIMEOUT_SECONDS * 1000L
     while (!workerReadyRef.get()) {
-        if (cancelledRef.get())      { stopWorker(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-        if (!proc.isAlive())         { return [ok: false, exitCode: -1, error: 'Kalıcı çalışan beklenmedik şekilde durdu (bağımlılıkları "Bağımlılık kontrolü" ile doğrulayın).'] }
-        if (System.currentTimeMillis() > deadline) { stopWorker(); return [ok: false, exitCode: -2, error: 'Kalıcı çalışan zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn).'] }
-        try { Thread.sleep(150) } catch (InterruptedException ie) { return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+        if (cancelledRef.get())      { stopWorker(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
+        if (!proc.isAlive())         { return [ok: false, exitCode: -1, error: workshopText('script.56cd9801fce9', 'Kalıcı çalışan beklenmedik şekilde durdu (bağımlılıkları "Bağımlılık kontrolü" ile doğrulayın).')] }
+        if (System.currentTimeMillis() > deadline) { stopWorker(); return [ok: false, exitCode: -2, error: workshopText('script.266f1a4ce2a4', 'Kalıcı çalışan zaman aşımı (') + PYTHON_TIMEOUT_SECONDS + workshopText('script.9bea015213cd', ' sn).')] }
+        try { Thread.sleep(150) } catch (InterruptedException ie) { return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
     }
-    appendLine('Kalıcı çalışan hazır (model bellekte; sonraki çağrılarda yeniden yüklenmez).')
+    appendLine(workshopText('script.753476e14c4e', 'Kalıcı çalışan hazır (model bellekte; sonraki çağrılarda yeniden yüklenmez).'))
     return [ok: true]
 }
 
 def workerSend = { java.util.Map req ->
     def w = workerWriterRef.get(); def p = workerProcRef.get()
-    if (w == null || p == null || !p.isAlive()) return [ok: false, exitCode: -1, error: 'Kalıcı çalışan etkin değil.']
+    if (w == null || p == null || !p.isAlive()) return [ok: false, exitCode: -1, error: workshopText('script.3f99bc019749', 'Kalıcı çalışan etkin değil.')]
     workerRespQueue.clear()
     def json = qupath.lib.io.GsonTools.getInstance(false).toJson(req)
     try { w.write(json); w.write('\n'); w.flush() }
-    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Komut gönderilemedi: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.12b58b8f0ac4', 'Komut gönderilemedi: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     String resp = null
     long deadline = System.currentTimeMillis() + PYTHON_TIMEOUT_SECONDS * 1000L
     while (resp == null) {
-        if (cancelledRef.get()) return [ok: false, exitCode: -3, error: 'İptal edildi']
-        if (!p.isAlive())       return [ok: false, exitCode: -1, error: 'Kalıcı çalışan durdu.']
-        if (System.currentTimeMillis() > deadline) return [ok: false, exitCode: -2, error: 'Kalıcı çalışan yanıt vermedi (zaman aşımı).']
+        if (cancelledRef.get()) return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')]
+        if (!p.isAlive())       return [ok: false, exitCode: -1, error: workshopText('script.ddaffa7b4e01', 'Kalıcı çalışan durdu.')]
+        if (System.currentTimeMillis() > deadline) return [ok: false, exitCode: -2, error: workshopText('script.bb6cdfde78b3', 'Kalıcı çalışan yanıt vermedi (zaman aşımı).')]
         try { resp = workerRespQueue.poll(200, java.util.concurrent.TimeUnit.MILLISECONDS) }
-        catch (InterruptedException ie) { return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+        catch (InterruptedException ie) { return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
     }
     def tail; synchronized (workerLastLines) { tail = new ArrayList(workerLastLines).join('\n') }
     try {
@@ -633,7 +633,7 @@ def workerSend = { java.util.Map req ->
         def err = (o.has('error') && !o.get('error').isJsonNull()) ? o.get('error').getAsString() : null
         return [ok: ok, exitCode: rc, error: err, lastLines: tail]
     } catch (Throwable t) {
-        return [ok: false, exitCode: -1, error: 'Yanıt çözümlenemedi: ' + resp, lastLines: tail]
+        return [ok: false, exitCode: -1, error: workshopText('script.a0874c0f4694', 'Yanıt çözümlenemedi: ') + resp, lastLines: tail]
     }
 }
 
@@ -665,11 +665,11 @@ def startSelftest = {
     persistFields()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
-    if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!miss.isEmpty()) { errorTextRef.set(workshopText('script.59d7792abf1b', 'Önce yapılandırmayı tamamlayın:\n  • ') + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set('Bağımlılık kontrolü'); step.set('CHECK_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.8369fe631575', 'Bağımlılık kontrolü')); step.set('CHECK_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         runPython(selftestCmd(cfg), appendLine)
@@ -681,45 +681,45 @@ def startSelftest = {
 // ── Eğit+tahmin / yalnız tahmin akışı ───────────────────────────────────────
 def startRun = { boolean wantTrain ->
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.da80fab350d1', 'Görüntü açık değil.')); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
     def workDir = resolveWorkDir(cfg, imageData)
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
-    runPhaseRef.set(wantTrain ? 'Karo dışa aktarılıyor (1/3)…' : 'Karo dışa aktarılıyor (1/2)…')
+    runPhaseRef.set(wantTrain ? workshopText('script.89cd0e350a07', 'Karo dışa aktarılıyor (1/3)…') : workshopText('script.d6da1ef0ca9e', 'Karo dışa aktarılıyor (1/2)…'))
     step.set('TRAIN_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
-        appendLine('Çalışma dizini: ' + workDir.getAbsolutePath())
+        appendLine(workshopText('script.8fba4a8a6457', 'Çalışma dizini: ') + workDir.getAbsolutePath())
         def exp
         try { exp = exportTiles(imageData, workDir, cfg, appendLine, wantTrain) }
         catch (Throwable t) {
-            javafx.application.Platform.runLater { errorTextRef.set('Karo dışa aktarma hatası:\n' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }; return
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.eeffc5532cd3', 'Karo dışa aktarma hatası:\n') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }; return
         }
-        if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
+        if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.fee85e45842b', 'İptal edildi.')); step.set('ERROR'); render() }; return }
         if (wantTrain && exp.nTrain < 2) {
-            javafx.application.Platform.runLater { errorTextRef.set('Eğitim için en az 2 SINIFLI anotasyon (karolu) gerekir. Bulunan: ' + exp.nTrain); step.set('ERROR'); render() }; return
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.f8d807c979c5', 'Eğitim için en az 2 SINIFLI anotasyon (karolu) gerekir. Bulunan: ') + exp.nTrain); step.set('ERROR'); render() }; return
         }
         if (exp.nPredict == 0) {
-            javafx.application.Platform.runLater { errorTextRef.set('Tahmin için en az 1 SINIFSIZ anotasyon (karolu) gerekir. Bulunan: 0'); step.set('ERROR'); render() }; return
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.3141a28b51d1', 'Tahmin için en az 1 SINIFSIZ anotasyon (karolu) gerekir. Bulunan: 0')); step.set('ERROR'); render() }; return
         }
         if (wantTrain) {
-            javafx.application.Platform.runLater { runPhaseRef.set('Gömme + RF eğitimi (2/3)…'); render() }
+            javafx.application.Platform.runLater { runPhaseRef.set(workshopText('script.cb0373f451c0', 'Gömme + RF eğitimi (2/3)…')); render() }
             def r1 = doTrain(cfg, workDir, appendLine)
             if (!r1.ok) {
-                javafx.application.Platform.runLater { errorTextRef.set('Eğitim başarısız (çıkış: ' + r1.exitCode + ')\n' + (r1.error ?: '') + '\n' + (r1.lastLines ?: '')); step.set('ERROR'); render() }; return
+                javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.fa5dbb2a769f', 'Eğitim başarısız (çıkış: ') + r1.exitCode + ')\n' + (r1.error ?: '') + '\n' + (r1.lastLines ?: '')); step.set('ERROR'); render() }; return
             }
         } else if (!(new File(workDir, 'classifier.pkl')).isFile()) {
-            javafx.application.Platform.runLater { errorTextRef.set('Eğitilmiş sınıflandırıcı (classifier.pkl) bulunamadı.\nÖnce "Eğit ve Tahmin Et" çalıştırın.\n' + workDir.getAbsolutePath()); step.set('ERROR'); render() }; return
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.2d12194f7493', 'Eğitilmiş sınıflandırıcı (classifier.pkl) bulunamadı.\nÖnce "Eğit ve Tahmin Et" çalıştırın.\n') + workDir.getAbsolutePath()); step.set('ERROR'); render() }; return
         }
-        if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set('İptal edildi.'); step.set('ERROR'); render() }; return }
-        javafx.application.Platform.runLater { runPhaseRef.set(wantTrain ? 'Tahmin (3/3)…' : 'Tahmin (2/2)…'); step.set('PREDICT_RUNNING'); render() }
+        if (cancelledRef.get()) { javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.fee85e45842b', 'İptal edildi.')); step.set('ERROR'); render() }; return }
+        javafx.application.Platform.runLater { runPhaseRef.set(wantTrain ? workshopText('script.1d6c8dd336c1', 'Tahmin (3/3)…') : workshopText('script.4145dbe2b847', 'Tahmin (2/2)…')); step.set('PREDICT_RUNNING'); render() }
         def r2 = doPredict(cfg, workDir, appendLine)
         if (!r2.ok) {
-            javafx.application.Platform.runLater { errorTextRef.set('Tahmin başarısız (çıkış: ' + r2.exitCode + ')\n' + (r2.error ?: '') + '\n' + (r2.lastLines ?: '')); step.set('ERROR'); render() }; return
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.9b6cf1767fab', 'Tahmin başarısız (çıkış: ') + r2.exitCode + ')\n' + (r2.error ?: '') + '\n' + (r2.lastLines ?: '')); step.set('ERROR'); render() }; return
         }
-        javafx.application.Platform.runLater { busyLabelRef.set('Tahminler QuPath\'e aktarılıyor…'); step.set('BUSY'); render() }
+        javafx.application.Platform.runLater { busyLabelRef.set(workshopText('script.b830f0c6f83d', 'Tahminler QuPath\'e aktarılıyor…')); step.set('BUSY'); render() }
         def imp = importPredictions(workDir, imageData)   /* çalıştırma başlarken yakalanan görüntü — sonuç başka lama yazılmasın */
         javafx.application.Platform.runLater {
             if (!imp.ok) { errorTextRef.set(imp.error); step.set('ERROR'); render() }
@@ -833,16 +833,16 @@ render = { ->
             boolean classifierExists = (new File(workDir, 'classifier.pkl')).isFile()
             title.setText(workshopText('script.94714b56ab99', 'Kaiko Midnight — hazır'))
             def sb = new StringBuilder()
-            sb << "Lam          : " << imageNameOf(imageData) << "\n"
-            sb << "Çalışma dizini : " << workDir.getAbsolutePath() << "\n"
-            sb << "Python         : " << (cfg.python ?: '(ayarsız)') << "\n"
-            sb << "Model          : " << (cfg.modelDir?.trim() ? cfg.modelDir : 'HuggingFace (kaiko-ai/midnight)') << "\n"
-            sb << "Aygıt          : " << cfg.device << "\n"
-            sb << "Sınıflandırıcı : " << (classifierExists ? 'mevcut (classifier.pkl)' : 'yok (henüz eğitilmedi)') << "\n\n"
-            sb << "Sınıflı anotasyonlar (eğitim):\n"
-            if (byClass.isEmpty()) sb << "  (yok)\n"
+            sb << workshopText('script.c482c0d5e596', 'Lam          : ') << imageNameOf(imageData) << "\n"
+            sb << workshopText('script.8506b05b84b7', 'Çalışma dizini : ') << workDir.getAbsolutePath() << "\n"
+            sb << workshopText('script.8b92092b854b', 'Python         : ') << (cfg.python ?: workshopText('script.a2bfafb27517', '(ayarsız)')) << "\n"
+            sb << workshopText('script.12f5ad52d431', 'Model          : ') << (cfg.modelDir?.trim() ? cfg.modelDir : workshopText('script.aba498468c1a', 'HuggingFace (kaiko-ai/midnight)')) << "\n"
+            sb << workshopText('script.5bbbc6e5a551', 'Aygıt          : ') << cfg.device << "\n"
+            sb << workshopText('script.ab8165d8183b', 'Sınıflandırıcı : ') << (classifierExists ? workshopText('script.506aaf83c2d3', 'mevcut (classifier.pkl)') : workshopText('script.42a5be167626', 'yok (henüz eğitilmedi)')) << "\n\n"
+            sb << workshopText('script.416ff8fddcdd', 'Sınıflı anotasyonlar (eğitim):\n')
+            if (byClass.isEmpty()) sb << workshopText('script.472c45024f76', '  (yok)\n')
             else byClass.each { cn, n -> sb << String.format(java.util.Locale.US, "  %-24s : %,d%n", cn, n) }
-            sb << String.format(java.util.Locale.US, "Sınıfsız anotasyonlar (tahmin) : %,d%n", unclassified.size())
+            sb << String.format(java.util.Locale.US, workshopText('script.d791a25c8fe6', 'Sınıfsız anotasyonlar (tahmin) : %,d%n'), unclassified.size())
             addMonoArea(sb.toString())
             addWarnLabel(workshopText('script.0747a795c037', '⚠ Midnight ~1.1B parametre. İlk çalıştırmada model (~4 GB) indirilir; CPU\'da karo başına birkaç saniye (GPU önerilir).'))
 

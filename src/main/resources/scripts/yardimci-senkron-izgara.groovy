@@ -132,7 +132,7 @@ Platform.runLater {
         int n = selected.size()
         String note = ''
         if (n > MAX_PANELS) {
-            note = ' (' + n + ' seçildi; ilk ' + MAX_PANELS + ' açılıyor)'
+            note = workshopText('script.4f5a2ada1166', ' (') + n + workshopText('script.2c8080b2af05', ' seçildi; ilk ') + MAX_PANELS + workshopText('script.0c9779e33f85', ' açılıyor)')
             selected = new ArrayList(selected.subList(0, MAX_PANELS))
             n = MAX_PANELS
         }

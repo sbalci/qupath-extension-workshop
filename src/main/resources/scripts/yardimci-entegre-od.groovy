@@ -128,14 +128,14 @@ def cal = server.getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 if (!(pw > 0) || !(ph > 0)) {
-    def msg = "Lamda piksel boyutu (µm) tanımlı değil; alan µm² olarak hesaplanamaz.\n\nKalibrasyon için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)."
+    def msg = workshopText('script.31cf243088d4', 'Lamda piksel boyutu (µm) tanımlı değil; alan µm² olarak hesaplanamaz.\n\nKalibrasyon için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).')
     if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage(workshopText('script.a5a01874aff2', "Kalibrasyon yok"), msg)
     return
 }
 
 def stains = imageData.getColorDeconvolutionStains()
 if (stains == null) {
-    def msg = "Renk ayrışma (color deconvolution) tanımlı değil.\nImage type → 'Brightfield (H-DAB)' olarak ayarlayın."
+    def msg = workshopText('script.786ba57a1143', 'Renk ayrışma (color deconvolution) tanımlı değil.\nImage type → \'Brightfield (H-DAB)\' olarak ayarlayın.')
     if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage(workshopText('script.0bf34cab947d', "Renk ayrışma yok"), msg)
     return
 }
@@ -143,7 +143,7 @@ if (stains == null) {
 // Seçili tek alan anotasyonu: IOD kapsamı
 def selectedAnnotations = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getROI()?.isArea() }
 if (selectedAnnotations.isEmpty()) {
-    def msg = "Ölçüm kapsamı olarak seçili bir ALAN anotasyonu yok.\n\nÖnce bölgeyi çizin, seçin, ardından tekrar çalıştırın."
+    def msg = workshopText('script.b62203a719cc', 'Ölçüm kapsamı olarak seçili bir ALAN anotasyonu yok.\n\nÖnce bölgeyi çizin, seçin, ardından tekrar çalıştırın.')
     if (isHeadless) println "UYARI: ${msg}" else Dialogs.showWarningNotification(workshopText('script.da079a56fe7d', "Anotasyon seçili değil"), msg)
     return
 }
@@ -157,9 +157,9 @@ def childDetections = QP.getDetectionObjects().findAll { det ->
 def classNames = childDetections.collect { it.getPathClass().toString() }.unique().sort()
 
 if (classNames.isEmpty()) {
-    def msg = "Seçili anotasyon içinde sınıflandırılmış deteksiyon yok.\n\n" +
-              "Önce Tümör/Stroma modülü piksel sınıflandırıcısını 'Seçili anotasyonda çalıştır' ile\n" +
-              "çalıştırın (deteksiyonlar hiyerarşide bulunmalı)."
+    def msg = workshopText('script.815202b550d4', 'Seçili anotasyon içinde sınıflandırılmış deteksiyon yok.\n\n') +
+              workshopText('script.4e00f547d352', 'Önce Tümör/Stroma modülü piksel sınıflandırıcısını \'Seçili anotasyonda çalıştır\' ile\n') +
+              workshopText('script.d4195729b0b9', 'çalıştırın (deteksiyonlar hiyerarşide bulunmalı).')
     if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage(workshopText('script.e2ee9332714f', "Deteksiyon/sınıf yok"), msg)
     return
 }
@@ -173,9 +173,7 @@ println String.format(java.util.Locale.US,
 // DAB olmayabilir; o zaman "DAB OD" olarak etiketlemek yanıltıcı olur — önce doğrula.
 def dabStain = stains.getStain(2)
 if (dabStain == null || !((dabStain.getName() ?: '').toLowerCase(java.util.Locale.ROOT).contains('dab'))) {
-    def msg = "2. boya vektörü DAB değil (bulunan: '${dabStain?.getName() ?: '(yok)'}').\n\n" +
-              "Image type → 'Brightfield (H-DAB)' olduğundan ve boya vektörlerinin doğru\n" +
-              "ayarlandığından emin olun (Boyama normalizasyonu eki · boya vektörleri sihirbazı)."
+    def msg = String.format(java.util.Locale.US, workshopText('script.73baf4104cde', '2. boya vektörü DAB değil (bulunan: \'%s\').\n\nImage type → \'Brightfield (H-DAB)\' olduğundan ve boya vektörlerinin doğru\nayarlandığından emin olun (Boyama normalizasyonu eki · boya vektörleri sihirbazı).'), (dabStain?.getName() ?: workshopText('script.715392eca0f8', '(yok)')))
     if (isHeadless) println "HATA: ${msg}" else Dialogs.showErrorMessage(workshopText('script.b21715242e3e', "DAB boyası bulunamadı"), msg)
     return
 }
@@ -272,14 +270,14 @@ def headerFmt = "%-${colW[0]}s %${colW[1]}s %${colW[2]}s %${colW[3]}s%n"
 def rowFmt    = "%-${colW[0]}s %${colW[1]}.4f %${colW[2]}.4f %${colW[3]}.2f%n"
 
 def body = new StringBuilder()
-body << "ENTEGRE DAB OD (pozitif alan × ortalama OD)\n"
+body << workshopText('script.9c0ee4ca65b5', 'ENTEGRE DAB OD (pozitif alan × ortalama OD)\n')
 body << "═════════════════════════════════════════════\n\n"
-body << String.format(java.util.Locale.US, "Kapsam anotasyonu  : %s%n", (scopeAnno.getName() ?: "(isimsiz)"))
-body << String.format(java.util.Locale.US, "Sınıf sayısı       : %d%n", classNames.size())
+body << String.format(java.util.Locale.US, workshopText('script.deb7e2cf767f', 'Kapsam anotasyonu  : %s%n'), (scopeAnno.getName() ?: workshopText('script.ed0d50f17972', '(isimsiz)')))
+body << String.format(java.util.Locale.US, workshopText('script.970e0680220c', 'Sınıf sayısı       : %d%n'), classNames.size())
 body << String.format(java.util.Locale.US, "Downsample         : %dx%n", DOWNSAMPLE)
-body << String.format(java.util.Locale.US, "Piksel boyutu      : %.4f × %.4f µm%n", pw, ph)
+body << String.format(java.util.Locale.US, workshopText('script.cb24e7296816', 'Piksel boyutu      : %.4f × %.4f µm%n'), pw, ph)
 body << "\n"
-body << String.format(java.util.Locale.US, headerFmt, "Sınıf", "Alan µm²", "Ort. OD", "IOD")
+body << String.format(java.util.Locale.US, headerFmt, workshopText('script.75c4ae45637f', 'Sınıf'), workshopText('script.9ab280a12202', 'Alan µm²'), workshopText('script.373edb6356d0', 'Ort. OD'), "IOD")
 body << ("-" * (colW.sum() + colW.size())) + "\n"
 classNames.each { cn ->
     double areaUm2 = scopeAnno.measurements[String.format(java.util.Locale.US, "Alan (%s) µm2", cn)] ?: 0.0
@@ -288,18 +286,18 @@ classNames.each { cn ->
     body << String.format(java.util.Locale.US, rowFmt, cn, areaUm2, meanOD, iod)
 }
 body << ("-" * (colW.sum() + colW.size())) + "\n"
-body << String.format(java.util.Locale.US, "%-${colW[0]}s %${colW[1]+colW[2]+2}s %${colW[3]}.2f%n", "TOPLAM", "", totalIOD)
+body << String.format(java.util.Locale.US, "%-${colW[0]}s %${colW[1]+colW[2]+2}s %${colW[3]}.2f%n", workshopText('script.1c54e7a8b22c', 'TOPLAM'), "", totalIOD)
 body << String.format(java.util.Locale.US, "%n")
-body << String.format(java.util.Locale.US, "Toplam IOD        : %.2f%n", totalIOD)
-body << String.format(java.util.Locale.US, "IOD / mm²         : %.2f   (payda: kapsam anotasyonunun alanı, %.4f mm²)%n", iodPerMm2, scopeAreaUm2 / 1e6)
+body << String.format(java.util.Locale.US, workshopText('script.029a5cb8f0fb', 'Toplam IOD        : %.2f%n'), totalIOD)
+body << String.format(java.util.Locale.US, workshopText('script.55ed3c45b3d8', 'IOD / mm²         : %.2f   (payda: kapsam anotasyonunun alanı, %.4f mm²)%n'), iodPerMm2, scopeAreaUm2 / 1e6)
 body << "\n"
-body << "Not: IOD kalibrasyon bağımlıdır (tarayıcı, boya, renk ayrışma matriksi).\n"
-body << "Değerleri YALNIZCA aynı protokol/tarayıcı koşullarında karşılaştırın.\n"
-body << "Bu bir ALAN/OD ölçümüdür — klinik skor veya yorum DEĞİL.\n"
+body << workshopText('script.3ef39caedae9', 'Not: IOD kalibrasyon bağımlıdır (tarayıcı, boya, renk ayrışma matriksi).\n')
+body << workshopText('script.3a4f53e66140', 'Değerleri YALNIZCA aynı protokol/tarayıcı koşullarında karşılaştırın.\n')
+body << workshopText('script.9ffa3280f341', 'Bu bir ALAN/OD ölçümüdür — klinik skor veya yorum DEĞİL.\n')
 body << "(Bacus & Grace 1987; van der Loos 2008; Bankhead 2017)\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+body << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
-showResultWindow("Entegre DAB OD", body.toString())
+showResultWindow(workshopText('script.a92f4f8ad4c5', 'Entegre DAB OD'), body.toString())
 println String.format(java.util.Locale.US,
     "✓ Entegre DAB OD yazıldı: toplam IOD=%.2f, IOD/mm²=%.2f (%d sınıf).",
     totalIOD, iodPerMm2, classNames.size())

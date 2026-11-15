@@ -88,8 +88,8 @@ def CLASS_SUFFIX    = ' (CytoFormer)'
 def MEAS_PREFIX     = 'CytoFormer: '
 def UNCERTAIN_CLASS = 'Belirsiz (CytoFormer)'
 // Mevcut sınıfların üzerine yazma kipi — çalıştırmadan ÖNCE sorulur (bkz. startRun / headless `mevcutsinif`).
-def MODE_SKIP       = 'Yalnızca sınıfsız hücreleri sınıfla (mevcut sınıflara dokunma)'
-def MODE_OVERWRITE  = 'Hepsini sınıfla (mevcut sınıfların üzerine yaz)'
+def MODE_SKIP       = workshopText('script.513fc9da2fbd', 'Yalnızca sınıfsız hücreleri sınıfla (mevcut sınıflara dokunma)')
+def MODE_OVERWRITE  = workshopText('script.b33a7e8a58a0', 'Hepsini sınıfla (mevcut sınıfların üzerine yaz)')
 double HALF_UM       = 28.0d   // 56 µm alan görüşü / 2
 int    OUT_PX        = 224
 int    MAX_EXPORT_THREADS = 8
@@ -137,21 +137,21 @@ def trOf = { String key -> (classByKey[key]?.tr) ?: key }
 // 16 organ: id → Türkçe ad + o organın desteklediği hücre tipleri (organ_celltype_map.json ile
 // İÇERİK olarak birebir — bkz. tasarım belgesi "Pinned upstream constants").
 def ORGANS = [
-    [id:'bone',        tr:'Kemik',      types:['Bone_cell','Endothelium','Lymphocyte','Stroma']],
-    [id:'bone_marrow', tr:'Kemik iliği',types:['Endothelium','Erythroid','Myeloid_progenitor','Neutrophil','Stroma']],
-    [id:'brain',       tr:'Beyin',      types:['Endothelium','Microglia','tumor']],
-    [id:'breast',      tr:'Meme',       types:['Endothelium','Epithelium','Lymphocyte','Macrophage','Plasma_cell','Stroma','tumor']],
-    [id:'cervix',      tr:'Serviks',    types:['Endothelium','Epithelium','Lymphocyte','Macrophage','Plasma_cell','Stroma','tumor']],
-    [id:'colon',       tr:'Kolon',      types:['Endothelium','Epithelium','Lymphocyte','Macrophage','Plasma_cell','Stroma','tumor']],
-    [id:'heart',       tr:'Kalp',       types:['Cardiomyocyte','Endothelium','Macrophage','Stroma']],
-    [id:'kidney',      tr:'Böbrek',     types:['Endothelium','Lymphocyte','Macrophage','Plasma_cell','Renal_tubule','Stroma','tumor']],
-    [id:'liver',       tr:'Karaciğer',  types:['Cholangiocyte','Endothelium','Hepatocyte','Lymphocyte','Macrophage','Stroma','tumor']],
-    [id:'lung',        tr:'Akciğer',    types:['Chondrocyte','Endothelium','Epithelium','Lymphocyte','Macrophage','Plasma_cell','Stroma','tumor']],
-    [id:'lymph_node',  tr:'Lenf nodu',  types:['Endothelium','Lymphocyte','Macrophage','Plasma_cell','Squamous_epithelium','Stroma','tumor']],
-    [id:'ovary',       tr:'Over',       types:['Endothelium','Epithelium','Lymphocyte','Macrophage','Plasma_cell','Stroma','tumor']],
-    [id:'pancreas',    tr:'Pankreas',   types:['Acinar','Ductal','Endothelium','Islet','Lymphocyte','Macrophage','Plasma_cell','Stroma','tumor']],
-    [id:'prostate',    tr:'Prostat',    types:['Endothelium','Epithelium','Lymphocyte','Macrophage','Nerve','Stroma','tumor']],
-    [id:'skin',        tr:'Deri',       types:['Endothelium','Epithelium','Lymphocyte','Macrophage','Plasma_cell','Stroma','melanocytic','tumor']],
+    [id:'bone',        tr:workshopText('script.5099254770f9', 'Kemik'),      types:['Bone_cell','Endothelium','Lymphocyte','Stroma']],
+    [id:'bone_marrow', tr:workshopText('script.2aa5855d24ed', 'Kemik iliği'),types:['Endothelium','Erythroid','Myeloid_progenitor','Neutrophil','Stroma']],
+    [id:'brain',       tr:workshopText('script.b8bd87578a2f', 'Beyin'),      types:['Endothelium','Microglia','tumor']],
+    [id:'breast',      tr:workshopText('script.2a3eaee204b5', 'Meme'),       types:['Endothelium','Epithelium','Lymphocyte','Macrophage','Plasma_cell','Stroma','tumor']],
+    [id:'cervix',      tr:workshopText('script.ba964ca0f1d6', 'Serviks'),    types:['Endothelium','Epithelium','Lymphocyte','Macrophage','Plasma_cell','Stroma','tumor']],
+    [id:'colon',       tr:workshopText('script.36013ccb142a', 'Kolon'),      types:['Endothelium','Epithelium','Lymphocyte','Macrophage','Plasma_cell','Stroma','tumor']],
+    [id:'heart',       tr:workshopText('script.6ab65c7bee15', 'Kalp'),       types:['Cardiomyocyte','Endothelium','Macrophage','Stroma']],
+    [id:'kidney',      tr:workshopText('script.0e6713ffabf9', 'Böbrek'),     types:['Endothelium','Lymphocyte','Macrophage','Plasma_cell','Renal_tubule','Stroma','tumor']],
+    [id:'liver',       tr:workshopText('script.18e4444ab464', 'Karaciğer'),  types:['Cholangiocyte','Endothelium','Hepatocyte','Lymphocyte','Macrophage','Stroma','tumor']],
+    [id:'lung',        tr:workshopText('script.8267b3480d80', 'Akciğer'),    types:['Chondrocyte','Endothelium','Epithelium','Lymphocyte','Macrophage','Plasma_cell','Stroma','tumor']],
+    [id:'lymph_node',  tr:workshopText('script.711ae9aa1c3e', 'Lenf nodu'),  types:['Endothelium','Lymphocyte','Macrophage','Plasma_cell','Squamous_epithelium','Stroma','tumor']],
+    [id:'ovary',       tr:workshopText('script.357222bbef4d', 'Over'),       types:['Endothelium','Epithelium','Lymphocyte','Macrophage','Plasma_cell','Stroma','tumor']],
+    [id:'pancreas',    tr:workshopText('script.83faa7a06cdc', 'Pankreas'),   types:['Acinar','Ductal','Endothelium','Islet','Lymphocyte','Macrophage','Plasma_cell','Stroma','tumor']],
+    [id:'prostate',    tr:workshopText('script.98167d186368', 'Prostat'),    types:['Endothelium','Epithelium','Lymphocyte','Macrophage','Nerve','Stroma','tumor']],
+    [id:'skin',        tr:workshopText('script.ceb1b16f48be', 'Deri'),       types:['Endothelium','Epithelium','Lymphocyte','Macrophage','Plasma_cell','Stroma','melanocytic','tumor']],
     [id:'tonsil',      tr:'Tonsil',     types:['Endothelium','Epithelium','Lymphocyte','Macrophage','Plasma_cell','Stroma']],
 ]
 def organById = [:]; ORGANS.each { organById[it.id] = it }
@@ -379,7 +379,7 @@ def runPython = { List cmd, Map extraEnv, Closure onLine ->
     def pb = new ProcessBuilder(cmd.collect { it.toString() }); pb.redirectErrorStream(true)
     applyCacheEnv(pb, extraEnv ?: [:])
     def proc
-    try { proc = pb.start() } catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName()), lines: []] }
+    try { proc = pb.start() } catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.f0e1e3289660', 'Python başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName()), lines: []] }
     processRef.set(proc)
     def lines = new ArrayList()
     try {
@@ -388,16 +388,16 @@ def runPython = { List cmd, Map extraEnv, Closure onLine ->
         while ((line = reader.readLine()) != null) { lines.add(line); onLine(line); if (cancelledRef.get()) break }
         reader.close()
     } catch (Throwable ignore) {}
-    if (cancelledRef.get()) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi', lines: lines] }
+    if (cancelledRef.get()) { killTree(proc); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi'), lines: lines] }
     int code
-    try { code = proc.waitFor() } catch (InterruptedException ie) { killTree(proc); return [ok: false, exitCode: -3, error: 'İptal edildi', lines: lines] }
+    try { code = proc.waitFor() } catch (InterruptedException ie) { killTree(proc); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi'), lines: lines] }
     return [ok: (code == 0), exitCode: code, lines: lines]
 }
 def tailOf = { List lines, int n -> lines.size() <= n ? lines.join('\n') : lines.subList(lines.size() - n, lines.size()).join('\n') }
 def exitCodeHint = { int code ->
-    if (code == 2) return 'Yapılandırma eksik (Python ortamı / kod / model bulunamadı).'
-    if (code == 3) return 'Geçersiz girdi (yama klasörü boş ya da beklenen sayı ile dışa aktarılan sayı uyuşmuyor).'
-    if (code == 4) return 'Cihaz hatası (CUDA bulunamadı/uyumsuz) — cihazı CPU yapın ya da NVIDIA sürücüsünü denetleyin.'
+    if (code == 2) return workshopText('script.8c5593fb4378', 'Yapılandırma eksik (Python ortamı / kod / model bulunamadı).')
+    if (code == 3) return workshopText('script.d9eebd3b1def', 'Geçersiz girdi (yama klasörü boş ya da beklenen sayı ile dışa aktarılan sayı uyuşmuyor).')
+    if (code == 4) return workshopText('script.cac1f9205b9f', 'Cihaz hatası (CUDA bulunamadı/uyumsuz) — cihazı CPU yapın ya da NVIDIA sürücüsünü denetleyin.')
     return null
 }
 
@@ -498,18 +498,18 @@ def runClassifyPipeline = { server, List allCells, double mpp, cfg, File modelDi
     def assignments = [:]   // globalIndex -> [key, prob]
     int totalExported = 0, totalSkippedExport = 0, totalNotReturned = 0
     for (int ci = 0; ci < nChunks; ci++) {
-        if (isCancelled()) return [ok: false, error: 'İptal edildi', exitCode: -3]
+        if (isCancelled()) return [ok: false, error: workshopText('script.dbd417da03e1', 'İptal edildi'), exitCode: -3]
         int off = ci * chunkSize
         int end = Math.min(n, off + chunkSize)
         def subList = allCells.subList(off, end)
-        setPhase(String.format(java.util.Locale.US, 'Yamalar dışa aktarılıyor (parça %d/%d)…', ci + 1, nChunks))
+        setPhase(String.format(java.util.Locale.US, workshopText('script.9ccde98c6306', 'Yamalar dışa aktarılıyor (parça %d/%d)…'), ci + 1, nChunks))
         def exp = exportChunkParallel(server, subList, patchDir, half, win, d, isCancelled)
         totalExported += exp.exported; totalSkippedExport += exp.skipped
-        appendLine(String.format(java.util.Locale.US, 'Parça %d/%d: %,d yama (%d atlanan) · %d×%d px, downsample %.3f',
+        appendLine(String.format(java.util.Locale.US, workshopText('script.fa087461961d', 'Parça %d/%d: %,d yama (%d atlanan) · %d×%d px, downsample %.3f'),
             ci + 1, nChunks, exp.exported, exp.skipped, win, win, d))
         if (exp.exported == 0) continue
-        if (isCancelled()) return [ok: false, error: 'İptal edildi', exitCode: -3]
-        setPhase(String.format(java.util.Locale.US, 'CytoFormer çalışıyor (parça %d/%d)…', ci + 1, nChunks))
+        if (isCancelled()) return [ok: false, error: workshopText('script.dbd417da03e1', 'İptal edildi'), exitCode: -3]
+        setPhase(String.format(java.util.Locale.US, workshopText('script.a878ba92d24d', 'CytoFormer çalışıyor (parça %d/%d)…'), ci + 1, nChunks))
         def cmd = [cfg.python, cfg.runner, 'classify',
                    '--patches', patchDir.getAbsolutePath(), '--model-dir', modelDir.getAbsolutePath(),
                    '--organ', organKey, '--out', outTsv.getAbsolutePath(),
@@ -520,7 +520,7 @@ def runClassifyPipeline = { server, List allCells, double mpp, cfg, File modelDi
             def hint = exitCodeHint(r.exitCode)
             // Önceki parçalar BAŞARIYLA sınıflandıysa 'assignments' burada TAŞINIR — çağıran taraf bu
             // kısmi sonucu uygulayabilir; tamamen çöpe atmak zaten tamamlanmış GPU işini kaybettirir.
-            return [ok: false, error: 'Sınıflama başarısız (çıkış: ' + r.exitCode + ')' + (hint ? ('\n' + hint) : '') +
+            return [ok: false, error: workshopText('script.465f4c5819e4', 'Sınıflama başarısız (çıkış: ') + r.exitCode + ')' + (hint ? ('\n' + hint) : '') +
                 (r.error ? ('\n' + r.error) : '') + '\n' + tailOf(r.lines, 30), exitCode: r.exitCode, assignments: assignments]
         }
         def rowsByLocal = parseClassifyTsv(outTsv)
@@ -590,18 +590,18 @@ def writeAnnotationMeasurements = { List targets, List allCells, Map assignments
 def buildResultText = { imageData, cfg, String organKey, Map pipeline, Map applyStats, double areaMm2, long elapsedMs ->
     def sb = new StringBuilder()
     int tot = applyStats.assigned as int
-    sb << "CYTOFORMER — SEÇİLİ ALANDA HÜCRE TİPLERİ\n"
+    sb << workshopText('script.12291074e99d', 'CYTOFORMER — SEÇİLİ ALANDA HÜCRE TİPLERİ\n')
     sb << "══════════════════════════════════════════\n\n"
-    sb << "Lam   : " << imageNameOf(imageData) << "\n"
+    sb << workshopText('script.a0858f037ccf', 'Lam   : ') << imageNameOf(imageData) << "\n"
     sb << "Organ   : " << organTrOf(organKey) << " (" << organKey << ")\n"
-    sb << "Cihaz   : " << (cfg.device ?: 'auto') << "\n"
-    if (Double.isFinite(areaMm2) && areaMm2 > 0) sb << String.format(java.util.Locale.US, "Alan    : %.3f mm²\n", areaMm2)
-    sb << String.format(java.util.Locale.US, "Hücre   : %,d sınıflandı", tot)
-    if (pipeline.skippedExport || pipeline.notReturned) sb << String.format(java.util.Locale.US, "  (%,d atlandı — dışa aktarım/eşleşme)", (pipeline.skippedExport ?: 0) + (pipeline.notReturned ?: 0))
+    sb << workshopText('script.76e969a2aac0', 'Cihaz   : ') << (cfg.device ?: 'auto') << "\n"
+    if (Double.isFinite(areaMm2) && areaMm2 > 0) sb << String.format(java.util.Locale.US, workshopText('script.afc36ae1212b', 'Alan    : %.3f mm²\n'), areaMm2)
+    sb << String.format(java.util.Locale.US, workshopText('script.bc558f9711a0', 'Hücre   : %,d sınıflandı'), tot)
+    if (pipeline.skippedExport || pipeline.notReturned) sb << String.format(java.util.Locale.US, workshopText('script.4de45d977428', '  (%,d atlandı — dışa aktarım/eşleşme)'), (pipeline.skippedExport ?: 0) + (pipeline.notReturned ?: 0))
     sb << "\n"
-    sb << "Süre    : " << formatDuration(elapsedMs / 1000.0d) << "  (" << pipeline.chunks << " parça)\n\n"
+    sb << workshopText('script.9928132fbfb4', 'Süre    : ') << formatDuration(elapsedMs / 1000.0d) << "  (" << pipeline.chunks << workshopText('script.4e0aae83819a', ' parça)\n\n')
     def organTypes = (organById[organKey]?.types ?: []) as List
-    sb << String.format(java.util.Locale.US, "%-28s %8s %8s %12s\n", 'Hücre tipi', 'n', '%', 'hücre/mm²')
+    sb << String.format(java.util.Locale.US, "%-28s %8s %8s %12s\n", workshopText('script.885e39f8ed39', 'Hücre tipi'), 'n', '%', workshopText('script.0accd665cbb9', 'hücre/mm²'))
     organTypes.each { k ->
         int n = (applyStats.perClass[k] ?: 0) as int
         String pct = tot > 0 ? String.format(java.util.Locale.US, '%.1f', 100.0d * n / tot) : '—'
@@ -612,27 +612,27 @@ def buildResultText = { imageData, cfg, String organKey, Map pipeline, Map apply
         String pct = tot > 0 ? String.format(java.util.Locale.US, '%.1f', 100.0d * applyStats.uncertain / tot) : '—'
         sb << String.format(java.util.Locale.US, "%-28s %8d %8s %12s\n", UNCERTAIN_CLASS, applyStats.uncertain as int, pct, '—')
     }
-    if (tot == 0) sb << "\n0 hücre sınıflandı — seçili alanda hücre tespiti bulunduğunu ve organ seçimini denetleyin.\n"
+    if (tot == 0) sb << workshopText('script.c1cfd7de5702', '\n0 hücre sınıflandı — seçili alanda hücre tespiti bulunduğunu ve organ seçimini denetleyin.\n')
     int skipped = (pipeline.skippedForeign ?: 0) as int
     if (skipped > 0)
         sb << String.format(java.util.Locale.US,
-            "\nATLANAN: %,d hücre, BAŞKA bir kaynaktan gelen sınıfı korunsun diye sınıflanmadı (sizin seçiminiz).\nYukarıdaki yüzdeler yalnız sınıflanan %,d hücreyi anlatır.\n", skipped, tot)
+            workshopText('script.f3d81255ad4f', '\nATLANAN: %,d hücre, BAŞKA bir kaynaktan gelen sınıfı korunsun diye sınıflanmadı (sizin seçiminiz).\nYukarıdaki yüzdeler yalnız sınıflanan %,d hücreyi anlatır.\n'), skipped, tot)
     int lost = ((pipeline.skippedExport ?: 0) + (pipeline.notReturned ?: 0)) as int
     if (skipped > 0 || lost > 0)
         sb << String.format(java.util.Locale.US,
-            "\nYOĞUNLUK: hücre/mm² değerleri de yalnız sınıflanan hücrelerden hesaplandı (%,d hücre dışarıda kaldı).\nAlandaki gerçek yoğunluk bu değerlerden yüksektir; alanlar arasında karşılaştırma yapmayın.\n", skipped + lost)
-    sb << "\nHücreler '<tip> (CytoFormer)' sınıfına atandı"
-    sb << (skipped > 0 ? " (yalnız sınıfsız/önceki CytoFormer hücreleri); " : " (mevcut sınıf varsa değiştirildi); ")
+            workshopText('script.7af0c99b87b0', '\nYOĞUNLUK: hücre/mm² değerleri de yalnız sınıflanan hücrelerden hesaplandı (%,d hücre dışarıda kaldı).\nAlandaki gerçek yoğunluk bu değerlerden yüksektir; alanlar arasında karşılaştırma yapmayın.\n'), skipped + lost)
+    sb << workshopText('script.510b7d9064b5', '\nHücreler \'<tip> (CytoFormer)\' sınıfına atandı')
+    sb << (skipped > 0 ? workshopText('script.c40b17787449', ' (yalnız sınıfsız/önceki CytoFormer hücreleri); ') : workshopText('script.6b3eb146a67f', ' (mevcut sınıf varsa değiştirildi); '))
     sb << "'CytoFormer: olasılık'\n"
-    sb << "ölçümü yazıldı; seçili anotasyonlara 'CytoFormer: <tip> (n) / (%) / (/mm²)' eklendi.\n\n"
-    sb << "MODELİN BİLİNEN SINIRLARI (Yao ve ark. 2026, tutulan test seti):\n"
-    sb << "  • Genel doğruluk 0.846, makro-F1 0.779. En zayıf sınıflar: Kondrosit, Sinir hücresi,\n"
-    sb << "    Miyeloid öncül hücre, Kemik hücresi, Mikroglia, Makrofaj.\n"
-    sb << "  • Mononükleer karışıklık (tutulan MEME kesiti): makrofajların %44,6'sı ve plazma hücrelerinin\n"
-    sb << "    %63,5'i lenfosit olarak; epitel hücrelerinin %25,8'i tümör olarak öngörülmüştür.\n"
-    sb << "  • Organ başlığı: tahminler YALNIZCA seçtiğiniz organın sınıf listesiyle sınırlıdır; başka bir\n"
-    sb << "    organa ait doku için yakın bir vekil organ seçildiyse (ör. " << CARCINOMA_ORGANS.join('/') << ") bu organda DOĞRULANMAMIŞTIR.\n"
-    sb << "Sınıflar modelin eğitim veri setinin (uzamsal transkriptom) kategorileridir; tanı değildir — görsel doğrulayın.\n"
+    sb << workshopText('script.ed755d6548ff', 'ölçümü yazıldı; seçili anotasyonlara \'CytoFormer: <tip> (n) / (%) / (/mm²)\' eklendi.\n\n')
+    sb << workshopText('script.c012625dcb8b', 'MODELİN BİLİNEN SINIRLARI (Yao ve ark. 2026, tutulan test seti):\n')
+    sb << workshopText('script.abd535cb88cc', '  • Genel doğruluk 0.846, makro-F1 0.779. En zayıf sınıflar: Kondrosit, Sinir hücresi,\n')
+    sb << workshopText('script.015c71f1d704', '    Miyeloid öncül hücre, Kemik hücresi, Mikroglia, Makrofaj.\n')
+    sb << workshopText('script.5fad920b2e7f', '  • Mononükleer karışıklık (tutulan MEME kesiti): makrofajların %44,6\'sı ve plazma hücrelerinin\n')
+    sb << workshopText('script.1925ae0b5248', '    %63,5\'i lenfosit olarak; epitel hücrelerinin %25,8\'i tümör olarak öngörülmüştür.\n')
+    sb << workshopText('script.86331c734908', '  • Organ başlığı: tahminler YALNIZCA seçtiğiniz organın sınıf listesiyle sınırlıdır; başka bir\n')
+    sb << workshopText('script.802b3ce16b96', '    organa ait doku için yakın bir vekil organ seçildiyse (ör. ') << CARCINOMA_ORGANS.join('/') << workshopText('script.4c8396412191', ') bu organda DOĞRULANMAMIŞTIR.\n')
+    sb << workshopText('script.c80d6465fe1e', 'Sınıflar modelin eğitim veri setinin (uzamsal transkriptom) kategorileridir; tanı değildir — görsel doğrulayın.\n')
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
 }
@@ -642,26 +642,26 @@ def buildResultText = { imageData, cfg, String organKey, Map pipeline, Map apply
 def readiness = { imageData, cfg, Closure targetsProvider ->
     def blocks = [], warns = []
     def st = setupStatus(cfg)
-    if (!setupComplete(cfg)) blocks << 'Kurulum tamamlanmadı (① Python ortamı, ② kod indirme, ③ ağırlık doğrulama) — "◀ Kurulum".'
+    if (!setupComplete(cfg)) blocks << workshopText('script.92c060214581', 'Kurulum tamamlanmadı (① Python ortamı, ② kod indirme, ③ ağırlık doğrulama) — "◀ Kurulum".')
     def targets = targetsProvider(imageData)
-    if (targets.isEmpty()) blocks << 'Bir alan çizip seçin (birden çok alan için Ctrl+tık), sonra "⟳ Yenile".'
+    if (targets.isEmpty()) blocks << workshopText('script.e46acfb95ea6', 'Bir alan çizip seçin (birden çok alan için Ctrl+tık), sonra "⟳ Yenile".')
     double mpp = pixelMicrons(imageData)
-    if (!Double.isFinite(mpp) || mpp <= 0) blocks << 'Görüntü kalibre değil — CytoFormer 56 µm alan görüşü hesaplamak için piksel boyutu (µm/px) gerektirir.'
-    else if (mpp > MPP_WARN_HIGH || mpp < MPP_WARN_LOW) warns << String.format(java.util.Locale.US, 'Piksel boyutu %.3f µm/px — eğitim aralığının (yaklaşık 0.18–0.35) dışında; sonuçlar daha az güvenilir olabilir.', mpp)
-    if (!organById.containsKey(cfg.organ)) blocks << 'Bir organ seçin.'
+    if (!Double.isFinite(mpp) || mpp <= 0) blocks << workshopText('script.a13d91d4ecd5', 'Görüntü kalibre değil — CytoFormer 56 µm alan görüşü hesaplamak için piksel boyutu (µm/px) gerektirir.')
+    else if (mpp > MPP_WARN_HIGH || mpp < MPP_WARN_LOW) warns << String.format(java.util.Locale.US, workshopText('script.48077786dbc2', 'Piksel boyutu %.3f µm/px — eğitim aralığının (yaklaşık 0.18–0.35) dışında; sonuçlar daha az güvenilir olabilir.'), mpp)
+    if (!organById.containsKey(cfg.organ)) blocks << workshopText('script.da2769378a0c', 'Bir organ seçin.')
     // RoiTools.union aynı düzlemde (z/t) OLMAYAN ROI'ler için IllegalArgumentException fırlatır — çoklu
     // seçim bir z-yığını/zaman noktası karışımıysa bunu burada YAKALA (diğer tüm ön koşul ihlalleri gibi
     // 'blocks' üzerinden akar), FX iş parçacığında yakalanmamış istisna olarak sızmasın.
     def unionRoi = null
     if (!targets.isEmpty()) {
         try { unionRoi = unionRoiOf(targets) }
-        catch (Throwable t) { blocks << 'Seçili alanlar aynı z/t düzleminde değil — birleştirilemedi (' + (t.getMessage() ?: t.getClass().getSimpleName()) + ').' }
+        catch (Throwable t) { blocks << workshopText('script.824bb65ad59e', 'Seçili alanlar aynı z/t düzleminde değil — birleştirilemedi (') + (t.getMessage() ?: t.getClass().getSimpleName()) + ').' }
     }
     def cells = (unionRoi != null && Double.isFinite(mpp) && mpp > 0) ? detectionsIn(imageData, unionRoi) : []
     if (!targets.isEmpty() && Double.isFinite(mpp) && mpp > 0 && cells.isEmpty())
-        blocks << 'Seçili alanda hücre tespiti yok — önce bir hücre tespiti çalıştırın (Hücre tespiti / StarDist / InstanSeg / Cellpose).'
-    int batch = parseIntOr(cfg.batch, DEFAULT_BATCH); if (batch < 1) blocks << 'Batch değeri geçersiz (en az 1) — Kurulum ekranından düzeltin.'
-    int chunk = parseIntOr(cfg.chunk, DEFAULT_CHUNK); if (chunk < 1) blocks << 'Parça (chunk) değeri geçersiz (en az 1) — Kurulum ekranından düzeltin.'
+        blocks << workshopText('script.417dc2acbdef', 'Seçili alanda hücre tespiti yok — önce bir hücre tespiti çalıştırın (Hücre tespiti / StarDist / InstanSeg / Cellpose).')
+    int batch = parseIntOr(cfg.batch, DEFAULT_BATCH); if (batch < 1) blocks << workshopText('script.e71a4ee30dee', 'Batch değeri geçersiz (en az 1) — Kurulum ekranından düzeltin.')
+    int chunk = parseIntOr(cfg.chunk, DEFAULT_CHUNK); if (chunk < 1) blocks << workshopText('script.914d965dfaa5', 'Parça (chunk) değeri geçersiz (en az 1) — Kurulum ekranından düzeltin.')
     double minProb = parseDoubleOr(cfg.minProb, 0.0d)
     boolean gpu = (cfg.device ?: 'auto') != 'cpu'
     int nChunks = chunk > 0 ? (int) Math.ceil(cells.size() / (double) chunk) : 0
@@ -805,7 +805,7 @@ def saveLogInteractive = {
     try {
         def suggested = new File(workDirRef.get() ?: new File(System.getProperty('user.home')), 'cytoformer_wizard.log')
         def f = qupath.fx.dialogs.FileChoosers.promptToSaveFile(stage, workshopText('script.c47d1c4e0b3a', 'Günlüğü kaydet'), suggested,
-            new javafx.stage.FileChooser.ExtensionFilter('Günlük (*.log, *.txt)', '*.log', '*.txt'))
+            new javafx.stage.FileChooser.ExtensionFilter(workshopText('script.c0f44ce4fc46', 'Günlük (*.log, *.txt)'), '*.log', '*.txt'))
         if (f != null) { f.setText(txt, 'UTF-8'); Dialogs.showInfoNotification(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.cbe9b591564d', 'Kaydedildi: ') + f.getAbsolutePath()) }
     } catch (Throwable t) { Dialogs.showErrorMessage(workshopText('script.301ef766a15b', 'Günlük'), workshopText('script.a0f73789f289', 'Kaydedilemedi: ') + (t.getMessage() ?: t.getClass().getSimpleName())) }
 }
@@ -814,7 +814,7 @@ def saveLogInteractive = {
 def startJob = { String title, List args, Map extraEnv, Closure onFinish ->
     def cfg = loadConfig()
     if (!cfg.python?.trim() || !new File(cfg.python).isFile() || !cfg.runner?.trim() || !new File(cfg.runner).isFile()) {
-        errorTextRef.set('Önce ① Python ortamını kurun ve köprü betiğini bulun.'); step.set('ERROR'); render(); return
+        errorTextRef.set(workshopText('script.c500a93feaf8', 'Önce ① Python ortamını kurun ve köprü betiğini bulun.')); step.set('ERROR'); render(); return
     }
     cancelledRef.set(false); resetLog()
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO)
@@ -825,32 +825,32 @@ def startJob = { String title, List args, Map extraEnv, Closure onFinish ->
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def r = runPython([cfg.python, cfg.runner] + args, extraEnv ?: [:], appendLine)
         if (r.error) appendLine('HATA: ' + r.error)
-        appendLine('# Çıkış kodu: ' + r.exitCode)
+        appendLine(workshopText('script.3510e56b50f2', '# Çıkış kodu: ') + r.exitCode)
         try { onFinish(r, cfg) } catch (Throwable t) { appendLine('HATA (sonuç işlenemedi): ' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '')) }
         javafx.application.Platform.runLater { jobOkRef.set(r.ok); step.set(isCheck ? 'CHECK_DONE' : 'DL_DONE'); render() }
     }, 'AtolyeCytoFormer-Job')
     worker.setDaemon(true); worker.start()
 }
-def startSelftest    = { -> startJob('Bağımlılık denetimi (selftest)', ['selftest'], [:], { r, cfg -> }) }
+def startSelftest    = { -> startJob(workshopText('script.f27ba047a16d', 'Bağımlılık denetimi (selftest)'), ['selftest'], [:], { r, cfg -> }) }
 def startFetchCode   = { ->
-    if (prefs.get(PREF_LICENSE, '') != CODE_SHA) { errorTextRef.set('Önce ② lisans onay kutusunu işaretleyin.'); step.set('ERROR'); render(); return }
-    startJob('Kod hazırlanıyor (~30 KB, 8 dosya, commit ' + CODE_SHA_SHORT + ')', ['fetch-code', '--accept-license'], [:], { r, cfg -> })
+    if (prefs.get(PREF_LICENSE, '') != CODE_SHA) { errorTextRef.set(workshopText('script.9391e50405b6', 'Önce ② lisans onay kutusunu işaretleyin.')); step.set('ERROR'); render(); return }
+    startJob(workshopText('script.b3e2b3a1cd26', 'Kod hazırlanıyor (~30 KB, 8 dosya, commit ') + CODE_SHA_SHORT + ')', ['fetch-code', '--accept-license'], [:], { r, cfg -> })
 }
 def startVerifyWeights = { ->
     def cfg = loadConfig(); def d = modelDirOf(cfg)
-    if (d == null) { errorTextRef.set('Önce ③ model klasörünü seçin.'); step.set('ERROR'); render(); return }
-    startJob('Model doğrulanıyor (SHA-256, ~2,7 GB)', ['verify-weights', '--model-dir', d.getAbsolutePath()], [:], { r, cfg2 -> if (r.ok) markVerified(ckptFileOf(cfg2)) })
+    if (d == null) { errorTextRef.set(workshopText('script.73c71f8bd7ee', 'Önce ③ model klasörünü seçin.')); step.set('ERROR'); render(); return }
+    startJob(workshopText('script.02f7daad8ffe', 'Model doğrulanıyor (SHA-256, ~2,7 GB)'), ['verify-weights', '--model-dir', d.getAbsolutePath()], [:], { r, cfg2 -> if (r.ok) markVerified(ckptFileOf(cfg2)) })
 }
 def startFetchWeights = { String token ->
     def dir = defaultWeightsDir(); dir.mkdirs()
     def extra = (token?.trim()) ? [HF_TOKEN: token.trim()] : [:]
-    startJob('Ağırlık indiriliyor (~2,7 GB, Hugging Face)', ['fetch-weights', '--dest', dir.getAbsolutePath()], extra, { r, cfg2 -> if (r.ok) markVerified(new File(dir, 'checkpoint.pth')) })
+    startJob(workshopText('script.c190664db975', 'Ağırlık indiriliyor (~2,7 GB, Hugging Face)'), ['fetch-weights', '--dest', dir.getAbsolutePath()], extra, { r, cfg2 -> if (r.ok) markVerified(new File(dir, 'checkpoint.pth')) })
 }
 
 // ── Ortam yöneticisinden bu sihirbaza dönüş ──────────────────────────────────
 def envReturnHook = [
     envId   : ENV_ID,
-    wizard  : 'CytoFormer hücre tipi sınıflama',
+    wizard  : workshopText('script.0fbe3085fdf3', 'CytoFormer hücre tipi sınıflama'),
     onReturn: { reopen ->
         javafx.application.Platform.runLater {
             if (stage == null || (!stage.isShowing() && !reopen)) return
@@ -898,10 +898,10 @@ def launchEnvManager = { ->
 // YANLIŞ bölgeyi sınıflamak yerine burada TAZE bir denetim yapılır — bkz. Classpose'un aynı deseni).
 def startRun = { ->
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.da80fab350d1', 'Görüntü açık değil.')); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
     def rd = readiness(imageData, cfg, selectedTargets)
-    if (!rd.ok) { errorTextRef.set('Çalıştırılamadı (seçim değişmiş olabilir):\n  • ' + rd.blocks.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!rd.ok) { errorTextRef.set(workshopText('script.ec8d6628276f', 'Çalıştırılamadı (seçim değişmiş olabilir):\n  • ') + rd.blocks.join('\n  • ')); step.set('ERROR'); render(); return }
 
     // ── Mevcut sınıflar için kullanıcıya SOR (çıkarımdan ÖNCE: İptal'de hiç GPU işi çalışmaz) ──
     //   Varsayılan: hiçbir mevcut sınıfın üzerine yazılmaz. Kendi önceki sınıflarımız "aynı kaynak"
@@ -911,15 +911,15 @@ def startRun = { ->
     if (!foreign.isEmpty()) {
         def byClass = [:]
         foreign.each { def n = it.getPathClass().toString(); byClass[n] = (byClass[n] ?: 0) + 1 }
-        def top = byClass.sort { -it.value }.take(4).collect { k, v -> String.format(java.util.Locale.US, '  • %s — %,d hücre', k, v) }.join('\n')
+        def top = byClass.sort { -it.value }.take(4).collect { k, v -> String.format(java.util.Locale.US, workshopText('script.4d3e69fc1075', '  • %s — %,d hücre'), k, v) }.join('\n')
         def sb = new StringBuilder()
         sb << String.format(java.util.Locale.US,
-            'Seçili alandaki %,d hücrenin %,d tanesinin BAŞKA bir kaynaktan gelen sınıfı var:\n%s',
+            workshopText('script.167e7d799851', 'Seçili alandaki %,d hücrenin %,d tanesinin BAŞKA bir kaynaktan gelen sınıfı var:\n%s'),
             rd.cells.size(), foreign.size(), top)
-        if (byClass.size() > 4) sb << String.format(java.util.Locale.US, '\n  • … ve %d sınıf daha', byClass.size() - 4)
-        sb << '\n\nCytoFormer nesne üretmez, var olan hücrelerin SINIFINI değiştirir — bu sınıflar '
-        sb << '(eğittiğiniz nesne sınıflandırıcısı, başka bir model ya da elle verdikleriniz) üzerine yazılırsa '
-        sb << 'geri alınamaz.\n\nNe yapılsın?'
+        if (byClass.size() > 4) sb << String.format(java.util.Locale.US, workshopText('script.c062c0af37d0', '\n  • … ve %d sınıf daha'), byClass.size() - 4)
+        sb << workshopText('script.dfd117a1dcbd', '\n\nCytoFormer nesne üretmez, var olan hücrelerin SINIFINI değiştirir — bu sınıflar ')
+        sb << workshopText('script.5a0b3f3a54be', '(eğittiğiniz nesne sınıflandırıcısı, başka bir model ya da elle verdikleriniz) üzerine yazılırsa ')
+        sb << workshopText('script.7b6946e6c420', 'geri alınamaz.\n\nNe yapılsın?')
         def pick = Dialogs.showChoiceDialog(workshopText('script.69ba4d3b4ea1', 'Mevcut sınıflar'), sb.toString(), [MODE_SKIP, MODE_OVERWRITE], MODE_SKIP)
         if (pick == null) return                       // İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz
         if (((String) pick) == MODE_OVERWRITE) {
@@ -944,12 +944,12 @@ def startRun = { ->
     def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs(); workDirRef.set(workDir)
     cancelledRef.set(false); resetLog(); runStartRef.set(System.currentTimeMillis())
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(true); la.setStyle(MONO); logAreaRef.set(la)
-    runPhaseRef.set('Hazırlanıyor…'); step.set('RUN_RUNNING'); render()
+    runPhaseRef.set(workshopText('script.074e464dc790', 'Hazırlanıyor…')); step.set('RUN_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> appendLog(ln); javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
         def setPhase   = { String ph -> javafx.application.Platform.runLater { runPhaseRef.set(ph); render() } }
         try {
-            appendLine('Organ: ' + organTrOf(cfg.organ) + ' (' + cfg.organ + ')  ·  hücre: ' + rd.cells.size() + '  ·  parça: ' + rd.chunk)
+            appendLine('Organ: ' + organTrOf(cfg.organ) + ' (' + cfg.organ + workshopText('script.856646e95b26', ')  ·  hücre: ') + rd.cells.size() + workshopText('script.402a40fe40e7', '  ·  parça: ') + rd.chunk)
             def pipeline = runClassifyPipeline(imageData.getServer(), rd.cells, rd.mpp, cfg, modelDir, cfg.organ, workDir,
                 rd.batch, rd.chunk, appendLine, setPhase, { -> cancelledRef.get() })
             long elapsed = System.currentTimeMillis() - runStartRef.get()
@@ -972,8 +972,8 @@ def startRun = { ->
                             nPartial = partial.assigned as int
                         } catch (Throwable ignore) {}
                     }
-                    errorTextRef.set((nPartial > 0 ? String.format(java.util.Locale.US, 'Kısmi sonuç uygulandı: %,d hücre (başarısız olan parçadan ÖNCEKİ parçalar).\n\n', nPartial) : '') +
-                        (pipeline.error ?: 'Bilinmeyen hata'))
+                    errorTextRef.set((nPartial > 0 ? String.format(java.util.Locale.US, workshopText('script.2833a6a46851', 'Kısmi sonuç uygulandı: %,d hücre (başarısız olan parçadan ÖNCEKİ parçalar).\n\n'), nPartial) : '') +
+                        (pipeline.error ?: workshopText('script.da001998a5bd', 'Bilinmeyen hata')))
                     step.set('ERROR'); render()
                 }
                 return
@@ -989,10 +989,10 @@ def startRun = { ->
                     pipeline.skippedForeign = skippedForeign
                     def txt = buildResultText(imageData, cfg, cfg.organ, pipeline, applyStats, rd.areaMm2, elapsed)
                     resultTextRef.set(txt); step.set('RESULT'); render()
-                } catch (Throwable t) { errorTextRef.set('Sonuç işleme hatası: ' + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
+                } catch (Throwable t) { errorTextRef.set(workshopText('script.cd62cf56dc30', 'Sonuç işleme hatası: ') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
             }
         } catch (Throwable t) {
-            javafx.application.Platform.runLater { errorTextRef.set('Beklenmeyen hata:\n' + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '')); step.set('ERROR'); render() }
+            javafx.application.Platform.runLater { errorTextRef.set(workshopText('script.6af403a9fc32', 'Beklenmeyen hata:\n') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '')); step.set('ERROR'); render() }
         }
     }, 'AtolyeCytoFormer-Run')
     worker.setDaemon(true); worker.start()
@@ -1001,7 +1001,7 @@ def startRun = { ->
 // çalıştırma startRun() içinde TAZE bir denetimle yapılır, bu yüzden birkaç saniyelik eskime zararsızdır.
 def confirmAndRun = { rd ->
     if (rd.overThreshold) {
-        def msg = String.format(java.util.Locale.US, '%,d hücre · tahmini süre %s. Devam edilsin mi?', rd.cells.size(), formatDuration(rd.estSec))
+        def msg = String.format(java.util.Locale.US, workshopText('script.699766758387', '%,d hücre · tahmini süre %s. Devam edilsin mi?'), rd.cells.size(), formatDuration(rd.estSec))
         if (!Dialogs.showConfirmDialog(workshopText('script.ec76b73c7f4a', 'Büyük çalıştırma'), msg)) return
     }
     startRun()
@@ -1054,20 +1054,20 @@ render = { ->
         section(workshopText('script.d9dc50d5303e', '② Kod (Penn Academic Software License)'))
         statusLine(st.codeOk, (st.codeOk ? workshopText('script.da7f892f9007', 'Kod indirilmiş: ') : workshopText('script.7ec2837c2232', 'Kod yok: ')) + codeDir().getAbsolutePath())
         def licenseArea = new javafx.scene.control.TextArea(
-            'PENN ACADEMIC SOFTWARE LICENSE AGREEMENT — özet (Türkçe): Kodu yalnız dahili araştırma/ticari olmayan ' +
-            'amaçla kullanabilirsiniz; PENN\'in yazılı izni olmadan başka bir yere ya da kişiye aktaramaz/dağıtamazsınız; ' +
-            'kaynak kodu tersine mühendislikle yeniden oluşturmaya çalışamazsınız; yazılıma dayalı oluşturduğunuz her ' +
-            'program türev sayılır ve PENN\'e ait olur; sözleşme 30 gün önceden bildirimle feshedilebilir. İndirdiğinizde bu ' +
-            'lisansın ALICISI (RECIPIENT) siz olursunuz.\n\n' +
-            'İngilizce özgün metin (birebir):\n\n' +
+            workshopText('script.d2deb0f1e1f9', 'PENN ACADEMIC SOFTWARE LICENSE AGREEMENT — özet (Türkçe): Kodu yalnız dahili araştırma/ticari olmayan ') +
+            workshopText('script.50666132e489', 'amaçla kullanabilirsiniz; PENN\'in yazılı izni olmadan başka bir yere ya da kişiye aktaramaz/dağıtamazsınız; ') +
+            workshopText('script.011aa2c75977', 'kaynak kodu tersine mühendislikle yeniden oluşturmaya çalışamazsınız; yazılıma dayalı oluşturduğunuz her ') +
+            workshopText('script.3b16b0a5fe34', 'program türev sayılır ve PENN\'e ait olur; sözleşme 30 gün önceden bildirimle feshedilebilir. İndirdiğinizde bu ') +
+            workshopText('script.f949673d480b', 'lisansın ALICISI (RECIPIENT) siz olursunuz.\n\n') +
+            workshopText('script.02aa798a2793', 'İngilizce özgün metin (birebir):\n\n') +
             '§4. "RECIPIENT agrees to use the Software solely for internal research or non-commercial purposes and ' +
             'shall not distribute or transfer the Software to another location or to any other person without prior ' +
             'written permission from PENN. Nothing in this license grants any rights for commercial use."\n\n' +
             '§9. "RECIPIENT agrees not to reverse engineer, reverse assemble, reverse compile decompile, disassemble, ' +
             'or otherwise attempt to re-create the source code for the Software. RECIPIENT acknowledges that any ' +
             'programs created based on the Software will be considered a derivative of Software and owned by PENN."\n\n' +
-            'Tam metin (indirilecek 8 dosyadan biri, LICENSE): ' + LICENSE_URL + '\n\n' +
-            'Araştırma dışı/ticari/yeniden dağıtım kullanımı için: zhi.huang@pennmedicine.upenn.edu — bu bir hukuki görüş değildir.')
+            workshopText('script.0e76d9c55e2a', 'Tam metin (indirilecek 8 dosyadan biri, LICENSE): ') + LICENSE_URL + '\n\n' +
+            workshopText('script.3209271dbb34', 'Araştırma dışı/ticari/yeniden dağıtım kullanımı için: zhi.huang@pennmedicine.upenn.edu — bu bir hukuki görüş değildir.'))
         licenseArea.setEditable(false); licenseArea.setWrapText(true); licenseArea.setPrefRowCount(10)
         center.getChildren().add(licenseArea)
         def licenseChk = new javafx.scene.control.CheckBox(workshopText('script.e50049a96f25', 'Okudum; bu koşulları (yalnız dahili araştırma / ticari olmayan kullanım, yeniden dağıtım yok) kendi adıma kabul ediyorum.'))
@@ -1141,11 +1141,11 @@ render = { ->
 
             def rd = readiness(imageData, cfg, selectedTargets)
             def sb = new StringBuilder()
-            sb << "Lam        : " << imageNameOf(imageData) << "\n"
-            sb << "④ Hücre sayısı (seçili alanda): " << rd.cells.size() << "\n"
-            sb << "Kalibrasyon  : " << (Double.isFinite(rd.mpp) && rd.mpp > 0 ? String.format(java.util.Locale.US, '%.4f µm/px', rd.mpp) : 'KALİBRE DEĞİL') << "\n"
-            if (Double.isFinite(rd.areaMm2)) sb << String.format(java.util.Locale.US, "Alan         : %.3f mm²%n", rd.areaMm2)
-            if (rd.cells.size() > 0) sb << String.format(java.util.Locale.US, "Tahmini süre : %s (%d parça, %s)%n", formatDuration(rd.estSec), rd.nChunks, rd.gpu ? 'GPU varsayımı' : 'CPU')
+            sb << workshopText('script.13db0a0038b7', 'Lam        : ') << imageNameOf(imageData) << "\n"
+            sb << workshopText('script.412a887fc709', '④ Hücre sayısı (seçili alanda): ') << rd.cells.size() << "\n"
+            sb << workshopText('script.2ca446370b58', 'Kalibrasyon  : ') << (Double.isFinite(rd.mpp) && rd.mpp > 0 ? String.format(java.util.Locale.US, '%.4f µm/px', rd.mpp) : workshopText('script.167d3bfed570', 'KALİBRE DEĞİL')) << "\n"
+            if (Double.isFinite(rd.areaMm2)) sb << String.format(java.util.Locale.US, workshopText('script.834f1f5c66b1', 'Alan         : %.3f mm²%n'), rd.areaMm2)
+            if (rd.cells.size() > 0) sb << String.format(java.util.Locale.US, workshopText('script.0426b9b6616d', 'Tahmini süre : %s (%d parça, %s)%n'), formatDuration(rd.estSec), rd.nChunks, rd.gpu ? workshopText('script.e351b1a979c2', 'GPU varsayımı') : 'CPU')
             addMonoArea(sb.toString())
 
             def devIds = ['auto', 'cuda', 'cpu']

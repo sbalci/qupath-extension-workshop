@@ -48,7 +48,7 @@ import qupath.fx.dialogs.Dialogs
 
 def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
-def openSlideHint = 'Sol paneldeki Project sekmesinden bir lama çift tıklayın veya bir lam dosyasını (.svs, .ndpi, .tiff) doğrudan QuPath penceresine sürükleyip bırakın.'
+def openSlideHint = workshopText('script.28e2923d500a', 'Sol paneldeki Project sekmesinden bir lama çift tıklayın veya bir lam dosyasını (.svs, .ndpi, .tiff) doğrudan QuPath penceresine sürükleyip bırakın.')
 
 // ── Tur sayfaları (id · vurgu bölgesi · hedef · demo · başlık · gövde) ───────
 // bolge ∈ {TOOLBAR, SIDEBAR, VIEWER, null}: belirli hedef çözülemezse geri çekilme.
@@ -60,184 +60,106 @@ def openSlideHint = 'Sol paneldeki Project sekmesinden bir lama çift tıklayın
 //        'MENU' (menü düğmesini aç) · 'COMMAND_LIST' (Ctrl/⌘+L).
 def pages = [
     [id: 'intro', bolge: null,
-     baslik: 'Hoş geldiniz — QuPath arayüz turu',
-     govde: 'Bu tur QuPath arayüzünü adım adım tanıtır. Her sayfada bir öğe anlatılır; ' +
-            'ilgili sekme, düğme ya da bölge canlı pencerede turuncu bir çerçeveyle işaretlenir. ' +
-            'Bazı adımlarda ilgili komut örnek olarak kendiliğinden çalıştırılır (ör. Parlaklık/Kontrast ' +
-            'diyaloğu açılır, Points aracı etkinleşir). En verimli kullanım için önce bir lam açın ' +
+     baslik: workshopText('script.5ac5f501fc16', 'Hoş geldiniz — QuPath arayüz turu'),
+     govde: workshopText('script.c42f174d2352', 'Bu tur QuPath arayüzünü adım adım tanıtır. Her sayfada bir öğe anlatılır; ilgili sekme, düğme ya da bölge canlı pencerede turuncu bir çerçeveyle işaretlenir. Bazı adımlarda ilgili komut örnek olarak kendiliğinden çalıştırılır (ör. Parlaklık/Kontrast diyaloğu açılır, Points aracı etkinleşir). En verimli kullanım için önce bir lam açın ') +
             '(' + openSlideHint + ') — ' +
-            'böylece görüntüleyici ve meta veri sekmeleri de dolu olur.\n\n' +
-            'İleri / Geri düğmeleriyle gezinin; sihirbaz penceresi her zaman üstte kalsın ' +
-            'isterseniz alttaki "Üstte tut" kutusu işaretli kalsın. "Otomatik göster" kutusu, her sayfada ' +
-            'vurgu ve örnek komutu kendiliğinden tetikler. Bu sihirbaz Pete Bankhead\'in ' +
-            'qupath-extension-training eklentisinden esinlenmiştir (son sayfadaki bağlantı).'],
+            workshopText('script.65df2bf027c3', 'böylece görüntüleyici ve meta veri sekmeleri de dolu olur.\n\nİleri / Geri düğmeleriyle gezinin; sihirbaz penceresi her zaman üstte kalsın isterseniz alttaki "Üstte tut" kutusu işaretli kalsın. "Otomatik göster" kutusu, her sayfada vurgu ve örnek komutu kendiliğinden tetikler. Bu sihirbaz Pete Bankhead\'in qupath-extension-training eklentisinden esinlenmiştir (son sayfadaki bağlantı).')],
 
     [id: 'viewer', bolge: 'VIEWER',
-     baslik: 'Görüntüleyici — lamın görüldüğü merkez alan',
-     govde: 'Görüntüleyici, lamın görüntülendiği merkezdeki büyük alandır. WSI\'yi Google ' +
-            'Haritalar gibi bir çözünürlük piramidi üzerinde gezersiniz: fare tekerleğiyle ' +
-            'yakınlaşıp uzaklaşır, Move aracı etkinken tıklayıp sürükleyerek kaydırırsınız. ' +
-            'Tüm tespit ve anotasyonlar bu alanın üzerine çizilir. Tüm lamı pencereye sığdırmak için View → Zoom → Zoom to fit.'],
+     baslik: workshopText('script.a0ac9f6e6995', 'Görüntüleyici — lamın görüldüğü merkez alan'),
+     govde: workshopText('script.5a8103642ca9', 'Görüntüleyici, lamın görüntülendiği merkezdeki büyük alandır. WSI\'yi Google Haritalar gibi bir çözünürlük piramidi üzerinde gezersiniz: fare tekerleğiyle yakınlaşıp uzaklaşır, Move aracı etkinken tıklayıp sürükleyerek kaydırırsınız. Tüm tespit ve anotasyonlar bu alanın üzerine çizilir. Tüm lamı pencereye sığdırmak için View → Zoom → Zoom to fit.')],
 
     [id: 'overview', bolge: 'VIEWER',
-     baslik: 'Genel bakış navigatörü (görüntüleyicinin sağ-üst köşesi)',
-     govde: 'Görüntüleyicinin sağ-üst köşesindeki küçük genel bakış (navigatör) penceresi, tüm lamdaki ' +
-            'konumunuzu gösterir — yüksek büyütmede "kayboldum" hissini önler. Üzerindeki dikdörtgen ' +
-            'şu an görünen alandır; küçük pencereye tıklayarak hızla başka bir bölgeye atlayabilirsiniz. ' +
-            'Konumu sabittir — QuPath onu her zaman sağ-üst köşeye yerleştirir (taşınamaz). ' +
-            'Ayarlanabilen tek şey görünürlüğüdür: View menüsünden ya da araç çubuğundaki görüntüleyici ' +
-            'görünüm menüsünden (ekran/monitör simgesi) genel bakışı gösterip gizleyebilirsiniz. ' +
-            'Not: "Bu bölgeyi vurgula" tüm görüntüleyiciyi çerçeveler; navigatör bu çerçevenin sağ-üst ' +
-            'köşesindeki küçük kutudur (görüntünün üstüne çizildiği için ayrı olarak işaretlenemez).'],
+     baslik: workshopText('script.904a5d4792e7', 'Genel bakış navigatörü (görüntüleyicinin sağ-üst köşesi)'),
+     govde: workshopText('script.51f94b4922bb', 'Görüntüleyicinin sağ-üst köşesindeki küçük genel bakış (navigatör) penceresi, tüm lamdaki konumunuzu gösterir — yüksek büyütmede "kayboldum" hissini önler. Üzerindeki dikdörtgen şu an görünen alandır; küçük pencereye tıklayarak hızla başka bir bölgeye atlayabilirsiniz. Konumu sabittir — QuPath onu her zaman sağ-üst köşeye yerleştirir (taşınamaz). Ayarlanabilen tek şey görünürlüğüdür: View menüsünden ya da araç çubuğundaki görüntüleyici görünüm menüsünden (ekran/monitör simgesi) genel bakışı gösterip gizleyebilirsiniz. Not: "Bu bölgeyi vurgula" tüm görüntüleyiciyi çerçeveler; navigatör bu çerçevenin sağ-üst köşesindeki küçük kutudur (görüntünün üstüne çizildiği için ayrı olarak işaretlenemez).')],
 
     [id: 'sidebar', bolge: 'SIDEBAR',
-     baslik: 'Kenar paneli — analiz sekmeleri',
-     govde: 'Sol kenardaki panel analizin kumanda merkezidir; sekmeler hâlinde düzenlenmiştir: ' +
-            'Project, Image, Annotations, Hierarchy ve Workflow. Bir sekmeye tıklayarak o görünüme ' +
-            'geçersiniz. Sonraki sayfalarda her sekmeyi tek tek tanıyacağız. Panel dar geldiğinde ' +
-            'kenarından tutup genişletebilirsiniz.'],
+     baslik: workshopText('script.9ab2ba2874e2', 'Kenar paneli — analiz sekmeleri'),
+     govde: workshopText('script.ae676bbe55d9', 'Sol kenardaki panel analizin kumanda merkezidir; sekmeler hâlinde düzenlenmiştir: Project, Image, Annotations, Hierarchy ve Workflow. Bir sekmeye tıklayarak o görünüme geçersiniz. Sonraki sayfalarda her sekmeyi tek tek tanıyacağız. Panel dar geldiğinde kenarından tutup genişletebilirsiniz.')],
 
     [id: 'tab-project', bolge: 'SIDEBAR', hedef: [tab: 'Project'], safeActivate: true,
-     baslik: 'Project sekmesi — lam listesi',
-     govde: 'Project sekmesi, projedeki tüm lamları küçük resimleriyle listeler. Bir küçük resme ' +
-            'çift tıklamak lamı görüntüleyicide açar; sağ tıklamak açıklama ekleme, görüntü tipi ' +
-            'atama gibi işlemleri sunar. Projeler birden çok lamı bir arada tutmanın ve aynı analizi ' +
-            'hepsine uygulamanın profesyonel yoludur. Henüz proje açmadıysanız bu sekme boş görünür.'],
+     baslik: workshopText('script.e96bf140c032', 'Project sekmesi — lam listesi'),
+     govde: workshopText('script.22efbeaa58e6', 'Project sekmesi, projedeki tüm lamları küçük resimleriyle listeler. Bir küçük resme çift tıklamak lamı görüntüleyicide açar; sağ tıklamak açıklama ekleme, görüntü tipi atama gibi işlemleri sunar. Projeler birden çok lamı bir arada tutmanın ve aynı analizi hepsine uygulamanın profesyonel yoludur. Henüz proje açmadıysanız bu sekme boş görünür.')],
 
     [id: 'tab-image', bolge: 'SIDEBAR', hedef: [tab: 'Image'], safeActivate: true,
-     baslik: 'Image sekmesi — piksel boyutu ve meta veri',
-     govde: 'Image sekmesi açık lamın meta verisini gösterir: piksel boyutu (µm/px), görüntü ' +
-            'boyutları, tarayıcı modeli ve boya tipi. Buradaki en kritik sayı piksel boyutudur — ' +
-            'QuPath fiziksel ölçeği buradan bilir ve her tespit/ölçüm buna bağlıdır. 1.0 µm/px ' +
-            'görüyorsanız meta veri eksik demektir; Giriş modülündeki kalibrasyon adımına dönün. Görüntü ' +
-            'tipi (Brightfield H&E / H-DAB / Fluorescence) de bu sekmede görünür ve boya ayrımını belirler.'],
+     baslik: workshopText('script.6d57b33e67dd', 'Image sekmesi — piksel boyutu ve meta veri'),
+     govde: workshopText('script.dacefe61002e', 'Image sekmesi açık lamın meta verisini gösterir: piksel boyutu (µm/px), görüntü boyutları, tarayıcı modeli ve boya tipi. Buradaki en kritik sayı piksel boyutudur — QuPath fiziksel ölçeği buradan bilir ve her tespit/ölçüm buna bağlıdır. 1.0 µm/px görüyorsanız meta veri eksik demektir; Giriş modülündeki kalibrasyon adımına dönün. Görüntü tipi (Brightfield H&E / H-DAB / Fluorescence) de bu sekmede görünür ve boya ayrımını belirler.')],
 
     [id: 'tab-annotations', bolge: 'SIDEBAR', hedef: [tab: 'Annotations'], safeActivate: true,
-     baslik: 'Annotations sekmesi — çizilen ROI\'ler ve sınıflar',
-     govde: 'Annotations sekmesi, elle veya algoritmayla oluşturulan tüm ROI\'leri (ilgi bölgelerini) ' +
-            've onların sınıflarını listeler. Bir anotasyona tıklamak onu görüntüleyicide seçer; sağ ' +
-            'tıklamayla sınıf atayabilir, ad verebilir veya silebilirsiniz. Tümör, stroma gibi sınıflar ' +
-            'burada renklerle yönetilir.'],
+     baslik: workshopText('script.237946e06110', 'Annotations sekmesi — çizilen ROI\'ler ve sınıflar'),
+     govde: workshopText('script.7c9e7eb1969d', 'Annotations sekmesi, elle veya algoritmayla oluşturulan tüm ROI\'leri (ilgi bölgelerini) ve onların sınıflarını listeler. Bir anotasyona tıklamak onu görüntüleyicide seçer; sağ tıklamayla sınıf atayabilir, ad verebilir veya silebilirsiniz. Tümör, stroma gibi sınıflar burada renklerle yönetilir.')],
 
     [id: 'tab-hierarchy', bolge: 'SIDEBAR', hedef: [tab: 'Hierarchy'], safeActivate: true,
-     baslik: 'Hierarchy sekmesi — nesne ağacı (anotasyon → tespit)',
-     govde: 'Hierarchy sekmesi nesnelerin ağaç yapısını gösterir: lam → anotasyon → tespit. Bir ' +
-            'anotasyonun içinde bulunan hücre tespitleri bu ağaçta onun altında yer alır. Anotasyon ile ' +
-            'tespit arasındaki fark burada görünür hâle gelir: anotasyon elle çizilen bölgedir, tespit ise ' +
-            'algoritmanın bulduğu nesnedir ve daima bir anotasyonun içindedir.'],
+     baslik: workshopText('script.08f2ef217f06', 'Hierarchy sekmesi — nesne ağacı (anotasyon → tespit)'),
+     govde: workshopText('script.29ffbfb5cce2', 'Hierarchy sekmesi nesnelerin ağaç yapısını gösterir: lam → anotasyon → tespit. Bir anotasyonun içinde bulunan hücre tespitleri bu ağaçta onun altında yer alır. Anotasyon ile tespit arasındaki fark burada görünür hâle gelir: anotasyon elle çizilen bölgedir, tespit ise algoritmanın bulduğu nesnedir ve daima bir anotasyonun içindedir.')],
 
     [id: 'tab-workflow', bolge: 'SIDEBAR', hedef: [tab: 'Workflow'], safeActivate: true,
-     baslik: 'Workflow sekmesi — yaptıklarınızın kaydı',
-     govde: 'Workflow sekmesi, oturumda yaptığınız işlemleri sırayla kaydeder — bir tür otomatik günlük. ' +
-            'Buradan tüm adımları yeniden çalıştırılabilir bir Groovy betiğine dönüştürebilirsiniz ' +
-            '(Create script), böylece aynı analizi başka lamlara tekrarlamak kolaylaşır. Bir girdiye ' +
-            'çift tıklamak o komutu aynı ayarlarla yeniden açar.'],
+     baslik: workshopText('script.32fdd39ff186', 'Workflow sekmesi — yaptıklarınızın kaydı'),
+     govde: workshopText('script.345d3241ab28', 'Workflow sekmesi, oturumda yaptığınız işlemleri sırayla kaydeder — bir tür otomatik günlük. Buradan tüm adımları yeniden çalıştırılabilir bir Groovy betiğine dönüştürebilirsiniz (Create script), böylece aynı analizi başka lamlara tekrarlamak kolaylaşır. Bir girdiye çift tıklamak o komutu aynı ayarlarla yeniden açar.')],
 
     [id: 'toolbar', bolge: 'TOOLBAR',
-     baslik: 'Araç çubuğu — genel bakış',
-     govde: 'Üstteki araç çubuğu en sık kullanılan komutları tek tıkla sunar: gezinme ve çizim araçları, ' +
-            'parlaklık/kontrast, görünürlük anahtarları, ölçüm tabloları ve betik editörü. Bir düğmenin ' +
-            'üzerine gelip beklerseniz adını ve kısayolunu gösteren ipucu belirir. Sonraki sayfalarda öne ' +
-            'çıkan düğmeleri tanıyacağız.'],
+     baslik: workshopText('script.cdab116fd393', 'Araç çubuğu — genel bakış'),
+     govde: workshopText('script.9ef157ff5a11', 'Üstteki araç çubuğu en sık kullanılan komutları tek tıkla sunar: gezinme ve çizim araçları, parlaklık/kontrast, görünürlük anahtarları, ölçüm tabloları ve betik editörü. Bir düğmenin üzerine gelip beklerseniz adını ve kısayolunu gösteren ipucu belirir. Sonraki sayfalarda öne çıkan düğmeleri tanıyacağız.')],
 
     [id: 'tools-draw', bolge: 'TOOLBAR', hedef: [tools: 'ALL'], demo: 'TOOL_MOVE',
-     baslik: 'Çizim araçları — Move, Rectangle, Polygon, Brush, Wand',
-     govde: 'Çizim araçları araç çubuğunda yan yana durur: Move (gezinme, kısayol M), Rectangle (R), ' +
-            'Ellipse (O), Polygon (P), Brush (fırça, B) ve Wand (kenar takipli sihirli değnek, W). Bir bölge ' +
-            'çizmek için ilgili aracı seçip görüntüleyicide sürüklersiniz. İş bitince Move aracına dönmek iyi ' +
-            'alışkanlıktır — yoksa yanlışlıkla yeni anotasyon çizebilirsiniz. (Bu adım örnek olarak Move aracını etkinleştirir.)'],
+     baslik: workshopText('script.cb78071c9a40', 'Çizim araçları — Move, Rectangle, Polygon, Brush, Wand'),
+     govde: workshopText('script.5ca0299c8177', 'Çizim araçları araç çubuğunda yan yana durur: Move (gezinme, kısayol M), Rectangle (R), Ellipse (O), Polygon (P), Brush (fırça, B) ve Wand (kenar takipli sihirli değnek, W). Bir bölge çizmek için ilgili aracı seçip görüntüleyicide sürüklersiniz. İş bitince Move aracına dönmek iyi alışkanlıktır — yoksa yanlışlıkla yeni anotasyon çizebilirsiniz. (Bu adım örnek olarak Move aracını etkinleştirir.)')],
 
     [id: 'tool-points', bolge: 'TOOLBAR', hedef: [tools: 'POINTS'], demo: 'TOOL_POINTS',
-     baslik: 'Points — sayım / işaretleme aracı',
-     govde: 'Points (nokta) aracı, tek tek hücreleri elle işaretleyip saymak için kullanılır — örneğin bir ' +
-            'referans sayımı yaparken. Her tıklama bir nokta bırakır; farklı sınıflar için ayrı nokta ' +
-            'kümeleri oluşturabilirsiniz. Bu, otomatik tespitin doğruluğunu gözle denetlemenin pratik bir yoludur. ' +
-            '(Bu adım örnek olarak Points aracını etkinleştirir.)'],
+     baslik: workshopText('script.c38d2983351b', 'Points — sayım / işaretleme aracı'),
+     govde: workshopText('script.295906432abf', 'Points (nokta) aracı, tek tek hücreleri elle işaretleyip saymak için kullanılır — örneğin bir referans sayımı yaparken. Her tıklama bir nokta bırakır; farklı sınıflar için ayrı nokta kümeleri oluşturabilirsiniz. Bu, otomatik tespitin doğruluğunu gözle denetlemenin pratik bir yoludur. (Bu adım örnek olarak Points aracını etkinleştirir.)')],
 
     // ── Uygulamalı alıştırma: kullanıcı istenen şekli çizince otomatik ilerler ──
     [id: 'practice-rectangle', bolge: 'TOOLBAR', hedef: [tools: 'RECTANGLE'], demo: 'TOOL_RECTANGLE', practice: 'RECTANGLE',
-     baslik: 'Alıştırma — bir DİKDÖRTGEN çizin',
-     govde: 'Sıra sizde! Rectangle (R) aracı sizin için seçildi. Görüntü üzerinde tıklayıp sürükleyerek bir ' +
-            'dikdörtgen anotasyon çizin. Sihirbaz çizimi algılayınca kendiliğinden bir sonraki alıştırmaya geçer. ' +
-            '(Bu alıştırma açık bir lam ister; istemezseniz "İleri ▶" ile atlayabilirsiniz.)'],
+     baslik: workshopText('script.6cbb07189bc3', 'Alıştırma — bir DİKDÖRTGEN çizin'),
+     govde: workshopText('script.3bdaf922a3cf', 'Sıra sizde! Rectangle (R) aracı sizin için seçildi. Görüntü üzerinde tıklayıp sürükleyerek bir dikdörtgen anotasyon çizin. Sihirbaz çizimi algılayınca kendiliğinden bir sonraki alıştırmaya geçer. (Bu alıştırma açık bir lam ister; istemezseniz "İleri ▶" ile atlayabilirsiniz.)')],
 
     [id: 'practice-ellipse', bolge: 'TOOLBAR', hedef: [tools: 'ELLIPSE'], demo: 'TOOL_ELLIPSE', practice: 'ELLIPSE',
-     baslik: 'Alıştırma — bir ELİPS çizin',
-     govde: 'Ellipse (O) aracı seçildi. Görüntü üzerinde tıklayıp sürükleyerek bir elips çizin. ' +
-            'Shift ile sürüklerseniz daire olur. Çizim algılanınca otomatik ilerlenir.'],
+     baslik: workshopText('script.fb8bc6b41545', 'Alıştırma — bir ELİPS çizin'),
+     govde: workshopText('script.ea5369c5b04a', 'Ellipse (O) aracı seçildi. Görüntü üzerinde tıklayıp sürükleyerek bir elips çizin. Shift ile sürüklerseniz daire olur. Çizim algılanınca otomatik ilerlenir.')],
 
     [id: 'practice-polygon', bolge: 'TOOLBAR', hedef: [tools: 'POLYGON'], demo: 'TOOL_POLYGON', practice: 'POLYGON',
-     baslik: 'Alıştırma — bir POLİGON çizin',
-     govde: 'Polygon (P) aracı seçildi. Köşelere tek tek tıklayarak bir çokgen oluşturun; çift tıklayarak ' +
-            '(ya da ilk noktaya dönerek) kapatın. İsterseniz tıklayıp sürükleyip bırakarak da çizebilirsiniz. ' +
-            'Poligon tamamlanınca otomatik ilerlenir.'],
+     baslik: workshopText('script.e36003708bf9', 'Alıştırma — bir POLİGON çizin'),
+     govde: workshopText('script.be606e4f6b83', 'Polygon (P) aracı seçildi. Köşelere tek tek tıklayarak bir çokgen oluşturun; çift tıklayarak (ya da ilk noktaya dönerek) kapatın. İsterseniz tıklayıp sürükleyip bırakarak da çizebilirsiniz. Poligon tamamlanınca otomatik ilerlenir.')],
 
     [id: 'practice-points', bolge: 'TOOLBAR', hedef: [tools: 'POINTS'], demo: 'TOOL_POINTS', practice: 'POINTS',
-     baslik: 'Alıştırma — NOKTA ekleyin',
-     govde: 'Points aracı seçildi. Görüntüye tıklayarak bir veya birkaç nokta işaretleyin (sayım/işaretleme ' +
-            'için kullanılır). Nokta ekleyince alttaki mesaj güncellenir; "İleri ▶" ile tura devam edin. ' +
-            'Tebrikler — beş çizim aracını da denediniz!'],
+     baslik: workshopText('script.e9dcec55bf7c', 'Alıştırma — NOKTA ekleyin'),
+     govde: workshopText('script.3cbe2f1eadfb', 'Points aracı seçildi. Görüntüye tıklayarak bir veya birkaç nokta işaretleyin (sayım/işaretleme için kullanılır). Nokta ekleyince alttaki mesaj güncellenir; "İleri ▶" ile tura devam edin. Tebrikler — beş çizim aracını da denediniz!')],
 
     [id: 'selection-mode', bolge: 'TOOLBAR', hedef: [selectionMode: true], demo: 'SELECTION_MODE',
-     baslik: 'Seçim modu — çizmek yerine nesne seçmek',
-     govde: 'Seçim modu (Selection mode) düğmesi, araçların davranışını "çizme"den "seçme"ye çevirir. Açıkken, ' +
-            'çizim aracıyla sürüklediğiniz alan yeni bir anotasyon oluşturmaz; o alana düşen mevcut nesneleri ' +
-            'seçer. Çok sayıda hücre veya anotasyonu toplu işlemek için kullanışlıdır. (Bu adım örnek olarak seçim ' +
-            'modunu açar; tur kapanınca eski durumu geri yükler.)'],
+     baslik: workshopText('script.385528c958ff', 'Seçim modu — çizmek yerine nesne seçmek'),
+     govde: workshopText('script.bda6c09402f6', 'Seçim modu (Selection mode) düğmesi, araçların davranışını "çizme"den "seçme"ye çevirir. Açıkken, çizim aracıyla sürüklediğiniz alan yeni bir anotasyon oluşturmaz; o alana düşen mevcut nesneleri seçer. Çok sayıda hücre veya anotasyonu toplu işlemek için kullanışlıdır. (Bu adım örnek olarak seçim modunu açar; tur kapanınca eski durumu geri yükler.)')],
 
     [id: 'brightness', bolge: 'TOOLBAR', hedef: [action: 'BRIGHTNESS_CONTRAST'], demo: 'FIRE',
-     baslik: 'Parlaklık & Kontrast — yalnızca ekranı değiştirir',
-     govde: 'Parlaklık & Kontrast diyaloğu (araç çubuğundaki güneş simgesi ya da Shift+C) yalnızca ekranda ' +
-            'gördüğünüzü değiştirir; analizde kullanılan piksel değerlerine dokunmaz. Kontrastı rahatça ' +
-            'oynatabilirsiniz — ölçümleriniz etkilenmez. H&E\'de R/G/B kanallarını, H-DAB\'de hematoksilen/DAB ' +
-            'kanallarını açıp kapatarak sinyali ayırt edebilirsiniz. (Bu adım diyaloğu örnek olarak açar.)'],
+     baslik: workshopText('script.6056e2ddcf11', 'Parlaklık & Kontrast — yalnızca ekranı değiştirir'),
+     govde: workshopText('script.866bf6eb5b76', 'Parlaklık & Kontrast diyaloğu (araç çubuğundaki güneş simgesi ya da Shift+C) yalnızca ekranda gördüğünüzü değiştirir; analizde kullanılan piksel değerlerine dokunmaz. Kontrastı rahatça oynatabilirsiniz — ölçümleriniz etkilenmez. H&E\'de R/G/B kanallarını, H-DAB\'de hematoksilen/DAB kanallarını açıp kapatarak sinyali ayırt edebilirsiniz. (Bu adım diyaloğu örnek olarak açar.)')],
 
     [id: 'visibility', bolge: 'TOOLBAR',
      hedef: [actions: ['SHOW_ANNOTATIONS', 'FILL_ANNOTATIONS', 'SHOW_DETECTIONS', 'FILL_DETECTIONS']],
-     baslik: 'Görünürlük: anotasyon/tespit göster-gizle, doldur',
-     govde: 'Araç çubuğundaki görünürlük anahtarları kalabalık bir lamda neyi gördüğünüzü denetler: ' +
-            'anotasyonları göster/gizle, tespitleri göster/gizle ve bunların içini doldur/boşalt. Binlerce hücre ' +
-            'dış çizgisini "doldurulmuş" yapmak uzaktan dağılımı çok daha okunaklı kılar. Bağlantıları ' +
-            '(connections) ve sınıflandırma kaplamasını da buradan açıp kapatırsınız. (Bu anahtarlar yalnızca ' +
-            'vurgulanır; tetiklenirse nesneleri gizleyeceği için otomatik çalıştırılmaz.)'],
+     baslik: workshopText('script.dbd81eb0091d', 'Görünürlük: anotasyon/tespit göster-gizle, doldur'),
+     govde: workshopText('script.00c6061acb0e', 'Araç çubuğundaki görünürlük anahtarları kalabalık bir lamda neyi gördüğünüzü denetler: anotasyonları göster/gizle, tespitleri göster/gizle ve bunların içini doldur/boşalt. Binlerce hücre dış çizgisini "doldurulmuş" yapmak uzaktan dağılımı çok daha okunaklı kılar. Bağlantıları (connections) ve sınıflandırma kaplamasını da buradan açıp kapatırsınız. (Bu anahtarlar yalnızca vurgulanır; tetiklenirse nesneleri gizleyeceği için otomatik çalıştırılmaz.)')],
 
     [id: 'opacity', bolge: 'TOOLBAR', hedef: [id: 'opacitySlider'],
-     baslik: 'Opaklık kaydırıcısı — kaplama saydamlığı',
-     govde: 'Opaklık kaydırıcısı, nesne ve sınıflandırma kaplamalarının saydamlığını ayarlar. Sola çekince ' +
-            'kaplama silikleşir ve altındaki H&E daha çok görünür; sağa çekince kaplama belirginleşir. Bir piksel ' +
-            'sınıflandırıcı maskesinin altındaki dokuyu kontrol ederken çok işe yarar.'],
+     baslik: workshopText('script.851924a132eb', 'Opaklık kaydırıcısı — kaplama saydamlığı'),
+     govde: workshopText('script.99f8427f435f', 'Opaklık kaydırıcısı, nesne ve sınıflandırma kaplamalarının saydamlığını ayarlar. Sola çekince kaplama silikleşir ve altındaki H&E daha çok görünür; sağa çekince kaplama belirginleşir. Bir piksel sınıflandırıcı maskesinin altındaki dokuyu kontrol ederken çok işe yarar.')],
 
     [id: 'measurements', bolge: 'TOOLBAR', hedef: [id: 'measurementTablesMenuButton'], demo: 'MENU',
-     baslik: 'Ölçüm tabloları',
-     govde: 'Ölçüm tabloları düğmesi, seçili nesnelerin (anotasyon veya tespit) tüm ölçümlerini bir tabloda ' +
-            'açar: alan, sayım, yoğunluk, boya optik yoğunluğu ve daha fazlası. Tablodaki bir satıra tıklamak ' +
-            'ilgili nesneyi görüntüleyicide seçer. Bu tablolar dışa aktarmanın (Veri dışa aktarma modülü) temelidir. ' +
-            '(Bu adım düğmenin menüsünü örnek olarak açar.)'],
+     baslik: workshopText('script.ad1478919b5c', 'Ölçüm tabloları'),
+     govde: workshopText('script.bf10e9188237', 'Ölçüm tabloları düğmesi, seçili nesnelerin (anotasyon veya tespit) tüm ölçümlerini bir tabloda açar: alan, sayım, yoğunluk, boya optik yoğunluğu ve daha fazlası. Tablodaki bir satıra tıklamak ilgili nesneyi görüntüleyicide seçer. Bu tablolar dışa aktarmanın (Veri dışa aktarma modülü) temelidir. (Bu adım düğmenin menüsünü örnek olarak açar.)')],
 
     [id: 'script-editor', bolge: 'TOOLBAR', hedef: [action: 'SCRIPT_EDITOR'], demo: 'FIRE',
-     baslik: 'Betik düzenleyicisi — betikler ve konsol',
-     govde: 'Betik düzenleyicisi (Script editor), QuPath\'in Groovy konsoludur; tekrar eden işleri otomatikleştirmenin ' +
-            'yoludur. Atölye eklentisinin tüm yardımcıları aslında buradan çalışan betiklerdir. Menüden ' +
-            'Automate → Script editor ile de açılır. Korkmayın — çoğu işi menülerden yapabilirsiniz; betikler ' +
-            'yalnızca tekrar ve ölçeklenme içindir. (Bu adım editörü örnek olarak açar.)'],
+     baslik: workshopText('script.6d8fa6fe8412', 'Betik düzenleyicisi — betikler ve konsol'),
+     govde: workshopText('script.948d5b2a6078', 'Betik düzenleyicisi (Script editor), QuPath\'in Groovy konsoludur; tekrar eden işleri otomatikleştirmenin yoludur. Atölye eklentisinin tüm yardımcıları aslında buradan çalışan betiklerdir. Menüden Automate → Script editor ile de açılır. Korkmayın — çoğu işi menülerden yapabilirsiniz; betikler yalnızca tekrar ve ölçeklenme içindir. (Bu adım editörü örnek olarak açar.)')],
 
     [id: 'command-list', bolge: null, demo: 'COMMAND_LIST',
-     baslik: 'Command List (Ctrl/⌘+L) — en hızlı navigasyon',
-     govde: 'Command List (Ctrl+L / ⌘+L), QuPath\'in "komut paleti"dir: aratabileceğiniz bir pencere açar, ' +
-            'menüleri gezmek yerine komutun adını yazıp çalıştırırsınız. "cell detection", "estimate stain ' +
-            'vectors", "brightness" gibi aramalar menü yolunu ezberleme yükünü ortadan kaldırır. Bir komutu ' +
-            'hatırlamadığınızda ilk refleksiniz bu olsun. (Bu adım Command List\'i örnek olarak açar — bir ' +
-            'araç çubuğu düğmesi değil, klavye kısayoludur; pencereyi kapatıp devam edin.)'],
+     baslik: workshopText('script.bc9428240283', 'Command List (Ctrl/⌘+L) — en hızlı navigasyon'),
+     govde: workshopText('script.cb1b72a4c6c8', 'Command List (Ctrl+L / ⌘+L), QuPath\'in "komut paleti"dir: aratabileceğiniz bir pencere açar, menüleri gezmek yerine komutun adını yazıp çalıştırırsınız. "cell detection", "estimate stain vectors", "brightness" gibi aramalar menü yolunu ezberleme yükünü ortadan kaldırır. Bir komutu hatırlamadığınızda ilk refleksiniz bu olsun. (Bu adım Command List\'i örnek olarak açar — bir araç çubuğu düğmesi değil, klavye kısayoludur; pencereyi kapatıp devam edin.)')],
 
     [id: 'close', bolge: null,
-     link: [text: 'qupath-extension-training — resmî tur eklentisi (GitHub) ↗',
+     link: [text: workshopText('script.23b149508e41', 'qupath-extension-training — resmî tur eklentisi (GitHub) ↗'),
             url: 'https://github.com/qupath/qupath-extension-training'],
-     baslik: 'Tur tamam — sıradaki adımlar',
-     govde: 'Turu tamamladınız. Bu sayfaların yazılı karşılığı, panel tablosu ve klavye kısayolları için ' +
-            'QuPath\'e Giriş — Arayüz turu bölümüne bakın. Daha derin, İngilizce ve buton-düzeyinde canlı vurgulu resmî ' +
-            'tur için Pete Bankhead\'in qupath-extension-training eklentisini kurabilirsiniz (aşağıdaki bağlantı). ' +
-            'Sıradaki adım: Hücre Tespiti.\n\n' +
-            '⚠️ Bu sihirbaz yalnızca eğitim amaçlıdır; ölçüm veya klinik karar üretmez.']
+     baslik: workshopText('script.5f614c5d208d', 'Tur tamam — sıradaki adımlar'),
+     govde: workshopText('script.39578be112a8', 'Turu tamamladınız. Bu sayfaların yazılı karşılığı, panel tablosu ve klavye kısayolları için QuPath\'e Giriş — Arayüz turu bölümüne bakın. Daha derin, İngilizce ve buton-düzeyinde canlı vurgulu resmî tur için Pete Bankhead\'in qupath-extension-training eklentisini kurabilirsiniz (aşağıdaki bağlantı). Sıradaki adım: Hücre Tespiti.\n\n⚠️ Bu sihirbaz yalnızca eğitim amaçlıdır; ölçüm veya klinik karar üretmez.')]
 ]
 
 // ── Headless: turu çalıştıramayız (GUI gerekir) — içeriği konsola özetle ─────
@@ -544,12 +466,12 @@ def matchesRoi = { roi, String type ->
     return false
 }
 def PRACTICE_HINT = [
-    RECTANGLE: 'Görüntü üzerinde tıklayıp sürükleyerek bir DİKDÖRTGEN çizin…',
-    ELLIPSE:   'Tıklayıp sürükleyerek bir ELİPS çizin…',
-    POLYGON:   'Köşelere tıklayarak bir POLİGON çizin (çift tıklayın ya da ilk noktaya dönerek bitirin)…',
-    POINTS:    'Görüntüye tıklayarak bir veya birkaç NOKTA ekleyin…'
+    RECTANGLE: workshopText('script.93358ccdf8dc', 'Görüntü üzerinde tıklayıp sürükleyerek bir DİKDÖRTGEN çizin…'),
+    ELLIPSE:   workshopText('script.b81d6c88d1cf', 'Tıklayıp sürükleyerek bir ELİPS çizin…'),
+    POLYGON:   workshopText('script.47485572b292', 'Köşelere tıklayarak bir POLİGON çizin (çift tıklayın ya da ilk noktaya dönerek bitirin)…'),
+    POINTS:    workshopText('script.71f0368ad5b0', 'Görüntüye tıklayarak bir veya birkaç NOKTA ekleyin…')
 ]
-def PRACTICE_DONE = [RECTANGLE: 'Dikdörtgen', ELLIPSE: 'Elips', POLYGON: 'Poligon', POINTS: 'Nokta']
+def PRACTICE_DONE = [RECTANGLE: workshopText('script.d0a7782b0e67', 'Dikdörtgen'), ELLIPSE: workshopText('script.220b8926fd40', 'Elips'), POLYGON: workshopText('script.e30c9a1cfe54', 'Poligon'), POINTS: workshopText('script.0ada951030d2', 'Nokta')]
 
 // Aktif alıştırma dinleyicisini kaldır (gezinme/kapanışta).
 def detachPractice = { ->
@@ -672,7 +594,7 @@ render = { ->
     List nodesF = hiNodes            // geri-çekilme sonrası kesin liste
     boolean spotF = hiSpot
     if (!hiNodes.isEmpty()) {
-        String hiLbl = !spotF ? 'Bu bölgeyi vurgula' : (nodesF.size() > 1 ? 'Bu öğeleri vurgula' : 'Bu öğeyi vurgula')
+        String hiLbl = !spotF ? workshopText('script.f715000e5393', 'Bu bölgeyi vurgula') : (nodesF.size() > 1 ? workshopText('script.4936112cc233', 'Bu öğeleri vurgula') : workshopText('script.c5a53dcbea2f', 'Bu öğeyi vurgula'))
         hiBtn = new javafx.scene.control.ToggleButton(hiLbl)
         def hiRef = hiBtn
         hiRef.setOnAction({
@@ -806,7 +728,7 @@ javafx.application.Platform.runLater {
         render()
         stage.show()
     } catch (Throwable t) {
-        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '(ileti yok)'))
+        Dialogs.showErrorMessage(workshopText('script.7fd583bc0c88', 'Sihirbaz açılamadı'), workshopText('script.9aac4912cb86', 'Bu araç başlatılamadı.\n\nYapabilecekleriniz:\n  1. Araç açık bir lam istiyorsa önce lamı açın.\n  2. QuPath\'i tamamen kapatıp yeniden açın ve tekrar deneyin.\n  3. Sorun sürerse View → Show log penceresinin ekran görüntüsünü atölye düzenleyicisine gönderin.\n\nTeknik ayrıntı: ') + t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: workshopText('script.e136f4a3bb45', '(ileti yok)')))
     }
 }
 println '✓ QuPath arayüz turu açıldı.'

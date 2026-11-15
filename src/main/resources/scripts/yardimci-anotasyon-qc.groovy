@@ -119,7 +119,7 @@ def cal = server.getPixelCalibration()
 double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 boolean calibrated = (pw > 0 && ph > 0)
-String areaUnit = calibrated ? "µm²" : "px² (kalibrasyon yok)"
+String areaUnit = calibrated ? "µm²" : workshopText('script.c7ff0bb23539', 'px² (kalibrasyon yok)')
 // Alanı µm² veya px² döndüren kapanım
 def toArea = { double pxArea -> calibrated ? pxArea * pw * ph : pxArea }
 
@@ -135,7 +135,7 @@ def centDist = { g1, g2 ->
 def annots = QP.getAnnotationObjects()
 int total = annots.size()
 if (total == 0) {
-    def msg = "Bu görüntüde hiç anotasyon yok."
+    def msg = workshopText('script.63a336155766', 'Bu görüntüde hiç anotasyon yok.')
     if (isHeadless) { println msg; return }
     Dialogs.showWarningNotification(workshopText('script.79f41bc67a0a', "Anotasyon QC"), msg)
     return
@@ -248,7 +248,7 @@ for (int i = 0; i < annotList.size() - 1; i++) {
         double relAreaDiff = (largerArea > 0) ? Math.abs(areaA - areaB) / largerArea : 0.0
         if (distUm < NEAR_DUP_DIST_UM && relAreaDiff < NEAR_DUP_AREA_FRAC) {
             nearDupPairs << String.format(java.util.Locale.US,
-                "%s ↔ %s (mesafe=%.1f %s, alan farkı=%.2f%%)",
+                workshopText('script.494ea1158c46', '%s ↔ %s (mesafe=%.1f %s, alan farkı=%.2f%%)'),
                 label(a), label(b), distUm, calibrated ? "µm" : "px", relAreaDiff * 100)
         }
 
@@ -263,7 +263,7 @@ for (int i = 0; i < annotList.size() - 1; i++) {
                         nestedPairs++
                     } else if (frac > OVERLAP_FRAC) {
                         overlapPairs << String.format(java.util.Locale.US,
-                            "%s ↔ %s (örtüşme=%.1f%% küçük anot.)",
+                            workshopText('script.87b4ba6e1324', '%s ↔ %s (örtüşme=%.1f%% küçük anot.)'),
                             label(a), label(b), frac * 100)
                     }
                 }
@@ -278,7 +278,7 @@ for (int i = 0; i < annotList.size() - 1; i++) {
                             nestedPairs++
                         } else if (frac > OVERLAP_FRAC) {
                             overlapPairs << String.format(java.util.Locale.US,
-                                "%s ↔ %s (örtüşme=%.1f%% küçük anot., buffer kurtarma)",
+                                workshopText('script.debdbc1fa1e5', '%s ↔ %s (örtüşme=%.1f%% küçük anot., buffer kurtarma)'),
                                 label(a), label(b), frac * 100)
                         }
                     }
@@ -290,58 +290,58 @@ for (int i = 0; i < annotList.size() - 1; i++) {
 
 // ── Sonuç metnini oluştur ────────────────────────────────────────────────────
 def fmt = { List<String> lst ->
-    if (lst.isEmpty()) return "  ✓ Sorun bulunamadı.\n"
+    if (lst.isEmpty()) return workshopText('script.dd7b160ff217', '  ✓ Sorun bulunamadı.\n')
     def sb = new StringBuilder()
     lst.take(MAX_LIST).each { sb << "  • ${it}\n" }
     if (lst.size() > MAX_LIST)
-        sb << String.format(java.util.Locale.US, "  … ve %d sorunlu anotasyon daha (pencere sınırı)\n", lst.size() - MAX_LIST)
+        sb << String.format(java.util.Locale.US, workshopText('script.a984b6268805', '  … ve %d sorunlu anotasyon daha (pencere sınırı)\n'), lst.size() - MAX_LIST)
     return sb.toString()
 }
 
 def body = new StringBuilder()
-body << "ANOTASYON YAPISI QC — geometri bütünlüğü denetimi\n"
+body << workshopText('script.04867dc13e98', 'ANOTASYON YAPISI QC — geometri bütünlüğü denetimi\n')
 body << "════════════════════════════════════════════════════\n"
-body << String.format(java.util.Locale.US, "Toplam anotasyon : %d\n", total)
-body << String.format(java.util.Locale.US, "Alan birimi      : %s\n", areaUnit)
-body << "Not: Sorunlu anotasyonlar elle incelenmelidir.\n\n"
+body << String.format(java.util.Locale.US, workshopText('script.c0eb53b8aea8', 'Toplam anotasyon : %d\n'), total)
+body << String.format(java.util.Locale.US, workshopText('script.8461670350e9', 'Alan birimi      : %s\n'), areaUnit)
+body << workshopText('script.7322e5173b12', 'Not: Sorunlu anotasyonlar elle incelenmelidir.\n\n')
 
 body << String.format(java.util.Locale.US,
-    "(1) KISMİ ÖRTÜŞME çiftleri (>%%5)        : %d çift\n", overlapPairs.size())
+    workshopText('script.99b730e00072', '(1) KISMİ ÖRTÜŞME çiftleri (>%%5)        : %d çift\n'), overlapPairs.size())
 body << fmt(overlapPairs)
 if (nestedPairs > 0) body << String.format(java.util.Locale.US,
-    "    Bilgi: %d çiftte biri ötekinin tamamen içinde (iç içe yapı); sorun sayılmadı.\n", nestedPairs)
+    workshopText('script.6aa63faa694f', '    Bilgi: %d çiftte biri ötekinin tamamen içinde (iç içe yapı); sorun sayılmadı.\n'), nestedPairs)
 
 body << String.format(java.util.Locale.US,
-    "(2) NEREDEYSE-KOPYA çiftleri (<10 %s, alan farkı <%%1) : %d çift\n",
+    workshopText('script.c187cd90960c', '(2) NEREDEYSE-KOPYA çiftleri (<10 %s, alan farkı <%%1) : %d çift\n'),
     calibrated ? "µm" : "px", nearDupPairs.size())
 body << fmt(nearDupPairs)
 
 body << String.format(java.util.Locale.US,
-    "(3) BOŞ / TRİVİAL (<100 %s ya da boş ROI) : %d\n", areaUnit, emptyTrivial.size())
+    workshopText('script.2db560b37f3f', '(3) BOŞ / TRİVİAL (<100 %s ya da boş ROI) : %d\n'), areaUnit, emptyTrivial.size())
 body << fmt(emptyTrivial)
 
 body << String.format(java.util.Locale.US,
-    "(4) İSİMSİZ + SINIFSIZ                   : %d\n", unnamedUnclassed.size())
+    workshopText('script.bcea0360d8bd', '(4) İSİMSİZ + SINIFSIZ                   : %d\n'), unnamedUnclassed.size())
 body << fmt(unnamedUnclassed)
 
 body << String.format(java.util.Locale.US,
-    "(5) SINIR DIŞI                            : %d\n", outOfBounds.size())
+    workshopText('script.e491b292c4b9', '(5) SINIR DIŞI                            : %d\n'), outOfBounds.size())
 body << fmt(outOfBounds)
 
 body << String.format(java.util.Locale.US,
-    "(6) GEÇERSİZ GEOMETRİ (JTS isValid=false) : %d\n", invalidGeom.size())
+    workshopText('script.36f55c1a6e94', '(6) GEÇERSİZ GEOMETRİ (JTS isValid=false) : %d\n'), invalidGeom.size())
 body << fmt(invalidGeom)
 
 int totalIssues = overlapPairs.size() + nearDupPairs.size() + emptyTrivial.size() +
                   unnamedUnclassed.size() + outOfBounds.size() + invalidGeom.size()
 body << "────────────────────────────────────────────────────\n"
 body << String.format(java.util.Locale.US,
-    "Toplam sorunlu giriş (çiftler ayrı sayılır) : %d\n\n", totalIssues)
-body << "Bu betik hiyerarşiyi değiştirmez ve ölçüm yazmaz.\n"
-body << "Geometri bütünlüğü sorunu — elle inceleme gerekir.\n\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı geometri bütünlüğü denetimi üretir."
+    workshopText('script.7a1d6b35812b', 'Toplam sorunlu giriş (çiftler ayrı sayılır) : %d\n\n'), totalIssues)
+body << workshopText('script.4b134b3e9a72', 'Bu betik hiyerarşiyi değiştirmez ve ölçüm yazmaz.\n')
+body << workshopText('script.ddd878c99d76', 'Geometri bütünlüğü sorunu — elle inceleme gerekir.\n\n')
+body << workshopText('script.c46d6fa5b1b9', '⚠️ Yalnızca araştırma/eğitim amaçlı geometri bütünlüğü denetimi üretir.')
 
-showResultWindow("Anotasyon Yapısı QC", body.toString())
+showResultWindow(workshopText('script.535fe979150a', 'Anotasyon Yapısı QC'), body.toString())
 println String.format(java.util.Locale.US,
     "✓ Anotasyon QC tamamlandı: %d anotasyon incelendi, %d sorunlu giriş.",
     total, totalIssues)

@@ -98,13 +98,13 @@ if (imageData == null) {
 def server = imageData.getServer()
 def stains = imageData.getColorDeconvolutionStains()
 if (stains == null) {
-    def msg = "Bu yardımcı renk dekonvolüsyonu (parlak alan H&E / H-DAB) gerektirir; boya vektörleri tanımlı değil.\n" +
-              "[Image → Set image type] ile Brightfield seçin ya da Boya vektörleri sihirbazını çalıştırın."
+    def msg = workshopText('script.eff2a052113f', 'Bu yardımcı renk dekonvolüsyonu (parlak alan H&E / H-DAB) gerektirir; boya vektörleri tanımlı değil.\n') +
+              workshopText('script.d919167f83ab', '[Image → Set image type] ile Brightfield seçin ya da Boya vektörleri sihirbazını çalıştırın.')
     if (isHeadless) { println msg; return }
     Dialogs.showErrorMessage(workshopText('script.a7c7cbba6d84', "Boya vektörü yok"), msg); return
 }
-def s1name = stains.getStain(1)?.getName() ?: "Boya 1"
-def s2name = stains.getStain(2)?.getName() ?: "Boya 2"
+def s1name = stains.getStain(1)?.getName() ?: workshopText('script.8a825b815f3c', 'Boya 1')
+def s2name = stains.getStain(2)?.getName() ?: workshopText('script.0bb66a7527b9', 'Boya 2')
 boolean isHE = (s2name.toLowerCase(java.util.Locale.ROOT).contains("eosin") || s2name.toLowerCase(java.util.Locale.ROOT).contains("eozin"))
 double[] svH = stains.getStain(1).getArray()
 double maxR = stains.getMaxRed(), maxG = stains.getMaxGreen(), maxB = stains.getMaxBlue()
@@ -122,7 +122,7 @@ double downsample = Math.max(1.0d, Math.max(rw, rh) / (double) MAX_DIM)
 def qcRequest = RegionRequest.createInstance(server.getPath(), downsample, rx, ry, rw, rh)
 def img
 try { img = server.readRegion(qcRequest) }
-catch (Throwable t) { def m = "Bölge okunamadı: " + (t.getMessage() ?: t.getClass().getSimpleName()); if (!isHeadless) Dialogs.showErrorMessage(workshopText('script.1a92c50caa82', "Okuma hatası"), m); else println m; return }
+catch (Throwable t) { def m = workshopText('script.2c76fee2cd50', 'Bölge okunamadı: ') + (t.getMessage() ?: t.getClass().getSimpleName()); if (!isHeadless) Dialogs.showErrorMessage(workshopText('script.1a92c50caa82', "Okuma hatası"), m); else println m; return }
 if (img == null) { if (!isHeadless) Dialogs.showErrorMessage(workshopText('script.1a92c50caa82', "Okuma hatası"), workshopText('script.83970d478d15', "Bölge boş okundu.")); else println "Bölge boş."; return }
 
 int iw = img.getWidth(), ih = img.getHeight()
@@ -159,7 +159,7 @@ for (int i = 0; i < rgb.length; i++) {
 }
 
 if (nTissue == 0) {
-    def m = "Doku pikseli bulunamadı (arka plan eşiği OD < " + BG_OD + ").\nDaha dokulu bir bölge seçin ya da eşiği gözden geçirin."
+    def m = workshopText('script.16e753bd9848', 'Doku pikseli bulunamadı (arka plan eşiği OD < ') + BG_OD + workshopText('script.5da3903406b1', ').\nDaha dokulu bir bölge seçin ya da eşiği gözden geçirin.')
     if (!isHeadless) Dialogs.showErrorMessage(workshopText('script.2155874eeb11', "Doku yok"), m); else println m; return
 }
 
@@ -171,39 +171,39 @@ double tissueFrac = nSampled > 0 ? (double) nTissue / (double) nSampled : 0.0d
 
 String heVerdict
 if (isHE && !Double.isNaN(lRatio)) {
-    if (lRatio >= 0.94d && lRatio <= 0.99d) heVerdict = "0,94–0,99 aralığında (Dunn 2025 optimal)"
-    else if (lRatio < 0.94d) heVerdict = "< 0,94 — hematoksilen baskın (koyu çekirdek eğilimi)"
-    else heVerdict = "> 0,99 — hematoksilen zayıf / eozin baskın"
+    if (lRatio >= 0.94d && lRatio <= 0.99d) heVerdict = workshopText('script.3593346507e5', '0,94–0,99 aralığında (Dunn 2025 optimal)')
+    else if (lRatio < 0.94d) heVerdict = workshopText('script.4e258898c962', '< 0,94 — hematoksilen baskın (koyu çekirdek eğilimi)')
+    else heVerdict = workshopText('script.700154f94df3', '> 0,99 — hematoksilen zayıf / eozin baskın')
 } else {
-    heVerdict = isHE ? "(hesaplanamadı)" : "(yalnız H&E için Dunn referansı; bu görüntü " + s1name + "/" + s2name + ")"
+    heVerdict = isHE ? workshopText('script.90be32b2a984', '(hesaplanamadı)') : workshopText('script.fd69189c7d48', '(yalnız H&E için Dunn referansı; bu görüntü ') + s1name + "/" + s2name + ")"
 }
 
 def sb = new StringBuilder()
-sb << "BOYA KALİTESİ QC ÖLÇÜMÜ\n"
+sb << workshopText('script.6005cb7fe9a1', 'BOYA KALİTESİ QC ÖLÇÜMÜ\n')
 sb << "═══════════════════════\n\n"
-sb << "Görüntü : " << (server.getMetadata().getName() ?: "(adsız)") << "\n"
-sb << "Bölge   : " << (roi != null ? "seçili anotasyon" : "tüm lam") << String.format(java.util.Locale.US, "  (%,d × %,d px, downsample %.2f)%n", rw, rh, downsample)
-sb << String.format(java.util.Locale.US, "Doku    : %,d piksel  (%.1f%% örneklenen alan; OD-sum ≥ %.2f)%n", nTissue, 100.0d*tissueFrac, BG_OD)
-sb << "\n📊  Yoğunluk (optik yoğunluk, OD)\n"
+sb << workshopText('script.0f99b69e70b9', 'Görüntü : ') << (server.getMetadata().getName() ?: workshopText('script.2966ac6511d8', '(adsız)')) << "\n"
+sb << workshopText('script.a0e6fdf4d70a', 'Bölge   : ') << (roi != null ? workshopText('script.3d9e23bba43f', 'seçili anotasyon') : workshopText('script.b6dd0bfc541d', 'tüm lam')) << String.format(java.util.Locale.US, "  (%,d × %,d px, downsample %.2f)%n", rw, rh, downsample)
+sb << String.format(java.util.Locale.US, workshopText('script.a575dac76e31', 'Doku    : %,d piksel  (%.1f%% örneklenen alan; OD-sum ≥ %.2f)%n'), nTissue, 100.0d*tissueFrac, BG_OD)
+sb << workshopText('script.a2fa959aed21', '\n📊  Yoğunluk (optik yoğunluk, OD)\n')
 sb << "──────────────────────────────\n"
 sb << String.format(java.util.Locale.US, "  %-14s : %.3f OD%n", s1name, meanOD1)
 sb << String.format(java.util.Locale.US, "  %-14s : %.3f OD%n", s2name, meanOD2)
-sb << String.format(java.util.Locale.US, "  %s:%s OD oranı : %.3f%n", s1name, s2name, odRatio)
-sb << "\n🎨  CIELAB L* (dekonvolve tek-boya yeniden-yapım)\n"
+sb << String.format(java.util.Locale.US, workshopText('script.4a0d2b67df3e', '  %s:%s OD oranı : %.3f%n'), s1name, s2name, odRatio)
+sb << workshopText('script.6748e0cc7a5f', '\n🎨  CIELAB L* (dekonvolve tek-boya yeniden-yapım)\n')
 sb << "────────────────────────────────────────────\n"
 sb << String.format(java.util.Locale.US, "  L* %-12s : %.1f%n", s1name, meanLH)
 sb << String.format(java.util.Locale.US, "  L* %-12s : %.1f%n", s2name, meanLE)
-sb << String.format(java.util.Locale.US, "  H:E L* oranı   : %.3f  →  %s%n", lRatio, heVerdict)
-sb << "\n📝 Yorum (ölçüm, yorum değil)\n"
+sb << String.format(java.util.Locale.US, workshopText('script.ea8df8d01eda', '  H:E L* oranı   : %.3f  →  %s%n'), lRatio, heVerdict)
+sb << workshopText('script.db1f57f8ad05', '\n📝 Yorum (ölçüm, yorum değil)\n')
 sb << "──────────────────────────\n"
-sb << "  • OD ↑ = boya daha koyu/yoğun; OD ↓ = soluk/zayıf boyama.\n"
-sb << "  • Aynı ölçümü TARAYICI başına (GT450 ↔ AT2) ve ZAMAN içinde izleyin;\n"
-sb << "    eşik dışı lamları işaretleyip (gerekirse) boyama normalizasyonu uygulayın (Boyama normalizasyonu eki §8).\n"
-sb << "  • Yönlü ΔE (dΔE) burada YOK: çok-slaytlı bir referans havuzu gerektirir (Dunn 2025).\n"
-sb << "\nYöntem: Dunn ve ark. 2025, J Pathol Inform 17:100423 (doi:10.1016/j.jpi.2025.100423).\n"
-sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik yorum içermez."
+sb << workshopText('script.5e613b35a134', '  • OD ↑ = boya daha koyu/yoğun; OD ↓ = soluk/zayıf boyama.\n')
+sb << workshopText('script.d3567c25d990', '  • Aynı ölçümü TARAYICI başına (GT450 ↔ AT2) ve ZAMAN içinde izleyin;\n')
+sb << workshopText('script.2c1b9c828768', '    eşik dışı lamları işaretleyip (gerekirse) boyama normalizasyonu uygulayın (Boyama normalizasyonu eki §8).\n')
+sb << workshopText('script.58d9ea8a48f6', '  • Yönlü ΔE (dΔE) burada YOK: çok-slaytlı bir referans havuzu gerektirir (Dunn 2025).\n')
+sb << workshopText('script.1c18dfd90269', '\nYöntem: Dunn ve ark. 2025, J Pathol Inform 17:100423 (doi:10.1016/j.jpi.2025.100423).\n')
+sb << workshopText('script.4a020727b3ed', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; klinik yorum içermez.')
 
-showResultWindow("Boya kalitesi QC — Tamamlandı 🎨", sb.toString())
+showResultWindow(workshopText('script.ecf0607c75eb', 'Boya kalitesi QC — Tamamlandı 🎨'), sb.toString())
 println String.format(java.util.Locale.US, "Boya kalitesi QC: %s OD %.3f, %s OD %.3f, H:E L* oranı %.3f (%,d doku piksel)", s1name, meanOD1, s2name, meanOD2, lRatio, nTissue)
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.

@@ -66,8 +66,8 @@ long PYTHON_TIMEOUT_SECONDS = 600L
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
 def SCHEME_GEOMETRY = 'geometry'
 def SCHEME_LABEL = 'label'
-def SCHEME_LABELS = ['Geometri tipine göre': SCHEME_GEOMETRY, 'Etiket metnine göre': SCHEME_LABEL]
-def SCHEME_DISPLAY = [(SCHEME_GEOMETRY): 'Geometri tipine göre', (SCHEME_LABEL): 'Etiket metnine göre']
+def SCHEME_LABELS = [(workshopText('script.0d2b9eef64ac', 'Geometri tipine göre')): SCHEME_GEOMETRY, (workshopText('script.0f02bbb25b60', 'Etiket metnine göre')): SCHEME_LABEL]
+def SCHEME_DISPLAY = [(SCHEME_GEOMETRY): workshopText('script.0d2b9eef64ac', 'Geometri tipine göre'), (SCHEME_LABEL): workshopText('script.0f02bbb25b60', 'Etiket metnine göre')]
 
 // ── Kalıcı yapılandırma: java.util.prefs (eklenti JAR'ı olmadan da çalışır) ──
 def prefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/sectra')
@@ -77,8 +77,8 @@ def PREF_SCHEME = 'scheme'
 def PREF_WORK   = 'workDir'
 
 // Önceki anotasyonlar sorusu (kullanıcı kararı D5) — varsayılan: hiçbir şey silme
-def SECTRA_KEEP    = 'Mevcut anotasyonlara dokunma — yalnız ekle (varsayılan)'
-def SECTRA_REPLACE = 'Önceki Sectra içe aktarımını değiştir (yalnız Sectra bayraklı anotasyonlar silinir)'
+def SECTRA_KEEP    = workshopText('script.0316403ac711', 'Mevcut anotasyonlara dokunma — yalnız ekle (varsayılan)')
+def SECTRA_REPLACE = workshopText('script.6f98699094e5', 'Önceki Sectra içe aktarımını değiştir (yalnız Sectra bayraklı anotasyonlar silinir)')
 
 // Atölye ayarları köprüsü — yalnız 'exports' klasör adı için (Tüm proje raporu)
 def __wpClass = { -> try { Class.forName('io.github.sbalci.qupath.workshop.WorkshopPrefs') } catch (Throwable t) { null } }
@@ -141,9 +141,9 @@ def loadConfig = { ->
 def configMissing = { cfg ->
     def miss = []
     if (!cfg.python?.trim() || !(new File(cfg.python)).isFile())
-        miss << 'Python yürütülebilir (python.exe)'
+        miss << workshopText('script.5623a3de03e1', 'Python yürütülebilir (python.exe)')
     if (!cfg.bridge?.trim() || !(new File(cfg.bridge)).isFile())
-        miss << 'Sectra köprüsü (sectra_dicom_to_qupath.py)'
+        miss << workshopText('script.2929946e1127', 'Sectra köprüsü (sectra_dicom_to_qupath.py)')
     return miss
 }
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
@@ -181,7 +181,7 @@ def runPython = { List cmd, Closure onLine ->
     pb.redirectErrorStream(true)
     def proc
     try { proc = pb.start() }
-    catch (Throwable e) { return [ok: false, exitCode: -1, error: 'Python başlatılamadı: ' + (e.getMessage() ?: e.getClass().getSimpleName())] }
+    catch (Throwable e) { return [ok: false, exitCode: -1, error: workshopText('script.f0e1e3289660', 'Python başlatılamadı: ') + (e.getMessage() ?: e.getClass().getSimpleName())] }
     processRef.set(proc)
     def last = new java.util.ArrayDeque()
     try {
@@ -196,9 +196,9 @@ def runPython = { List cmd, Closure onLine ->
     } catch (Throwable ignore) {}
     boolean finished
     try { finished = proc.waitFor(PYTHON_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) }
-    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
-    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: 'Zaman aşımı (' + PYTHON_TIMEOUT_SECONDS + ' sn)'] }
-    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: 'İptal edildi'] }
+    catch (InterruptedException ie) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
+    if (!finished) { proc.destroyForcibly(); return [ok: false, exitCode: -2, error: workshopText('script.e6b0c32aaae9', 'Zaman aşımı (') + PYTHON_TIMEOUT_SECONDS + workshopText('script.2ccf3f4af0dd', ' sn)')] }
+    if (cancelledRef.get()) { proc.destroyForcibly(); return [ok: false, exitCode: -3, error: workshopText('script.dbd417da03e1', 'İptal edildi')] }
     int code = proc.exitValue()
     return [ok: (code == 0), exitCode: code, lastLines: last.join('\n')]
 }
@@ -226,7 +226,7 @@ def ensureClass = { String name, Integer rgb ->
 def importGeoJSON = { File geojsonFile, hier = null, boolean replacePrevious = false ->
     def targetH = (hier != null) ? hier : QP.getCurrentHierarchy()
     if (geojsonFile == null || !geojsonFile.isFile())
-        return [ok: false, error: 'GeoJSON bulunamadı:\n' + (geojsonFile?.getAbsolutePath() ?: '(yol yok)')]
+        return [ok: false, error: workshopText('script.61027cc60e81', 'GeoJSON bulunamadı:\n') + (geojsonFile?.getAbsolutePath() ?: workshopText('script.7732453089e4', '(yol yok)'))]
     def plane = ImagePlane.getDefaultPlane()
 
     def ptsOf = { arr ->
@@ -267,7 +267,7 @@ def importGeoJSON = { File geojsonFile, hier = null, boolean replacePrevious = f
         try {
             def root = JsonParser.parseReader(reader).getAsJsonObject()
             if (!root.has('features'))
-                return [ok: false, error: "Geçersiz GeoJSON: 'features' dizisi yok."]
+                return [ok: false, error: workshopText('script.3f4a2b7ffa39', 'Geçersiz GeoJSON: \'features\' dizisi yok.')]
             root.getAsJsonArray('features').each { fe ->
                 def feature = fe.getAsJsonObject()
                 if (!feature.has('geometry') || feature.get('geometry').isJsonNull()) { skipped++; return }
@@ -329,8 +329,8 @@ def importGeoJSON = { File geojsonFile, hier = null, boolean replacePrevious = f
         return [ok: false, error: String.format(java.util.Locale.US, workshopText('script.983ebf08a70e', 'GeoJSON dosyası okunamadı. Seçtiğiniz dosyanın bozulmamış bir .geojson (Sectra GSPS dışa aktarımı) olduğunu ve başka bir programda açık olmadığını denetleyin; dosya bozuksa dışa aktarmayı yeniden yapıp tekrar deneyin.\n\nTeknik ayrıntı: %s'), (t.getMessage() ?: t.getClass().getSimpleName()))]
     }
     if (newAnns.isEmpty())
-        return [ok: false, error: 'GeoJSON içinde geçerli geometri bulunamadı (atlanan: ' + skipped + ').\n' +
-                'Dosya bir Sectra GSPS (GraphicAnnotationSequence) dışa aktarımı mı?']
+        return [ok: false, error: workshopText('script.bbbe463c3666', 'GeoJSON içinde geçerli geometri bulunamadı (atlanan: ') + skipped + ').\n' +
+                workshopText('script.5ce829ef5686', 'Dosya bir Sectra GSPS (GraphicAnnotationSequence) dışa aktarımı mı?')]
     // Önceki Sectra içe aktarımını temizle (istenirse) → idempotent
     def previous = targetH.getAnnotationObjects().findAll {
         try { it.getMeasurementList().getNames().contains(SECTRA_FLAG) } catch (Throwable t) { false }
@@ -345,22 +345,22 @@ def importGeoJSON = { File geojsonFile, hier = null, boolean replacePrevious = f
 // ── Özet metni ──────────────────────────────────────────────────────────────
 def buildResultText = { slideName, schemeDisp, imp, boolean replacedPrev = false ->
     def sb = new StringBuilder()
-    sb << "SECTRA PACS ANOTASYON — İÇE AKTARMA\n"
+    sb << workshopText('script.ca123b3b06f1', 'SECTRA PACS ANOTASYON — İÇE AKTARMA\n')
     sb << "═════════════════════════════════════\n\n"
-    sb << "Lam       : " << slideName << "\n"
+    sb << workshopText('script.c2fe774dbdab', 'Lam       : ') << slideName << "\n"
     sb << "GeoJSON     : " << (imp.file?.getAbsolutePath() ?: '-') << "\n"
-    sb << "Renk şeması : " << schemeDisp << "\n"
-    sb << "Önceki      : " << (replacedPrev ? (String.valueOf(imp.removed) + ' Sectra bayraklı anotasyon değiştirildi') : 'mevcut anotasyonlara dokunulmadı (yalnız eklendi)') << "\n\n"
+    sb << workshopText('script.2af456589a7b', 'Renk şeması : ') << schemeDisp << "\n"
+    sb << workshopText('script.23c4c29effe1', 'Önceki      : ') << (replacedPrev ? (String.valueOf(imp.removed) + workshopText('script.6cc7f1157e6b', ' Sectra bayraklı anotasyon değiştirildi')) : workshopText('script.738de0b2fa33', 'mevcut anotasyonlara dokunulmadı (yalnız eklendi)')) << "\n\n"
     int total = 0
-    sb << "Geometri tipine göre:\n"
+    sb << workshopText('script.e89c4df905c3', 'Geometri tipine göre:\n')
     imp.byType.each { t, n -> sb << String.format(java.util.Locale.US, "  %-22s : %,d%n", t, n); total += n }
-    sb << String.format(java.util.Locale.US, "  %-22s : %,d%n", '(toplam)', total)
-    sb << String.format(java.util.Locale.US, "  %-22s : %,d%n%n", 'atlanan özellik', (imp.skipped ?: 0))
-    sb << "Sınıf (PathClass) dökümü:\n"
+    sb << String.format(java.util.Locale.US, "  %-22s : %,d%n", workshopText('script.24d37979974f', '(toplam)'), total)
+    sb << String.format(java.util.Locale.US, "  %-22s : %,d%n%n", workshopText('script.8ab1cc10ccce', 'atlanan özellik'), (imp.skipped ?: 0))
+    sb << workshopText('script.97da3e90f130', 'Sınıf (PathClass) dökümü:\n')
     imp.byClass.each { cn, n -> sb << String.format(java.util.Locale.US, "  %-22s : %,d%n", cn, n) }
-    sb << "\nTüm anotasyonlar kilitli eklendi; Sectra metin etiketi anotasyon adıdır.\n"
-    sb << "Manuel Düzeltme eki ile düzeltebilir, Veri dışa aktarma modülü ile dışa aktarabilirsiniz.\n"
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar."
+    sb << workshopText('script.b825cfa94c0d', '\nTüm anotasyonlar kilitli eklendi; Sectra metin etiketi anotasyon adıdır.\n')
+    sb << workshopText('script.0e45001d3e39', 'Manuel Düzeltme eki ile düzeltebilir, Veri dışa aktarma modülü ile dışa aktarabilirsiniz.\n')
+    sb << workshopText('script.625c43e2ff2e', '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.')
     return sb.toString()
 }
 
@@ -392,8 +392,8 @@ def pyFieldRef     = new java.util.concurrent.atomic.AtomicReference(null)
 def bridgeFieldRef = new java.util.concurrent.atomic.AtomicReference(null)
 def workFieldRef   = new java.util.concurrent.atomic.AtomicReference(null)
 def schemeChoiceRef= new java.util.concurrent.atomic.AtomicReference(null)
-def resultTitleRef = new java.util.concurrent.atomic.AtomicReference('Tamamlandı ✅')
-def resultBtnRef   = new java.util.concurrent.atomic.AtomicReference('↻ Yeni .dcm')
+def resultTitleRef = new java.util.concurrent.atomic.AtomicReference(workshopText('script.92c17020894f', 'Tamamlandı ✅'))
+def resultBtnRef   = new java.util.concurrent.atomic.AtomicReference(workshopText('script.96bcad4ab933', '↻ Yeni .dcm'))
 def render  // forward declaration
 
 def navButton = { String text, Closure action, String tooltip = null ->
@@ -427,7 +427,7 @@ def startSelftest = {
     persistConfig()
     def cfg = loadConfig()
     def miss = configMissing(cfg)
-    if (!miss.isEmpty()) { errorTextRef.set('Önce yapılandırmayı tamamlayın:\n  • ' + miss.join('\n  • ')); step.set('ERROR'); render(); return }
+    if (!miss.isEmpty()) { errorTextRef.set(workshopText('script.59d7792abf1b', 'Önce yapılandırmayı tamamlayın:\n  • ') + miss.join('\n  • ')); step.set('ERROR'); render(); return }
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
@@ -443,7 +443,7 @@ def startSelftest = {
 // ── Dönüştür + içe aktar akışı ──────────────────────────────────────────────
 def startConvert = { File dicomFile ->
     def imageData = QP.getCurrentImageData()
-    if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
+    if (imageData == null) { errorTextRef.set(workshopText('script.da80fab350d1', 'Görüntü açık değil.')); step.set('ERROR'); render(); return }
     // Önceki anotasyonlar için SOR — varsayılan: hiçbir şey silme (kullanıcı kararı D5). Görüntü boşsa sorulmaz.
     boolean replacePrevious = false
     def existingAnns = imageData.getHierarchy().getAnnotationObjects()
@@ -469,15 +469,15 @@ def startConvert = { File dicomFile ->
     step.set('CONVERT_RUNNING'); render()
     def worker = new Thread({
         def appendLine = { String ln -> javafx.application.Platform.runLater { def a = logAreaRef.get(); if (a != null) a.appendText(ln + '\n') } }
-        appendLine('DICOM     : ' + dicomFile.getAbsolutePath())
-        appendLine('Çıktı     : ' + outGeojson.getAbsolutePath())
-        appendLine('Boyut     : ' + width + 'x' + height + '  (QuPath\'ten)')
-        appendLine('Renk şeması: ' + schemeDisp)
+        appendLine(workshopText('script.361092eb7428', 'DICOM     : ') + dicomFile.getAbsolutePath())
+        appendLine(workshopText('script.3f3c9ef9fad7', 'Çıktı     : ') + outGeojson.getAbsolutePath())
+        appendLine(workshopText('script.5c4426c23e34', 'Boyut     : ') + width + 'x' + height + workshopText('script.f1be5ab9e547', '  (QuPath\'ten)'))
+        appendLine(workshopText('script.06075700bfe9', 'Renk şeması: ') + schemeDisp)
         appendLine('')
         def r = runPython(convertCmd(cfg, dicomFile, outGeojson, width, height), appendLine)
         if (!r.ok) {
             javafx.application.Platform.runLater {
-                errorTextRef.set('Dönüştürme başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: ''))
+                errorTextRef.set(workshopText('script.572986101f53', 'Dönüştürme başarısız (çıkış: ') + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: ''))
                 step.set('ERROR'); render()
             }
             return
@@ -493,18 +493,18 @@ def startConvert = { File dicomFile ->
         } catch (Throwable ignore) { stillOpen = false }
         if (!stillOpen) {
             javafx.application.Platform.runLater {
-                errorTextRef.set('Görüntü dönüştürme sırasında kapatıldı; içe aktarma yapılmadı.')
+                errorTextRef.set(workshopText('script.b49d70d59a9a', 'Görüntü dönüştürme sırasında kapatıldı; içe aktarma yapılmadı.'))
                 step.set('ERROR'); render()
             }
             return
         }
-        javafx.application.Platform.runLater { busyLabelRef.set('GeoJSON içe aktarılıyor…'); step.set('BUSY'); render() }
+        javafx.application.Platform.runLater { busyLabelRef.set(workshopText('script.d0dbcf48f7e2', 'GeoJSON içe aktarılıyor…')); step.set('BUSY'); render() }
         def imp = importGeoJSON(outGeojson, imageData.getHierarchy(), replacePrevious)
         javafx.application.Platform.runLater {
             if (!imp.ok) { errorTextRef.set(imp.error); step.set('ERROR'); render() }
             else {
                 try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {}
-                resultTextRef.set(buildResultText(slideName, schemeDisp, imp, replacePrevious)); resultTitleRef.set('Tamamlandı ✅'); resultBtnRef.set('↻ Yeni .dcm'); step.set('RESULT'); render()
+                resultTextRef.set(buildResultText(slideName, schemeDisp, imp, replacePrevious)); resultTitleRef.set(workshopText('script.92c17020894f', 'Tamamlandı ✅')); resultBtnRef.set(workshopText('script.96bcad4ab933', '↻ Yeni .dcm')); step.set('RESULT'); render()
             }
         }
     }, 'AtolyeSectra-Convert')
@@ -536,11 +536,11 @@ def buildSectraRows = { File dir ->
         String pfx = (sf == null) ? null : (sf.toLowerCase(java.util.Locale.ROOT) + '.graphics.')
         def cands = (pfx == null) ? [] : dcms.findAll { it.getName().toLowerCase(java.util.Locale.ROOT).startsWith(pfx) }
         cands = cands.sort { a, b -> tsOf(b.getName()) <=> tsOf(a.getName()) }   // en yeni önce
-        String status = (sf == null) ? 'dosya URI\'si yok' : (cands.isEmpty() ? '.dcm yok' : (cands.size() > 1 ? (cands.size() + ' sürüm — en yenisi seçili') : 'eşleşti'))
+        String status = (sf == null) ? workshopText('script.4eb019f5e37e', 'dosya URI\'si yok') : (cands.isEmpty() ? workshopText('script.9eb4a3fc1db2', '.dcm yok') : (cands.size() > 1 ? (cands.size() + workshopText('script.2b91e95794e4', ' sürüm — en yenisi seçili')) : workshopText('script.ebadeff80220', 'eşleşti')))
         def row = [entry: e, name: e.getImageName(), slideFile: sf, candidates: cands, file: (cands ? cands[0] : null), include: !cands.isEmpty(), status: status]
         if (isTransformedEntry(e)) {
             // kırpılmış/dönüştürülmüş görüntüde Sectra (tam lam) koordinatları uymaz → önseçim yok
-            row.file = null; row.include = false; row.transformed = true; row.status = 'dönüştürülmüş görüntü (kırpma vb.) — Sectra koordinatları uymaz'
+            row.file = null; row.include = false; row.transformed = true; row.status = workshopText('script.bef03bb25c1d', 'dönüştürülmüş görüntü (kırpma vb.) — Sectra koordinatları uymaz')
         }
         rows.add(row)
     }
@@ -549,7 +549,7 @@ def buildSectraRows = { File dir ->
     rows.each { r -> if (r.file != null) { String k = r.file.getPath(); claims.put(k, ((claims.get(k) ?: 0) as int) + 1) } }
     rows.each { r ->
         if (r.file != null && (claims.get(r.file.getPath()) as int) > 1) {
-            r.include = false; r.status = 'belirsiz — aynı .dcm birden çok görüntüye uyuyor'
+            r.include = false; r.status = workshopText('script.7d8d55987de8', 'belirsiz — aynı .dcm birden çok görüntüye uyuyor')
         }
     }
     def used = new HashSet(rows.collectMany { it.candidates }.collect { it.getPath() })
@@ -559,16 +559,16 @@ def buildSectraRows = { File dir ->
 def startBatch = {
     def cfg = loadConfig()
     def project = batchRowsRef.get()?.project          // önizleme kurulurken SABİTLENEN proje
-    if (project == null || QP.getProject() == null) { errorTextRef.set('Proje açık değil.'); step.set('ERROR'); render(); return }
+    if (project == null || QP.getProject() == null) { errorTextRef.set(workshopText('script.7dfc869848aa', 'Proje açık değil.')); step.set('ERROR'); render(); return }
     def rows = (batchRowsRef.get()?.rows ?: []).findAll { it.include && it.file != null }
     if (!QP.getProject().is(project) || rows.any { r -> !project.getImageList().any { e -> e.is(r.entry) } }) {
-        errorTextRef.set('Proje değişti; önizlemeyi yeniden oluşturun.'); step.set('ERROR'); render(); return
+        errorTextRef.set(workshopText('script.528168bd44d5', 'Proje değişti; önizlemeyi yeniden oluşturun.')); step.set('ERROR'); render(); return
     }
-    if (rows.isEmpty()) { errorTextRef.set('İçe aktarılacak işaretli satır yok.'); step.set('ERROR'); render(); return }
+    if (rows.isEmpty()) { errorTextRef.set(workshopText('script.0e2169857880', 'İçe aktarılacak işaretli satır yok.')); step.set('ERROR'); render(); return }
     def dupCount = [:]
     rows.each { r -> String k = r.file.getPath(); dupCount.put(k, ((dupCount.get(k) ?: 0) as int) + 1) }
     if (dupCount.values().any { (it as int) > 1 }) {
-        errorTextRef.set('Aynı .dcm birden çok görüntü için seçili; önizlemede düzeltin.'); step.set('ERROR'); render(); return
+        errorTextRef.set(workshopText('script.8fadc47fb3a4', 'Aynı .dcm birden çok görüntü için seçili; önizlemede düzeltin.')); step.set('ERROR'); render(); return
     }
     // Önceki anotasyonlar için SOR — varsayılan: hiçbir şey silme (kullanıcı kararı D5)
     def pick = Dialogs.showChoiceDialog(workshopText('script.4374a936df93', 'Önceki anotasyonlar'),
@@ -595,7 +595,7 @@ def startBatch = {
         for (r in rows) {
             idx++
             if (cancelledRef.get()) {
-                cancelled = true; appendLine('⏹ İptal edildi — kalan görüntüler işlenmedi.')
+                cancelled = true; appendLine(workshopText('script.89846f127ccf', '⏹ İptal edildi — kalan görüntüler işlenmedi.'))
                 for (int k = idx - 1; k < rows.size(); k++) {
                     skip++
                     report << [rows[k].name, rows[k].file.getName(), 'atlandı', 0, 0, 0, 'iptal edildi — işlenmedi'].collect { clean(it) }.join('\t') << '\n'
@@ -606,7 +606,7 @@ def startBatch = {
             if (r.transformed || isTransformedEntry(r.entry)) {
                 skipT++
                 report << [r.name, r.file.getName(), 'atlandı', 0, 0, 0, 'dönüştürülmüş görüntü — Sectra koordinatları uymaz'].collect { clean(it) }.join('\t') << '\n'
-                appendLine('   ⏭ dönüştürülmüş görüntü — Sectra koordinatları uymaz')
+                appendLine(workshopText('script.03ad2bd51cc1', '   ⏭ dönüştürülmüş görüntü — Sectra koordinatları uymaz'))
                 continue
             }
             def data = null
@@ -643,11 +643,11 @@ def startBatch = {
                 if (live != null) liveTouched = true
                 ok++
                 report << [r.name, r.file.getName(), 'tamam', imp.annotations.size(), imp.removed, imp.skipped, ''].collect { clean(it) }.join('\t') << '\n'
-                appendLine('   ✓ ' + imp.annotations.size() + ' anotasyon eklendi' + (replacePrevious ? (', önceki Sectra içe aktarımından ' + imp.removed + ' silindi') : ''))
+                appendLine('   ✓ ' + imp.annotations.size() + workshopText('script.545be22bd786', ' anotasyon eklendi') + (replacePrevious ? (workshopText('script.f1073c2ecf12', ', önceki Sectra içe aktarımından ') + imp.removed + workshopText('script.90dbebfadf58', ' silindi')) : ''))
             } catch (java.util.concurrent.CancellationException ce) {
                 cancelled = true; skip++
                 report << [r.name, r.file.getName(), 'atlandı', 0, 0, 0, 'iptal edildi'].collect { clean(it) }.join('\t') << '\n'
-                appendLine('   ⏹ iptal edildi')
+                appendLine(workshopText('script.d82211818ad7', '   ⏹ iptal edildi'))
             } catch (Throwable e) {
                 fail++
                 String msg = (e instanceof java.util.concurrent.TimeoutException) ? 'açık görüntü sorgusu zaman aşımına uğradı' : (e.getMessage() ?: e.getClass().getSimpleName())
@@ -662,18 +662,18 @@ def startBatch = {
         String reportErr = null
         try { rf.getParentFile().mkdirs(); rf.setText(report.toString(), 'UTF-8') } catch (Throwable we) { reportErr = we.getMessage() ?: we.getClass().getSimpleName() }
         def sb = new StringBuilder()
-        sb << 'SECTRA PACS ANOTASYON — TÜM PROJE İÇE AKTARMA' << (cancelled ? ' (İPTAL EDİLDİ)' : '') << '\n'
+        sb << workshopText('script.79cefe5e925a', 'SECTRA PACS ANOTASYON — TÜM PROJE İÇE AKTARMA') << (cancelled ? workshopText('script.0f71a2452bcb', ' (İPTAL EDİLDİ)') : '') << '\n'
         sb << '══════════════════════════════════════════════\n\n'
-        sb << String.format(java.util.Locale.US, 'İşaretli görüntü: %,d   içe aktarıldı: %,d   hata: %,d%n', rows.size(), ok, fail)
-        sb << 'Önceki anotasyonlar: ' << (replacePrevious ? 'Sectra bayraklı olanlar değiştirildi' : 'korundu (yalnız eklendi)') << '\n'
-        if (skip > 0) sb << String.format(java.util.Locale.US, 'İptal nedeniyle işlenmedi: %,d%n', skip)
-        if (skipT > 0) sb << String.format(java.util.Locale.US, 'Dönüştürülmüş görüntü nedeniyle atlandı: %,d%n', skipT)
-        sb << 'Rapor   : ' << (reportErr == null ? rf.getAbsolutePath() : ('⚠ Rapor yazılamadı: ' + reportErr)) << '\n'
+        sb << String.format(java.util.Locale.US, workshopText('script.160326c7281b', 'İşaretli görüntü: %,d   içe aktarıldı: %,d   hata: %,d%n'), rows.size(), ok, fail)
+        sb << workshopText('script.5bf3790c27b2', 'Önceki anotasyonlar: ') << (replacePrevious ? workshopText('script.9ff939b97101', 'Sectra bayraklı olanlar değiştirildi') : workshopText('script.8ee48a3d74d6', 'korundu (yalnız eklendi)')) << '\n'
+        if (skip > 0) sb << String.format(java.util.Locale.US, workshopText('script.63851e384327', 'İptal nedeniyle işlenmedi: %,d%n'), skip)
+        if (skipT > 0) sb << String.format(java.util.Locale.US, workshopText('script.c12bee9fbb80', 'Dönüştürülmüş görüntü nedeniyle atlandı: %,d%n'), skipT)
+        sb << workshopText('script.53457f6f8f2c', 'Rapor   : ') << (reportErr == null ? rf.getAbsolutePath() : (workshopText('script.760e619dbc51', '⚠ Rapor yazılamadı: ') + reportErr)) << '\n'
         sb << 'GeoJSON : ' << workDir.getAbsolutePath() << '\n\n'
-        sb << '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.'
+        sb << workshopText('script.625c43e2ff2e', '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.')
         javafx.application.Platform.runLater {
             if (liveTouched) { try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {} }
-            resultTitleRef.set(cancelled ? 'İptal edildi' : (fail > 0 ? 'Tamamlandı (hatalarla) ⚠' : (reportErr != null ? 'Tamamlandı (rapor yazılamadı) ⚠' : 'Tamamlandı ✅'))); resultBtnRef.set('↻ Yeni içe aktarma')
+            resultTitleRef.set(cancelled ? workshopText('script.dbd417da03e1', 'İptal edildi') : (fail > 0 ? workshopText('script.1f99131663f1', 'Tamamlandı (hatalarla) ⚠') : (reportErr != null ? workshopText('script.bb0038c6bf4f', 'Tamamlandı (rapor yazılamadı) ⚠') : workshopText('script.92c17020894f', 'Tamamlandı ✅')))); resultBtnRef.set(workshopText('script.5d3bf15fac5d', '↻ Yeni içe aktarma'))
             resultTextRef.set(sb.toString()); step.set('RESULT'); render()
         }
     }, 'AtolyeSectra-Batch')
@@ -770,15 +770,15 @@ render = { ->
             def workDir = resolveWorkDir(cfg, imageData)
             title.setText(workshopText('script.64ab3233a4af', 'Sectra PACS anotasyon — hazır'))
             def sb = new StringBuilder()
-            sb << "Lam        : " << imageNameOf(imageData) << "\n"
-            sb << "Boyut (px)   : " << server.getWidth() << " x " << server.getHeight() << "\n"
-            sb << "Python       : " << (cfg.python ?: '(ayarsız)') << "\n"
-            sb << "Köprü        : " << (cfg.bridge ?: '(ayarsız)') << "\n"
-            sb << "Çıktı dizini : " << workDir.getAbsolutePath() << "\n"
+            sb << workshopText('script.13db0a0038b7', 'Lam        : ') << imageNameOf(imageData) << "\n"
+            sb << workshopText('script.d9f94c903b7b', 'Boyut (px)   : ') << server.getWidth() << " x " << server.getHeight() << "\n"
+            sb << "Python       : " << (cfg.python ?: workshopText('script.a2bfafb27517', '(ayarsız)')) << "\n"
+            sb << workshopText('script.d2346c12c78a', 'Köprü        : ') << (cfg.bridge ?: workshopText('script.a2bfafb27517', '(ayarsız)')) << "\n"
+            sb << workshopText('script.ebe699644d96', 'Çıktı dizini : ') << workDir.getAbsolutePath() << "\n"
             addMonoArea(sb.toString())
             def schemeChoice = new javafx.scene.control.ChoiceBox()
             SCHEME_LABELS.keySet().each { schemeChoice.getItems().add(it) }
-            schemeChoice.setValue(SCHEME_DISPLAY[cfg.scheme] ?: 'Geometri tipine göre')
+            schemeChoice.setValue(SCHEME_DISPLAY[cfg.scheme] ?: workshopText('script.0d2b9eef64ac', 'Geometri tipine göre'))
             schemeChoice.valueProperty().addListener({ o, ov, nv ->
                 if (nv != null) persistScheme(SCHEME_LABELS[nv] ?: SCHEME_GEOMETRY)
             } as javafx.beans.value.ChangeListener)
@@ -818,16 +818,16 @@ render = { ->
         int nOk = rows.count { it.file != null } as int
         addGuidance(String.format(java.util.Locale.US, workshopText('script.20f1f59957bb', '%,d görüntü · .dcm eşleşen %,d · eşleşmeyen .dcm %,d — klasör: %s'),
             rows.size(), nOk, pv.unmatched.size(), batchDirRef.get()?.getAbsolutePath() ?: '-'))
-        String NONE = '— dosya yok —'
+        String NONE = workshopText('script.9142e3dd7fcd', '— dosya yok —')
         def refreshBatchBtn = { -> }
         def byName = new LinkedHashMap()
         rows.each { r -> r.candidates.each { f -> byName.put(f.getName(), f) } }
         pv.unmatched.each { f -> byName.put(f.getName(), f) }
         def grid = new javafx.scene.layout.GridPane(); grid.setHgap(10); grid.setVgap(6)
-        ['İçe aktar', 'Görüntü', 'Sectra .dcm', 'Durum'].eachWithIndex { String h, int c ->
+        [workshopText('script.ef53d675ddaa', 'İçe aktar'), workshopText('script.461af90e2417', 'Görüntü'), 'Sectra .dcm', workshopText('script.8bd057388e28', 'Durum')].eachWithIndex { String h, int c ->
             def l = new javafx.scene.control.Label(h); l.setStyle('-fx-font-weight: bold;'); grid.add(l, c, 0)
         }
-        String DUP = 'belirsiz — aynı .dcm birden çok görüntüde seçili'
+        String DUP = workshopText('script.7017cc05376c', 'belirsiz — aynı .dcm birden çok görüntüde seçili')
         def stLabels = [:]
         def refreshClaims = { -> }
         rows.eachWithIndex { r, int i ->
@@ -844,7 +844,7 @@ render = { ->
                 def f = (nv == null || nv == NONE) ? null : byName.get(nv)
                 r.file = f; r.include = (f != null)
                 inc.setSelected((boolean) r.include); inc.setDisable(f == null)
-                r.status = (f == null) ? '.dcm yok' : 'elle seçildi'
+                r.status = (f == null) ? workshopText('script.9eb4a3fc1db2', '.dcm yok') : workshopText('script.84892a1b8093', 'elle seçildi')
                 st.setText((String) r.status)
                 refreshClaims()
                 refreshBatchBtn()
@@ -858,7 +858,7 @@ render = { ->
             rows.each { r ->
                 boolean dup = r.include && r.file != null && (cnt.get(r.file.getPath()) as int) > 1
                 if (dup && r.status != DUP) { r.status = DUP; stLabels.get(r)?.setText(DUP) }
-                else if (!dup && r.status == DUP) { r.status = 'elle seçildi'; stLabels.get(r)?.setText((String) r.status) }
+                else if (!dup && r.status == DUP) { r.status = workshopText('script.84892a1b8093', 'elle seçildi'); stLabels.get(r)?.setText((String) r.status) }
             }
         }
         def sp = new javafx.scene.control.ScrollPane(grid); sp.setFitToWidth(true)

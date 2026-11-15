@@ -137,8 +137,8 @@ if (isHeadless) {
 // ── 2) TSV / CSV dosyasını seç ───────────────────────────────────────
 // qupath.fx.dialogs.Dialogs'ta promptForFile YOK (0.6/0.7'de doğrulandı) → FileChoosers kullanılır.
 def tsvFile = qupath.fx.dialogs.FileChoosers.promptForFile(
-    "Küme / fenotip etiketi tablosunu seçin",
-    qupath.fx.dialogs.FileChoosers.createExtensionFilter("Küme/Fenotip TSV (*.tsv, *.csv, *.txt)", "*.tsv", "*.csv", "*.txt"))
+    workshopText('script.e2431951a4c2', 'Küme / fenotip etiketi tablosunu seçin'),
+    qupath.fx.dialogs.FileChoosers.createExtensionFilter(workshopText('script.bfd89f2aa07a', 'Küme/Fenotip TSV (*.tsv, *.csv, *.txt)'), "*.tsv", "*.csv", "*.txt"))
 if (tsvFile == null) {
     println "İptal edildi — dosya seçilmedi."
     return
@@ -301,33 +301,33 @@ if (matched == 0) {
 // ── 6) Özet ─────────────────────────────────────────────────────────
 int detsWithoutRow = dets.size() - coveredDets.size()
 def body = new StringBuilder()
-body << "KÜME / FENOTİP ETİKETİ — İÇE AKTARMA\n"
+body << workshopText('script.29c10cc84895', 'KÜME / FENOTİP ETİKETİ — İÇE AKTARMA\n')
 body << "════════════════════════════════════\n\n"
-body << "Dosya       : ${tsvFile.getName()}\n"
-body << "Eşleştirme  : " + (byId ? "object_id (UUID, kesin)" : "centroid (≤ ${centroidToleranceUm} µm)") + "\n"
-body << "Sınıf sütunu: " + (classColName != null ? classColName : "(yok — yalnız ölçüm yazıldı)") + "\n\n"
-body << String.format(java.util.Locale.US, "Eşleşen satır        : %,d%n", matched)
-body << String.format(java.util.Locale.US, "Eşleşmeyen satır     : %,d%n", unmatched)
-body << String.format(java.util.Locale.US, "Sınıf atanan tespit  : %,d%n", classApplied)
-body << String.format(java.util.Locale.US, "Yazılan ölçüm değeri : %,d%n", measApplied)
-body << String.format(java.util.Locale.US, "Satırsız tespit      : %,d%n", detsWithoutRow)
+body << String.format(java.util.Locale.US, workshopText('script.e81bef2363a9', 'Dosya       : %s\n'), tsvFile.getName())
+body << workshopText('script.0f9002946219', 'Eşleştirme  : ') + (byId ? workshopText('script.30b9d0930d9d', 'object_id (UUID, kesin)') : String.format(java.util.Locale.US, workshopText('script.f6f0693a06dd', 'centroid (≤ %s µm)'), centroidToleranceUm)) + "\n"
+body << workshopText('script.f9a64c07888a', 'Sınıf sütunu: ') + (classColName != null ? classColName : workshopText('script.c08a34da470a', '(yok — yalnız ölçüm yazıldı)')) + "\n\n"
+body << String.format(java.util.Locale.US, workshopText('script.97ca948233f3', 'Eşleşen satır        : %,d%n'), matched)
+body << String.format(java.util.Locale.US, workshopText('script.2c4b315c3cc5', 'Eşleşmeyen satır     : %,d%n'), unmatched)
+body << String.format(java.util.Locale.US, workshopText('script.2c6fa7f98fa5', 'Sınıf atanan tespit  : %,d%n'), classApplied)
+body << String.format(java.util.Locale.US, workshopText('script.279356def46f', 'Yazılan ölçüm değeri : %,d%n'), measApplied)
+body << String.format(java.util.Locale.US, workshopText('script.a1e4ba6aaf0e', 'Satırsız tespit      : %,d%n'), detsWithoutRow)
 
 if (!measColsUsed.isEmpty()) {
-    body << "\nÖlçüm sütunları:\n"
+    body << workshopText('script.a3dd6d2252a1', '\nÖlçüm sütunları:\n')
     measColsUsed.each { body << "  • ${it}\n" }
 }
 if (!classCounts.isEmpty()) {
-    body << "\nSınıf dökümü:\n"
+    body << workshopText('script.322fceed5409', '\nSınıf dökümü:\n')
     classCounts.each { cls, n ->
         body << String.format(java.util.Locale.US, "  %-20s : %,d%n", cls, n)
     }
 }
-body << "\nKüme/fenotip etiketleri bir KEŞİF çıktısıdır — klinik tanı kategorisi değildir;\n"
-body << "görsel olarak doğrulanmalıdır. UMAP1/UMAP2 ölçümlerini QuPath'in dağılım grafiğinde\n"
-body << "([Measure menüsü]) görselleştirebilirsiniz.\n"
-body << "⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar."
+body << workshopText('script.f4e5404f5a2c', '\nKüme/fenotip etiketleri bir KEŞİF çıktısıdır — klinik tanı kategorisi değildir;\n')
+body << workshopText('script.cd303c45594b', 'görsel olarak doğrulanmalıdır. UMAP1/UMAP2 ölçümlerini QuPath\'in dağılım grafiğinde\n')
+body << workshopText('script.b3f77ce7c7a8', '([Measure menüsü]) görselleştirebilirsiniz.\n')
+body << workshopText('script.625c43e2ff2e', '⚠️ Yalnızca araştırma/eğitim amaçlı veri aktarımı yapar.')
 
-showResultWindow("Küme / fenotip etiketi içe aktarma", body.toString())
+showResultWindow(workshopText('script.766ecedd684b', 'Küme / fenotip etiketi içe aktarma'), body.toString())
 println String.format(java.util.Locale.US,
     "✓ İçe aktarma tamamlandı: %d eşleşti, %d eşleşmedi, %d sınıf, %d ölçüm.",
     matched, unmatched, classApplied, measApplied)

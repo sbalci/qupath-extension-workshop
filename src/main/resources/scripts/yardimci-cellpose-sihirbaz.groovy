@@ -97,7 +97,7 @@ def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').t
 // ── Ön kontrol: görüntü açık mı? ──
 def imageData = QP.getCurrentImageData()
 if (imageData == null) {
-    def msg = "Önce bir lam açın, sonra bu sihirbazı tekrar çalıştırın."
+    def msg = workshopText('script.221acb690560', 'Önce bir lam açın, sonra bu sihirbazı tekrar çalıştırın.')
     if (isHeadless) { println msg } else { Dialogs.showErrorMessage(workshopText('script.b4c901dc184b', "Görüntü açık değil"), msg) }
     return
 }
@@ -119,11 +119,11 @@ def runDetection = { String family, String model, String channelMode,
                      int cytoCh, int nucCh ->
 
     if (!cellposeHere)
-        return [ok:false, error:'BIOP Cellpose eklentisi bulunamadı. Kurulum: Cellpose eki § 2 (Extensions → Manage extension catalogs → BIOP).']
+        return [ok:false, error:workshopText('script.d93b534090e9', 'BIOP Cellpose eklentisi bulunamadı. Kurulum: Cellpose eki § 2 (Extensions → Manage extension catalogs → BIOP).')]
 
     def selected = QP.getSelectedObjects().findAll { it.isAnnotation() }
     if (selected.isEmpty())
-        return [ok:false, error:'Önce bir bölgeyi anotasyonla çevreleyip SEÇİN (kenarı sarı görünür). Sihirbaz yalnızca seçili anotasyon içinde çalışır.']
+        return [ok:false, error:workshopText('script.94b68139e531', 'Önce bir bölgeyi anotasyonla çevreleyip SEÇİN (kenarı sarı görünür). Sihirbaz yalnızca seçili anotasyon içinde çalışır.')]
 
     // RE-RUN GÜVENLİĞİ: seçili anotasyonlardaki mevcut tespitleri temizle (birikim önlenir)
     selected.each { ann ->
@@ -180,7 +180,7 @@ def runDetection = { String family, String model, String channelMode,
             def partial = ann.getChildObjects().findAll { it.isDetection() }
             if (!partial.isEmpty()) QP.removeObjects(partial, true)
         }
-        return [ok:false, error:"Cellpose çalıştırılamadı: ${reason}\n\nİpuçları: Python yolu ayarlı mı (Edit → Preferences → Cellpose/Omnipose)? Model ilk çalıştırmada indiriliyor olabilir. cpsam ayrı venv ister."]
+        return [ok:false, error:String.format(java.util.Locale.US, workshopText('script.e7ebd67ea048', 'Cellpose çalıştırılamadı: %s\n\nİpuçları: Python yolu ayarlı mı (Edit → Preferences → Cellpose/Omnipose)? Model ilk çalıştırmada indiriliyor olabilir. cpsam ayrı venv ister.'), reason)]
     }
 
     // İsteğe bağlı İHK yoğunluk binning
@@ -221,33 +221,33 @@ def runDetection = { String family, String model, String channelMode,
 
     // ── Sonuç dizesi ──
     def famLabel = (family == 'cpsam') ? "Cellpose-SAM (cpsam)" : (family == 'omnipose' ? "Omnipose (${model})" : "Cellpose v3 (${model})")
-    def chanLabel = (channelMode == 'brightfield') ? "brightfield İHK (dekonvolüsyon · DAB/H)" :
-                    (channelMode == 'floresan 2-kanal') ? "floresan 2-kanal (sito+çekirdek, yerel çift-kanal)" :
-                    "basit (gri/floresan)"
+    def chanLabel = (channelMode == 'brightfield') ? workshopText('script.56bdfa564832', 'brightfield İHK (dekonvolüsyon · DAB/H)') :
+                    (channelMode == 'floresan 2-kanal') ? workshopText('script.a9086ab8add4', 'floresan 2-kanal (sito+çekirdek, yerel çift-kanal)') :
+                    workshopText('script.1e4c1481a11d', 'basit (gri/floresan)')
 
     def sb = new StringBuilder()
-    sb << "Cellpose tespiti tamamlandı.\n\n"
+    sb << workshopText('script.dbe794f30724', 'Cellpose tespiti tamamlandı.\n\n')
     sb << "═══════════════════════════════════════════════════\n"
-    sb << "  Aile / model     : ${famLabel}\n"
-    sb << "  Kanal modu       : ${chanLabel}\n"
-    sb << "  Parametreler     : diameter ${diameter} px · pixelSize ${String.format(java.util.Locale.US, '%.2f', pixelSize)} µm\n"
+    sb << String.format(java.util.Locale.US, workshopText('script.e32eb7bd535b', '  Aile / model     : %s\n'), famLabel)
+    sb << String.format(java.util.Locale.US, workshopText('script.6279e87db87c', '  Kanal modu       : %s\n'), chanLabel)
+    sb << String.format(java.util.Locale.US, workshopText('script.41f44075dd5d', '  Parametreler     : diameter %s px · pixelSize %s µm\n'), diameter, String.format(java.util.Locale.US, '%.2f', pixelSize))
     sb << "                     flow ${String.format(java.util.Locale.US, '%.2f', flow)} · cellprob ${String.format(java.util.Locale.US, '%.2f', cellprob)} · expansion ${String.format(java.util.Locale.US, '%.1f', cellExpansion)} µm\n"
     sb << "═══════════════════════════════════════════════════\n"
-    sb << "  Toplam hücre     : ${String.format(java.util.Locale.US, '%,d', total)}\n"
+    sb << String.format(java.util.Locale.US, workshopText('script.6adfbf38aec8', '  Toplam hücre     : %s\n'), String.format(java.util.Locale.US, '%,d', total))
     if (calibrated && areaMm2 > 0)
-        sb << "  Alan / yoğunluk  : ${String.format(java.util.Locale.US, '%.3f', areaMm2)} mm² · ${String.format(java.util.Locale.US, '%,.0f', densityPerMm2)} hücre/mm²\n"
+        sb << String.format(java.util.Locale.US, workshopText('script.e052489284b9', '  Alan / yoğunluk  : %s mm² · %s hücre/mm²\n'), String.format(java.util.Locale.US, '%.3f', areaMm2), String.format(java.util.Locale.US, '%,.0f', densityPerMm2))
     else
-        sb << "  Alan / yoğunluk  : kalibre değil (piksel boyutu ayarlı değil → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu))\n"
+        sb << workshopText('script.8aba799d786f', '  Alan / yoğunluk  : kalibre değil (piksel boyutu ayarlı değil → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu))\n')
     if (ihcBin) {
         def pct = { int cnt -> total > 0 ? 100.0 * cnt / total : 0.0 }
-        sb << "  İHK binning (${compartment}):\n"
-        sb << "    0  (negatif)   : ${String.format(java.util.Locale.US, '%,d', n0)}  (%${String.format(java.util.Locale.US, '%.1f', pct(n0))})\n"
-        sb << "    1+ (zayıf)     : ${String.format(java.util.Locale.US, '%,d', n1)}  (%${String.format(java.util.Locale.US, '%.1f', pct(n1))})\n"
-        sb << "    2+ (orta)      : ${String.format(java.util.Locale.US, '%,d', n2)}  (%${String.format(java.util.Locale.US, '%.1f', pct(n2))})\n"
-        sb << "    3+ (güçlü)     : ${String.format(java.util.Locale.US, '%,d', n3)}  (%${String.format(java.util.Locale.US, '%.1f', pct(n3))})\n"
+        sb << String.format(java.util.Locale.US, workshopText('script.800774f227d8', '  İHK binning (%s):\n'), compartment)
+        sb << String.format(java.util.Locale.US, workshopText('script.8c70965684b6', '    0  (negatif)   : %s  (%%%s)\n'), String.format(java.util.Locale.US, '%,d', n0), String.format(java.util.Locale.US, '%.1f', pct(n0)))
+        sb << String.format(java.util.Locale.US, workshopText('script.4841b87c3582', '    1+ (zayıf)     : %s  (%%%s)\n'), String.format(java.util.Locale.US, '%,d', n1), String.format(java.util.Locale.US, '%.1f', pct(n1)))
+        sb << String.format(java.util.Locale.US, workshopText('script.15f16b8ba422', '    2+ (orta)      : %s  (%%%s)\n'), String.format(java.util.Locale.US, '%,d', n2), String.format(java.util.Locale.US, '%.1f', pct(n2)))
+        sb << String.format(java.util.Locale.US, workshopText('script.370ddd87b863', '    3+ (güçlü)     : %s  (%%%s)\n'), String.format(java.util.Locale.US, '%,d', n3), String.format(java.util.Locale.US, '%.1f', pct(n3)))
     }
-    sb << "  Süre             : ${String.format(java.util.Locale.US, '%.1f', elapsed)} sn\n\n"
-    sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    sb << String.format(java.util.Locale.US, workshopText('script.3b958a709852', '  Süre             : %s sn\n\n'), String.format(java.util.Locale.US, '%.1f', elapsed))
+    sb << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
     println "Cellpose: ${total} hücre · ${famLabel} · ${String.format(java.util.Locale.US, '%.1f', elapsed)} sn"
     return [ok:true, text:sb.toString()]

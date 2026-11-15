@@ -346,37 +346,37 @@ def runValidation = { String gtLabel, String predLabel, String mode, double thr,
         ? (((double) m.matchedIoUSum) / (tp + 0.5d * fp + 0.5d * fn)) : Double.NaN
 
     boolean gtArea = gtUnits.every { it.geom != null }
-    String gtKind = gtArea ? "poligon" : "nokta/karışık"
+    String gtKind = gtArea ? workshopText('script.00403ef28d5b', 'poligon') : workshopText('script.fcf55859db14', 'nokta/karışık')
     String thrLine = (mode == 'IOU') ?
-        String.format(java.util.Locale.US, "IoU (eşik %.2f)", thr) :
+        String.format(java.util.Locale.US, workshopText('script.35efa50ab0bb', 'IoU (eşik %.2f)'), thr) :
         (ctx.hasMicrons ?
-            String.format(java.util.Locale.US, "Merkez (≤ %.1f µm)", thr) :
-            String.format(java.util.Locale.US, "Merkez (≤ %.1f px — kalibrasyon yok)", thr))
+            String.format(java.util.Locale.US, workshopText('script.e33d171e5ebe', 'Merkez (≤ %.1f µm)'), thr) :
+            String.format(java.util.Locale.US, workshopText('script.e247cf50065c', 'Merkez (≤ %.1f px — kalibrasyon yok)'), thr))
 
     def fmtMetric = { double v -> Double.isNaN(v) ? "—" : String.format(java.util.Locale.US, "%.3f", v) }
 
     def b = new StringBuilder()
-    b << "TESPİT DOĞRULAMA (altın standarda karşı)\n"
+    b << workshopText('script.439894b6d0ce', 'TESPİT DOĞRULAMA (altın standarda karşı)\n')
     b << "═══════════════════════════════════════════\n\n"
-    b << "Doğrulama bölgesi : " << (ctx.patch.getName() ?: "(adsız)") << "\n"
-    b << "Eşleştirme modu   : " << thrLine << "\n"
-    b << String.format(java.util.Locale.US, "Altın standart    : %-28s (N=%d, %s)%n", gtLabel, gtUnits.size(), gtKind)
-    b << String.format(java.util.Locale.US, "Tahmin            : %-28s (N=%d)%n", (predAll ? "tüm tespitler" : predLabel), predUnits.size())
+    b << workshopText('script.37b18426c0be', 'Doğrulama bölgesi : ') << (ctx.patch.getName() ?: workshopText('script.2966ac6511d8', '(adsız)')) << "\n"
+    b << workshopText('script.d49f4d151a3d', 'Eşleştirme modu   : ') << thrLine << "\n"
+    b << String.format(java.util.Locale.US, workshopText('script.d8bc7f8bdfd2', 'Altın standart    : %-28s (N=%d, %s)%n'), gtLabel, gtUnits.size(), gtKind)
+    b << String.format(java.util.Locale.US, workshopText('script.c2709c616826', 'Tahmin            : %-28s (N=%d)%n'), (predAll ? workshopText('script.2a85f25a284e', 'tüm tespitler') : predLabel), predUnits.size())
     b << "\n"
-    b << String.format(java.util.Locale.US, "Eşleşen (TP)        : %d%n", tp)
-    b << String.format(java.util.Locale.US, "Yanlış pozitif (FP) : %d   (tahmin var, referans yok)%n", fp)
-    b << String.format(java.util.Locale.US, "Kaçırılan (FN)      : %d   (referans var, tahmin yok)%n", fn)
+    b << String.format(java.util.Locale.US, workshopText('script.26163c540e80', 'Eşleşen (TP)        : %d%n'), tp)
+    b << String.format(java.util.Locale.US, workshopText('script.74a198d47968', 'Yanlış pozitif (FP) : %d   (tahmin var, referans yok)%n'), fp)
+    b << String.format(java.util.Locale.US, workshopText('script.dfd58b02e157', 'Kaçırılan (FN)      : %d   (referans var, tahmin yok)%n'), fn)
     b << "\n"
-    b << "Precision (kesinlik)  : " << fmtMetric(precision) << "   = TP/(TP+FP)\n"
-    b << "Recall (duyarlılık)   : " << fmtMetric(recall) << "   = TP/(TP+FN)\n"
-    b << "F1 skoru              : " << fmtMetric(f1) << "   = 2·TP/(2·TP+FP+FN)\n"
+    b << workshopText('script.6c4687e8d14f', 'Precision (kesinlik)  : ') << fmtMetric(precision) << "   = TP/(TP+FP)\n"
+    b << workshopText('script.b7a705825901', 'Recall (duyarlılık)   : ') << fmtMetric(recall) << "   = TP/(TP+FN)\n"
+    b << workshopText('script.49d3b19fbf56', 'F1 skoru              : ') << fmtMetric(f1) << "   = 2·TP/(2·TP+FP+FN)\n"
     if (panopticOk) {
-        b << "SQ (ort. eşleşen IoU) : " << fmtMetric(sq) << "   = Σ IoU(eşleşen) / TP\n"
-        b << "PQ (panoptik kalite)  : " << fmtMetric(pq) << "   = SQ × F1  (Kirillov 2019)\n"
-        b << "Dice (alan tabanlı)   : " << fmtMetric((double) m.areaDice) << "   = 2·kesişim/(GT+Tahmin alanı)\n"
-        b << "IoU (alan tabanlı)    : " << fmtMetric((double) m.areaIoU) << "   = kesişim/birleşim (bölge)\n"
-        b << String.format(java.util.Locale.US, "Aşırı bölütleme (N)   : %d   (1 GT ↔ >1 tahmin)%n", m.overSeg)
-        b << String.format(java.util.Locale.US, "Yetersiz bölütleme (N): %d   (1 tahmin ↔ >1 GT)%n", m.underSeg)
+        b << workshopText('script.668f010dec39', 'SQ (ort. eşleşen IoU) : ') << fmtMetric(sq) << workshopText('script.ecb043141eef', '   = Σ IoU(eşleşen) / TP\n')
+        b << workshopText('script.715d0333fffc', 'PQ (panoptik kalite)  : ') << fmtMetric(pq) << "   = SQ × F1  (Kirillov 2019)\n"
+        b << workshopText('script.0c41a236189c', 'Dice (alan tabanlı)   : ') << fmtMetric((double) m.areaDice) << workshopText('script.56ae56ca4716', '   = 2·kesişim/(GT+Tahmin alanı)\n')
+        b << workshopText('script.66c6b8499a16', 'IoU (alan tabanlı)    : ') << fmtMetric((double) m.areaIoU) << workshopText('script.0a027fb0848c', '   = kesişim/birleşim (bölge)\n')
+        b << String.format(java.util.Locale.US, workshopText('script.62e3834e7fd5', 'Aşırı bölütleme (N)   : %d   (1 GT ↔ >1 tahmin)%n'), m.overSeg)
+        b << String.format(java.util.Locale.US, workshopText('script.eb3beb2f22db', 'Yetersiz bölütleme (N): %d   (1 tahmin ↔ >1 GT)%n'), m.underSeg)
     }
     b << "\n"
     if (!appliedMode.prevNames.isEmpty()) {
@@ -384,11 +384,11 @@ def runValidation = { String gtLabel, String predLabel, String mode, double thr,
     } else if (appliedMode.removed > 0) {
         b << String.format(java.util.Locale.US, workshopText('script.bc31ff876c31', 'Önceki sonuç değiştirildi: %,d özet anotasyonu silindi (içlerindeki diğer nesneler korundu).'), appliedMode.removed) << "\n\n"
     }
-    b << "Eşleştirme açgözlü bire-bir; skorlar 0–1 arası (yüzde değil).\n"
-    b << "Bu bir ÖLÇÜM kalite göstergesidir (örneklenen bölgede otomatik tespit ile\n"
-    b << "referans anotasyon UYUMU) — klinik doğruluk iddiası ya da validasyon\n"
-    b << "çalışması DEĞİL. Validasyon tasarımı için bkz. Yeniden Üretilebilirlik eki; AI değerlendirme: Yapay Zekâ Araçlarını Değerlendirme eki.\n\n"
-    b << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
+    b << workshopText('script.5bc703ae530b', 'Eşleştirme açgözlü bire-bir; skorlar 0–1 arası (yüzde değil).\n')
+    b << workshopText('script.41c0c091f614', 'Bu bir ÖLÇÜM kalite göstergesidir (örneklenen bölgede otomatik tespit ile\n')
+    b << workshopText('script.5845a5aa5c16', 'referans anotasyon UYUMU) — klinik doğruluk iddiası ya da validasyon\n')
+    b << workshopText('script.0779fc812259', 'çalışması DEĞİL. Validasyon tasarımı için bkz. Yeniden Üretilebilirlik eki; AI değerlendirme: Yapay Zekâ Araçlarını Değerlendirme eki.\n\n')
+    b << workshopText('script.cf6099f0a005', '⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.')
 
     // ── Kilitli özet anotasyonu (Veri dışa aktarma modülü ile dışa aktarılır) ───────────
     def srv = ctx.imageData.getServer()

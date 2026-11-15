@@ -318,31 +318,31 @@ hierarchy.addObjects([summary])
 QP.fireHierarchyUpdate(hierarchy)
 
 def fmt = { double value, String pattern ->
-    Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : 'hesaplanamadı'
+    Double.isFinite(value) ? String.format(java.util.Locale.US, pattern, value) : workshopText('script.77fa6502fb41', 'hesaplanamadı')
 }
 def body = new StringBuilder()
-body << 'HÜCRE YOĞUNLUĞU HARİTASI\n'
+body << workshopText('script.9065a4eab3c7', 'HÜCRE YOĞUNLUĞU HARİTASI\n')
 body << '══════════════════════════════════\n\n'
 if (!keptSetNames.isEmpty()) {
     body << String.format(java.util.Locale.US, workshopText('script.b880deb01e0a', 'DİKKAT — önceki sonuç hâlâ lamda duruyor: %s. Hiçbir şey silinmedi. Eski seti kaldırmak için o addaki anotasyonları seçip silin ya da betiği yeniden çalıştırıp "Öncekini değiştir"i seçin. Dışa aktarım ve özetler iki seti de görür.\nBu çalıştırmanın özeti: %s'), keptSetNames.join(', '), summary.getName()) << '\n\n'
 } else if (removedCount > 0) {
     body << String.format(java.util.Locale.US, workshopText('script.d0cc14f27b20', 'Önceki sonuç değiştirildi: %,d anotasyon silindi (içlerindeki nesneler korundu).'), removedCount) << '\n\n'
 }
-body << String.format(java.util.Locale.US, 'Analiz alanı         : %.3f mm²%n', analyzedAreaMm2)
-body << String.format(java.util.Locale.US, 'Hücre (toplam)        : %,d%n', n)
-body << String.format(java.util.Locale.US, 'Izgara                : %d × %d; kare ≈ %.0f µm%n', nCols, nRows, tilePxX * pw)
-body << String.format(java.util.Locale.US, 'ROI ile kesişen kare  : %,d%n', newTiles.size())
-body << String.format(java.util.Locale.US, 'Sıfır hücreli kare    : %,d%n', zeroTiles)
+body << String.format(java.util.Locale.US, workshopText('script.3ab6dd2cc57b', 'Analiz alanı         : %.3f mm²%n'), analyzedAreaMm2)
+body << String.format(java.util.Locale.US, workshopText('script.df2c7171aca3', 'Hücre (toplam)        : %,d%n'), n)
+body << String.format(java.util.Locale.US, workshopText('script.368f1e4174c5', 'Izgara                : %d × %d; kare ≈ %.0f µm%n'), nCols, nRows, tilePxX * pw)
+body << String.format(java.util.Locale.US, workshopText('script.3cd20d72c2f5', 'ROI ile kesişen kare  : %,d%n'), newTiles.size())
+body << String.format(java.util.Locale.US, workshopText('script.1d9bfc9c3dc9', 'Sıfır hücreli kare    : %,d%n'), zeroTiles)
 body << '──────────────────────────────────\n'
-body << "Genel yoğunluk        : ${fmt(overallDensity, '%.1f hücre/mm²')}\n"
-body << "Maksimum tam karo     : ${fmt(maxFullTileDensity, '%.1f hücre/mm²')}\n"
-body << '\nGenel yoğunluk = toplam hücre / toplam analiz alanı.\n'
-body << 'Kısmi kenar karelerinde gerçek ROI-kesişim alanı payda olarak kullanılır.\n'
-body << 'Maksimum değer yalnız yaklaşık tam alanlı karolar arasında hesaplanır.\n'
-body << 'Sıfır hücreli kareler toplam analiz alanına dahildir.\n\n'
-body << 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.'
+body << String.format(java.util.Locale.US, workshopText('script.d6d5823c3f34', 'Genel yoğunluk        : %s\n'), fmt(overallDensity, workshopText('script.e32c42e5aa69', '%.1f hücre/mm²')))
+body << String.format(java.util.Locale.US, workshopText('script.26c26e88e794', 'Maksimum tam karo     : %s\n'), fmt(maxFullTileDensity, workshopText('script.e32c42e5aa69', '%.1f hücre/mm²')))
+body << workshopText('script.581f2ce6b751', '\nGenel yoğunluk = toplam hücre / toplam analiz alanı.\n')
+body << workshopText('script.745984f0c5ab', 'Kısmi kenar karelerinde gerçek ROI-kesişim alanı payda olarak kullanılır.\n')
+body << workshopText('script.268760c2ab0c', 'Maksimum değer yalnız yaklaşık tam alanlı karolar arasında hesaplanır.\n')
+body << workshopText('script.107a6a94459d', 'Sıfır hücreli kareler toplam analiz alanına dahildir.\n\n')
+body << workshopText('script.7893bd721111', 'Bu çıktı betimsel bir ölçümdür; klinik yorum veya kategori üretmez.')
 
-showResultWindow('Yoğunluk haritası', body.toString())
+showResultWindow(workshopText('script.3fa7cf9b1870', 'Yoğunluk haritası'), body.toString())
 println String.format(java.util.Locale.US, 'Yoğunluk haritası: %d kare, genel yoğunluk %.1f hücre/mm²', newTiles.size(), overallDensity)
 
 // Resolve extension UI language; standalone scripts keep their Turkish fallback.
