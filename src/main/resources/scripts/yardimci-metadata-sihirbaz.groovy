@@ -493,7 +493,7 @@ def reportText = { m ->
     line('Piksel (µm/px)', (m.pixel_width_um != null && !Double.isNaN((double) m.pixel_width_um)) ? (fmt((double) m.pixel_width_um, 4) + ' × ' + fmt((double) m.pixel_height_um, 4)) : '— (kalibre değil)')
     line('Kestirilen büyütme', (m.estimated_magnification != null) ? ('~' + m.estimated_magnification + '×  (sezgisel)') : '—')
     if (m.objective_magnification != null) line('Objektif büyütme', fmt((double) m.objective_magnification, 1) + '×  (gömülü)')
-    if (m.area_mm2 != null) line('Doku alanı (mm²)', fmt((double) m.area_mm2, 1))
+    if (m.area_mm2 != null) line('Tarama alanı (mm²)', fmt((double) m.area_mm2, 1) + '  (tüm görüntü; doku alanı değil)')
     sb << '\n'
     line('Piramit', (m.has_pyramid ? ('evet, ' + m.pyramid_levels + ' seviye') : 'YOK ⚠'))
     if (m.pyramid_factor != null) line('Piramit faktörü', fmt((double) m.pyramid_factor, 2))

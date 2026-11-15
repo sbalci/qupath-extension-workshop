@@ -81,6 +81,11 @@ def PREF_REF    = 'reference'
 def PREF_BUILT  = 'useBuiltin'
 def PREF_WORK   = 'workDir'
 def PREF_MODE   = 'mode'
+// "Doku tespiti → TIA Toolbox maskesi" menüsünden açıldıysa maske modunda başla (son kullanılan modda değil).
+try {
+    if (binding.hasVariable('ATOLYE_ENTRY_KEY') && binding.getVariable('ATOLYE_ENTRY_KEY') == 'script.tissue.tiatoolbox')
+        prefs.put(PREF_MODE, 'tissue-mask')
+} catch (Throwable ignore) {}
 def PREF_NORM   = 'normMethod'
 def PREF_MASK   = 'maskMethod'
 def PREF_DS     = 'downsample'       // normalize bölge/karo dışa aktarma downsample'ı

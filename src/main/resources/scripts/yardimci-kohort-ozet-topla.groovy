@@ -141,6 +141,7 @@ def rows         = []
 def columnOrder  = new java.util.LinkedHashSet<String>()
 int totalImages  = entries.size()
 int skipped      = 0
+def duplicateImages = new java.util.LinkedHashSet<String>()
 println String.format(java.util.Locale.US, "Kohort özet toplayıcı başladı: %d görüntü", totalImages)
 
 entries.eachWithIndex { entry, idx ->
@@ -154,9 +155,16 @@ entries.eachWithIndex { entry, idx ->
         // Kilitli anotasyonları al (QP statik API'si burada entry kapsamında değil;
         // doğrudan hierarchy üzerinden çalışıyoruz)
         def lockedAnnos = hierarchy.getAnnotationObjects().findAll { it.isLocked() }
+        // Aynı lamda aynı adı taşıyan birden çok kilitli anotasyon varsa hiçbiri atılmaz: ikincisi
+        // "<ad> (2)", üçüncüsü "<ad> (3)" sütunlarına yazılır (eskiden yalnız ilki kalıyordu).
+        def seenLabels = [:]
         lockedAnnos.each { anno ->
             // Sütun ön eki: ad varsa adı, yoksa sınıf adını kullan
-            def label = (anno.getName() ?: anno.getPathClass()?.toString() ?: "Anotasyon").trim()
+            def baseLabel = (anno.getName() ?: anno.getPathClass()?.toString() ?: "Anotasyon").trim()
+            int ordinal = ((seenLabels[baseLabel] ?: 0) as int) + 1
+            seenLabels[baseLabel] = ordinal
+            if (ordinal == 2) duplicateImages << imgName
+            def label = (ordinal == 1) ? baseLabel : (baseLabel + " (" + ordinal + ")")
             def ml = anno.getMeasurementList()
             def names = ml.getMeasurementNames()
             names.each { mKey ->
@@ -221,6 +229,10 @@ body << "\nTSV dosyası:\n  " + tsvFile.getAbsolutePath() + "\n"
 body << "\nİlk " + previewCols.size() + " sütun:\n"
 previewCols.each { c -> body << "  • " + c + "\n" }
 if (colCount > 15) body << String.format(java.util.Locale.US, "  … ve %,d sütun daha%n", colCount - 15)
+if (!duplicateImages.isEmpty()) {
+    body << String.format(java.util.Locale.US, "\nAynı adlı birden çok kilitli anotasyon: %,d görüntü. İkinci ve sonrakiler \"<ad> (2)\", \"<ad> (3)\" sütunlarında.%n", duplicateImages.size())
+    duplicateImages.take(5).each { n -> body << "  • " + n + "\n" }
+}
 body << "\nSütun adı formatı: \"<anotasyon adı veya sınıfı> · <ölçüm adı>\"\n"
 body << "Eksik değerler TSV'de boş hücre olarak bırakıldı (Excel/R doğrudan okur).\n"
 body << "Veri dışa aktarma modülünde üretilen uzun-format tablosu ile birleştirilebilir.\n\n"

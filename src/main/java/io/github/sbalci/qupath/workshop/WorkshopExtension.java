@@ -142,7 +142,7 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             new ScriptEntry("HistoPLUS hücre bölütleme + sınıflama sihirbazı (H&E, 13 sınıf)", "yardimci-histoplus-sihirbaz.groovy"),
             new ScriptEntry("NuClick (tıkla → çekirdek sınırı) sihirbazı",               "yardimci-nuclick-sihirbaz.groovy"),
             new ScriptEntry("Hepatosit bölütleme sihirbazı (Python)",                    "yardimci-hepatosit-sihirbaz.groovy"),
-            new ScriptEntry("KongNet H&E mitoz tespiti (DL)",                            "yardimci-mitoz-kongnet.groovy"),
+            new ScriptEntry("KongNet mitoz sonuçlarını içe aktar (GeoJSON)",                            "yardimci-mitoz-kongnet.groovy"),
             new ScriptEntry("Tespit doğrulama (F1 / IoU)",                               "yardimci-dogrulama-f1.groovy")
         )),
         new ScriptGroup("Skorlama ve ölçüm", "group.util.scoring", List.of(
@@ -448,19 +448,6 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
 
     private void runScriptSafely(QuPathGUI qupath, ScriptEntry entry) {
         String activeLabel = entry.currentLabel();
-        for (String key : WorkshopPrefs.keys()) {
-            Object stored = WorkshopPrefs.property(key).getValue();
-            if (!(stored instanceof Number number)) continue;
-            String problem = WorkshopParameterValidation.problem(key, number.doubleValue(), other ->
-                    ((Number) WorkshopPrefs.property(other).getValue()).doubleValue());
-            if (problem != null) {
-                Dialogs.showErrorMessage(
-                        WorkshopI18n.t("dialog.fixSetting.title"),
-                        WorkshopSettingsDialog.labelFor(key) + ": " + problem
-                        + WorkshopI18n.t("dialog.fixSetting.footer"));
-                return;
-            }
-        }
         String scriptBody;
         try {
             scriptBody = readScriptResource(entry.resource);
@@ -470,6 +457,26 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
                 WorkshopI18n.t("dialog.jarReload.body")
             );
             return;
+        }
+        // An invalid numeric setting blocks only the scripts that read it. It used to block every
+        // menu entry, including scripts that never touch that setting.
+        if (scriptBody != null) {
+            for (String key : WorkshopPrefs.keys()) {
+                Object stored = WorkshopPrefs.property(key).getValue();
+                if (!(stored instanceof Number number)) continue;
+                String problem = WorkshopParameterValidation.problem(key, number.doubleValue(), other ->
+                        ((Number) WorkshopPrefs.property(other).getValue()).doubleValue());
+                if (problem == null) continue;
+                if (!scriptBody.contains(key)) {
+                    logger.warn("Invalid Atölye setting {} ignored: {} does not read it", key, entry.resource);
+                    continue;
+                }
+                Dialogs.showErrorMessage(
+                        WorkshopI18n.t("dialog.fixSetting.title"),
+                        WorkshopSettingsDialog.labelFor(key) + ": " + problem
+                        + WorkshopI18n.t("dialog.fixSetting.footer"));
+                return;
+            }
         }
         if (scriptBody == null) {
             Dialogs.showErrorMessage(
@@ -483,6 +490,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             try {
                 Binding binding = new Binding();
                 binding.setVariable("EXTENSION_NAME", "qupath-extension-workshop");
+                // Which menu entry launched the script; lets a script shared by two entries open in the matching mode.
+                binding.setVariable("ATOLYE_ENTRY_KEY", entry.i18nKey);
                 GroovyShell shell = new GroovyShell(
                     WorkshopExtension.class.getClassLoader(),
                     binding

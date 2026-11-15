@@ -1701,6 +1701,12 @@ def wslCmd = { cfg, List runnerArgsWsl ->
     return ['wsl', 'bash', '-lc', inner]
 }
 
+// Kırpılmış/döndürülmüş/çevrilmiş proje girdisi mi? VALIS lam DOSYASININ tamamını hizalar; böyle bir girdinin
+// anotasyon koordinatları ise kırpma kökenine göredir. Aktarım yapılırsa nesneler kırpma kökeni kadar kayar.
+def TRANSFORM_BUILDER = ~/(?i)^.*\$(Cropped|Rotated|AffineTransform|Flipped|Sparse)ImageServerBuilder$/
+def isTransformedEntry = { entry ->
+    try { def b = entry?.getServerBuilder(); return b != null && (b.getClass().getName() ==~ TRANSFORM_BUILDER) } catch (Throwable t) { return false }
+}
 // Hedef girdinin yerel dosyasını çöz — readImageData pahalı; hedef için BİR kez çağrılır.
 def entrySlideFileVia = { entry ->
     def data = null
@@ -1751,6 +1757,7 @@ def importWarpedToTarget = { project, targetEntry, File warpedFile, double srcAr
         try { objs = PathIO.readObjectsFromGeoJSON(ins) } finally { ins.close() }
     } catch (Throwable t) { return [ok: false, error: 'GeoJSON okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
     if (objs == null || objs.isEmpty()) return [ok: false, error: 'Warp\'lı GeoJSON\'da nesne yok.']
+    if (isTransformedEntry(targetEntry)) return [ok: false, error: 'Hedef kırpılmış ya da dönüştürülmüş bir proje girdisi; koordinatlar uymaz, içe aktarılmadı.']
     objs.each { try { it.setName(VALIS_SENTINEL); it.setLocked(true) } catch (Throwable ignore) {} }
     def curData = QP.getCurrentImageData()
     def curEntry = null
@@ -2210,6 +2217,11 @@ def prepareRun = { cfg, boolean reuseRegistrar = false, boolean warpOnly = false
     if (!targetEntries.isEmpty() || wantMicroFocus) {
         if (targetEntries.any { it.getID()?.toString() == srcId })
             return [ok: false, error: 'Warp hedefi kaynakla aynı olamaz — farklı bir hedef seçin ya da hedefi kaldırın.']
+        if (isTransformedEntry(srcEntry))
+            return [ok: false, error: 'Kaynak, kırpılmış ya da dönüştürülmüş bir proje girdisi. Anotasyon koordinatları tam lam dosyasına uymaz; aktarım yapılmadı. Tam lam girdisini açıp yeniden deneyin.']
+        def badTargets = targetEntries.findAll { isTransformedEntry(it) }
+        if (!badTargets.isEmpty())
+            return [ok: false, error: 'Şu hedefler kırpılmış ya da dönüştürülmüş proje girdisi; aktarılan nesneler kırpma kökeni kadar kayardı, aktarım yapılmadı:\n  ' + badTargets.collect { it.getImageName() ?: '?' }.join('\n  ') + '\nTam lam girdilerini hedef seçin.']
         if (wantMicroFocus && imageData.getHierarchy().getAnnotationObjects().isEmpty())
             return [ok: false, error: 'Bölge odağı için açık (kaynak) lamda en az bir ANOTASYON çizili olmalı — bölgeyi çizin ya da "Bölge odağı" kutusunu kapatın.']
         def sanitize = { String s -> (s ?: 'x').replaceAll('[^A-Za-z0-9._-]', '_') }

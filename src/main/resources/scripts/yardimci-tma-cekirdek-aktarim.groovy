@@ -142,15 +142,16 @@ cores.each { core ->
 
     int n = cells.size()
     int nPos = cells.count { isPositive(it) } as int
-    double aMm2 = 0.0
+    // Hesaplanamayan değer 0 DEĞİL, eksiktir (NaN → TSV'de boş hücre): hücresiz çekirdekte yüzde,
+    // kalibrasyonsuz lamda alan ve yoğunluk. 0 yazmak "ölçüldü ve sıfır çıktı" anlamına gelirdi.
+    double aMm2 = Double.NaN
     def roi = core.getROI()
     if (roi != null && calibrated) aMm2 = (roi.getArea() * pw * ph) / 1_000_000.0
-    double pct = n > 0 ? (100.0 * nPos / n) : 0.0
-    double density = aMm2 > 0 ? n / aMm2 : 0.0
+    double pct = n > 0 ? (100.0 * nPos / n) : Double.NaN
+    double density = aMm2 > 0 ? n / aMm2 : Double.NaN
 
-    if (!missing) validCores++
-    totalCells += n
-    totalPos += nPos
+    // Eksik (missing) işaretli çekirdekler genel toplama girmez.
+    if (!missing) { validCores++; totalCells += n; totalPos += nPos }
 
     // Çekirdeğe ölçüm yaz (Veri dışa aktarma modülü ile de dışa aktarılabilir)
     core.measurements['Hücre sayısı']          = n as double
@@ -186,20 +187,20 @@ def tsvFile = new File(outDir, "tma_cekirdek_ozet.tsv")
 def sb = new StringBuilder()
 sb << "Cekirdek ID\tGecerli\tAlan mm2\tHucre\tPozitif\tPozitif %\tHucre/mm2\n"
 rows.each { r ->
-    sb << String.format(java.util.Locale.US, "%s\t%s\t%.4f\t%d\t%d\t%.2f\t%.1f%n",
-        r[0], r[1], r[2] as double, r[3] as int, r[4] as int, r[5] as double, r[6] as double)
+    def cell = { double v, String pat -> Double.isFinite(v) ? String.format(java.util.Locale.US, pat, v) : '' }
+    sb << [r[0], r[1], cell(r[2] as double, '%.4f'), r[3] as int, r[4] as int, cell(r[5] as double, '%.2f'), cell(r[6] as double, '%.1f')].join('\t') << System.lineSeparator()
 }
 tsvFile.write(sb.toString(), "UTF-8")
 
 // ── 4) Sonucu sun ───────────────────────────────────────────────────
-double overallPct = totalCells > 0 ? (100.0 * totalPos / totalCells) : 0.0
+double overallPct = totalCells > 0 ? (100.0 * totalPos / totalCells) : Double.NaN
 def body = new StringBuilder()
 body << "TMA ÇEKİRDEK BAZLI DIŞA AKTARIM\n"
 body << "═══════════════════════════════\n\n"
 body << String.format(java.util.Locale.US, "Çekirdek sayısı   : %d  (geçerli: %d)%n", cores.size(), validCores)
-body << String.format(java.util.Locale.US, "Toplam hücre      : %,d%n", totalCells)
+body << String.format(java.util.Locale.US, "Toplam hücre      : %,d  (yalnız geçerli çekirdekler)%n", totalCells)
 body << String.format(java.util.Locale.US, "Toplam pozitif    : %,d  (%.1f %%)%n", totalPos, overallPct)
-if (!calibrated) body << "\n⚠️ Piksel kalibrasyonu yok → alan/yoğunluk sütunları 0 yazıldı.\n"
+if (!calibrated) body << "\n⚠️ Piksel kalibrasyonu yok → alan/yoğunluk sütunları boş bırakıldı.\n"
 body << "\nTSV: " << tsvFile.getAbsolutePath() << "\n\n"
 body << "Bu bir SAYIM/YOĞUNLUK tablosudur — klinik skor veya yorum DEĞİL.\n"
 body << "(Kurowski 2024; Loughrey 2018; Porter 2023)\n\n"

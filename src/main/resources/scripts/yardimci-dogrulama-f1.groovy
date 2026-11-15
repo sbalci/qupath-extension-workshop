@@ -117,7 +117,10 @@ def gatherContext = { ->
 def buildUnits = { objs ->
     def units = []
     objs.each { o ->
-        def r = o.getROI()
+        // Hücre nesnesinde (çekirdek + genişletilmiş sınır) karşılaştırılan şey ÇEKİRDEKTİR: QuPath'in hücre
+        // tespiti çekirdeği bölütler, dış sınır yalnızca sabit bir genişletmedir. Dış sınırla ölçülürse
+        // kusursuz bir çekirdek eşleşmesi bile 0.5'in altında IoU alabilir.
+        def r = (o.isCell() && o.getNucleusROI() != null) ? o.getNucleusROI() : o.getROI()
         if (r == null) return
         if (r.isPoint()) {
             r.getAllPoints().each { pt ->

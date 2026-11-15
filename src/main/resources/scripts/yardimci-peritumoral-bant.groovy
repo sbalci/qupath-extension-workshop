@@ -191,6 +191,11 @@ def bandClass = QP.getPathClass(BAND_CLASS)
 def created = []
 int skipped = 0
 def rows = []
+int trimmed = 0
+def ringGeoms = []
+def srvB = QP.getCurrentImageData().getServer()
+def imageBoundsGeom = new org.locationtech.jts.geom.GeometryFactory().toGeometry(
+    new org.locationtech.jts.geom.Envelope(0.0d, (double) srvB.getWidth(), 0.0d, (double) srvB.getHeight()))
 
 targets.eachWithIndex { t, i ->
     def roi = t.getROI()
@@ -217,6 +222,22 @@ targets.eachWithIndex { t, i ->
         } catch (Throwable t3) { ring = null }
     }
     if (ring == null || ring.isEmpty()) { skipped++; return }
+    // Dış halka komşu kaynak yapıların İÇİNE taşmasın (komşu tümörün kendisi "peritümöral" sayılmaz)
+    // ve görüntü sınırının dışına çıkmasın.
+    if (direction != DIR_IN) {
+        try {
+            double before = ring.getArea()
+            targets.eachWithIndex { o, j ->
+                if (j == i) return
+                def og = o.getROI().getGeometry()
+                if (ring.getEnvelopeInternal().intersects(og.getEnvelopeInternal())) ring = ring.difference(og)
+            }
+            ring = ring.intersection(imageBoundsGeom)
+            if (ring.getArea() < before - 1e-6) trimmed++
+        } catch (Throwable t4) { /* kırpılamadıysa halka olduğu gibi kalır */ }
+        if (ring == null || ring.isEmpty()) { skipped++; return }
+    }
+    ringGeoms << ring
 
     def srcName = t.getName() ?: (t.getPathClass()?.toString()) ?: "bölge ${i + 1}"
     def ringROI = qupath.lib.roi.GeometryTools.geometryToROI(ring, plane)
@@ -252,6 +273,15 @@ body << "Yön                : ${direction}\n"
 body << String.format(java.util.Locale.US, "Bant genişliği     : %.0f µm%n", widthUm)
 body << String.format(java.util.Locale.US, "Üretilen bant      : %,d  (atlanan: %,d)%n", created.size(), skipped)
 body << String.format(java.util.Locale.US, "Toplam bant alanı  : %,.0f µm²%n", totalBandUm2)
+if (ringGeoms.size() > 1) {
+    try {
+        double unionUm2 = org.locationtech.jts.operation.union.UnaryUnionOp.union(ringGeoms).getArea() * pw * ph
+        if (unionUm2 < totalBandUm2 * 0.999d)
+            body << String.format(java.util.Locale.US, "  Bantlar birbiriyle örtüşüyor: örtüşme bir kez sayılırsa %,.0f µm².%n", unionUm2)
+    } catch (Throwable ignore) {}
+}
+if (trimmed > 0)
+    body << String.format(java.util.Locale.US, "Kırpılan bant      : %,d  (komşu kaynak yapının içi ya da görüntü dışı çıkarıldı)%n", trimmed)
 body << "──────────────────────────────────────────────\n"
 rows.each { r ->
     body << String.format(java.util.Locale.US, "  %-28s %,.0f µm²%n",

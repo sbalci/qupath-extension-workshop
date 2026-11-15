@@ -324,7 +324,7 @@ double observedPerWhoArea = Math.abs(totalAreaMm2 - whoAreaMm2) <= areaTolerance
 
 writeMetrics(summary, analysisROI, cells)
 summary.measurements['Kaynak ROI sayısı'] = targets.size() as double
-summary.measurements['Mitoz / 2 mm2 (yalnız 2.00 ± 0.01 mm2 ROI)'] = observedPerWhoArea
+summary.measurements['PHH3+ çekirdek / 2 mm2 (yalnız 2.00 ± 0.01 mm2 ROI)'] = observedPerWhoArea
 summary.setLocked(true)
 QP.fireHierarchyUpdate()
 

@@ -154,6 +154,7 @@ def MAX_LIST = 10  // Her kategoride gösterilecek max offender
 
 // ── Kategori listeleri ────────────────────────────────────────────────────────
 def overlapPairs     = []   // String açıklamaları
+int nestedPairs      = 0    // biri ötekinin TAMAMEN içinde: olağan iç içe yapı (doku > tümör, ROI > karo); sorun sayılmaz
 def nearDupPairs     = []
 def emptyTrivial     = []
 def unnamedUnclassed = []
@@ -258,7 +259,9 @@ for (int i = 0; i < annotList.size() - 1; i++) {
                 if (inter != null && !inter.isEmpty()) {
                     double interArea = toArea(inter.getArea())
                     double frac = interArea / smallerArea
-                    if (frac > OVERLAP_FRAC) {
+                    if (frac >= 0.999d) {
+                        nestedPairs++
+                    } else if (frac > OVERLAP_FRAC) {
                         overlapPairs << String.format(java.util.Locale.US,
                             "%s ↔ %s (örtüşme=%.1f%% küçük anot.)",
                             label(a), label(b), frac * 100)
@@ -271,7 +274,9 @@ for (int i = 0; i < annotList.size() - 1; i++) {
                     if (inter != null && !inter.isEmpty()) {
                         double interArea = toArea(inter.getArea())
                         double frac = interArea / smallerArea
-                        if (frac > OVERLAP_FRAC) {
+                        if (frac >= 0.999d) {
+                            nestedPairs++
+                        } else if (frac > OVERLAP_FRAC) {
                             overlapPairs << String.format(java.util.Locale.US,
                                 "%s ↔ %s (örtüşme=%.1f%% küçük anot., buffer kurtarma)",
                                 label(a), label(b), frac * 100)
@@ -301,8 +306,10 @@ body << String.format(java.util.Locale.US, "Alan birimi      : %s\n", areaUnit)
 body << "Not: Sorunlu anotasyonlar elle incelenmelidir.\n\n"
 
 body << String.format(java.util.Locale.US,
-    "(1) ÖRTÜŞME çiftleri (>%%5 küçük alan)   : %d çift\n", overlapPairs.size())
+    "(1) KISMİ ÖRTÜŞME çiftleri (>%%5)        : %d çift\n", overlapPairs.size())
 body << fmt(overlapPairs)
+if (nestedPairs > 0) body << String.format(java.util.Locale.US,
+    "    Bilgi: %d çiftte biri ötekinin tamamen içinde (iç içe yapı); sorun sayılmadı.\n", nestedPairs)
 
 body << String.format(java.util.Locale.US,
     "(2) NEREDEYSE-KOPYA çiftleri (<10 %s, alan farkı <%%1) : %d çift\n",

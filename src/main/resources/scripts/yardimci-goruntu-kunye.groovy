@@ -67,7 +67,7 @@ def channelLabel = { int idx, boolean rgb, int nb, server ->
 
 // ── Tek bölgeyi oku → kanal başına istatistik + 256-kovalı histogram ─────────
 // Dönen: [ok: bool, note: String, bands: [ [label, min, max, mean, pct0, pctMax, maxVal, hist(256)] ] ]
-def computeStats = { server, RegionRequest request, boolean rgb ->
+def computeStats = { server, RegionRequest request, boolean rgb, roi = null ->
     def result = [ok: false, note: '', bands: []]
     def img = null
     try { img = server.readRegion(request) } catch (Throwable t) { result.note = 'Piksel okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName()); return result }
@@ -77,6 +77,12 @@ def computeStats = { server, RegionRequest request, boolean rgb ->
         int nb = raster.getNumBands()
         int iw = img.getWidth(), ih = img.getHeight()
         def sm = raster.getSampleModel()
+        // ROI verildiyse yalnız poligonun içi sayılır (eskiden sınırlayıcı kutunun tamamı sayılıyordu).
+        byte[] roiMask = null
+        if (roi != null && roi.isArea()) {
+            def maskImg = qupath.lib.awt.common.BufferedImageTools.createROIMask(iw, ih, roi, request)
+            roiMask = ((java.awt.image.DataBufferByte) maskImg.getRaster().getDataBuffer()).getData()
+        }
         boolean isFloat = false
         try { isFloat = server.getPixelType()?.toString()?.contains('FLOAT') } catch (Throwable ignore) {}
         for (int b = 0; b < nb; b++) {
@@ -90,6 +96,7 @@ def computeStats = { server, RegionRequest request, boolean rgb ->
             long mn = Long.MAX_VALUE, mx = Long.MIN_VALUE
             for (int y = 0; y < ih; y++) {
                 for (int x = 0; x < iw; x++) {
+                    if (roiMask != null && roiMask[y * iw + x] == 0) continue
                     long s = (long) raster.getSample(x, y, b)
                     n++
                     sum += s
@@ -195,7 +202,7 @@ def buildReport = { imageData ->
         rw = (int) Math.ceil(roi.getBoundsWidth()); rh = (int) Math.ceil(roi.getBoundsHeight())
         if (rx < 0) rx = 0
         if (ry < 0) ry = 0
-        regionDesc = 'Seçili ROI'
+        regionDesc = roi.isArea() ? 'Seçili ROI (yalnız şeklin içi)' : 'Seçili ROI (sınırlayıcı kutu)'
     } else {
         rx = 0; ry = 0; rw = W; rh = H
         regionDesc = 'Tüm görüntü'
@@ -212,7 +219,7 @@ def buildReport = { imageData ->
     line('Örneklenen bölge', regionDesc)
     line('Altörnekleme', '1/' + fmt(downsample, 1) + '  (yaklaşık)')
 
-    def stats = computeStats(server, request, rgb)
+    def stats = computeStats(server, request, rgb, roi)
     if (!stats.ok) {
         sb << '\n  ⚠ ' + (stats.note ?: 'Piksel istatistiği üretilemedi.') + '\n'
         sb << '\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.'

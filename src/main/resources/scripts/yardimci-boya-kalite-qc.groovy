@@ -119,13 +119,21 @@ else { rx = 0; ry = 0; rw = server.getWidth(); rh = server.getHeight() }
 if (rw <= 0 || rh <= 0) { if (!isHeadless) Dialogs.showErrorMessage(workshopText('script.37d5cbd6aa45', "Geçersiz bölge"), workshopText('script.efa1e38da33a', "Bölge boyutu okunamadı.")); else println "Geçersiz bölge."; return }
 double downsample = Math.max(1.0d, Math.max(rw, rh) / (double) MAX_DIM)
 
+def qcRequest = RegionRequest.createInstance(server.getPath(), downsample, rx, ry, rw, rh)
 def img
-try { img = server.readRegion(RegionRequest.createInstance(server.getPath(), downsample, rx, ry, rw, rh)) }
+try { img = server.readRegion(qcRequest) }
 catch (Throwable t) { def m = "Bölge okunamadı: " + (t.getMessage() ?: t.getClass().getSimpleName()); if (!isHeadless) Dialogs.showErrorMessage(workshopText('script.1a92c50caa82', "Okuma hatası"), m); else println m; return }
 if (img == null) { if (!isHeadless) Dialogs.showErrorMessage(workshopText('script.1a92c50caa82', "Okuma hatası"), workshopText('script.83970d478d15', "Bölge boş okundu.")); else println "Bölge boş."; return }
 
 int iw = img.getWidth(), ih = img.getHeight()
 int[] rgb = img.getRGB(0, 0, iw, ih, null, 0, iw)
+// Seçili anotasyon varsa yalnız POLİGONUN İÇİ örneklenir (eskiden sınırlayıcı kutunun tamamı okunuyordu).
+byte[] roiMask = null
+if (roi != null) {
+    def maskImg = qupath.lib.awt.common.BufferedImageTools.createROIMask(iw, ih, roi, qcRequest)
+    roiMask = ((java.awt.image.DataBufferByte) maskImg.getRaster().getDataBuffer()).getData()
+}
+long nSampled = 0
 
 // ── Toplu dekonvolüsyon: OD (Stain_1, Stain_2, OD-sum) ──────────────────────
 float[] od1 = ColorTransformer.getTransformedPixels(rgb, ColorTransformMethod.Stain_1, null, stains)
@@ -136,6 +144,8 @@ double sumOD1 = 0, sumOD2 = 0, sumLH = 0, sumLE = 0
 long nTissue = 0
 double[] svE = stains.getStain(2).getArray()
 for (int i = 0; i < rgb.length; i++) {
+    if (roiMask != null && roiMask[i] == 0) continue            // poligon dışı
+    nSampled++
     double osum = (double) ods[i]
     if (Double.isNaN(osum) || osum < BG_OD) continue            // arka plan → atla
     double o1 = (double) od1[i]; double o2 = (double) od2[i]
@@ -157,7 +167,7 @@ double meanOD1 = sumOD1 / nTissue, meanOD2 = sumOD2 / nTissue
 double odRatio = (meanOD2 > 1e-6) ? (meanOD1 / meanOD2) : Double.NaN
 double meanLH = sumLH / nTissue, meanLE = sumLE / nTissue
 double lRatio = (meanLE != 0) ? (meanLH / meanLE) : Double.NaN
-double tissueFrac = (double) nTissue / (double) rgb.length
+double tissueFrac = nSampled > 0 ? (double) nTissue / (double) nSampled : 0.0d
 
 String heVerdict
 if (isHE && !Double.isNaN(lRatio)) {

@@ -75,8 +75,10 @@ def odOf = { int v -> -Math.log((v + 1.0d) / 256.0d) / Math.log(10.0d) }
 def computeScalar = { java.awt.image.Raster raster, int W, int H, String choice ->
     float[] scalar = new float[W * H]
     if (choice == CHOICES[1] && stains != null) {
-        def s1 = stains.getStain(1)
-        double vr = s1.getRed(), vg = s1.getGreen(), vb = s1.getBlue()
+        // Gerçek renk ayırma: boya matrisinin TERSİ ile (QuPath'in ColorTransformer'ı ile aynı düzen).
+        // Eskiden OD, Hematoksilen vektörüne yalnızca izdüşürülüyordu; eozin de yüksek değer alıyordu.
+        double[][] inv = stains.getMatrixInverse()
+        double vr = inv[0][0], vg = inv[1][0], vb = inv[2][0]
         for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) {
             double hem = odOf(raster.getSample(x, y, 0) & 0xFF) * vr +
                          odOf(raster.getSample(x, y, 1) & 0xFF) * vg +
