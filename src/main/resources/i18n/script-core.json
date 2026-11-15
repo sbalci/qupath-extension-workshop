@@ -5340,7 +5340,15 @@
     },
     "sitoplazmik-boya.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "ece4b7a4861d9b1a990d6282a27a67c5980848c053f489c2fc0c87b5ae6cfa39"
+      "sha256": "b7276f1721bab640e1b30d425042b220c5294b32908d25b72611dbfeecaf0660",
+      "baseline_reviews": [
+        {
+          "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
+          "previous_sha256": "ece4b7a4861d9b1a990d6282a27a67c5980848c053f489c2fc0c87b5ae6cfa39",
+          "sha256": "b7276f1721bab640e1b30d425042b220c5294b32908d25b72611dbfeecaf0660",
+          "record": "docs/source-baseline-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-kalibrasyon.groovy": {
       "revision": "6c648c9c95b7d3cefe35588d2420554dcf87ddc3",
@@ -5366,7 +5374,15 @@
     },
     "yardimci-metadata-sihirbaz.groovy": {
       "revision": "6c648c9c95b7d3cefe35588d2420554dcf87ddc3",
-      "sha256": "d8d465de7d0105aed88a04d448f35e68901f054bdea6e34221dc434ffb129d63"
+      "sha256": "8b87917084374e7f4184288a25185e352d15bc6f4ef0f50cbeeeefe623ca7100",
+      "baseline_reviews": [
+        {
+          "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
+          "previous_sha256": "d8d465de7d0105aed88a04d448f35e68901f054bdea6e34221dc434ffb129d63",
+          "sha256": "8b87917084374e7f4184288a25185e352d15bc6f4ef0f50cbeeeefe623ca7100",
+          "record": "docs/source-baseline-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-python-ortam-yoneticisi.groovy": {
       "revision": "6c648c9c95b7d3cefe35588d2420554dcf87ddc3",
@@ -5378,7 +5394,15 @@
     },
     "yardimci-cytoformer-sihirbaz.groovy": {
       "revision": "a93a2117daf270c8a867eeb39575850c771c9fd2",
-      "sha256": "a2c6e4ca3a2d427b92c22f18684e50d57634ee6543aa4c2f0c8027dc99114e98"
+      "sha256": "30d692a18d8bfc8e8596c46fb878498e4396f791c747b26d72e19528c536d5f1",
+      "baseline_reviews": [
+        {
+          "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
+          "previous_sha256": "a2c6e4ca3a2d427b92c22f18684e50d57634ee6543aa4c2f0c8027dc99114e98",
+          "sha256": "30d692a18d8bfc8e8596c46fb878498e4396f791c747b26d72e19528c536d5f1",
+          "record": "docs/source-baseline-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-grandqc-sihirbaz.groovy": {
       "revision": "a93a2117daf270c8a867eeb39575850c771c9fd2",
@@ -5402,11 +5426,27 @@
     },
     "yardimci-anotasyon-qc.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "81214cd5cdb0d0bb0d65d7f5fd47510b9af5a8e5df95f02775b506348ade4ecb"
+      "sha256": "f780ac5c4dc9b08c1a57b32450961fe9cb634b2d6800caac3cfd6b806f9afb94",
+      "baseline_reviews": [
+        {
+          "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
+          "previous_sha256": "81214cd5cdb0d0bb0d65d7f5fd47510b9af5a8e5df95f02775b506348ade4ecb",
+          "sha256": "f780ac5c4dc9b08c1a57b32450961fe9cb634b2d6800caac3cfd6b806f9afb94",
+          "record": "docs/source-baseline-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-boya-kalite-qc.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "7c3553547140b2e874cc65eda1f45eefbab21a21dc4b92da92e8e42b776df021"
+      "sha256": "8265b75e4122e260aa7f5e41dea724e71f88ee4827a063dfdb2ac02ca743d0b5",
+      "baseline_reviews": [
+        {
+          "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
+          "previous_sha256": "7c3553547140b2e874cc65eda1f45eefbab21a21dc4b92da92e8e42b776df021",
+          "sha256": "8265b75e4122e260aa7f5e41dea724e71f88ee4827a063dfdb2ac02ca743d0b5",
+          "record": "docs/source-baseline-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-capraz-nn-mesafe.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
@@ -5438,7 +5478,15 @@
     },
     "yardimci-dogrulama-f1.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "5cd88ceffe30474a023c62175aed10d8f43a40da0ff70e601f8506038cfd5740"
+      "sha256": "4b2c4fef43f37c42488cbe6b7d2917c46a92b0b949adac430ef3ec00f57b5bf9",
+      "baseline_reviews": [
+        {
+          "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
+          "previous_sha256": "5cd88ceffe30474a023c62175aed10d8f43a40da0ff70e601f8506038cfd5740",
+          "sha256": "4b2c4fef43f37c42488cbe6b7d2917c46a92b0b949adac430ef3ec00f57b5bf9",
+          "record": "docs/source-baseline-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-esik-alan.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
@@ -5458,7 +5506,15 @@
     },
     "yardimci-goruntu-kunye.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "efc53775963b44d20bd54a55d6d6e29d4ee9cd60462be8916c4ea6bb6678e21a"
+      "sha256": "d4c68761140d5bec32940632c62bbc11ece04a2892f2d22c6eebc4b7e904dd18",
+      "baseline_reviews": [
+        {
+          "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
+          "previous_sha256": "efc53775963b44d20bd54a55d6d6e29d4ee9cd60462be8916c4ea6bb6678e21a",
+          "sha256": "d4c68761140d5bec32940632c62bbc11ece04a2892f2d22c6eebc4b7e904dd18",
+          "record": "docs/source-baseline-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-goruntu-yakala.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
@@ -5506,7 +5562,15 @@
     },
     "yardimci-kohort-ozet-topla.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "399daef39a175c590c13b9745b9a74b700d0e930e6373e569ede848a9d7d234b"
+      "sha256": "15213babd7c9895f14af80cff65457beec24f9ee85182c64ca185604d8770f83",
+      "baseline_reviews": [
+        {
+          "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
+          "previous_sha256": "399daef39a175c590c13b9745b9a74b700d0e930e6373e569ede848a9d7d234b",
+          "sha256": "15213babd7c9895f14af80cff65457beec24f9ee85182c64ca185604d8770f83",
+          "record": "docs/source-baseline-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-konveks-zarf.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
@@ -5540,7 +5604,15 @@
     },
     "yardimci-mitoz-karsilastir.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "20d9276a3326fd911ea09996cc1289bbe014f19c8d82e040114c958334505595"
+      "sha256": "970c3b1918bdeb5b22307d06693a8fe7e58437aa6f4b831279831b82824e4e0f",
+      "baseline_reviews": [
+        {
+          "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
+          "previous_sha256": "20d9276a3326fd911ea09996cc1289bbe014f19c8d82e040114c958334505595",
+          "sha256": "970c3b1918bdeb5b22307d06693a8fe7e58437aa6f4b831279831b82824e4e0f",
+          "record": "docs/source-baseline-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-mitoz-merkez.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
@@ -5586,7 +5658,15 @@
     },
     "yardimci-peritumoral-bant.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "e3fc661fe7af3ac18555db8e9c41215618b794b9e354e88cf6dde0799e4e3d0c"
+      "sha256": "299b9a1df93b2e0e9e45331e167258a95e7cae46f9ba903dc111d400d7074457",
+      "baseline_reviews": [
+        {
+          "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
+          "previous_sha256": "e3fc661fe7af3ac18555db8e9c41215618b794b9e354e88cf6dde0799e4e3d0c",
+          "sha256": "299b9a1df93b2e0e9e45331e167258a95e7cae46f9ba903dc111d400d7074457",
+          "record": "docs/source-baseline-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-senkron-izgara.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
@@ -5622,7 +5702,15 @@
     },
     "yardimci-tma-cekirdek-aktarim.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "f5896ef1a27b1c22ebda92f129fab72e28783e5b1f2a231aa49b61d47bdd6f01"
+      "sha256": "fe25bced77c41ff55385cfa935612f285af6cb748fe4d8c0dcea49415b1af47d",
+      "baseline_reviews": [
+        {
+          "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
+          "previous_sha256": "f5896ef1a27b1c22ebda92f129fab72e28783e5b1f2a231aa49b61d47bdd6f01",
+          "sha256": "fe25bced77c41ff55385cfa935612f285af6cb748fe4d8c0dcea49415b1af47d",
+          "record": "docs/source-baseline-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-tus-fare-gostergesi.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
