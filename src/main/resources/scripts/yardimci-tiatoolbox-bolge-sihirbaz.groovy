@@ -64,6 +64,10 @@ def isHeadless = gui == null
 long PYTHON_TIMEOUT_SECONDS = 3600L
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
 def SENTINEL_PREFIX = 'TIA bölge tespiti · '
+// "Önceki sonuç ne olsun?" kipleri — varsayılan HİÇBİR ŞEY SİLMEZ (ev kuralı: sonuç yazan her
+// sihirbaz önce sorar). Ekle: yeni set adın sonuna "(2)", "(3)" … numarası alır.
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
 
 // Atölye model kataloğu (TIA Toolbox nucleus_detector — patoloji nokta-tespiti).
 def MODELS = [
@@ -286,8 +290,42 @@ def exportRegionMask = { imageData, File workDir, double downsample, List region
     return [ok: true, file: f, w: mw, h: mh]
 }
 
+// ── Bu sihirbazın önceki sonuçları ─────────────────────────────────────────────
+// Ad "TIA bölge tespiti · <sınıf> (<nokta sayısı>)" ya da set numarası ≥ 2 ile
+// "… (<nokta sayısı>) (N)". Önek eşleşmesi YOK: ad tam bu kalıba uymalı, anotasyon NOKTA
+// anotasyonu olmalı, adın içindeki sınıf anotasyonun sınıfı olmalı ve adın içindeki sayı
+// gerçek nokta sayısı olmalı. Kullanıcının "TIA bölge tespiti · notlarım" diye adlandırdığı
+// ya da elle noktası eklenip çıkarılmış anotasyon süpürülmez.
+// Dönüş: 0 = bu sihirbazın değil, 1 = ilk set, N ≥ 2 = numaralı set.
+def ownPointSetIndex = { obj ->
+    if (obj == null || !obj.isAnnotation() || !obj.hasROI() || !obj.getROI().isPoint()) return 0
+    String name = obj.getName()
+    if (name == null || !name.startsWith(SENTINEL_PREFIX)) return 0
+    def m = (name.substring(SENTINEL_PREFIX.length()) =~ /^(.+?) \((\d+)\)(?: \((\d+)\))?$/)
+    if (!m.matches()) return 0
+    String cls = m.group(1)
+    def pc = obj.getPathClass()
+    if (pc == null || !(pc.getName() == cls || pc.toString() == cls)) return 0
+    if (m.group(2).length() > 9 || (m.group(2) as int) != obj.getROI().getNumPoints()) return 0
+    if (m.group(3) == null) return 1
+    if (m.group(3).length() > 9) return 0
+    int idx = m.group(3) as int
+    return (idx >= 2) ? idx : 0
+}
+def prevOwnPointSets = { hierarchy ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { ownPointSetIndex(it) > 0 }
+}
+def nextPointSetIndex = { hierarchy ->
+    def used = prevOwnPointSets(hierarchy).collect { ownPointSetIndex(it) }
+    return used.isEmpty() ? 1 : ((used.max() as int) + 1)
+}
+def pointSetName = { String cls, int n, int idx ->
+    return SENTINEL_PREFIX + cls + ' (' + n + ')' + ((idx >= 2) ? (' (' + idx + ')') : '')
+}
+
 // ── GeoJSON içe al + bölgeye göre filtrele + sınıf başına nokta-anotasyonu ──
-def importAndFilter = { File geojson, imageData, List regionRois ->
+def importAndFilter = { File geojson, imageData, List regionRois, String mode = 'add' ->
     if (geojson == null || !geojson.isFile())
         return [ok: false, error: 'GeoJSON çıktısı bulunamadı:\n' + (geojson?.getAbsolutePath() ?: '(yol yok)')]
     def root
@@ -325,20 +363,35 @@ def importAndFilter = { File geojson, imageData, List regionRois ->
     // Verilen imageData'nın kendi hiyerarşisine yaz (proje kapsamı için ZORUNLU:
     // QP.* statikleri AÇIK görüntüye yazar, bu görüntüye değil).
     def hier = imageData.getHierarchy()
-    hier.removeObjects(hier.getAnnotationObjects().findAll { it.getName() != null && it.getName().startsWith(SENTINEL_PREFIX) }, false)
+    // Önceki sonuç: SORULMADAN SİLİNMEZ. Kip çağırandan gelir (varsayılan: ekle).
+    //   ekle     → hiçbir şey silinmez; yeni set sıradaki numarayı alır ("… (2)", "(3)" …).
+    //   değiştir → yalnız bu sihirbazın önceki setleri silinir (ownPointSetIndex); içlerindeki
+    //              alt nesneler KORUNUR (keepChildren = true).
+    def prev = prevOwnPointSets(hier)
+    def prevNames = prev.collect { it.getName() }.unique().sort()
+    int removed = 0
+    int setIdx
+    if (mode == 'replace') {
+        removed = prev.size()
+        if (removed > 0) hier.removeObjects(prev, true)
+        setIdx = 1
+    } else {
+        setIdx = nextPointSetIndex(hier)
+    }
     def newAnns = []
     byClass.each { cls, pts ->
         if (pts.isEmpty()) return
         def roi = ROIs.createPointsROI(pts, plane)
         def ann = PathObjects.createAnnotationObject(roi, QP.getPathClass(cls.toString()))
-        ann.setName(SENTINEL_PREFIX + cls + ' (' + pts.size() + ')')
+        ann.setName(pointSetName(cls.toString(), pts.size(), setIdx))
         ann.setLocked(true)
         newAnns << ann
     }
     hier.addObjects(newAnns)
     hier.fireHierarchyChangedEvent(hier)
     def counts = new LinkedHashMap(); byClass.each { k, v -> counts.put(k, v.size()) }
-    return [ok: true, total: total, inside: inside, counts: counts]
+    return [ok: true, total: total, inside: inside, counts: counts,
+            prevNames: (mode == 'replace' ? [] : prevNames), removed: removed]
 }
 
 // ── Sonuç metni ─────────────────────────────────────────────────────────────
@@ -358,6 +411,12 @@ def resultText = { imageData, cfg, model, exp, imp, scope = 'annotation' ->
     else sb << "  (kapsam içinde tespit yok)\n"
     sb << "\nTespitler sınıf başına kilitli nokta-anotasyonu olarak eklendi\n"
     sb << "(Annotations sekmesi: '" << SENTINEL_PREFIX << "…'). Tahminleri görsel doğrulayın.\n"
+    if (imp?.prevNames) {
+        sb << "\n" << workshopText('script.661a7459b516', 'DİKKAT — bu lamda önceki sonuç da duruyor: ') << imp.prevNames.join(', ') << "\n"
+        sb << workshopText('script.e61302cdacaf', 'Hiçbir şey silinmedi. Eski seti kaldırmak için o addaki anotasyonları seçip silin ya da yeniden çalıştırırken "Öncekini değiştir"i seçin. Dışa aktarım ve kohort özetleri iki seti de görür.') << "\n"
+    } else if ((imp?.removed ?: 0) > 0) {
+        sb << "\n" << String.format(java.util.Locale.US, workshopText('script.c8839122f795', 'Önceki sonuç değiştirildi: %,d anotasyon silindi (içlerindeki alt nesneler korundu).'), (int) imp.removed) << "\n"
+    }
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
 }
@@ -376,7 +435,7 @@ def projectResultText = { cfg, model, summary ->
     sb << String.format(java.util.Locale.US, "Toplam tespit: %,d%n", (long)(summary.grandTotal ?: 0))
     sb << "\nGörüntü başına (tespit):\n"
     if (summary.perImage && !summary.perImage.isEmpty())
-        summary.perImage.each { e -> sb << String.format(java.util.Locale.US, "  • %-34s %,d%n", (e.name ?: '?').toString(), (int)(e.count ?: 0)) }
+        summary.perImage.each { e -> sb << String.format(java.util.Locale.US, "  • %-34s %,d%s%n", (e.name ?: '?').toString(), (int)(e.count ?: 0), (e.note ? (' ' + e.note) : '')) }
     else sb << "  (kaydedilmiş sonuç yok)\n"
     sb << "\nHer görüntünün sonuçları o girdiye kaydedildi (nokta-anotasyonu '" << SENTINEL_PREFIX << "…').\n"
     sb << "Atlananlar: yerel WSI yolu olmayan görüntüler (tiatoolbox lamı doğrudan açamaz).\n"
@@ -393,6 +452,22 @@ if (isHeadless) {
     if (!miss.isEmpty()) println "Eksik yapılandırma: ${miss.join(', ')}"
     if (imageData != null) println "Alan anotasyonu: ${regionRoisOf(imageData).size()}"
     else println "Açık görüntü yok."
+    // Başsız kipte diyalog yok: önceki sonuç varsa hiçbir şey yazılmaz; `-a mevcut=ekle|degistir`.
+    def scriptArgs = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+    def argMap = [:]
+    scriptArgs.each { a -> def s = a?.toString() ?: ''; int i = s.indexOf('='); if (i > 0) argMap[s.substring(0, i).trim()] = s.substring(i + 1).trim() }
+    if (argMap.containsKey('mevcut')) {
+        def mv = (argMap.mevcut ?: '').toLowerCase(java.util.Locale.ROOT)
+        if (!['ekle', 'degistir'].contains(mv)) {
+            println String.format(java.util.Locale.US, workshopText('script.37ab92155fc9', 'HATA: mevcut yalnızca \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut)
+            return
+        }
+    }
+    if (imageData != null) {
+        int prevN = prevOwnPointSets(imageData.getHierarchy()).size()
+        if (prevN > 0) println String.format(java.util.Locale.US, workshopText('script.aa128578d32a', 'Bu görüntüde bu sihirbazın %,d önceki sonuç anotasyonu var. Hiçbir şey yazılmadı. Yeniden çalıştırırken mevcut=ekle (yeni set olarak ekler, eskiye dokunmaz) ya da mevcut=degistir (eski sonucu siler) verin.'), prevN)
+    }
     println "TIA Toolbox bölge sihirbazı için QuPath arayüzü gerekir (headless çalıştırılamaz)."
     println "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return
@@ -445,6 +520,41 @@ def persistFields = {
     try { prefs.flush() } catch (Throwable ignore) {}
 }
 
+// ── Önceki sonuç için kullanıcıya SOR (FX iş parçacığında, çıkarımdan ÖNCE çağrılır) ──
+//   Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz).
+//   Önceki sonuç yoksa sormadan 'add' döner.
+def askExisting = { imageData ->
+    def prev = prevOwnPointSets(imageData?.getHierarchy())
+    if (prev.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.5fcbb9588b11', 'Öncekine dokunma — yeni bir set olarak ekle (varsayılan)')
+    String optRep = workshopText('script.4aeb56ddf562', 'Öncekini değiştir (bu sihirbazın önceki nokta-anotasyonları silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.1fb8a9b94699', 'Önceki bölge tespiti sonucu'),
+        String.format(java.util.Locale.US, workshopText('script.81b9362b534a', 'Bu lamda bu sihirbazın %,d önceki nokta-anotasyonu var ("TIA bölge tespiti · …").\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir set olur (adın sonuna "(2)" gibi bir numara eklenir). Lamda iki set birlikte durur.\n\n"Değiştir" seçilirse önceki sonuç anotasyonları silinir. Kendi anotasyonlarınıza dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?'), prev.size()),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.0e2a5d553a9f', 'Önceki bölge tespiti sonucu silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.6f7505af723c', '%,d önceki nokta-anotasyonu silinecek ve yeni sonuç yazılacak. Bu anotasyonlarda elle yaptığınız değişiklikler KAYBOLUR.\n\nDevam edilsin mi?'), prev.size()))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+// Proje kapsamı: görüntülerde önceki sonuç olup olmadığı tek tek okunmadan BİR kez sorulur;
+// seçim önceki sonucu olan her görüntüye uygulanır (olmayanlar sormadan eskisi gibi çalışır).
+def askProjectMode = { int nImages ->
+    String optAdd = workshopText('script.7cbf0c8d2999', 'Önceki sonuçlara dokunma — her görüntüde yeni bir set olarak ekle (varsayılan)')
+    String optRep = workshopText('script.76eabac9f122', 'Önceki sonuçları değiştir (her görüntüde bu sihirbazın önceki nokta-anotasyonları silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.6fa94af07aed', 'Proje geneli tespit'),
+        String.format(java.util.Locale.US, workshopText('script.ca63d66f5544', 'Projedeki %,d görüntünün her biri için tespit çalıştırılacak ve sonuç her girdiye diske KAYDEDİLECEK.\n\nBu sihirbazın önceki sonucu olan görüntülerde ne yapılacağını seçin. "Ekle" hiçbir şey silmez; yeni sonuç "… (2)" gibi ayrı bir set olur. Önceki sonucu olmayan görüntüler sormadan eskisi gibi işlenir.\n\nİptal: hiçbir şey çalıştırılmaz.\n\nÖnceki sonuçlar ne olsun?'), nImages),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.6fede02d4565', 'Önceki sonuçlar silinecek'), workshopText('script.d5b504eb0223', 'Önceki sonucu olan HER görüntüde bu sihirbazın önceki nokta-anotasyonları (elle yaptığınız değişiklikler dahil) silinip yeni sonuç yazılacak ve diske kaydedilecek. Bu işlem geri alınamaz.\n\nDevam edilsin mi?'))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
 // ── Python süreci → satır akışı ──────────────────────────────────────────────
 def runPython = { List cmd, Closure onLine ->
     def pb = new ProcessBuilder(cmd); pb.redirectErrorStream(true)
@@ -493,7 +603,7 @@ def startSelftest = {
 
 // ── Tek görüntü için çıkarım (senkron; bir worker iş parçacığından çağrılır) ──
 // Dönüş: [ok, error?, exp?, imp?]. appendLine ile ilerleme yazar; setPhase ile faz.
-def runOnImageData = { imageData, cfg, model, List regionRois, Closure appendLine, Closure setPhase ->
+def runOnImageData = { imageData, cfg, model, List regionRois, Closure appendLine, Closure setPhase, String mode = 'add' ->
     def wsi = wsiPathOf(imageData)
     if (wsi == null) return [ok: false, error: 'Lamın yerel dosya yolu yok (WSI tiatoolbox tarafından açılamaz).']
     if (regionRois == null || regionRois.isEmpty()) return [ok: false, error: 'Çıkarım bölgesi yok.']
@@ -521,7 +631,7 @@ def runOnImageData = { imageData, cfg, model, List regionRois, Closure appendLin
     if (!r.ok) return [ok: false, error: 'Çıkarım başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')]
     def geo = outGeo
     try { def m = (r.lastLines ?: '') =~ /RESULT geojson=(.+)/; if (m.find()) { def gp = new File(m.group(1).trim()); if (gp.isFile()) geo = gp } } catch (Throwable ignore) {}
-    def imp = importAndFilter(geo, imageData, regionRois)
+    def imp = importAndFilter(geo, imageData, regionRois, mode)
     if (!imp.ok) return [ok: false, error: imp.error]
     return [ok: true, exp: exp, imp: imp, geo: geo]
 }
@@ -536,6 +646,9 @@ def startRun = { String scope ->
     if (scope == 'annotation' && regionRois.isEmpty()) {
         errorTextRef.set('Bölge yok.\nÖnce bir alan anotasyonu çizin/seçin (ya da kapsamı "Tüm görüntü" yapın).'); step.set('ERROR'); render(); return
     }
+    // Önceki sonuç varsa Python hattından ÖNCE sor: İptal'de hiçbir şey çalışmaz, hiçbir şey yazılmaz.
+    final String importMode = askExisting(imageData)
+    if (importMode == null) return
     cancelledRef.set(false); geojsonRef.set(null)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
@@ -546,7 +659,7 @@ def startRun = { String scope ->
         def setPhase   = { String ph -> javafx.application.Platform.runLater { runPhaseRef.set(ph); render() } }
         appendLine('Kapsam: ' + (scope == 'image' ? 'Tüm görüntü' : 'Anotasyon bölgesi'))
         try {
-            def res = runOnImageData(imageData, cfg, model, regionRois, appendLine, setPhase)
+            def res = runOnImageData(imageData, cfg, model, regionRois, appendLine, setPhase, importMode)
             javafx.application.Platform.runLater {
                 if (!res.ok) { errorTextRef.set(res.error); step.set('ERROR'); render() }
                 else {
@@ -570,6 +683,9 @@ def startProjectRun = {
     if (entries.isEmpty()) { errorTextRef.set('Projede görüntü yok.'); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
     def model = modelByName(cfg.model)
+    // Önceki sonuçlar SORULMADAN silinmez: kip burada seçilir, İptal hiçbir şey çalıştırmaz.
+    final String importMode = askProjectMode(entries.size())
+    if (importMode == null) return
     cancelledRef.set(false)
     def la = new javafx.scene.control.TextArea(); la.setEditable(false); la.setWrapText(false); la.setStyle(MONO)
     logAreaRef.set(la)
@@ -608,7 +724,7 @@ def startProjectRun = {
                 if (liveData != null) { imgData = liveData; appendLine('   (açık görüntü — canlı veri kullanılıyor)') }
                 else { imgData = entry.readImageData(); opened = true }
                 def regionRois = fullImageRois(imgData)
-                def res = runOnImageData(imgData, cfg, model, regionRois, appendLine, { String ph -> appendLine('   ' + ph) })
+                def res = runOnImageData(imgData, cfg, model, regionRois, appendLine, { String ph -> appendLine('   ' + ph) }, importMode)
                 if (!res.ok) {
                     if ((res.error ?: '').contains('yerel dosya yolu yok')) { skipped++; appendLine('   ⏭ atlandı: yerel WSI yolu yok') }
                     else { failed++; appendLine('   ✗ hata: ' + (res.error ?: '').readLines().take(2).join(' ')) }
@@ -619,8 +735,10 @@ def startProjectRun = {
                     try { entry.saveImageData(imgData) }
                     catch (Throwable se) { saved = false; appendLine('   ✗ KAYDEDİLEMEDİ: ' + (se.getMessage() ?: se.getClass().getSimpleName())) }
                     if (saved) {
-                        ok++; grandTotal += inside; perImage << [name: nm, count: inside]
-                        appendLine('   ✓ tespit: ' + inside + ' (kaydedildi)')
+                        String prevNote = res.imp?.prevNames ? ('[' + workshopText('script.19827e4eab38', 'önceki sonuç duruyor') + ': ' + res.imp.prevNames.join(', ') + ']') :
+                            (((res.imp?.removed ?: 0) > 0) ? ('[' + String.format(java.util.Locale.US, workshopText('script.be8d521b4f49', 'önceki %,d anotasyon silindi'), (int) res.imp.removed) + ']') : '')
+                        ok++; grandTotal += inside; perImage << [name: nm, count: inside, note: prevNote]
+                        appendLine('   ✓ tespit: ' + inside + ' (kaydedildi) ' + prevNote)
                     } else {
                         failed++
                         appendLine('   ✗ ' + inside + ' tespit yapıldı ama girdiye yazılamadı')

@@ -61,6 +61,75 @@ import org.codehaus.groovy.runtime.InvokerHelper
 def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 
 String SENTINEL = '↪ Warpy aktarımı'
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+// Bu sihirbazın seti mi? Yalnız TAM ad ya da "ad (N)" — önek eşleşmesi YOK:
+// kullanıcının kendi adlandırdığı bir anotasyon süpürülmez.
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
+// Aktarılan her nesne (iç içe olanlar dahil) işaretlenir; "Değiştir" yalnız işaretli
+// olanları siler. Kullanıcının sonradan içine eklediği (işaretsiz) nesneler KORUNUR.
+def TRANSFER_TAG = 'atolye_aktarim'
+def tagTransferTree = { roots, String tag ->
+    def stack = new ArrayList(roots ?: [])
+    while (!stack.isEmpty()) {
+        def o = stack.remove(stack.size() - 1)
+        try { o.getMetadata().put('atolye_aktarim', tag) } catch (Throwable ignore) {}
+        try { stack.addAll(o.getChildObjectsAsArray() as List) } catch (Throwable ignore) {}
+    }
+}
+def ownTransferTree = { prev ->
+    def out = new LinkedHashSet(prev ?: [])
+    def stack = new ArrayList(prev ?: [])
+    while (!stack.isEmpty()) {
+        def o = stack.remove(stack.size() - 1)
+        def kids = []
+        try { kids = (o.getChildObjectsAsArray() as List) } catch (Throwable ignore) {}
+        kids.each { c ->
+            boolean tagged = false
+            try { tagged = c.getMetadata()?.containsKey('atolye_aktarim') } catch (Throwable ignore) {}
+            if (tagged) out << c
+            stack << c
+        }
+    }
+    return new ArrayList(out)
+}
+// Önceki aktarım için kullanıcıya SOR (FX iş parçacığında, ağır işten ÖNCE çağrılır).
+//   Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz).
+//   Önceki sonuç yoksa sormadan 'add' döner.
+def askExisting = { ->
+    def prev = prevOwnObjects(QP.getCurrentImageData()?.getHierarchy(), SENTINEL)
+    if (prev.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.5fcbb9588b11', 'Öncekine dokunma — yeni bir set olarak ekle (varsayılan)')
+    String optRep = workshopText('script.b7d79be32c1c', 'Öncekini değiştir (bu sihirbazın aktardıkları silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.aab9acb25376', 'Önceki Warpy aktarımı'),
+        String.format(java.util.Locale.US, workshopText('script.3cad69a43512', 'Bu lamda bu sihirbazın önceki aktarımından %,d anotasyon var ("%s").\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni aktarım ayrı bir set olur ("%s (2)" gibi). Lamda iki set birlikte durur.\n\n"Değiştir" seçilirse önceki aktarımın anotasyonları silinir — onlarda elle yaptığınız düzeltmeler de gider. Onlarla birlikte aktarılmış nesneler (ör. hücre tespitleri) de silinir; içlerine sonradan kendi eklediğiniz nesneler lamda kalır. Bu sürümden önce yapılmış aktarımların içindeki nesneler işaretli olmadığından lamda kalır; gerekirse elle silin. Kendi çizdiğiniz anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki aktarım ne olsun?'), prev.size(), SENTINEL, SENTINEL),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.72b2fc13ba69', 'Önceki Warpy aktarımı silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.793ec45d606c', '"%2$s" adlı %1$,d anotasyon silinecek ve yerine yenisi aktarılacak. Bu anotasyonlarda elle yaptığınız düzeltmeler KAYBOLUR; onlarla birlikte aktarılmış nesneler de silinir. İçlerine sonradan kendi eklediğiniz nesneler kalır.\n\nDevam edilsin mi?'), prev.size(), SENTINEL))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
 def prefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/warpy')
 String PREF_FIJI = 'fijiPath'
 
@@ -148,7 +217,7 @@ if (isHeadless) {
 }
 
 // ── Warpy aktarım işi (arka planda; kaynak hiyerarşi okuma dosya IO'su yapar) ───
-def doTransfer = { Object sourceEntry, boolean addMeas, double downsample, boolean lock ->
+def doTransfer = { Object sourceEntry, boolean addMeas, double downsample, boolean lock, String mode = 'add' ->
     try {
         def W = warpyClass()
         if (W == null) return [ok:false, kind:'noclass', error:"Warpy eklentisi kurulu değil (BIOP kataloğu). Kurup QuPath'i yeniden başlatın."]
@@ -182,11 +251,26 @@ def doTransfer = { Object sourceEntry, boolean addMeas, double downsample, boole
             }
         }
 
-        // Önceki Warpy aktarımını (aynı ada sahip) temizle → yeniden çalıştırılabilir
-        QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() == SENTINEL }, false)
+        // Önceki aktarım: SORULMADAN SİLİNMEZ. Kip kullanıcıdan gelir (varsayılan: ekle).
+        //   ekle     → hiçbir şey silinmez; yeni set sıradaki adı alır ("↪ Warpy aktarımı (2)" …).
+        //   değiştir → yalnız bu sihirbazın setleri (tam ad ya da "(N)") silinir; onlarla birlikte
+        //              aktarılmış (işaretli) nesneler de silinir; sonradan eklenenler KORUNUR. Kullanıcının kendi anotasyonlarına dokunulmaz.
+        def prev = prevOwnObjects(QP.getCurrentImageData()?.getHierarchy(), SENTINEL)
+        def prevNames = prev.collect { it.getName() }.unique().sort()
+        int removed = 0
+        String setName
+        if (mode == 'replace') {
+            removed = prev.size()
+            if (removed > 0) QP.removeObjects(ownTransferTree(prev), true)
+            setName = SENTINEL
+        } else {
+            setName = nextOwnSetName(QP.getCurrentImageData()?.getHierarchy(), SENTINEL)
+        }
+        transferred.each { o -> o.setName(setName) }
+        tagTransferTree(transferred, setName)
         QP.addObjects(transferred)
         QP.fireHierarchyUpdate()
-        return [ok:true, count:n, measWarn:measWarn]
+        return [ok:true, count:n, measWarn:measWarn, setName:setName, prevNames:(mode == 'replace' ? [] : prevNames), removed:removed]
     } catch (Throwable t) {
         return [ok:false, kind:'other', error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '')]
     }
@@ -301,11 +385,14 @@ javafx.application.Platform.runLater {
             def srcName = sourceBox.getValue()
             if (!srcName) { status.setStyle('-fx-text-fill: -qp-script-error-color;'); status.setText(workshopText('script.00f5c8cc1719', 'Kaynak yok — önce Fiji\'de hizalamayı tamamlayıp "Kaynakları tazele"ye basın.')); return }
             def srcEntry = sourceEntries[srcName]
+            // Önceki aktarım varsa ağır işten ÖNCE sor: İptal'de hiçbir şey çalışmaz, hiçbir şey yazılmaz.
+            final String transferMode = askExisting()
+            if (transferMode == null) return
             aktarBtn.setDisable(true); status.setStyle(''); status.setText(workshopText('script.e7ae44366dcf', 'Aktarılıyor…'))
             double ds = 1.0d
             try { def _t = (dsField.getText() ?: '1').trim(); if (_t) ds = Math.max(1.0d, Double.parseDouble(_t)) } catch (ignore) {}
             def worker = new Thread({
-                def r = doTransfer(srcEntry, measChk.isSelected(), ds, lockChk.isSelected())
+                def r = doTransfer(srcEntry, measChk.isSelected(), ds, lockChk.isSelected(), transferMode)
                 javafx.application.Platform.runLater {
                     aktarBtn.setDisable(false)
                     if (r.ok) {
@@ -313,7 +400,16 @@ javafx.application.Platform.runLater {
                             workshopText('script.8d4f44cf84e8', 'Tamamlandı ✅ — %,d nesne aktarıldı. Örtüşmeyi gözle doğrulayın.'), r.count))
                         def msg = new StringBuilder()
                         msg << String.format(java.util.Locale.US, 'Kaynak: %s%n', srcName)
-                        msg << String.format(java.util.Locale.US, 'Aktarılan nesne: %,d (kilitli; ad "%s")%n', r.count, SENTINEL)
+                        msg << String.format(java.util.Locale.US, 'Aktarılan nesne: %,d (kilitli; ad "%s")%n', r.count, (r.setName ?: SENTINEL))
+                        if (r.prevNames) {
+                            def stillMsg = String.format(java.util.Locale.US, workshopText('script.b953a9fa8fe1', 'DİKKAT — bu lamda önceki Warpy aktarımı da duruyor: %1$s. Hiçbir şey silinmedi; yeni set "%2$s" adıyla eklendi. Eski seti kaldırmak için o addaki anotasyonları seçip silin ya da yeniden aktarırken "Öncekini değiştir"i seçin. Dışa aktarım ve ölçümler iki seti de görür.'), r.prevNames.join(', '), r.setName)
+                            msg << '\n' << stillMsg << '\n'
+                            status.setText(status.getText() + '\n' + stillMsg)
+                        } else if ((r.removed ?: 0) > 0) {
+                            def replMsg = String.format(java.util.Locale.US, workshopText('script.9bc28ae951f1', 'Önceki Warpy aktarımı değiştirildi: %,d anotasyon silindi ve onlarla aktarılmış nesneler (sonradan eklediğiniz nesneler korundu).'), r.removed)
+                            msg << '\n' << replMsg << '\n'
+                            status.setText(status.getText() + '\n' + replMsg)
+                        }
                         if (r.measWarn) msg << ('\nNot: yoğunluk ölçümü eklenemedi (aktarım tamam): ' + r.measWarn + '\n')
                         msg << '\nEsnek dönüşüm hücre düzeyinde daha iyidir; yine de örtüşmeyi opaklık\n'
                         msg << 'kaydırıcısıyla doğrulayın. ⚠️ Yalnızca araştırma/eğitim amaçlıdır.'

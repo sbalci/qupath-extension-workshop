@@ -27,7 +27,12 @@
  *      önizleme yeterli görününce "Uygula".
  *
  * ÇIKTI:
- *   • Kilitli, "Doku" sınıflı kütlesel anotasyon (idempotent — yeniden uygulamada temizlenir).
+ *   • Kilitli, "Doku" sınıflı kütlesel anotasyon. Lamda önceki bir sihirbaz sonucu ("Doku" ya da
+ *     "Doku (N)" adlı, "Doku" sınıflı anotasyon) varsa "Uygula" ÖNCE SORAR: Ekle (varsayılan, hiçbir
+ *     şey silinmez; yeni sonuç "Doku (2)" …) · Değiştir (yalnız önceki sihirbaz sonuçları silinir,
+ *     içindeki nesneler korunur; ikinci onay ister) · İptal (hiçbir şey yazılmaz).
+ *     Önizleme yalnız pencerede çizilir; hiyerarşiye nesne koymaz.
+ *     Başsız kip: `-a mevcut=ekle` | `-a mevcut=degistir` (önceki sonuç varsa belirtilmezse durur).
  *   • Doku alanı (mm²) ve doku fraksiyonu (%) — pencere içi özet.
  *
  * YÖNTEM / KAYNAK:
@@ -50,6 +55,9 @@ def isHeadless = qupath.lib.gui.QuPathGUI.getInstance() == null
 // ── Sabitler ────────────────────────────────────────────────────────
 String SENTINEL_NAME = "Doku"
 String SENTINEL_CLASS = "Doku"
+// "Önceki sonuç ne olsun?" kipleri — varsayılan HİÇBİR ŞEY SİLMEZ (ev kuralı: sonuç yazan her sihirbaz önce sorar).
+String MODE_ADD = 'add'
+String MODE_REPLACE = 'replace'
 int BINS = 512
 List<String> CHOICES = ["OD toplamı (OD sum)", "Hematoksilen", "Arka plan (parlaklık)"]
 // "Hematoksilen" tabanı gerçek renk ayırmadır: yalnız eozin alan (çekirdekten fakir) doku ~0 değer alır.
@@ -173,18 +181,76 @@ def detect = { float[] scalar, int W, int H, double threshold, def request, doub
     return [roi: finalRoi, pieces: kept.size()]
 }
 
-// Kilitli 'Doku' anotasyonunu (idempotent) ekle
-def applyAnno = { def finalRoi ->
-    QP.removeObjects(QP.getAnnotationObjects().findAll {
-        it.getPathClass()?.toString() == SENTINEL_CLASS && it.getName() == SENTINEL_NAME
-    }, false)
+// Bu sihirbazın seti mi? Yalnız TAM ad ya da "ad (N)" — önek eşleşmesi YOK:
+// kullanıcının "Doku düzeltmelerim" diye adlandırdığı anotasyon süpürülmez.
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+// Doku sihirbazı varyantı: ad eşleşmesine ek olarak sınıf da "Doku" olmalı (TIA Toolbox'un
+// "Doku maskesi (TIA Toolbox)" anotasyonu ya da başka sınıflı bir "Doku" adlı anotasyon sayılmaz).
+def prevTissueObjects = { hierarchy, String base, String cls ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll {
+        it.getPathClass()?.toString() == cls && isOwnSetName(it.getName(), base)
+    }
+}
+def nextTissueSetName = { hierarchy, String base, String cls ->
+    def used = prevTissueObjects(hierarchy, base, cls).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
+
+// Önceki sonuç için kullanıcıya SOR (FX iş parçacığında, "Uygula" işlemi başlamadan ÖNCE çağrılır).
+//   Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz).
+//   Önceki sonuç yoksa sormadan 'add' döner.
+def askExisting = { hierarchy ->
+    def prev = prevTissueObjects(hierarchy, SENTINEL_NAME, SENTINEL_CLASS)
+    if (prev.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.5fcbb9588b11', 'Öncekine dokunma — yeni bir set olarak ekle (varsayılan)')
+    String optRep = workshopText('script.60998bbceb32', 'Öncekini değiştir (bu sihirbazın eklediği "Doku" anotasyonları silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.52853a7c428d', 'Önceki Doku sonucu'),
+        String.format(java.util.Locale.US, workshopText('script.043a1b6afd3c', 'Bu lamda "Doku" sınıflı, adı "Doku" ya da "Doku (2)" gibi olan %,d anotasyon zaten var.\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir set olur ("Doku (2)" gibi). İki doku anotasyonu lamda birlikte durur; alan ölçümlerini toplarken ikisini de saymayın.\n\n"Değiştir" seçilirse bu anotasyonlar silinir; üzerlerinde ELLE yaptığınız düzeltmeler de gider. Anotasyonların içindeki nesnelere (ör. hücre tespitleri) ve başka adlı ya da başka sınıflı anotasyonlarınıza dokunulmaz.\n\nİptal: hiçbir şey yazılmaz.\n\nÖnceki Doku sonucu ne olsun?'), prev.size()),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.428da4197ab8', 'Önceki Doku sonucu silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.3b4bb905f07c', '"Doku" sınıflı, adı "Doku" ya da "Doku (2)" gibi olan %,d anotasyon silinecek ve yerine yeni sonuç eklenecek. Bu anotasyonlarda elle yaptığınız düzeltmeler KAYBOLUR; içlerindeki nesneler korunur.\n\nDevam edilsin mi?'), prev.size()))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
+// Kilitli 'Doku' anotasyonunu ekle. Kip çağırandan gelir (sorulmuş olmalı).
+//   add     → hiçbir şey silinmez; yeni set sıradaki adı alır ("Doku (2)" …).
+//   replace → yalnız bu sihirbazın setleri (sınıf Doku + tam ad ya da "(N)") silinir; içlerindeki
+//             nesneler KORUNUR (keepChildren = true).
+def applyAnno = { def finalRoi, def hierarchy, String mode ->
+    def prev = prevTissueObjects(hierarchy, SENTINEL_NAME, SENTINEL_CLASS)
+    def prevNames = prev.collect { it.getName() }.unique().sort()
+    int removed = 0
+    String setName
+    if (mode == MODE_REPLACE) {
+        removed = prev.size()
+        if (removed > 0) hierarchy.removeObjects(prev, true)
+        setName = SENTINEL_NAME
+    } else {
+        setName = nextTissueSetName(hierarchy, SENTINEL_NAME, SENTINEL_CLASS)
+    }
     def a = PathObjects.createAnnotationObject(finalRoi, QP.getPathClass(SENTINEL_CLASS))
-    a.setName(SENTINEL_NAME); a.setLocked(true)
-    QP.addObjects([a]); QP.fireHierarchyUpdate()
+    a.setName(setName); a.setLocked(true)
+    hierarchy.addObjects([a]); QP.fireHierarchyUpdate(hierarchy)
+    return [setName: setName, prevNames: (mode == MODE_REPLACE ? [] : prevNames), removed: removed]
 }
 
 // Özet metni
-def summaryOf = { String choice, double ds, double thr, boolean useOtsu, double minAreaMm2, int pieces, def finalRoi ->
+def summaryOf = { String choice, double ds, double thr, boolean useOtsu, double minAreaMm2, int pieces, def finalRoi, def info = null ->
     double tissuePx2 = finalRoi.getArea()
     double slidePx2  = (double) server.getWidth() * server.getHeight()
     double frac = (slidePx2 > 0) ? 100.0d * tissuePx2 / slidePx2 : 0.0d
@@ -203,6 +269,14 @@ def summaryOf = { String choice, double ds, double thr, boolean useOtsu, double 
         b << String.format(java.util.Locale.US, "Doku alanı   : %,.0f px²  (kalibre değil)%n", tissuePx2)
     b << String.format(java.util.Locale.US, "Doku fraksiyonu : %.1f %%%n", frac)
     b << "\nKilitli 'Doku' anotasyonu eklendi. ⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm."
+    if (info != null) {
+        b << "\n" << workshopText('script.1634a63e0849', 'Set adı : ') << (info.setName ?: '-') << "\n"
+        if (info.prevNames) {
+            b << String.format(java.util.Locale.US, workshopText('script.b687630159b5', 'DİKKAT — bu lamda önceki Doku sonucu da duruyor: %s\nHiçbir şey silinmedi. Eskisini kaldırmak için o adlı anotasyonu seçip silin ya da yeniden uygularken "Öncekini değiştir"i seçin.'), info.prevNames.join(', ')) << "\n"
+        } else if ((info.removed ?: 0) > 0) {
+            b << String.format(java.util.Locale.US, workshopText('script.e4a2b21cde56', 'Önceki Doku sonucu değiştirildi: %,d anotasyon silindi (içlerindeki nesneler korundu).'), info.removed) << "\n"
+        }
+    }
     return b.toString()
 }
 
@@ -216,14 +290,29 @@ boolean defOtsu = Boolean.parseBoolean(prefs.get('useOtsu', 'true'))
 
 // ── Headless: tek-atış (Otsu eşiği + kayıtlı parametreler) ───────────
 if (isHeadless) {
+    // Önceki sonuç: başsız modda diyalog yok — `-a mevcut=ekle|degistir`. Belirtilmezse (ve önceki sonuç
+    // varsa) hiçbir şey yazılmaz. Bilinmeyen değer HER durumda durdurur (fail closed).
+    def scriptArgs = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+    def argMap = [:]
+    scriptArgs.each { a -> def sa = a?.toString() ?: ''; int ia = sa.indexOf('='); if (ia > 0) argMap[sa.substring(0, ia).trim()] = sa.substring(ia + 1).trim() }
+    String mevcut = argMap.mevcut == null ? null : argMap.mevcut.toLowerCase(java.util.Locale.ROOT)
+    if (mevcut != null && !['ekle', 'degistir'].contains(mevcut)) {
+        println String.format(java.util.Locale.US, workshopText('script.768b9abc88f3', 'HATA: mevcut yalnız \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut); return
+    }
+    def prevHeadless = prevTissueObjects(imageData.getHierarchy(), SENTINEL_NAME, SENTINEL_CLASS)
+    if (!prevHeadless.isEmpty() && mevcut == null) {
+        println String.format(java.util.Locale.US, workshopText('script.4f47ef9c32bf', 'Bu lamda "Doku" sınıflı, bu sihirbazın eklediği %,d anotasyon zaten var. Hiçbir şey yazılmadı. Yeni bir kopya eklemek için -a mevcut=ekle, önceki sonucu değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.'), prevHeadless.size()); return
+    }
+    String headlessMode = (mevcut == 'degistir') ? MODE_REPLACE : MODE_ADD
     def c = buildCache(defDs, defChoice)
     if (c.error != null) { println "HATA: ${c.error}"; return }
     if (c.flat) { println "Tüm pikseller aynı değerde — eşikleme yapılamadı."; return }
     double minAreaPx2 = (calibrated && defMin > 0) ? (defMin * 1_000_000.0d / (pw * ph)) : 0.0d
     def d = detect((float[]) c.scalar, (int) c.W, (int) c.H, (double) c.otsu, c.request, minAreaPx2)
     if (d == null) { println "Doku bulunamadı (eşik/downsample/min alan değerlerini değiştirin)."; return }
-    applyAnno(d.roi)
-    println summaryOf(defChoice, defDs, (double) c.otsu, true, defMin, (int) d.pieces, d.roi)
+    def info = applyAnno(d.roi, imageData.getHierarchy(), headlessMode)
+    println summaryOf(defChoice, defDs, (double) c.otsu, true, defMin, (int) d.pieces, d.roi, info)
     return
 }
 
@@ -412,13 +501,22 @@ javafx.application.Platform.runLater {
             double minAreaMm2 = minSlider.getValue()
             String choice = (String) choiceBox.getValue()
             double minAreaPx2 = (calibrated && minAreaMm2 > 0) ? (minAreaMm2 * 1_000_000.0d / (pw * ph)) : 0.0d
+            // Önceki "Doku" sonucu varsa işlemden ÖNCE sor; İptal'de hiçbir şey çalışmaz, hiçbir şey yazılmaz.
+            final def targetHierarchy = QP.getCurrentImageData()?.getHierarchy()
+            if (targetHierarchy == null) return
+            final String applyMode = askExisting(targetHierarchy)
+            if (applyMode == null) return
             applyBtn.setDisable(true); applyBtn.setText(workshopText('script.b191668e82bb', "Uygulanıyor…"))
             new Thread({
                 def d
                 try { d = detect((float[]) c.scalar, (int) c.W, (int) c.H, thr, c.request, minAreaPx2) }
                 catch (Throwable t) { d = null }
                 def summary = null
-                if (d != null) { try { applyAnno(d.roi) } catch (Throwable t) {}; summary = summaryOf(choice, ds, thr, useOtsu, minAreaMm2, (int) d.pieces, d.roi) }
+                if (d != null) {
+                    def info = null
+                    try { info = applyAnno(d.roi, targetHierarchy, applyMode) } catch (Throwable t) {}
+                    summary = summaryOf(choice, ds, thr, useOtsu, minAreaMm2, (int) d.pieces, d.roi, info)
+                }
                 javafx.application.Platform.runLater {
                     applyBtn.setDisable(false); applyBtn.setText(workshopText('script.78be6436e7a5', "Uygula (Doku anotasyonu)"))
                     if (d == null) {
@@ -485,7 +583,7 @@ javafx.application.Platform.runLater {
         bar.setPadding(new javafx.geometry.Insets(8, 12, 8, 12))
 
         def footer = new javafx.scene.control.Label(
-            workshopText('script.5a9020c1aabc', "Bir ALAN ölçümüdür — klinik yorum/grade/tanı üretmez. Kilitli 'Doku' anotasyonu (idempotent)."))
+            workshopText('script.867c6553cd5f', 'Bir ALAN ölçümüdür — klinik yorum/grade/tanı üretmez. Kilitli \'Doku\' anotasyonu eklenir; lamda önceki sonuç varsa \'Uygula\' önce sorar.'))
         footer.setMaxWidth(Double.MAX_VALUE)
         footer.setStyle("-fx-text-fill: -fx-text-base-color; -fx-opacity: 0.55; -fx-font-style: italic; -fx-padding: 2 12 2 12; -fx-font-size: 11px;")
 

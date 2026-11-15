@@ -51,7 +51,32 @@ def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
 
 // ── Sabitler ───────────────────────────────────────────────────────────────
-def VALIS_SENTINEL = 'VALIS'                  // warp'lı içe aktarımda idempotent temizlik/kilit adı
+def VALIS_SENTINEL = 'VALIS'                  // warp'lı içe aktarılan anotasyonların adı (ilk set) ve kilit adı
+// "Önceki sonuç ne olsun?" kipleri — varsayılan HİÇBİR ŞEY SİLMEZ (ev kuralı:
+// sonuç yazan her sihirbaz önce sorar). Ekle: yeni set "VALIS (2)", "(3)" … adını alır.
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+// Bu sihirbazın seti mi? Yalnız TAM ad ya da "ad (N)" — önek eşleşmesi YOK:
+// kullanıcının "VALIS notlarım" diye adlandırdığı anotasyon süpürülmez.
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
 def DOCKER_IMAGE   = 'cdgatenbee/valis-wsi'
 def CONTAINER_MOUNT= '/work'                  // çalışma kökü konteynerde buraya bağlanır
 def CROP_OPTIONS   = ['overlap', 'reference', 'all']
@@ -1743,12 +1768,77 @@ def exportAnnotations = { imageData, File outFile, anns ->
     } catch (Throwable t) { return [ok: false, error: (t.getMessage() ?: t.getClass().getSimpleName())] }
 }
 
-// ── QuPath: warp'lı GeoJSON'u HEDEF lama içe aktar (sentinel + kilit; idempotent) ──
+// Aktarılan her nesne (iç içe olanlar dahil) işaretlenir; "Değiştir" yalnız işaretli
+// olanları siler. Kullanıcının sonradan içine eklediği (işaretsiz) nesneler KORUNUR.
+def TRANSFER_TAG = 'atolye_aktarim'
+def tagTransferTree = { roots, String tag ->
+    def stack = new ArrayList(roots ?: [])
+    while (!stack.isEmpty()) {
+        def o = stack.remove(stack.size() - 1)
+        try { o.getMetadata().put('atolye_aktarim', tag) } catch (Throwable ignore) {}
+        try { stack.addAll(o.getChildObjectsAsArray() as List) } catch (Throwable ignore) {}
+    }
+}
+def ownTransferTree = { prev ->
+    def out = new LinkedHashSet(prev ?: [])
+    def stack = new ArrayList(prev ?: [])
+    while (!stack.isEmpty()) {
+        def o = stack.remove(stack.size() - 1)
+        def kids = []
+        try { kids = (o.getChildObjectsAsArray() as List) } catch (Throwable ignore) {}
+        kids.each { c ->
+            boolean tagged = false
+            try { tagged = c.getMetadata()?.containsKey('atolye_aktarim') } catch (Throwable ignore) {}
+            if (tagged) out << c
+            stack << c
+        }
+    }
+    return new ArrayList(out)
+}
+// Hedef girdide bu sihirbazın önceki seti var mı? (salt okur; hiçbir şey yazmaz/silmez).
+// Dönüş: önceki set adlarının listesi (nesne başına bir ad; boşsa önceki sonuç yok).
+def valisPrevInEntry = { project, entry ->
+    def data = null; boolean opened = false
+    try {
+        def curData = QP.getCurrentImageData()
+        def curEntry = null
+        try { curEntry = (curData != null) ? project.getEntry(curData) : null } catch (Throwable ignore) {}
+        boolean live = (curEntry != null && curEntry.getID() != null && entry.getID() != null && curEntry.getID() == entry.getID())
+        data = live ? curData : entry.readImageData()
+        opened = !live
+        return prevOwnObjects(data.getHierarchy(), VALIS_SENTINEL).collect { it.getName() }
+    } catch (Throwable t) {
+        return []   // okunamayan hedef: 'ekle' kipi hiçbir şey silmez; asıl hata aktarımda raporlanır
+    } finally {
+        try { if (opened && data != null) data.getServer()?.close() } catch (Throwable ignore) {}
+    }
+}
+// Önceki VALIS sonucu için kullanıcıya SOR (FX iş parçacığında, ağır işten ÖNCE çağrılır).
+//   prevCount: silinebilecek önceki anotasyon sayısı; nTargets: önceki sonucu olan hedef sayısı.
+//   Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz).
+//   Önceki sonuç yoksa sormadan 'add' döner.
+def askExisting = { int prevCount, int nTargets ->
+    if (prevCount <= 0) return MODE_ADD
+    String optAdd = workshopText('script.5fcbb9588b11', 'Öncekine dokunma — yeni bir set olarak ekle (varsayılan)')
+    String optRep = workshopText('script.b7d79be32c1c', 'Öncekini değiştir (bu sihirbazın aktardıkları silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.149bd436c4c0', 'Önceki VALIS aktarımı'),
+        String.format(java.util.Locale.US, workshopText('script.8d9a98b918d7', '%2$,d hedef lamda toplam %1$,d VALIS anotasyonu zaten var.\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir set olur ("VALIS (2)" gibi). Lamda iki set birlikte durur.\n\n"Değiştir" seçilirse önceki VALIS anotasyonları silinir — onlarda ELLE yaptığınız düzeltmeler de gider. Onlarla birlikte aktarılmış nesneler de silinir. Kendi anotasyonlarınıza ve sonradan eklediğiniz nesnelere dokunulmaz. Bu sürümden önce yapılmış aktarımların içindeki nesneler işaretli olmadığından lamda kalır; gerekirse elle silin.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki VALIS sonucu ne olsun?'), prevCount, nTargets),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.158fb27b6582', 'Önceki VALIS sonucu silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.49f4a0940d50', '%1$,d VALIS anotasyonu (%2$,d lamda) silinip yeniden aktarılacak. Bu anotasyonlarda elle yaptığınız düzeltmeler KAYBOLUR. Lam açık değilse sonuç diske kaydedilir ve geri alınamaz.\n\nDevam edilsin mi?'), prevCount, nTargets))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
+// ── QuPath: warp'lı GeoJSON'u HEDEF lama içe aktar (ad + kilit; önceki aktarım SORULARAK ele alınır) ──
 // srcAreaUm2 (isteğe bağlı, >0): kaynaktaki dışa aktarılan anotasyonun alanı (µm²) — verilirse hedefin
 // KENDİ piksel kalibrasyonuyla hesaplanan alanla oranlanır; oran [WARP_SCALE_RATIO_MIN, WARP_SCALE_RATIO_MAX]
 // dışındaysa dönüşte 'scaleWarn' doldurulur. Bu bir ÖRTÜŞME/Dice DOĞRULUĞU ölçüsü DEĞİLDİR — yalnız
 // ölçek/piramit-seviyesi karışıklığı gibi kaba hataları yakalayan bir tutarlılık kontrolüdür.
-def importWarpedToTarget = { project, targetEntry, File warpedFile, double srcAreaUm2 = 0.0d ->
+def importWarpedToTarget = { project, targetEntry, File warpedFile, double srcAreaUm2 = 0.0d, String mode = 'add' ->
     if (warpedFile == null || !warpedFile.isFile())
         return [ok: false, error: 'Warp\'lı GeoJSON bulunamadı:\n' + (warpedFile?.getAbsolutePath() ?: '-')]
     def objs = null
@@ -1758,7 +1848,7 @@ def importWarpedToTarget = { project, targetEntry, File warpedFile, double srcAr
     } catch (Throwable t) { return [ok: false, error: 'GeoJSON okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
     if (objs == null || objs.isEmpty()) return [ok: false, error: 'Warp\'lı GeoJSON\'da nesne yok.']
     if (isTransformedEntry(targetEntry)) return [ok: false, error: 'Hedef kırpılmış ya da dönüştürülmüş bir proje girdisi; koordinatlar uymaz, içe aktarılmadı.']
-    objs.each { try { it.setName(VALIS_SENTINEL); it.setLocked(true) } catch (Throwable ignore) {} }
+    objs.each { try { it.setLocked(true) } catch (Throwable ignore) {} }
     def curData = QP.getCurrentImageData()
     def curEntry = null
     try { curEntry = (curData != null) ? project.getEntry(curData) : null } catch (Throwable ignore) {}
@@ -1768,7 +1858,23 @@ def importWarpedToTarget = { project, targetEntry, File warpedFile, double srcAr
         data = isLive ? curData : targetEntry.readImageData()
         opened = !isLive
         def hier = data.getHierarchy()
-        hier.removeObjects(hier.getAnnotationObjects().findAll { it.getName() == VALIS_SENTINEL }, false)
+        // Önceki aktarım: SORULMADAN SİLİNMEZ. Kip çağırandan gelir (varsayılan: ekle).
+        //   ekle     → hiçbir şey silinmez; yeni set sıradaki adı alır ("VALIS (2)" …).
+        //   değiştir → yalnız bu sihirbazın setleri (tam ad ya da "(N)") silinir; içlerindeki
+        //              alt nesneler KORUNUR (keepChildren = true).
+        def prevOwn = prevOwnObjects(hier, VALIS_SENTINEL)
+        def prevNames = prevOwn.collect { it.getName() }.unique().sort()
+        int removed = 0
+        String setName
+        if (mode == 'replace') {
+            removed = prevOwn.size()
+            if (removed > 0) hier.removeObjects(ownTransferTree(prevOwn), true)
+            setName = VALIS_SENTINEL
+        } else {
+            setName = nextOwnSetName(hier, VALIS_SENTINEL)
+        }
+        objs.each { try { it.setName(setName) } catch (Throwable ignore) {} }
+        tagTransferTree(objs, setName)
         hier.addObjects(objs)
         QP.fireHierarchyUpdate(hier)   // PathObjectHierarchy'de fireHierarchyUpdate() YOK (0.6/0.7) → MissingMethodException
         // ── Ölçek tutarlılık kontrolü — HEDEFİN KENDİ kalibrasyonuyla (kaynağınkiyle DEĞİL) ──
@@ -1793,7 +1899,8 @@ def importWarpedToTarget = { project, targetEntry, File warpedFile, double srcAr
         }
         if (isLive) { javafx.application.Platform.runLater { try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {} } }
         else { targetEntry.saveImageData(data) }
-        return [ok: true, count: objs.size(), live: isLive, scaleWarn: scaleWarn]
+        return [ok: true, count: objs.size(), live: isLive, scaleWarn: scaleWarn,
+                setName: setName, prevNames: (mode == 'replace' ? [] : prevNames), removed: removed]
     } catch (Throwable t) {
         return [ok: false, error: (t.getMessage() ?: t.getClass().getSimpleName())]
     } finally {
@@ -1984,6 +2091,17 @@ if (isHeadless) {
     def miss = configMissing(cfg)
     if (!miss.isEmpty()) println "Eksik yapılandırma: ${miss.join(', ')}"
     println "VALIS sihirbazı için QuPath arayüzü gerekir (headless çalıştırılamaz)."
+    // Önceki sonucun üzerine yazma kipi: başsız modda diyalog yok. Bu sihirbaz başsız hiçbir şey yazmaz;
+    // bilinmeyen `mevcut` değeri kapalı-hata verir (hiçbir şey yazılmaz).
+    def headlessArgs = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) headlessArgs = (a as List) } } catch (Throwable ignore) {}
+    def headlessMap = [:]
+    headlessArgs.each { a -> def s = a?.toString() ?: ''; int i = s.indexOf('='); if (i > 0) headlessMap[s.substring(0, i).trim()] = s.substring(i + 1).trim() }
+    if (headlessMap.mevcut != null && !['ekle', 'degistir'].contains(headlessMap.mevcut.toLowerCase(java.util.Locale.ROOT))) {
+        println String.format(java.util.Locale.US, workshopText('script.768b9abc88f3', 'HATA: mevcut yalnız \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), headlessMap.mevcut)
+        return
+    }
+    println workshopText('script.c95f4645fae9', 'Başsız kipte hiçbir şey yazılmadı. Önceki VALIS sonucu olan bir lama aktarım için QuPath arayüzünde sihirbazı açın ya da (destekleyen betiklerde) mevcut=ekle (kopya olarak ekle) / mevcut=degistir (öncekini değiştir) ile yeniden çalıştırın.')
     return
 }
 
@@ -2622,10 +2740,18 @@ def doPrefetch = { cfg ->
 
 // Kayıtlı warpPlan'daki HER hedefi içe aktarır (ÇOKLU) — dosya-varlığı, önceki tek-hedef davranışıyla
 // AYNI şekilde, per-hedef başarının referans standartdir. Tek özet bildirimle sonuç raporlanır.
-def doImportWarped = {
+// presetMode: çağıran zaten sorduysa ('add'|'replace') tekrar sorulmaz. İptal → 'cancel' döner, hiçbir şey yazılmaz.
+def doImportWarped = { String presetMode = null ->
     def project = QP.getProject()
     def plan = lastWarpPlanRef.get() ?: []
     if (project == null || plan.isEmpty()) { Dialogs.showErrorMessage(workshopText('script.feebb3bba06c', 'İçe aktarım'), workshopText('script.319a252dc278', 'Proje/hedef bilgisi yok — önce en az bir warp hedefi işaretleyip "Komut üret" ya da "Doğrudan çalıştır".')); return }
+    String importMode = presetMode
+    if (importMode == null) {
+        int prevTotal = 0, prevTargets = 0
+        plan.each { p -> def pn = (p.geojsonOut instanceof File && p.geojsonOut.isFile()) ? valisPrevInEntry(project, p.entry) : []; if (!pn.isEmpty()) { prevTotal += pn.size(); prevTargets++ } }
+        importMode = askExisting(prevTotal, prevTargets)
+        if (importMode == null) return 'cancel'
+    }
     def srcAreaUm2 = (lastWarpSrcAreaUm2Ref.get() ?: 0.0d) as double
     int ok = 0, fail = 0
     def notes = []
@@ -2636,10 +2762,12 @@ def doImportWarped = {
             fail++; notes << ('  ✗ ' + (p.targetName ?: '?') + ': warp\'lı GeoJSON henüz yok')
             return
         }
-        def r = importWarpedToTarget(project, p.entry, gj, srcAreaUm2)
+        def r = importWarpedToTarget(project, p.entry, gj, srcAreaUm2, importMode)
         if (r.ok) {
             ok++
             notes << ('  ✓ ' + (p.targetName ?: '?') + ': ' + r.count + ' nesne' + (r.live ? ' (açık lam)' : ' (diske kaydedildi)'))
+            if (r.prevNames) notes << ('      ' + String.format(java.util.Locale.US, workshopText('script.b2d8f3f095c9', 'DİKKAT — önceki VALIS sonucu lamda duruyor: %1$s. Hiçbir şey silinmedi; yeni set "%2$s" adını aldı. Eskisini kaldırmak için o addaki anotasyonları seçip silin ya da yeniden aktarırken "Öncekini değiştir"i seçin.'), r.prevNames.join(', '), r.setName))
+            else if ((r.removed ?: 0) > 0) notes << ('      ' + String.format(java.util.Locale.US, workshopText('script.600a7fca5a26', 'Önceki VALIS sonucu değiştirildi: %,d anotasyon silindi ve onlarla aktarılmış nesneler (sonradan eklediğiniz nesneler korundu).'), r.removed))
             if (r.scaleWarn) warns << (p.targetName + ' — ' + r.scaleWarn)
         } else {
             fail++; notes << ('  ✗ ' + (p.targetName ?: '?') + ': ' + (r.error ?: '?'))
@@ -2746,7 +2874,7 @@ def doAddMergeOut = {
 // referanslarını (lastOmeDirRef/lastWarpPlanRef) kullanır → WSL/terminalde elle çalıştırılmış
 // bir sonuç bunlarla aktarılamaz. Bu iki yol herhangi bir GeoJSON/OME-TIFF dosyasını seçtirip
 // aktarır (importWarpedToTarget/addOmeToProject mantığını yeniden kullanır; değiştirmez).
-def importGeojsonToCurrent = { File gjFile ->
+def importGeojsonToCurrent = { File gjFile, String mode = 'add' ->
     def data = QP.getCurrentImageData()
     if (data == null) return [ok: false, error: 'Açık lam yok — warp\'lı anotasyonun ait olduğu (hedef) lamı açın, sonra tekrar deneyin.']
     def objs = null
@@ -2755,21 +2883,41 @@ def importGeojsonToCurrent = { File gjFile ->
         try { objs = PathIO.readObjectsFromGeoJSON(ins) } finally { ins.close() }
     } catch (Throwable t) { return [ok: false, error: 'GeoJSON okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
     if (objs == null || objs.isEmpty()) return [ok: false, error: 'GeoJSON\'da nesne yok.']
-    objs.each { try { it.setName(VALIS_SENTINEL); it.setLocked(true) } catch (Throwable ignore) {} }
+    objs.each { try { it.setLocked(true) } catch (Throwable ignore) {} }
     try {
         def hier = data.getHierarchy()
-        hier.removeObjects(hier.getAnnotationObjects().findAll { it.getName() == VALIS_SENTINEL }, false)
+        // Önceki aktarım SORULMADAN silinmez (bkz. importWarpedToTarget): ekle = hiçbir şey silinmez; değiştir =
+        // yalnız bu sihirbazın setleri, alt nesneler korunur.
+        def prevOwn = prevOwnObjects(hier, VALIS_SENTINEL)
+        def prevNames = prevOwn.collect { it.getName() }.unique().sort()
+        int removed = 0
+        String setName
+        if (mode == 'replace') {
+            removed = prevOwn.size()
+            if (removed > 0) hier.removeObjects(ownTransferTree(prevOwn), true)
+            setName = VALIS_SENTINEL
+        } else {
+            setName = nextOwnSetName(hier, VALIS_SENTINEL)
+        }
+        objs.each { try { it.setName(setName) } catch (Throwable ignore) {} }
+        tagTransferTree(objs, setName)
         hier.addObjects(objs)
         QP.fireHierarchyUpdate(hier)   // PathObjectHierarchy'de fireHierarchyUpdate() YOK (0.6/0.7) → MissingMethodException
         javafx.application.Platform.runLater { try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {} }
-        return [ok: true, count: objs.size()]
+        return [ok: true, count: objs.size(), setName: setName, prevNames: (mode == 'replace' ? [] : prevNames), removed: removed]
     } catch (Throwable t) { return [ok: false, error: (t.getMessage() ?: t.getClass().getSimpleName())] }
 }
 def doImportGeojsonFromFile = {
     def gj = qupath.fx.dialogs.FileChoosers.promptForFile(stage, workshopText('script.1fbbe1b2c877', 'Warp\'lı GeoJSON seç (VALIS çıktısı)'))
     if (gj == null) return
-    def r = importGeojsonToCurrent(gj)
-    if (r.ok) Dialogs.showInfoNotification(workshopText('script.95ab5a716bdc', 'Warp\'lı anotasyon'), r.count + workshopText('script.5779086b39f8', ' nesne açık lama aktarıldı (VALIS adlı, kilitli). Hizalamayı görsel doğrulayın.'))
+    // Dosya seçildikten sonra, yazmadan ÖNCE sor: İptal hiçbir şey yazmaz.
+    def prevHere = prevOwnObjects(QP.getCurrentImageData()?.getHierarchy(), VALIS_SENTINEL)
+    def fileMode = askExisting(prevHere.size(), prevHere.isEmpty() ? 0 : 1)
+    if (fileMode == null) return
+    def r = importGeojsonToCurrent(gj, fileMode)
+    if (r.ok) Dialogs.showInfoNotification(workshopText('script.95ab5a716bdc', 'Warp\'lı anotasyon'), r.count + workshopText('script.5779086b39f8', ' nesne açık lama aktarıldı (VALIS adlı, kilitli). Hizalamayı görsel doğrulayın.') +
+        (r.prevNames ? ('\n' + String.format(java.util.Locale.US, workshopText('script.b2d8f3f095c9', 'DİKKAT — önceki VALIS sonucu lamda duruyor: %1$s. Hiçbir şey silinmedi; yeni set "%2$s" adını aldı. Eskisini kaldırmak için o addaki anotasyonları seçip silin ya da yeniden aktarırken "Öncekini değiştir"i seçin.'), r.prevNames.join(', '), r.setName)) :
+         ((r.removed ?: 0) > 0 ? ('\n' + String.format(java.util.Locale.US, workshopText('script.600a7fca5a26', 'Önceki VALIS sonucu değiştirildi: %,d anotasyon silindi ve onlarla aktarılmış nesneler (sonradan eklediğiniz nesneler korundu).'), r.removed)) : '')))
     else Dialogs.showErrorMessage(workshopText('script.e3de92afd6ab', 'İçe aktarım başarısız'), r.error ?: '?')
 }
 def doAddOmeFromFile = {
@@ -2802,6 +2950,11 @@ def doWarpOnlyTransfer = { cfg ->
     if (pkl == null) { Dialogs.showErrorMessage(workshopText('script.a144e4c584cf', 'Hızlı warp'), workshopText('script.fde0610c9793', 'Henüz kayıtlı hizalama yok — önce "Doğrudan çalıştır" ile bir kez tam kayıt yapın.')); return }
     def plan = prepareRun(cfg, true, true)
     if (!plan.ok) { errorTextRef.set(plan.error); step.set('ERROR'); render(); return }
+    // Python/warp çalıştırmasından ÖNCE sor: İptal'de hiçbir şey çalışmaz, hiçbir şey yazılmaz.
+    int prevTotalW = 0, prevTargetsW = 0
+    (lastWarpPlanRef.get() ?: []).each { p -> def pn = valisPrevInEntry(QP.getProject(), p.entry); if (!pn.isEmpty()) { prevTotalW += pn.size(); prevTargetsW++ } }
+    final String warpMode = askExisting(prevTotalW, prevTargetsW)
+    if (warpMode == null) return
     def cmd = (cfg.mode == 'wsl') ? plan.wslCmd : ((cfg.mode == 'native') ? plan.nativeCmd : plan.dockerCmd)
     startRun(cmd, 'Anotasyon warp ediliyor (kayıtlı hizalamadan)', 'run', {
         def wp = lastWarpPlanRef.get() ?: []
@@ -2812,7 +2965,7 @@ def doWarpOnlyTransfer = { cfg ->
             errorTextRef.set('Hızlı warp: hiçbir hedef için warp\'lı GeoJSON üretilmedi.\n\n' + tail)
             step.set('ERROR'); render(); return
         }
-        doImportWarped()
+        doImportWarped(warpMode)
         def sb = new StringBuilder()
         sb << "HIZLI WARP TAMAMLANDI ✅\n═══════════════════════════════\n\n"
         sb << "Kayıtlı hizalamadan (yeniden KAYIT yok) " << wp.size() << " hedef için anotasyon warp edildi ve içe aktarıldı:\n\n"
@@ -3381,7 +3534,7 @@ render = { ->
         actions.add(navButton(workshopText('script.a7ca83d7f1f5', 'Kopyala (native)'), { copyToClipboard(nativeTextRef.get()) }))
         if (dockerOk) actions.add(navButton(workshopText('script.fe1561f4d1bb', 'Kopyala (Docker)'), { copyToClipboard(dockerTextRef.get()) }))
         actions.add(navButton(workshopText('script.3ecd99c46bb6', 'Doğrudan çalıştır ▶'), { def c = lastCmdRef.get(); if (c != null) startDirectRun(c) }))
-        actions.add(navButton(workshopText('script.e3dc55321aaf', 'Sonuçları içe aktar'), { doImportWarped(); doAddOme(); doAddMergeOut() }, workshopText('script.98be18e15bc0', 'Warp\'lı anotasyonu hedefe + OME-TIFF\'leri + birleşik multipleksi projeye ekler')))
+        actions.add(navButton(workshopText('script.e3dc55321aaf', 'Sonuçları içe aktar'), { if (doImportWarped() != 'cancel') { doAddOme(); doAddMergeOut() } }, workshopText('script.98be18e15bc0', 'Warp\'lı anotasyonu hedefe + OME-TIFF\'leri + birleşik multipleksi projeye ekler')))
     } else if (cur == 'RUNNING') {
         title.setText(busyLabelRef.get() + '…')
         addGuidance(workshopText('script.cc9bbd2a1212', 'VALIS çalışıyor (hizalama uzun sürebilir; günlük aşağıda akıyor). Zaman aşımı: ') + (activeTimeoutSecondsRef.get() / 3600.0d) + workshopText('script.5668cb265ad2', ' saat.'))

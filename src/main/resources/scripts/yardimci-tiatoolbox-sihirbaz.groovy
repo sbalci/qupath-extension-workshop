@@ -71,7 +71,32 @@ def MODE_LABELS = [
     'tissue-mask'     : 'Doku maskesi (Otsu / Morphological)'
 ]
 def modeLabelToKey = { String lbl -> def k = MODE_LABELS.find { it.value == lbl }?.key; return (k ?: 'normalize-region') }
-def TISSUE_SENTINEL = 'Doku maskesi (TIA Toolbox)'
+def TISSUE_SENTINEL = 'Doku maskesi (TIA Toolbox)'   // bu sihirbazın içe aktardığı doku anotasyonunun adı (ilk set)
+// "Önceki sonuç ne olsun?" kipleri — varsayılan HİÇBİR ŞEY SİLMEZ (ev kuralı:
+// sonuç yazan her sihirbaz önce sorar). Ekle: yeni set "Doku maskesi (TIA Toolbox) (2)", "(3)" … adını alır.
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+// Bu sihirbazın seti mi? Yalnız TAM ad ya da "ad (N)" — önek eşleşmesi YOK:
+// kullanıcının "Doku maskesi (TIA Toolbox) düzeltmelerim" diye adlandırdığı anotasyon süpürülmez.
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
 
 // ── Kalıcı yapılandırma: java.util.prefs (eklenti JAR'ı olmadan da çalışır) ──
 def prefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/tiatoolbox')
@@ -377,7 +402,7 @@ def openFileExternally = { File f ->
 }
 
 // ── Doku maskesini içe aktar (raster → "Doku" anotasyonu) ───────────────────
-def importTissueMask = { File workDir, imageData, double downsample ->
+def importTissueMask = { File workDir, imageData, double downsample, String mode = 'add' ->
     def maskFile = new File(workDir, 'tissue_mask.png')
     if (!maskFile.isFile())
         return [ok: false, error: 'tissue_mask.png bulunamadı:\n' + maskFile.getAbsolutePath()]
@@ -391,19 +416,33 @@ def importTissueMask = { File workDir, imageData, double downsample ->
     try { roi = ContourTracing.createTracedROI(raster, 1.0d, 255.0d, 0, request) }
     catch (Throwable t) { return [ok: false, error: 'Maske izlenemedi: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
 
+    // Önceki içe aktarım: SORULMADAN SİLİNMEZ. Kip çağırandan gelir (varsayılan: ekle).
+    //   ekle     → hiçbir şey silinmez; yeni set sıradaki adı alır ("Doku maskesi (TIA Toolbox) (2)" …).
+    //   değiştir → yalnız bu sihirbazın setleri (tam ad ya da "(N)") silinir; içlerindeki alt
+    //              nesneler KORUNUR (keepChildren = true). Yeni maske boşsa eskiye dokunulmaz.
+    // Yakalanan imageData'nın KENDİ hiyerarşisi kullanılır (QP.* açık görüntüye yazardı).
     def hierarchy = imageData.getHierarchy()
-    QP.removeObjects(QP.getAnnotationObjects().findAll { it.getName() == TISSUE_SENTINEL }, false)
+    def prev = prevOwnObjects(hierarchy, TISSUE_SENTINEL)
+    def prevNames = prev.collect { it.getName() }.unique().sort()
+    int removed = 0
+    String setName = TISSUE_SENTINEL
     def newAnns = []
     double areaPx = 0.0d
     if (roi != null && !roi.isEmpty()) {
+        if (mode == 'replace') {
+            removed = prev.size()
+            if (removed > 0) hierarchy.removeObjects(prev, true)
+        } else {
+            setName = nextOwnSetName(hierarchy, TISSUE_SENTINEL)
+        }
         def pc = QP.getPathClass('Doku')
         def ann = PathObjects.createAnnotationObject(roi, pc)
-        ann.setName(TISSUE_SENTINEL); ann.setLocked(true)
+        ann.setName(setName); ann.setLocked(true)
         newAnns << ann
         areaPx = roi.getArea()
     }
-    QP.addObjects(newAnns)
-    QP.fireHierarchyUpdate()
+    hierarchy.addObjects(newAnns)
+    QP.fireHierarchyUpdate(hierarchy)
     javafx.application.Platform.runLater { try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {} }
 
     def cal = server.getPixelCalibration()
@@ -411,7 +450,8 @@ def importTissueMask = { File workDir, imageData, double downsample ->
     boolean calibrated = (pw > 0 && ph > 0 && !Double.isNaN(pw) && !Double.isNaN(ph))
     double mm2 = calibrated ? (areaPx * pw * ph / 1_000_000.0d) : Double.NaN
     return [ok: true, nAnns: newAnns.size(), areaPx: areaPx, mm2: mm2, calibrated: calibrated,
-            maskW: img.getWidth(), maskH: img.getHeight()]
+            maskW: img.getWidth(), maskH: img.getHeight(),
+            setName: setName, prevNames: ((mode == 'replace' || newAnns.isEmpty()) ? [] : prevNames), removed: removed]
 }
 
 // ── Özet metinleri ────────────────────────────────────────────────────────────
@@ -456,6 +496,13 @@ def tissueResultText = { File workDir, cfg, exp, imp ->
     else
         sb << "Doku alanı: (görüntü kalibre değil — mm² verilemedi)\n"
     sb << "\nMaske açık lama hizalı 'Doku' anotasyonu olarak eklendi.\n"
+    sb << workshopText('script.2513915f923e', 'Set adı   : ') << (imp?.setName ?: '-') << "\n"
+    if (imp?.prevNames) {
+        sb << "\n" << workshopText('script.661a7459b516', 'DİKKAT — bu lamda önceki sonuç da duruyor: ') << imp.prevNames.join(', ') << "\n"
+        sb << workshopText('script.004ee1831264', 'Hiçbir şey silinmedi. Eski maskeyi kaldırmak için o addaki anotasyonu seçip silin ya da yeniden çalıştırırken "Öncekini değiştir"i seçin. Alan ölçümleri ve kohort özetleri iki maskeyi de görür.') << "\n"
+    } else if ((imp?.removed ?: 0) > 0) {
+        sb << "\n" << String.format(java.util.Locale.US, workshopText('script.2927902834a3', 'Önceki doku maskesi değiştirildi: %,d anotasyon silindi (içlerindeki alt nesneler korundu).'), (int) imp.removed) << "\n"
+    }
     sb << "Maske bir tahmindir; görsel olarak doğrulayın (Yapay Zekâ Araçlarını Değerlendirme eki). Klinik yorum üretilmez.\n"
     sb << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return sb.toString()
@@ -472,6 +519,22 @@ if (isHeadless) {
         def anns = imageData.getHierarchy().getAnnotationObjects().findAll { it.hasROI() && it.getROI().isArea() }
         println "Alan anotasyonu: ${anns.size()}"
     } else println "Açık görüntü yok."
+    // Başsız kipte diyalog yok: önceki sonuç varsa hiçbir şey yazılmaz; `-a mevcut=ekle|degistir`.
+    def scriptArgs = []
+    try { if (binding.hasVariable('args')) { def a = binding.getVariable('args'); if (a != null) scriptArgs = (a as List) } } catch (Throwable ignore) {}
+    def argMap = [:]
+    scriptArgs.each { a -> def s = a?.toString() ?: ''; int i = s.indexOf('='); if (i > 0) argMap[s.substring(0, i).trim()] = s.substring(i + 1).trim() }
+    if (argMap.containsKey('mevcut')) {
+        def mv = (argMap.mevcut ?: '').toLowerCase(java.util.Locale.ROOT)
+        if (!['ekle', 'degistir'].contains(mv)) {
+            println String.format(java.util.Locale.US, workshopText('script.37ab92155fc9', 'HATA: mevcut yalnızca \'ekle\' ya da \'degistir\' olabilir (verilen: %s). Hiçbir şey yazılmadı.'), argMap.mevcut)
+            return
+        }
+    }
+    if (imageData != null) {
+        int prevN = prevOwnObjects(imageData.getHierarchy(), TISSUE_SENTINEL).size()
+        if (prevN > 0) println String.format(java.util.Locale.US, workshopText('script.71653619f6db', 'Bu görüntüde bu sihirbazın %,d önceki doku maskesi anotasyonu var. Hiçbir şey yazılmadı. Yeniden çalıştırırken mevcut=ekle (yeni set olarak ekler, eskiye dokunmaz) ya da mevcut=degistir (eski maskeyi siler) verin.'), prevN)
+    }
     println "TIA Toolbox sihirbazı için QuPath arayüzü gerekir (headless çalıştırılamaz)."
     println "⚠️ Yalnızca araştırma/eğitim amaçlı veri/ölçüm üretir."
     return
@@ -543,12 +606,40 @@ def startSelftest = {
     worker.setDaemon(true); worker.start()
 }
 
+// ── Önceki doku maskesi için kullanıcıya SOR (FX iş parçacığında, Python'dan ÖNCE çağrılır) ──
+//   Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz).
+//   Önceki sonuç yoksa sormadan 'add' döner.
+def askExisting = { hierarchy ->
+    def prev = prevOwnObjects(hierarchy, TISSUE_SENTINEL)
+    if (prev.isEmpty()) return MODE_ADD
+    String optAdd = workshopText('script.5fcbb9588b11', 'Öncekine dokunma — yeni bir set olarak ekle (varsayılan)')
+    String optRep = workshopText('script.6caef5af8fda', 'Öncekini değiştir (bu sihirbazın önceki doku maskesi silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.48b4a67ec4b3', 'Önceki doku maskesi'),
+        String.format(java.util.Locale.US, workshopText('script.afda6cf6f06c', 'Bu lamda bu sihirbazın %,d önceki doku maskesi anotasyonu var ("Doku maskesi (TIA Toolbox)").\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni maske ayrı bir set olur ("Doku maskesi (TIA Toolbox) (2)" gibi). Lamda iki maske birlikte durur.\n\n"Değiştir" seçilirse önceki doku maskesi anotasyonları silinir — onlarda ELLE yaptığınız düzeltmeler de gider. Kendi anotasyonlarınıza ve içlerindeki nesnelere dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki doku maskesi ne olsun?'), prev.size()),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.e9551c85492d', 'Önceki doku maskesi silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.07448503a423', '%,d doku maskesi anotasyonu silinip yerine yenisi yazılacak. Bu anotasyonlarda elle yaptığınız düzeltmeler KAYBOLUR.\n\nDevam edilsin mi?'), prev.size()))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
 // ── Çalıştırma akışı (moda göre dallanır) ───────────────────────────────────
 def startRun = {
     def imageData = QP.getCurrentImageData()
     if (imageData == null) { errorTextRef.set('Görüntü açık değil.'); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
     def mode = cfg.mode
+    // Doku maskesi modunda önceki sonuç varsa Python hattından ÖNCE sor: İptal'de hiçbir şey
+    // çalışmaz, hiçbir şey yazılmaz (iş parçacığı başlamadan, dışa aktarımdan önce döner).
+    String importMode = MODE_ADD
+    if (mode == 'tissue-mask') {
+        importMode = askExisting(imageData.getHierarchy())
+        if (importMode == null) return
+    }
+    final String tissueImportMode = importMode
     def workDir = resolveWorkDir(cfg, imageData)
     workDir.mkdirs()
     cancelledRef.set(false)
@@ -581,7 +672,7 @@ def startRun = {
                 def r = runPython(cmd, appendLine)
                 if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set('Doku maskesi başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '')); step.set('ERROR'); render() }; return }
                 javafx.application.Platform.runLater { busyLabelRef.set('Maske QuPath\'e içe aktarılıyor (3/3)…'); step.set('BUSY'); render() }
-                def imp = importTissueMask(workDir, imageData, mds)   /* çalıştırma başlarken yakalanan görüntü — sonuç başka lama yazılmasın */
+                def imp = importTissueMask(workDir, imageData, mds, tissueImportMode)   /* çalıştırma başlarken yakalanan görüntü — sonuç başka lama yazılmasın */
                 javafx.application.Platform.runLater {
                     if (!imp.ok) { errorTextRef.set(imp.error); step.set('ERROR'); render() }
                     else { resultTextRef.set(tissueResultText(workDir, cfg, exp, imp)); step.set('RESULT'); render() }

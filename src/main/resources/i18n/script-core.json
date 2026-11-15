@@ -10674,6 +10674,396 @@
       "key": "script.94f3333599cf",
       "tr": "Projedeki HER görüntüde önceki GrandQC anotasyonları (elle yaptığınız düzeltmeler dahil) silinip yeniden içe aktarılacak ve sonuç diske kaydedilecek. Bu işlem geri alınamaz.\n\nDevam edilsin mi?",
       "en": "On EVERY image in the project the earlier GrandQC annotations (including corrections made by hand) will be deleted and imported again, and the result saved to disk. This cannot be undone.\n\nContinue?"
+    },
+    {
+      "key": "script.b7d79be32c1c",
+      "tr": "Öncekini değiştir (bu sihirbazın aktardıkları silinir)",
+      "en": "Replace the earlier transfer (what this wizard transferred is removed)"
+    },
+    {
+      "key": "script.aab9acb25376",
+      "tr": "Önceki Warpy aktarımı",
+      "en": "Earlier Warpy transfer"
+    },
+    {
+      "key": "script.3cad69a43512",
+      "tr": "Bu lamda bu sihirbazın önceki aktarımından %,d anotasyon var (\"%s\").\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni aktarım ayrı bir set olur (\"%s (2)\" gibi). Lamda iki set birlikte durur.\n\n\"Değiştir\" seçilirse önceki aktarımın anotasyonları silinir — onlarda elle yaptığınız düzeltmeler de gider. Onlarla birlikte aktarılmış nesneler (ör. hücre tespitleri) de silinir; içlerine sonradan kendi eklediğiniz nesneler lamda kalır. Bu sürümden önce yapılmış aktarımların içindeki nesneler işaretli olmadığından lamda kalır; gerekirse elle silin. Kendi çizdiğiniz anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki aktarım ne olsun?",
+      "en": "This slide already holds %,d annotation(s) from an earlier transfer by this wizard (\"%s\").\n\n\"Add\" deletes nothing; the new transfer becomes a separate set (named like \"%s (2)\"). Both sets stay on the slide.\n\n\"Replace\" deletes the annotations of the earlier transfer, including any manual corrections you made to them. Objects transferred with them (for example cell detections) are deleted too; objects you added inside them afterwards stay on the slide. Objects inside transfers made before this version carry no mark and stay on the slide; delete them by hand if needed. Annotations you drew yourself are not touched.\n\nCancel: nothing is run and nothing is written.\n\nWhat should happen to the earlier transfer?"
+    },
+    {
+      "key": "script.72b2fc13ba69",
+      "tr": "Önceki Warpy aktarımı silinecek",
+      "en": "The earlier Warpy transfer will be removed"
+    },
+    {
+      "key": "script.793ec45d606c",
+      "tr": "\"%2$s\" adlı %1$,d anotasyon silinecek ve yerine yenisi aktarılacak. Bu anotasyonlarda elle yaptığınız düzeltmeler KAYBOLUR; onlarla birlikte aktarılmış nesneler de silinir. İçlerine sonradan kendi eklediğiniz nesneler kalır.\n\nDevam edilsin mi?",
+      "en": "\"%2$s\": %1$,d annotation(s) with this name will be removed and replaced by the new transfer. Manual corrections you made to them are LOST; objects transferred with them are removed too. Objects you added inside them afterwards stay.\n\nContinue?"
+    },
+    {
+      "key": "script.b953a9fa8fe1",
+      "tr": "DİKKAT — bu lamda önceki Warpy aktarımı da duruyor: %1$s. Hiçbir şey silinmedi; yeni set \"%2$s\" adıyla eklendi. Eski seti kaldırmak için o addaki anotasyonları seçip silin ya da yeniden aktarırken \"Öncekini değiştir\"i seçin. Dışa aktarım ve ölçümler iki seti de görür.",
+      "en": "NOTE — the earlier Warpy transfer is still on this slide: %1$s. Nothing was deleted; the new set was added as \"%2$s\". To remove the old set, select the annotations with that name and delete them, or choose \"Replace the earlier transfer\" next time. Exports and measurements see both sets."
+    },
+    {
+      "key": "script.9bc28ae951f1",
+      "tr": "Önceki Warpy aktarımı değiştirildi: %,d anotasyon silindi ve onlarla aktarılmış nesneler (sonradan eklediğiniz nesneler korundu).",
+      "en": "The earlier Warpy transfer was replaced: %,d annotation(s) removed together with the objects transferred with them (objects you added afterwards were kept)."
+    },
+    {
+      "key": "script.a4536559d5c3",
+      "tr": "Önceki hizalama aktarımı",
+      "en": "Earlier alignment transfer"
+    },
+    {
+      "key": "script.9e93c5be3e96",
+      "tr": "Bu lamda bu sihirbazın önceki aktarımından %,d anotasyon var (\"%s\").\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni aktarım ayrı bir set olur (\"%s (2)\" gibi). Lamda iki set birlikte durur.\n\n\"Değiştir\" seçilirse önceki aktarımın anotasyonları silinir — onlarda elle yaptığınız düzeltmeler de gider. Onlarla birlikte aktarılmış nesneler (ör. hücre tespitleri) de silinir; içlerine sonradan kendi eklediğiniz nesneler lamda kalır. Bu sürümden önce yapılmış aktarımların içindeki nesneler işaretli olmadığından lamda kalır; gerekirse elle silin. Kendi çizdiğiniz anotasyonlara dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz (otomatik hizalama da başlamaz).\n\nÖnceki aktarım ne olsun?",
+      "en": "This slide already holds %,d annotation(s) from an earlier transfer by this wizard (\"%s\").\n\n\"Add\" deletes nothing; the new transfer becomes a separate set (named like \"%s (2)\"). Both sets stay on the slide.\n\n\"Replace\" deletes the annotations of the earlier transfer, including any manual corrections you made to them. Objects transferred with them (for example cell detections) are deleted too; objects you added inside them afterwards stay on the slide. Objects inside transfers made before this version carry no mark and stay on the slide; delete them by hand if needed. Annotations you drew yourself are not touched.\n\nCancel: nothing is run and nothing is written (automatic alignment does not start either).\n\nWhat should happen to the earlier transfer?"
+    },
+    {
+      "key": "script.49dce785c700",
+      "tr": "Önceki hizalama aktarımı silinecek",
+      "en": "The earlier alignment transfer will be removed"
+    },
+    {
+      "key": "script.2d499cfac317",
+      "tr": "DİKKAT — bu lamda önceki hizalama aktarımı da duruyor: %1$s. Hiçbir şey silinmedi; yeni set \"%2$s\" adıyla eklendi. Eski seti kaldırmak için o addaki anotasyonları seçip silin ya da yeniden aktarırken \"Öncekini değiştir\"i seçin. Dışa aktarım ve ölçümler iki seti de görür.",
+      "en": "NOTE — the earlier alignment transfer is still on this slide: %1$s. Nothing was deleted; the new set was added as \"%2$s\". To remove the old set, select the annotations with that name and delete them, or choose \"Replace the earlier transfer\" next time. Exports and measurements see both sets."
+    },
+    {
+      "key": "script.a5361261ace9",
+      "tr": "Önceki hizalama aktarımı değiştirildi: %,d anotasyon silindi ve onlarla aktarılmış nesneler (sonradan eklediğiniz nesneler korundu).",
+      "en": "The earlier alignment transfer was replaced: %,d annotation(s) removed together with the objects transferred with them (objects you added afterwards were kept)."
+    },
+    {
+      "key": "script.149bd436c4c0",
+      "tr": "Önceki VALIS aktarımı",
+      "en": "Earlier VALIS transfer"
+    },
+    {
+      "key": "script.8d9a98b918d7",
+      "tr": "%2$,d hedef lamda toplam %1$,d VALIS anotasyonu zaten var.\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir set olur (\"VALIS (2)\" gibi). Lamda iki set birlikte durur.\n\n\"Değiştir\" seçilirse önceki VALIS anotasyonları silinir — onlarda ELLE yaptığınız düzeltmeler de gider. Onlarla birlikte aktarılmış nesneler de silinir. Kendi anotasyonlarınıza ve sonradan eklediğiniz nesnelere dokunulmaz. Bu sürümden önce yapılmış aktarımların içindeki nesneler işaretli olmadığından lamda kalır; gerekirse elle silin.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki VALIS sonucu ne olsun?",
+      "en": "On %2$,d target slide(s) there are already %1$,d VALIS annotations in total.\n\n\"Add\" deletes nothing; the new result becomes a separate set (for example \"VALIS (2)\"). Both sets stay on the slide.\n\n\"Replace\" deletes the earlier VALIS annotations, including any corrections you made to them by hand. Objects transferred with them are deleted too. Your own annotations and objects you added afterwards are not touched. Objects inside transfers made before this version carry no mark and stay on the slide; delete them by hand if needed.\n\nCancel: nothing is run and nothing is written.\n\nWhat should happen to the earlier VALIS result?"
+    },
+    {
+      "key": "script.158fb27b6582",
+      "tr": "Önceki VALIS sonucu silinecek",
+      "en": "The earlier VALIS result will be deleted"
+    },
+    {
+      "key": "script.49f4a0940d50",
+      "tr": "%1$,d VALIS anotasyonu (%2$,d lamda) silinip yeniden aktarılacak. Bu anotasyonlarda elle yaptığınız düzeltmeler KAYBOLUR. Lam açık değilse sonuç diske kaydedilir ve geri alınamaz.\n\nDevam edilsin mi?",
+      "en": "%1$,d VALIS annotations (on %2$,d slide(s)) will be deleted and transferred again. Any corrections you made to them by hand will be LOST. For slides that are not open, the result is saved to disk and cannot be undone.\n\nContinue?"
+    },
+    {
+      "key": "script.768b9abc88f3",
+      "tr": "HATA: mevcut yalnız 'ekle' ya da 'degistir' olabilir (verilen: %s). Hiçbir şey yazılmadı.",
+      "en": "ERROR: mevcut must be 'ekle' or 'degistir' (given: %s). Nothing was written."
+    },
+    {
+      "key": "script.c95f4645fae9",
+      "tr": "Başsız kipte hiçbir şey yazılmadı. Önceki VALIS sonucu olan bir lama aktarım için QuPath arayüzünde sihirbazı açın ya da (destekleyen betiklerde) mevcut=ekle (kopya olarak ekle) / mevcut=degistir (öncekini değiştir) ile yeniden çalıştırın.",
+      "en": "Nothing was written in headless mode. To transfer onto a slide that already has a VALIS result, open the wizard in the QuPath window, or re-run with mevcut=ekle (add a copy) or mevcut=degistir (replace the earlier result) where supported."
+    },
+    {
+      "key": "script.b2d8f3f095c9",
+      "tr": "DİKKAT — önceki VALIS sonucu lamda duruyor: %1$s. Hiçbir şey silinmedi; yeni set \"%2$s\" adını aldı. Eskisini kaldırmak için o addaki anotasyonları seçip silin ya da yeniden aktarırken \"Öncekini değiştir\"i seçin.",
+      "en": "NOTE — the earlier VALIS result is still on the slide: %1$s. Nothing was deleted; the new set is named \"%2$s\". To remove the old one, select the annotations with that name and delete them, or choose \"Replace the earlier result\" next time."
+    },
+    {
+      "key": "script.600a7fca5a26",
+      "tr": "Önceki VALIS sonucu değiştirildi: %,d anotasyon silindi ve onlarla aktarılmış nesneler (sonradan eklediğiniz nesneler korundu).",
+      "en": "The earlier VALIS result was replaced: %,d annotations were deleted together with the objects transferred with them (objects you added afterwards were kept)."
+    },
+    {
+      "key": "script.c5e460ca07d9",
+      "tr": "Öncekini değiştir (bu alandaki KongNet mitoz noktaları ve özetleri silinir)",
+      "en": "Replace the earlier result (KongNet mitosis points and summaries in this area are deleted)"
+    },
+    {
+      "key": "script.c83e335af033",
+      "tr": "Seçili alanda zaten %,d KongNet mitoz noktası ve %,d KongNet özeti var.\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir özet olur (\"KongNet Mitoz Özet (2)\" gibi) ve yeni noktalar öncekilerin yanında durur. Bu durumda seçili anotasyonların ölçümleri değiştirilmez.\n\n\"Değiştir\" seçilirse bu alandaki önceki KongNet noktaları, etiket halkaları ve özetleri silinir — onlarda elle yaptığınız düzeltmeler de gider. Kendi anotasyonlarınıza, başka modellerin mitoz noktalarına ve özetlerin içindeki diğer nesnelere dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki KongNet sonucu ne olsun?",
+      "en": "The selected area already holds %,d KongNet mitosis points and %,d KongNet summaries.\n\n\"Add\" deletes nothing: the new result becomes a separate summary (for example \"KongNet Mitoz Özet (2)\") and the new points sit next to the earlier ones. The measurements on your selected annotations are left unchanged in that case.\n\n\"Replace\" deletes the earlier KongNet points, their label rings and the summaries in this area — any corrections you made by hand go too. Your own annotations, other models' mitosis points and other objects inside the summaries are not touched.\n\nCancel: nothing is run and nothing is written.\n\nWhat should happen to the earlier KongNet result?"
+    },
+    {
+      "key": "script.3bcf3505b270",
+      "tr": "%,d KongNet mitoz noktası (etiket halkalarıyla birlikte) ve %,d özet silinip yeniden içe aktarılacak. Bunlarda elle yaptığınız düzeltmeler KAYBOLUR.\n\nDevam edilsin mi?",
+      "en": "%,d KongNet mitosis points (with their label rings) and %,d summaries will be deleted and imported again. Any corrections you made to them by hand will be LOST.\n\nContinue?"
+    },
+    {
+      "key": "script.9bb2e191ad74",
+      "tr": "Özet adı             : %s",
+      "en": "Summary name         : %s"
+    },
+    {
+      "key": "script.3b56d23e7de4",
+      "tr": "DİKKAT — bu alanda önceki KongNet sonucu da duruyor (özet: %s; %,d mitoz noktası). Hiçbir şey silinmedi ve seçili anotasyonların ölçümleri değiştirilmedi. Eskisini kaldırmak için o adlı özeti ve KongNet mitoz noktalarını (etiket halkalarıyla) silin ya da yeniden içe aktarırken \"Öncekini değiştir\"i seçin.",
+      "en": "NOTE — the earlier KongNet result is still in this area (summary: %s; %,d mitosis points). Nothing was deleted and the measurements on your selected annotations were not changed. To remove it, delete that summary and the KongNet mitosis points (with their label rings), or choose \"Replace the earlier result\" on the next import."
+    },
+    {
+      "key": "script.fd1ddf2819cb",
+      "tr": "Önceki KongNet sonucu değiştirildi: %,d mitoz noktası, %,d etiket halkası ve %,d özet silindi (özetlerin içindeki diğer nesneler korundu).",
+      "en": "The earlier KongNet result was replaced: %,d mitosis points, %,d label rings and %,d summaries were deleted (other objects inside the summaries were kept)."
+    },
+    {
+      "key": "script.e5a087722a44",
+      "tr": "Öncekilere dokunma — yeni bir set olarak ekle (varsayılan)",
+      "en": "Leave the earlier results alone — add this run as a new set (default)"
+    },
+    {
+      "key": "script.d6d66a75bdb5",
+      "tr": "Öncekileri değiştir (bu alandaki bu sihirbazın model noktaları, konsensüs noktaları ve özetleri silinir)",
+      "en": "Replace the earlier results (this wizard's model points, consensus points and summaries in this area are deleted)"
+    },
+    {
+      "key": "script.ef91aba02af7",
+      "tr": "Önceki karşılaştırma sonucu",
+      "en": "Earlier comparison result"
+    },
+    {
+      "key": "script.3c32fc06f493",
+      "tr": "Seçili alanda bu sihirbazın önceki sonuçları var:\n\n%s\n  • Konsensüs noktası: %,d\n  • Karşılaştırma özeti: %,d\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir özet olur (\"Mitoz — model karşılaştırması (2)\" gibi). Aynı modelin yeni noktaları, öncekilerle aynı sınıfta ve aynı yerlerde üst üste durur.\n\n\"Değiştir\" seçilirse bu alandaki bu sihirbazın önceki model noktaları, konsensüs noktaları, etiket halkaları ve özetleri silinir — onlarda elle yaptığınız düzeltmeler de gider. Bu çalıştırmada başarısız olan bir modelin önceki noktalarına dokunulmaz. Kendi anotasyonlarınıza, başka sihirbazların mitoz noktalarına ve özetlerin içindeki diğer nesnelere dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuçlar ne olsun?",
+      "en": "This wizard's earlier results are already in the selected area:\n\n%s\n  • Consensus points: %,d\n  • Comparison summaries: %,d\n\n\"Add\" deletes nothing: the new result becomes a separate summary (for example \"Mitoz — model karşılaştırması (2)\"). The new points of a model sit on top of its earlier points, in the same class and at the same places.\n\n\"Replace\" deletes this wizard's earlier model points, consensus points, label rings and summaries in this area — any corrections you made by hand go too. If a model fails in this run, its earlier points are not touched. Your own annotations, other wizards' mitosis points and other objects inside the summaries are not touched.\n\nCancel: nothing is run and nothing is written.\n\nWhat should happen to the earlier results?"
+    },
+    {
+      "key": "script.f846780dee33",
+      "tr": "Önceki karşılaştırma sonuçları silinecek",
+      "en": "Earlier comparison results will be deleted"
+    },
+    {
+      "key": "script.29aeb07526e8",
+      "tr": "Bu alandaki bu sihirbazın %,d mitoz noktası (konsensüs dahil, etiket halkalarıyla birlikte) ve %,d özeti silinip yeniden yazılacak. Bunlarda elle yaptığınız düzeltmeler KAYBOLUR.\n\nDevam edilsin mi?",
+      "en": "%,d of this wizard's mitosis points in this area (including consensus, with their label rings) and %,d summaries will be deleted and written again. Any corrections you made to them by hand will be LOST.\n\nContinue?"
+    },
+    {
+      "key": "script.a308d8282914",
+      "tr": "Özet adı: %s",
+      "en": "Summary name: %s"
+    },
+    {
+      "key": "script.94e565c1330a",
+      "tr": "DİKKAT — bu alanda önceki karşılaştırma sonucu da duruyor (özet: %s; %,d mitoz noktası). Hiçbir şey silinmedi. Eskisini kaldırmak için o adlı özeti ve model/konsensüs noktalarını (etiket halkalarıyla) silin ya da yeniden çalıştırırken \"Öncekileri değiştir\"i seçin.",
+      "en": "NOTE — the earlier comparison result is still in this area (summary: %s; %,d mitosis points). Nothing was deleted. To remove it, delete that summary and the model/consensus points (with their label rings), or choose \"Replace the earlier results\" the next time you run the comparison."
+    },
+    {
+      "key": "script.02035b0fc0aa",
+      "tr": "Önceki sonuçlar değiştirildi: %,d mitoz noktası, %,d etiket halkası ve %,d özet silindi (özetlerin içindeki diğer nesneler korundu).",
+      "en": "The earlier results were replaced: %,d mitosis points, %,d label rings and %,d summaries were deleted (other objects inside the summaries were kept)."
+    },
+    {
+      "key": "script.661a7459b516",
+      "tr": "DİKKAT — bu lamda önceki sonuç da duruyor: ",
+      "en": "NOTE — an earlier result is still on this slide: "
+    },
+    {
+      "key": "script.e61302cdacaf",
+      "tr": "Hiçbir şey silinmedi. Eski seti kaldırmak için o addaki anotasyonları seçip silin ya da yeniden çalıştırırken \"Öncekini değiştir\"i seçin. Dışa aktarım ve kohort özetleri iki seti de görür.",
+      "en": "Nothing was deleted. To remove the old set, select the annotations with that name and delete them, or choose \"Replace the earlier result\" when you run again. Exports and cohort summaries see both sets."
+    },
+    {
+      "key": "script.c8839122f795",
+      "tr": "Önceki sonuç değiştirildi: %,d anotasyon silindi (içlerindeki alt nesneler korundu).",
+      "en": "The earlier result was replaced: %,d annotations were deleted (any objects inside them were kept)."
+    },
+    {
+      "key": "script.37ab92155fc9",
+      "tr": "HATA: mevcut yalnızca 'ekle' ya da 'degistir' olabilir (verilen: %s). Hiçbir şey yazılmadı.",
+      "en": "ERROR: mevcut can only be 'ekle' or 'degistir' (given: %s). Nothing was written."
+    },
+    {
+      "key": "script.aa128578d32a",
+      "tr": "Bu görüntüde bu sihirbazın %,d önceki sonuç anotasyonu var. Hiçbir şey yazılmadı. Yeniden çalıştırırken mevcut=ekle (yeni set olarak ekler, eskiye dokunmaz) ya da mevcut=degistir (eski sonucu siler) verin.",
+      "en": "This image already holds %,d result annotations from this wizard. Nothing was written. Re-run with mevcut=ekle (adds a new set, leaves the old one) or mevcut=degistir (deletes the old result)."
+    },
+    {
+      "key": "script.4aeb56ddf562",
+      "tr": "Öncekini değiştir (bu sihirbazın önceki nokta-anotasyonları silinir)",
+      "en": "Replace the earlier result (this wizard's earlier point annotations are deleted)"
+    },
+    {
+      "key": "script.1fb8a9b94699",
+      "tr": "Önceki bölge tespiti sonucu",
+      "en": "Earlier region-detection result"
+    },
+    {
+      "key": "script.81b9362b534a",
+      "tr": "Bu lamda bu sihirbazın %,d önceki nokta-anotasyonu var (\"TIA bölge tespiti · …\").\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir set olur (adın sonuna \"(2)\" gibi bir numara eklenir). Lamda iki set birlikte durur.\n\n\"Değiştir\" seçilirse önceki sonuç anotasyonları silinir. Kendi anotasyonlarınıza dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuç ne olsun?",
+      "en": "This slide already holds %,d point annotations from this wizard (\"TIA bölge tespiti · …\").\n\n\"Add\" deletes nothing; the new result becomes a separate set (a number such as \"(2)\" is appended to the name). Both sets stay on the slide.\n\n\"Replace\" deletes the earlier result annotations. Your own annotations are not touched.\n\nCancel: nothing is run and nothing is written.\n\nWhat should happen to the earlier result?"
+    },
+    {
+      "key": "script.0e2a5d553a9f",
+      "tr": "Önceki bölge tespiti sonucu silinecek",
+      "en": "The earlier region-detection result will be deleted"
+    },
+    {
+      "key": "script.6f7505af723c",
+      "tr": "%,d önceki nokta-anotasyonu silinecek ve yeni sonuç yazılacak. Bu anotasyonlarda elle yaptığınız değişiklikler KAYBOLUR.\n\nDevam edilsin mi?",
+      "en": "%,d earlier point annotations will be deleted and the new result written. Any manual changes you made to them will be LOST.\n\nContinue?"
+    },
+    {
+      "key": "script.76eabac9f122",
+      "tr": "Önceki sonuçları değiştir (her görüntüde bu sihirbazın önceki nokta-anotasyonları silinir)",
+      "en": "Replace earlier results (in every image, this wizard's earlier point annotations are deleted)"
+    },
+    {
+      "key": "script.6fa94af07aed",
+      "tr": "Proje geneli tespit",
+      "en": "Project-wide detection"
+    },
+    {
+      "key": "script.ca63d66f5544",
+      "tr": "Projedeki %,d görüntünün her biri için tespit çalıştırılacak ve sonuç her girdiye diske KAYDEDİLECEK.\n\nBu sihirbazın önceki sonucu olan görüntülerde ne yapılacağını seçin. \"Ekle\" hiçbir şey silmez; yeni sonuç \"… (2)\" gibi ayrı bir set olur. Önceki sonucu olmayan görüntüler sormadan eskisi gibi işlenir.\n\nİptal: hiçbir şey çalıştırılmaz.\n\nÖnceki sonuçlar ne olsun?",
+      "en": "Detection will run on each of the %,d images in the project and the result will be SAVED to every entry on disk.\n\nChoose what happens in images that already hold an earlier result from this wizard. \"Add\" deletes nothing; the new result becomes a separate set such as \"… (2)\". Images without an earlier result are processed as before, without a question.\n\nCancel: nothing is run.\n\nWhat should happen to the earlier results?"
+    },
+    {
+      "key": "script.6fede02d4565",
+      "tr": "Önceki sonuçlar silinecek",
+      "en": "Earlier results will be deleted"
+    },
+    {
+      "key": "script.d5b504eb0223",
+      "tr": "Önceki sonucu olan HER görüntüde bu sihirbazın önceki nokta-anotasyonları (elle yaptığınız değişiklikler dahil) silinip yeni sonuç yazılacak ve diske kaydedilecek. Bu işlem geri alınamaz.\n\nDevam edilsin mi?",
+      "en": "In EVERY image that already holds an earlier result, this wizard's earlier point annotations (including any manual changes) will be deleted, the new result written and saved to disk. This cannot be undone.\n\nContinue?"
+    },
+    {
+      "key": "script.19827e4eab38",
+      "tr": "önceki sonuç duruyor",
+      "en": "earlier result kept"
+    },
+    {
+      "key": "script.2513915f923e",
+      "tr": "Set adı   : ",
+      "en": "Set name  : "
+    },
+    {
+      "key": "script.004ee1831264",
+      "tr": "Hiçbir şey silinmedi. Eski maskeyi kaldırmak için o addaki anotasyonu seçip silin ya da yeniden çalıştırırken \"Öncekini değiştir\"i seçin. Alan ölçümleri ve kohort özetleri iki maskeyi de görür.",
+      "en": "Nothing was deleted. To remove the old mask, select the annotation with that name and delete it, or choose \"Replace the earlier result\" when you run again. Area measurements and cohort summaries see both masks."
+    },
+    {
+      "key": "script.2927902834a3",
+      "tr": "Önceki doku maskesi değiştirildi: %,d anotasyon silindi (içlerindeki alt nesneler korundu).",
+      "en": "The earlier tissue mask was replaced: %,d annotations were deleted (any objects inside them were kept)."
+    },
+    {
+      "key": "script.71653619f6db",
+      "tr": "Bu görüntüde bu sihirbazın %,d önceki doku maskesi anotasyonu var. Hiçbir şey yazılmadı. Yeniden çalıştırırken mevcut=ekle (yeni set olarak ekler, eskiye dokunmaz) ya da mevcut=degistir (eski maskeyi siler) verin.",
+      "en": "This image already holds %,d tissue-mask annotations from this wizard. Nothing was written. Re-run with mevcut=ekle (adds a new set, leaves the old one) or mevcut=degistir (deletes the old mask)."
+    },
+    {
+      "key": "script.6caef5af8fda",
+      "tr": "Öncekini değiştir (bu sihirbazın önceki doku maskesi silinir)",
+      "en": "Replace the earlier result (this wizard's earlier tissue mask is deleted)"
+    },
+    {
+      "key": "script.48b4a67ec4b3",
+      "tr": "Önceki doku maskesi",
+      "en": "Earlier tissue mask"
+    },
+    {
+      "key": "script.afda6cf6f06c",
+      "tr": "Bu lamda bu sihirbazın %,d önceki doku maskesi anotasyonu var (\"Doku maskesi (TIA Toolbox)\").\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni maske ayrı bir set olur (\"Doku maskesi (TIA Toolbox) (2)\" gibi). Lamda iki maske birlikte durur.\n\n\"Değiştir\" seçilirse önceki doku maskesi anotasyonları silinir — onlarda ELLE yaptığınız düzeltmeler de gider. Kendi anotasyonlarınıza ve içlerindeki nesnelere dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki doku maskesi ne olsun?",
+      "en": "This slide already holds %,d tissue-mask annotations from this wizard (\"Doku maskesi (TIA Toolbox)\").\n\n\"Add\" deletes nothing; the new mask becomes a separate set (such as \"Doku maskesi (TIA Toolbox) (2)\"). Both masks stay on the slide.\n\n\"Replace\" deletes the earlier tissue-mask annotations — any manual corrections you made to them are lost too. Your own annotations and the objects inside them are not touched.\n\nCancel: nothing is run and nothing is written.\n\nWhat should happen to the earlier tissue mask?"
+    },
+    {
+      "key": "script.e9551c85492d",
+      "tr": "Önceki doku maskesi silinecek",
+      "en": "The earlier tissue mask will be deleted"
+    },
+    {
+      "key": "script.07448503a423",
+      "tr": "%,d doku maskesi anotasyonu silinip yerine yenisi yazılacak. Bu anotasyonlarda elle yaptığınız düzeltmeler KAYBOLUR.\n\nDevam edilsin mi?",
+      "en": "%,d tissue-mask annotations will be deleted and replaced by the new one. Any manual corrections you made to them will be LOST.\n\nContinue?"
+    },
+    {
+      "key": "script.60998bbceb32",
+      "tr": "Öncekini değiştir (bu sihirbazın eklediği \"Doku\" anotasyonları silinir)",
+      "en": "Replace the earlier result (the \"Doku\" annotations this wizard added are deleted)"
+    },
+    {
+      "key": "script.52853a7c428d",
+      "tr": "Önceki Doku sonucu",
+      "en": "Earlier tissue result"
+    },
+    {
+      "key": "script.043a1b6afd3c",
+      "tr": "Bu lamda \"Doku\" sınıflı, adı \"Doku\" ya da \"Doku (2)\" gibi olan %,d anotasyon zaten var.\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir set olur (\"Doku (2)\" gibi). İki doku anotasyonu lamda birlikte durur; alan ölçümlerini toplarken ikisini de saymayın.\n\n\"Değiştir\" seçilirse bu anotasyonlar silinir; üzerlerinde ELLE yaptığınız düzeltmeler de gider. Anotasyonların içindeki nesnelere (ör. hücre tespitleri) ve başka adlı ya da başka sınıflı anotasyonlarınıza dokunulmaz.\n\nİptal: hiçbir şey yazılmaz.\n\nÖnceki Doku sonucu ne olsun?",
+      "en": "This slide already has %,d annotation(s) of class \"Doku\" named \"Doku\" or like \"Doku (2)\".\n\n\"Add\" deletes nothing; the new result becomes a separate set (named like \"Doku (2)\"). Both tissue annotations then stay on the slide, so do not count both when you add up areas.\n\n\"Replace\" deletes those annotations, including any corrections you made by hand. Objects inside them (for example cell detections) and annotations with other names or classes are not touched.\n\nCancel: nothing is written.\n\nWhat should happen to the earlier tissue result?"
+    },
+    {
+      "key": "script.428da4197ab8",
+      "tr": "Önceki Doku sonucu silinecek",
+      "en": "The earlier tissue result will be deleted"
+    },
+    {
+      "key": "script.3b4bb905f07c",
+      "tr": "\"Doku\" sınıflı, adı \"Doku\" ya da \"Doku (2)\" gibi olan %,d anotasyon silinecek ve yerine yeni sonuç eklenecek. Bu anotasyonlarda elle yaptığınız düzeltmeler KAYBOLUR; içlerindeki nesneler korunur.\n\nDevam edilsin mi?",
+      "en": "%,d annotation(s) of class \"Doku\" named \"Doku\" or like \"Doku (2)\" will be deleted and the new result added in their place. Corrections you made by hand on them are LOST; the objects inside them are kept.\n\nContinue?"
+    },
+    {
+      "key": "script.b687630159b5",
+      "tr": "DİKKAT — bu lamda önceki Doku sonucu da duruyor: %s\nHiçbir şey silinmedi. Eskisini kaldırmak için o adlı anotasyonu seçip silin ya da yeniden uygularken \"Öncekini değiştir\"i seçin.",
+      "en": "NOTE — the earlier tissue result is still on this slide: %s\nNothing was deleted. To remove the old one, select that annotation and delete it, or choose \"Replace the earlier result\" the next time you apply."
+    },
+    {
+      "key": "script.e4a2b21cde56",
+      "tr": "Önceki Doku sonucu değiştirildi: %,d anotasyon silindi (içlerindeki nesneler korundu).",
+      "en": "The earlier tissue result was replaced: %,d annotation(s) deleted (objects inside them were kept)."
+    },
+    {
+      "key": "script.4f47ef9c32bf",
+      "tr": "Bu lamda \"Doku\" sınıflı, bu sihirbazın eklediği %,d anotasyon zaten var. Hiçbir şey yazılmadı. Yeni bir kopya eklemek için -a mevcut=ekle, önceki sonucu değiştirmek için -a mevcut=degistir ile yeniden çalıştırın.",
+      "en": "This slide already has %,d \"Doku\" annotation(s) added by this wizard. Nothing was written. Run again with -a mevcut=ekle to add a copy, or -a mevcut=degistir to replace the earlier result."
+    },
+    {
+      "key": "script.867c6553cd5f",
+      "tr": "Bir ALAN ölçümüdür — klinik yorum/grade/tanı üretmez. Kilitli 'Doku' anotasyonu eklenir; lamda önceki sonuç varsa 'Uygula' önce sorar.",
+      "en": "This is an AREA measurement — it produces no clinical interpretation, grade or diagnosis. A locked 'Doku' annotation is added; if the slide already has an earlier result, 'Apply' asks first."
+    },
+    {
+      "key": "script.1c7f212dcbd3",
+      "tr": "Öncekini değiştir (bu sihirbazın önceki nesneleri silinir)",
+      "en": "Replace the earlier result (this wizard's earlier objects are deleted)"
+    },
+    {
+      "key": "script.4e8e0af236b8",
+      "tr": "Önceki tomurcuk sonucu",
+      "en": "Earlier budding result"
+    },
+    {
+      "key": "script.e09d59235832",
+      "tr": "Bu lamda bu sihirbazın önceki sonucundan kalan %,d nesne var: sınıfı \"Tumor bud\" olan tespitler ve (cephe ya da TMA kipinde) sihirbazın oluşturduğu bant / çekirdek bölgesi anotasyonları.\n\n\"Ekle\" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir set olur (\"Tumor bud (2)\" gibi) ve seçili bölgelerdeki ölçüm adlarına \"(2)\" eklenir. İki set lamda birlikte durur; tomurcukları sayarken ikisini toplamayın.\n\n\"Değiştir\" seçilirse bu nesneler silinir; üzerlerinde ELLE yaptığınız düzeltmeler de gider. Seçtiğiniz anotasyonlara ve sınıfı \"Tumor bud\" olmayan nesnelere (ör. hücre tespitleri) dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki tomurcuk sonucu ne olsun?",
+      "en": "This slide has %,d object(s) left from this wizard's earlier result: detections of class \"Tumor bud\" and (in front or TMA mode) the band / core-region annotations the wizard created.\n\n\"Add\" deletes nothing; the new result becomes a separate set (named like \"Tumor bud (2)\") and the measurement names on your selected regions get a \"(2)\" suffix. Both sets stay on the slide, so do not add them together when you count buds.\n\n\"Replace\" deletes those objects, including any corrections you made by hand. The annotations you selected and objects whose class is not \"Tumor bud\" (for example cell detections) are not touched.\n\nCancel: nothing runs and nothing is written.\n\nWhat should happen to the earlier budding result?"
+    },
+    {
+      "key": "script.2a445666bd81",
+      "tr": "Önceki tomurcuk sonucu silinecek",
+      "en": "The earlier budding result will be deleted"
+    },
+    {
+      "key": "script.220920d88ad6",
+      "tr": "%,d nesne silinecek: sınıfı \"Tumor bud\" olan tüm tespitler (elle sınıfladıklarınız dahil) ve cephe / TMA kipinde sihirbazın oluşturduğu bant / çekirdek bölgesi anotasyonları. Bunlarda elle yaptığınız düzeltmeler KAYBOLUR; anotasyonların içindeki diğer nesneler korunur.\n\nDevam edilsin mi?",
+      "en": "%,d object(s) will be deleted: every detection of class \"Tumor bud\" (including ones you classified by hand) and, in front / TMA mode, the band / core-region annotations the wizard created. Corrections you made by hand on them are LOST; other objects inside the annotations are kept.\n\nContinue?"
+    },
+    {
+      "key": "script.9a0b0897a5e7",
+      "tr": "DİKKAT — lamda önceki tomurcuk sonucu da duruyor: %s\nHiçbir şey silinmedi. Bu sayımın sonucu \"%s\" adını taşır. Eskisini kaldırmak için o nesneleri seçip silin ya da yeniden sayarken \"Öncekini değiştir\"i seçin. Dışa aktarım ve özetler iki sonucu da görür.",
+      "en": "NOTE — the earlier budding result is still on this slide: %s\nNothing was deleted. This count's result is named \"%s\". To remove the old one, select those objects and delete them, or choose \"Replace the earlier result\" the next time you count. Exports and summaries see both results."
+    },
+    {
+      "key": "script.1ae5e41c44be",
+      "tr": "Seçili bölgelerdeki ölçümler \"%1$s\" son ekiyle yazıldı (ör. \"Tomurcuk sayısı%1$s\"); önceki ölçümler değişmedi.",
+      "en": "Measurements on the selected regions were written with the suffix \"%1$s\" (for example \"Tomurcuk sayısı%1$s\"); the earlier measurements were not changed."
+    },
+    {
+      "key": "script.2f88f960c3b6",
+      "tr": "Önceki tomurcuk sonucu değiştirildi: %,d nesne silindi (anotasyonların içindeki diğer nesneler korundu).",
+      "en": "The earlier budding result was replaced: %,d object(s) deleted (other objects inside the annotations were kept)."
+    },
+    {
+      "key": "script.53ec67e56b06",
+      "tr": "Model omurgasına erişim izniniz yok gibi görünüyor. Bu model Hugging Face'te kapılıdır; erişim otomatik verilmez.\n\nYapılacaklar:\n  1. huggingface.co/facebook/dinov3-vith16plus-pretrain-lvd1689m sayfasını açın, oturum açın ve lisans koşullarını kabul edin.\n  2. Erişim onayını bekleyin (süresi Meta'ya bağlıdır).\n  3. Hugging Face hesabınızda Settings → Access Tokens bölümünden \"read\" türünde bir jeton oluşturun.\n  4. Bir komut penceresi açın (Windows: Başlat → \"cmd\"), şu komutu çalıştırın ve jetonu yapıştırın:\n       %s\n  5. Sihirbazı yeniden çalıştırın.\n\nErişim gelene kadar \"Atipik sınıflandırma — MIDOG25 EffNetV2\" girişini kullanabilirsiniz; o model kapılı değildir.",
+      "en": "You do not seem to have access to the model backbone. This model is gated on Hugging Face; access is not granted automatically.\n\nWhat to do:\n  1. Open huggingface.co/facebook/dinov3-vith16plus-pretrain-lvd1689m, sign in and accept the licence terms.\n  2. Wait for access approval (the time depends on Meta).\n  3. In your Hugging Face account, under Settings → Access Tokens, create a token of type \"read\".\n  4. Open a command window (Windows: Start → \"cmd\"), run this command and paste the token:\n       %s\n  5. Run the wizard again.\n\nUntil access arrives you can use the \"Atypical subtyping — MIDOG25 EffNetV2\" entry; that model is not gated."
     }
   ],
   "source_contracts": {
@@ -11191,13 +11581,19 @@
     },
     "yardimci-mitoz-karsilastir.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "970c3b1918bdeb5b22307d06693a8fe7e58437aa6f4b831279831b82824e4e0f",
+      "sha256": "a1eafe6b64d10dfaa36656e3638eeb7d5aa5cf929e8be8c650100d0792289fe1",
       "baseline_reviews": [
         {
           "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
           "previous_sha256": "20d9276a3326fd911ea09996cc1289bbe014f19c8d82e040114c958334505595",
           "sha256": "970c3b1918bdeb5b22307d06693a8fe7e58437aa6f4b831279831b82824e4e0f",
           "record": "docs/source-baseline-review-2026-11-15.md"
+        },
+        {
+          "revision": "b511ba2803a1727cccafdbbdda96fa0c524d4ca0",
+          "previous_sha256": "970c3b1918bdeb5b22307d06693a8fe7e58437aa6f4b831279831b82824e4e0f",
+          "sha256": "a1eafe6b64d10dfaa36656e3638eeb7d5aa5cf929e8be8c650100d0792289fe1",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
@@ -11393,7 +11789,7 @@
     },
     "yardimci-doku-tespiti-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "3b0b1deb66ec302df15c1759adb63501b40fa1c2518712ac4ca2bf114e9a9692",
+      "sha256": "4d61a88598d902f412cd1e07b8a41ff2d53d787ff10f23f8e5b67f08764e98d4",
       "expressions": [
         {
           "original": "\"Hata: ${result.error}\"",
@@ -11408,6 +11804,12 @@
           "previous_sha256": "f43debd110826a0e4d18efe66f807cc01c3faa9d463954fb7504212067aeac30",
           "sha256": "3b0b1deb66ec302df15c1759adb63501b40fa1c2518712ac4ca2bf114e9a9692",
           "record": "docs/source-baseline-review-2026-11-15.md"
+        },
+        {
+          "revision": "b511ba2803a1727cccafdbbdda96fa0c524d4ca0",
+          "previous_sha256": "3b0b1deb66ec302df15c1759adb63501b40fa1c2518712ac4ca2bf114e9a9692",
+          "sha256": "4d61a88598d902f412cd1e07b8a41ff2d53d787ff10f23f8e5b67f08764e98d4",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
@@ -11433,7 +11835,15 @@
     },
     "yardimci-hizalama-aktarim.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "498a94f9bb1e004e7d389608af2f74d8720a13aec6c3cfa64da3cdb98d116623"
+      "sha256": "bf7b343af280e2a8c6bc3430eb50a43bba4205717f1f74407a840a2a96a80df6",
+      "baseline_reviews": [
+        {
+          "revision": "b511ba2803a1727cccafdbbdda96fa0c524d4ca0",
+          "previous_sha256": "498a94f9bb1e004e7d389608af2f74d8720a13aec6c3cfa64da3cdb98d116623",
+          "sha256": "bf7b343af280e2a8c6bc3430eb50a43bba4205717f1f74407a840a2a96a80df6",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-hotspot-sirali.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
@@ -11515,7 +11925,15 @@
     },
     "yardimci-mitoz-atipik-sanofi.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "a6a0dfb4c7a5cf517cc2066621f6ab08aca42cab6b9a38e07bbe9884c0f29c38"
+      "sha256": "9b6ee01ad38f7a2d0370f76e98432be63daf8348f3d34ae31b1f98c0958ce309",
+      "baseline_reviews": [
+        {
+          "revision": "b511ba2803a1727cccafdbbdda96fa0c524d4ca0",
+          "previous_sha256": "a6a0dfb4c7a5cf517cc2066621f6ab08aca42cab6b9a38e07bbe9884c0f29c38",
+          "sha256": "9b6ee01ad38f7a2d0370f76e98432be63daf8348f3d34ae31b1f98c0958ce309",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-mitoz-fcos.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
@@ -11523,13 +11941,21 @@
     },
     "yardimci-mitoz-kongnet.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "3e829049ec1bf4ffdbecb29a054388ad649334bfa6d931bb06d9f1a041439d48",
+      "sha256": "2bec089618db83573578cbd841fc3696f45986436023b50acb5f92701504c867",
       "expressions": [
         {
           "original": "\"KongNet GeoJSON'u Brightfield (H&E) görüntüyle eşleşmelidir. Şu anki: ${imageTypeName}\"",
           "replacement": "\"${workshopText('script.e8e8eb0908b1', 'KongNet GeoJSON\\'u Brightfield (H&E) görüntüyle eşleşmelidir. Şu anki: ')}${imageTypeName}\"",
           "count": 1,
           "context": "showErrorMessage"
+        }
+      ],
+      "baseline_reviews": [
+        {
+          "revision": "b511ba2803a1727cccafdbbdda96fa0c524d4ca0",
+          "previous_sha256": "3e829049ec1bf4ffdbecb29a054388ad649334bfa6d931bb06d9f1a041439d48",
+          "sha256": "2bec089618db83573578cbd841fc3696f45986436023b50acb5f92701504c867",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
@@ -11571,15 +11997,31 @@
     },
     "yardimci-tiatoolbox-bolge-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "70f0e6b8d45ab02cf2f520e386b5c71dfea1dcb7dfee98c60dd2949c02844740"
+      "sha256": "1ed5408039b8b17a3330ebce2650a3fd3e28ee0fd4330cac201d36a0cdcd1bba",
+      "baseline_reviews": [
+        {
+          "revision": "b511ba2803a1727cccafdbbdda96fa0c524d4ca0",
+          "previous_sha256": "70f0e6b8d45ab02cf2f520e386b5c71dfea1dcb7dfee98c60dd2949c02844740",
+          "sha256": "1ed5408039b8b17a3330ebce2650a3fd3e28ee0fd4330cac201d36a0cdcd1bba",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-tiatoolbox-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "78d4037040f5b13640f8fd9a731ae163c4ba991f699f73ef117cdc9f8275dbd1"
+      "sha256": "4ab9dd49cda556e30e6c58078c9bc3a511d7bcbddb8cac9ce504a47479cb05e9",
+      "baseline_reviews": [
+        {
+          "revision": "b511ba2803a1727cccafdbbdda96fa0c524d4ca0",
+          "previous_sha256": "78d4037040f5b13640f8fd9a731ae163c4ba991f699f73ef117cdc9f8275dbd1",
+          "sha256": "4ab9dd49cda556e30e6c58078c9bc3a511d7bcbddb8cac9ce504a47479cb05e9",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-tumor-tomurcuklanma.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "0d69ab05ee5b26957c156850fdf2daa892baba66cfb147754fb09d8b211edfc4",
+      "sha256": "b5a081195ef386a185538448796ec2e3d6a82a0e39bb28fdc5057a2ef9356dbe",
       "expressions": [
         {
           "original": "\"  ${s.image ? '✓' : '✗'} Görüntü açık\\n\"",
@@ -11605,15 +12047,39 @@
           "count": 1,
           "context": "setText"
         }
+      ],
+      "baseline_reviews": [
+        {
+          "revision": "b511ba2803a1727cccafdbbdda96fa0c524d4ca0",
+          "previous_sha256": "0d69ab05ee5b26957c156850fdf2daa892baba66cfb147754fb09d8b211edfc4",
+          "sha256": "b5a081195ef386a185538448796ec2e3d6a82a0e39bb28fdc5057a2ef9356dbe",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
       ]
     },
     "yardimci-valis-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "933f9bc4449ad85f07c1bcded840d9916cd55b2fccc46bdc04a08e46fbf475cf"
+      "sha256": "3765d1802d1561724c87661e1113e5a8e5a3e0a08b3cd8bf3802ed5962e5038b",
+      "baseline_reviews": [
+        {
+          "revision": "b511ba2803a1727cccafdbbdda96fa0c524d4ca0",
+          "previous_sha256": "933f9bc4449ad85f07c1bcded840d9916cd55b2fccc46bdc04a08e46fbf475cf",
+          "sha256": "3765d1802d1561724c87661e1113e5a8e5a3e0a08b3cd8bf3802ed5962e5038b",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-warpy-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "12fbe9b21fbb7d3eb0bdbddaf196de99dbea148f1efcd1229969cae4a799ae60"
+      "sha256": "4044b5239111a424837ca6ff61bc7a29b8c3b6a7c87382d044d891157312ca49",
+      "baseline_reviews": [
+        {
+          "revision": "b511ba2803a1727cccafdbbdda96fa0c524d4ca0",
+          "previous_sha256": "12fbe9b21fbb7d3eb0bdbddaf196de99dbea148f1efcd1229969cae4a799ae60",
+          "sha256": "4044b5239111a424837ca6ff61bc7a29b8c3b6a7c87382d044d891157312ca49",
+          "record": "docs/ask-first-review-2026-11-15.md"
+        }
+      ]
     }
   }
 }

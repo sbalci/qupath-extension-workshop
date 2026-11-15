@@ -105,15 +105,77 @@ def mitosisRing = { point, double r, int rgb, String label ->
     ring.setLocked(true)
     return ring
 }
-// Bağlı noktası artık olmayan görüntü halkalarını sil (yeniden çalıştırma ya da silinen nokta).
-def removeOrphanRings = { hier ->
-    def ids = new HashSet<String>()
-    hier.getAnnotationObjects().each { ids.add(it.getID().toString()) }
-    def orphans = hier.getAnnotationObjects().findAll { a ->
-        def link = a.getMetadata().get(META_POINT)
-        link != null && !ids.contains(link)
+// ── Önceki sonuç: SORULMADAN SİLİNMEZ (ev kuralı: sonuç yazan her sihirbaz önce sorar) ──
+// Kipler: ekle (varsayılan) HİÇBİR ŞEY SİLMEZ, yeni özet "Mitoz — model karşılaştırması (2)" … adını alır;
+// değiştir yalnız bu sihirbazın nesnelerini siler (özetlerin içindeki diğer nesneler korunur).
+def MODE_ADD     = 'add'
+def MODE_REPLACE = 'replace'
+// Bu sihirbazın özeti mi? Yalnız TAM ad ya da "ad (N)" — önek eşleşmesi YOK:
+// kullanıcının "Mitoz — model karşılaştırması notlarım" diye adlandırdığı anotasyon süpürülmez.
+// (isOwnSetName / ownSetIndex / prevOwnObjects / nextOwnSetName: yardimci-grandqc-sihirbaz.groovy'den AYNEN.)
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+def prevOwnObjects = { hierarchy, String base ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), base) }
+}
+def nextOwnSetName = { hierarchy, String base ->
+    def used = prevOwnObjects(hierarchy, base).collect { ownSetIndex(it.getName(), base) }
+    if (used.isEmpty()) return base
+    return base + ' (' + ((used.max() as int) + 1) + ')'
+}
+// Bu sihirbazın önceki nokta-anotasyonları: AYNI sınıf VE bu sihirbazın yazdığı kaynak etiketi (META_SOURCE == sınıf adı)
+// VE nokta bölge içinde. Kullanıcının elle eklediği/yeniden sınıfladığı noktalar (etiketsiz) ve başka sihirbazların
+// "Mitosis" noktaları (başka sınıf, başka etiket) eşleşmez.
+def prevOwnModelPoints = { hierarchy, String cls, List regionRois ->
+    if (hierarchy == null) return []
+    return hierarchy.getAnnotationObjects().findAll { a ->
+        a.getPathClass() != null && a.getPathClass().toString() == cls && a.hasROI() && a.getROI().isPoint() &&
+        a.getMetadata().get(META_SOURCE) == cls &&
+        regionRois.any { r -> r.contains(a.getROI().getCentroidX(), a.getROI().getCentroidY()) }
     }
-    if (!orphans.isEmpty()) hier.removeObjects(orphans, false)
+}
+// Bölgeyle kesişen önceki karşılaştırma özetleri (tam ad ya da "(N)").
+def prevOwnSummaries = { hierarchy, List regionRois ->
+    return prevOwnObjects(hierarchy, SUMMARY_NAME).findAll { sm ->
+        sm.getROI() != null && regionRois.any { r -> r.getGeometry().intersects(sm.getROI().getGeometry()) }
+    }
+}
+// Yalnız verilen noktalara bağlı görüntü halkaları (bağ = noktanın ID'si). Yetim halkalar SÜPÜRÜLMEZ.
+def ringsOfPoints = { hierarchy, pts ->
+    def ids = new HashSet<String>()
+    pts.each { ids.add(it.getID().toString()) }
+    return hierarchy.getAnnotationObjects().findAll { a ->
+        def link = a.getMetadata().get(META_POINT)
+        link != null && ids.contains(link)
+    }
+}
+// Çalıştırma için TEK soru (model başına değil). modelLines: ["model etiketi: n", …] (yalnız n > 0).
+// Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz). Önceki sonuç yoksa sormadan 'add'.
+def askExisting = { List modelLines, int nCons, int nSum ->
+    if (modelLines.isEmpty() && nCons == 0 && nSum == 0) return MODE_ADD
+    int nPts = nCons
+    modelLines.each { nPts += (it.n as int) }
+    String optAdd = workshopText('script.e5a087722a44', 'Öncekilere dokunma — yeni bir set olarak ekle (varsayılan)')
+    String optRep = workshopText('script.d6d66a75bdb5', 'Öncekileri değiştir (bu alandaki bu sihirbazın model noktaları, konsensüs noktaları ve özetleri silinir)')
+    String listText = modelLines.collect { '  • ' + it.label + ': ' + it.n }.join('\n')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.ef91aba02af7', 'Önceki karşılaştırma sonucu'),
+        String.format(java.util.Locale.US, workshopText('script.3c32fc06f493', 'Seçili alanda bu sihirbazın önceki sonuçları var:\n\n%s\n  • Konsensüs noktası: %,d\n  • Karşılaştırma özeti: %,d\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir özet olur ("Mitoz — model karşılaştırması (2)" gibi). Aynı modelin yeni noktaları, öncekilerle aynı sınıfta ve aynı yerlerde üst üste durur.\n\n"Değiştir" seçilirse bu alandaki bu sihirbazın önceki model noktaları, konsensüs noktaları, etiket halkaları ve özetleri silinir — onlarda elle yaptığınız düzeltmeler de gider. Bu çalıştırmada başarısız olan bir modelin önceki noktalarına dokunulmaz. Kendi anotasyonlarınıza, başka sihirbazların mitoz noktalarına ve özetlerin içindeki diğer nesnelere dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki sonuçlar ne olsun?'), listText, nCons, nSum), [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.f846780dee33', 'Önceki karşılaştırma sonuçları silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.29aeb07526e8', 'Bu alandaki bu sihirbazın %,d mitoz noktası (konsensüs dahil, etiket halkalarıyla birlikte) ve %,d özeti silinip yeniden yazılacak. Bunlarda elle yaptığınız düzeltmeler KAYBOLUR.\n\nDevam edilsin mi?'), nPts, nSum))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
 }
 
 // ── Dedektör tanımları (per-detector descriptor) ─────────────────────────────
@@ -348,18 +410,22 @@ def readPoints = { File geojson, List regionRois ->
     }
     return out
 }
-// Bir modelin noktalarını renkli nokta-anotasyonu olarak ekle (önceki aynı-sınıfı bölgede sil).
-def importModelPoints = { imageData, List regionRois, String cls, List rgbColor, List coords ->
+// Bir modelin noktalarını renkli nokta-anotasyonu olarak ekle.
+// mode == 'replace' ise YALNIZ bu sihirbazın önceki aynı-sınıf noktaları (+ onlara bağlı halkalar) bölgede silinir;
+// 'add' (varsayılan) hiçbir şey silmez. Dönüş: önceki nokta sayısı + silinenler (sonuç metni için).
+def importModelPoints = { imageData, List regionRois, String cls, List rgbColor, List coords, String mode = 'add' ->
     def hier = imageData.getHierarchy()
     def plane = ImagePlane.getDefaultPlane()
     def pc = QP.getPathClass(cls)
     int rgb = qupath.lib.common.ColorTools.packRGB(rgbColor[0] as int, rgbColor[1] as int, rgbColor[2] as int)
     try { pc.setColor(rgb) } catch (Throwable ignore) {}
-    hier.removeObjects(hier.getAnnotationObjects().findAll { a ->
-        a.getPathClass() == pc && a.hasROI() && a.getROI().isPoint() &&
-        regionRois.any { r -> r.contains(a.getROI().getCentroidX(), a.getROI().getCentroidY()) }
-    }, false)
-    removeOrphanRings(hier)
+    def prevPts = prevOwnModelPoints(hier, cls, regionRois)
+    int removedPts = 0, removedRings = 0
+    if (mode == 'replace' && !prevPts.isEmpty()) {
+        def prevRings = ringsOfPoints(hier, prevPts)
+        removedPts = prevPts.size(); removedRings = prevRings.size()
+        hier.removeObjects(prevRings + prevPts, true)
+    }
     double ringPx = markerRadiusPx(imageData)
     def anns = []
     coords.eachWithIndex { pt, i ->
@@ -369,6 +435,7 @@ def importModelPoints = { imageData, List regionRois, String cls, List rgbColor,
     }
     if (!anns.isEmpty()) hier.addObjects(anns)
     hier.fireHierarchyChangedEvent(hier)
+    return [prevPts: prevPts.size(), removedPts: removedPts, removedRings: removedRings]
 }
 
 // ── Uzlaşı: tek-bağ kümeleme (R piksel) → küme başına model kümesi ──
@@ -513,6 +580,17 @@ def startRun = { List chosen, String device, double radiusUm, Double thr ->
     def targets = regionAnnotationsOf(imageData)
     if (targets.isEmpty()) { errorTextRef.set('Bölge yok.\nÖnce bir alan anotasyonu çizin/seçin.'); step.set('ERROR'); render(); return }
     def regionRois = targets.collect { it.getROI() }
+    // Önceki sonuç varsa, dışa aktarma/Python'dan ÖNCE TEK soru sor (İptal: hiçbir şey çalışmaz, hiçbir şey yazılmaz).
+    def hierNow = imageData.getHierarchy()
+    def prevModelLines = []
+    chosen.each { d ->
+        int n = prevOwnModelPoints(hierNow, d.cls, regionRois).size()
+        if (n > 0) prevModelLines << [label: d.label, n: n]
+    }
+    final String importMode = askExisting(prevModelLines,
+        prevOwnModelPoints(hierNow, CONSENSUS_CLASS, regionRois).size() as int,
+        prevOwnSummaries(hierNow, regionRois).size() as int)
+    if (importMode == null) return
     def cal = pixelMicrons(imageData)
     def workDir = resolveWorkDir(imageData); workDir.mkdirs()
     def base = imageNameOf(imageData)
@@ -580,19 +658,35 @@ def startRun = { List chosen, String device, double radiusUm, Double thr ->
             // Sonuçları içe al + uzlaşı hesapla (captured imageData'ya yaz — TOCTOU güvenli).
             javafx.application.Platform.runLater {
                 try {
-                    chosen.eachWithIndex { d, mi -> if (perModel.containsKey(mi)) importModelPoints(imageData, regionRois, d.cls, d.color, perModel[mi]) }
+                    int prevPtsAll = 0, removedPtsAll = 0, removedRingsAll = 0, removedSumsAll = 0
+                    chosen.eachWithIndex { d, mi ->
+                        if (perModel.containsKey(mi)) {
+                            def ir = importModelPoints(imageData, regionRois, d.cls, d.color, perModel[mi], importMode)
+                            prevPtsAll += ir.prevPts; removedPtsAll += ir.removedPts; removedRingsAll += ir.removedRings
+                        }
+                    }
                     // R µm → piksel
                     double rPx = (cal != null) ? (radiusUm / ((cal.pw + cal.ph) / 2.0)) : (radiusUm / 0.25d)
                     def clusters = clusterAgreement(perModel, rPx)
                     int K = perModel.size()   // konsensüs = tüm çalışan modeller
                     // özet + konsensüs noktaları
                     def hier = imageData.getHierarchy()
-                    hier.removeObjects(hier.getAnnotationObjects().findAll { it.getName() != null && it.getName().startsWith(SUMMARY_NAME) }, false)
                     def consClass = QP.getPathClass(CONSENSUS_CLASS)
                     int consRgb = qupath.lib.common.ColorTools.packRGB(30, 170, 90)
                     try { consClass.setColor(consRgb) } catch (Throwable ignore) {}
-                    hier.removeObjects(hier.getAnnotationObjects().findAll { it.getPathClass() == consClass && it.hasROI() && it.getROI().isPoint() && regionRois.any { r -> r.contains(it.getROI().getCentroidX(), it.getROI().getCentroidY()) } }, false)
-                    removeOrphanRings(hier)
+                    // Önceki özet ve konsensüs: SORULMADAN silinmez (kip startRun'da soruldu). Değiştir kipinde yalnız
+                    // bu sihirbazın özetleri (tam ad / "(N)"), konsensüs noktaları ve onlara bağlı halkalar silinir.
+                    def prevSums = prevOwnSummaries(hier, regionRois)
+                    def prevSumNames = prevSums.collect { it.getName() }.unique().sort()
+                    def prevCons = prevOwnModelPoints(hier, CONSENSUS_CLASS, regionRois)
+                    prevPtsAll += prevCons.size()
+                    boolean hadPrev = (prevPtsAll > 0 || !prevSums.isEmpty())
+                    if (importMode == MODE_REPLACE) {
+                        def prevConsRings = ringsOfPoints(hier, prevCons)
+                        removedPtsAll += prevCons.size(); removedRingsAll += prevConsRings.size(); removedSumsAll += prevSums.size()
+                        hier.removeObjects(prevConsRings + prevCons + prevSums, true)
+                    }
+                    String setName = nextOwnSetName(hier, SUMMARY_NAME)
                     def plane = ImagePlane.getDefaultPlane()
                     double consRingPx = markerRadiusPx(imageData) * CONSENSUS_RING_SCALE
                     int consensus = 0
@@ -601,7 +695,7 @@ def startRun = { List chosen, String device, double radiusUm, Double thr ->
                     if (!consAnns.isEmpty()) hier.addObjects(consAnns)
 
                     def unionRoi = (targets.size() == 1) ? targets[0].getROI() : qupath.lib.roi.RoiTools.union(targets.collect { it.getROI() })
-                    def summary = PathObjects.createAnnotationObject(unionRoi); summary.setName(SUMMARY_NAME)
+                    def summary = PathObjects.createAnnotationObject(unionRoi); summary.setName(setName)
                     counts.each { id, cnt -> if (cnt >= 0) summary.measurements['Mitoz — ' + id] = cnt as double }
                     summary.measurements['Konsensüs (≥' + K + ' model)'] = consensus as double
                     if (cal != null) { double areaMm2 = unionRoi.getArea() * cal.pw * cal.ph / 1_000_000.0; summary.measurements['Ölçülen alan (mm2)'] = areaMm2 }
@@ -612,6 +706,12 @@ def startRun = { List chosen, String device, double radiusUm, Double thr ->
                     def sb = new StringBuilder()
                     sb << "MİTOZ MODEL KARŞILAŞTIRMASI\n═══════════════════════════\n\n"
                     sb << "Bölge   : " << (targets.size()) << " anotasyon\n"
+                    sb << String.format(java.util.Locale.US, workshopText('script.a308d8282914', 'Özet adı: %s'), setName) << "\n"
+                    if (hadPrev && importMode == MODE_ADD) {
+                        sb << String.format(java.util.Locale.US, workshopText('script.94e565c1330a', 'DİKKAT — bu alanda önceki karşılaştırma sonucu da duruyor (özet: %s; %,d mitoz noktası). Hiçbir şey silinmedi. Eskisini kaldırmak için o adlı özeti ve model/konsensüs noktalarını (etiket halkalarıyla) silin ya da yeniden çalıştırırken "Öncekileri değiştir"i seçin.'), prevSumNames.isEmpty() ? '-' : prevSumNames.join(', '), prevPtsAll) << "\n"
+                    } else if (removedPtsAll + removedRingsAll + removedSumsAll > 0) {
+                        sb << String.format(java.util.Locale.US, workshopText('script.02035b0fc0aa', 'Önceki sonuçlar değiştirildi: %,d mitoz noktası, %,d etiket halkası ve %,d özet silindi (özetlerin içindeki diğer nesneler korundu).'), removedPtsAll, removedRingsAll, removedSumsAll) << "\n"
+                    }
                     sb << String.format(java.util.Locale.US, "Eşleşme yarıçapı: %.1f µm%n%n", radiusUm)
                     sb << "Model başı mitoz:\n"
                     chosen.eachWithIndex { d, mi -> def cnt = counts[d.id]; sb << "  • " << d.label << " : " << (cnt != null && cnt >= 0 ? ('' + cnt) : 'BAŞARISIZ') << "\n" }

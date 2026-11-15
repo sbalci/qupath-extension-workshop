@@ -21,6 +21,12 @@
  *       - Hotspot           → ≈0.785 mm² (1 mm Ø) bir alan anotasyonu seçin
  *       - TMA               → dearray edilmiş çekirdekler (TMA → Dearray)
  *
+ * ÖNCEKİ SONUÇ: Bu sihirbazın önceki bir sonucu varsa ("Tumor bud" sınıflı tespitler; cephe/TMA
+ *   kipinde ayrıca sihirbazın oluşturduğu bant / çekirdek bölgesi anotasyonları) "Tomurcukları say"
+ *   ÖNCE SORAR: Ekle (varsayılan, hiçbir şey silinmez; yeni sonuç "(2)", "(3)" … adını alır) ·
+ *   Değiştir (yalnız bu sihirbazın önceki nesneleri silinir; ikinci onay ister) · İptal (hiçbir şey
+ *   çalışmaz). Seçtiğiniz anotasyonlardaki başka tespitlere (ör. hücre tespitleri) HİÇ dokunulmaz.
+ *
  * ÇIKTI (yalnızca ölçüm):
  *   • "Tumor bud" tespitleri (her birinde tomurcuk alanı µm²)
  *   • Bölge başına: tomurcuk sayısı, alan (mm²), yoğunluk (tomurcuk/mm²)
@@ -63,6 +69,11 @@ final double DEF_ERODE_UM  = 30.0     // µm — TMA çekirdek kenarı aşındı
 final boolean DEF_FILL     = true     // CK⁺ bölge içi delikleri doldur
 final double ITBCC_FIELD_MM2 = 0.785  // ITBCC sayım sahası (1 mm Ø)
 final String BAND_NAME = 'Tomurcuk bandı (invazif cephe)'
+final String BUD_CLASS_NAME = 'Tumor bud'
+final String TMA_BASE = 'TMA çekirdek bölgesi'
+// "Önceki sonuç ne olsun?" kipleri — varsayılan HİÇBİR ŞEY SİLMEZ (ev kuralı: sonuç yazan her sihirbaz önce sorar).
+final String MODE_ADD = 'add'
+final String MODE_REPLACE = 'replace'
 
 // ── Gömülü CK/DAB piksel sınıflandırıcısı (handson/classifiers/.../ck-tumor-dab.json) ──
 // Aynı JSON proje klasöründe de bulunur; sihirbaz, projeye bağımlı olmadan
@@ -146,14 +157,113 @@ def buildClassifier = { ->
     catch (Throwable t) { return null }
 }
 
+// Bu sihirbazın seti mi? Yalnız TAM ad ya da "ad (N)" — önek eşleşmesi YOK:
+// kullanıcının "Tomurcuk bandı (invazif cephe) notlarım" diye adlandırdığı anotasyon süpürülmez.
+def isOwnSetName = { String name, String base ->
+    if (name == null) return false
+    if (name == base) return true
+    return name.startsWith(base + ' (') && name.endsWith(')') &&
+        name.substring(base.length() + 2, name.length() - 1).isInteger() &&
+        (name.substring(base.length() + 2, name.length() - 1) as int) >= 2
+}
+def ownSetIndex = { String name, String base ->
+    return (name == base) ? 1 : (name.substring(base.length() + 2, name.length() - 1) as int)
+}
+// TMA çekirdek bölgesi adı çekirdek adını taşır ("TMA çekirdek bölgesi: A-1"; 2. set: "TMA çekirdek bölgesi (2): A-1").
+// Eşleşme yalnız gridde bulunan çekirdek adlarıyla TAM eşleşmedir; dönüş: set numarası ya da 0 (bizim değil).
+def tmaSetIndex = { String name, Collection coreNames, String base ->
+    if (name == null) return 0
+    for (String cn : coreNames) {
+        if (name == base + ': ' + cn) return 1
+        String pre = base + ' ('
+        String suf = '): ' + cn
+        if (name.startsWith(pre) && name.endsWith(suf) && name.length() > pre.length() + suf.length()) {
+            String mid = name.substring(pre.length(), name.length() - suf.length())
+            if (mid.isInteger() && (mid as int) >= 2) return (mid as int)
+        }
+    }
+    return 0
+}
+def isBudDetection = { o -> o.isDetection() && o.getPathClass()?.getName() == BUD_CLASS_NAME }
+def budIndexOf = { d ->
+    String n = d.getName()
+    return (n != null && isOwnSetName(n, BUD_CLASS_NAME)) ? ownSetIndex(n, BUD_CLASS_NAME) : 1
+}
+// Bu sihirbazın ÖNCEKİ sonucu: area/hotspot → seçili bölgelerin doğrudan çocuğu olan "Tumor bud" sınıflı
+// tespitler; front → sihirbazın bant anotasyonları (+ içlerindeki "Tumor bud" tespitleri); tma → sihirbazın
+// çekirdek bölgesi anotasyonları (+ içlerindeki "Tumor bud" tespitleri). Başka hiçbir nesne (hücre tespitleri,
+// kullanıcının anotasyonları) önceki sonuç sayılmaz.
+def earlierOf = { hierarchy, String mode, List selected ->
+    def parents = []
+    def buds = []
+    def idx = []
+    if (hierarchy != null) {
+        if (mode == 'area' || mode == 'hotspot') {
+            selected.findAll {
+                it.isAnnotation() && it.getROI()?.isArea() && it.getPathClass()?.getName() != BUD_CLASS_NAME &&
+                    !isOwnSetName(it.getName(), BAND_NAME)
+            }.each { p -> p.getChildObjects().findAll { it.isDetection() }.findAll { isBudDetection(it) }.each { buds << it } }
+            buds.each { idx << budIndexOf(it) }
+        } else if (mode == 'front') {
+            hierarchy.getAnnotationObjects().findAll { isOwnSetName(it.getName(), BAND_NAME) }.each { b ->
+                parents << b; idx << ownSetIndex(b.getName(), BAND_NAME)
+                b.getChildObjects().findAll { it.isDetection() }.findAll { isBudDetection(it) }.each { buds << it }
+            }
+        } else if (mode == 'tma') {
+            def grid = hierarchy.getTMAGrid()
+            if (grid != null) {
+                def coreNames = grid.getTMACoreList().collect { (it.getName() ?: '?').toString() }
+                hierarchy.getAnnotationObjects().each { a ->
+                    int k = tmaSetIndex(a.getName(), coreNames, TMA_BASE)
+                    if (k > 0) {
+                        parents << a; idx << k
+                        a.getChildObjects().findAll { it.isDetection() }.findAll { isBudDetection(it) }.each { buds << it }
+                    }
+                }
+            }
+        }
+    }
+    def names = (parents.isEmpty() ? buds.collect { it.getName() ?: BUD_CLASS_NAME } : parents.collect { it.getName() }).unique().sort()
+    return [parents: parents, buds: buds, count: parents.size() + buds.size(),
+            maxIdx: (idx.isEmpty() ? 0 : (idx.max() as int)), names: names]
+}
+// Değiştir kipi: yalnız earlierOf'un döndürdüğü nesneler; içlerindeki diğer nesneler KORUNUR (keepChildren = true).
+def removeEarlier = { hierarchy, e ->
+    if (!e.buds.isEmpty()) hierarchy.removeObjects(e.buds, true)
+    if (!e.parents.isEmpty()) hierarchy.removeObjects(e.parents, true)
+    return (int) e.count
+}
+// Önceki sonuç için kullanıcıya SOR (FX iş parçacığında, "Tomurcukları say" işlemi başlamadan ÖNCE çağrılır).
+//   Dönüş: 'add' | 'replace' | null (İptal → hiçbir şey çalışmaz, hiçbir şey yazılmaz).
+//   Önceki sonuç yoksa sormadan 'add' döner.
+def askExisting = { hierarchy, String mode ->
+    def e = earlierOf(hierarchy, mode, QP.getSelectedObjects() as List)
+    if (e.count == 0) return MODE_ADD
+    String optAdd = workshopText('script.5fcbb9588b11', 'Öncekine dokunma — yeni bir set olarak ekle (varsayılan)')
+    String optRep = workshopText('script.1c7f212dcbd3', 'Öncekini değiştir (bu sihirbazın önceki nesneleri silinir)')
+    def pick = Dialogs.showChoiceDialog(workshopText('script.4e8e0af236b8', 'Önceki tomurcuk sonucu'),
+        String.format(java.util.Locale.US, workshopText('script.e09d59235832', 'Bu lamda bu sihirbazın önceki sonucundan kalan %,d nesne var: sınıfı "Tumor bud" olan tespitler ve (cephe ya da TMA kipinde) sihirbazın oluşturduğu bant / çekirdek bölgesi anotasyonları.\n\n"Ekle" seçilirse hiçbir şey silinmez; yeni sonuç ayrı bir set olur ("Tumor bud (2)" gibi) ve seçili bölgelerdeki ölçüm adlarına "(2)" eklenir. İki set lamda birlikte durur; tomurcukları sayarken ikisini toplamayın.\n\n"Değiştir" seçilirse bu nesneler silinir; üzerlerinde ELLE yaptığınız düzeltmeler de gider. Seçtiğiniz anotasyonlara ve sınıfı "Tumor bud" olmayan nesnelere (ör. hücre tespitleri) dokunulmaz.\n\nİptal: hiçbir şey çalıştırılmaz, hiçbir şey yazılmaz.\n\nÖnceki tomurcuk sonucu ne olsun?'), e.count),
+        [optAdd, optRep], optAdd)
+    if (pick == null) return null
+    if (pick == optRep) {
+        boolean ok = Dialogs.showConfirmDialog(workshopText('script.2a445666bd81', 'Önceki tomurcuk sonucu silinecek'),
+            String.format(java.util.Locale.US, workshopText('script.220920d88ad6', '%,d nesne silinecek: sınıfı "Tumor bud" olan tüm tespitler (elle sınıfladıklarınız dahil) ve cephe / TMA kipinde sihirbazın oluşturduğu bant / çekirdek bölgesi anotasyonları. Bunlarda elle yaptığınız düzeltmeler KAYBOLUR; anotasyonların içindeki diğer nesneler korunur.\n\nDevam edilsin mi?'), e.count))
+        return ok ? MODE_REPLACE : null
+    }
+    return MODE_ADD
+}
+
 // ── Bir parent anotasyon içinde tomurcukları tespit et + süz + say ─────────
-def detectBudsIn = { parentAnn, classifier, double pw, double ph, double budMin, double budMax, boolean fillHoles ->
+def detectBudsIn = { parentAnn, classifier, double pw, double ph, double budMin, double budMax, boolean fillHoles, int setIdx ->
     QP.selectObjects(parentAnn)
     double holeArea = fillHoles ? Double.MAX_VALUE : 0.0
-    // SPLIT → bitişik CK⁺ bölgeleri ayrı nesnelere böler; DELETE_EXISTING → bu
-    // parent altındaki önceki tespitleri temizler (tekrar çalıştırma idempotent).
-    QP.createDetectionsFromPixelClassifier(classifier, budMin, holeArea, 'SPLIT', 'DELETE_EXISTING')
-    def children = parentAnn.getChildObjects().findAll { it.isDetection() }
+    // Bu parent altında ÖNCEDEN var olan tespitler (önceki sonuç, kullanıcının hücre tespitleri …) kaydedilir;
+    // yalnız BU çalıştırmanın yeni ürettiği nesneler süzülür/silinir. (DELETE_EXISTING kullanılmaz: o seçenek
+    // parent altındaki HER tespiti sorulmadan silerdi.)
+    def before = parentAnn.getChildObjects().findAll { it.isDetection() } as Set
+    // SPLIT → bitişik CK⁺ bölgeleri ayrı nesnelere böler.
+    QP.createDetectionsFromPixelClassifier(classifier, budMin, holeArea, 'SPLIT')
+    def children = parentAnn.getChildObjects().findAll { it.isDetection() }.findAll { !before.contains(it) }
     def budClass = QP.getPathClass('Tumor bud')
     try { budClass.setColor((Integer) ColorTools.packRGB(150, 20, 20)) } catch (Throwable ignore) { }
     def toRemove = []
@@ -166,17 +276,19 @@ def detectBudsIn = { parentAnn, classifier, double pw, double ph, double budMin,
             toRemove << d
         } else {
             d.setPathClass(budClass)
+            if (setIdx > 1) d.setName(BUD_CLASS_NAME + ' (' + setIdx + ')')
             d.measurements['Tomurcuk alanı (µm²)'] = areaUm2
             kept++
         }
     }
+    // toRemove YALNIZ bu çalıştırmanın az önce ürettiği, henüz kullanıcıya sunulmamış geçici nesnelerdir.
     if (!toRemove.isEmpty()) QP.removeObjects(toRemove, true)
     return kept
 }
 
 // ── Ana akış: mod + parametrelerle çalıştır ────────────────────────────────
 // Dönüş: [ok:true, text] | [ok:false, error:'NO_REGION'|'NO_LINE'|'NO_TMA'|<mesaj>]
-def runBudding = { String mode, double budMin, double budMax, double frontMargin, double erodeUm, boolean fillHoles ->
+def runBudding = { String mode, double budMin, double budMax, double frontMargin, double erodeUm, boolean fillHoles, String existMode = 'add' ->
     try {
         def imageData = QP.getCurrentImageData()
         if (imageData == null) return [ok:false, error:'Görüntü açık değil.']
@@ -194,33 +306,42 @@ def runBudding = { String mode, double budMin, double budMax, double frontMargin
 
         def hierarchy = imageData.getHierarchy()
         def parents = []          // her biri [ann:..., label:...]
+        // Önceki sonuç: kip çağırandan gelir ('add' varsayılan = hiçbir şey silinmez). 'replace' yalnız
+        // kullanıcı iki kez onayladıysa gelir ve yalnız earlierOf'un bulduğu nesneleri siler.
+        def earlier = earlierOf(hierarchy, mode, QP.getSelectedObjects() as List)
+        boolean doReplace = (existMode == MODE_REPLACE)
+        int setIdx = (doReplace || earlier.count == 0) ? 1 : (earlier.maxIdx + 1)
+        int removedN = 0
+        String bandName = (setIdx > 1) ? (BAND_NAME + ' (' + setIdx + ')') : BAND_NAME
+        String tmaBase = (setIdx > 1) ? (TMA_BASE + ' (' + setIdx + ')') : TMA_BASE
         boolean hotspotCheck = (mode == 'hotspot')
         double avgUmPerPx = (pw + ph) / 2.0
 
         if (mode == 'area' || mode == 'hotspot') {
             def sel = QP.getSelectedObjects().findAll {
-                it.isAnnotation() && it.getROI()?.isArea() && it.getPathClass()?.getName() != 'Tumor bud' && it.getName() != BAND_NAME
+                it.isAnnotation() && it.getROI()?.isArea() && it.getPathClass()?.getName() != 'Tumor bud' && !isOwnSetName(it.getName(), BAND_NAME)
             }
             if (sel.isEmpty()) return [ok:false, error:'NO_REGION']
+            if (doReplace) removedN = removeEarlier(hierarchy, earlier)
             sel.eachWithIndex { a, i -> parents << [ann:a, label:(a.getName() ?: ('Bölge ' + (i + 1)))] }
         } else if (mode == 'front') {
             def lines = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getROI()?.isLine() }
             if (lines.isEmpty()) return [ok:false, error:'NO_LINE']
-            def oldBands = QP.getAnnotationObjects().findAll { it.getName() == BAND_NAME }
-            if (!oldBands.isEmpty()) QP.removeObjects(oldBands, true)
+            if (doReplace) removedN = removeEarlier(hierarchy, earlier)
             double radPx = frontMargin / avgUmPerPx
             lines.eachWithIndex { ln, i ->
                 def roi = ln.getROI()
                 def band = roi.getGeometry().buffer(radPx)
                 def bandRoi = GeometryTools.geometryToROI(band, roi.getImagePlane())
                 def bandAnn = PathObjects.createAnnotationObject(bandRoi)
-                bandAnn.setName(BAND_NAME)
+                bandAnn.setName(bandName)
                 QP.addObject(bandAnn)
                 parents << [ann:bandAnn, label:('İnvazif cephe bandı ' + (i + 1))]
             }
         } else if (mode == 'tma') {
             def grid = hierarchy.getTMAGrid()
             if (grid == null || grid.nCores() == 0) return [ok:false, error:'NO_TMA']
+            if (doReplace) removedN = removeEarlier(hierarchy, earlier)
             double erodePx = erodeUm / avgUmPerPx
             grid.getTMACoreList().each { core ->
                 if (core.isMissing()) return
@@ -230,7 +351,7 @@ def runBudding = { String mode, double budMin, double budMax, double frontMargin
                 if (eroded == null || eroded.isEmpty()) eroded = roi.getGeometry()
                 def pRoi = GeometryTools.geometryToROI(eroded, roi.getImagePlane())
                 def pAnn = PathObjects.createAnnotationObject(pRoi)
-                pAnn.setName('TMA çekirdek bölgesi: ' + (core.getName() ?: '?'))
+                pAnn.setName(tmaBase + ': ' + (core.getName() ?: '?'))
                 QP.addObject(pAnn)
                 parents << [ann:pAnn, label:('Çekirdek ' + (core.getName() ?: '?'))]
             }
@@ -242,12 +363,16 @@ def runBudding = { String mode, double budMin, double budMax, double frontMargin
         def perRegion = []
         int totalBuds = 0
         double totalAreaMm2 = 0.0
+        // Ekle kipinde ve önceki sonuç varken, SEÇİLİ (kullanıcının) bölgelerdeki ölçüm adları "(N)" son eki alır;
+        // böylece önceki sonucun ölçümleri sessizce üzerine yazılmaz. Bu sihirbazın kendi oluşturduğu bant /
+        // çekirdek bölgesi anotasyonları yenidir ve ad taşır.
+        String msfx = ((mode == 'area' || mode == 'hotspot') && setIdx > 1) ? (' (' + setIdx + ')') : ''
         parents.each { p ->
-            int n = detectBudsIn(p.ann, classifier, pw, ph, budMin, budMax, fillHoles)
+            int n = detectBudsIn(p.ann, classifier, pw, ph, budMin, budMax, fillHoles, setIdx)
             double areaMm2 = p.ann.getROI().getArea() * pw * ph / 1_000_000.0
-            p.ann.measurements['Tomurcuk sayısı'] = n as double
-            p.ann.measurements['Bölge alanı (mm²)'] = areaMm2
-            p.ann.measurements['Tomurcuk yoğunluğu (1/mm²)'] = areaMm2 > 0 ? (n / areaMm2) : Double.NaN
+            p.ann.measurements['Tomurcuk sayısı' + msfx] = n as double
+            p.ann.measurements['Bölge alanı (mm²)' + msfx] = areaMm2
+            p.ann.measurements['Tomurcuk yoğunluğu (1/mm²)' + msfx] = areaMm2 > 0 ? (n / areaMm2) : Double.NaN
             p.ann.setLocked(true)
             perRegion << [label:p.label, n:n, areaMm2:areaMm2]
             totalBuds += n
@@ -287,6 +412,16 @@ def runBudding = { String mode, double budMin, double budMax, double frontMargin
             sb.append(near
                 ? 'Seçili alan ≈ ITBCC sahası (0.785 mm²); ham tomurcuk sayısı doğrudan saha sayımıdır.\n'
                 : 'Not: seçili alan 0.785 mm² (ITBCC sahası) ile aynı değil; saha sayımı için\n     1 mm Ø (≈0.785 mm²) bir daire kullanın ([Objects → Annotations → Specify annotation]).\n')
+        }
+
+        if (!doReplace && earlier.count > 0) {
+            String newLabel = (mode == 'front') ? bandName
+                            : (mode == 'tma') ? (tmaBase + ': …')
+                            : (BUD_CLASS_NAME + ' (' + setIdx + ')')
+            sb.append('\n').append(String.format(java.util.Locale.US, workshopText('script.9a0b0897a5e7', 'DİKKAT — lamda önceki tomurcuk sonucu da duruyor: %s\nHiçbir şey silinmedi. Bu sayımın sonucu "%s" adını taşır. Eskisini kaldırmak için o nesneleri seçip silin ya da yeniden sayarken "Öncekini değiştir"i seçin. Dışa aktarım ve özetler iki sonucu da görür.'), earlier.names.take(6).join(', ') + (earlier.names.size() > 6 ? ' …' : ''), newLabel)).append('\n')
+            if (msfx) sb.append(String.format(java.util.Locale.US, workshopText('script.1ae5e41c44be', 'Seçili bölgelerdeki ölçümler "%1$s" son ekiyle yazıldı (ör. "Tomurcuk sayısı%1$s"); önceki ölçümler değişmedi.'), msfx)).append('\n')
+        } else if (removedN > 0) {
+            sb.append('\n').append(String.format(java.util.Locale.US, workshopText('script.2f88f960c3b6', 'Önceki tomurcuk sonucu değiştirildi: %,d nesne silindi (anotasyonların içindeki diğer nesneler korundu).'), removedN)).append('\n')
         }
 
         sb.append('\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir; ITBCC derecesi (Bd1/Bd2/Bd3) üretmez.')
@@ -349,6 +484,9 @@ def numField = { holder ->
 }
 
 def startRun = {
+    // Önceki sonuç varsa işlemden ÖNCE sor (FX iş parçacığı); İptal'de hiçbir şey çalışmaz, hiçbir şey yazılmaz.
+    String existMode = askExisting(QP.getCurrentImageData()?.getHierarchy(), modeRef.get())
+    if (existMode == null) return
     step.set('RUNNING'); render()
     def worker = new Thread({
         def res = runBudding(modeRef.get(),
@@ -356,7 +494,7 @@ def startRun = {
                 ((Number) budMaxRef.get()).doubleValue(),
                 ((Number) frontRef.get()).doubleValue(),
                 ((Number) erodeRef.get()).doubleValue(),
-                fillRef.get())
+                fillRef.get(), existMode)
         javafx.application.Platform.runLater { runResult.set(res); step.set('RESULT'); render() }
     }, 'AtolyeBuddingRun')
     worker.setDaemon(true); worker.start()

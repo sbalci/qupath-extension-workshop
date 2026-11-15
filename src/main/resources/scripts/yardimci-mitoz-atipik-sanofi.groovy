@@ -12,11 +12,11 @@
  *   köprü (sanofi/eftd_runner.py) her nokta çevresinde bir yama kırpar, sınıflar → her nokta
  *   "Mitoz (tipik)" (yeşil) / "Mitoz (atipik)" (kırmızı) olarak yeniden sınıflandırılır.
  *
- * ⚠️ KAPILI OMURGA — VARSAYILAN OLARAK DEVRE DIŞI:
+ * ⚠️ KAPILI OMURGA — ERİŞİM İZNİ SİZDEN İSTENİR:
  *   Omurga (facebook/dinov3-vith16plus-pretrain-lvd1689m) HuggingFace'te KAPILIDIR: Meta
- *   lisansını kabul edip `huggingface-cli login` ile giriş yapmanız gerekir (onay beklenebilir;
- *   OTOMATİK DEĞİL). Bu yüzden menüde bu giriş DEVRE DIŞIdır. Erişim edindikten sonra eklentiyi
- *   yeniden derleyip etkinleştirin ya da betiği [Automate → Project scripts]'ten çalıştırın.
+ *   lisansını model sayfasında kabul edip `huggingface-cli login` ile giriş yapmanız gerekir
+ *   (onay beklenebilir; OTOMATİK DEĞİL). Menü girişi etkindir; erişim yoksa sihirbaz çalıştırma
+ *   sırasında durur ve yapılacak adımları gösterir. Eklentiyi yeniden derlemeniz GEREKMEZ.
  *   Depo lisansı ticari-olmayan araştırmadır. LoRA adaptörleri + kafa çalışma anında indirilir.
  *
  * NE ÖLÇER (ve ne ÖLÇMEZ):
@@ -81,7 +81,28 @@ def applyCacheEnv = { pb ->
         env.put('HF_HOME', new File(cache, 'huggingface').getAbsolutePath())
         env.put('TORCH_HOME', new File(cache, 'torch').getAbsolutePath())
         env.put('TIATOOLBOX_HOME', new File(cache, 'tiatoolbox').getAbsolutePath())
+        // HF_HOME yönlendirildiği için kullanıcının olağan terminalde yaptığı oturum açma
+        // (~/.cache/huggingface/token) görünmezdi; kapılı omurga için jetonu ortama aktar.
+        // Jeton DEĞERİ hiçbir yere yazdırılmaz.
+        if (!env.get('HF_TOKEN')) {
+            def tokFile = new File(new File(System.getProperty('user.home'), '.cache/huggingface'), 'token')
+            if (tokFile.isFile()) { def tok = tokFile.getText('UTF-8').trim(); if (tok) env.put('HF_TOKEN', tok) }
+        }
     } catch (Throwable ignore) {}
+}
+
+// Oturum açma komutu: ortamın kendi klasöründe hangisi GERÇEKTEN varsa onu göster.
+def hfLoginCommand = { String pythonPath ->
+    try {
+        def dir = (pythonPath?.trim()) ? new File(pythonPath.trim()).getParentFile() : null
+        if (dir != null) {
+            for (cand in [['hf.exe', 'auth login'], ['hf', 'auth login'], ['huggingface-cli.exe', 'login'], ['huggingface-cli', 'login']]) {
+                def f = new File(dir, cand[0])
+                if (f.isFile()) return '"' + f.getAbsolutePath() + '" ' + cand[1]
+            }
+        }
+    } catch (Throwable ignore) {}
+    return 'hf auth login'
 }
 
 def detectPython = { ->
@@ -365,7 +386,11 @@ def startRun = {
             appendLine('# Çıkış kodu: ' + r.exitCode)
             def savedLog = autoSaveLog(workDir, base)
             if (savedLog != null) appendLine('# Günlük kaydedildi: ' + savedLog.getAbsolutePath())
-            if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set('Sınıflama başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '') + (savedLog != null ? ('\n\nGünlük: ' + savedLog.getAbsolutePath()) : '')); step.set('ERROR'); render() }; return }
+            // Kapılı omurgaya erişim yoksa ham çıktının üstüne yapılacak adımları yaz.
+            def gateText = ((r.error ?: '') + '\n' + (r.lastLines ?: ''))
+            boolean gateLikely = (gateText =~ /(?i)KAPILI|gated|GatedRepo|401|403|access to model|huggingface-cli login/).find()
+            String gateHelp = gateLikely ? (String.format(java.util.Locale.US, workshopText('script.53ec67e56b06', 'Model omurgasına erişim izniniz yok gibi görünüyor. Bu model Hugging Face\'te kapılıdır; erişim otomatik verilmez.\n\nYapılacaklar:\n  1. huggingface.co/facebook/dinov3-vith16plus-pretrain-lvd1689m sayfasını açın, oturum açın ve lisans koşullarını kabul edin.\n  2. Erişim onayını bekleyin (süresi Meta\'ya bağlıdır).\n  3. Hugging Face hesabınızda Settings → Access Tokens bölümünden "read" türünde bir jeton oluşturun.\n  4. Bir komut penceresi açın (Windows: Başlat → "cmd"), şu komutu çalıştırın ve jetonu yapıştırın:\n       %s\n  5. Sihirbazı yeniden çalıştırın.\n\nErişim gelene kadar "Atipik sınıflandırma — MIDOG25 EffNetV2" girişini kullanabilirsiniz; o model kapılı değildir.'), hfLoginCommand(cfg.python)) + '\n\n') : ''
+            if (!r.ok) { javafx.application.Platform.runLater { errorTextRef.set(gateHelp + 'Sınıflama başarısız (çıkış: ' + r.exitCode + ')\n' + (r.error ?: '') + '\n' + (r.lastLines ?: '') + (savedLog != null ? ('\n\nGünlük: ' + savedLog.getAbsolutePath()) : '')); step.set('ERROR'); render() }; return }
             def geo = outGeo
             try { def m = (r.lastLines ?: '') =~ /RESULT geojson=(.+)/; if (m.find()) { def gp = new File(m.group(1).trim()); if (gp.isFile()) geo = gp } } catch (Throwable ignore) {}
             javafx.application.Platform.runLater {
