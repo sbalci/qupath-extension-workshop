@@ -77,7 +77,7 @@ def cfg = [
 ]
 
 def parseIntOr    = { s, int d -> try { return Integer.parseInt((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
-def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
+def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim().replace(',', '.')) } catch (Throwable t) { return d } }
 
 // ── Ön kontrol: görüntü açık mı? ──
 def imageData = QP.getCurrentImageData()
@@ -368,10 +368,26 @@ javafx.application.Platform.runLater {
         def compartBox = new javafx.scene.control.ChoiceBox()
         compartBox.getItems().addAll('Cell: DAB OD mean', 'Membrane: DAB OD mean', 'Nucleus: DAB OD mean', 'Cytoplasm: DAB OD mean')
         compartBox.setValue(cfg.compartment)
-        def spT1 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.membrane1', 0.15), 0.01)
-        def spT2 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.membrane2', 0.40), 0.01)
-        def spT3 = new javafx.scene.control.Spinner(0.0, 2.0, atolyeD('atolye.membrane3', 0.70), 0.01)
+        // Eşik varsayılanları seçilen bölmeyi izler: çekirdek ve sitoplazma ölçümüne membran
+        // eşikleri uygulanırsa 1+/2+/3+ sınırları o bölmenin atölye taban değerleriyle uyuşmaz.
+        // 'Cell' (tüm hücre ortalaması) için ayrı taban değer yoktur; membran değerleriyle açılır.
+        def binDefaults = { String comp ->
+            String c = (comp ?: '')
+            if (c.startsWith('Nucleus'))   return [atolyeD('atolye.nuclear1', 0.20), atolyeD('atolye.nuclear2', 0.40), atolyeD('atolye.nuclear3', 0.60)]
+            if (c.startsWith('Cytoplasm')) return [atolyeD('atolye.cyto1', 0.10), atolyeD('atolye.cyto2', 0.20), atolyeD('atolye.cyto3', 0.35)]
+            return [atolyeD('atolye.membrane1', 0.15), atolyeD('atolye.membrane2', 0.40), atolyeD('atolye.membrane3', 0.70)]
+        }
+        def bin0 = binDefaults(cfg.compartment as String)
+        def spT1 = new javafx.scene.control.Spinner(0.0, 2.0, (bin0[0] as double), 0.01)
+        def spT2 = new javafx.scene.control.Spinner(0.0, 2.0, (bin0[1] as double), 0.01)
+        def spT3 = new javafx.scene.control.Spinner(0.0, 2.0, (bin0[2] as double), 0.01)
         [spT1, spT2, spT3].each { it.setEditable(true); it.setPrefWidth(90) }
+        compartBox.valueProperty().addListener({ obs, oldV, newV ->
+            def d = binDefaults(newV as String)
+            spT1.getValueFactory().setValue(d[0] as Double)
+            spT2.getValueFactory().setValue(d[1] as Double)
+            spT3.getValueFactory().setValue(d[2] as Double)
+        } as javafx.beans.value.ChangeListener)
         def binGrid = new javafx.scene.layout.GridPane()
         binGrid.setHgap(8); binGrid.setVgap(6); binGrid.setPadding(new javafx.geometry.Insets(6))
         binGrid.addRow(0, binChk)

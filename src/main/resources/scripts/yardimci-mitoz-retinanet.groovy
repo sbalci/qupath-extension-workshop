@@ -6,7 +6,7 @@
  * NE YAPAR:
  *   QuPath'te ÇİZDİĞİNİZ alan anotasyonu içinde — ve YALNIZ orada — DeepMicroscopy'nin
  *   2021/22 MIDOG referans dedektörünü (Domain-Adversarial RetinaNet, ResNet18, fastai v1)
- *   canlı çalıştırır. Sihirbaz seçili bölgeyi hedef çözünürlükte (varsayılan 0.5 µm/px) bir
+ *   canlı çalıştırır. Sihirbaz seçili bölgeyi hedef çözünürlükte (varsayılan 0.25 µm/px) bir
  *   ROI görüntüsü olarak dışa aktarır → Python köprüsü (midog/retinanet_runner.py) referans
  *   deposunun KODUNU + AĞIRLIĞINI çalışma anında indirir (GrandQC gibi; paketlenmez), o kodla
  *   512-döşemeli çıkarım yapar → mitotik figür merkezleri TABAN-piksel koordinatlarında GeoJSON
@@ -37,7 +37,7 @@
  *   • Her mitoz için "Mitosis" sınıflı nokta-anotasyonu (tespitin kendisi) + çevresinde,
  *     etiketi ("RetinaNet mitoz #i") taşıyan bir GÖRÜNTÜ halkası (sınıfsız, kilitli) —
  *     etiket mitozu örtmesin diye
- *   • Her seçili anotasyona: "Mitoz (RetinaNet)" + "Mitoz yoğunluğu (mitoz/mm2)"
+ *   • Her seçili anotasyona: "Mitoz (RetinaNet)" + "Mitoz yoğunluğu (RetinaNet, mitoz/mm2)"
  *   • Kilitli "RetinaNet MIDOG mitoz özeti" anotasyonu
  *
  * API: RegionRequest.createInstance + ImageServer.readRegion; ROIs.createPointsROI +
@@ -71,7 +71,7 @@ def ENV_ID         = 'midog-retinanet-legacy'
 def MITOSIS_CLASS  = 'Mitosis'                 // paylaşılan sözleşme
 def MITOSIS_PREFIX = 'RetinaNet mitoz'         // halka etiketi öneki + noktanın META_SOURCE değeri
 def MITOSIS_RGB    = [170, 70, 200]            // RetinaNet = mor (sınıf + görüntü halkası)
-double TARGET_MPP  = 0.5        // MIDOG kanonik; KongNet/FCOS ile tutarlı
+double TARGET_MPP  = 0.25       // referans kod (process.py, level = 0) MIDOG görüntülerini taban düzeyinde (~0.25 µm/px) okur
 double DET_THRESH  = 0.64       // referans process.py çıktı eşiği
 double WHO_AREA_MM2 = 2.0
 double AREA_TOL_MM2 = 0.01
@@ -375,7 +375,7 @@ def writeCounts = { imageData, List targets, List coords, cal, boolean writeTarg
             if (cal != null) {
                 double a = roi.getArea() * cal.pw * cal.ph / 1_000_000.0
                 ann.measurements['ROI alanı (mm2)'] = a
-                ann.measurements['Mitoz yoğunluğu (mitoz/mm2)'] = a > 0 ? cnt / a : Double.NaN
+                ann.measurements['Mitoz yoğunluğu (RetinaNet, mitoz/mm2)'] = a > 0 ? cnt / a : Double.NaN
             }
         }
     }
@@ -391,7 +391,7 @@ def writeCounts = { imageData, List targets, List coords, cal, boolean writeTarg
         double unionAreaMm2 = unionRoi.getArea() * cal.pw * cal.ph / 1_000_000.0
         double density = unionAreaMm2 > 0 ? insideUnion / unionAreaMm2 : Double.NaN
         summary.measurements['Ölçülen alan (mm2)'] = unionAreaMm2
-        summary.measurements['Mitoz yoğunluğu (mitoz/mm2)'] = density
+        summary.measurements['Mitoz yoğunluğu (RetinaNet, mitoz/mm2)'] = density
         if (Math.abs(unionAreaMm2 - WHO_AREA_MM2) <= AREA_TOL_MM2) summary.measurements['Mitoz / 2 mm2 (gozlenen)'] = insideUnion as double
         out = [inside: insideUnion, unionAreaMm2: unionAreaMm2, density: density]
     }
@@ -624,7 +624,7 @@ def startRun = {
             def cmd = [cfg.python, cfg.runner, 'detect', '--roi', exp.file.getAbsolutePath(), '--out', outGeo.getAbsolutePath(),
                        '--origin', (exp.originX + ',' + exp.originY), '--downsample', String.format(java.util.Locale.US, '%.6f', (double) exp.downsample),
                        '--device', (cfg.device ?: 'cpu'), '--batch-size', String.valueOf(parseIntOr(cfg.batchSize, 8))]
-            if (cfg.threshold?.trim()) { double thr = parseDoubleOr(cfg.threshold, -1.0d); if (thr >= 0.0d && thr <= 1.0d) { cmd.add('--det-thresh'); cmd.add(String.format(java.util.Locale.US, '%.4f', thr)); appendLine('Duyarlılık eşiği: ' + String.format(java.util.Locale.US, '%.3f', thr) + ' (referans 0.64)') } }
+            if (cfg.threshold?.trim()) { double thr = parseDoubleOr(cfg.threshold, -1.0d); if (thr >= 0.0d && thr <= 1.0d) { cmd.add('--det-thresh'); cmd.add(String.format(java.util.Locale.US, '%.4f', thr)); appendLine('Duyarlılık eşiği: ' + String.format(java.util.Locale.US, '%.3f', thr) + ' (referans 0.64)'); if (thr < 0.4d) appendLine('Not: model 0.40 altındaki adayları hiç üretmez (decode eşiği); 0.40 altındaki bir eşik 0.40 ile aynı sonucu verir.') } }
             setPhase('RetinaNet çıkarımı çalışıyor (2/2, yavaş olabilir)…')
             def r = runPython(cmd, appendLine)
             appendLine('# Çıkış kodu: ' + r.exitCode)
@@ -747,7 +747,7 @@ render = { ->
         def pyField = new javafx.scene.control.TextField(cfg.python ?: '')
         def rnField = new javafx.scene.control.TextField(cfg.runner ?: '')
         def wdField = new javafx.scene.control.TextField(cfg.workDir ?: '')
-        def tmppField = new javafx.scene.control.TextField(cfg.targetMpp ?: ''); tmppField.setPromptText('boş = 0.5')
+        def tmppField = new javafx.scene.control.TextField(cfg.targetMpp ?: ''); tmppField.setPromptText('boş = 0.25')
         def batchField = new javafx.scene.control.TextField(cfg.batchSize ?: '8')
         def threshField = new javafx.scene.control.TextField(cfg.threshold ?: ''); threshField.setPromptText('boş = 0.64')
         [pyField, rnField, wdField].each { it.setPrefColumnCount(36) }
@@ -770,7 +770,7 @@ render = { ->
         def mcLbl = new javafx.scene.control.Label(mcf.isFile() ? ('✓ Yerel model VAR: ' + mcf.getAbsolutePath()) : '○ Yerel model yok — "Modeli yerel indir" ile depo + ağırlığı bir kez indirin.')
         mcLbl.setWrapText(true); mcLbl.setMaxWidth(Double.MAX_VALUE); mcLbl.setStyle('-fx-opacity: 0.85; -fx-font-size: 11px;'); center.getChildren().add(mcLbl)
         addWarnLabel('⚠ ESKİ/DOĞRULANMAMIŞ ORTAM: fastai 1.0.61 + eski torch stack. Modern torch/GPU ile uyumsuzluk olası (ortam import bile edemeyebilir); çözülürse GPU kullanabilir ama kırılgan/yavaştır. Aşılmış model — MIDOG25 FCOS önerilir.')
-        addGuidance('Model: 2021/22 MIDOG referans DA-RetinaNet, sabit. "Modeli yerel indir" referans deposunun KODUNU + ağırlığını v1 yayınından çeker (LİSANS yok → araştırma/eğitim). Hedef çözünürlük: ROI bu µm/px\'e örneklenir (varsayılan 0.5). Duyarlılık eşiği: referans 0.64.')
+        addGuidance('Model: 2021/22 MIDOG referans DA-RetinaNet, sabit. "Modeli yerel indir" referans deposunun KODUNU + ağırlığını v1 yayınından çeker (LİSANS yok → araştırma/eğitim). Hedef çözünürlük: ROI bu µm/px\'e örneklenir (varsayılan 0.25: model ~40x görüntüyle eğitildi). Duyarlılık eşiği: referans 0.64.')
         actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
         actions.add(navButton('⚙ Python ortamı', { launchEnvManager() }, 'Atölye Python ortam yöneticisini aç'))
         actions.add(navButton('Modeli yerel indir', { startModelDownload() }, 'Referans depo + RetinaNetDA.pth ağırlığını bir kez indir'))

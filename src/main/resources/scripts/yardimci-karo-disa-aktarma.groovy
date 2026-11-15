@@ -300,7 +300,7 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
             g2.add(help("Sınır karoları: bir karo iki etiket bölgesine değiyorsa yalnız kapsaması en büyük etikete yazılır. Aynı pikseller hiçbir zaman iki klasöre girmez; bu ayar kapatılamaz."), 0, r++, 3, 1)
             addRow(g2, r++, "En az doku (%):", tissueField, "Karonun piksellerinin en az bu kadarı doku olmalı (beyazlık eşiğinden koyu). 0 = kapalı. Anotasyon geniş çizildiyse boş cam karolarını eler.")
             addRow(g2, r++, "Beyazlık eşiği (0–255):", whiteField, "Gri değeri bunun altındaki piksel doku sayılır. 220 yaygın bir başlangıçtır; soluk boyamada yükseltin.")
-            addRow(g2, r++, "Etiket başına en çok:", maxField, "0 = sınırsız. Sayı verirseniz her etiketten rastgele (yinelenebilir) bu kadar karo seçilir; sınıf dengesi için.")
+            addRow(g2, r++, "Etiket başına en çok:", maxField, "0 = sınırsız. Sayı verirseniz her etiketten rastgele (yinelenebilir) bu kadar karo seçilir. Sınır BU LAM içindir ve doku süzgecinden sonra uygulanır; küme genelindeki dengeyi sonuç penceresindeki küme özeti gösterir.")
 
             // ── Sekme 3: Çıktı düzeni ──
             def outField = field(defaultOutRoot.getAbsolutePath(), 30)
@@ -336,7 +336,8 @@ def showOptionsForm = { int selCount, int allCount, List annInfo, File defaultOu
                 "  • aynı lam birden çok bölmeye yazılamaz,\n" +
                 "  • lamın karoları aynı kümede başka bölmede varsa durur,\n" +
                 "  • aynı hastanın başka lamı projede farklı bölmedeyse durur,\n" +
-                "  • hasta kimliği yoksa açık onay ister.\n" +
+                "  • bölmeli ve bölmesiz lamlar aynı kümeye yazılamaz,\n" +
+                "  • hasta kimliği yoksa durur (onayla devam yolu yoktur).\n" +
                 "Betik bölme atamaz; yalnız var olan bölmeyi okur.")
             leakInfo.setWrapText(true)
             leakInfo.setStyle("-fx-font-size: 11px; -fx-text-fill: #7a1f1f; -fx-background-color: #fdeeee; -fx-padding: 8;")
@@ -589,7 +590,9 @@ if (imageData == null) {
     return
 }
 def server = imageData.getServer()
-double avgPx = server.getPixelCalibration().getAveragedPixelSize()   // kalibre değilse NaN/0
+// getAveragedPixelSize() kalibre olmayan lamda 1.0 döndürür (NaN değil); bu yüzden µm bilgisi açıkça sorulur.
+def pixelCal = server.getPixelCalibration()
+double avgPx = pixelCal.hasPixelSizeMicrons() ? pixelCal.getAveragedPixelSizeMicrons().doubleValue() : Double.NaN
 
 def selectedAnns = QP.getSelectedObjects().findAll { it.isAnnotation() && it.getROI() != null }
 def allAnns = QP.getAnnotationObjects().findAll { it.getROI() != null }
@@ -667,9 +670,11 @@ if (selectedScope && inScope.isEmpty()) {
 // ──────────────────────────────────────────────────────────────
 def labelServer = null
 def legend = []   // ["0 = arka plan", "1 = Tumor", ...]
+def maskClasses = []   // bu lamda maskeye girecek sınıf adları (dışlama sınıfları arka plan kalır)
 if (maskMode) {
-    def classes = inScope.collect { it.getPathClass() }.findAll { it != null }.unique().sort { it.toString() }
-    if (classes.isEmpty()) {
+    maskClasses = inScope.collect { it.getPathClass() }.findAll { it != null }.collect { it.toString() }
+                         .findAll { !excludeMatch(it, excludePatterns) }.unique().sort()
+    if (maskClasses.isEmpty()) {
         Dialogs.showErrorMessage(
             "Sınıflı anotasyon yok",
             "Etiket maskesi üretmek için anotasyonların bir SINIFI (PathClass) olmalı\n" +
@@ -680,16 +685,8 @@ if (maskMode) {
         return
     }
     imageExt = '.png'   // maske modunda RGB karolar da kayıpsız olsun (JPEG önerilmez)
-    def builder = new LabeledImageServer.Builder(imageData)
-        .backgroundLabel(0, ColorTools.WHITE)
-        .downsample(downsample)
-        .multichannelOutput(false)
-    legend << "0 = arka plan"
-    classes.eachWithIndex { pc, i ->
-        builder.addLabel(pc.toString(), i + 1)
-        legend << "${i + 1} = ${pc.toString()}".toString()
-    }
-    labelServer = builder.build()
+    // Sınıf → indeks haritası çıktı kümesi belli olduktan sonra kurulur (bkz. "Maske indeksleri"):
+    // indeksler lamdan lama değişmemeli, bu yüzden kümedeki labels.txt esas alınır.
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -742,20 +739,38 @@ def metaPatient = { Map md ->
     }
     return null
 }
+// Hasta kimliği karşılaştırması: "P-001", "p-001 " ve tam genişlikli yazımlar aynı hastadır.
+// Yalnız karşılaştırmada kullanılır; ekranda ve karo listesinde özgün yazım kalır.
+def normPatient = { Object v ->
+    if (v == null) return null
+    String s = java.text.Normalizer.normalize(v.toString(), java.text.Normalizer.Form.NFKC)
+                   .trim().replaceAll('\\s+', ' ').toLowerCase(java.util.Locale.ROOT)
+    return s.isEmpty() ? null : s
+}
+// Bölme değeri yazılmış ama klasör adına çevrilemiyorsa (ör. yalnız Latin dışı harfler) "bölme yok"
+// sayılmaz: sessizce bölmesiz yazmak sızıntı denetimini atlatırdı. Bu değerler toplanır, çalışma durur.
+def badSplits = new java.util.TreeSet()
+def readSplit = { Map md ->
+    String raw = metaSplit(md)
+    String n = normSplit(raw)
+    if (raw != null && n == null) badSplits.add(raw)
+    return n
+}
 String entrySplit = null
 String patientId = null
 def projEntry = null
 try {
     projEntry = (project != null) ? project.getEntry(imageData) : null
     if (projEntry != null) {
-        entrySplit = normSplit(metaSplit(projEntry.getMetadata()))
+        entrySplit = readSplit(projEntry.getMetadata())
         patientId = metaPatient(projEntry.getMetadata())
     }
 } catch (Throwable ignore) {}
+String patientKey = normPatient(patientId)
 // [bölme, kaynak] — bölme yoksa [null, '']
 def splitOf = { ann ->
     String v = null
-    try { v = normSplit(metaSplit(ann.getMetadata())) } catch (Throwable ignore) {}
+    try { v = readSplit(ann.getMetadata()) } catch (Throwable ignore) {}
     if (v != null) return [v, 'anotasyon']
     if (entrySplit != null) return [entrySplit, 'proje girdisi']
     return [null, '']
@@ -797,7 +812,21 @@ inScope.each { ann ->
     if (ann.getName() != null && !ann.getName().trim().isEmpty()) groupInfo.get(key).names.add(ann.getName().trim())
     if (ann.getPathClass() != null) groupInfo.get(key).classes.add(ann.getPathClass().toString())
 }
+if (!badSplits.isEmpty()) {
+    Dialogs.showErrorMessage(
+        "Bölme değeri okunamadı",
+        "Şu bölme değerleri klasör adına çevrilemedi: " + badSplits.take(6).join(", ") + ".\n\n" +
+        "Bölme değeri Latin harfi ya da rakam içermelidir (ör. train, val, test, fold_1).\n" +
+        "Değer yok sayılıp bölmesiz yazılsaydı sızıntı denetimi yapılamazdı; hiçbir karo yazılmadı."
+    )
+    return
+}
 boolean useSplit = groupInfo.values().any { it.split != null }
+// Bölme varken karo listesi kapatılamaz: hasta ↔ bölme kaydı sonraki lamların sızıntı denetiminde kullanılır.
+if (useSplit && !writeManifest) {
+    writeManifest = true
+    println "Bölme kullanıldığı için karo listesi yazılacak (sızıntı denetiminin kaydıdır)."
+}
 def splitsHere = new java.util.TreeSet(groupInfo.values().collect { it.split }.findAll { it != null })
 String NO_SPLIT = 'bolmesiz'
 def keyTitle = { String key ->
@@ -871,8 +900,11 @@ if (sharedTiles > 0) {
 }
 
 // Etiket başına en çok N karo: rastgele ama yinelenebilir (tohum = lam adı), sınıf dengesi için.
+// Doku süzgeci açıksa sınır BURADA uygulanmaz: önce süzgeç, sonra sınır (bölüm 9'daki ön seçim).
+// Yoksa N karo seçilip ardından boş cam karoları atılır ve etiket N'nin altında kalır.
+boolean capAfterTissue = (maxPerLabel > 0 && minTissue > 0.0d)
 int droppedByCap = 0
-if (maxPerLabel > 0) {
+if (maxPerLabel > 0 && !capAfterTissue) {
     def kept = []
     tiles.groupBy { it[0] }.each { key, List list ->
         if (list.size() > maxPerLabel) {
@@ -887,13 +919,18 @@ if (maxPerLabel > 0) {
     tiles.each { List tile -> perLabel.put((String) tile[0], perLabel.get((String) tile[0]) + 1) }
 }
 
-if (!isHeadless && tiles.size() > 5000) {
+int expectedTiles = tiles.size()
+if (capAfterTissue) {
+    expectedTiles = 0
+    tiles.groupBy { it[0] }.each { key, List list -> expectedTiles += Math.min(list.size(), maxPerLabel) }
+}
+if (!isHeadless && expectedTiles > 5000) {
     def ok = Dialogs.showConfirmDialog(
         "Çok sayıda karo",
         String.format(java.util.Locale.US,
-            "Bu ayarlarla %,d karo yazılacak.\n\n" +
+            "Bu ayarlarla %s%,d karo yazılacak.\n\n" +
             "Devam edilsin mi? (Karo boyutunu büyütmek, µm/px değerini büyütmek ya da\n" +
-            "en az kapsama eşiğini yükseltmek karo sayısını azaltır.)", tiles.size())
+            "en az kapsama eşiğini yükseltmek karo sayısını azaltır.)", (capAfterTissue ? "en çok " : ""), expectedTiles)
     )
     if (!ok) { println "Kullanıcı çok-karo onayını reddetti."; return }
 }
@@ -932,6 +969,55 @@ def findSlideTiles = { File rootDir ->
 }
 String slideSplit = null
 boolean patientVerified = false
+// ── Küme düzeyi tutarlılık: bir çıktı kümesi ya tümüyle bölmeli ya tümüyle bölmesizdir ──
+// Bölmesiz bir lam bölmeli kümeye (ya da tersi) yazılırsa hasta ↔ bölme denetimi o lam için hiç çalışmaz;
+// aynı hasta hem "test" içinde hem bölmesiz klasörde bulunabilir. Bu yüzden karışık kümeye yazılmaz.
+// Okunamayan bir karo listesi de denetimi kör eder: o durumda da durulur.
+def otherListFiles = (outDir.listFiles() ?: new File[0]).findAll {
+    it.isFile() && it.getName().startsWith("karo_listesi__") && it.getName().endsWith(".tsv") && it.getName() != ("karo_listesi__" + slug + ".tsv")
+}
+def setSplitLists = []
+def setUnsplitLists = []
+def unreadableLists = []
+otherListFiles.each { lf ->
+    try {
+        def rows = lf.readLines("UTF-8")
+        if (rows.size() < 2) return
+        int ib = (rows[0].split("\t") as List).indexOf("bolme")
+        if (ib < 0) { unreadableLists << lf.getName(); return }
+        def vals = rows.drop(1).findAll { !it.trim().isEmpty() }.collect { ln -> def c = ln.split("\t", -1); (c.length > ib) ? c[ib].trim() : '' }
+        if (vals.any { !it.isEmpty() }) setSplitLists << lf.getName()
+        if (vals.any { it.isEmpty() }) setUnsplitLists << lf.getName()
+    } catch (Throwable t) { unreadableLists << lf.getName() }
+}
+if (!unreadableLists.isEmpty()) {
+    Dialogs.showErrorMessage(
+        "Veri sızıntısı denetlenemedi: karo listesi okunamadı",
+        "Bu çıktı kümesindeki şu karo listeleri okunamadı ya da 'bolme' sütunu yok:\n  " + unreadableLists.take(8).join("\n  ") + "\n\n" +
+        "Bu listeler olmadan kümedeki diğer lamların bölmesi ve hastası denetlenemez. Hiçbir karo yazılmadı.\n" +
+        "Dosya başka bir programda açıksa kapatın; bozuksa o lamı yeniden dışa aktarın ya da başka bir çıktı klasörü seçin."
+    )
+    return
+}
+if (!useSplit && !setSplitLists.isEmpty()) {
+    Dialogs.showErrorMessage(
+        "Veri sızıntısı önlendi: bölmesiz lam, bölmeli küme",
+        "Bu çıktı kümesinde bölmesi olan lamlar var:\n  " + setSplitLists.take(8).join("\n  ") + "\n\n" +
+        "Bu lamda bölme üst verisi yok. Bölmesiz yazılırsa hasta ↔ bölme denetimi bu lam için çalışmaz;\n" +
+        "aynı hasta hem bir bölmede hem bölmesiz klasörde bulunabilir. Hiçbir karo yazılmadı.\n\n" +
+        "Bu lama bölme verin (proje girdisi ya da anotasyon üst verisi) ya da başka bir çıktı klasörü seçin."
+    )
+    return
+}
+if (useSplit && !setUnsplitLists.isEmpty()) {
+    Dialogs.showErrorMessage(
+        "Veri sızıntısı önlendi: bölmeli lam, bölmesiz küme",
+        "Bu çıktı kümesinde bölmesiz yazılmış lamlar var:\n  " + setUnsplitLists.take(8).join("\n  ") + "\n\n" +
+        "O lamların hastaları hiçbir bölmeye bağlı değil; bu lamın hastasıyla çakışıp çakışmadığı denetlenemez.\n" +
+        "Hiçbir karo yazılmadı. O lamlara bölme verip yeniden dışa aktarın ya da başka bir çıktı klasörü seçin."
+    )
+    return
+}
 if (useSplit) {
     def distinct = new java.util.TreeSet(groupInfo.values().collect { it.split != null ? it.split.toString() : NO_SPLIT })
     if (distinct.size() > 1) {
@@ -968,7 +1054,7 @@ if (useSplit) {
         return
     }
     // (c) aynı hastanın başka lamı projede farklı bölmede mi?
-    if (patientId != null && project != null) {
+    if (patientKey != null && project != null) {
         def conflicts = []
         def unreadable = []
         int siblingCount = 0
@@ -976,19 +1062,25 @@ if (useSplit) {
             project.getImageList().each { other ->
                 if (other == projEntry) return
                 def omd = other.getMetadata()
-                String op = metaPatient(omd)
-                if (op == null || op != patientId) return
+                String op = normPatient(metaPatient(omd))
+                if (op == null || op != patientKey) return
                 siblingCount++
                 // Aynı hastanın diğer lamı: bölme proje girdisinde yoksa kayıtlı anotasyonlarının üst verisine de bakılır
                 // (görüntü açılmadan, kayıtlı hiyerarşiden). Okunamazsa "denetlenemedi" sayılır.
                 def found = new java.util.TreeSet()
-                String os = normSplit(metaSplit(omd))
+                // Okunamayan bölme değeri ("?…") hiçbir bölmeye eşit sayılmaz → çakışma olarak bildirilir.
+                def splitOrUnknown = { Map md2 ->
+                    String raw = metaSplit(md2)
+                    String n = normSplit(raw)
+                    return (raw != null && n == null) ? ('?' + raw) : n
+                }
+                String os = splitOrUnknown(omd)
                 if (os != null) found.add(os)
                 try {
                     def oh = other.readHierarchy()
                     if (oh != null) oh.getAnnotationObjects().each { oa ->
                         String asp = null
-                        try { asp = normSplit(metaSplit(oa.getMetadata())) } catch (Throwable ignore2) {}
+                        try { asp = splitOrUnknown(oa.getMetadata()) } catch (Throwable ignore2) {}
                         if (asp != null) found.add(asp)
                     }
                 } catch (Throwable th) {
@@ -1025,7 +1117,7 @@ if (useSplit) {
                 int ib = head.indexOf("bolme")
                 if (ih < 0 || ib < 0) return
                 def seen = new java.util.TreeSet()
-                rows.drop(1).each { ln -> def c = ln.split("\t", -1); if (c.length > Math.max(ih, ib) && c[ih] == patientId && !c[ib].isEmpty() && c[ib] != slideSplit) seen.add(c[ib]) }
+                rows.drop(1).each { ln -> def c = ln.split("\t", -1); if (c.length > Math.max(ih, ib) && normPatient(c[ih]) == patientKey && !c[ib].isEmpty() && c[ib] != slideSplit) seen.add(c[ib]) }
                 seen.each { listClash << (lf.getName() + " → " + it) }
             } catch (Throwable ignore) {}
         }
@@ -1039,19 +1131,72 @@ if (useSplit) {
         }
         patientVerified = true
     } else {
-        // (d) hasta kimliği yok: denetlenemez → açık onay gerekir; headless ise durur
+        // (d) hasta kimliği yok: denetlenemez → durur. Onayla devam yolu YOKTUR (ne pencerede ne headless):
+        // bir "eminim" tıklaması hasta düzeyi denetimin yerini tutmaz ve denetimi atlatmanın tek yolu olurdu.
         String why = "Bölme üst verisi var, ama bu lamın proje girdisinde hasta kimliği yok\n" +
                      "(anahtar: patient / hasta / case / vaka / patient_pseudonym …).\n\n" +
-                     "Aynı hastanın başka lamlarının başka bölmede olup olmadığı DENETLENEMEDİ."
-        if (isHeadless) {
-            println "Veri sızıntısı denetlenemedi; karo yazılmadı.\n" + why
+                     "Aynı hastanın başka lamlarının başka bölmede olup olmadığı DENETLENEMEDİ.\n\n" +
+                     "Proje sekmesinde lama sağ tıklayın → Add metadata → anahtar \"hasta\", değer hasta kimliği\n" +
+                     "(takma ad olabilir; aynı hastanın bütün lamlarında aynı olmalı). Sonra yeniden çalıştırın.\n" +
+                     "Hiçbir karo yazılmadı."
+        println "Veri sızıntısı denetlenemedi; karo yazılmadı.\n" + why
+        if (!isHeadless) Dialogs.showErrorMessage("Hasta kimliği yok: karo yazılmadı", why)
+        return
+    }
+}
+
+// ── Maske indeksleri: küme boyunca sabit ──
+// İndeksler her lamda alfabetik sıradan yeniden üretilseydi "1" bir lamda Stroma, ötekinde Tümör olurdu.
+// Kümedeki labels.txt esas alınır: bilinen sınıf indeksini korur, yeni sınıf sona eklenir, dosya hiç daraltılmaz.
+// Dışlama (Ignore*) sınıfları indeks almaz; maskede arka plan (0) kalır.
+if (maskMode) {
+    def labelsFile = new File(outDir, "labels.txt")
+    def classIndex = new java.util.LinkedHashMap<String, Integer>()
+    if (labelsFile.isFile()) {
+        boolean bad = false
+        try {
+            def lp = java.util.regex.Pattern.compile('(\\d+) = (.+)')
+            labelsFile.readLines("UTF-8").each { ln ->
+                if (ln.trim().isEmpty()) return
+                def m = lp.matcher(ln.trim())
+                if (!m.matches()) { bad = true; return }
+                int idx = Integer.parseInt(m.group(1))
+                if (idx == 0) return
+                if (classIndex.containsKey(m.group(2)) || classIndex.containsValue(idx)) bad = true
+                classIndex.put(m.group(2), idx)
+            }
+        } catch (Throwable t) { bad = true }
+        if (bad) {
+            Dialogs.showErrorMessage(
+                "labels.txt okunamadı",
+                "Bu çıktı kümesindeki labels.txt okunamadı ya da aynı indeks / sınıf iki kez geçiyor:\n  " + labelsFile.getAbsolutePath() + "\n\n" +
+                "Maske indeksleri kümedeki diğer lamlarla aynı olmak zorundadır; dosya olmadan bu sağlanamaz.\n" +
+                "Hiçbir karo yazılmadı. Dosyayı düzeltin ya da başka bir çıktı klasörü seçin."
+            )
             return
         }
-        def go = Dialogs.showConfirmDialog(
-            "Hasta düzeyinde sızıntı denetlenemedi",
-            why + "\n\nBu hastanın yalnız bu bölmede olduğundan eminseniz devam edin.\nDevam edilsin mi?"
-        )
-        if (!go) { println "Hasta kimliği olmadığı için kullanıcı dışa aktarmayı durdurdu."; return }
+    }
+    int nextIndex = classIndex.isEmpty() ? 1 : (classIndex.values().max() + 1)
+    maskClasses.each { String cn -> if (!classIndex.containsKey(cn)) { classIndex.put(cn, nextIndex); nextIndex++ } }
+    if (classIndex.values().max() > 255) {
+        Dialogs.showErrorMessage("Çok fazla sınıf", "Bu çıktı kümesinde 255'ten fazla maske sınıfı birikti; 8 bit maskeye sığmaz. Hiçbir karo yazılmadı.")
+        return
+    }
+    def builder = new LabeledImageServer.Builder(imageData)
+        .backgroundLabel(0, ColorTools.WHITE)
+        .downsample(downsample)
+        .multichannelOutput(false)
+    legend << "0 = arka plan"
+    classIndex.entrySet().sort { it.getValue() }.each { e ->
+        builder.addLabel(e.getKey(), e.getValue())
+        legend << (e.getValue() + " = " + e.getKey())
+    }
+    labelServer = builder.build()
+    // Karolardan ÖNCE yazılır: yazılamıyorsa indeks kaydı olmayan maske üretilmez.
+    try { labelsFile.write(legend.join("\n") + "\n", "UTF-8") }
+    catch (Throwable t) {
+        Dialogs.showErrorMessage("labels.txt yazılamadı", "Sınıf → indeks kaydı yazılamadı: " + t.getMessage() + "\nHiçbir karo yazılmadı.")
+        return
     }
 }
 
@@ -1092,7 +1237,7 @@ println "───────────────────────�
 println "Mod      : " + (maskMode ? "Görüntü + etiket maskesi" : "Sadece görüntü")
 println "Kapsam   : " + (selectedScope ? "Seçili anotasyon(lar)" : "Tüm anotasyonlar") + " (${inScope.size()})"
 println String.format(java.util.Locale.US, "Çözünürlük: %.3f µm/px → downsample %.3f%s", umPerPx, downsample, (calibrated ? "" : " (kalibre değil)"))
-println "Etiketler: " + perLabel.collect { k, v -> keyTitle(k) + "=" + v }.join(", ")
+println "Etiketler" + ((minTissue > 0.0d) ? " (aday, doku süzgecinden önce)" : "") + ": " + perLabel.collect { k, v -> keyTitle(k) + "=" + v }.join(", ")
 println "Çıktı    : ${outDir.getAbsolutePath()}"
 
 // ──────────────────────────────────────────────────────────────
@@ -1176,8 +1321,10 @@ def writeOne = { List tile ->
                              (gi.split != null ? gi.split : ""), gi.source, gi.classes.join("; "), gi.names.join("; "), (patientId ?: ""), tissueText, key]
             return
         }
-        if (madeDirs.add(imgDir.getAbsolutePath())) imgDir.mkdirs()
-        if (labDir != null && madeDirs.add(labDir.getAbsolutePath())) labDir.mkdirs()
+        // createDirectories yinelenebilir ve iş parçacığı güvenlidir. Eski "kümeye ekle, sonra mkdirs" kalıbında ikinci
+        // iş parçacığı klasör daha oluşmadan yazmaya geçebiliyor ve o karo "yol bulunamadı" hatasıyla kayboluyordu.
+        if (!madeDirs.contains(imgDir.getAbsolutePath())) { java.nio.file.Files.createDirectories(imgDir.toPath()); madeDirs.add(imgDir.getAbsolutePath()) }
+        if (labDir != null && !madeDirs.contains(labDir.getAbsolutePath())) { java.nio.file.Files.createDirectories(labDir.toPath()); madeDirs.add(labDir.getAbsolutePath()) }
         if (imgFormat == 'jpg') img = toRgb(img)
         def imgFile = new File(imgDir, fileStem + imageExt)
         if (imgFormat == 'jpg') {
@@ -1210,6 +1357,50 @@ def writeOne = { List tile ->
 def t0 = System.currentTimeMillis()
 int nThreads = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() - 1))
 def pool = java.util.concurrent.Executors.newFixedThreadPool(nThreads)
+
+// Ön seçim (doku süzgeci + etiket başına en çok N birlikte): her grupta karolar sabit tohumla karıştırılır,
+// sırayla doku oranı ölçülür ve süzgeci geçen ilk N karo alınır. Ölçüm paralel, kabul sırası karıştırma
+// sırasıdır; bu yüzden sonuç iş parçacığı sayısından bağımsız ve yinelenebilirdir. Hiçbir şey yazılmaz.
+if (capAfterTissue) {
+    def kept = []
+    try {
+        tiles.groupBy { it[0] }.each { key, List list ->
+            def shuffled = new ArrayList(list)
+            java.util.Collections.shuffle(shuffled, new java.util.Random((long) (server.getMetadata().getName() + '|' + key).hashCode()))
+            int taken = 0
+            int failed = 0
+            int idx = 0
+            while (taken < maxPerLabel && idx < shuffled.size()) {
+                int want = Math.max(maxPerLabel - taken, nThreads * 4)
+                def batch = shuffled.subList(idx, Math.min(shuffled.size(), idx + want))
+                def futs = batch.collect { List tile ->
+                    pool.submit({
+                        try {
+                            def req = RegionRequest.createInstance(serverPath, downsample, (int) tile[1], (int) tile[2], tileL0, tileL0, planeZ, planeT)
+                            return tissueFraction(fitTo(server.readRegion(req), false))
+                        } catch (Throwable t) { return null }
+                    } as java.util.concurrent.Callable)
+                }
+                for (int bi = 0; bi < batch.size(); bi++) {
+                    def tf = futs[bi].get()
+                    if (taken >= maxPerLabel) continue          // ölçüldü ama sınır doldu: sınırla dışarıda kalanlara sayılır
+                    if (tf == null) { failed++; errors << ("ön seçim: x" + batch[bi][1] + " y" + batch[bi][2] + " okunamadı"); continue }
+                    if (((double) tf) < minTissue) { failed++; tissueDropped.incrementAndGet(); continue }
+                    kept << batch[bi]
+                    taken++
+                }
+                idx += batch.size()
+            }
+            droppedByCap += list.size() - taken - failed
+        }
+        tiles = kept
+    } catch (Throwable t) {
+        // Ön seçim yarıda kalırsa hiçbir karo yazılmaz: eksik bir seçimle devam etmek sayıları yanıltır.
+        tiles = []
+        errors << ("ön seçim yarıda kaldı, karo yazılmadı: " + t.getClass().getSimpleName() + ": " + t.getMessage())
+    }
+}
+
 try {
     def futures = tiles.collect { List tile -> pool.submit({ writeOne(tile) } as Runnable) }
     futures.each { it.get() }
@@ -1233,17 +1424,94 @@ if (writeManifest) try {
     manifestFile.withWriter('UTF-8') { w ->
         w.writeLine(['lam', 'hasta', 'bolme', 'bolme_kaynagi', 'etiket', 'sinif', 'anotasyon_adlari', 'x', 'y', 'kenar_taban_px', 'karo_px', 'downsample', 'um_px', 'kapsama', 'doku_orani', 'dosya', 'maske'].join('\t'))
         def clean = { Object v -> (v == null ? '' : v.toString().replaceAll('[\\t\\r\\n]', ' ')) }
+        // um_px: karonun GERÇEK çözünürlüğü. Taban kenar tam piksele yuvarlandığı için istenen değerden az farklı olabilir.
+        String umEff = calibrated ? String.format(java.util.Locale.US, "%.4f", tileL0 * avgPx / (double) tileSize) : ''
         manifestRows.sort { a, b -> (a[6] <=> b[6]) ?: (a[0] <=> b[0]) ?: (a[2] <=> b[2]) ?: (a[1] <=> b[1]) }.each { r ->
             w.writeLine([slug, clean(r[10]), r[6], r[7], r[0], clean(r[8]), clean(r[9]), r[1], r[2], tileL0, tileSize, dsLabel,
-                         (calibrated ? numLabel(umPerPx) : ''), r[3], r[11], r[4], r[5]].join('\t'))
+                         umEff, r[3], r[11], r[4], r[5]].join('\t'))
         }
     }
 } catch (Throwable t) {
     errors << ("karo listesi yazılamadı: " + t.getMessage())
 }
-if (maskMode) {
-    // labels.txt — sınıf → indeks açıklaması
-    try { new File(outDir, "labels.txt").write(legend.join("\n") + "\n", "UTF-8") } catch (Throwable ignored) {}
+// labels.txt (sınıf → indeks) karolardan önce, "Maske indeksleri" adımında yazıldı.
+
+// ── Küme özeti: bu çıktı kümesindeki TÜM karo listeleri (bu lam dahil) üzerinden sınıf dengesi ──
+// Yalnız sayar ve raporlar: karo silmez, çoğaltmaz, bölme atamaz. Kaynak karo listeleridir (klasör içeriği değil).
+// Satır: [lam, hasta (karşılaştırma biçimi), bölme, etiket]
+def setRows = []
+def setSkipped = []
+manifestRows.each { r -> setRows << [slug, (patientKey ?: ''),(r[6] != null ? r[6].toString() : ''), r[0].toString()] }
+(outDir.listFiles() ?: new File[0]).findAll {
+    it.isFile() && it.getName().startsWith("karo_listesi__") && it.getName().endsWith(".tsv") && it.getName() != manifestFile.getName()
+}.sort { it.getName() }.each { lf ->
+    try {
+        def lines = lf.readLines("UTF-8")
+        if (lines.size() < 2) return
+        def head = lines[0].split("\t") as List
+        int cl = head.indexOf("lam"), ch = head.indexOf("hasta"), cb = head.indexOf("bolme"), ce = head.indexOf("etiket")
+        if (cl < 0 || ce < 0) { setSkipped << lf.getName(); return }
+        lines.drop(1).findAll { !it.trim().isEmpty() }.each { ln ->
+            def c = ln.split("\t", -1)
+            if (c.length <= ce || c.length <= cl) return
+            setRows << [c[cl].trim(), ((ch >= 0 && c.length > ch) ? (normPatient(c[ch]) ?: '') : ''), ((cb >= 0 && c.length > cb) ? c[cb].trim() : ''), c[ce].trim()]
+        }
+    } catch (Throwable t) { setSkipped << lf.getName() }
+}
+String setSummaryBlock = ""
+def setSummaryFile = new File(outDir, "kume_ozeti.tsv")
+if (!setRows.isEmpty()) {
+    def setLabels = new java.util.TreeSet<String>(setRows.collect { (String) it[3] })
+    def setSplits = new java.util.TreeSet<String>(setRows.collect { (String) it[2] })
+    def setSlides = new java.util.TreeSet<String>(setRows.collect { (String) it[0] })
+    def setPatients = new java.util.TreeSet<String>(setRows.collect { (String) it[1] }.findAll { it })
+    int rowsNoPatient = setRows.count { !it[1] } as int
+    def splitTitle = { String s -> s ? s : "(bölmesiz)" }
+    def sl = []
+    sl << String.format(java.util.Locale.US, "  %,d karo · %d lam · %d hasta%s", setRows.size(), setSlides.size(), setPatients.size(),
+                        (rowsNoPatient > 0 ? String.format(java.util.Locale.US, " (%,d karonun hasta kimliği yok)", rowsNoPatient) : ""))
+    sl << ("  " + String.format(java.util.Locale.US, "%-22s", "Etiket") + setSplits.collect { String.format(java.util.Locale.US, "%12s", splitTitle(it)) }.join("") +
+           String.format(java.util.Locale.US, "%12s%7s%7s%20s", "Toplam", "Lam", "Hasta", "En büyük hasta payı"))
+    def tsv = [['etiket', 'bolme', 'karo', 'lam', 'hasta', 'en_buyuk_hasta_payi'].join('\t')]
+    def warns = []
+    def totals = new java.util.TreeMap<String, Integer>()
+    setLabels.each { String lab ->
+        def rowsL = setRows.findAll { it[3] == lab }
+        totals.put(lab, rowsL.size())
+        def withPat = rowsL.findAll { it[1] }
+        def byPat = withPat.countBy { it[1] }
+        double topShare = byPat.isEmpty() ? Double.NaN : (byPat.values().max() / (double) withPat.size())
+        String shareText = Double.isNaN(topShare) ? "—" : String.format(java.util.Locale.US, "%% %.0f", topShare * 100.0d)
+        sl << ("  " + String.format(java.util.Locale.US, "%-22s", (lab.length() > 22 ? lab.substring(0, 21) + "…" : lab)) +
+               setSplits.collect { String sp -> String.format(java.util.Locale.US, "%,12d", rowsL.count { it[2] == sp }) }.join("") +
+               String.format(java.util.Locale.US, "%,12d%7d%7d%20s", rowsL.size(), rowsL.collect { it[0] }.unique().size(), byPat.size(), shareText))
+        (setSplits + ['*']).each { String sp ->
+            def rr = (sp == '*') ? rowsL : rowsL.findAll { it[2] == sp }
+            def wp = rr.findAll { it[1] }
+            def bp = wp.countBy { it[1] }
+            tsv << [lab, (sp == '*' ? 'tumu' : sp), rr.size(), rr.collect { it[0] }.unique().size(), bp.size(),
+                    (bp.isEmpty() ? '' : String.format(java.util.Locale.US, "%.4f", bp.values().max() / (double) wp.size()))].join('\t')
+        }
+        if (setSplits.size() > 1) {
+            def missing = setSplits.findAll { String sp -> rowsL.count { it[2] == sp } == 0 }
+            if (!missing.isEmpty()) warns << ("  • ⚠️ \"" + lab + "\" şu bölmelerde hiç yok: " + missing.collect { splitTitle(it) }.join(", ") + ".")
+        }
+        if (setPatients.size() >= 3 && !Double.isNaN(topShare) && topShare > 0.5d) {
+            warns << String.format(java.util.Locale.US, "  • ⚠️ \"%s\" karolarının %% %.0f kadarı tek hastadan geliyor (%d hastadan).", lab, topShare * 100.0d, byPat.size())
+        }
+    }
+    if (totals.size() > 1) {
+        int mx = totals.values().max()
+        int mn = totals.values().min()
+        sl << (mn > 0 ? String.format(java.util.Locale.US, "  En büyük / en küçük etiket: %.1f kat (%,d / %,d karo)", mx / (double) mn, mx, mn) : "  En küçük etiketin karosu yok.")
+    }
+    if (setPatients.size() > 0 && setPatients.size() < 3) warns << "  • Kümede 3'ten az hasta var: hasta payı uyarısı üretilmedi."
+    if (!setSkipped.isEmpty()) warns << ("  • ⚠️ Okunamayan karo listesi özete girmedi: " + setSkipped.join(", "))
+    if (maskMode) warns << "  • Maske modunda sayım karo etiketine göredir; maskelerin içindeki sınıf piksel payı ölçülmez."
+    warns << "  • Özet yalnız sayar: karo silmez, çoğaltmaz. Dengelemeyi eğitimde (örnekleme / ağırlık) yapın; doğrulama ve test bölmelerini dengelemeyin."
+    try { setSummaryFile.write(tsv.join('\n') + '\n', 'UTF-8') }
+    catch (Throwable t) { errors << ("küme özeti yazılamadı: " + t.getMessage()) }
+    setSummaryBlock = "\n🧮 Küme özeti (bu kümedeki tüm karo listeleri · " + setSummaryFile.getName() + ")\n──────────────\n" + sl.join("\n") + "\n" + warns.join("\n") + "\n"
 }
 
 // Önizleme: lamın küçük görüntüsü üzerinde, listeye giren karoların kutuları (etikete göre renkli)
@@ -1303,7 +1571,9 @@ def notes = []
 if (ignoredAsLabel > 0) notes << ("  • " + ignoredAsLabel + " Ignore* anotasyonu karo üretmedi" + (subtractIgnore ? " ve diğer bölgelerden çıkarıldı." : "."))
 if (subtractChildren) notes << "  • Alt anotasyonlar üst anotasyondan çıkarıldı."
 if (skippedByClass > 0) notes << ("  • " + skippedByClass + " anotasyon, etiketi işaretli olmadığı için atlandı.")
-if (droppedByCap > 0) notes << ("  • Etiket başına en çok " + maxPerLabel + " karo: " + droppedByCap + " karo rastgele seçimle dışarıda kaldı.")
+if (droppedByCap > 0) notes << ("  • Etiket başına en çok " + maxPerLabel + " karo: " + droppedByCap + " karo rastgele seçimle dışarıda kaldı" +
+                                (capAfterTissue ? " (sınır doku süzgecinden sonra uygulandı; atlanan doku sayısı yalnız incelenen karoları kapsar)." : "."))
+else if (maxPerLabel > 0) notes << ("  • Etiket başına en çok " + maxPerLabel + " karo: hiçbir etiket sınırı aşmadı. Sınır bu lam içindir, küme genelinde değil.")
 if (!writeManifest) notes << "  • Karo listesi yazılmadı (seçiminizle)."
 if (minTissue > 0.0d) notes << String.format(java.util.Locale.US, "  • En az doku %%%.0f (beyazlık eşiği %d): %,d karo yeterli doku içermediği için atlandı.", minTissue * 100.0d, whiteThreshold, tissueDropped.get())
 if (coordsOnly) notes << ("  • Yalnız karo listesi: " + listedTiles + " karonun koordinatı yazıldı, görüntü dosyası yazılmadı.")
@@ -1314,8 +1584,7 @@ if (useSplit) {
     def src = new java.util.TreeSet(groupInfo.values().collect { it.source }.findAll { it })
     notes << ("  • Bölme üst veriden okundu (" + src.join(" + ") + "): " + splitsHere.join(", ") + ". Betik bölme atamaz.")
     notes << ("  • Sızıntı denetimi: bu lam tek bölmede (" + slideSplit + "); aynı kümede başka bölmede karosu yok.")
-    notes << (patientVerified ? ("  • Hasta " + patientId + ": projedeki diğer lamları (proje girdisi + kayıtlı anotasyonlar) ve bu kümedeki karo listeleri denetlendi; başka bölmede yok.")
-                              : "  • ⚠️ Hasta kimliği yoktu; hasta düzeyinde denetim YAPILAMADI (onayınızla devam edildi).")
+    notes << ("  • Hasta " + patientId + ": projedeki diğer lamları (proje girdisi + kayıtlı anotasyonlar) ve bu kümedeki karo listeleri denetlendi; başka bölmede yok.")
 } else {
     notes << "  • Bölme üst verisi bulunamadı (anahtar: split / bolme / set / fold): klasörlerde bölme düzeyi yok.\n    Bölmeyi sonradan yaparken karo düzeyinde değil, lam / hasta düzeyinde yapın."
 }
@@ -1343,7 +1612,7 @@ showResultWindow(
         "  Görüntü karosu : %,d\n" +
         "  Maske karosu   : %,d\n" +
         "  Süre           : %.1f sn\n" +
-        "%s%s%s\n" +
+        "%s%s%s%s\n" +
         "📝 Sonraki adım:\n" +
         "  • Karoları derin öğrenme / harici AI araçlarına verin (<Etiket>/<dosya> düzeni).\n" +
         "  • Veri bölmeyi karo listesindeki lam / hasta düzeyinde yapın, karo düzeyinde değil.\n" +
@@ -1365,7 +1634,7 @@ showResultWindow(
         legendBlock,
         labelBlock,
         imageTiles, maskTiles, elapsed,
-        errBlock, emptyHint, noteBlock
+        setSummaryBlock, errBlock, emptyHint, noteBlock
     )
 )
 

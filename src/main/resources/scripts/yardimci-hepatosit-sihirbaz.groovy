@@ -152,7 +152,7 @@ def configMissing = { cfg ->
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
 
 def parseIntOr = { s, int d -> try { return Integer.parseInt((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
-def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
+def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim().replace(',', '.')) } catch (Throwable t) { return d } }
 
 // ── Lam yolunu çöz (yalnız yerel dosya; Python openslide ile açar) ────────
 def resolveSlidePath = { imageData ->

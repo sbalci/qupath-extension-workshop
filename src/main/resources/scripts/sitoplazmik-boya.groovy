@@ -216,7 +216,8 @@ def finishCytoMetrics = { targetAnnotation, double cyto1, double cyto2, double c
         "  Toplam yoğunluk       : ~%,d hücre/mm²\n" +
         "  CD68+ yoğunluk        : ~%,d hücre/mm²\n" +
         "  Anotasyon alanı       : %.2f mm²\n" +
-        "  Süre                  : %.1f sn\n" +
+        "  Süre                  : %.1f sn\n\n" +
+        "Payda: anotasyonda tespit edilen TÜM hücreler (hücre tipi ayrılmaz).\n" +
         "%s\n" +
         "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir.",
         cyto1, cyto2, cyto3, cellExpansionCyto,

@@ -228,13 +228,18 @@ if (Math.abs(impliedW - server.getWidth()) > tolerance) {
 def labelsPresent = new TreeSet<Integer>()
 boolean binaryFallback = false
 int[] rowBuf = new int[maskW]
+int maxSeen = 0   // BÜTÜN maskedeki en büyük değer; ikili geri dönüşte izleme üst sınırıdır
 for (int y = 0; y < maskH; y++) {
     raster.getSamples(0, y, maskW, 1, 0, rowBuf)
     for (int x = 0; x < maskW; x++) {
         int v = rowBuf[x]
-        if (v != 0) labelsPresent.add(v)
+        if (v == 0) continue
+        if (v > maxSeen) maxSeen = v
+        if (!binaryFallback) labelsPresent.add(v)
     }
-    if (labelsPresent.size() > maxDistinctLabels) { binaryFallback = true; break }
+    // Çok fazla ayrı değer → ikili (ön plan/arka plan) okuma. Tarama burada KESİLMEZ:
+    // erken kesilseydi üst sınır yalnız ilk satırlardan gelir, alttaki daha büyük değerli pikseller dışarıda kalırdı.
+    if (labelsPresent.size() > maxDistinctLabels) binaryFallback = true
 }
 if (labelsPresent.isEmpty()) {
     Dialogs.showWarningNotification("Boş maske",
@@ -288,7 +293,7 @@ if (numBands > 1) {
 }
 
 if (binaryFallback) {
-    int maxVal = labelsPresent.max()
+    int maxVal = maxSeen
     def roi = ContourTracing.createTracedROI(raster, 1.0d, (double) maxVal, 0, request)
     addRoiAsAnnotations(roi, fgName)
 } else {

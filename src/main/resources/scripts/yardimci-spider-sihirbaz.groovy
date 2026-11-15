@@ -157,7 +157,7 @@ def loadConfig = { ->
       modelDir    : prefs.get(PREF_MODEL,  ''),
       workDir     : prefs.get(PREF_WORK,   ''),
       tileSize    : prefs.get(PREF_TILE,   '1120'),
-      downsample  : prefs.get(PREF_DS,     '1.0'),
+      downsample  : prefs.get(PREF_DS,     ''),
       maxTiles    : prefs.get(PREF_MAXT,   '0'),
       organ       : prefs.get(PREF_ORGAN,  'colorectal'),
       granularity : prefs.get(PREF_GRAN,   'annotation'),
@@ -176,7 +176,7 @@ def configMissing = { cfg ->
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
 
 def parseIntOr = { s, int d -> try { return Integer.parseInt((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
-def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
+def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim().replace(',', '.')) } catch (Throwable t) { return d } }
 
 // ── Çalışma dizinini çöz (proje dizini → lam klasörü → geçici) ────────────
 def resolveWorkDir = { cfg, imageData ->
@@ -274,7 +274,23 @@ def exportTiles = { imageData, File workDir, cfg, Closure appendLine ->
     def server = imageData.getServer()
     def imageName = imageNameOf(imageData)
     int tileSize = parseIntOr(cfg.tileSize, 1120)
-    double downsample = parseDoubleOr(cfg.downsample, 1.0d)
+    // Downsample boşsa otomatik: lamın µm/px değerinden 0.5 µm/px (~20x) hedefine. Kalibrasyon yoksa 1.0.
+    def calDs = server.getPixelCalibration()
+    double mppDs = calDs.hasPixelSizeMicrons() ? calDs.getAveragedPixelSizeMicrons().doubleValue() : Double.NaN
+    double downsample
+    if ((cfg.downsample ?: '').toString().trim().isEmpty()) {
+        downsample = (Double.isFinite(mppDs) && mppDs > 0) ? Math.max(1.0d, 0.5d / mppDs) : 1.0d
+        appendLine(String.format(java.util.Locale.US, 'Downsample otomatik: %.3f%s', downsample,
+            Double.isFinite(mppDs) ? String.format(java.util.Locale.US, ' (lam %.3f µm/px → karo %.3f µm/px)', mppDs, mppDs * downsample) : ' (lam kalibre değil; ölçek bilinmiyor)'))
+    } else {
+        downsample = parseDoubleOr(cfg.downsample, 1.0d)
+        if (!(downsample > 0)) downsample = 1.0d
+        if (Double.isFinite(mppDs)) appendLine(String.format(java.util.Locale.US, 'Downsample %.3f (lam %.3f µm/px → karo %.3f µm/px)', downsample, mppDs, mppDs * downsample))
+    }
+    if (Double.isFinite(mppDs) && Math.abs(mppDs * downsample - 0.5d) > 0.1d)
+        appendLine(String.format(java.util.Locale.US, '⚠ Karo çözünürlüğü %.3f µm/px. SPIDER 20x (~0.5 µm/px) karolarla eğitildi; bu ölçekte tahminler güvenilmez olabilir.', mppDs * downsample))
+    else if (!Double.isFinite(mppDs))
+        appendLine('⚠ Lam kalibre değil: karo ölçeği denetlenemedi. SPIDER 20x (~0.5 µm/px) karolarla eğitildi.')
     int maxTiles = parseIntOr(cfg.maxTiles, 0)
     String mode = (cfg.granularity == 'tile-grid') ? 'tile-grid' : 'annotation'
     def tilesRoot = new File(workDir, 'tiles')
@@ -535,7 +551,7 @@ def persistFields = {
     prefs.put(PREF_MODEL,  textOf(modelFieldRef))
     prefs.put(PREF_WORK,   textOf(workFieldRef))
     def ts = textOf(tileFieldRef); prefs.put(PREF_TILE, ts ?: '1120')
-    def ds = textOf(dsFieldRef);   prefs.put(PREF_DS,   ds ?: '1.0')
+    def ds = textOf(dsFieldRef);   prefs.put(PREF_DS,   ds ?: '')
     def mt = textOf(maxTFieldRef); prefs.put(PREF_MAXT, mt ?: '0')
     def og = organChoiceRef.get();  prefs.put(PREF_ORGAN, (og != null && og.getValue() != null) ? og.getValue() : 'colorectal')
     def gr = granChoiceRef.get();   prefs.put(PREF_GRAN, (gr != null && gr.getValue() != null) ? granLabelToKey(gr.getValue()) : 'annotation')
@@ -689,7 +705,7 @@ render = { ->
         def mdField = new javafx.scene.control.TextField(cfg.modelDir ?: '')
         def wdField = new javafx.scene.control.TextField(cfg.workDir ?: '')
         def tsField = new javafx.scene.control.TextField(cfg.tileSize ?: '1120')
-        def dsField = new javafx.scene.control.TextField(cfg.downsample ?: '1.0')
+        def dsField = new javafx.scene.control.TextField(cfg.downsample ?: ''); dsField.setPromptText('boş = otomatik')
         def mtField = new javafx.scene.control.TextField(cfg.maxTiles ?: '0')
         [pyField, brField, mdField, wdField].each { it.setPrefColumnCount(34) }
         [tsField, dsField, mtField].each { it.setPrefColumnCount(8) }
@@ -717,7 +733,7 @@ render = { ->
         center.getChildren().add(grid)
         if (!cfg.modelDir?.trim())
             addWarnLabel('⚠ SPIDER modelleri KAPILIDIR (CC BY-NC 4.0). Model dizini boşsa indirme için HuggingFace token gerekir (huggingface-cli login). Çevrimdışı için indirilmiş klasörü "Model dizini"ne yazın — bkz. Kaynaklar § G.')
-        addGuidance('Karo boyutu SPIDER için 1120 (sabit bağlam penceresi). Downsample: 0,5 µm/px tarayıcıda 1.0; 0,25 µm/px tarayıcıda 2.0. ' +
+        addGuidance('Karo boyutu SPIDER için 1120 (sabit bağlam penceresi). Downsample: boş bırakın, lamın µm/px değerinden 0.5 µm/px (20x) hedefine otomatik hesaplanır (0,25 µm/px tarayıcıda 2.0). ' +
             'Granülarite: "Anotasyon düzeyi" her anotasyona tek sınıf; "Karo ızgarası" her 1120 karo için renkli alt-tespit (ısı haritası).')
         actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
         actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }, 'spider_bridge.py selftest — bağımlılık + HF erişimi doğrular'))

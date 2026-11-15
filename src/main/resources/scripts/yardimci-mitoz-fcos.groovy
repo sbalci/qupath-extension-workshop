@@ -6,7 +6,7 @@
  * NE YAPAR:
  *   QuPath'te ÇİZDİĞİNİZ alan anotasyonu içinde — ve YALNIZ orada — DeepMicroscopy'nin
  *   **MIDOG 2025 Görev 1 resmî referans** dedektörünü (torchvision FCOS + ResNeXt101)
- *   canlı çalıştırır. Sihirbaz seçili bölgeyi hedef çözünürlükte (varsayılan 0.5 µm/px)
+ *   canlı çalıştırır. Sihirbaz seçili bölgeyi hedef çözünürlükte (varsayılan 0.25 µm/px)
  *   bir ROI görüntüsü olarak dışa aktarır → Python köprüsü (midog/fcos_runner.py) 1024
  *   döşemeli FCOS çıkarımını yapar → mitotik figür merkezleri TABAN-piksel koordinatlarında
  *   GeoJSON olarak geri alınır, bölgeye göre filtrelenir, "Mitosis" nokta-anotasyonu olarak
@@ -40,7 +40,7 @@
  *   • Her mitoz için "Mitosis" sınıflı nokta-anotasyonu (tespitin kendisi) + çevresinde,
  *     etiketi ("FCOS mitoz #i") taşıyan bir GÖRÜNTÜ halkası (sınıfsız, kilitli) — etiket
  *     mitozu örtmesin diye
- *   • Her seçili anotasyona: "Mitoz (FCOS)" + "Mitoz yoğunluğu (mitoz/mm2)"
+ *   • Her seçili anotasyona: "Mitoz (FCOS)" + "Mitoz yoğunluğu (FCOS, mitoz/mm2)"
  *   • Kilitli "FCOS MIDOG25 mitoz özeti" anotasyonu (Veri dışa aktarma ile dışa aktarılır)
  *
  * YÖNTEM / KAYNAK REFERANSLARI:
@@ -84,7 +84,7 @@ def MITOSIS_CLASS  = 'Mitosis'                 // içe alınan nokta-anotasyonu 
 def MITOSIS_PREFIX = 'FCOS mitoz'              // halka etiketi öneki + noktanın META_SOURCE değeri
 def MITOSIS_RGB    = [40, 120, 255]            // FCOS = mavi (sınıf + görüntü halkası)
 def WEIGHTS_NAME   = 'FCOS_x101.ckpt'
-double TARGET_MPP  = 0.5        // FCOS'a beslenecek hedef çözünürlük (MIDOG kanonik; KongNet ile tutarlı)
+double TARGET_MPP  = 0.25       // FCOS'a beslenecek hedef çözünürlük: referans kod (patch_config.yaml, level: 0) MIDOG görüntülerini taban düzeyinde (~0.25 µm/px) okur
 double DET_THRESH  = 0.548      // MIDOG25 T1 referans mitotik-figür eşiği
 double WHO_AREA_MM2 = 2.0        // WHO alan-tabanlı raporlama birimi (mitoz / 2 mm²)
 double AREA_TOL_MM2 = 0.01
@@ -140,7 +140,7 @@ def PREF_PYTHON = 'python'
 def PREF_RUNNER = 'runner'
 def PREF_WORK   = 'workDir'
 def PREF_DEVICE = 'device'
-def PREF_TMPP   = 'targetMpp'      // hedef çözünürlük (µm/px); boş = 0.5
+def PREF_TMPP   = 'targetMpp'      // hedef çözünürlük (µm/px); boş = 0.25
 def PREF_BATCH  = 'batchSize'
 def PREF_THRESH = 'threshold'      // det_thresh geçersiz kılma (boş = 0.548)
 
@@ -230,7 +230,7 @@ def loadConfig = { ->
       runner    : rn,
       workDir   : prefs.get(PREF_WORK,   ''),
       device    : prefs.get(PREF_DEVICE, 'cuda'),
-      targetMpp : prefs.get(PREF_TMPP,   ''),     // boş = TARGET_MPP (0.5)
+      targetMpp : prefs.get(PREF_TMPP,   ''),     // boş = TARGET_MPP (0.25)
       batchSize : prefs.get(PREF_BATCH,  '8'),
       threshold : prefs.get(PREF_THRESH, '') ]    // boş = DET_THRESH (0.548)
 }
@@ -284,7 +284,7 @@ def calibrationInfo = { imageData ->
     try { mag = imageData.getServer().getMetadata().getMagnification() } catch (Throwable ignore) {}
     def warn = null
     if (cal == null) {
-        warn = 'Piksel boyutu tanımlı DEĞİL — yoğunluk hesaplanamaz VE ROI hedef çözünürlüğe (0.5 µm/px) yeniden örneklenemez (0 tespit olası). Kalibrasyon yardımcısını çalıştırın.'
+        warn = 'Piksel boyutu tanımlı DEĞİL — yoğunluk hesaplanamaz VE ROI hedef çözünürlüğe (0.25 µm/px) yeniden örneklenemez (0 tespit olası). Kalibrasyon yardımcısını çalıştırın.'
     } else {
         double p = (cal.pw + cal.ph) / 2.0
         if (p <= 0.0) warn = 'Piksel boyutu geçersiz (≤ 0).'
@@ -436,7 +436,7 @@ def writeCounts = { imageData, List targets, List coords, cal, boolean writeTarg
             if (cal != null) {
                 double a = roi.getArea() * cal.pw * cal.ph / 1_000_000.0
                 ann.measurements['ROI alanı (mm2)'] = a
-                ann.measurements['Mitoz yoğunluğu (mitoz/mm2)'] = a > 0 ? cnt / a : Double.NaN
+                ann.measurements['Mitoz yoğunluğu (FCOS, mitoz/mm2)'] = a > 0 ? cnt / a : Double.NaN
             }
         }
     }
@@ -452,7 +452,7 @@ def writeCounts = { imageData, List targets, List coords, cal, boolean writeTarg
         double unionAreaMm2 = unionRoi.getArea() * cal.pw * cal.ph / 1_000_000.0
         double density = unionAreaMm2 > 0 ? insideUnion / unionAreaMm2 : Double.NaN
         summary.measurements['Ölçülen alan (mm2)'] = unionAreaMm2
-        summary.measurements['Mitoz yoğunluğu (mitoz/mm2)'] = density
+        summary.measurements['Mitoz yoğunluğu (FCOS, mitoz/mm2)'] = density
         if (Math.abs(unionAreaMm2 - WHO_AREA_MM2) <= AREA_TOL_MM2)
             summary.measurements['Mitoz / 2 mm2 (gozlenen)'] = insideUnion as double
         out = [inside: insideUnion, unionAreaMm2: unionAreaMm2, density: density]
@@ -903,7 +903,7 @@ render = { ->
         def rnField = new javafx.scene.control.TextField(cfg.runner ?: '')
         def wdField = new javafx.scene.control.TextField(cfg.workDir ?: '')
         def tmppField = new javafx.scene.control.TextField(cfg.targetMpp ?: '')
-        tmppField.setPromptText('boş = 0.5')
+        tmppField.setPromptText('boş = 0.25')
         def batchField = new javafx.scene.control.TextField(cfg.batchSize ?: '8')
         def threshField = new javafx.scene.control.TextField(cfg.threshold ?: '')
         threshField.setPromptText('boş = 0.548')
@@ -934,7 +934,7 @@ render = { ->
         center.getChildren().add(mcLbl)
         addGuidance('Model: MIDOG 2025 Görev 1 resmî referansı (FCOS-ResNeXt101), sabit. Ağırlık ve referans kodu paketlenmez; "Modeli yerel indir" ikisini de bir kez çeker (ağırlık: v1.0.0 yayını; kod: sabit commit — model kurulumu ve döşemeli çıkarım bu koddan değiştirilmeden çalıştırılır; LİSANS dosyası yok → araştırma/eğitim, kullanıcı sorumluluğunda). midog-fcos ortamını bu sürümden önce kurduysanız yeniden kurun (SimpleITK + pyyaml eklendi).\n' +
             'Python + köprü otomatik bulunur (midog-fcos venv ve handson/python/midog/). Cihaz: GPU için cuda.\n' +
-            'Hedef çözünürlük: ROI bu µm/px değerine yeniden örneklenip FCOS\'a beslenir (varsayılan 0.5, MIDOG kanonik). Duyarlılık eşiği: referans 0.548; daha çok tespit için düşürün (ör. 0.3) — daha çok yanlış-pozitif, görsel doğrulayın.')
+            'Hedef çözünürlük: ROI bu µm/px değerine yeniden örneklenip FCOS\'a beslenir (varsayılan 0.25: model MIDOG görüntülerinin taban düzeyinde, ~40x, eğitildi; 0.5 girerseniz mitozlar modelin gördüğünün yarı boyutunda kalır). Duyarlılık eşiği: referans 0.548; daha çok tespit için düşürün (ör. 0.3) — daha çok yanlış-pozitif, görsel doğrulayın.')
         actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
         actions.add(navButton('⚙ Python ortamı', { launchEnvManager() }, 'Atölye Python ortam yöneticisini aç (midog-fcos kur)'))
         actions.add(navButton('Modeli yerel indir', { startModelDownload() }, 'FCOS_x101.ckpt ağırlığını bir kez yerel indir'))

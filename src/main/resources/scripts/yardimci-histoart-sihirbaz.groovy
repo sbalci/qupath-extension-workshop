@@ -272,20 +272,29 @@ def gridTiles = { server, roi, double downsample, int tileSize, int maxTiles, Cl
     int bw = (int) Math.ceil(roi.getBoundsWidth())
     int bh = (int) Math.ceil(roi.getBoundsHeight())
     int sw = server.getWidth(); int sh = server.getHeight()
-    int count = 0
+    // Önce aday konumlar (piksel okumadan). Karo sınırı adaylardan küçükse adaylar sabit tohumla
+    // karıştırılır: satır sırasıyla doldurmak yalnız bölgenin ÜST şeridini örneklerdi ve oranlar
+    // bölgenin tamamını temsil etmezdi. Sabit tohum → aynı bölgede aynı karolar (yinelenebilir).
+    def cands = []
     for (int yy = by; yy + phys <= by + bh; yy += phys) {
         for (int xx = bx; xx + phys <= bx + bw; xx += phys) {
             if (xx < 0 || yy < 0 || xx + phys > sw || yy + phys > sh) continue
             double cx = xx + phys / 2.0d, cy = yy + phys / 2.0d
             if (!roi.contains(cx, cy)) continue
-            def img
-            try { img = server.readRegion(RegionRequest.createInstance(server.getPath(), downsample, xx, yy, phys, phys)) }
-            catch (Throwable t) { continue }
-            if (img == null || isBackground(img)) continue
-            sink(xx, yy, phys, img)
-            count++
-            if (maxTiles > 0 && count >= maxTiles) return count
+            cands << ([xx, yy] as int[])
         }
+    }
+    if (maxTiles > 0 && cands.size() > maxTiles) java.util.Collections.shuffle(cands, new java.util.Random(20260917L))
+    int count = 0
+    for (int[] c in cands) {
+        int xx = c[0], yy = c[1]
+        def img
+        try { img = server.readRegion(RegionRequest.createInstance(server.getPath(), downsample, xx, yy, phys, phys)) }
+        catch (Throwable t) { continue }
+        if (img == null || isBackground(img)) continue
+        sink(xx, yy, phys, img)
+        count++
+        if (maxTiles > 0 && count >= maxTiles) return count
     }
     return count
 }

@@ -70,7 +70,7 @@ def toSlug = { String s ->
             .replace('ö', 'o').replace('Ö', 'O').replace('ç', 'c').replace('Ç', 'C')
             .replaceAll('[^a-zA-Z0-9_\\-]', '_').replaceAll('_+', '_')
 }
-def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
+def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim().replace(',', '.')) } catch (Throwable t) { return d } }
 def parseIntOr    = { s, int d    -> try { return Integer.parseInt((s ?: '').toString().trim()) }    catch (Throwable t) { return d } }
 def jsonEsc = { String s -> (s ?: '').replace('\\', '\\\\').replace('"', '\\"').replace('\n', ' ').replace('\r', ' ').replace('\t', ' ') }
 

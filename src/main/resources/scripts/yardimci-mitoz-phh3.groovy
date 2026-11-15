@@ -24,7 +24,7 @@
  *
  * ÇIKTI:
  *   • Her anotasyona: "PHH3-pozitif çekirdek (mitoz adayı)" +
- *     "Mitoz yoğunluğu (mitoz/mm2)" + "PHH3+ nükleer %"
+ *     "PHH3+ çekirdek yoğunluğu (çekirdek/mm2)" + "PHH3+ nükleer %"
  *   • Kilitli "Mitoz Özet" anotasyonu (Veri dışa aktarma modülü ile dışa aktarılır)
  *
  * YÖNTEM NOTU — EMPAIA "Mitosis Detection" not defteri ile bağlantı:
@@ -299,7 +299,8 @@ def writeMetrics = { object, roi, localCells ->
     object.measurements['ROI alanı (mm2)'] = area
     object.measurements['Toplam çekirdek'] = total as double
     object.measurements['PHH3-pozitif çekirdek (mitoz adayı)'] = positive as double
-    object.measurements['Mitoz yoğunluğu (mitoz/mm2)'] = area > 0 ? positive / area : Double.NaN
+    // Anahtar belirtece özgüdür: H&E mitoz sihirbazlarının yoğunluk ölçümüyle aynı adı paylaşmaz.
+    object.measurements['PHH3+ çekirdek yoğunluğu (çekirdek/mm2)'] = area > 0 ? positive / area : Double.NaN
     object.measurements['PHH3+ nükleer %'] = total > 0 ? 100.0 * positive / total : Double.NaN
 }
 
@@ -337,7 +338,7 @@ body << String.format(java.util.Locale.US, "Seçili ROI                : %,d%n",
 body << String.format(java.util.Locale.US, "Birleşik ölçülen alan     : %.3f mm²%n", totalAreaMm2)
 body << String.format(java.util.Locale.US, "Toplam çekirdek           : %,d%n", totalNuclei)
 body << "PHH3-pozitif (mitoz adayı): ${totalPos}  (${fmt(overallPct, '%.2f%%')})\n"
-body << "Mitoz yoğunluğu           : ${fmt(overallDensity, '%.1f mitoz/mm²')}\n"
+body << "PHH3+ çekirdek yoğunluğu  : ${fmt(overallDensity, '%.1f çekirdek/mm²')}\n"
 if (Double.isFinite(observedPerWhoArea))
     body << String.format(java.util.Locale.US, "Mitoz / %.0f mm² (gözlenen): %.0f%n", whoAreaMm2, observedPerWhoArea)
 else

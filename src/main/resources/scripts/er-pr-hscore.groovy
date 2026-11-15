@@ -22,7 +22,7 @@
  *   • Hücre yoğunluğu (hücre/mm²)
  *
  * NE YAPMAZ:
- *   • Allred skoru hesaplamaz (yoğunluk × dağılım puanı — manuel)
+ *   • Allred skoru hesaplamaz (oran puanı 0–5 + yoğunluk puanı 0–3, toplam 0–8 — manuel)
  */
 
 import qupath.fx.dialogs.Dialogs
@@ -258,6 +258,8 @@ def buildResultText = { m, double thr1, double thr2, double thr3, double elapsed
             (m.hScore - baseline.hScore)
         )
     }
+    text += "\nPayda: anotasyonda tespit edilen TÜM çekirdekler. Hücre tipi ayrılmaz; stroma ve iltihap\n" +
+            "hücreleri de sayılır. Yalnız tümör hücreleri için anotasyonu tümör alanına sınırlayın.\n"
     text += uyari + "\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return text
 }

@@ -278,7 +278,10 @@ def runBudding = { String mode, double budMin, double budMax, double frontMargin
         }
 
         if (hotspotCheck) {
-            double tol = 0.15
+            // ±0,02 mm² ≈ %2,5 (1 mm çaplı dairenin çizim/poligonlama payı). Eski ±0,15 mm² (%19) payı
+            // 0,64–0,94 mm² arasındaki her alanı "ITBCC sahası" sayıyordu; sayım alanla orantılı olduğundan
+            // bu, ham sayıda %19'a varan sapmayı "doğrudan saha sayımı" diye sunmak demekti.
+            double tol = 0.02
             boolean near = !perRegion.isEmpty() && perRegion.every { Math.abs(it.areaMm2 - ITBCC_FIELD_MM2) <= tol }
             sb.append('\n')
             sb.append(near

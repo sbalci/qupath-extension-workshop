@@ -258,7 +258,10 @@ classNames.each { cn ->
     totalAreaUm2 += areaUm2
 }
 
-double iodPerMm2 = (totalAreaUm2 > 0) ? totalIOD / (totalAreaUm2 / 1e6) : 0.0
+// Payda KAPSAM anotasyonunun alanıdır. Sınıf alanlarının toplamına bölünseydi alan sadeleşir,
+// sonuç ortalama OD × 10^6 olurdu (boyalı alanın büyüklüğünden bağımsız bir sayı).
+double scopeAreaUm2 = scopeROI.getScaledArea(pw, ph)
+double iodPerMm2 = (scopeAreaUm2 > 0) ? totalIOD / (scopeAreaUm2 / 1e6) : 0.0
 scopeAnno.measurements["Toplam Entegre DAB OD"]   = totalIOD
 scopeAnno.measurements["Entegre DAB OD / mm2"]    = iodPerMm2
 QP.fireHierarchyUpdate()
@@ -288,7 +291,7 @@ body << ("-" * (colW.sum() + colW.size())) + "\n"
 body << String.format(java.util.Locale.US, "%-${colW[0]}s %${colW[1]+colW[2]+2}s %${colW[3]}.2f%n", "TOPLAM", "", totalIOD)
 body << String.format(java.util.Locale.US, "%n")
 body << String.format(java.util.Locale.US, "Toplam IOD        : %.2f%n", totalIOD)
-body << String.format(java.util.Locale.US, "IOD / mm²         : %.2f%n", iodPerMm2)
+body << String.format(java.util.Locale.US, "IOD / mm²         : %.2f   (payda: kapsam anotasyonunun alanı, %.4f mm²)%n", iodPerMm2, scopeAreaUm2 / 1e6)
 body << "\n"
 body << "Not: IOD kalibrasyon bağımlıdır (tarayıcı, boya, renk ayrışma matriksi).\n"
 body << "Değerleri YALNIZCA aynı protokol/tarayıcı koşullarında karşılaştırın.\n"

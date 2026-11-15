@@ -34,7 +34,7 @@
  *   • Her mitoz için "Mitosis" sınıflı nokta-anotasyonu (tespitin kendisi) + çevresinde,
  *     etiketi ("KongNet MIDOG mitoz #i") taşıyan bir GÖRÜNTÜ halkası (sınıfsız, kilitli) —
  *     etiket mitozu örtmesin diye
- *   • Her seçili anotasyona: "Mitoz (KongNet)" + "Mitoz yoğunluğu (mitoz/mm2)"
+ *   • Her seçili anotasyona: "Mitoz (KongNet)" + "Mitoz yoğunluğu (KongNet, mitoz/mm2)"
  *   • Kilitli "KongNet MIDOG mitoz özeti" anotasyonu (Veri dışa aktarma ile dışa aktarılır)
  *
  * YÖNTEM / KAYNAK REFERANSLARI:
@@ -439,7 +439,7 @@ def writeCounts = { imageData, List targets, List coords, cal, boolean writeTarg
             if (cal != null) {
                 double a = roi.getArea() * cal.pw * cal.ph / 1_000_000.0
                 ann.measurements['ROI alanı (mm2)'] = a
-                ann.measurements['Mitoz yoğunluğu (mitoz/mm2)'] = a > 0 ? cnt / a : Double.NaN
+                ann.measurements['Mitoz yoğunluğu (KongNet, mitoz/mm2)'] = a > 0 ? cnt / a : Double.NaN
             }
         }
     }
@@ -456,7 +456,7 @@ def writeCounts = { imageData, List targets, List coords, cal, boolean writeTarg
         double unionAreaMm2 = unionRoi.getArea() * cal.pw * cal.ph / 1_000_000.0
         double density = unionAreaMm2 > 0 ? insideUnion / unionAreaMm2 : Double.NaN
         summary.measurements['Ölçülen alan (mm2)'] = unionAreaMm2
-        summary.measurements['Mitoz yoğunluğu (mitoz/mm2)'] = density
+        summary.measurements['Mitoz yoğunluğu (KongNet, mitoz/mm2)'] = density
         // WHO 2 mm² birimi: yalnız alan ~2 mm² ise GÖZLENEN sayıyı yaz (asla ölçekleme)
         if (Math.abs(unionAreaMm2 - WHO_AREA_MM2) <= AREA_TOL_MM2)
             summary.measurements['Mitoz / 2 mm2 (gozlenen)'] = insideUnion as double

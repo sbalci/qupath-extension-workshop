@@ -130,17 +130,20 @@ double pw = cal.getPixelWidthMicrons()
 double ph = cal.getPixelHeightMicrons()
 boolean hasCalibration = (pw > 0) && (ph > 0)
 
-// Eski özet hariç tüm sınıflı anotasyonlar
+// Eski özet hariç tüm anotasyonlar. Sınıfsız karolar da adaydır: QuPath'in kendi "Create tiles" komutu
+// sınıfsız anotasyon üretir. Sınıfsız seçenekte, içinde başka anotasyon bulunan (üst) anotasyonlar karo sayılmaz.
+String NOCLASS = "(sınıfsız)"
 def allAnnos = QP.getAnnotationObjects().findAll { it.getName() != summaryName }
-def classNames = allAnnos
-    .findAll { it.getPathClass() != null }
-    .collect { it.getPathClass().toString() }
-    .unique()
-    .sort()
+def annParents = allAnnos.collect { it.getParent() }.findAll { it != null } as Set   // içinde anotasyon bulunanlar
+def classOf = { a ->
+    a.getPathClass() != null ? a.getPathClass().toString()
+        : (annParents.contains(a) ? null : NOCLASS)
+}
+def classNames = allAnnos.collect { classOf(it) }.findAll { it != null && it != hotspotClass }.unique().sort()
 
 if (classNames.isEmpty()) {
-    def msg = "Sınıflı anotasyon bulunamadı. Bir piksel sınıflandırıcı ya da ızgara betiği çalıştırın."
-    if (isHeadless) println msg else Dialogs.showErrorMessage("Sınıf yok", msg)
+    def msg = "Karo anotasyonu bulunamadı. Bir piksel sınıflandırıcı, ızgara betiği ya da Create tiles çalıştırın."
+    if (isHeadless) println msg else Dialogs.showErrorMessage("Karo yok", msg)
     return
 }
 
@@ -166,7 +169,7 @@ if (isHeadless) {
         "Hangi sınıftaki karolar sıralansın?", classNames, defClass)
     if (chosenClass == null) { println "İptal edildi."; return }
 
-    def tiles0 = allAnnos.findAll { it.getPathClass()?.toString() == chosenClass }
+    def tiles0 = allAnnos.findAll { classOf(it) == chosenClass }
     def measurementKeys = tiles0
         .collectMany { tile -> tile.measurements.keySet().toList() }
         .findAll { !it.startsWith("Hotspot") }
@@ -201,11 +204,12 @@ if (isHeadless) {
 // Önceki çalıştırmadan kalan "Hotspot" etiketlerini seçili sınıfa geri döndür ki aday
 // havuzu çalıştırmalar arasında küçülmesin (yeniden çalıştırınca tüm karolar aday kalır).
 if (assignHotspotClass) {
-    def resetPC = QP.getPathClass(chosenClass)
-    allAnnos.findAll { it.getPathClass()?.toString() == hotspotClass }
+    // Yalnız bu betiğin işaretlediği (sıra ölçümü taşıyan) karolar geri döndürülür.
+    def resetPC = (chosenClass == NOCLASS) ? null : QP.getPathClass(chosenClass)
+    allAnnos.findAll { it.getPathClass()?.toString() == hotspotClass && it.measurements.containsKey(rankMeasKey) }
             .each { it.setPathClass(resetPC) }
 }
-def tiles = allAnnos.findAll { it.getPathClass()?.toString() == chosenClass }
+def tiles = allAnnos.findAll { classOf(it) == chosenClass }
 if (tiles.isEmpty()) {
     def msg = "'${chosenClass}' sınıfında karo bulunamadı."
     if (isHeadless) println msg else Dialogs.showErrorMessage("Karo yok", msg)
@@ -252,7 +256,8 @@ def topValues = topTiles.collect { it.value }.findAll { Double.isFinite(it) }
 double topMean = topValues.isEmpty() ? Double.NaN : (topValues.sum() as double) / topValues.size()
 double topSD   = Double.NaN
 if (topValues.size() > 1) {
-    double var0 = topValues.collect { v -> (v - topMean) * (v - topMean) }.sum() / topValues.size()
+    // Örneklem SD (n−1): QuPath'in ve tablolama yazılımlarının SD'si ile aynı tanım.
+    double var0 = topValues.collect { v -> (v - topMean) * (v - topMean) }.sum() / (topValues.size() - 1)
     topSD = Math.sqrt(var0)
 }
 
@@ -290,9 +295,12 @@ body << "\n"
 body << String.format(java.util.Locale.US,
     "Top-N karo ortalama (%s): %s%n", chosenKey, fmt(topMean, "%.4f"))
 body << String.format(java.util.Locale.US,
-    "Top-N karo SD         (%s): %s%n", chosenKey, fmt(topSD, "%.4f"))
+    "Top-N karo SD (n−1)   (%s): %s%n", chosenKey, fmt(topSD, "%.4f"))
+if (scoredTiles.size() < tiles.size()) body << String.format(java.util.Locale.US,
+    "%nNot: %d karo bu ölçümü taşımıyor; sıralamaya alınmadı.%n", tiles.size() - scoredTiles.size())
 if (assignHotspotClass) body << String.format(java.util.Locale.US,
     "%nTop-%d karolara \"%s\" sınıfı atandı.%n", actualN, hotspotClass)
+if (chosenClass == NOCLASS) body << "\nSınıfsız seçenek: içinde başka anotasyon bulunan (üst) anotasyonlar karo sayılmadı. Üst anotasyon\nhiyerarşide karolarla aynı düzeydeyse sıralamaya girebilir; tablodaki alanları denetleyin.\n"
 body << "\nHer top-N karosuna '${rankMeasKey}' ölçümü yazıldı (Veri dışa aktarma modülü ile dışa aktarılır).\n"
 body << "Bu bir betimsel sıralama ölçümüdür; klinik kategori veya eşik üretmez.\n\n"
 body << "⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."

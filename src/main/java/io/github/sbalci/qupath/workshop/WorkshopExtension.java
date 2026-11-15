@@ -199,7 +199,8 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         )),
         new ScriptGroup("Klinik ve kohort", "group.util.clinical", List.of(
             new ScriptEntry("Kohort üst veri sihirbazı",              "yardimci-metadata-sihirbaz.groovy", false, false),
-            new ScriptEntry("Sectra PACS anotasyon sihirbazı",        "yardimci-sectra-iceaktar.groovy"),
+            // needsImage=false: "Tüm proje (klasörden)" modu açık lam olmadan çalışır; betik lamsız durumu kendi ekranında ele alır.
+            new ScriptEntry("Sectra PACS anotasyon sihirbazı",        "yardimci-sectra-iceaktar.groovy", false, false),
             new ScriptEntry("WSI anonimleştirme sihirbazı",           "yardimci-anonim-sihirbaz.groovy", false, false),
             new ScriptEntry("Kohort özet toplayıcı (proje tablosu)",  "yardimci-kohort-ozet-topla.groovy", false, false),
             new ScriptEntry("GrandQC kohort KK özeti",                "yardimci-grandqc-kohort-ozet.groovy", false, false),

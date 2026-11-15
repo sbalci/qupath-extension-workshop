@@ -225,16 +225,26 @@ def contour_ring(labels, objs, nid, ox, oy, ds):
     sub = (labels[sl] == nid).astype(np.uint8)
     if not sub.any():
         return None
-    found = cv2.findContours(sub, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Kontur piksel KENARLARINDAN gecmeli. OpenCV sinir piksellerinin MERKEZINI verir; dogrudan
+    # kullanilirsa poligon her yonde yarim piksel icte kalir ve alan dusuk cikar (12 px capli
+    # cekirdekte ~%15). Cozum: (K*h+1, K*w+1) kafes; (r, c) pikseli K*r..K*r+K, K*c..K*c+K alt
+    # indekslerini kaplar, boylece alt indeks j taban koordinati j/K'ye (piksel kenarina) duser.
+    # Kalan sapma: her ic bukey kosede 1/(2*K*K) piksel fazlalik (K=4 icin 1/32 px).
+    K = 4
+    h, w = sub.shape
+    grid = np.zeros((K * h + 1, K * w + 1), np.uint8)
+    grid[:K * h, :K * w] = np.kron(sub, np.ones((K, K), np.uint8))
+    grid[1:, :] |= grid[:-1, :].copy()
+    grid[:, 1:] |= grid[:, :-1].copy()
+    found = cv2.findContours(grid, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = found[-2]  # OpenCV 3 (3 deger) ve 4 (2 deger) ile uyumlu
     big = max(cnts, key=cv2.contourArea).reshape(-1, 2) if len(cnts) else None
-    if big is None or len(big) < 3 or cv2.contourArea(big) < 1.0:
-        # cok kucuk nesne: piksel kenarlarindan sinir kutusu
+    if big is None or len(big) < 3:
+        # beklenmez; piksel kenarlarindan sinir kutusu
         r1, c1 = sl[0].stop, sl[1].stop
         pts = [(c0, r0), (c1, r0), (c1, r1), (c0, r1)]
     else:
-        # OpenCV sinir PIKSEL indekslerini verir; piksel merkezi = indeks + 0.5
-        pts = [(float(x) + c0 + 0.5, float(y) + r0 + 0.5) for x, y in big]
+        pts = [(float(x) / K + c0, float(y) / K + r0) for x, y in big]
     ring = [[round(ox + x * ds, 2), round(oy + y * ds, 2)] for x, y in pts]
     ring.append(list(ring[0]))
     return ring

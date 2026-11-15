@@ -220,7 +220,13 @@ def obj_to_feature(obj, width, height, scheme):
 
     try:
         if gtype == "CIRCLE" and obj.get("polygon"):
-            ring = scale(obj["polygon"], width, height)
+            # Yaricap PIKSEL uzayinda hesaplanir. Normalize [0-1] uzayda hesaplanip sonra
+            # x*genislik, y*yukseklik ile olceklenseydi kare olmayan lamda daire elipse donerdi.
+            if len(obj["coordinates"]) >= 2:
+                (pcx, pcy), (prx, pry) = scale(obj["coordinates"][:2], width, height)
+                ring = circle_to_polygon(pcx, pcy, math.hypot(prx - pcx, pry - pcy))
+            else:
+                ring = scale(obj["polygon"], width, height)
             return _feature({"type": "Polygon", "coordinates": [ring]}, properties)
         if gtype in ("POLYLINE", "ARROW") and len(obj["coordinates"]) >= 2:
             return _feature({"type": "LineString",

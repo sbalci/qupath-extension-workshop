@@ -127,7 +127,7 @@ def loadConfig = { ->
       modelDir    : prefs.get(PREF_MODEL,  ''),
       workDir     : prefs.get(PREF_WORK,   ''),
       tileSize    : prefs.get(PREF_TILE,   '224'),
-      downsample  : prefs.get(PREF_DS,     '1.0'),
+      downsample  : prefs.get(PREF_DS,     ''),
       nEstimators : prefs.get(PREF_NEST,   '100'),
       minPerClass : prefs.get(PREF_MINPC,  '2'),
       maxTiles    : prefs.get(PREF_MAXT,   '20'),
@@ -146,7 +146,7 @@ def configMissing = { cfg ->
 def configComplete = { cfg -> configMissing(cfg).isEmpty() }
 
 def parseIntOr = { s, int d -> try { return Integer.parseInt((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
-def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim()) } catch (Throwable t) { return d } }
+def parseDoubleOr = { s, double d -> try { return Double.parseDouble((s ?: '').toString().trim().replace(',', '.')) } catch (Throwable t) { return d } }
 
 // ── Çalışma dizinini çöz (proje dizini → lam klasörü → geçici) ────────────
 def resolveWorkDir = { cfg, imageData ->
@@ -200,21 +200,30 @@ def exportRoiTiles = { server, roi, double downsample, int tileSize, File outDir
     int bw = (int) Math.ceil(roi.getBoundsWidth())
     int bh = (int) Math.ceil(roi.getBoundsHeight())
     int sw = server.getWidth(); int sh = server.getHeight()
-    int count = 0
+    // Önce aday konumlar (piksel okumadan). Karo sınırı adaylardan küçükse adaylar sabit tohumla
+    // karıştırılır: satır sırasıyla doldurmak yalnız anotasyonun ÜST şeridini örneklerdi.
+    // Sabit tohum → aynı anotasyonda aynı karolar (yinelenebilir).
+    def cands = []
     for (int yy = by; yy + phys <= by + bh; yy += phys) {
         for (int xx = bx; xx + phys <= bx + bw; xx += phys) {
             if (xx < 0 || yy < 0 || xx + phys > sw || yy + phys > sh) continue
             double cx = xx + phys / 2.0d, cy = yy + phys / 2.0d
             if (!roi.contains(cx, cy)) continue
-            def img
-            try { img = server.readRegion(RegionRequest.createInstance(server.getPath(), downsample, xx, yy, phys, phys)) }
-            catch (Throwable t) { continue }
-            if (img == null || isBackground(img)) continue
-            try { javax.imageio.ImageIO.write(img, 'PNG', new File(outDir, 'tile_x' + xx + '_y' + yy + '.png')) }
-            catch (Throwable t) { continue }
-            count++
-            if (maxTiles > 0 && count >= maxTiles) return count
+            cands << ([xx, yy] as int[])
         }
+    }
+    if (maxTiles > 0 && cands.size() > maxTiles) java.util.Collections.shuffle(cands, new java.util.Random(20260917L))
+    int count = 0
+    for (int[] c in cands) {
+        int xx = c[0], yy = c[1]
+        def img
+        try { img = server.readRegion(RegionRequest.createInstance(server.getPath(), downsample, xx, yy, phys, phys)) }
+        catch (Throwable t) { continue }
+        if (img == null || isBackground(img)) continue
+        try { javax.imageio.ImageIO.write(img, 'PNG', new File(outDir, 'tile_x' + xx + '_y' + yy + '.png')) }
+        catch (Throwable t) { continue }
+        count++
+        if (maxTiles > 0 && count >= maxTiles) return count
     }
     // Karo boyutundan küçük anotasyon: merkeze (sunucu sınırına kırpılmış) tek karo
     if (count == 0) {
@@ -245,7 +254,19 @@ def exportTiles = { imageData, File workDir, cfg, Closure appendLine, boolean in
     def server = imageData.getServer()
     def imageName = imageNameOf(imageData)
     int tileSize = parseIntOr(cfg.tileSize, 224)
-    double downsample = parseDoubleOr(cfg.downsample, 1.0d)
+    // Downsample boşsa otomatik: lamın µm/px değerinden 0.5 µm/px (~20x) hedefine. Kalibrasyon yoksa 1.0.
+    def calDs = server.getPixelCalibration()
+    double mppDs = calDs.hasPixelSizeMicrons() ? calDs.getAveragedPixelSizeMicrons().doubleValue() : Double.NaN
+    double downsample
+    if ((cfg.downsample ?: '').toString().trim().isEmpty()) {
+        downsample = (Double.isFinite(mppDs) && mppDs > 0) ? Math.max(1.0d, 0.5d / mppDs) : 1.0d
+        appendLine(String.format(java.util.Locale.US, 'Downsample otomatik: %.3f%s', downsample,
+            Double.isFinite(mppDs) ? String.format(java.util.Locale.US, ' (lam %.3f µm/px → karo %.3f µm/px)', mppDs, mppDs * downsample) : ' (lam kalibre değil; ölçek bilinmiyor)'))
+    } else {
+        downsample = parseDoubleOr(cfg.downsample, 1.0d)
+        if (!(downsample > 0)) downsample = 1.0d
+        if (Double.isFinite(mppDs)) appendLine(String.format(java.util.Locale.US, 'Downsample %.3f (lam %.3f µm/px → karo %.3f µm/px)', downsample, mppDs, mppDs * downsample))
+    }
     int maxTiles = parseIntOr(cfg.maxTiles, 20)
     def tilesRoot = new File(workDir, 'tiles')
     // Önceki çalıştırmanın karoları birikmesin — bu çalıştırmadan önce temizle.
@@ -481,7 +502,7 @@ def persistFields = {
     prefs.put(PREF_MODEL,  textOf(modelFieldRef))
     prefs.put(PREF_WORK,   textOf(workFieldRef))
     def ts = textOf(tileFieldRef);  prefs.put(PREF_TILE,  ts ?: '224')
-    def ds = textOf(dsFieldRef);    prefs.put(PREF_DS,    ds ?: '1.0')
+    def ds = textOf(dsFieldRef);    prefs.put(PREF_DS,    ds ?: '')
     def ne = textOf(nEstFieldRef);  prefs.put(PREF_NEST,  ne ?: '100')
     def mp = textOf(minPCFieldRef); prefs.put(PREF_MINPC, mp ?: '2')
     def mt = textOf(maxTFieldRef);  prefs.put(PREF_MAXT,  mt ?: '20')
@@ -756,7 +777,7 @@ render = { ->
         def mdField = new javafx.scene.control.TextField(cfg.modelDir ?: '')
         def wdField = new javafx.scene.control.TextField(cfg.workDir ?: '')
         def tsField = new javafx.scene.control.TextField(cfg.tileSize ?: '224')
-        def dsField = new javafx.scene.control.TextField(cfg.downsample ?: '1.0')
+        def dsField = new javafx.scene.control.TextField(cfg.downsample ?: ''); dsField.setPromptText('boş = otomatik')
         def neField = new javafx.scene.control.TextField(cfg.nEstimators ?: '100')
         def mpField = new javafx.scene.control.TextField(cfg.minPerClass ?: '2')
         def mtField = new javafx.scene.control.TextField(cfg.maxTiles ?: '20')
@@ -782,7 +803,7 @@ render = { ->
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Anotasyon başı maks. karo:'), mtField)
         qupath.fx.utils.GridPaneUtils.addGridRow(grid, row++, 0, null, new javafx.scene.control.Label('Aygıt:'), deviceChoice)
         center.getChildren().add(grid)
-        addGuidance('Downsample: 0.5 µm/px tarayıcıda 1.0; 0.25 µm/px tarayıcıda büyük anotasyon için 2.0 deneyin. ' +
+        addGuidance('Downsample: boş bırakın, lamın µm/px değerinden 0.5 µm/px hedefine otomatik hesaplanır (0.25 µm/px tarayıcıda 2.0). Eğitim ve tahminde aynı değeri kullanın. ' +
             'Model dizini boşsa Midnight ilk çalıştırmada HuggingFace\'ten indirilir (~4 GB).')
         actions.add(navButton('İptal', { step.set(configComplete(cfg) ? 'READY' : 'CONFIG_INCOMPLETE'); render() }))
         actions.add(navButton('Bağımlılık kontrolü', { startSelftest() }, 'kaiko_bridge.py selftest — bağımlılıkları doğrular'))

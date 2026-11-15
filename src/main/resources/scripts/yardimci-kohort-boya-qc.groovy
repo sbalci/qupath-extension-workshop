@@ -201,13 +201,14 @@ def median = { List<Double> vals ->
     if (s.isEmpty()) return Double.NaN
     int n = s.size(); (n % 2 == 0) ? ((s[n/2-1] + s[n/2]) / 2.0d) : (double) s[n/2]
 }
-def iqr = { List<Double> vals ->
+// [Q1, Q3]; dörtten az değer varsa [NaN, NaN]
+def quartiles = { List<Double> vals ->
     def s = vals.findAll { !Double.isNaN(it) }.sort()
-    if (s.size() < 4) return Double.NaN
+    if (s.size() < 4) return [Double.NaN, Double.NaN]
     int n = s.size()
     double q1 = (n % 4 == 0) ? ((s[n/4-1] + s[n/4]) / 2.0d) : (double) s[(int)(n/4)]
     double q3 = (n % 4 == 0) ? ((s[3*n/4-1] + s[3*n/4]) / 2.0d) : (double) s[(int)(3*n/4)]
-    return q3 - q1
+    return [q1, q3]
 }
 
 // ── Ön kontrol: proje gerekli ─────────────────────────────────────────────────
@@ -291,13 +292,17 @@ def numCols = ['od1_mean','od2_mean','od_ratio','lab_l_ratio','tissue_frac']
 def stats = [:]
 numCols.each { col ->
     List<Double> vals = rows.collect { r -> def v = r[col]; (v instanceof Number && !Double.isNaN((double)v)) ? (double)v : Double.NaN }
-    double med = median(vals); double iq = iqr(vals)
+    double med = median(vals)
+    def qq = quartiles(vals)
+    double q1 = (double) qq[0]; double q3 = (double) qq[1]; double iq = q3 - q1
     // Not: Elvis (?:) kullanma — Groovy'de 0.0 "falsy"dir, gerçek 0.0 min/max NaN'a düşerdi.
     def finiteVals = vals.findAll { !Double.isNaN(it) }
     double mn = finiteVals.isEmpty() ? Double.NaN : (double) finiteVals.min()
     double mx = finiteVals.isEmpty() ? Double.NaN : (double) finiteVals.max()
     stats[col] = [med: med, iqr: iq, min: mn, max: mx,
-                  lo: (med - 1.5d * iq), hi: (med + 1.5d * iq)]
+                  // Tukey çitleri çeyreklerden ölçülür (Q1 − 1,5·IQR, Q3 + 1,5·IQR), medyandan değil:
+                  // medyan ± 1,5·IQR daha dar bir aralıktır ve çarpık dağılımda fazladan lam işaretler.
+                  lo: (q1 - 1.5d * iq), hi: (q3 + 1.5d * iq)]
 }
 
 def outlierRows = rows.findAll { r ->
@@ -348,7 +353,7 @@ sb << "\n"
 if (outlierRows.isEmpty()) {
     sb << "Tüm görüntüler kohort medyanının 1,5·IQR aralığı içinde.\n"
 } else {
-    sb << String.format(java.util.Locale.US, "Kohort medyanından uzak lamlar (%d adet) — 1,5·IQR Tukey kuralı:%n", outlierRows.size())
+    sb << String.format(java.util.Locale.US, "Tukey çitlerinin dışındaki lamlar (%d adet) — Q1 − 1,5·IQR altı ya da Q3 + 1,5·IQR üstü:%n", outlierRows.size())
     outlierRows.each { r ->
         def flags = numCols.findAll { col ->
             def v = r[col]; if (!(v instanceof Number)) return false

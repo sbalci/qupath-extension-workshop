@@ -65,7 +65,7 @@ long PYTHON_TIMEOUT_SECONDS = 3600L
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
 def SUMMARY_NAME    = 'Mitoz — model karşılaştırması'
 def CONSENSUS_CLASS = 'Mitoz (konsensüs)'
-double TARGET_MPP   = 0.5        // FCOS için ROI yeniden örnekleme hedefi
+double TARGET_MPP   = 0.25       // FCOS/RetinaNet ROI hedefi: MIDOG referans kodları taban düzeyi (~0.25 µm/px) okur. HoVer-NeXt kendi roiMpp değerini (0.5) kullanır.
 double DEFAULT_R_UM = 10.0       // eşleşme yarıçapı (µm) ≈ bir çekirdek çapı
 double WHO_AREA_MM2 = 2.0
 double AREA_TOL_MM2 = 0.01
@@ -132,7 +132,7 @@ def DETECTORS = [
           if (thr != null) { c.add('--threshold'); c.add(String.format(java.util.Locale.US, '%.4f', thr)) }
           return c } ],
     [ id:'fcos', label:'MIDOG25 FCOS (torchvision)', envId:'midog-fcos',
-      runnerRel:'python/midog/fcos_runner.py', inputKind:'roi',
+      runnerRel:'python/midog/fcos_runner.py', inputKind:'roi', roiMpp:0.25d,
       cls:'Mitoz — FCOS', color:[40, 120, 255],
       buildCmd:{ py, runner, art, outGeo, device, thr ->
           def c = [py, runner, 'detect', '--roi', art.roi, '--out', outGeo,
@@ -141,7 +141,7 @@ def DETECTORS = [
           if (thr != null) { c.add('--det-thresh'); c.add(String.format(java.util.Locale.US, '%.4f', thr)) }
           return c } ],
     [ id:'retinanet', label:'MIDOG DA-RetinaNet (2021, eski)', envId:'midog-retinanet-legacy',
-      runnerRel:'python/midog/retinanet_runner.py', inputKind:'roi',
+      runnerRel:'python/midog/retinanet_runner.py', inputKind:'roi', roiMpp:0.25d,
       cls:'Mitoz — RetinaNet', color:[170, 70, 200],
       buildCmd:{ py, runner, art, outGeo, device, thr ->
           def c = [py, runner, 'detect', '--roi', art.roi, '--out', outGeo,
@@ -154,7 +154,7 @@ def DETECTORS = [
     // needsCalibration: ölçek-duyarlı (0.5 µm/px + piksel-tabanlı boyut eşikleri) → kalibrasyonsuz devre dışı;
     // köprü ayrıca --mpp bandı dışında reddeder. usesThreshold: false → ortak eşik uygulanmaz (sınıf argmax).
     [ id:'hovernext', label:'HoVer-NeXt Lizard — mitoz SINIFI (çekirdek sınıflandırıcı)', envId:'hovernext',
-      runnerRel:'python/hovernext/hovernext_runner.py', inputKind:'roi',
+      runnerRel:'python/hovernext/hovernext_runner.py', inputKind:'roi', roiMpp:0.5d,
       cls:'Mitoz — HoVer-NeXt', color:[255, 140, 0],
       optIn:true, needsCalibration:true, usesThreshold:false,
       caveat:'kolorektal (Lizard) eğitimli çekirdek sınıflandırıcısı; yayımlanmış mitoza-özel metrik YOK; ortak eşik uygulanmaz; yalnız CUDA GPU',
@@ -296,7 +296,7 @@ def exportRegionMask = { imageData, File workDir, double downsample, List region
     appendLine('Bölge maskesi: ' + f.getName() + ' (' + mw + ' × ' + mh + ' px)')
     return [ok: true, file: f]
 }
-def exportRegionImage = { imageData, File workDir, double targetMpp, List regionRois, cal, int warnPx, Closure appendLine ->
+def exportRegionImage = { imageData, File workDir, double targetMpp, List regionRois, cal, int warnPx, Closure appendLine, String fileTag = '' ->
     def server = imageData.getServer()
     double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY
     regionRois.each { roi ->
@@ -322,7 +322,7 @@ def exportRegionImage = { imageData, File workDir, double targetMpp, List region
     def rgb = new java.awt.image.BufferedImage(img.getWidth(), img.getHeight(), java.awt.image.BufferedImage.TYPE_INT_RGB)
     def g = rgb.createGraphics()
     try { g.setColor(java.awt.Color.WHITE); g.fillRect(0, 0, rgb.getWidth(), rgb.getHeight()); g.drawImage(img, 0, 0, null) } finally { g.dispose() }
-    def f = new File(workDir, 'karsilastir_roi.png'); if (f.getParentFile() != null) f.getParentFile().mkdirs()
+    def f = new File(workDir, 'karsilastir_roi' + fileTag + '.png'); if (f.getParentFile() != null) f.getParentFile().mkdirs()
     javax.imageio.ImageIO.write(rgb, 'PNG', f)
     appendLine(String.format(java.util.Locale.US, 'ROI görüntüsü: %s (%d × %d px, downsample %.3f, köken %d,%d)', f.getName(), rgb.getWidth(), rgb.getHeight(), downsample, x, y))
     return [ok: true, file: f, originX: x, originY: y, downsample: downsample]
@@ -528,6 +528,7 @@ def startRun = { List chosen, String device, double radiusUm, Double thr ->
             boolean needRoi  = chosen.any { it.inputKind == 'roi' }
             if (needMask && wsi == null) { javafx.application.Platform.runLater { errorTextRef.set('KongNet için lamın yerel dosya yolu gerekli (OpenSlide ile açın) — ya da yalnız FCOS seçin.'); step.set('ERROR'); render() }; return }
             def art = [wsi: wsi, saveDir: new File(workDir, 'karsilastir_out_' + base).getAbsolutePath()]
+            def roiArts = [:]   // hedef µm/px -> [roi, origin, downsample, mpp]
             if (needMask) {
                 setPhase('Bölge maskesi yazılıyor…')
                 def em = exportRegionMask(imageData, workDir, 16.0d, regionRois, appendLine)
@@ -536,11 +537,19 @@ def startRun = { List chosen, String device, double radiusUm, Double thr ->
             }
             if (needRoi) {
                 setPhase('ROI görüntüsü dışa aktarılıyor…')
-                def ei = exportRegionImage(imageData, workDir, TARGET_MPP, regionRois, cal, ROI_WARN_PX, appendLine)
-                if (!ei.ok) { javafx.application.Platform.runLater { errorTextRef.set(ei.error); step.set('ERROR'); render() }; return }
-                art.roi = ei.file.getAbsolutePath(); art.origin = (ei.originX + ',' + ei.originY); art.downsample = String.format(java.util.Locale.US, '%.6f', (double) ei.downsample)
-                // ROI'nin ETKİN µm/px'i — ölçek-duyarlı köprüler (HoVer-NeXt) bunu doğrular; kalibrasyonsuzsa boş.
-                art.mpp = (cal != null) ? String.format(java.util.Locale.US, '%.6f', ((cal.pw + cal.ph) / 2.0d) * (double) ei.downsample) : ''
+                // Her model KENDİ eğitim çözünürlüğünde beslenir: aynı ROI, her farklı hedef µm/px için ayrı yazılır.
+                def roiTargets = chosen.findAll { it.inputKind == 'roi' }.collect { ((it.roiMpp ?: TARGET_MPP) as double) }.unique()
+                String roiError = null
+                roiTargets.each { double tm ->
+                    if (roiError != null) return
+                    def ei = exportRegionImage(imageData, workDir, tm, regionRois, cal, ROI_WARN_PX, appendLine, '_' + String.format(java.util.Locale.US, '%.2f', tm).replace('.', 'p'))
+                    if (!ei.ok) { roiError = (ei.error ?: 'ROI yazılamadı.'); return }
+                    // mpp: ROI'nin ETKİN µm/px'i — ölçek-duyarlı köprüler (HoVer-NeXt) bunu doğrular; kalibrasyonsuzsa boş.
+                    roiArts[tm] = [roi: ei.file.getAbsolutePath(), origin: (ei.originX + ',' + ei.originY),
+                                   downsample: String.format(java.util.Locale.US, '%.6f', (double) ei.downsample),
+                                   mpp: (cal != null) ? String.format(java.util.Locale.US, '%.6f', ((cal.pw + cal.ph) / 2.0d) * (double) ei.downsample) : '']
+                }
+                if (roiError != null) { String re = roiError; javafx.application.Platform.runLater { errorTextRef.set(re); step.set('ERROR'); render() }; return }
             }
 
             def perModel = [:]   // modelIdx -> coords
@@ -553,7 +562,8 @@ def startRun = { List chosen, String device, double radiusUm, Double thr ->
                 setPhase('Çalışıyor: ' + d.label + '…')
                 def py = detectPythonFor(d.envId); def rn = detectRunnerFor(d.runnerRel)
                 def outGeo = new File(workDir, base + '_' + d.id + '_mitoz.geojson')
-                def cmd = d.buildCmd(py, rn, art, outGeo.getAbsolutePath(), device, thr)
+                def artFor = (d.inputKind == 'roi') ? (art + (roiArts[((d.roiMpp ?: TARGET_MPP) as double)] ?: [:])) : art
+                def cmd = d.buildCmd(py, rn, artFor, outGeo.getAbsolutePath(), device, thr)
                 appendLine('▶ ' + d.label)
                 if (thr != null && d.usesThreshold == false) appendLine('  (ortak duyarlılık eşiği bu modele uygulanmaz — sınıf kararı eşiksizdir)')
                 def r = runPython(cmd, appendLine)
@@ -572,7 +582,7 @@ def startRun = { List chosen, String device, double radiusUm, Double thr ->
                 try {
                     chosen.eachWithIndex { d, mi -> if (perModel.containsKey(mi)) importModelPoints(imageData, regionRois, d.cls, d.color, perModel[mi]) }
                     // R µm → piksel
-                    double rPx = (cal != null) ? (radiusUm / ((cal.pw + cal.ph) / 2.0)) : (radiusUm / TARGET_MPP)
+                    double rPx = (cal != null) ? (radiusUm / ((cal.pw + cal.ph) / 2.0)) : (radiusUm / 0.25d)
                     def clusters = clusterAgreement(perModel, rPx)
                     int K = perModel.size()   // konsensüs = tüm çalışan modeller
                     // özet + konsensüs noktaları

@@ -155,6 +155,9 @@ if (cells.isEmpty()) {
 def isPositive = { detection ->
     String className = detection.getPathClass()?.getName() ?: ''
     if (className.equalsIgnoreCase('Positive') || className.endsWith('+')) return true
+    // Sınıfı açıkça 'Negative' olan hücre eşikle yeniden pozitif sayılmaz: sınıf ve eşik aynı
+    // tabloda karışırsa pozitif oranı hiçbir tek ölçüte karşılık gelmez. Eşik yalnız sınıfsız hücreler içindir.
+    if (className.equalsIgnoreCase('Negative')) return false
     def value = detection.measurements[dabKey]
     return value != null && (value as double) >= dabThreshold
 }
@@ -237,7 +240,7 @@ double meanTileLI = validTileLI.isEmpty() ? Double.NaN : validTileLI.sum() / val
 double sdTileLI = Double.NaN
 double cvTileLI = Double.NaN
 if (validTileLI.size() > 1) {
-    double variance = validTileLI.collect { value -> (value - meanTileLI) * (value - meanTileLI) }.sum() / validTileLI.size()
+    double variance = validTileLI.collect { value -> (value - meanTileLI) * (value - meanTileLI) }.sum() / (validTileLI.size() - 1)   // örneklem SD (n−1)
     sdTileLI = Math.sqrt(variance)
     cvTileLI = meanTileLI > 0 ? 100.0 * sdTileLI / meanTileLI : Double.NaN
 }
@@ -284,7 +287,7 @@ body << String.format(java.util.Locale.US, 'Sıfır hücreli karo     : %,d%n', 
 body << String.format(java.util.Locale.US, 'LI için geçerli karo   : %,d (karo başına ≥%d hücre)%n', validTileLI.size(), minCellsPerTile)
 body << '────────────────────────────────\n'
 body << "Karo LI ortalaması    : ${fmt(meanTileLI, '%.2f%%')}\n"
-body << "Karo LI SD            : ${fmt(sdTileLI, '%.2f%%')}\n"
+body << "Karo LI SD (n−1)      : ${fmt(sdTileLI, '%.2f%%')}\n"
 body << "Karo LI CV            : ${fmt(cvTileLI, '%.2f%%')}\n"
 body << "Morisita Iδ           : ${fmt(morisita, '%.4f')}\n"
 body << String.format(java.util.Locale.US, 'Morisita quadratları   : %,d tam alanlı karo%n', quadrats)

@@ -27,7 +27,8 @@
  *
  * MODEL (atölye varsayılanı — sabit, "küçük" model):
  *   • Sınıflandırıcı : Random Forest (OpenCV RTrees, QuPath varsayılan ağaç ayarları)
- *   • Özellikler     : Hematoxylin OD + Eosin OD; ham + Gaussian σ = 1, 2, 4 µm
+ *   • Özellikler     : Hematoxylin OD + Eosin OD; ham + Gaussian σ = 1, 2, 4 piksel
+ *                      (eğitim çözünürlüğünde; 2 µm/px'te 2, 4, 8 µm)
  *   • Çözünürlük     : 2 µm/px (Tümör/Stroma modülü §3 başlangıç değeri; doku-ölçekli, orta çözünürlük)
  *   Bu ayarlar Tümör/Stroma modülü §3'te öğretilen ayarlarla birebir aynıdır.
  *
@@ -377,7 +378,8 @@ def devam = waitForConfirm(
     (extraClasses ? "  • Ek sınıflar: ${extraClasses.join(', ')}\n" : "") +
     "\nModel ayarları (atölye varsayılanı — Tümör/Stroma modülü §3 ile aynı):\n" +
     "  • Sınıflandırıcı : Random Forest\n" +
-    "  • Özellikler     : Hematoxylin OD + Eosin OD; ham + Gaussian σ = 1, 2, 4 µm\n" +
+    "  • Özellikler     : Hematoxylin OD + Eosin OD; ham + Gaussian σ = 1, 2, 4 piksel\n" +
+    "                     (eğitim çözünürlüğünde; 2 µm/px'te 2, 4, 8 µm)\n" +
     "  • Çözünürlük     : ${trainResolutionMicrons} µm/px\n\n" +
     "Not: Bu işlem yalnızca modeli EĞİTİP KAYDEDER — lamdaki anotasyonlarınıza\n" +
     "dokunmaz (silmez). Modeli seçili anotasyon sınırında ölçmek için sonra\n" +

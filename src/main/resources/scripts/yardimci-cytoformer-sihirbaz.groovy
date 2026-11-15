@@ -617,6 +617,10 @@ def buildResultText = { imageData, cfg, String organKey, Map pipeline, Map apply
     if (skipped > 0)
         sb << String.format(java.util.Locale.US,
             "\nATLANAN: %,d hücre, BAŞKA bir kaynaktan gelen sınıfı korunsun diye sınıflanmadı (sizin seçiminiz).\nYukarıdaki yüzdeler yalnız sınıflanan %,d hücreyi anlatır.\n", skipped, tot)
+    int lost = ((pipeline.skippedExport ?: 0) + (pipeline.notReturned ?: 0)) as int
+    if (skipped > 0 || lost > 0)
+        sb << String.format(java.util.Locale.US,
+            "\nYOĞUNLUK: hücre/mm² değerleri de yalnız sınıflanan hücrelerden hesaplandı (%,d hücre dışarıda kaldı).\nAlandaki gerçek yoğunluk bu değerlerden yüksektir; alanlar arasında karşılaştırma yapmayın.\n", skipped + lost)
     sb << "\nHücreler '<tip> (CytoFormer)' sınıfına atandı"
     sb << (skipped > 0 ? " (yalnız sınıfsız/önceki CytoFormer hücreleri); " : " (mevcut sınıf varsa değiştirildi); ")
     sb << "'CytoFormer: olasılık'\n"

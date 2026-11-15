@@ -36,7 +36,7 @@
  *   • Her mitoz için "Mitosis" sınıflı nokta-tespiti (tespitin kendisi) + çevresinde,
  *     etiketi ("KongNet mitoz #i") taşıyan bir GÖRÜNTÜ halkası (sınıfsız, kilitli
  *     anotasyon; tespit sayımlarına girmez) — etiket mitozu örtmesin diye
- *   • Her anotasyona: "Mitoz (KongNet)" + "Mitoz yoğunluğu (mitoz/mm2)"
+ *   • Her anotasyona: "Mitoz (KongNet)" + "Mitoz yoğunluğu (KongNet, mitoz/mm2)"
  *   • Kilitli "KongNet Mitoz Özet" anotasyonu (Veri dışa aktarma modülü ile dışa aktarılır)
  *
  * YÖNTEM / KAYNAK REFERANSLARI:
@@ -265,7 +265,7 @@ targets.each { target ->
     double area = areaMm2(roi)
     target.measurements['ROI alanı (mm2)'] = area
     target.measurements['Mitoz (KongNet)'] = count as double
-    target.measurements['Mitoz yoğunluğu (mitoz/mm2)'] = area > 0 ? count / area : Double.NaN
+    target.measurements['Mitoz yoğunluğu (KongNet, mitoz/mm2)'] = area > 0 ? count / area : Double.NaN
 }
 
 int totalMitosis = pointsInROI.size()
@@ -281,7 +281,7 @@ summary.measurements['Kaynak ROI sayısı'] = targets.size() as double
 summary.measurements['GeoJSON nokta sayısı'] = points.size() as double
 summary.measurements['ROI içi mitoz (KongNet)'] = totalMitosis as double
 summary.measurements['Ölçülen alan (mm2)'] = totalAreaMm2
-summary.measurements['Mitoz yoğunluğu (mitoz/mm2)'] = overallDensity
+summary.measurements['Mitoz yoğunluğu (KongNet, mitoz/mm2)'] = overallDensity
 summary.measurements['Mitoz / 2 mm2 (yalnız 2.00 ± 0.01 mm2 ROI)'] = observedPerWhoArea
 summary.setLocked(true)
 QP.addObjects([summary])

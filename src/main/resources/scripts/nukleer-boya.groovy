@@ -249,9 +249,9 @@ def buildResultText = { m, double thr1, double thr2, double thr3, double elapsed
     def uyari = ""
     if (m.total < warnNuclearCount) {
         uyari = String.format(java.util.Locale.US,
-            "\n📝 Not: %,d hücre <500 — Ki-67 Working Group (Nielsen 2021) sayma standardının altında.\n" +
-            "  Daha büyük bir ROI ile tekrar deneyin (hedef: ≥500-1.000 hücre).",
-            m.total)
+            "\n📝 Not: %,d hücre, ayarlı uyarı eşiğinin (%,d) altında. Ki-67 Working Group (Nielsen 2021)\n" +
+            "  en az 500 hücre sayılmasını önerir; daha büyük bir ROI ile tekrar deneyin.",
+            m.total, (warnNuclearCount as long))
     } else if (m.total > 50000) {
         uyari = String.format(java.util.Locale.US,
             "\n📝 Not: %,d hücre çok fazla — ROI küçültmek hesaplama hızını artırır.",
@@ -293,6 +293,8 @@ def buildResultText = { m, double thr1, double thr2, double thr3, double elapsed
             (m.li - baseline.li)
         )
     }
+    text += "\nPayda: anotasyonda tespit edilen TÜM çekirdekler. Hücre tipi ayrılmaz; stroma ve iltihap\n" +
+            "hücreleri de sayılır. Yalnız tümör hücreleri için: Tümör içi Ki-67.\n"
     text += uyari + "\n⚠️ Yalnızca araştırma/eğitim amaçlı ölçüm üretir."
     return text
 }
