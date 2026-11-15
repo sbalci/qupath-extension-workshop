@@ -27,7 +27,20 @@ public final class WorkshopErrors {
             return english
                     ? "Required file not found. Re-select the slide, model, or classifier path; if the project moved, run Project → Check image paths."
                     : "Gerekli dosya bulunamadı. Sanal lam, model veya sınıflandırıcı yolunu yeniden seçin; taşınmış proje için Project → Check image paths komutunu çalıştırın.";
-        if (className.contains("format") || message.contains("unsupported") || message.contains("bio-formats")
+        // A number typed into a field could not be read (for example text, or a
+        // thousands separator). This is not an image problem, so say what to type.
+        if (cause instanceof NumberFormatException)
+            return english
+                    ? "A number could not be read. Type the value with digits and a decimal point or comma only, for example 0.25 — no units, spaces or thousands separators — then run the tool again."
+                    : "Bir sayı okunamadı. Değeri yalnız rakam ve ondalık nokta ya da virgülle yazın (örnek: 0.25); birim, boşluk veya binlik ayırıcı eklemeyin ve aracı yeniden çalıştırın.";
+        // Faults inside the tool itself: never send the user to check their slide.
+        if (cause instanceof java.util.IllegalFormatException || cause instanceof NullPointerException
+                || cause instanceof ClassCastException
+                || className.contains("missingmethod") || className.contains("missingproperty"))
+            return english
+                    ? "The tool stopped because of an internal error; this is usually not caused by your slide. If no slide is open, open one and try again. Otherwise use 'Copy diagnostic summary' below, read it, and send it to the workshop team; you can continue with another tool meanwhile."
+                    : "Araç bir iç hata nedeniyle durdu; bu çoğunlukla lamınızdan kaynaklanmaz. Açık bir lam yoksa bir lam açıp yeniden deneyin. Açıksa aşağıdaki 'Tanı özetini kopyala' düğmesiyle özeti kopyalayın, okuyun ve atölye ekibine iletin; bu sırada başka bir araçla devam edebilirsiniz.";
+        if (className.contains("formatexception") || message.contains("unsupported") || message.contains("bio-formats")
                 || message.contains("openslide") || message.contains("corrupt") || message.contains("image server"))
             return english
                     ? "Image format unreadable or pyramid corrupted. Confirm the download finished completely and the file is a WSI format supported by QuPath 0.6.0+ (.svs, .ndpi, .ome.tif, .ome.zarr)."
@@ -41,7 +54,8 @@ public final class WorkshopErrors {
             return english
                     ? "No valid closed area (ROI) selected. Draw a closed area on tissue using the rectangle/polygon/brush tool (not a point or line) and click inside until its border turns yellow."
                     : "Geçerli bir kapalı alan (ROI) seçili değil. Nokta veya çizgi yerine dikdörtgen/poligon/fırça aracıyla doku üzerinde kapalı alan çizin ve kenarı sarı olana kadar içine tıklayın.";
-        if (message.contains("nan") || message.contains("infinity") || message.contains("pixel calibration") || message.contains("microns"))
+        // Whole words only: "financial" or "nanometre" must not read as NaN.
+        if (message.matches("(?s).*\\b(nan|infinity|infinite)\\b.*") || message.contains("pixel calibration") || message.contains("microns"))
             return english
                     ? "Invalid numeric measurement (NaN/Infinity) or physical scale (MPP) mismatch. Check pixel width/height (µm) in the Image tab and numeric values in Workshop Settings."
                     : "Geçersiz sayısal ölçüm (NaN/sonsuz) veya fiziksel ölçek (MPP) uyumsuzluğu bulundu. Image sekmesindeki piksel genişliği/yüksekliğini (µm) ve Atölye Ayarları'ndaki sayıları denetleyin.";

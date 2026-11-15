@@ -49,6 +49,30 @@ class ParameterValidationTest extends GroovyTestCase {
         assertTrue(WorkshopErrors.guidance(new RuntimeException('cellpose python environment missing')).contains('Ortam kontrolü'))
         assertTrue(WorkshopErrors.guidance(null).contains('Show log'))
     }
+    // Y5: a typed number, a tool fault and a word containing "nan" each get their own next step.
+    void testGuidanceDoesNotBlameTheSlideForOtherFaults() {
+        def number = WorkshopErrors.guidance(new NumberFormatException('For input string: "0,25x"'), false)
+        assertTrue(number.contains('0.25'))
+        assertFalse(number.contains('piramit'))
+        assertTrue(WorkshopErrors.guidance(new NumberFormatException('x'), true).contains('0.25'))
+        def formatFault = WorkshopErrors.guidance(new java.util.IllegalFormatConversionException('d' as char, String), false)
+        assertTrue(formatFault.contains('iç hata'))
+        assertFalse(formatFault.contains('piramit'))
+        [new NullPointerException(), new MissingMethodException('foo', String, [] as Object[]),
+         new MissingPropertyException('bar', String), new ClassCastException('x')].each { fault ->
+            def text = WorkshopErrors.guidance(fault, false)
+            assertTrue(text.contains('iç hata'))
+            assertTrue(text.contains('Tanı özetini kopyala'))
+            assertFalse(text.startsWith('Bir sanal lam açın'))
+            assertTrue(WorkshopErrors.guidance(fault, true).contains('internal error'))
+        }
+        assertFalse(WorkshopErrors.guidance(new IllegalArgumentException('financial report'), false).contains('NaN'))
+        assertFalse(WorkshopErrors.guidance(new IllegalArgumentException('nanometre scale'), false).contains('NaN'))
+        assertTrue(WorkshopErrors.guidance(new IllegalArgumentException('value is NaN'), false).contains('NaN'))
+        assertTrue(WorkshopErrors.guidance(new IllegalArgumentException('Infinity found'), false).contains('NaN'))
+        // An image-reader format exception still points at the file.
+        assertTrue(WorkshopErrors.guidance(new RuntimeException(new SlideFormatException()), false).contains('piramit'))
+    }
     void testColorblindSafeAndClassicPalettes() {
         def cb = WorkshopColorPalettes.colorblindSafePalette()
         def classic = WorkshopColorPalettes.classicPathologyPalette()
@@ -75,4 +99,5 @@ class ParameterValidationTest extends GroovyTestCase {
             assertTrue("Missing mathematical bridge in tooltip for ${key}", tip.contains('Matematik:'))
         }
     }
+    static class SlideFormatException extends Exception {}
 }
