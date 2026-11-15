@@ -52,6 +52,10 @@ String SENTINEL_NAME = "Doku"
 String SENTINEL_CLASS = "Doku"
 int BINS = 512
 List<String> CHOICES = ["OD toplamı (OD sum)", "Hematoksilen", "Arka plan (parlaklık)"]
+// "Hematoksilen" tabanı gerçek renk ayırmadır: yalnız eozin alan (çekirdekten fakir) doku ~0 değer alır.
+String HEM_NOTE = "  Not: Hematoksilen tabanı yalnız çekirdekten zengin alanları seçer; eozinle boyanan, çekirdekten\n" +
+                  "  fakir doku (ör. stroma) dışarıda kalabilir. Dokunun tamamı için \"OD toplamı\" kullanın."
+String HEM_FALLBACK = "  Not: Boya vektörleri tanımlı değil; Hematoksilen yerine OD toplamı kullanıldı."
 def prefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/doku-tespiti-sihirbaz')
 
 // ── 1) Ön kontroller ────────────────────────────────────────────────
@@ -187,6 +191,7 @@ def summaryOf = { String choice, double ds, double thr, boolean useOtsu, double 
     def b = new StringBuilder()
     b << "DOKU TESPİTİ (native)\n"
     b << "Eşik tabanı  : ${choice}\n"
+    if (choice == CHOICES[1]) b << (stains != null ? HEM_NOTE : HEM_FALLBACK) << "\n"
     b << String.format(java.util.Locale.US, "Alt örnekleme (downsample): %.0f%n", ds)
     b << String.format(java.util.Locale.US, "Eşik         : %.4f  (%s)%n", thr, useOtsu ? "Otsu" : "elle")
     b << String.format(java.util.Locale.US, "Minimum alan : %.2f mm²%s%n", minAreaMm2,
@@ -240,6 +245,15 @@ javafx.application.Platform.runLater {
         def choiceBox = new javafx.scene.control.ComboBox(javafx.collections.FXCollections.observableArrayList(CHOICES))
         choiceBox.getSelectionModel().select(defChoice)
         choiceBox.setMaxWidth(Double.MAX_VALUE)
+        // Hematoksilen seçiliyken görünen uyarı (yalnız çekirdekten zengin alanlar seçilir)
+        def hemHint = new javafx.scene.control.Label()
+        hemHint.setWrapText(true); hemHint.setStyle("-fx-font-size: 11px; -fx-text-fill: #b45309;")
+        def syncHemHint = { ->
+            boolean on = (choiceBox.getValue() == CHOICES[1])
+            hemHint.setText(on ? (stains != null ? HEM_NOTE : HEM_FALLBACK).replace("\n ", "").trim() : "")
+            hemHint.setVisible(on); hemHint.setManaged(on)
+        }
+        syncHemHint()
 
         def dsSlider = new javafx.scene.control.Slider(16, 64, defDs)
         dsSlider.setMajorTickUnit(16); dsSlider.setMinorTickCount(3)
@@ -384,7 +398,7 @@ javafx.application.Platform.runLater {
             def c = cache.get(); if (c != null && n) thrSlider.setValue((double) c.otsu)
             updatePreview()
         } as javafx.beans.value.ChangeListener)
-        choiceBox.setOnAction({ rebuild(true) })
+        choiceBox.setOnAction({ syncHemHint(); rebuild(true) })
         // downsample: sürükleme bitince yeniden oku (ağır)
         dsSlider.valueChangingProperty().addListener({ obs, o, n -> if (!n) rebuild(true) } as javafx.beans.value.ChangeListener)
         dsSlider.setOnMouseReleased({ rebuild(true) })
@@ -440,6 +454,7 @@ javafx.application.Platform.runLater {
         form.getColumnConstraints().addAll(col0, col1, col2)
         int rr = 0
         form.add(new javafx.scene.control.Label(workshopText('script.669af7d1f057', "Eşik tabanı")), 0, rr); form.add(choiceBox, 1, rr, 2, 1); rr++
+        form.add(hemHint, 0, rr, 3, 1); rr++
         form.add(new javafx.scene.control.Label(workshopText('script.8f86eefdf40e', "Alt örnekleme (downsample):")), 0, rr); form.add(dsSlider, 1, rr); form.add(dsVal, 2, rr); rr++
         form.add(otsuChk, 0, rr, 3, 1); rr++
         form.add(new javafx.scene.control.Label(workshopText('script.b3e1a6068621', "Eşik")), 0, rr); form.add(thrSlider, 1, rr); form.add(thrVal, 2, rr); rr++

@@ -260,8 +260,10 @@ def summary = PathObjects.createAnnotationObject(analysisROI)
 summary.setName('Ki-67 Heterojenlik Özet')
 summary.measurements['Ağırlıklı genel LI (%)'] = overallLI
 summary.measurements['Karo LI ortalaması (%)'] = meanTileLI
-summary.measurements['Karo LI SD (%)'] = sdTileLI
-summary.measurements['Karo LI CV (%)'] = cvTileLI
+// Adlar "n-1" taşır: eski sürüm aynı değerleri n böleniyle ('Karo LI SD (%)', 'Karo LI CV (%)') yazıyordu;
+// ad değiştiği için eski ve yeni dışa aktarımlar aynı sütunda sessizce karışmaz.
+summary.measurements['Karo LI SD, n-1 (%)'] = sdTileLI
+summary.measurements['Karo LI CV, n-1 (%)'] = cvTileLI
 summary.measurements['LI için geçerli karo'] = validTileLI.size() as double
 summary.measurements['Morisita quadrat sayısı'] = quadrats as double
 summary.measurements['Morisita Iδ'] = morisita
@@ -288,7 +290,7 @@ body << String.format(java.util.Locale.US, 'LI için geçerli karo   : %,d (karo
 body << '────────────────────────────────\n'
 body << "Karo LI ortalaması    : ${fmt(meanTileLI, '%.2f%%')}\n"
 body << "Karo LI SD (n−1)      : ${fmt(sdTileLI, '%.2f%%')}\n"
-body << "Karo LI CV            : ${fmt(cvTileLI, '%.2f%%')}\n"
+body << "Karo LI CV (n−1)      :${fmt(cvTileLI, '%.2f%%')}\n"
 body << "Morisita Iδ           : ${fmt(morisita, '%.4f')}\n"
 body << String.format(java.util.Locale.US, 'Morisita quadratları   : %,d tam alanlı karo%n', quadrats)
 body << String.format(java.util.Locale.US, 'Dışlanan kenar karosu  : %,d kısmi karo%n', partialTiles)

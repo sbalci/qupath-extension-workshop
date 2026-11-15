@@ -268,7 +268,8 @@ ozet.setName(summaryName)
 ozet.measurements["Toplam karo sayısı (${chosenClass})"]  = tiles.size() as double
 ozet.measurements["Seçilen top-N"]                        = actualN as double
 ozet.measurements["Top-N karo ortalama (${chosenKey})"]   = topMean
-ozet.measurements["Top-N karo SD (${chosenKey})"]         = topSD
+// Ad "n-1" taşır: eski sürüm "Top-N karo SD (…)" adıyla n bölenli SD yazıyordu; karışmasın.
+ozet.measurements["Top-N karo SD, n-1 (${chosenKey})"]    = topSD
 ozet.setLocked(true)
 QP.addObjects([ozet])
 QP.fireHierarchyUpdate()

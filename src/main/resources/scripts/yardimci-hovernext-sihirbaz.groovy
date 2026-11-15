@@ -35,7 +35,7 @@
  *   3. Bu sihirbazı çalıştırın → (ilk kez) Yapılandır → "Modeli yerel indir" → "Bölgede çalıştır".
  *
  * ÇIKTI:
- *   • Her çekirdek için "<Sınıf> (HoVer-NeXt)" sınıflı poligon TESPİTİ + "Çekirdek alanı (µm2)"
+ *   • Her çekirdek için "<Sınıf> (HoVer-NeXt)" sınıflı poligon TESPİTİ + "Çekirdek alanı, piksel kenarı (µm2)"
  *   • Her seçili anotasyona: sınıf başına "(n)", "(%)", "(/mm2)" ölçümleri
  *   • Kilitli "HoVer-NeXt çekirdek sınıfları özeti" anotasyonu (Veri dışa aktarma ile dışa aktarılır)
  *
@@ -408,7 +408,7 @@ def importNuclei = { File geojson, imageData, List regionRois, cal, boolean repl
         total++
         if (!insideAny(bounds, cx, cy)) continue
         def det = PathObjects.createDetectionObject(roi, pcs[key])
-        if (cal != null && roi.isArea()) det.getMeasurements().put('Çekirdek alanı (µm2)', roi.getArea() * cal.pw * cal.ph)
+        if (cal != null && roi.isArea()) det.getMeasurements().put('Çekirdek alanı, piksel kenarı (µm2)', roi.getArea() * cal.pw * cal.ph)
         dets << det
         nuclei << [cx, cy, key]
     }
