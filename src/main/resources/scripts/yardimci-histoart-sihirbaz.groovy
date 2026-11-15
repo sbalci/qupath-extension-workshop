@@ -470,7 +470,7 @@ def importPredictions = { File workDir, imageData, exp, String mode = 'add' ->
             }
         } finally { r.close() }
     } catch (Throwable t) {
-        return [ok: false, error: 'tiles.json okunamadı:\n' + (t.getMessage() ?: t.getClass().getSimpleName())]
+        return [ok: false, error: String.format(java.util.Locale.US, workshopText('script.c0db56a2492e', 'tiles.json okunamadı. Python adımı bu dosyayı eksiksiz yazmamış olabilir: çalışma günlüğünü ve çıktı klasörünü denetleyin, sonra sihirbazda çalıştırmayı yeniden yapın.\n\nTeknik ayrıntı: %s'), (t.getMessage() ?: t.getClass().getSimpleName()))]
     }
 
     def records = []
@@ -491,7 +491,7 @@ def importPredictions = { File workDir, imageData, exp, String mode = 'add' ->
             }
         } finally { reader.close() }
     } catch (Throwable t) {
-        return [ok: false, error: 'predictions.json okunamadı:\n' + (t.getMessage() ?: t.getClass().getSimpleName())]
+        return [ok: false, error: String.format(java.util.Locale.US, workshopText('script.02b28b3b1773', 'predictions.json okunamadı. Python adımı bu dosyayı eksiksiz yazmamış olabilir: çalışma günlüğünü ve çıktı klasörünü denetleyin, sonra sihirbazda çalıştırmayı yeniden yapın.\n\nTeknik ayrıntı: %s'), (t.getMessage() ?: t.getClass().getSimpleName()))]
     }
 
     def ensureClass = { String name ->

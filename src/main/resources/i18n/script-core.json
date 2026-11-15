@@ -12184,6 +12184,141 @@
       "key": "script.13fdf447446f",
       "tr": "Lamda piksel boyutu (µm) tanımlı değil; mesafe µm olarak hesaplanamaz.\n\nPiksel boyutunu ayarlamak için: Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu).",
       "en": "No pixel size (µm) is defined for this slide; distances cannot be calculated in µm.\n\nSet it with: Extensions → Atölye → Utilities → Basic tools → Calibration (pixel size)."
+    },
+    {
+      "key": "script.14ae5da27c97",
+      "tr": "Cellpose çalıştırılamadı; hücre bazlı tespit Watershed yöntemiyle sürdürüldü (sonuç metninde dedektör adı yazar), piksel tabanlı H-score etkilenmedi. Cellpose'u kullanmak için ortamı denetleyin: Extensions → Atölye → Yardımcılar → Hücre ve çekirdek tespiti → Cellpose hücre/çekirdek tespiti sihirbazı.\nTeknik ayrıntı: %s",
+      "en": "Cellpose could not run; cell-based detection continued with the Watershed method (the detector name appears in the result text), and the pixel-based H-score is unaffected. To use Cellpose, check its environment: Extensions → Atölye → Utilities → Cell & nucleus detection → Cellpose cell/nucleus detection wizard.\nTechnical detail: %s"
+    },
+    {
+      "key": "script.a8c1a833bf41",
+      "tr": "Cellpose çalıştırılamadı",
+      "en": "Cellpose could not run"
+    },
+    {
+      "key": "script.540c7a7a0d5c",
+      "tr": "Hücre bazlı tespit atlandı; piksel tabanlı H-score yine de hesaplandı ve geçerlidir. Hücre bazlı karşılaştırma gerekiyorsa ortamı denetleyin (Extensions → Atölye → Ortam kontrolü…) ve aracı yeniden çalıştırın.\nTeknik ayrıntı: %s",
+      "en": "Cell-based detection was skipped; the pixel-based H-score was still calculated and is valid. If you need the cell-based comparison, check the environment (Extensions → Atölye → Environment check…) and run the tool again.\nTechnical detail: %s"
+    },
+    {
+      "key": "script.0cbb791f2c5b",
+      "tr": "Hücre bazlı tespit atlandı",
+      "en": "Cell-based detection skipped"
+    },
+    {
+      "key": "script.c2c8bba69355",
+      "tr": "Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla",
+      "en": "Extensions → Atölye → Utilities → Basic tools → Set image type"
+    },
+    {
+      "key": "script.e3dc2534d6aa",
+      "tr": "Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)",
+      "en": "Extensions → Atölye → Utilities → Basic tools → Calibration (pixel size)"
+    },
+    {
+      "key": "script.e251977b9cc3",
+      "tr": "Extensions → Atölye menüsündeki ilgili araç",
+      "en": "the matching tool in the Extensions → Atölye menu"
+    },
+    {
+      "key": "script.4682ed652f87",
+      "tr": "Sihirbazın yardımcı adımlarından biri çalışırken hata verdi; sihirbazın kendisi açık kalır.\nAdımı kendi menü girişinden çalıştırın: %s\nArdından sihirbazda \"Yenile\"ye basın; durum değişmezse sihirbazı kapatıp yeniden açın.\n\nTeknik ayrıntı: %s",
+      "en": "One of the wizard's helper steps failed; the wizard itself stays open.\nRun that step from its own menu entry: %s\nThen press \"Refresh\" in the wizard; if the status does not change, close and reopen the wizard.\n\nTechnical detail: %s"
+    },
+    {
+      "key": "script.f2ef0ca7ef8f",
+      "tr": "Yardımcı adım çalışmadı",
+      "en": "Helper step did not run"
+    },
+    {
+      "key": "script.186dd2b709e8",
+      "tr": "StarDist yüklü değil",
+      "en": "StarDist is not installed"
+    },
+    {
+      "key": "script.cc3d27e2d676",
+      "tr": "StarDist eklentisi yüklü olmadığı için klasik Watershed hücre tespiti kullanıldı; sonuçlar StarDist ile aynı olmaz. StarDist'i kurmak için Extensions → Atölye → Ortam kontrolü… penceresine ve kaynaklar sayfasındaki ileri kurulumlar bölümüne bakın, sonra aracı yeniden çalıştırın.",
+      "en": "Because the StarDist extension is not installed, classic Watershed cell detection was used; results will not match StarDist. To install StarDist, see Extensions → Atölye → Environment check… and the advanced-installs section of the resources page, then run the tool again."
+    },
+    {
+      "key": "script.8acf12fe2ef2",
+      "tr": "Extensions → Atölye → Yardımcılar → İçe ve dışa aktarma / veri → Örnek tümör/stroma sınıflandırıcısını projeye kaydet",
+      "en": "Extensions → Atölye → Utilities → Import / export / data → Save sample tumor/stroma classifier to project"
+    },
+    {
+      "key": "script.f99623b20df3",
+      "tr": "Extensions → Atölye → Modüller → Tümör/Stroma → Tümör/Stroma sihirbazı",
+      "en": "Extensions → Atölye → Modules → Tumor/Stroma → Tumor/Stroma wizard"
+    },
+    {
+      "key": "script.b9b07c9a4d2d",
+      "tr": "Bir yardımcı adım çalışırken hata verdi.\nAdımı kendi menü girişinden çalıştırın: %s\nArdından Tümör/Stroma ölçümünü yeniden başlatın.\n\nTeknik ayrıntı: %s",
+      "en": "A helper step failed.\nRun that step from its own menu entry: %s\nThen start the Tumor/Stroma measurement again.\n\nTechnical detail: %s"
+    },
+    {
+      "key": "script.aab73e5d6aed",
+      "tr": "⚠ Seçtiğiniz kayıt yeri bulunamadı (%s); dosyalar proje varsayılan klasörüne yazıldı: %s\n  Başka bir klasör istiyorsanız aracı yeniden çalıştırıp var olan bir klasör seçin.",
+      "en": "⚠ The location you chose was not found (%s); the files were written to the project's default folder: %s\n  If you want a different folder, run the tool again and pick a folder that exists."
+    },
+    {
+      "key": "script.cc58e417f2b4",
+      "tr": "GeoJSON dosyası okunamadı. Dosyanın GrandQC'nin ürettiği geçerli bir .geojson olduğunu ve başka bir programda açık olmadığını denetleyin; gerekirse GrandQC adımını yeniden çalıştırın.\n\nTeknik ayrıntı: %s",
+      "en": "The GeoJSON file could not be read. Check that the file is a valid .geojson produced by GrandQC and is not open in another program; if needed, run the GrandQC step again.\n\nTechnical detail: %s"
+    },
+    {
+      "key": "script.a94ce369adb2",
+      "tr": "GeoJSON dosyası okunamadı. Aracın Python adımı çıktı dosyasını eksiksiz yazmamış olabilir: çalışma günlüğünü ve çıktı klasörünü denetleyin, sonra sihirbazda çalıştırmayı yeniden yapın.\n\nTeknik ayrıntı: %s",
+      "en": "The GeoJSON file could not be read. The tool's Python step may not have written the output file completely: check the run log and the output folder, then run again from the wizard.\n\nTechnical detail: %s"
+    },
+    {
+      "key": "script.c0db56a2492e",
+      "tr": "tiles.json okunamadı. Python adımı bu dosyayı eksiksiz yazmamış olabilir: çalışma günlüğünü ve çıktı klasörünü denetleyin, sonra sihirbazda çalıştırmayı yeniden yapın.\n\nTeknik ayrıntı: %s",
+      "en": "Could not read tiles.json. The Python step may not have written this file completely: check the run log and the output folder, then run again from the wizard.\n\nTechnical detail: %s"
+    },
+    {
+      "key": "script.02b28b3b1773",
+      "tr": "predictions.json okunamadı. Python adımı bu dosyayı eksiksiz yazmamış olabilir: çalışma günlüğünü ve çıktı klasörünü denetleyin, sonra sihirbazda çalıştırmayı yeniden yapın.\n\nTeknik ayrıntı: %s",
+      "en": "Could not read predictions.json. The Python step may not have written this file completely: check the run log and the output folder, then run again from the wizard.\n\nTechnical detail: %s"
+    },
+    {
+      "key": "script.6b795b8e0033",
+      "tr": "Seçili bölge görüntünün dışında kalıyor ya da alanı yok. Doku üzerine kapalı bir bölge çizin (dikdörtgen, çokgen ya da fırça aracıyla), seçin (sınırı sarı görünsün) ve yeniden çalıştırın.",
+      "en": "The selected region lies outside the image or has no area. Draw a closed region on tissue (with the rectangle, polygon or brush tool), select it so its border is yellow, and run again."
+    },
+    {
+      "key": "script.2e7a6ab0b16e",
+      "tr": "Seçili bölgenin pikselleri okunamadı. Bölgeyi daha küçük çizip yeniden çalıştırın; sürerse görüntü dosyasına erişilebildiğini denetleyin (taşınmış dosya, bağlantısı kopmuş ağ sürücüsü).\n\nTeknik ayrıntı: readRegion null döndü.",
+      "en": "The pixels of the selected region could not be read. Draw a smaller region and run again; if it persists, check that the image file is reachable (moved file, disconnected network drive).\n\nTechnical detail: readRegion returned null."
+    },
+    {
+      "key": "script.1a93ae5e5aa7",
+      "tr": "GeoJSON çıktısı ayrıştırılamadı. HoVer-NeXt adımı çıktı dosyasını eksiksiz yazmamış olabilir: çalışma günlüğünü ve çıktı klasörünü denetleyin, sonra sihirbazda çalıştırmayı yeniden yapın.\n\nTeknik ayrıntı: %s",
+      "en": "The GeoJSON output could not be parsed. The HoVer-NeXt step may not have written the output file completely: check the run log and the output folder, then run again from the wizard.\n\nTechnical detail: %s"
+    },
+    {
+      "key": "script.6ce019695f08",
+      "tr": "Görüntü tipi açık lamda değişti ama diske kaydedilemedi. Değişikliği kalıcı yapmak için QuPath ana penceresinde Ctrl+S ile kaydedin; kaydetmezseniz lamı yeniden açtığınızda eski tip geri gelebilir.\nTeknik ayrıntı: %s",
+      "en": "The image type was changed on the open slide but could not be saved to disk. To make the change permanent, press Ctrl+S in the main QuPath window; if you do not, the old type may return when you reopen the slide.\nTechnical detail: %s"
+    },
+    {
+      "key": "script.df5879c3213b",
+      "tr": "Dosya ayrıştırılamadı. Dosyanın geçerli bir GeoJSON olduğunu ve başka bir programda açık olmadığını denetleyin; dosyayı üreten araçtan yeniden dışa aktarıp tekrar deneyin.\n\nTeknik ayrıntı: %s",
+      "en": "The file could not be parsed. Check that it is a valid GeoJSON and is not open in another program; export it again from the tool that produced it and retry.\n\nTechnical detail: %s"
+    },
+    {
+      "key": "script.eb9286a1e87a",
+      "tr": "Açık lam diske kaydedilemedi; matris o lamın son kayıtlı halinden üretildi. Güncel hali için QuPath ana penceresinde Ctrl+S ile kaydedin ve aracı yeniden çalıştırın.\nTeknik ayrıntı: %s",
+      "en": "The open slide could not be saved to disk; the matrix was built from that slide's last saved state. For the current state, press Ctrl+S in the main QuPath window and run the tool again.\nTechnical detail: %s"
+    },
+    {
+      "key": "script.983ebf08a70e",
+      "tr": "GeoJSON dosyası okunamadı. Seçtiğiniz dosyanın bozulmamış bir .geojson (Sectra GSPS dışa aktarımı) olduğunu ve başka bir programda açık olmadığını denetleyin; dosya bozuksa dışa aktarmayı yeniden yapıp tekrar deneyin.\n\nTeknik ayrıntı: %s",
+      "en": "The GeoJSON file could not be read. Check that the file you chose is an intact .geojson (a Sectra GSPS export) and is not open in another program; if the file is damaged, export it again and retry.\n\nTechnical detail: %s"
+    },
+    {
+      "key": "script.57c3b4c3f2ef",
+      "tr": "Aracın ürettiği hizalanmış GeoJSON dosyası okunamadı. Dosyanın tam yazıldığını ve başka bir programda açık olmadığını denetleyin; gerekirse sihirbazda hizalama adımını yeniden çalıştırın.\n\nTeknik ayrıntı: %s",
+      "en": "The aligned GeoJSON file produced by the tool could not be read. Check that the file was written completely and is not open in another program; if needed, run the alignment step again in the wizard.\n\nTechnical detail: %s"
     }
   ],
   "source_contracts": {
@@ -12193,7 +12328,7 @@
     },
     "sihirbaz.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "8513ee70fe2a8e9a2e2a090ee471d6febff28943580cfb2ff484eefffc4a8059",
+      "sha256": "10f09ae5ed9def8ec91092c416a283ca80c3e961b1506eb31b4dbf2972a777c4",
       "expressions": [
         {
           "original": "\"Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\\n${where}\"",
@@ -12274,12 +12409,18 @@
           "previous_sha256": "2f847f85e50e235f42df0d27e7fe8fb6ed87a9aa9da2615b56847e905ed3b301",
           "sha256": "8513ee70fe2a8e9a2e2a090ee471d6febff28943580cfb2ff484eefffc4a8059",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "8513ee70fe2a8e9a2e2a090ee471d6febff28943580cfb2ff484eefffc4a8059",
+          "sha256": "10f09ae5ed9def8ec91092c416a283ca80c3e961b1506eb31b4dbf2972a777c4",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
     "tumor-ici-ki67.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "083ca07dc8894737f6751e4539838921b7fd99432a66b873e9393794eee67491",
+      "sha256": "d43197e26e7b8c9b0d2f158fda531dfff69288975239b76fa32c45228982970c",
       "expressions": [
         {
           "original": "\"Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\\n${where}\"",
@@ -12360,12 +12501,18 @@
           "previous_sha256": "b949df75e3621d4344fe99faff6d7596445af5d6456cd5970ddc8279a9374629",
           "sha256": "083ca07dc8894737f6751e4539838921b7fd99432a66b873e9393794eee67491",
           "record": "docs/menu-path-hints-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "083ca07dc8894737f6751e4539838921b7fd99432a66b873e9393794eee67491",
+          "sha256": "d43197e26e7b8c9b0d2f158fda531dfff69288975239b76fa32c45228982970c",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
     "tumor-stroma.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "f061929353ef2ca26348e03a1179556c2495d60ff0e52fcb40ce183ef5fb0f08",
+      "sha256": "db40459cbcf8ad8c7f3baa018b1b069070691ba1394db70c63993215f5cf493f",
       "expressions": [
         {
           "original": "\"Tümör/stroma sınıflandırıcısı Brightfield (H&E) görüntü bekler. Şu anki: ${imageTypeName}\"",
@@ -12392,24 +12539,36 @@
           "previous_sha256": "f4e4c57c175499827f53d70246bb7fc37bc9c82b0ffab603cae2639d76737e0f",
           "sha256": "f061929353ef2ca26348e03a1179556c2495d60ff0e52fcb40ce183ef5fb0f08",
           "record": "docs/menu-path-hints-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "f061929353ef2ca26348e03a1179556c2495d60ff0e52fcb40ce183ef5fb0f08",
+          "sha256": "db40459cbcf8ad8c7f3baa018b1b069070691ba1394db70c63993215f5cf493f",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
     "veri-aktarma.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "a206a221a31ffb4a6d159e2e0dde6963f1038b1ff8abaa3a7a50ea1fffcf3c8e",
+      "sha256": "b83e3e8a0aa306ddd2e27fe6379598baea93e0fefe23dbec2176fa0deb18deb8",
       "baseline_reviews": [
         {
           "revision": "66268e21d1e44d7d7c80b7ea14536f49db6eccc2",
           "previous_sha256": "3a3cc3a6ad10b1f762806f1bed48f36d68a3c30462fb929f3857fb7c75d6621f",
           "sha256": "a206a221a31ffb4a6d159e2e0dde6963f1038b1ff8abaa3a7a50ea1fffcf3c8e",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "a206a221a31ffb4a6d159e2e0dde6963f1038b1ff8abaa3a7a50ea1fffcf3c8e",
+          "sha256": "b83e3e8a0aa306ddd2e27fe6379598baea93e0fefe23dbec2176fa0deb18deb8",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
     "quantum-ctcf.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "e4a0412fec0e802b499d0ef8534c76e216adf807849ec3922746e149e4a6af7b",
+      "sha256": "3808304a9ad822f98f1fe1676666734aea15b432e7c33dc5f0d0ba137880ef04",
       "expressions": [
         {
           "original": "\"Bu adım atölye eklentisini gerektirir. Menüden çalıştırın:\\n${where}\"",
@@ -12484,12 +12643,18 @@
           "previous_sha256": "f5859abcdf08b45d872b7913217dfee5aa854952c24d8553bef40ec714beada8",
           "sha256": "e4a0412fec0e802b499d0ef8534c76e216adf807849ec3922746e149e4a6af7b",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "e4a0412fec0e802b499d0ef8534c76e216adf807849ec3922746e149e4a6af7b",
+          "sha256": "3808304a9ad822f98f1fe1676666734aea15b432e7c33dc5f0d0ba137880ef04",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
     "membran-boya.groovy": {
       "revision": "cdb47e2c49bffdd7f1c060edd8261aad673f9076",
-      "sha256": "2dda0eb7fbc90d70f257b654e779b355437f4fb040df45d1e8424f84c41e0098",
+      "sha256": "60ea1cb5bbe40b3e2fa15eef40bdf236bc8f98d327f000bccf95e3783fc8d23a",
       "baseline_reviews": [
         {
           "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
@@ -12502,6 +12667,12 @@
           "previous_sha256": "933aa4fe0a08b47f1bfd02522b1d05a095281cbe6c29cba89701cfebbec99006",
           "sha256": "2dda0eb7fbc90d70f257b654e779b355437f4fb040df45d1e8424f84c41e0098",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "2dda0eb7fbc90d70f257b654e779b355437f4fb040df45d1e8424f84c41e0098",
+          "sha256": "60ea1cb5bbe40b3e2fa15eef40bdf236bc8f98d327f000bccf95e3783fc8d23a",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
@@ -12601,7 +12772,7 @@
     },
     "yardimci-grandqc-sihirbaz.groovy": {
       "revision": "a93a2117daf270c8a867eeb39575850c771c9fd2",
-      "sha256": "b35ff32b18770c18fb7f2c43be6b57dec8d61bd39aba9c41c92a53e038c171f1",
+      "sha256": "84da6fd5add09b8d55dcfef66027370da160ed1531388059ab2968310342f6ef",
       "baseline_reviews": [
         {
           "revision": "95ea34af49aa4ab2f08b6884be22bad2e13fbfd9",
@@ -12614,6 +12785,12 @@
           "previous_sha256": "eb3e667a3f3f4b94e171e3f4203786a6fdd551cd5c6b5071fb54b95d23212474",
           "sha256": "b35ff32b18770c18fb7f2c43be6b57dec8d61bd39aba9c41c92a53e038c171f1",
           "record": "docs/menu-path-hints-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "b35ff32b18770c18fb7f2c43be6b57dec8d61bd39aba9c41c92a53e038c171f1",
+          "sha256": "84da6fd5add09b8d55dcfef66027370da160ed1531388059ab2968310342f6ef",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
@@ -12853,13 +13030,21 @@
     },
     "yardimci-image-type.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "4eb1c358b73fc7367c88489bc86fb4522883715b552f456050c3cbdeb8870d3e",
+      "sha256": "8a43bd86bab9817325f136bdec41be7954ac2b204e8ec107001ae5f9b737e212",
       "expressions": [
         {
           "original": "\"Görüntü tipi tanınmadı: ${targetTypeName}\"",
           "replacement": "\"${workshopText('script.8d13b11c3ecf', 'Görüntü tipi tanınmadı: ')}${targetTypeName}\"",
           "count": 1,
           "context": "showErrorMessage"
+        }
+      ],
+      "baseline_reviews": [
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "4eb1c358b73fc7367c88489bc86fb4522883715b552f456050c3cbdeb8870d3e",
+          "sha256": "8a43bd86bab9817325f136bdec41be7954ac2b204e8ec107001ae5f9b737e212",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
@@ -13001,7 +13186,7 @@
     },
     "yardimci-mitoz-karsilastir.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "5df972eaa34d22c673e98cb147a26870d82a280aaf059aca99bbdd68dfbdc0a4",
+      "sha256": "399f19024c8fd9a3eb64a15febedc4a45479425fc9aa627b5e43901f33f2d66a",
       "baseline_reviews": [
         {
           "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
@@ -13020,6 +13205,12 @@
           "previous_sha256": "a1eafe6b64d10dfaa36656e3638eeb7d5aa5cf929e8be8c650100d0792289fe1",
           "sha256": "5df972eaa34d22c673e98cb147a26870d82a280aaf059aca99bbdd68dfbdc0a4",
           "record": "docs/menu-path-hints-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "5df972eaa34d22c673e98cb147a26870d82a280aaf059aca99bbdd68dfbdc0a4",
+          "sha256": "399f19024c8fd9a3eb64a15febedc4a45479425fc9aa627b5e43901f33f2d66a",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
@@ -13077,7 +13268,7 @@
     },
     "yardimci-ozellik-matrisi.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "19f8f2d4ae6aa915a8b8ecaaab84f215d89c7f12f5feebda632135e613558b18",
+      "sha256": "de9c5192d4a630b5e2ebf2ec1ca8c85605e97560172bf8fbaa7d9768832093ad",
       "expressions": [
         {
           "original": "\"${windowBody}\\n\\nEvet: ${optionB}\\nHayır: ${optionA}\"",
@@ -13092,6 +13283,12 @@
           "previous_sha256": "ab742adfc258fd68522d001d16f73b050167f2cd1c0c5a96e6e512c247745678",
           "sha256": "19f8f2d4ae6aa915a8b8ecaaab84f215d89c7f12f5feebda632135e613558b18",
           "record": "docs/menu-path-hints-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "19f8f2d4ae6aa915a8b8ecaaab84f215d89c7f12f5feebda632135e613558b18",
+          "sha256": "de9c5192d4a630b5e2ebf2ec1ca8c85605e97560172bf8fbaa7d9768832093ad",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
@@ -13161,13 +13358,21 @@
     },
     "yardimci-tahmin-iceaktar.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "f4d88cc4b4aa34b4a1465eae9fffa4796a5861bb3453e63e3aeeb428c3717555",
+      "sha256": "468e200cca680dba231f8815e6072c8997790ae9d1acb601c7b7c898b50291cf",
       "expressions": [
         {
           "original": "\"GeoJSON dosyasında geçerli Polygon/MultiPolygon özelliği bulunamadı (atlanan: ${skipped}).\"",
           "replacement": "\"${workshopText('script.1149564c8762', 'GeoJSON dosyasında geçerli Polygon/MultiPolygon özelliği bulunamadı (atlanan: ')}${skipped}).\"",
           "count": 1,
           "context": "showWarningNotification"
+        }
+      ],
+      "baseline_reviews": [
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "f4d88cc4b4aa34b4a1465eae9fffa4796a5861bb3453e63e3aeeb428c3717555",
+          "sha256": "468e200cca680dba231f8815e6072c8997790ae9d1acb601c7b7c898b50291cf",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
@@ -13463,25 +13668,37 @@
     },
     "yardimci-hepatosit-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "d520ae6b7a2553400359db5e2077146e82f43b5f952e935ba437d63b21e75a85",
+      "sha256": "af5bfe8c763eace88a05cc28429c28a674f82a9a55009d9cc0c884a234c831dc",
       "baseline_reviews": [
         {
           "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
           "previous_sha256": "058ca07874bcdbdae6ef6c2e358f7652de07e97a0f10764d7c394fccb09dcd7e",
           "sha256": "d520ae6b7a2553400359db5e2077146e82f43b5f952e935ba437d63b21e75a85",
           "record": "docs/menu-path-hints-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "d520ae6b7a2553400359db5e2077146e82f43b5f952e935ba437d63b21e75a85",
+          "sha256": "af5bfe8c763eace88a05cc28429c28a674f82a9a55009d9cc0c884a234c831dc",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
     "yardimci-histoart-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "60be96f73d5c8ca9f2b021172f16a7fbf91cd077546ed1b280bb174a0056d9ac",
+      "sha256": "7abfb8e03462a91bc26edca9865a47efabfb5d69734150b86be5f1524a7a45ee",
       "baseline_reviews": [
         {
           "revision": "9d5bc70c2277c9ef91a23360f994d9578bb96d50",
           "previous_sha256": "ca0b76d0fd1d94020c3ec1a5c3e36c21d101b7c260b300614a1a83637f1e9f65",
           "sha256": "60be96f73d5c8ca9f2b021172f16a7fbf91cd077546ed1b280bb174a0056d9ac",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "60be96f73d5c8ca9f2b021172f16a7fbf91cd077546ed1b280bb174a0056d9ac",
+          "sha256": "7abfb8e03462a91bc26edca9865a47efabfb5d69734150b86be5f1524a7a45ee",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
@@ -13541,7 +13758,7 @@
     },
     "yardimci-hovernext-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "3e4c4fef0b7487810f78b04195060abeb8900b06a1cd5dfaa2d58dd9326c1566",
+      "sha256": "f3b10d25983eadb015aaa38a5ad519cb0bdb42005c729a5de98f7e261bccf826",
       "baseline_reviews": [
         {
           "revision": "cc8d89ad314f4d22d1de3f78d0467d0ca662fc89",
@@ -13554,6 +13771,12 @@
           "previous_sha256": "df07231a096871bf71d58705241d7bf7cf57feb160a53d6605c0caa11dba6a1e",
           "sha256": "3e4c4fef0b7487810f78b04195060abeb8900b06a1cd5dfaa2d58dd9326c1566",
           "record": "docs/menu-path-hints-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "3e4c4fef0b7487810f78b04195060abeb8900b06a1cd5dfaa2d58dd9326c1566",
+          "sha256": "f3b10d25983eadb015aaa38a5ad519cb0bdb42005c729a5de98f7e261bccf826",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
@@ -13589,13 +13812,19 @@
     },
     "yardimci-kaiko-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "60d3080f1f80fb311d29d0b182343717f175c28817d893c6da8ae485535f2558",
+      "sha256": "d5504e51d6f098e5574904deafddb5a4e4c6efbac46f1e8e058c88abb5d57b1d",
       "baseline_reviews": [
         {
           "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
           "previous_sha256": "ca9991e05a1e8dda86fbd010c5982c8a9fc0b99e63d13c344ca7373843aa176b",
           "sha256": "60d3080f1f80fb311d29d0b182343717f175c28817d893c6da8ae485535f2558",
           "record": "docs/menu-path-hints-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "60d3080f1f80fb311d29d0b182343717f175c28817d893c6da8ae485535f2558",
+          "sha256": "d5504e51d6f098e5574904deafddb5a4e4c6efbac46f1e8e058c88abb5d57b1d",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
@@ -13667,7 +13896,7 @@
     },
     "yardimci-mitoz-atipik-sanofi.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "1ac88f4fb2403f880dad6ffd0854dba22f4bbdf716712e5b2afcf746ce3a75a7",
+      "sha256": "9110dc4f8cd6eabf92728b133980594a8a74472d4d49d56c8087ba9532575614",
       "baseline_reviews": [
         {
           "revision": "b511ba2803a1727cccafdbbdda96fa0c524d4ca0",
@@ -13680,24 +13909,36 @@
           "previous_sha256": "9b6ee01ad38f7a2d0370f76e98432be63daf8348f3d34ae31b1f98c0958ce309",
           "sha256": "1ac88f4fb2403f880dad6ffd0854dba22f4bbdf716712e5b2afcf746ce3a75a7",
           "record": "docs/menu-path-hints-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "1ac88f4fb2403f880dad6ffd0854dba22f4bbdf716712e5b2afcf746ce3a75a7",
+          "sha256": "9110dc4f8cd6eabf92728b133980594a8a74472d4d49d56c8087ba9532575614",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
     "yardimci-mitoz-fcos.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "9be7a0bf3832e3e0f3d2428326ec9fe158a12dbc40cc24ca28c8391af91f2506",
+      "sha256": "a37d8ab9393d539c4929e3fe8d7a297d204a32d5203079c26cb27cce63071f56",
       "baseline_reviews": [
         {
           "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
           "previous_sha256": "be7da70da725ea986a6aab91ed03827f3e833f5069f9a8b560f967f94bbdb310",
           "sha256": "9be7a0bf3832e3e0f3d2428326ec9fe158a12dbc40cc24ca28c8391af91f2506",
           "record": "docs/menu-path-hints-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "9be7a0bf3832e3e0f3d2428326ec9fe158a12dbc40cc24ca28c8391af91f2506",
+          "sha256": "a37d8ab9393d539c4929e3fe8d7a297d204a32d5203079c26cb27cce63071f56",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
     "yardimci-mitoz-kongnet.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "2bec089618db83573578cbd841fc3696f45986436023b50acb5f92701504c867",
+      "sha256": "44e6cbb2aa9228177271decddff34fc9ef40d73b6bbb86a18e3f89c2081ccaf2",
       "expressions": [
         {
           "original": "\"KongNet GeoJSON'u Brightfield (H&E) görüntüyle eşleşmelidir. Şu anki: ${imageTypeName}\"",
@@ -13712,6 +13953,12 @@
           "previous_sha256": "3e829049ec1bf4ffdbecb29a054388ad649334bfa6d931bb06d9f1a041439d48",
           "sha256": "2bec089618db83573578cbd841fc3696f45986436023b50acb5f92701504c867",
           "record": "docs/ask-first-review-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "2bec089618db83573578cbd841fc3696f45986436023b50acb5f92701504c867",
+          "sha256": "44e6cbb2aa9228177271decddff34fc9ef40d73b6bbb86a18e3f89c2081ccaf2",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
@@ -13737,13 +13984,19 @@
     },
     "yardimci-mitoz-retinanet.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "d42b989174683a7bee34953c516f86d5370f8b271884762b762ce5ff89ab8478",
+      "sha256": "dfbb79cce6d50dd922d257c25011c632f65053bc875fbd79cb4c1ca4f30e3650",
       "baseline_reviews": [
         {
           "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
           "previous_sha256": "198831cb9c9f236fe5518235d83eda6773cb05c41fd5b642c1be135e826e616c",
           "sha256": "d42b989174683a7bee34953c516f86d5370f8b271884762b762ce5ff89ab8478",
           "record": "docs/menu-path-hints-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "d42b989174683a7bee34953c516f86d5370f8b271884762b762ce5ff89ab8478",
+          "sha256": "dfbb79cce6d50dd922d257c25011c632f65053bc875fbd79cb4c1ca4f30e3650",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
@@ -13761,29 +14014,49 @@
     },
     "yardimci-nuclick-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "75cd9783b4301c96e28fa603ab51756a18d08c2c171baf3c0d9e6d51d0589cfb"
+      "sha256": "134c175e403df9757eabff8e9a5a9317210fdc2975b44a0fa316516e1ae0e915",
+      "baseline_reviews": [
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "75cd9783b4301c96e28fa603ab51756a18d08c2c171baf3c0d9e6d51d0589cfb",
+          "sha256": "134c175e403df9757eabff8e9a5a9317210fdc2975b44a0fa316516e1ae0e915",
+          "record": "docs/message-next-steps-2026-11-15.md"
+        }
+      ]
     },
     "yardimci-sectra-iceaktar.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "3aab4b4f8b8a50f7166267e44ba8937f55b706ff0b1a2d376b9b9fc2111079f7",
+      "sha256": "0ccc72055864b9a3126e7fb71d89580eff96bc9a02fd4e580212d102686e2758",
       "baseline_reviews": [
         {
           "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
           "previous_sha256": "cb02863cd355d72d52fcd9e97aecc6de4a9593b7c00742e9d5e59f8ae5fd2be0",
           "sha256": "3aab4b4f8b8a50f7166267e44ba8937f55b706ff0b1a2d376b9b9fc2111079f7",
           "record": "docs/menu-path-hints-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "3aab4b4f8b8a50f7166267e44ba8937f55b706ff0b1a2d376b9b9fc2111079f7",
+          "sha256": "0ccc72055864b9a3126e7fb71d89580eff96bc9a02fd4e580212d102686e2758",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
     "yardimci-spider-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "354dc4abfe26d4e7600627c37561bea05fbafbec89aaffcb3be8e858df288dae",
+      "sha256": "dabbf27f7d05db79f0206a1d64d2a9ef440827ea290552b2a32e2aaa8bc4ff99",
       "baseline_reviews": [
         {
           "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
           "previous_sha256": "f3ee8bdd0e4d4698caf78aa7e68c140243fca79936aa7fb254b2df11403efce8",
           "sha256": "354dc4abfe26d4e7600627c37561bea05fbafbec89aaffcb3be8e858df288dae",
           "record": "docs/menu-path-hints-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "354dc4abfe26d4e7600627c37561bea05fbafbec89aaffcb3be8e858df288dae",
+          "sha256": "dabbf27f7d05db79f0206a1d64d2a9ef440827ea290552b2a32e2aaa8bc4ff99",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },
@@ -13887,7 +14160,7 @@
     },
     "yardimci-valis-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "ffb4210edb124d29e38890eb62c5992da88861007943af8913e5a2fa904a3ba3",
+      "sha256": "184c5fc2dd78a0e6492d70f42d009b3fb4baa24e258bbde9a5f96aa7895c448c",
       "baseline_reviews": [
         {
           "revision": "b511ba2803a1727cccafdbbdda96fa0c524d4ca0",
@@ -13900,6 +14173,12 @@
           "previous_sha256": "3765d1802d1561724c87661e1113e5a8e5a3e0a08b3cd8bf3802ed5962e5038b",
           "sha256": "ffb4210edb124d29e38890eb62c5992da88861007943af8913e5a2fa904a3ba3",
           "record": "docs/menu-path-hints-2026-11-15.md"
+        },
+        {
+          "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
+          "previous_sha256": "ffb4210edb124d29e38890eb62c5992da88861007943af8913e5a2fa904a3ba3",
+          "sha256": "184c5fc2dd78a0e6492d70f42d009b3fb4baa24e258bbde9a5f96aa7895c448c",
+          "record": "docs/message-next-steps-2026-11-15.md"
         }
       ]
     },

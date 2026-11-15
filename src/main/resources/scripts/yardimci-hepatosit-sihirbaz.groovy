@@ -227,7 +227,7 @@ def importResult = { File outputFile, imageData, List targetAnns ->
         return [ok: false, error: 'Çıktı GeoJSON bulunamadı:\n' + (outputFile?.getAbsolutePath() ?: '(yol yok)')]
     def imported = []
     try { outputFile.withInputStream { is -> imported = PathIO.readObjectsFromGeoJSON(is) } }
-    catch (Throwable t) { return [ok: false, error: 'GeoJSON okunamadı:\n' + (t.getMessage() ?: t.getClass().getSimpleName())] }
+    catch (Throwable t) { return [ok: false, error: String.format(java.util.Locale.US, workshopText('script.a94ce369adb2', 'GeoJSON dosyası okunamadı. Aracın Python adımı çıktı dosyasını eksiksiz yazmamış olabilir: çalışma günlüğünü ve çıktı klasörünü denetleyin, sonra sihirbazda çalıştırmayı yeniden yapın.\n\nTeknik ayrıntı: %s'), (t.getMessage() ?: t.getClass().getSimpleName()))] }
     if (imported != null && !imported.isEmpty()) {
         imageData.getHierarchy().addObjects(imported)
         QP.fireHierarchyUpdate()

@@ -414,11 +414,15 @@ def processImage = { imageData, String imageName ->
 // ──────────────────────────────────────────────────────────────
 // 5) Modu uygula
 // ──────────────────────────────────────────────────────────────
+def openSaveWarning = ''
 if (projectMode) {
     // Açık lamı önce diske kaydet — readImageData diskten okur
     if (currentImageData != null && currentEntry != null) {
         try { currentEntry.saveImageData(currentImageData) }
-        catch (Throwable t) { println "⚠ Açık lam kaydedilemedi: ${t.getMessage()}" }
+        catch (Throwable t) {
+            println "⚠ Açık lam kaydedilemedi: ${t.getMessage()}"
+            openSaveWarning = "\n\n⚠️ " + String.format(java.util.Locale.US, workshopText('script.eb9286a1e87a', 'Açık lam diske kaydedilemedi; matris o lamın son kayıtlı halinden üretildi. Güncel hali için QuPath ana penceresinde Ctrl+S ile kaydedin ve aracı yeniden çalıştırın.\nTeknik ayrıntı: %s'), String.valueOf(t.getMessage()))
+        }
     }
     def imageList = project.getImageList()
     println "  ${imageList.size()} lam işlenecek..."
@@ -483,8 +487,8 @@ def calibNote = uncalibratedImages.isEmpty() ? "" :
     uncalibratedImages.take(5).collect { "  • ${it}" }.join("\n") +
     (uncalibratedImages.size() > 5 ? "\n  ... ve ${uncalibratedImages.size() - 5} lam daha" : "")
 
-def errSection = errors.isEmpty() ? "" :
-    "\n\n⚠️ Bazı dosyalar yazılamadı:\n" + errors.take(10).collect { "  • ${it}" }.join("\n")
+def errSection = (errors.isEmpty() ? "" :
+    "\n\n⚠️ Bazı dosyalar yazılamadı:\n" + errors.take(10).collect { "  • ${it}" }.join("\n")) + openSaveWarning
 
 showResultWindow(
     "Özellik matrisi — Tamamlandı 🧮",

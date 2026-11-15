@@ -647,6 +647,7 @@ def stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_H
 
 def chosenLoc = ((opt.location ?: "") as String).trim()
 def base
+String locFallbackNote = null
 if (chosenLoc) {
     def f = new File(chosenLoc)
     if (f.isDirectory()) {
@@ -656,6 +657,7 @@ if (chosenLoc) {
     } else {
         base = defaultBase
         println "⚠ Seçilen kayıt yeri bulunamadı (${chosenLoc}); proje varsayılanı kullanılıyor."
+        locFallbackNote = String.format(java.util.Locale.US, workshopText('script.aab73e5d6aed', '⚠ Seçtiğiniz kayıt yeri bulunamadı (%s); dosyalar proje varsayılan klasörüne yazıldı: %s\n  Başka bir klasör istiyorsanız aracı yeniden çalıştırıp var olan bir klasör seçin.'), chosenLoc, defaultBase.getAbsolutePath())
     }
 } else {
     base = defaultBase
@@ -843,6 +845,7 @@ if (currentSaved) {
 } else {
     saveStatusLine = "(Açık lam yok — projedeki tüm lamlar son kayıtlı halinden okundu.)"
 }
+if (locFallbackNote != null) saveStatusLine = saveStatusLine + "\n" + locFallbackNote
 
 // Eğer dışa aktarım toplamları sıfırsa — çoğunlukla kaydedilmemiş slayt göstergesi
 def emptyHint = ""

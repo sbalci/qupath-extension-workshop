@@ -326,7 +326,7 @@ def importGeoJSON = { File geojsonFile, hier = null, boolean replacePrevious = f
             }
         } finally { reader.close() }
     } catch (Throwable t) {
-        return [ok: false, error: 'GeoJSON okunamadı:\n' + (t.getMessage() ?: t.getClass().getSimpleName())]
+        return [ok: false, error: String.format(java.util.Locale.US, workshopText('script.983ebf08a70e', 'GeoJSON dosyası okunamadı. Seçtiğiniz dosyanın bozulmamış bir .geojson (Sectra GSPS dışa aktarımı) olduğunu ve başka bir programda açık olmadığını denetleyin; dosya bozuksa dışa aktarmayı yeniden yapıp tekrar deneyin.\n\nTeknik ayrıntı: %s'), (t.getMessage() ?: t.getClass().getSimpleName()))]
     }
     if (newAnns.isEmpty())
         return [ok: false, error: 'GeoJSON içinde geçerli geometri bulunamadı (atlanan: ' + skipped + ').\n' +

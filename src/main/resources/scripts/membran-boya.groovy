@@ -458,6 +458,10 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
                     def reason = cellposeError.getMessage() ?: cellposeError.getClass().getSimpleName()
                     println "⚠ Cellpose çalıştırılamadı: ${reason}"
                     println "→ WatershedCellMembraneDetection yedeğine düşülüyor."
+                    if (!isHeadless) {
+                        def cpMsg = String.format(java.util.Locale.US, workshopText('script.14ae5da27c97', 'Cellpose çalıştırılamadı; hücre bazlı tespit Watershed yöntemiyle sürdürüldü (sonuç metninde dedektör adı yazar), piksel tabanlı H-score etkilenmedi. Cellpose\'u kullanmak için ortamı denetleyin: Extensions → Atölye → Yardımcılar → Hücre ve çekirdek tespiti → Cellpose hücre/çekirdek tespiti sihirbazı.\nTeknik ayrıntı: %s'), String.valueOf(reason))
+                        javafx.application.Platform.runLater { qupath.fx.dialogs.Dialogs.showWarningNotification(workshopText('script.a8c1a833bf41', 'Cellpose çalıştırılamadı'), cpMsg) }
+                    }
                     cellposeAvailable = false
                     detector = "WatershedCellMembraneDetection (Cellpose başarısız oldu)"
                     def partial = targetAnnotation.getChildObjects().findAll { it.isDetection() }
@@ -501,6 +505,10 @@ def runDetection = { double m1, double m2, double m3, double pd1, double pd2, do
         def reason = cellErr.getMessage() ?: cellErr.getClass().getSimpleName()
         println "⚠ Hücre bazlı tespit atlandı: ${reason}"
         println "  Birincil piksel H-score sonucu etkilenmedi."
+        if (!isHeadless) {
+            def cbMsg = String.format(java.util.Locale.US, workshopText('script.540c7a7a0d5c', 'Hücre bazlı tespit atlandı; piksel tabanlı H-score yine de hesaplandı ve geçerlidir. Hücre bazlı karşılaştırma gerekiyorsa ortamı denetleyin (Extensions → Atölye → Ortam kontrolü…) ve aracı yeniden çalıştırın.\nTeknik ayrıntı: %s'), String.valueOf(reason))
+            javafx.application.Platform.runLater { qupath.fx.dialogs.Dialogs.showWarningNotification(workshopText('script.0cbb791f2c5b', 'Hücre bazlı tespit atlandı'), cbMsg) }
+        }
     }
 
     // ── 5) Sonuç dizesi ──

@@ -1845,7 +1845,7 @@ def importWarpedToTarget = { project, targetEntry, File warpedFile, double srcAr
     try {
         def ins = new java.io.FileInputStream(warpedFile)
         try { objs = PathIO.readObjectsFromGeoJSON(ins) } finally { ins.close() }
-    } catch (Throwable t) { return [ok: false, error: 'GeoJSON okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
+    } catch (Throwable t) { return [ok: false, error: String.format(java.util.Locale.US, workshopText('script.57c3b4c3f2ef', 'Aracın ürettiği hizalanmış GeoJSON dosyası okunamadı. Dosyanın tam yazıldığını ve başka bir programda açık olmadığını denetleyin; gerekirse sihirbazda hizalama adımını yeniden çalıştırın.\n\nTeknik ayrıntı: %s'), (t.getMessage() ?: t.getClass().getSimpleName()))] }
     if (objs == null || objs.isEmpty()) return [ok: false, error: 'Warp\'lı GeoJSON\'da nesne yok.']
     if (isTransformedEntry(targetEntry)) return [ok: false, error: 'Hedef kırpılmış ya da dönüştürülmüş bir proje girdisi; koordinatlar uymaz, içe aktarılmadı.']
     objs.each { try { it.setLocked(true) } catch (Throwable ignore) {} }
@@ -2881,7 +2881,7 @@ def importGeojsonToCurrent = { File gjFile, String mode = 'add' ->
     try {
         def ins = new java.io.FileInputStream(gjFile)
         try { objs = PathIO.readObjectsFromGeoJSON(ins) } finally { ins.close() }
-    } catch (Throwable t) { return [ok: false, error: 'GeoJSON okunamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
+    } catch (Throwable t) { return [ok: false, error: String.format(java.util.Locale.US, workshopText('script.57c3b4c3f2ef', 'Aracın ürettiği hizalanmış GeoJSON dosyası okunamadı. Dosyanın tam yazıldığını ve başka bir programda açık olmadığını denetleyin; gerekirse sihirbazda hizalama adımını yeniden çalıştırın.\n\nTeknik ayrıntı: %s'), (t.getMessage() ?: t.getClass().getSimpleName()))] }
     if (objs == null || objs.isEmpty()) return [ok: false, error: 'GeoJSON\'da nesne yok.']
     objs.each { try { it.setLocked(true) } catch (Throwable ignore) {} }
     try {

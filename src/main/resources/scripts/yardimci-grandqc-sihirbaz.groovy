@@ -498,7 +498,7 @@ def importGeoJSON = { File geojsonFile, hierarchy, String mode = 'add' ->
             }
         } finally { reader.close() }
     } catch (Throwable t) {
-        return [ok: false, error: 'GeoJSON okunamadı:\n' + (t.getMessage() ?: t.getClass().getSimpleName())]
+        return [ok: false, error: String.format(java.util.Locale.US, workshopText('script.cc58e417f2b4', 'GeoJSON dosyası okunamadı. Dosyanın GrandQC\'nin ürettiği geçerli bir .geojson olduğunu ve başka bir programda açık olmadığını denetleyin; gerekirse GrandQC adımını yeniden çalıştırın.\n\nTeknik ayrıntı: %s'), (t.getMessage() ?: t.getClass().getSimpleName()))]
     }
     if (newAnns.isEmpty())
         return [ok: false, error: 'GeoJSON dosyasında geçerli Polygon/MultiPolygon özelliği bulunamadı (atlanan: ' + skipped + ').']

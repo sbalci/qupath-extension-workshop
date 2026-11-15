@@ -123,7 +123,16 @@ def launchBundled = { String name ->
     if (text == null) return false
     def runner = new Thread({
         try { new groovy.lang.GroovyShell(this.class.classLoader).evaluate(text, name) }
-        catch (Throwable err) { println "Alt betik hatası (${name}): ${err}" }
+        catch (Throwable err) {
+            println "Alt betik hatası (${name}): ${err}"
+            def stepWhere = [
+                'yardimci-ornek-siniflandirici.groovy': workshopText('script.8acf12fe2ef2', 'Extensions → Atölye → Yardımcılar → İçe ve dışa aktarma / veri → Örnek tümör/stroma sınıflandırıcısını projeye kaydet'),
+                'sihirbaz.groovy': workshopText('script.f99623b20df3', 'Extensions → Atölye → Modüller → Tümör/Stroma → Tümör/Stroma sihirbazı')
+            ][name] ?: workshopText('script.e251977b9cc3', 'Extensions → Atölye menüsündeki ilgili araç')
+            def stepMsg = String.format(java.util.Locale.US, workshopText('script.b9b07c9a4d2d', 'Bir yardımcı adım çalışırken hata verdi.\nAdımı kendi menü girişinden çalıştırın: %s\nArdından Tümör/Stroma ölçümünü yeniden başlatın.\n\nTeknik ayrıntı: %s'), stepWhere, String.valueOf(err))
+            try { javafx.application.Platform.runLater { Dialogs.showErrorMessage(workshopText('script.f2ef0ca7ef8f', 'Yardımcı adım çalışmadı'), stepMsg) } }
+            catch (Throwable ignored) { }
+        }
     }, "AtolyeLaunch-${name}")
     runner.setDaemon(true)
     runner.start()

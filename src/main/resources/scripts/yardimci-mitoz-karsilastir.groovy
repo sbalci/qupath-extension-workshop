@@ -371,7 +371,7 @@ def exportRegionImage = { imageData, File workDir, double targetMpp, List region
     int w = (int) Math.ceil(maxX - x); int h = (int) Math.ceil(maxY - y)
     if (x + w > server.getWidth())  w = server.getWidth()  - x
     if (y + h > server.getHeight()) h = server.getHeight() - y
-    if (w <= 0 || h <= 0) return [ok: false, error: 'Bölge sınır dışı ya da boş.']
+    if (w <= 0 || h <= 0) return [ok: false, error: workshopText('script.6b795b8e0033', 'Seçili bölge görüntünün dışında kalıyor ya da alanı yok. Doku üzerine kapalı bir bölge çizin (dikdörtgen, çokgen ya da fırça aracıyla), seçin (sınırı sarı görünsün) ve yeniden çalıştırın.')]
     double baseMpp = (cal != null) ? (cal.pw + cal.ph) / 2.0 : Double.NaN
     double downsample = 1.0
     if (cal != null && targetMpp > 0 && Double.isFinite(baseMpp) && baseMpp > 0) { downsample = targetMpp / baseMpp; if (downsample < 1.0) downsample = 1.0 }
@@ -380,7 +380,7 @@ def exportRegionImage = { imageData, File workDir, double targetMpp, List region
         appendLine(String.format(java.util.Locale.US, '⚠ Büyük ROI (%d × %d px) — bellek yoğun. Daha küçük bir sıcak-nokta seçmeyi düşünün.', outW, outH))
     def request = qupath.lib.regions.RegionRequest.createInstance(server.getPath(), downsample, x, y, w, h)
     def img = server.readRegion(request)
-    if (img == null) return [ok: false, error: 'Bölge okunamadı (readRegion null döndü).']
+    if (img == null) return [ok: false, error: workshopText('script.2e7a6ab0b16e', 'Seçili bölgenin pikselleri okunamadı. Bölgeyi daha küçük çizip yeniden çalıştırın; sürerse görüntü dosyasına erişilebildiğini denetleyin (taşınmış dosya, bağlantısı kopmuş ağ sürücüsü).\n\nTeknik ayrıntı: readRegion null döndü.')]
     def rgb = new java.awt.image.BufferedImage(img.getWidth(), img.getHeight(), java.awt.image.BufferedImage.TYPE_INT_RGB)
     def g = rgb.createGraphics()
     try { g.setColor(java.awt.Color.WHITE); g.fillRect(0, 0, rgb.getWidth(), rgb.getHeight()); g.drawImage(img, 0, 0, null) } finally { g.dispose() }

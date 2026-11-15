@@ -109,6 +109,8 @@ def curImageType = imageData.getImageType()
 if (curImageType == qupath.lib.images.ImageData.ImageType.FLUORESCENCE) {
     // Floresan görüntünün tipini parlak alana çevirmek kalıcı bir hatadır — dokunma.
     println "⚠ Görüntü tipi FLORESAN — bu modül parlak alan H&E/İHK içindir; tip değiştirilmedi."
+    if (!isHeadless) Dialogs.showWarningNotification(atolyeText('cell.msg.fluorTitle', 'Görüntü tipi Floresan'),
+        atolyeText('cell.msg.fluorBody', 'Bu modül parlak alan (H&E ya da İHK) lamları içindir; bu lamın görüntü tipi Floresan olduğundan tip değiştirilmedi ve hücre tespiti çalışmayabilir. Parlak alan bir lam açın. Lam gerçekten parlak alansa sol paneldeki Image sekmesinde Image type değerini "Brightfield (H&E)" ya da "Brightfield (H-DAB)" yapıp aracı yeniden çalıştırın.'))
 } else if (!hasHematoxylin) {
     // Görüntü tipini H&E yapmak lamın tipini VE boya vektörlerini değiştirir → SORULUR, sessizce yapılmaz.
     String typeNow = curImageType?.toString() ?: atolyeText('cell.type.unset', 'ayarlanmamış')

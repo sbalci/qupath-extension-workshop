@@ -296,7 +296,7 @@ def exportRegionImage = { imageData, File workDir, double targetMpp, List region
     int w = (int) Math.ceil(maxX - x); int h = (int) Math.ceil(maxY - y)
     if (x + w > server.getWidth())  w = server.getWidth()  - x
     if (y + h > server.getHeight()) h = server.getHeight() - y
-    if (w <= 0 || h <= 0) return [ok: false, error: 'Bölge sınır dışı ya da boş.']
+    if (w <= 0 || h <= 0) return [ok: false, error: workshopText('script.6b795b8e0033', 'Seçili bölge görüntünün dışında kalıyor ya da alanı yok. Doku üzerine kapalı bir bölge çizin (dikdörtgen, çokgen ya da fırça aracıyla), seçin (sınırı sarı görünsün) ve yeniden çalıştırın.')]
     double baseMpp = (cal.pw + cal.ph) / 2.0d
     double downsample = targetMpp / baseMpp
     if (downsample < 1.0d) downsample = 1.0d   // asla üst-örnekleme — native besle
@@ -306,7 +306,7 @@ def exportRegionImage = { imageData, File workDir, double targetMpp, List region
         appendLine(String.format(java.util.Locale.US, '⚠ Büyük ROI (%d × %d px @ hedef çözünürlük) — bellek/süre yoğun. Daha küçük bir bölge seçmeyi düşünün.', outW, outH))
     def request = RegionRequest.createInstance(server.getPath(), downsample, x, y, w, h)
     def img = server.readRegion(request)
-    if (img == null) return [ok: false, error: 'Bölge okunamadı (readRegion null döndü).']
+    if (img == null) return [ok: false, error: workshopText('script.2e7a6ab0b16e', 'Seçili bölgenin pikselleri okunamadı. Bölgeyi daha küçük çizip yeniden çalıştırın; sürerse görüntü dosyasına erişilebildiğini denetleyin (taşınmış dosya, bağlantısı kopmuş ağ sürücüsü).\n\nTeknik ayrıntı: readRegion null döndü.')]
     def rgb = new java.awt.image.BufferedImage(img.getWidth(), img.getHeight(), java.awt.image.BufferedImage.TYPE_INT_RGB)
     def g = rgb.createGraphics()
     try { g.setColor(java.awt.Color.WHITE); g.fillRect(0, 0, rgb.getWidth(), rgb.getHeight()); g.drawImage(img, 0, 0, null) } finally { g.dispose() }
@@ -359,7 +359,7 @@ def importNuclei = { File geojson, imageData, List regionRois, cal, boolean repl
         return [ok: false, error: 'GeoJSON çıktısı bulunamadı:\n' + (geojson?.getAbsolutePath() ?: '(yol yok)')]
     def root
     try { root = JsonParser.parseString(geojson.getText('UTF-8')).getAsJsonObject() }
-    catch (Throwable t) { return [ok: false, error: 'GeoJSON ayrıştırılamadı: ' + (t.getMessage() ?: t.getClass().getSimpleName())] }
+    catch (Throwable t) { return [ok: false, error: String.format(java.util.Locale.US, workshopText('script.1a93ae5e5aa7', 'GeoJSON çıktısı ayrıştırılamadı. HoVer-NeXt adımı çıktı dosyasını eksiksiz yazmamış olabilir: çalışma günlüğünü ve çıktı klasörünü denetleyin, sonra sihirbazda çalıştırmayı yeniden yapın.\n\nTeknik ayrıntı: %s'), (t.getMessage() ?: t.getClass().getSimpleName()))] }
     def feats = root.has('features') ? root.getAsJsonArray('features') : null
     if (feats == null) return [ok: false, error: 'GeoJSON "features" içermiyor.']
     def bounds = regionBounds(regionRois)

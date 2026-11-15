@@ -28,6 +28,8 @@ The review record for the behaviour changes is `docs/ask-first-review-2026-11-15
 - Error guidance: a mistyped number says how to type it instead of reporting an unreadable image; internal faults no longer tell you to open a slide; `NaN` is matched as a word.
 - The error dialog no longer calls the diagnostic summary anonymised. Home-folder paths and slide file names are masked; other names may remain.
 - `tools/verify-candidate.py` runs on Windows.
+- Messages that only stated a problem now say what to do next: a file that cannot be read, a helper step that failed inside a wizard, a region outside the image. Warnings that went only to the log (a fluorescence image in a brightfield module, a skipped detection step, a save that fell back to another location) are shown to the user.
+- Menu-path hints name the topic group, so the path can be followed (92 hints in 58 scripts).
 
 ### Documentation
 - README install steps follow the workshop site (drag-and-drop first) and use the button names of QuPath 0.6.0's extension manager. English paths name the `Atölye` menu.

@@ -54,7 +54,16 @@ def launchBundled = { String name ->
     if (text == null) return false
     def runner = new Thread({
         try { new groovy.lang.GroovyShell(this.class.classLoader).evaluate(text, name) }
-        catch (Throwable err) { println "Alt betik hatası (${name}): ${err}" }
+        catch (Throwable err) {
+            println "Alt betik hatası (${name}): ${err}"
+            def stepWhere = [
+                'yardimci-image-type.groovy': workshopText('script.c2c8bba69355', 'Extensions → Atölye → Yardımcılar → Temel araçlar → Görüntü tipi ayarla'),
+                'yardimci-kalibrasyon.groovy': workshopText('script.e3dc2534d6aa', 'Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)')
+            ][name] ?: workshopText('script.e251977b9cc3', 'Extensions → Atölye menüsündeki ilgili araç')
+            def stepMsg = String.format(java.util.Locale.US, workshopText('script.4682ed652f87', 'Sihirbazın yardımcı adımlarından biri çalışırken hata verdi; sihirbazın kendisi açık kalır.\nAdımı kendi menü girişinden çalıştırın: %s\nArdından sihirbazda "Yenile"ye basın; durum değişmezse sihirbazı kapatıp yeniden açın.\n\nTeknik ayrıntı: %s'), stepWhere, String.valueOf(err))
+            try { javafx.application.Platform.runLater { Dialogs.showErrorMessage(workshopText('script.f2ef0ca7ef8f', 'Yardımcı adım çalışmadı'), stepMsg) } }
+            catch (Throwable ignored) { }
+        }
     }, "Modul7Wizard-${name}")
     runner.setDaemon(true); runner.start()
     return true

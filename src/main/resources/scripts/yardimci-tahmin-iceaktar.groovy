@@ -245,7 +245,7 @@ try {
         reader.close()
     }
 } catch (Throwable t) {
-    Dialogs.showErrorMessage(workshopText('script.b147d1274e17', "GeoJSON okunamadı"), workshopText('script.5430313684bd', "Dosya ayrıştırılamadı:\n\n") + (t.getMessage() ?: t.getClass().getSimpleName()))
+    Dialogs.showErrorMessage(workshopText('script.b147d1274e17', "GeoJSON okunamadı"), String.format(java.util.Locale.US, workshopText('script.df5879c3213b', 'Dosya ayrıştırılamadı. Dosyanın geçerli bir GeoJSON olduğunu ve başka bir programda açık olmadığını denetleyin; dosyayı üreten araçtan yeniden dışa aktarıp tekrar deneyin.\n\nTeknik ayrıntı: %s'), (t.getMessage() ?: t.getClass().getSimpleName())))
     return
 }
 

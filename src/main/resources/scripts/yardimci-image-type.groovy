@@ -237,6 +237,7 @@ if (targetType == null) {
 def t0 = System.currentTimeMillis()
 def updated = []
 def skipped = []
+def saveWarnings = []
 
 if (scope == "current") {
     def imageData = QP.getCurrentImageData()
@@ -257,6 +258,7 @@ if (scope == "current") {
             }
         } catch (Throwable t) {
             println "⚠ ImageData kaydedilemedi (proje açık değil mi?): ${t.message}"
+            saveWarnings << String.format(java.util.Locale.US, workshopText('script.6ce019695f08', 'Görüntü tipi açık lamda değişti ama diske kaydedilemedi. Değişikliği kalıcı yapmak için QuPath ana penceresinde Ctrl+S ile kaydedin; kaydetmezseniz lamı yeniden açtığınızda eski tip geri gelebilir.\nTeknik ayrıntı: %s'), String.valueOf(t.message))
         }
         updated << "Açık lam: ${previous} → ${targetTypeName}"
     }
@@ -325,6 +327,10 @@ if (skipped.isEmpty()) {
     skipped.each { summary << "  • ${it}\n" }
 }
 summary << "\n"
+if (!saveWarnings.isEmpty()) {
+    saveWarnings.each { summary << "⚠ " + it + "\n" }
+    summary << "\n"
+}
 summary << "Not: Renk dekonvolüsyon vektörleri varsayılana sıfırlandı.\n"
 summary << "Özel kalibre vektörlerinizi yeniden uygulamayı unutmayın."
 
