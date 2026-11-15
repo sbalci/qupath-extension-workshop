@@ -14,3 +14,5 @@ handson/tiatoolbox-results/
 
 
 audit-artifacts/
+__pycache__/
+*.py[cod]

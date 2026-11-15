@@ -22,6 +22,11 @@ CANDIDATES = {
         archive_sha256='70a0b36a8c648f27a7b45436acd23b585351460c69589a4eded51359a17c7db0',
         jar_sha256='0eefa0e1953617965ce004885fa7ae7f104b3cfb27bb0ef852abe5f1e8966eec',
         artifact_id=12735752184, run_id=40507617137, version='0.2.2-rc7'),
+    'rc8-reconciled': dict(source_ref='6a376ae58b46f1518569fa894f42b953c7d1ec6b',
+        checkout_ref='9826cdf53c8c1dd5d066cd79e0baf7155b8a2cba',
+        archive_sha256='2e380a2a7ccd9c8fe148db530698ecac8db13e8087540ebef12148d42cf2afb8',
+        jar_sha256='0870de63395cdb044916a6c54e81ee1b64a936df6c79e5db4a0311997731cfdd',
+        artifact_id=13206675137, run_id=41582122603, version='0.2.2-rc8'),
     'rc8': dict(source_ref='222449d8f6b7ff8c83c73d71e8d90b62def00f07',
         checkout_ref='0c77a5712f405facdf6459f5adaa5828653d1de7',
         archive_sha256='123dc21998e93b527209047d01c024927483358199dc2f9f6f4b84bada6ec3a7',
@@ -100,6 +105,7 @@ def main():
         with zipfile.ZipFile(jar) as z:
             wizard = z.read(SCRIPT).decode('utf-8')
         layout = make_slide(work / 'source.svs')
+        source_digest = sha(work / 'source.svs')
         (work / 'fixture-layout.json').write_text(json.dumps(layout, indent=2) + '\n')
         if not a.qupath:
             report['host_integration'] = 'BLOCKED: no QuPath executable supplied'
@@ -166,6 +172,20 @@ try {
         host = json.loads((work / 'host-results.json').read_text())
         assert host['status'] == 'passed' and host['qupath_version'] == '0.6.0'
         check_output(work / 'source.svs', host['output'], layout)
+        # Exercise the new helper from the same JAR, with and without an image.
+        # Historical candidate profiles do not contain it and retain their scope.
+        with zipfile.ZipFile(jar) as z:
+            helper_name = 'scripts/yardimci-ajan-kopru-denetimi.groovy'
+            if helper_name in z.namelist():
+                helper = work / 'packaged-bridge-inspection.groovy'
+                helper.write_bytes(z.read(helper_name))
+                for label, extra in [('no-image', []), ('image', ['-i', str(work / 'source.svs')])]:
+                    run('bridge-' + label, ['script', str(helper), *extra])
+                    log = (work / ('bridge-' + label + '.log')).read_text()
+                    assert 'Köprü denetimi tamamlandı (salt okunur).' in log
+                    assert ('Açık görüntü yok; bu başlık atlandı.' in log) == (label == 'no-image')
+                assert sha(work / 'source.svs') == source_digest
+                report['bridge_inspection'] = 'passed (packaged script, CLI with/without synthetic image; GUI menu NOT RUN)'
         report['host_integration'] = 'passed (QuPath CLI, synthetic only)'
         report['service_discovery'] = 'passed (GUI install not exercised)'
         report['host_results'] = host

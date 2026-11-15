@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        candidate: [earlier, rc8]
+        candidate: [rc8-reconciled]
     env:
       CANDIDATE: ${{ matrix.candidate }}
     steps:
