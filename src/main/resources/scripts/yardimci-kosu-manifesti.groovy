@@ -163,6 +163,31 @@ def resolveManifestDir = { project ->
     return new File(System.getProperty('java.io.tmpdir'), 'qupath_manifests')
 }
 
+// ── Sonuç kopyaları: veri-aktarma.groovy ile aynı kural (VERBATIM kopya) ──────
+def copiesParse = { String name ->
+    if (name == null) return null
+    def m = (name =~ '^(.+) \\((\\d{1,6})\\)$')
+    if (!m.matches()) return null
+    int n = Integer.parseInt(m.group(2))
+    return (n >= 2) ? [base: m.group(1), index: n] : null
+}
+def copiesGroups = { Collection items, Closure nameOf ->
+    def all = new LinkedHashMap()
+    def bases = new HashSet()
+    items.each { a -> def p = copiesParse(nameOf(a)); if (p != null) bases << p.base }
+    items.each { a ->
+        String nm = nameOf(a)
+        if (nm == null) return
+        def p = copiesParse(nm)
+        if (p != null) all.get(p.base, new TreeMap()).get(p.index, []) << a
+        if (p == null || bases.contains(nm)) all.get(nm, new TreeMap()).get(1, []) << a
+    }
+    def out = new LinkedHashMap()
+    all.each { b, idx -> if (idx.size() >= 2) out[b] = idx }
+    return out
+}
+int copyGroupsRecorded = 0
+
 // ── Tek görüntüden manifest kaydı oluştur ─────────────────────────────────────
 def buildRecord = { imgData, entry, project, String note ->
     def rec = new java.util.LinkedHashMap()
@@ -244,6 +269,25 @@ def buildRecord = { imgData, entry, project, String note ->
         analysisState.detection_count_total = detections.size()
         analysisState.detection_count_by_class = detSummary
     } catch (Throwable ig) { analysisState.detection_error = ig.getMessage() ?: ig.getClass().getSimpleName() }
+    // Sonuç kopyası grupları (salt okunur kayıt; sayımlardan hiçbir şey çıkarılmaz)
+    try {
+        def copyGroups = copiesGroups(imgData.getHierarchy().getAnnotationObjects(), { it.getName() })
+        def copyList = []
+        copyGroups.each { base, idx ->
+            def members = []
+            idx.values().each { objs -> objs.each { members << it.getName() } }
+            def g = new java.util.LinkedHashMap()
+            g.base    = base
+            g.members = members
+            g.count   = members.size()
+            copyList << g
+        }
+        analysisState.annotation_copy_groups = copyList
+        copyGroupsRecorded += copyList.size()
+    } catch (Throwable ig) {
+        analysisState.annotation_copy_groups = []
+        analysisState.annotation_copy_groups_error = ig.getMessage() ?: ig.getClass().getSimpleName()
+    }
     rec.analysis_state = analysisState
 
     // Ortam
@@ -326,6 +370,7 @@ sb << workshopText('script.2f44c9f1566a', 'İŞLEM KAYDI\n')
 sb << "═══════════════════════════════════════\n\n"
 sb << String.format(java.util.Locale.US, workshopText('script.d930002b98f6', 'Kapsam          : %s%n'), scope)
 sb << String.format(java.util.Locale.US, workshopText('script.d38459852caf', 'Yazılan dosya   : %,d%n'), writtenFiles.size())
+sb << String.format(java.util.Locale.US, workshopText('script.764d4627d83a', 'Kopya grupları  : %,d%n'), copyGroupsRecorded)
 if (errors.size() > 0)
     sb << String.format(java.util.Locale.US, workshopText('script.c0fa4b70f976', 'Atlanan / hatalı: %,d%n'), errors.size())
 sb << String.format(java.util.Locale.US, workshopText('script.8a14d73372b4', 'Çıktı dizini    : %s%n%n'), manifestDir.getAbsolutePath())

@@ -16,6 +16,7 @@ Still local, still `0.2.2-rc8` in the version string, nothing pushed.
 | StarDist filter asks first | After the classifier runs, a choice dialog states the class and count; "keep" is preselected and closing the dialog keeps. The result text says whether the kept detections are in the count (they are). |
 | Mitosis ring clean-up | One button in `Mitoz modelleri listesi`: finds rings by the exact metadata key the wizards write whose point no longer exists, shows the count per model, "leave" preselected. |
 | Replace no longer sweeps other models' rings (owner decision) | FCOS, RetinaNet and TIA Toolbox: Replace removes this wizard's earlier points and the rings linked to exactly those points. Orphan rings of other models stay until the hub's clean-up button is used. |
+| Run manifest lists copy groups (owner decision) | New field `analysis_state.annotation_copy_groups` (always present, empty list when none). Existing keys and counts are unchanged. |
 | Translatable choice lists | Tile exporter (mode, scope, format, foldering, layout, old tiles), VALIS reference, peritumoural band direction compare stable ids. Headless values, stored preference values and everything written to files are unchanged. |
 
 Tests: 241 → 265. All 103 scripts compile in QuPath 0.6.0 and 0.7.0.
@@ -34,7 +35,6 @@ Tests: 241 → 265. All 103 scripts compile in QuPath 0.6.0 and 0.7.0.
 - Decided: the anonymiser's per-file detail lines (also written to the report) stay Turkish on screen in English mode.
 - "Only the newest" follows the name rule, so a user's own `Region` and `Region (2)` count as copies. "All" is the default and the dialog lists what would be left out.
 - The StarDist filter classifier is applied to all detections on the image, not only under the selected annotation (unchanged).
-- Should the run manifest list copy groups as an extra field?
 
 ## What changed
 

@@ -29129,6 +29129,11 @@
       "key": "script.0ebf9002ab25",
       "tr": "WSI anonimleştirme sihirbazı açıldı.",
       "en": "WSI anonymization wizard opened."
+    },
+    {
+      "key": "script.764d4627d83a",
+      "tr": "Kopya grupları  : %,d%n",
+      "en": "Copy groups     : %,d%n"
     }
   ],
   "source_contracts": {
@@ -30184,13 +30189,19 @@
     },
     "yardimci-kosu-manifesti.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "25f7d9189f4f405348ca6396589155edfdfca5440d1385f5a07bcc9f28edf7c9",
+      "sha256": "43cdfdf7d990b46a2818420f50e7acc4d0bea79699daf2dc96749e031d18ec91",
       "baseline_reviews": [
         {
           "revision": "9627a53e98774c099decfdc1f6c13e9dd29b5b63",
           "previous_sha256": "b5e6f49c1ec9205ebc7c1adde9375f9983ddc3c2b14e955b1b1b0c9d2b7b73a3",
           "sha256": "25f7d9189f4f405348ca6396589155edfdfca5440d1385f5a07bcc9f28edf7c9",
           "record": "docs/english-coverage-2026-11-15.md"
+        },
+        {
+          "revision": "74f1106472daeed7bec05ffb6265e67d186ab796",
+          "previous_sha256": "25f7d9189f4f405348ca6396589155edfdfca5440d1385f5a07bcc9f28edf7c9",
+          "sha256": "43cdfdf7d990b46a2818420f50e7acc4d0bea79699daf2dc96749e031d18ec91",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
