@@ -110,16 +110,6 @@ def mitosisRing = { point, double r, int rgb, String label ->
     ring.setLocked(true)
     return ring
 }
-// Bağlı noktası artık olmayan görüntü halkalarını sil (yeniden çalıştırma ya da silinen nokta).
-def removeOrphanRings = { hier ->
-    def ids = new HashSet<String>()
-    hier.getAnnotationObjects().each { ids.add(it.getID().toString()) }
-    def orphans = hier.getAnnotationObjects().findAll { a ->
-        def link = a.getMetadata().get(META_POINT)
-        link != null && !ids.contains(link)
-    }
-    if (!orphans.isEmpty()) hier.removeObjects(orphans, false)
-}
 
 def prefs = java.util.prefs.Preferences.userRoot().node('/qupath/atolye/mitoz-retinanet')
 def PREF_PYTHON = 'python'
@@ -350,8 +340,15 @@ def importMitoses = { File geojson, imageData, List regionRois, boolean replaceP
         def oldSummaries = prevSummariesIn(hier, regionRois)
         if (!oldSummaries.isEmpty()) hier.removeObjects(oldSummaries, true)
         def oldPts = prevMitosesIn(hier, regionRois)
+        // Yalnız bu noktalara bağlı halkalar silinir; başka modellerin ya da silinmiş noktaların
+        // yetim halkalarına dokunulmaz (onlar için: Mitoz modelleri listesi → Yetim halkaları temizle).
+        def oldPointIds = oldPts.collect { it.getID().toString() } as Set
+        def oldRings = hier.getAnnotationObjects().findAll { a ->
+            def link = a.getMetadata().get(META_POINT)
+            link != null && oldPointIds.contains(link)
+        }
         if (!oldPts.isEmpty()) hier.removeObjects(oldPts, false)
-        removeOrphanRings(hier)
+        if (!oldRings.isEmpty()) hier.removeObjects(oldRings, false)
     }
     double ringPx = markerRadiusPx(imageData)
     def newAnns = []

@@ -31228,7 +31228,7 @@
     },
     "yardimci-mitoz-fcos.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "56fe8acb40f2bed7de178f090b955da3d0c9b2e7d00c036c8ecd540779a50112",
+      "sha256": "248febd3eb57bcbfa1031d5dd55128cb37789c9ebf4eca705c50c2fd40a80cd6",
       "baseline_reviews": [
         {
           "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
@@ -31247,6 +31247,12 @@
           "previous_sha256": "a37d8ab9393d539c4929e3fe8d7a297d204a32d5203079c26cb27cce63071f56",
           "sha256": "56fe8acb40f2bed7de178f090b955da3d0c9b2e7d00c036c8ecd540779a50112",
           "record": "docs/english-coverage-2026-11-15.md"
+        },
+        {
+          "revision": "512b29009b5190ffb05c4bad65c810807ceda2cd",
+          "previous_sha256": "56fe8acb40f2bed7de178f090b955da3d0c9b2e7d00c036c8ecd540779a50112",
+          "sha256": "248febd3eb57bcbfa1031d5dd55128cb37789c9ebf4eca705c50c2fd40a80cd6",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
@@ -31310,7 +31316,7 @@
     },
     "yardimci-mitoz-retinanet.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "35b8f80018220ae28aa9a881fc596933c857bcb6dd2e5e1f468761a299587d0d",
+      "sha256": "4fc798f73fe72b064257f3a7cd60dcb73f79803f7911e17e78b144d0f9b55dd3",
       "baseline_reviews": [
         {
           "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
@@ -31329,12 +31335,18 @@
           "previous_sha256": "dfbb79cce6d50dd922d257c25011c632f65053bc875fbd79cb4c1ca4f30e3650",
           "sha256": "35b8f80018220ae28aa9a881fc596933c857bcb6dd2e5e1f468761a299587d0d",
           "record": "docs/english-coverage-2026-11-15.md"
+        },
+        {
+          "revision": "512b29009b5190ffb05c4bad65c810807ceda2cd",
+          "previous_sha256": "35b8f80018220ae28aa9a881fc596933c857bcb6dd2e5e1f468761a299587d0d",
+          "sha256": "4fc798f73fe72b064257f3a7cd60dcb73f79803f7911e17e78b144d0f9b55dd3",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },
     "yardimci-mitoz-tiatoolbox.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "bec02939fe0c484f155dc6458d130d32ff9a86739091a01de9036eb69ddd0ab7",
+      "sha256": "87857df179f22bccc9d6a03ad8f7cd47706805bad05b71e7f712e3cf93548306",
       "baseline_reviews": [
         {
           "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
@@ -31347,6 +31359,12 @@
           "previous_sha256": "95b1d6a839ad6fb6090bbfea1351631f60dc0e22a7372b3eb1b609a848070367",
           "sha256": "bec02939fe0c484f155dc6458d130d32ff9a86739091a01de9036eb69ddd0ab7",
           "record": "docs/english-coverage-2026-11-15.md"
+        },
+        {
+          "revision": "512b29009b5190ffb05c4bad65c810807ceda2cd",
+          "previous_sha256": "bec02939fe0c484f155dc6458d130d32ff9a86739091a01de9036eb69ddd0ab7",
+          "sha256": "87857df179f22bccc9d6a03ad8f7cd47706805bad05b71e7f712e3cf93548306",
+          "record": "docs/ask-first-review-2026-11-15.md"
         }
       ]
     },

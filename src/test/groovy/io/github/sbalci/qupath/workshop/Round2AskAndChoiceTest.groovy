@@ -137,4 +137,18 @@ return dirLabels.size()
         assert !s.contains("startsWith('Otomatik')")
         assert s.contains("referenceModeRef.get() == 'auto'")   // consumer unchanged (-> --auto-reference)
     }
+
+    // ---- Replace in FCOS / RetinaNet / TIA Toolbox removes only the replaced points' own rings -------------------
+    void testReplaceNoLongerSweepsOtherModelsOrphanRings() {
+        ['yardimci-mitoz-fcos.groovy', 'yardimci-mitoz-retinanet.groovy', 'yardimci-mitoz-tiatoolbox.groovy'].each { f ->
+            String s = src(f)
+            assert !s.contains('removeOrphanRings') : f
+            int pts = s.indexOf('def oldPts = prevMitosesIn(hier, regionRois)')
+            int ids = s.indexOf('def oldPointIds = oldPts.collect { it.getID().toString() } as Set')
+            int rings = s.indexOf('link != null && oldPointIds.contains(link)')
+            int removePts = s.indexOf('if (!oldPts.isEmpty()) hier.removeObjects(oldPts, false)')
+            assert pts > 0 && pts < ids && ids < rings && rings < removePts : f   // rings are collected before the points go
+            assert s.indexOf('if (replacePrev) {') < pts : f
+        }
+    }
 }
