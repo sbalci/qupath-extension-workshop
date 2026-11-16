@@ -298,13 +298,12 @@ if (selectedScope) {
         maxX = Math.max(maxX, roi.getBoundsX() + roi.getBoundsWidth())
         maxY = Math.max(maxY, roi.getBoundsY() + roi.getBoundsHeight())
     }
-    int rx = (int) Math.floor(minX)
-    int ry = (int) Math.floor(minY)
-    int rw = (int) Math.ceil(maxX - minX)
-    int rh = (int) Math.ceil(maxY - minY)
-    rx = Math.max(0, rx); ry = Math.max(0, ry)
-    rw = Math.min(rw, server.getWidth() - rx)
-    rh = Math.min(rh, server.getHeight() - ry)
+    int rx = Math.max(0, (int) Math.floor(minX))
+    int ry = Math.max(0, (int) Math.floor(minY))
+    int x2 = Math.min(server.getWidth(), (int) Math.ceil(maxX))
+    int y2 = Math.min(server.getHeight(), (int) Math.ceil(maxY))
+    int rw = x2 - rx
+    int rh = y2 - ry
     if (rw <= 0 || rh <= 0) {
         Dialogs.showErrorMessage(workshopText('script.37d5cbd6aa45', "Geçersiz bölge"), workshopText('script.9908dfadc2cc', "Seçili anotasyonun sınırlayıcı kutusu görüntü dışında."))
         return

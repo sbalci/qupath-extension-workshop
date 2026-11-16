@@ -98,13 +98,15 @@ if (imageData == null) {
 // Modal pencere yerine: pencere her zaman açılır; tip yanlışsa kullanıcı
 // pencere içinde tek tıkla "Brightfield (H-DAB)" olarak ayarlayabilir.
 def imageTypeOk = { ->
-    def n = (imageData.getImageType()?.toString() ?: "")
+    def curImg = QP.getCurrentImageData() ?: imageData
+    def n = (curImg.getImageType()?.toString() ?: "")
         .toUpperCase(java.util.Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
     n.contains('H_DAB')
 }
 def imageTypeGuidance = { ->
+    def curImg = QP.getCurrentImageData() ?: imageData
     workshopText('script.415a5e83cd58', 'Bu lam \'Brightfield (H-DAB)\' olarak ayarlı değil.\n') +
-    String.format(java.util.Locale.US, workshopText('script.a53dc88cdb8c', 'Şu anki tip: %s\n\n'), imageData.getImageType()?.toString() ?: '') +
+    String.format(java.util.Locale.US, workshopText('script.a53dc88cdb8c', 'Şu anki tip: %s\n\n'), curImg.getImageType()?.toString() ?: '') +
     workshopText('script.c92b22ac3c2b', 'Çözüm:\n') +
     workshopText('script.dd4d6557261d', '  • Penceredeki "Görüntü tipini \'Brightfield (H-DAB)\' olarak ayarla" düğmesine tıklayın, VEYA\n') +
     workshopText('script.e3cf68f1032b', '  1. Image panelini açın (sol-üst)\n') +
@@ -693,7 +695,7 @@ javafx.application.Platform.runLater {
         def fixTypeBtn = new javafx.scene.control.Button(workshopText('script.8a62116b4df8', "Görüntü tipini 'Brightfield (H-DAB)' olarak ayarla"))
         fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
         fixTypeBtn.setOnAction({
-            imageData.setImageType(qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_H_DAB)
+            (QP.getCurrentImageData() ?: imageData).setImageType(qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_H_DAB)
             QP.setImageType('BRIGHTFIELD_H_DAB')
             fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
             status.setStyle(''); status.setText(workshopText('script.1a0b412fdbec', "✓ Görüntü tipi 'Brightfield (H-DAB)' olarak ayarlandı. Şimdi bir alan anotasyonu seçip 'Çalıştır'a basın."))
@@ -754,7 +756,12 @@ javafx.application.Platform.runLater {
             double pd3 = spPD3.getValue() as double
             double ph  = spPH.getValue()  as double
             def worker = new Thread({
-                def res = runDetection(m1, m2, m3, pd1, pd2, pd3, ph, false)
+                def res
+                try {
+                    res = runDetection(m1, m2, m3, pd1, pd2, pd3, ph, false)
+                } catch (Throwable t) {
+                    res = [ok: false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '')]
+                }
                 javafx.application.Platform.runLater { handleResult(res) }
             }, 'Modul4Detect')
             worker.setDaemon(true); worker.start()
@@ -773,7 +780,12 @@ javafx.application.Platform.runLater {
             double pd3 = spPD3.getValue() as double
             double ph  = spPH.getValue()  as double
             def worker = new Thread({
-                def res = runDetection(m1, m2, m3, pd1, pd2, pd3, ph, true)
+                def res
+                try {
+                    res = runDetection(m1, m2, m3, pd1, pd2, pd3, ph, true)
+                } catch (Throwable t) {
+                    res = [ok: false, error: t.getClass().getSimpleName() + ': ' + (t.getMessage() ?: '')]
+                }
                 javafx.application.Platform.runLater { handleResult(res) }
             }, 'Modul4Recount')
             worker.setDaemon(true); worker.start()

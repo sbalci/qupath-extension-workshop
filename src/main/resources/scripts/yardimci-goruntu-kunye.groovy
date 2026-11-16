@@ -198,10 +198,12 @@ def buildReport = { imageData ->
     int rx, ry, rw, rh
     String regionDesc
     if (roi != null) {
-        rx = (int) Math.floor(roi.getBoundsX()); ry = (int) Math.floor(roi.getBoundsY())
-        rw = (int) Math.ceil(roi.getBoundsWidth()); rh = (int) Math.ceil(roi.getBoundsHeight())
-        if (rx < 0) rx = 0
-        if (ry < 0) ry = 0
+        rx = Math.max(0, (int) Math.floor(roi.getBoundsX()))
+        ry = Math.max(0, (int) Math.floor(roi.getBoundsY()))
+        int x2 = Math.min(W, (int) Math.ceil(roi.getBoundsX() + roi.getBoundsWidth()))
+        int y2 = Math.min(H, (int) Math.ceil(roi.getBoundsY() + roi.getBoundsHeight()))
+        rw = x2 - rx
+        rh = y2 - ry
         regionDesc = roi.isArea() ? workshopText('script.1d342d05f768', 'Seçili ROI (yalnız şeklin içi)') : workshopText('script.0ffc78172f6e', 'Seçili ROI (sınırlayıcı kutu)')
     } else {
         rx = 0; ry = 0; rw = W; rh = H

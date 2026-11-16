@@ -70,13 +70,15 @@ if (imageData == null) {
 // Modal pencere yerine: pencere her zaman açılır; tip yanlışsa kullanıcı
 // pencere içinde tek tıkla "Brightfield (H-DAB)" olarak ayarlayabilir.
 def imageTypeOk = { ->
-    def n = (imageData.getImageType()?.toString() ?: "")
+    def curImg = QP.getCurrentImageData() ?: imageData
+    def n = (curImg.getImageType()?.toString() ?: "")
         .toUpperCase(java.util.Locale.ROOT).replaceAll('[^A-Z0-9]+', '_')
     n.contains('H_DAB')
 }
 def imageTypeGuidance = { ->
+    def curImg = QP.getCurrentImageData() ?: imageData
     workshopText('script.415a5e83cd58', 'Bu lam \'Brightfield (H-DAB)\' olarak ayarlı değil.\n') +
-    String.format(java.util.Locale.US, workshopText('script.a53dc88cdb8c', 'Şu anki tip: %s\n\n'), imageData.getImageType()?.toString() ?: '') +
+    String.format(java.util.Locale.US, workshopText('script.a53dc88cdb8c', 'Şu anki tip: %s\n\n'), curImg.getImageType()?.toString() ?: '') +
     workshopText('script.c92b22ac3c2b', 'Çözüm:\n') +
     workshopText('script.dd4d6557261d', '  • Penceredeki "Görüntü tipini \'Brightfield (H-DAB)\' olarak ayarla" düğmesine tıklayın, VEYA\n') +
     workshopText('script.e3cf68f1032b', '  1. Image panelini açın (sol-üst)\n') +
@@ -228,7 +230,7 @@ def finishCytoMetrics = { targetAnnotation, double cyto1, double cyto2, double c
     def hScore = totalCells > 0
         ? (1.0 * n1 + 2.0 * n2 + 3.0 * n3) * 100.0 / totalCells
         : 0.0
-    def cal = imageData.getServer().getPixelCalibration()
+    def cal = (QP.getCurrentImageData() ?: imageData).getServer().getPixelCalibration()
     def pixelWidth  = cal.getPixelWidthMicrons()
     def pixelHeight = cal.getPixelHeightMicrons()
     def totalAreaMm2 = 0.0
@@ -436,7 +438,7 @@ javafx.application.Platform.runLater {
         def fixTypeBtn = new javafx.scene.control.Button(workshopText('script.8a62116b4df8', "Görüntü tipini 'Brightfield (H-DAB)' olarak ayarla"))
         fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
         fixTypeBtn.setOnAction({
-            imageData.setImageType(qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_H_DAB)
+            (QP.getCurrentImageData() ?: imageData).setImageType(qupath.lib.images.ImageData.ImageType.BRIGHTFIELD_H_DAB)
             QP.setImageType('BRIGHTFIELD_H_DAB')
             fixTypeBtn.setVisible(false); fixTypeBtn.setManaged(false)
             status.setStyle(''); status.setText(workshopText('script.1a0b412fdbec', "✓ Görüntü tipi 'Brightfield (H-DAB)' olarak ayarlandı. Şimdi bir alan anotasyonu seçip 'Çalıştır'a basın."))

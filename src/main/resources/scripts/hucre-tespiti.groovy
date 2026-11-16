@@ -142,7 +142,7 @@ def runDetection = { double thr, double sig, double exp, int replaced = 0 ->
     if (selected == null || !(selected instanceof PathAnnotationObject))
         return [ok:false, error:atolyeText('cell.noRoi', 'Önce ölçmek istediğiniz alan anotasyonunu seçin (üst araç çubuğundan Dikdörtgen [R], Çokgen [P] veya Fırça [B] ile çizip üzerine tıklayın; seçili anotasyonun kenarı SARI görünür).')]
     def target = selected
-    def cal = imageData.getServer().getPixelCalibration()
+    def cal = (QP.getCurrentImageData() ?: imageData).getServer().getPixelCalibration()
     double pw = cal.getPixelWidthMicrons(), ph = cal.getPixelHeightMicrons()
     if (!(pw > 0) || !(ph > 0))
         return [ok:false, error:atolyeText('cell.noScale', 'Piksel kalibrasyonu yok; mm² hesaplanamaz (Extensions → Atölye → Yardımcılar → Temel araçlar → Kalibrasyon (piksel boyutu)).')]
@@ -289,7 +289,7 @@ javafx.application.Platform.runLater {
             double exp = spExp.getValue() as double
             // Tespit, seçili anotasyondaki mevcut hücreleri DEĞİŞTİRİR: tespitten ÖNCE sorulur.
             def selNow = QP.getSelectedObject()
-            def calNow = imageData.getServer().getPixelCalibration()
+            def calNow = (QP.getCurrentImageData() ?: imageData).getServer().getPixelCalibration()
             int nPrev = (selNow instanceof PathAnnotationObject && calNow.getPixelWidthMicrons() > 0 && calNow.getPixelHeightMicrons() > 0) ? countReplaceable(selNow) : 0
             if (nPrev > 0) {
                 boolean okReplace = confirmReplaceCells(atolyeText('cell.redetect.askTitle', 'Önceki hücre tespitleri değiştirilecek'),

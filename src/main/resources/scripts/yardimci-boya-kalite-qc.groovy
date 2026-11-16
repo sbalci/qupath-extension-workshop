@@ -114,7 +114,7 @@ if (!(maxR > 0)) maxR = 255.0d; if (!(maxG > 0)) maxG = 255.0d; if (!(maxB > 0))
 def sel = imageData.getHierarchy().getSelectionModel().getSelectedObjects().findAll { it.isAnnotation() && it.getROI()?.isArea() }
 def roi = sel.isEmpty() ? null : sel.iterator().next().getROI()
 int rx, ry, rw, rh
-if (roi != null) { rx = (int) Math.max(0, roi.getBoundsX()); ry = (int) Math.max(0, roi.getBoundsY()); rw = (int) Math.min(server.getWidth()-rx, Math.ceil(roi.getBoundsWidth())); rh = (int) Math.min(server.getHeight()-ry, Math.ceil(roi.getBoundsHeight())) }
+if (roi != null) { rx = Math.max(0, (int) Math.floor(roi.getBoundsX())); ry = Math.max(0, (int) Math.floor(roi.getBoundsY())); int x2 = Math.min(server.getWidth(), (int) Math.ceil(roi.getBoundsX() + roi.getBoundsWidth())); int y2 = Math.min(server.getHeight(), (int) Math.ceil(roi.getBoundsY() + roi.getBoundsHeight())); rw = x2 - rx; rh = y2 - ry }
 else { rx = 0; ry = 0; rw = server.getWidth(); rh = server.getHeight() }
 if (rw <= 0 || rh <= 0) { if (!isHeadless) Dialogs.showErrorMessage(workshopText('script.37d5cbd6aa45', "Geçersiz bölge"), workshopText('script.efa1e38da33a', "Bölge boyutu okunamadı.")); else println "Geçersiz bölge."; return }
 double downsample = Math.max(1.0d, Math.max(rw, rh) / (double) MAX_DIM)

@@ -302,7 +302,16 @@ targets.eachWithIndex { t, i ->
     } catch (Throwable t2) {
         try {
             def ob = orig.buffer(0)
-            ring = (direction == DIR_IN) ? ob.difference(ob.buffer(-rPx)) : ob.buffer(rPx).difference(ob)
+            if (direction == DIR_OUT) {
+                ring = ob.buffer(rPx).difference(ob)
+            } else if (direction == DIR_IN) {
+                def innerB = ob.buffer(-rPx)
+                ring = (innerB == null || innerB.isEmpty()) ? null : ob.difference(innerB)
+            } else {
+                def innerB = ob.buffer(-rPx)
+                def outerB = ob.buffer(rPx)
+                ring = (innerB == null || innerB.isEmpty()) ? outerB.difference(ob) : outerB.difference(innerB)
+            }
         } catch (Throwable t3) { ring = null }
     }
     if (ring == null || ring.isEmpty()) { skipped++; return }

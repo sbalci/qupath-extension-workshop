@@ -85,8 +85,10 @@ def selectedAreaAnns = { -> QP.getSelectedObjects().findAll { it.isAnnotation() 
 def clampedBounds = { roi, server ->
     int rx = Math.max(0, (int) Math.floor(roi.getBoundsX()))
     int ry = Math.max(0, (int) Math.floor(roi.getBoundsY()))
-    int rw = Math.min((int) Math.ceil(roi.getBoundsWidth()),  server.getWidth()  - rx)
-    int rh = Math.min((int) Math.ceil(roi.getBoundsHeight()), server.getHeight() - ry)
+    int x2 = Math.min(server.getWidth(),  (int) Math.ceil(roi.getBoundsX() + roi.getBoundsWidth()))
+    int y2 = Math.min(server.getHeight(), (int) Math.ceil(roi.getBoundsY() + roi.getBoundsHeight()))
+    int rw = x2 - rx
+    int rh = y2 - ry
     if (rw <= 0 || rh <= 0) return null
     return [rx, ry, rw, rh] as int[]
 }

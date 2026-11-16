@@ -47,7 +47,7 @@ Düğme adları QuPath 0.6.0'ın kendi arayüz metinlerinden alınmıştır. / B
 2. **Catalog URL** kutusuna şu adresi olduğu gibi yapıştırın ve **Add** düğmesine tıklayın:
    `https://raw.githubusercontent.com/sbalci/qupath-extension-workshop/main/catalog.json`
 3. **Manage extensions** penceresine dönün. **`QuPath Workshop extension (Atölye)`** satırındaki kurma düğmesine (**+**; üzerine gelince "Install extension" yazar) tıklayın.
-4. Açılan pencerede **Version to install** listesinden en üstteki sürümü seçin ve **Install** düğmesine tıklayın.
+4. Açılan pencerede **Version to install** listesinden yayımlanmış en güncel indirilebilir sürüm olan **`v0.2.2-rc8`** öğesini seçin (`v0.2.2-rc9` GitHub Releases üzerinde yayımlanana kadar `rc9` seçimi 404 döndürür) ve **Install** düğmesine tıklayın.
 5. QuPath'i **tamamen kapatıp yeniden açın**.
 
 **English:**
@@ -55,7 +55,7 @@ Düğme adları QuPath 0.6.0'ın kendi arayüz metinlerinden alınmıştır. / B
 2. Paste this address into **Catalog URL** exactly as written and click **Add**:
    `https://raw.githubusercontent.com/sbalci/qupath-extension-workshop/main/catalog.json`
 3. Go back to **Manage extensions**. On the **`QuPath Workshop extension (Atölye)`** row click the install button (**+**; its tooltip reads "Install extension").
-4. In the window that opens, choose the top entry under **Version to install** and click **Install**.
+4. In the window that opens, choose **`v0.2.2-rc8`** under **Version to install** (the latest published GitHub Release asset; `v0.2.2-rc9` is the local development target until its GitHub Release is published) and click **Install**.
 5. **Quit QuPath completely and reopen it.**
 
 **Kurulumu doğrulayın / Check the installation:** **Extensions → Manage extensions** penceresinde Atölye eklentisinin sürümü, indirdiğiniz dosya adındaki sürümle aynı olmalıdır. / The version shown for the Atölye extension must match the version in the file name you downloaded.
@@ -131,7 +131,7 @@ Extensions
   .\gradlew.bat clean build   # Windows
   ./gradlew clean build       # macOS / Linux
   ```
-  Çıktı: `build/libs/qupath-extension-workshop-0.2.2-rc8.jar`
+  Çıktı / Output: `build/libs/qupath-extension-workshop-0.2.2-rc9.jar` *(yerel geliştirme derlemesi; yayımlanmış en güncel sürüm `0.2.2-rc8`)*
 
 ---
 

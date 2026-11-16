@@ -338,12 +338,13 @@ int leftAnnotations = builtRows.leftAnnotations
 // ── 4) TSV yaz (sekme ayırıcı; eksik hücre = boş string) ────────────────────
 def colList = new ArrayList<String>(["image_name"] + new ArrayList<String>(columnOrder))
 if (copiesChoice != null) colList << "kopya_bilgisi"
+def sanitizeTsvCell = { Object val -> (val == null ? "" : val.toString()).replaceAll('[\\t\\r\\n]+', ' ').trim() }
 try {
     outDir.mkdirs()
     tsvFile.withWriter("UTF-8") { w ->
-        w.writeLine(colList.join("\t"))
+        w.writeLine(colList.collect { col -> sanitizeTsvCell(col) }.join("\t"))
         rows.each { r ->
-            def line = colList.collect { col -> (r[col] ?: "") }.join("\t")
+            def line = colList.collect { col -> sanitizeTsvCell(r[col] ?: "") }.join("\t")
             w.writeLine(line)
         }
     }

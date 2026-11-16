@@ -174,7 +174,9 @@ def gatherContext = { ->
         if (o == patch) return false
         if (isOwnSetName(o.getName(), summaryName)) return false
         def r = o.getROI()
-        r != null && patchRoi.contains(r.getCentroidX(), r.getCentroidY())
+        if (r == null) return false
+        if (r.isPoint()) return r.getAllPoints().any { pt -> patchRoi.contains(pt.getX(), pt.getY()) }
+        return patchRoi.contains(r.getCentroidX(), r.getCentroidY())
     }
     return [ok: true, imageData: imageData, patch: patch, inPatch: inPatch,
             hasMicrons: hasMicrons, avgUm: avgUm, multi: patches.size()]
@@ -182,8 +184,8 @@ def gatherContext = { ->
 
 // ── Nesneleri eşleştirme birimlerine çevir ─────────────────────────────
 // Her birim: [cx, cy, geom (JTS alan geometrisi ya da null), roi, source]
-// Nokta (PointsROI) nesneleri TEK TEK noktalara açılır (her nokta = bir birim).
-def buildUnits = { objs ->
+// Nokta (PointsROI) nesneleri TEK TEK noktalara açılır ve bölge sınırı (patchRoi) ile süzülür.
+def buildUnits = { objs, filterRoi = null ->
     def units = []
     objs.each { o ->
         // Hücre nesnesinde (çekirdek + genişletilmiş sınır) karşılaştırılan şey ÇEKİRDEKTİR: QuPath'in hücre
@@ -193,7 +195,10 @@ def buildUnits = { objs ->
         if (r == null) return
         if (r.isPoint()) {
             r.getAllPoints().each { pt ->
-                units << [cx: pt.getX() as double, cy: pt.getY() as double,
+                double px = pt.getX() as double
+                double py = pt.getY() as double
+                if (filterRoi != null && !filterRoi.contains(px, py)) return
+                units << [cx: px, cy: py,
                           geom: null, roi: null, source: null]
             }
         } else if (r.isArea()) {
@@ -322,8 +327,9 @@ def runValidation = { String gtLabel, String predLabel, String mode, double thr,
     if (gtObjs.isEmpty()) return [ok: false, reason: 'NO_GT']
     if (predObjs.isEmpty()) return [ok: false, reason: 'NO_PRED']
 
-    def gtUnits = buildUnits(gtObjs)
-    def predUnits = buildUnits(predObjs)
+    def patchFilterRoi = ctx.patch?.getROI()
+    def gtUnits = buildUnits(gtObjs, patchFilterRoi)
+    def predUnits = buildUnits(predObjs, patchFilterRoi)
     if (gtUnits.isEmpty()) return [ok: false, reason: 'NO_GT']
     if (predUnits.isEmpty()) return [ok: false, reason: 'NO_PRED']
 

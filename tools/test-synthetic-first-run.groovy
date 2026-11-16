@@ -10,7 +10,7 @@ import qupath.lib.roi.ROIs
 import qupath.lib.regions.ImagePlane
 
 def root = new File(System.getenv('WORKSHOP_EXAMPLE_ROOT') ?: '.')
-def jar = new File(System.getenv('WORKSHOP_EXAMPLE_JAR') ?: new File(root, 'build/libs/qupath-extension-workshop-0.2.2-rc8.jar').path)
+def jar = new File(System.getenv('WORKSHOP_EXAMPLE_JAR') ?: new File(root, 'build/libs/qupath-extension-workshop-0.2.2-rc9.jar').path)
 def image = new File(root, 'assets/examples/synthetic-nuclei.png')
 assert image.isFile() && jar.isFile(): 'Build the JAR and synthetic example first.'
 def server = ImageServerProvider.buildServer(image.toURI().toString(), BufferedImage.class)

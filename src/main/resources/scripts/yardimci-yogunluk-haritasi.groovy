@@ -267,7 +267,8 @@ for (int row = 0; row < nRows; row++) {
         double x = minX + col * tilePxX
         double y = minY + row * tilePxY
         def rectangle = ROIs.createRectangleROI(x, y, tilePxX, tilePxY, plane)
-        def clipped = RoiTools.intersection([rectangle, analysisROI])
+        def clipped = null
+        try { clipped = RoiTools.intersection([rectangle, analysisROI]) } catch (Throwable ignore) {}
         if (clipped == null || clipped.isEmpty() || !clipped.isArea()) continue
 
         int count = tileCount[row * nCols + col]

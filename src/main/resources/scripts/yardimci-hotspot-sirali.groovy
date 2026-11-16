@@ -317,10 +317,17 @@ if (isHeadless) {
 // Önceki çalıştırmadan kalan "Hotspot" etiketlerini seçili sınıfa geri döndür ki aday
 // havuzu çalıştırmalar arasında küçülmesin (yeniden çalıştırınca tüm karolar aday kalır).
 if (assignHotspotClass) {
-    // Yalnız bu betiğin işaretlediği (sıra ölçümü taşıyan) karolar geri döndürülür.
+    // Yalnız bu betiğin işaretlediği (sıra ölçümü taşıyan) karolar kendi özgün sınıfına geri döndürülür.
     def resetPC = (chosenClass == NOCLASS) ? null : QP.getPathClass(chosenClass)
     allAnnos.findAll { it.getPathClass()?.toString() == hotspotClass && it.measurements.containsKey(rankMeasKey) }
-            .each { it.setPathClass(resetPC) }
+            .each {
+                String origCls = it.getMetadata().get('atolye.hotspot.prevClass')
+                if (origCls != null) {
+                    it.setPathClass(origCls == NOCLASS ? null : QP.getPathClass(origCls))
+                } else {
+                    it.setPathClass(resetPC)
+                }
+            }
 }
 def tiles = allAnnos.findAll { classOf(it) == chosenClass }
 if (tiles.isEmpty()) {
@@ -358,10 +365,13 @@ topTiles.eachWithIndex { entry, idx ->
 }
 
 if (assignHotspotClass) {
-    // Önceki "Hotspot" etiketleri (3) adımında seçili sınıfa geri döndürüldü;
-    // burada yalnız yeni top-N karolara "Hotspot" sınıfı atanır.
+    // Önceki "Hotspot" etiketleri (3) adımında kendi özgün sınıfına geri döndürüldü;
+    // burada yalnız yeni top-N karolara özgün sınıf kaydıyla "Hotspot" sınıfı atanır.
     def hotspotPC = QP.getPathClass(hotspotClass)
-    topTiles.each { entry -> entry.tile.setPathClass(hotspotPC) }
+    topTiles.each { entry ->
+        entry.tile.getMetadata().put('atolye.hotspot.prevClass', chosenClass)
+        entry.tile.setPathClass(hotspotPC)
+    }
 }
 
 def topValues = topTiles.collect { it.value }.findAll { Double.isFinite(it) }

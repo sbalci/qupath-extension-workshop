@@ -1330,6 +1330,11 @@ if (maskMode) {
         def keepOut = copiesExcludedIds
         builder.useFilter({ o -> o.isAnnotation() && !copiesAncestorHit(o, keepOut) } as java.util.function.Predicate)
     }
+    if (selectedScope) {
+        def scopeIds = inScope.collect { it.getID() } as Set
+        def keepOutScope = copiesExcludedIds
+        builder.useFilter({ o -> o.isAnnotation() && scopeIds.contains(o.getID()) && (keepOutScope == null || !copiesAncestorHit(o, keepOutScope)) } as java.util.function.Predicate)
+    }
     legend << "0 = arka plan"
     classIndex.entrySet().sort { it.getValue() }.each { e ->
         builder.addLabel(e.getKey(), e.getValue())
@@ -1490,7 +1495,32 @@ def writeOne = { List tile ->
         String relMask = ''
         if (maskMode) {
             def mreq = RegionRequest.createInstance(labelPath, downsample, x, y, tileL0, tileL0, planeZ, planeT)
-            def mimg = fitTo(labelServer.readRegion(mreq), true)
+            def rawMask = labelServer.readRegion(mreq)
+            if (ignoreUnion != null && !ignoreUnion.isEmpty()) {
+                try {
+                    def tileEnv = new org.locationtech.jts.geom.Envelope(x as double, (x + tileL0) as double, y as double, (y + tileL0) as double)
+                    if (ignoreUnion.getEnvelopeInternal().intersects(tileEnv)) {
+                        def tilePoly = ignoreUnion.getFactory().toGeometry(tileEnv)
+                        def clippedIgnore = ignoreUnion.intersection(tilePoly)
+                        if (clippedIgnore != null && !clippedIgnore.isEmpty()) {
+                            def shape = qupath.lib.roi.RoiTools.getShape(qupath.lib.roi.GeometryTools.geometryToROI(clippedIgnore, plane))
+                            double sx = rawMask.getWidth() / (double) tileL0
+                            double sy = rawMask.getHeight() / (double) tileL0
+                            def xform = java.awt.geom.AffineTransform.getScaleInstance(sx, sy)
+                            xform.translate(-x as double, -y as double)
+                            def localIgnore = xform.createTransformedShape(shape)
+                            def raster = rawMask.getRaster()
+                            int mw = rawMask.getWidth(), mh = rawMask.getHeight()
+                            for (int py = 0; py < mh; py++) {
+                                for (int px = 0; px < mw; px++) {
+                                    if (localIgnore.contains(px + 0.5d, py + 0.5d)) raster.setSample(px, py, 0, 0)
+                                }
+                            }
+                        }
+                    }
+                } catch (Throwable ignore) {}
+            }
+            def mimg = fitTo(rawMask, true)
             def maskFile = new File(labDir, fileStem + ".png")
             if (!javax.imageio.ImageIO.write(mimg, "png", maskFile)) throw new java.io.IOException(workshopText('script.32da8f0f3a2b', 'maske yazılamadı'))
             maskCounter.incrementAndGet()
