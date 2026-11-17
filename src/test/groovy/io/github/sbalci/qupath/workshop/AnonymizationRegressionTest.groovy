@@ -52,7 +52,8 @@ import java.time.format.DateTimeFormatter
         'latin1Form','isLabelOrMacro','extOf','fmtBytes','moveWithRetry','fingerprintOf','fpEqual','fpString',
         'compileAccession','maskHit','accessionHits','pinTimes']
     static String tiffCode() { imports + constants() + availableCode(TIFF_NAMES) }
-    def shell(Map vars = [:]) { SafetyRegressionTest.shell(vars) }
+    // Window texts are workshopText(key, turkishText) calls; return the Turkish fallback so the closures run as before.
+    def shell(Map vars = [:]) { SafetyRegressionTest.shell([workshopText: { Object... a -> a[1] }] + vars) }
 
     // Minimal classic/BigTIFF in either byte order: tissue + label + macro IFDs,
     // with out-of-line descriptions and non-overlapping strip payloads.
