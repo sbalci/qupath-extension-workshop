@@ -9,7 +9,7 @@ from pathlib import Path
 import shutil
 import subprocess
 
-AUDIT_REF = '95bc3d468793d30fe797b7dd4710ff6a42d2913f'
+AUDIT_REF = '8a01c214b82aaff0471e9303ab834029490710a1'
 root = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--audit-root', type=Path, required=True)
