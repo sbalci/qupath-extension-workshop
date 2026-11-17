@@ -101,6 +101,12 @@ jobs:
           status = result.stdout.decode(errors='replace').splitlines()
           if result.returncode == 0 or not status or not __import__('re').fullmatch(r'HTTP/\S+ 404(?: .*)?', status[0]):
               raise SystemExit('Existing release or release lookup failure; refusing to publish/overwrite')
+          # releases/tags/<tag> never returns a DRAFT (it 404s), so look for a leftover draft as well.
+          def releases_for_tag():
+              pages = json.loads(subprocess.check_output(['gh', 'api', '--paginate', '--slurp', f'repos/{repo}/releases?per_page=100']))
+              return [r for page in pages for r in page if r['tag_name'] == tag]
+          if releases_for_tag():
+              raise SystemExit('A release or draft already exists for this tag; refusing to publish/overwrite')
           args = ['gh', 'release', 'create', tag, '--repo', repo, '--target', os.environ['GITHUB_SHA'],
                   '--title', tag, '--generate-notes', '--draft']
           notes = Path('docs/releases', tag + '.md')
@@ -110,7 +116,11 @@ jobs:
               args += ['--prerelease', '--latest=false']
           args += [str(jar), str(jar) + '.sha256', str(jar) + '.verification.json']
           subprocess.run(args, check=True)
-          release = json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/releases/tags/{tag}']))
+          # The new release is still a draft, which releases/tags/<tag> cannot see (404; rc11, 2026-11-17).
+          found = releases_for_tag()
+          if len(found) != 1:
+              raise SystemExit('Expected exactly one draft for this tag after creation; leaving it for review')
+          release = found[0]
           expected = {f.name: f for f in [jar, Path(str(jar)+'.sha256'), Path(str(jar)+'.verification.json')]}
           assets = release['assets']
           if release['draft'] is not True or {a['name'] for a in assets} != set(expected) or len(assets) != len(expected):

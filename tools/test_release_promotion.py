@@ -221,21 +221,27 @@ class ProposedWorkflowTest(unittest.TestCase):
             if notes:
                 (root/'docs/releases').mkdir(); (root/'docs/releases'/(tag+'.md')).write_text('Release-specific notes')
             assets=[dict(id=i,name=f.name,size=f.stat().st_size) for i,f in enumerate(sorted(out.iterdir()),1)]
-            release=dict(id=123,draft=True,assets=assets)
+            release=dict(id=123,draft=True,tag_name=tag,assets=assets)
+            # Like GitHub: a draft never appears at releases/tags/<tag> (404), only in the release list.
+            listed=[dict(release)] if mode=='leftover-draft' else []
             calls=[]
             def run(args,**kwargs):
                 calls.append(args)
                 if args[:3]==['gh','api','--include']:
                     status=b'HTTP/2.0 404 Not Found\n' if mode not in ['exists','api-error'] else (b'HTTP/2.0 200 OK\n' if mode=='exists' else b'HTTP/2.0 500 Server Error\n')
                     return subprocess.CompletedProcess(args,0 if mode=='exists' else 1,status,b'')
-                if args[:3]==['gh','release','create']: return subprocess.CompletedProcess(args,0)
+                if args[:3]==['gh','release','create']:
+                    if mode=='missing-upload': release['assets']=assets[:-1]
+                    listed.append(release); return subprocess.CompletedProcess(args,0)
                 if args[:4]==['gh','api','--method','PATCH']: return subprocess.CompletedProcess(args,0)
                 raise AssertionError('Unexpected command: '+str(args))
             def check_output(args,**kwargs):
                 calls.append(args)
                 if args[:2]==['gh','api'] and '/releases/tags/' in args[-1]:
-                    if mode=='missing-upload': release['assets']=assets[:-1]
-                    return json.dumps(release).encode()
+                    raise subprocess.CalledProcessError(1,args)
+                if args[:2]==['gh','api'] and args[-1].endswith('/releases?per_page=100'):
+                    other=dict(id=7,draft=False,tag_name='v0.2.1',assets=[])
+                    return json.dumps([[other]+listed]).encode()
                 if args[:2]==['gh','api'] and '/environments/' in args[-1]:
                     return json.dumps(dict(protection_rules=[] if mode=='unprotected' else [dict(type='required_reviewers',reviewers=[dict(type='User')])])).encode()
                 if args[:2]==['gh','api'] and '/releases/assets/' in args[-1]:
@@ -261,7 +267,7 @@ class ProposedWorkflowTest(unittest.TestCase):
         self.assertEqual(calls[-1][-2:],['-F','draft=false'])
 
     def test_existing_release_api_failure_and_bad_uploads_never_publish(self):
-        for mode in ['unprotected','exists','api-error','missing-upload','wrong-upload']:
+        for mode in ['unprotected','exists','api-error','leftover-draft','missing-upload','wrong-upload']:
             with self.subTest(mode=mode): self.simulate(mode)
 
     def test_final_and_other_prerelease_classification_and_optional_notes(self):
