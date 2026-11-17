@@ -40,7 +40,7 @@
  *
  * ÇIKTI:
  *   • Sınıflandırılmış, kilitli anotasyonlar ("Maske içe aktarım" adıyla; yeniden
- *     içe aktarımda otomatik temizlenir → idempotent).
+ *     içe aktarımda ekleme veya önceki aktarımı değiştirme seçimi sorulur).
  *   • Sınıf başına anotasyon sayısı + alan dökümünü gösteren özet penceresi.
  *
  * API / BELGE: ContourTracing.createTracedROI(Raster, min, max, band, RegionRequest)
@@ -144,13 +144,32 @@ if (maskFile == null) {
     return
 }
 
+// Etiketler renk bileşenleri değildir. İndeksli renk paleti kabul edilir (tek raster bandı), RGB kabul edilmez.
+def maskDownsample = { Object value ->
+    if (value == null) throw new IllegalArgumentException('downsample')
+    double d = value instanceof Number ? ((Number) value).doubleValue() : Double.parseDouble(value.toString().trim().replace(',', '.'))
+    if (!Double.isFinite(d) || d <= 0.0d) throw new IllegalArgumentException('downsample')
+    return d
+}
+
+def maskDimensionMismatch = { int mw, int mh, double ds, int sw, int sh ->
+    return Math.abs(mw * ds - sw) > Math.max(8.0d, sw * 0.02d) ||
+           Math.abs(mh * ds - sh) > Math.max(8.0d, sh * 0.02d)
+}
+
 // ── 3) Yan dosya (<maske>.json) — downsample + sınıf adları ──────────
 def baseName = maskFile.getName().replaceAll(/\.[^.]+$/, '')
 def jsonSidecar = new File(maskFile.getParentFile(), baseName + ".json")
 Map sidecar = null
 if (jsonSidecar.isFile()) {
-    try { sidecar = (Map) qupath.lib.io.GsonTools.getInstance().fromJson(jsonSidecar.getText("UTF-8"), Map.class) }
-    catch (Throwable t) { sidecar = null }
+    try {
+        sidecar = (Map) qupath.lib.io.GsonTools.getInstance().fromJson(jsonSidecar.getText("UTF-8"), Map.class)
+        if (sidecar == null) throw new IllegalArgumentException('empty sidecar')
+    } catch (Exception t) {
+        Dialogs.showErrorMessage(workshopText('script.74f15afe0001', "Maske üst verisi okunamadı"),
+            workshopText('script.74f15afe0002', "Maske yanındaki JSON dosyası okunamadı. Dosyayı düzeltin veya maskeyi ölçek bilgisiyle yeniden dışa aktarın. Hiçbir anotasyon eklenmedi.\n") + jsonSidecar.getName())
+        return
+    }
 }
 def labelClass = [:]   // int indeks → sınıf adı (yan dosyadan)
 if (sidecar != null && sidecar.labels instanceof Map) {
@@ -189,11 +208,21 @@ if (maskW <= 0 || maskH <= 0) {
     return
 }
 
+if (numBands != 1) {
+    Dialogs.showErrorMessage(workshopText('script.74f15afe0003', "Tek kanallı etiket maskesi gerekli"),
+        workshopText('script.74f15afe0004', "RGB/RGBA görüntünün renk kanalları sınıf indeksi değildir. Maskeyi tek kanallı indeksli veya gri PNG olarak yeniden dışa aktarın; 0 arka plan, her sıfır-dışı tamsayı bir sınıf olmalıdır. Hiçbir anotasyon eklenmedi."))
+    return
+}
+
 // ── 5) Downsample (yan dosyadan ya da boyut oranından sorularak) ─────
 double downsample
 if (sidecar != null && sidecar.downsample != null) {
-    try { downsample = ((Number) sidecar.downsample).doubleValue() }
-    catch (Throwable t) { downsample = 1.0d }
+    try { downsample = maskDownsample(sidecar.downsample) }
+    catch (IllegalArgumentException t) {
+        Dialogs.showErrorMessage(workshopText('script.74f15afe0005', "Geçersiz maske ölçeği"),
+            workshopText('script.74f15afe0006', "Downsample sonlu ve sıfırdan büyük bir sayı olmalıdır (ör. 4.0). JSON yan dosyasındaki değeri düzeltin. Hiçbir anotasyon eklenmedi."))
+        return
+    }
 } else {
     double suggested = (maskW > 0) ? (server.getWidth() / (double) maskW) : 1.0d
     if (!(suggested > 0)) suggested = 1.0d
@@ -203,24 +232,23 @@ if (sidecar != null && sidecar.downsample != null) {
         "(Boyut oranından öneri: ") + String.format(java.util.Locale.US, "%.3f", suggested) + ")",
         String.format(java.util.Locale.US, "%.3f", suggested))
     if (dsText == null) { println "İptal edildi."; return }
-    try { downsample = Double.parseDouble(dsText.trim().replace(',', '.')) }
-    catch (NumberFormatException nfe) {
-        Dialogs.showErrorMessage(workshopText('script.9cc391204f66', "Sayı formatı"), workshopText('script.0d0e0e36ccff', "Downsample ondalık bir sayı olmalı (ör. 4.0)."))
+    try { downsample = maskDownsample(dsText) }
+    catch (IllegalArgumentException nfe) {
+        Dialogs.showErrorMessage(workshopText('script.9cc391204f66', "Sayı formatı"), workshopText('script.74f15afe0008', "Downsample sonlu ve sıfırdan büyük bir sayı olmalıdır (ör. 4.0). Hiçbir anotasyon eklenmedi."))
         return
     }
 }
-if (!(downsample > 0)) downsample = 1.0d
 
 // Boyut tutarlılık uyarısı (yanlış lam açık olabilir) — engelleyici değil
 double impliedW = maskW * downsample
-double tolerance = Math.max(8.0d, server.getWidth() * 0.02d)
-if (Math.abs(impliedW - server.getWidth()) > tolerance) {
+double impliedH = maskH * downsample
+if (maskDimensionMismatch(maskW, maskH, downsample, server.getWidth(), server.getHeight())) {
     def proceed = Dialogs.showConfirmDialog(workshopText('script.2c91f9a51247', "Boyut uyuşmuyor"),
         String.format(java.util.Locale.US,
-            workshopText('script.cca1fafeaa39', "Maske × downsample = %,.0f px, açık görüntü genişliği = %,d px.%n%n" +
-            "Maske bu lamdan türememiş ya da downsample yanlış olabilir.%n" +
+            workshopText('script.74f15afe0007', "Maske × downsample = %,.0f × %,.0f px; açık görüntü = %,d × %,d px.%n%n" +
+            "Maske bu lamdan türememiş ya da downsample yanlış olabilir.%nBu araç maskeyi (0,0) köşesinden yerleştirir; kırpılmış bölgenin konumunu otomatik çıkarmaz.%n" +
             "Yine de devam edilsin mi?"),
-            impliedW, server.getWidth()))
+            impliedW, impliedH, server.getWidth(), server.getHeight()))
     if (!proceed) { println "Kullanıcı boyut-uyuşmazlığı onayını reddetti."; return }
 }
 
@@ -286,10 +314,6 @@ def addRoiAsAnnotations = { roi, String className ->
         classCounts[className] = (classCounts.getOrDefault(className, 0)) + 1
         classAreaPx[className] = (classAreaPx.getOrDefault(className, 0.0d)) + r.getArea()
     }
-}
-
-if (numBands > 1) {
-    println "Uyarı: maske ${numBands} kanallı — yalnız ilk kanal (band 0) kullanılıyor."
 }
 
 if (binaryFallback) {
