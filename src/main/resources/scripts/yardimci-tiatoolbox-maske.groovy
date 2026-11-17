@@ -39,6 +39,8 @@
  *
  * API / BELGE: LabeledImageServer.Builder + ImageWriterTools.writeImage (QuPath 0.6.0+).
  *   Maske tek kanallı indekslidir (multichannelOutput=false); arka plan = 0.
+ *   PNG paletlidir: 0 siyaha, sınıflar QuPath sınıf rengine boyanır. Python'da sınıf numarasını
+ *   np.array(Image.open(p)) verir; cv2/imageio/skimage paleti renge açar.
  *   TIA Toolbox: https://tia-toolbox.readthedocs.io/en/stable/  (Ek: TIA Toolbox).
  *
  * ⚠️ Yalnızca araştırma/eğitim amaçlı veri üretir.
@@ -205,7 +207,10 @@ if (maskW > 10000 || maskH > 10000) {
 // ──────────────────────────────────────────────────────────────
 def classes = classifiedAnns.collect { it.getPathClass() }.unique().sort { it.toString() }
 def builder = new LabeledImageServer.Builder(imageData)
-    .backgroundLabel(0, ColorTools.WHITE)
+    // Arka plan paletinde SİYAH olmalı: TIA Toolbox (2.1.3, models/dataset/dataset_abc.py) maske yolunu
+    // cv2 ile RENK olarak okur, griye çevirir ve "> 0" alır. Beyaz arka plan (255) bütün lamı maske içi yapar;
+    // 2026-11-17'de bu yolun birebir benzetimiyle ölçüldü (beyaz: %100 içeride, siyah: anotasyonla aynı).
+    .backgroundLabel(0, ColorTools.BLACK)
     .downsample(downsample)
     .multichannelOutput(false)
 def legend = [workshopText('script.869ac0156228', '0 = arka plan')]
