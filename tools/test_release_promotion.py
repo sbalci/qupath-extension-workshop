@@ -49,7 +49,7 @@ class ReleasePromotionTest(unittest.TestCase):
         self.evidence_files = {'host-acceptance/host-results.json':json.dumps(host),
             'host-acceptance/bridge-image.log':'Köprü denetimi tamamlandı (salt okunur).',
             'host-acceptance/bridge-no-image.log':'Köprü denetimi tamamlandı (salt okunur).',
-            'test-results/test/TEST-example.xml':'<testsuite>'+''.join(f'<testcase classname="C" name="test{i}"/>' for i in range(49))+'</testsuite>'}
+            'test-results/test/TEST-example.xml':'<testsuite>'+''.join(f'<testcase classname="C" name="test{i}"/>' for i in range(m.ACCEPTANCE_TEST_FLOOR))+'</testsuite>'}
         self.refresh()
 
     def tearDown(self):
@@ -81,7 +81,7 @@ class ReleasePromotionTest(unittest.TestCase):
         self.assertEqual((out/self.p['jar_name']).read_bytes(), self.build_files[self.p['jar_name']])
         report = json.loads((out/(self.p['jar_name']+'.verification.json')).read_text())
         self.assertEqual(report['clinical_validation'], 'NOT ESTABLISHED')
-        self.assertEqual(report['packaged_contracts'], 49)
+        self.assertEqual(report['packaged_contracts'], f'>= {m.ACCEPTANCE_TEST_FLOOR}, all passing')
 
     def test_wrong_run_status_identity_attempt_workflow_and_source(self):
         original = copy.deepcopy(self.inputs)

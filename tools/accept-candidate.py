@@ -32,6 +32,15 @@ CANDIDATES = {
         archive_sha256='123dc21998e93b527209047d01c024927483358199dc2f9f6f4b84bada6ec3a7',
         jar_sha256='3a40cabe18b7108a47c301680df784ee00816de22233d5cac3484f7999042be1',
         artifact_id=13068674430, run_id=41270697133, version='0.2.2-rc8'),
+    # PR #9 Build. The wizard hash differs from WIZARD_SHA by display-language changes only
+    # (6a245aa, 512b290): check-script-ui-contract.py recovers the source, and
+    # AnonymizationFileOutputLanguageTest pins everything written to disk to Turkish.
+    'rc11': dict(source_ref='0394dbaaff49f43794c688985581625a6c247083',
+        checkout_ref='745bf06783ce336d1a8421cf75f237f9192d1ab2',
+        archive_sha256='bbe53ff7de075d900bae8380caff4dd171846382d317e22c09cad2808c14518e',
+        jar_sha256='7424fe0d4ce0f9c24f9ad66c7de270f4030ae8a9e07f8f7d9e02fd38ce05deab',
+        artifact_id=14323504234, run_id=44074585895, version='0.2.2-rc11',
+        wizard_sha256='fb28537560b764fe84970d0d790e7bd66f56497f112c196b02ff36cd4b0f8c03'),
 }
 WIZARD_SHA = 'b6f3d19559e00d90b7efc8c6142c6e0c1b3b06778e62b2a774b8a28bcd68b307'
 
@@ -58,6 +67,26 @@ SCRIPT = 'scripts/yardimci-anonim-sihirbaz.groovy'
 
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+HELPER_START = '\nprivate String workshopText(String key, String fallback) {'
+
+
+def language_helper(wizard):
+    """The wizard's own display-language method, copied verbatim, or '' for older wizards.
+
+    Since rc9 the wizard defines workshopText at its very end, after the dispatch that the
+    host harness cuts off, so the extracted prefix would call a method it no longer contains.
+    """
+    start = wizard.find(HELPER_START)
+    if start < 0:
+        return ''
+    assert wizard.count(HELPER_START) == 1, 'Language helper defined more than once'
+    end = wizard.find('\n}', start + 1)
+    assert end > start, 'Unterminated language helper'
+    helper = wizard[start:end + 2]
+    assert wizard[end + 2:].strip() == '', 'Language helper is no longer the end of the wizard'
+    return helper + '\n'
 
 
 def unpack_candidate(archive, work, candidate):
@@ -99,7 +128,8 @@ def main():
                         '--source-ref', candidate['source_ref'], '--expect-sha256', candidate['jar_sha256']], cwd=ROOT, check=True)
         metadata = json.loads(jar.with_suffix('.jar.verification.json').read_text())
         assert metadata['version'] == candidate['version'], 'Unexpected version metadata'
-        assert metadata['anonymization_wizard_sha256'] == WIZARD_SHA
+        # Each candidate records the reviewed wizard it was accepted with; older ones keep WIZARD_SHA.
+        assert metadata['anonymization_wizard_sha256'] == candidate.get('wizard_sha256', WIZARD_SHA)
         report['packaging'] = metadata
         report['provenance'] = 'passed'
         with zipfile.ZipFile(jar) as z:
@@ -167,7 +197,7 @@ try {
         prefix = wizard.split(anchor)[0]
         checks = (ROOT / 'tools/integration/host-checks.groovy').read_text()
         harness = work / 'host.groovy'
-        harness.write_text(prefix + '\ndef acceptanceRoot = new File(args[0])\n' + checks)
+        harness.write_text(prefix + language_helper(wizard) + '\ndef acceptanceRoot = new File(args[0])\n' + checks)
         run('host', ['script', str(harness), '--args', str(work)])
         host = json.loads((work / 'host-results.json').read_text())
         assert host['status'] == 'passed' and host['qupath_version'] == '0.6.0'
