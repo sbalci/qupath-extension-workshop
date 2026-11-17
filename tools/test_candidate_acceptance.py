@@ -50,6 +50,16 @@ class CandidateAcceptanceTest(unittest.TestCase):
                 with self.subTest(name=name, key=key), self.assertRaises(AssertionError):
                     accept.verify_run_metadata(run, dict(artifact, **{key:value}), c)
 
+    def test_language_helper_is_copied_verbatim_only_from_the_wizard_tail(self):
+        body = ("\nprivate String workshopText(String key, String fallback) {\n"
+                "    try { return x } catch (Throwable ignored) {\n        return fallback\n    }\n}\n")
+        self.assertEqual(accept.language_helper('def a = 1\n'), '')
+        self.assertEqual(accept.language_helper('def a = 1' + body), body)
+        with self.assertRaises(AssertionError):
+            accept.language_helper('def a = 1' + body + 'println "after"\n')
+        with self.assertRaises(AssertionError):
+            accept.language_helper(body + body)
+
     def test_earlier_archive_cannot_be_used_as_rc8(self):
         archive = self.root / 'wrong.zip'
         with zipfile.ZipFile(archive, 'w') as z:

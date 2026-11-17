@@ -17,6 +17,9 @@ ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY = 'sbalci/qupath-extension-workshop'
 PRODUCTION = ['src', 'build.gradle.kts', 'settings.gradle.kts', 'gradle.properties',
               'gradle', 'gradlew', 'gradlew.bat', '.github/workflows/build.yml']
+# Acceptance runs the whole current suite against the packaged scripts. Keep this equal to the
+# floor asserted in candidate-acceptance.yml. (rc8 was accepted when that suite had 49 cases.)
+ACCEPTANCE_TEST_FLOOR = 255
 
 
 class VerificationError(ValueError):
@@ -141,8 +144,8 @@ def verify_evidence(files, p):
             require(suite.tag == 'testsuite' and all(next(suite.iter(t), None) is None
                     for t in ['failure', 'error', 'skipped']), 'Failed/skipped JUnit evidence')
             cases.extend(suite.findall('testcase'))
-    require(len(cases) == len({(c.attrib['classname'], c.attrib['name']) for c in cases}) == 49,
-            'Require 49 distinct passing packaged contracts')
+    require(len(cases) == len({(c.attrib['classname'], c.attrib['name']) for c in cases}) >= ACCEPTANCE_TEST_FLOOR,
+            f'Require at least {ACCEPTANCE_TEST_FLOOR} distinct passing packaged contracts')
 
 
 def verify_bundle(p, inputs, root, release_sha):
@@ -200,7 +203,7 @@ def stage(p, inputs, output, root, release_sha):
         (work / name).write_bytes(jar)
         (work / (name + '.sha256')).write_text(p['jar_sha256'] + '  ' + name + '\n')
         report = dict(verification='passed', release_commit=release_sha, profile=p,
-                      packaged_contracts=49, synthetic_host='QuPath 0.6.0 CLI; bridge with/without image',
+                      packaged_contracts=f'>= {ACCEPTANCE_TEST_FLOOR}, all passing', synthetic_host='QuPath 0.6.0 CLI; bridge with/without image',
                       gui_acceptance='NOT RUN', real_slide_acceptance='NOT RUN',
                       barcode_and_intended_os_acceptance='NOT RUN', clinical_validation='NOT ESTABLISHED')
         (work / (name + '.verification.json')).write_text(json.dumps(report, indent=2) + '\n')
