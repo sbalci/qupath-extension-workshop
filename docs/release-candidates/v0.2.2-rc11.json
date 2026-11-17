@@ -1,0 +1,35 @@
+{
+  "repository": "sbalci/qupath-extension-workshop",
+  "repository_id": 1240697127,
+  "version": "0.2.2-rc11",
+  "candidate": "rc11",
+  "source_ref": "0394dbaaff49f43794c688985581625a6c247083",
+  "checkout_ref": "745bf06783ce336d1a8421cf75f237f9192d1ab2",
+  "jar_name": "qupath-extension-workshop-0.2.2-rc11.jar",
+  "jar_bytes": 4746352,
+  "jar_sha256": "7424fe0d4ce0f9c24f9ad66c7de270f4030ae8a9e07f8f7d9e02fd38ce05deab",
+  "build": {
+    "run_id": 44074585895,
+    "attempt": 1,
+    "head_sha": "0394dbaaff49f43794c688985581625a6c247083",
+    "workflow_id": 277865758,
+    "path": ".github/workflows/build.yml",
+    "event": "pull_request",
+    "artifact_id": 14323504234,
+    "artifact_name": "qupath-extension-workshop-jar",
+    "archive_bytes": 4735344,
+    "archive_sha256": "bbe53ff7de075d900bae8380caff4dd171846382d317e22c09cad2808c14518e"
+  },
+  "acceptance": {
+    "run_id": 44075245182,
+    "attempt": 1,
+    "head_sha": "34e73541c9618770872ce4377135394f5b8dc384",
+    "workflow_id": 403244129,
+    "path": ".github/workflows/candidate-acceptance.yml",
+    "event": "pull_request",
+    "artifact_id": 14323659854,
+    "artifact_name": "candidate-rc11-acceptance-reports",
+    "archive_bytes": 30254,
+    "archive_sha256": "3c321237803f829c4c01d9b3ab2867c7982ea28d58455359ad42c3ebb03e10e1"
+  }
+}
