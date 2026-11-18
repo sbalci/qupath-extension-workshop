@@ -107,6 +107,8 @@ def resolve_device(name):
         return "cpu"
     if name == "cuda":
         if not torch.cuda.is_available():
+            if os.environ.get("ATOLYE_STRICT_DEVICE") == "1":
+                die("CUDA istendi ama kullanilamiyor; yerel tarifte CPU'yu acikca secin.")
             log("UYARI: --device cuda istendi ama CUDA yok; CPU'ya dusuluyor.")
             return "cpu"
         return "cuda"
@@ -115,6 +117,11 @@ def resolve_device(name):
 
 def weights_path(overwrite=False):
     """Agirliklari TIATOOLBOX_HOME altina indir/bul; yerel yolu dondur."""
+    local = os.environ.get("ATOLYE_LOCAL_WEIGHTS", "")
+    if local:
+        if overwrite or not os.path.isfile(local):
+            die("Hazir yerel agirlik dosyasi bulunamadi; once hazirlik adimini tamamlayin.")
+        return local
     from tiatoolbox.models.architecture import fetch_pretrained_weights
     return fetch_pretrained_weights(MODEL_NAME, overwrite=bool(overwrite))
 
@@ -369,7 +376,7 @@ def cmd_predict(args):
     os.makedirs(args.output_dir, exist_ok=True)
     out = os.path.join(args.output_dir, "predictions.json")
     with open(out, "w", encoding="utf-8") as fh:
-        json.dump({"tile_size": TILE_SIZE, "model": MODEL_NAME, "items": results},
+        json.dump({"tile_size": TILE_SIZE, "model": MODEL_NAME, "device": str(device), "items": results},
                   fh, ensure_ascii=False)
 
     ok = sum(1 for r in results if r.get("ok"))

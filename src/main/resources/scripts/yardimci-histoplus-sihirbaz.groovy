@@ -68,6 +68,8 @@ import java.io.File
 
 def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
+def localWorkflow = null
+try { localWorkflow = Class.forName('io.github.sbalci.qupath.workshop.WorkshopLocalWorkflow') } catch (ClassNotFoundException ignored) {}
 
 // ── Sabitler ───────────────────────────────────────────────────────────────
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
@@ -812,6 +814,7 @@ def importCells = { File geojson, imageData, unionRoi, calA, boolean replacePrev
                 pcs[key] = pc
             }
             def det = PathObjects.createDetectionObject(roi, pc)
+            det.getMetadata().put('atolye.workflow.original-class', pc.toString())
             def ml = det.getMeasurements()
             if (calA != null) ml.put('Alan µm²', roi.getArea() * calA.pw * calA.ph)
             if (!Double.isNaN(vote)) ml.put(VOTE_MEAS, vote)
@@ -829,7 +832,7 @@ def importCells = { File geojson, imageData, unionRoi, calA, boolean replacePrev
     }
     if (!dets.isEmpty()) hier.addObjects(dets)
     hier.fireHierarchyChangedEvent(hier)
-    return [cells: cells, removed: old.size(), removedSummaries: removedSummaries, unknown: unknown, outside: outside]
+    return [cells: cells, detections: dets, removed: old.size(), removedSummaries: removedSummaries, unknown: unknown, outside: outside]
 }
 
 // ── Sınıf başına sayım + % + yoğunluk: seçili anotasyonlara + kilitli özete ──
@@ -867,7 +870,7 @@ def writeCounts = { imageData, List targets, unionRoi, List cells, calA, String 
     summary.setLocked(true)
     hier.addObjects([summary])
     hier.fireHierarchyChangedEvent(hier)
-    return [areaMm2: areaMm2, keys: keys, summaryName: summaryName, wroteTargets: replacePrev]
+    return [areaMm2: areaMm2, keys: keys, summary: summary, summaryName: summaryName, wroteTargets: replacePrev]
 }
 
 // ── Sonuç metni (yalnız sayım/yüzde/yoğunluk/oy oranı) ──────────────────────
@@ -962,6 +965,7 @@ def startRun = {
         }
     }
     final boolean runReplacePrev = replacePrev
+    final def runProject = QP.getProject()
     final String runSummaryBase = summaryBase
     def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs(); workDirRef.set(workDir)
     def roiFile = new File(workDir, 'roi.geojson')
@@ -1024,12 +1028,31 @@ def startRun = {
             javafx.application.Platform.runLater { busyLabelRef.set(workshopText('script.c56cd61805bd', 'Hücreler içe aktarılıyor…')); step.set('BUSY'); render() }
             // Uzun çalıştırmadan SONRA QP.getCurrentImageData()'yı YENİDEN ALMA: başlatan imageData'ya yaz.
             if (cancelledRef.get()) { javafx.application.Platform.runLater { step.set('READY'); render() }; return }
+            def applyOutput = { ->
+                if (cancelledRef.get()) { javafx.application.Platform.runLater { step.set('READY'); render() }; return }
             def imp = importCells(geo, imageData, rd.unionRoi, rd.calA, runReplacePrev, runSummaryBase)
-            // Ad, içe aktarma anında belirlenir (uzun çalıştırma sırasında hiyerarşi değişmiş olabilir).
-            def summaryName = runReplacePrev ? runSummaryBase
-                                             : nextSummaryName(imageData.getHierarchy(), rd.unionRoi, runSummaryBase)
-            def dens = writeCounts(imageData, rd.targets, rd.unionRoi, imp.cells, rd.calA,
-                                   (stats.model ?: rd.modelKey) as String, runReplacePrev, summaryName)
+                // Ad, içe aktarma anında belirlenir (uzun çalıştırma sırasında hiyerarşi değişmiş olabilir).
+                def summaryName = runReplacePrev ? runSummaryBase
+                                                 : nextSummaryName(imageData.getHierarchy(), rd.unionRoi, runSummaryBase)
+                def dens = writeCounts(imageData, rd.targets, rd.unionRoi, imp.cells, rd.calA,
+                                       (stats.model ?: rd.modelKey) as String, runReplacePrev, summaryName)
+                return [imp: imp, dens: dens]
+            }
+            def applied = localWorkflow != null ? localWorkflow.onHost(applyOutput as java.util.concurrent.Callable) : applyOutput()
+            if (applied == null) { javafx.application.Platform.runLater { step.set('READY'); render() }; return }
+            def imp = applied.imp
+            def dens = applied.dens
+            if (localWorkflow != null && runProject != null) {
+                def runJson = new File(workDir, 'histoplus_run.json')
+                def observed = runJson.isFile() ? JsonParser.parseString(runJson.getText('UTF-8')).getAsJsonObject() : null
+                localWorkflow.recordWizardResult(runProject, imageData, 'histoplus', rd.unionRoi, imp.detections, dens.summary,
+                    [runner: cfg.runner, weights: weightFileOf(cfg, (stats.model ?: rd.modelKey) as String)?.getAbsolutePath(),
+                     revision: observed?.get('hf_revision')?.getAsString(), actual_device: observed?.get('device')?.getAsString(),
+                     precision: 'model default; not independently observed', classes: CLASSES.collect { it.tr + CLASS_SUFFIX },
+                     class_mapping: CLASSES.collectEntries { [(it.tr + CLASS_SUFFIX): it.key] },
+                     settings: [batch_size: cfg.batchSize, pp_threads: cfg.ppThreads, requested_device: cfg.device],
+                     component_rois: rd.targets.collect { it.getID().toString() }])
+            }
             if (imp.outside > 0) appendLine(workshopText('script.9309f1b8f107', 'Not: alan dışında kalan ') + imp.outside + workshopText('script.3bc3065e521a', ' kontur atlandı (karolar alanı aşar; sayım yalnız alan içidir).'))
             def txt = resultText(imageData, cfg, rd, imp, dens, stats, elapsed)
             javafx.application.Platform.runLater {

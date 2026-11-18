@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Workshop local workflow recipe v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "adapter", "model", "revision", "weight_sha256", "runner_sha256", "device", "target_mpp", "parameters", "measurement_version", "class_mapping_version"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "adapter": {"enum": ["histoplus", "nuclick"]},
+    "model": {"enum": ["40x", "20x", "original"]},
+    "revision": {"type": "string", "minLength": 1},
+    "weight_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "runner_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "device": {"enum": ["cpu", "cuda"]},
+    "target_mpp": {"enum": [0.25, 0.5]},
+    "parameters": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "batch_size": {"type": "integer", "minimum": 1, "maximum": 65536},
+        "pp_threads": {"type": "integer", "minimum": 1, "maximum": 65536},
+        "threshold": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1},
+        "min_size": {"type": "integer", "minimum": 0, "maximum": 65536},
+        "min_hole_size": {"type": "integer", "minimum": 0, "maximum": 65536}
+      }
+    },
+    "measurement_version": {"const": 1},
+    "class_mapping_version": {"const": 1}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"adapter": {"const": "histoplus"}}},
+      "then": {"properties": {
+        "model": {"enum": ["40x", "20x"]},
+        "revision": {"const": "cde2eee81af9e39b03802fc33d4f284733b5ee5e"},
+        "parameters": {"properties": {"threshold": false, "min_size": false, "min_hole_size": false}}
+      }},
+      "else": {"properties": {
+        "model": {"const": "original"},
+        "revision": {"const": "tiatoolbox-original-pannuke"},
+        "parameters": {"properties": {"pp_threads": false}}
+      }}
+    },
+    {
+      "if": {"properties": {"model": {"const": "20x"}}},
+      "then": {"properties": {"target_mpp": {"const": 0.5}}},
+      "else": {"properties": {"target_mpp": {"const": 0.25}}}
+    }
+  ]
+}

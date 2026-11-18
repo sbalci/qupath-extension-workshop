@@ -87,6 +87,7 @@ tasks.compileJava {
 
 tasks.processResources {
     filteringCharset = "UTF-8"
+    exclude("**/__pycache__/**", "**/*.pyc")
 }
 
 // Generates build-info.properties fresh on every build (timestamp computed at

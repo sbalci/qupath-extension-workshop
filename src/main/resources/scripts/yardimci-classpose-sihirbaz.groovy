@@ -55,6 +55,8 @@ import java.io.File
 
 def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
+def localWorkflow = null
+try { localWorkflow = Class.forName('io.github.sbalci.qupath.workshop.WorkshopLocalWorkflow') } catch (ClassNotFoundException ignored) {}
 
 // ── Sabitler ───────────────────────────────────────────────────────────────
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
@@ -799,6 +801,7 @@ def importCells = { File geojson, imageData, unionRoi, calA, boolean replacePrev
             pcs[key] = pc
         }
         def det = PathObjects.createDetectionObject(roi, pc)
+            det.getMetadata().put('atolye.workflow.original-class', pc.toString())
         if (calA != null) det.getMeasurements().put('Alan µm²', roi.getArea() * calA.pw * calA.ph)
         dets << det
         cells << [cx, cy, key]
@@ -818,7 +821,7 @@ def importCells = { File geojson, imageData, unionRoi, calA, boolean replacePrev
     }
     if (!dets.isEmpty()) hier.addObjects(dets)
     hier.fireHierarchyChangedEvent(hier)
-    return [cells: cells, removed: old.size(), removedSummaries: removedSummaries, unknown: unknown, outside: outside]
+    return [cells: cells, detections: dets, removed: old.size(), removedSummaries: removedSummaries, unknown: unknown, outside: outside]
 }
 
 // ── Sınıf başına sayım + % + yoğunluk: seçili anotasyonlara + kilitli özete ──
@@ -854,7 +857,7 @@ def writeCounts = { imageData, List targets, unionRoi, List cells, calA, String 
     summary.setLocked(true)
     hier.addObjects([summary])
     hier.fireHierarchyChangedEvent(hier)
-    return [areaMm2: areaMm2, keys: keys, summaryName: finalSummaryName, wroteTargets: writeTargets]
+    return [areaMm2: areaMm2, keys: keys, summary: summary, summaryName: finalSummaryName, wroteTargets: writeTargets]
 }
 
 // ── Sonuç metni (yalnız sayım/yüzde/yoğunluk) ────────────────────────────────
@@ -918,6 +921,7 @@ def resultText = { imageData, cfg, Map rd, Map imp, Map dens, Map stats, long el
 def runStartRef = new java.util.concurrent.atomic.AtomicLong(0L)
 def timelineRef = new java.util.concurrent.atomic.AtomicReference(null)
 def startRun = {
+    final def runProject = QP.getProject()
     def imageData = QP.getCurrentImageData()
     if (imageData == null) { errorTextRef.set(workshopText('script.da80fab350d1', 'Görüntü açık değil.')); step.set('ERROR'); render(); return }
     def cfg = loadConfig()
@@ -1010,10 +1014,24 @@ def startRun = {
             javafx.application.Platform.runLater { busyLabelRef.set(workshopText('script.c56cd61805bd', 'Hücreler içe aktarılıyor…')); step.set('BUSY'); render() }
             // Uzun çalıştırmadan SONRA QP.getCurrentImageData()'yı YENİDEN ALMA: başlatan imageData'ya yaz.
             if (cancelledRef.get()) { javafx.application.Platform.runLater { step.set('READY'); render() }; return }
-            def imp = importCells(geo, imageData, rd.unionRoi, rd.calA, runReplacePrev, runSummaryBase)
-            def summaryName = runReplacePrev ? runSummaryBase
-                                             : nextSummaryName(imageData.getHierarchy(), rd.unionRoi, runSummaryBase)
-            def dens = writeCounts(imageData, rd.targets, rd.unionRoi, imp.cells, rd.calA, cfg.model, runWriteTargets, summaryName)
+            def applyOutput = { ->
+                if (cancelledRef.get()) return null
+                def imp = importCells(geo, imageData, rd.unionRoi, rd.calA, runReplacePrev, runSummaryBase)
+                def summaryName = runReplacePrev ? runSummaryBase
+                                                 : nextSummaryName(imageData.getHierarchy(), rd.unionRoi, runSummaryBase)
+                def dens = writeCounts(imageData, rd.targets, rd.unionRoi, imp.cells, rd.calA, cfg.model, runWriteTargets, summaryName)
+                return [imp: imp, dens: dens]
+            }
+            def applied = localWorkflow != null ? localWorkflow.onHost(applyOutput as java.util.concurrent.Callable) : applyOutput()
+            if (applied == null) { javafx.application.Platform.runLater { step.set('READY'); render() }; return }
+            def imp = applied.imp
+            def dens = applied.dens
+            if (localWorkflow != null && runProject != null) {
+                localWorkflow.recordWizardResult(runProject, imageData, 'classpose', rd.unionRoi, imp.detections, dens.summary,
+                    [runner: cfg.runner, classes: CLASSES.collect { it.tr + CLASS_SUFFIX },
+                     class_mapping: CLASSES.collectEntries { [(it.tr + CLASS_SUFFIX): it.key] },
+                     settings: [model: cfg.model, requested_device: cfg.device]])
+            }
             if (imp.outside > 0) appendLine(workshopText('script.9309f1b8f107', 'Not: alan dışında kalan ') + imp.outside + workshopText('script.8604214cf20b', ' kontur atlandı.'))
             def txt = resultText(imageData, cfg, rd, imp, dens, stats, elapsed)
             javafx.application.Platform.runLater {

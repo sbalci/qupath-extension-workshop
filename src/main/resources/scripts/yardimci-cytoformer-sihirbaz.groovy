@@ -75,6 +75,8 @@ import java.io.File
 
 def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
+def localWorkflow = null
+try { localWorkflow = Class.forName('io.github.sbalci.qupath.workshop.WorkshopLocalWorkflow') } catch (ClassNotFoundException ignored) {}
 
 // ── Sabitler ───────────────────────────────────────────────────────────────
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
@@ -743,6 +745,7 @@ if (isHeadless) {
     println String.format(java.util.Locale.US, 'Tahmini süre: %s (%d hücre, %d parça, %s)', formatDuration(rd.estSec), rd.cells.size(), rd.nChunks, rd.gpu ? 'GPU varsayımı' : 'CPU')
 
     def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs()
+    def previousClasses = rd.cells.collectEntries { [(it.getID().toString()): (it.getPathClass()?.toString() ?: '')] }
     long t0 = System.currentTimeMillis()
     def appendLine = { String ln -> println '  | ' + ln }
     def setPhase = { String ph -> println '# ' + ph }
@@ -762,6 +765,14 @@ if (isHeadless) {
     def applyStats = applyAssignments(rd.cells, pipeline.assignments, rd.minProb)
     writeAnnotationMeasurements(rd.targets, rd.cells, pipeline.assignments, rd.minProb, rd.mpp)
     try { imageData.getHierarchy().fireHierarchyChangedEvent(imageData.getHierarchy()) } catch (Throwable ignore) {}
+    if (localWorkflow != null && QP.getProject() != null) {
+        localWorkflow.recordClassificationResult(QP.getProject(), imageData, rd.unionRoi,
+            pipeline.assignments.keySet().collect { rd.cells[it as int] },
+            [runner: cfg.runner, weights: new File(effModelDir, 'checkpoint.pth').getAbsolutePath(), revision: CODE_SHA,
+             previous_classes: previousClasses, classes: CLASSES.collect { it.tr + CLASS_SUFFIX },
+             class_mapping: CLASSES.collectEntries { [(it.tr + CLASS_SUFFIX): it.key] },
+             settings: [organ: cfg.organ, requested_device: cfg.device, min_probability: rd.minProb]])
+    }
     long elapsed = System.currentTimeMillis() - t0
     pipeline.skippedForeign = skippedForeign
     println buildResultText(imageData, cfg, cfg.organ, pipeline, applyStats, rd.areaMm2, elapsed)
@@ -940,6 +951,8 @@ def startRun = { ->
         }
     }
     final int skippedForeign = nSkippedForeign
+    final def runProject = QP.getProject()
+    final def previousClasses = rd.cells.collectEntries { [(it.getID().toString()): (it.getPathClass()?.toString() ?: '')] }
     def modelDir = modelDirOf(cfg)
     def workDir = resolveWorkDir(cfg, imageData); workDir.mkdirs(); workDirRef.set(workDir)
     cancelledRef.set(false); resetLog(); runStartRef.set(System.currentTimeMillis())
@@ -988,6 +1001,23 @@ def startRun = { ->
                     try { gui.getViewer()?.repaintEntireImage() } catch (Throwable ignore) {}
                     pipeline.skippedForeign = skippedForeign
                     def txt = buildResultText(imageData, cfg, cfg.organ, pipeline, applyStats, rd.areaMm2, elapsed)
+                    if (localWorkflow != null && runProject != null) {
+                        def recorder = new Thread({
+                            try {
+                                localWorkflow.recordClassificationResult(runProject, imageData, rd.unionRoi,
+                                    pipeline.assignments.keySet().collect { rd.cells[it as int] },
+                                    [runner: cfg.runner, weights: new File(modelDir, 'checkpoint.pth').getAbsolutePath(), revision: CODE_SHA,
+                                     previous_classes: previousClasses, classes: CLASSES.collect { it.tr + CLASS_SUFFIX },
+                                     class_mapping: CLASSES.collectEntries { [(it.tr + CLASS_SUFFIX): it.key] },
+                                     settings: [organ: cfg.organ, requested_device: cfg.device, min_probability: rd.minProb]])
+                                javafx.application.Platform.runLater { resultTextRef.set(txt); step.set('RESULT'); render() }
+                            } catch (Throwable t) {
+                                javafx.application.Platform.runLater { errorTextRef.set(t.getMessage() ?: t.getClass().getSimpleName()); step.set('ERROR'); render() }
+                            }
+                        }, 'AtolyeCytoFormer-Record')
+                        recorder.setDaemon(true); recorder.start()
+                        return
+                    }
                     resultTextRef.set(txt); step.set('RESULT'); render()
                 } catch (Throwable t) { errorTextRef.set(workshopText('script.cd62cf56dc30', 'Sonuç işleme hatası: ') + (t.getMessage() ?: t.getClass().getSimpleName())); step.set('ERROR'); render() }
             }

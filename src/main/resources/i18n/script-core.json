@@ -29693,19 +29693,26 @@
     },
     "yardimci-classpose-sihirbaz.groovy": {
       "revision": "a93a2117daf270c8a867eeb39575850c771c9fd2",
-      "sha256": "efb8259e457385b96e900b2257bcac342ba0e217bdec0cd29ecb3199a55ca7b1",
+      "sha256": "ea9458fce0f2a707a0ac83ca32e6176aadb42f3d8f9a5764f4b05d0a97fc0ee8",
       "baseline_reviews": [
         {
           "revision": "9627a53e98774c099decfdc1f6c13e9dd29b5b63",
           "previous_sha256": "8367cf2cd264417e2215263bd1a381b5ee8ae026688fd96aaf73626d3f674611",
           "sha256": "efb8259e457385b96e900b2257bcac342ba0e217bdec0cd29ecb3199a55ca7b1",
           "record": "docs/english-coverage-2026-11-15.md"
+        },
+        {
+          "revision": "b44990ecbd4baf985adb59548dad68b0ea61e0d4",
+          "working_tree": true,
+          "previous_sha256": "efb8259e457385b96e900b2257bcac342ba0e217bdec0cd29ecb3199a55ca7b1",
+          "sha256": "ea9458fce0f2a707a0ac83ca32e6176aadb42f3d8f9a5764f4b05d0a97fc0ee8",
+          "record": "docs/local-workflow-validation-2026-11-18.md"
         }
       ]
     },
     "yardimci-cytoformer-sihirbaz.groovy": {
       "revision": "a93a2117daf270c8a867eeb39575850c771c9fd2",
-      "sha256": "f811e73f10c2dbe504abd1a0f507bfa295a18220c7fdcd0a1488e5d6157fb312",
+      "sha256": "22fbeb76b913bd047f88ab60017a777400874d955b497c3372a57aa84c2e171a",
       "baseline_reviews": [
         {
           "revision": "30c1f81d651d74f9f4004e642a1ab45fd28c72fb",
@@ -29718,6 +29725,13 @@
           "previous_sha256": "30d692a18d8bfc8e8596c46fb878498e4396f791c747b26d72e19528c536d5f1",
           "sha256": "f811e73f10c2dbe504abd1a0f507bfa295a18220c7fdcd0a1488e5d6157fb312",
           "record": "docs/english-coverage-2026-11-15.md"
+        },
+        {
+          "revision": "b44990ecbd4baf985adb59548dad68b0ea61e0d4",
+          "working_tree": true,
+          "previous_sha256": "f811e73f10c2dbe504abd1a0f507bfa295a18220c7fdcd0a1488e5d6157fb312",
+          "sha256": "22fbeb76b913bd047f88ab60017a777400874d955b497c3372a57aa84c2e171a",
+          "record": "docs/local-workflow-validation-2026-11-18.md"
         }
       ]
     },
@@ -30617,7 +30631,7 @@
     },
     "yardimci-tiatoolbox-maske.groovy": {
       "revision": "7de156cb15b7f8e0ae3b1fd990ee65d2d160a655",
-      "sha256": "1b683ab78e6a50bafd3d776d1f70434e494d409c129fe3cc0fe753e28a293b88",
+      "sha256": "60b5c56994bdb34da1f31ddf2cb28e9ccc1e594e05be2043aaa3262915333df1",
       "baseline_reviews": [
         {
           "revision": "3d10305046a7781d249eb41df56f79ee479f6524",
@@ -30630,6 +30644,12 @@
           "previous_sha256": "537069c18e90124eae14435dbfd9a240fea7c381c360a261b11b967593a566b0",
           "sha256": "1b683ab78e6a50bafd3d776d1f70434e494d409c129fe3cc0fe753e28a293b88",
           "record": "docs/english-coverage-2026-11-15.md"
+        },
+        {
+          "revision": "b44990ecbd4baf985adb59548dad68b0ea61e0d4",
+          "previous_sha256": "1b683ab78e6a50bafd3d776d1f70434e494d409c129fe3cc0fe753e28a293b88",
+          "sha256": "60b5c56994bdb34da1f31ddf2cb28e9ccc1e594e05be2043aaa3262915333df1",
+          "record": "docs/local-workflow-validation-2026-11-18.md"
         }
       ]
     },
@@ -31057,13 +31077,20 @@
     },
     "yardimci-histoplus-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "b793c1f60aa7ffc703573ee9b9c4c1fdfede0499980e67e9e6a0d882e5674205",
+      "sha256": "d6e199e3df7a98ca4cbce2ae71ff61f29a1c314cbb52f2cb1b11a33746acd2c0",
       "baseline_reviews": [
         {
           "revision": "9627a53e98774c099decfdc1f6c13e9dd29b5b63",
           "previous_sha256": "470cfe97d34fc7a5ce1dedfc21d1ed724a0ed49d2bfa83d0eab315cdc425e79f",
           "sha256": "b793c1f60aa7ffc703573ee9b9c4c1fdfede0499980e67e9e6a0d882e5674205",
           "record": "docs/english-coverage-2026-11-15.md"
+        },
+        {
+          "revision": "b44990ecbd4baf985adb59548dad68b0ea61e0d4",
+          "working_tree": true,
+          "previous_sha256": "b793c1f60aa7ffc703573ee9b9c4c1fdfede0499980e67e9e6a0d882e5674205",
+          "sha256": "d6e199e3df7a98ca4cbce2ae71ff61f29a1c314cbb52f2cb1b11a33746acd2c0",
+          "record": "docs/local-workflow-validation-2026-11-18.md"
         }
       ]
     },
@@ -31519,7 +31546,7 @@
     },
     "yardimci-nuclick-sihirbaz.groovy": {
       "revision": "53c98af1479cb43943fb6fd26a8a4ef231061ff3",
-      "sha256": "756ac1deb299aeb6abdd28abec5897bde1ab251879e0d556b47547fd5709a01b",
+      "sha256": "2f4ac739ba32c6a3e507ea23eeffc9d572ad3846e853848755d1b7f15679db87",
       "baseline_reviews": [
         {
           "revision": "3f379977508d3636ab34ad91d3c0c36fc035df8d",
@@ -31532,6 +31559,13 @@
           "previous_sha256": "134c175e403df9757eabff8e9a5a9317210fdc2975b44a0fa316516e1ae0e915",
           "sha256": "756ac1deb299aeb6abdd28abec5897bde1ab251879e0d556b47547fd5709a01b",
           "record": "docs/english-coverage-2026-11-15.md"
+        },
+        {
+          "revision": "b44990ecbd4baf985adb59548dad68b0ea61e0d4",
+          "working_tree": true,
+          "previous_sha256": "756ac1deb299aeb6abdd28abec5897bde1ab251879e0d556b47547fd5709a01b",
+          "sha256": "2f4ac739ba32c6a3e507ea23eeffc9d572ad3846e853848755d1b7f15679db87",
+          "record": "docs/local-workflow-validation-2026-11-18.md"
         }
       ]
     },

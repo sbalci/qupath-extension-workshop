@@ -357,6 +357,10 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
             }
 
             menu.getItems().add(new SeparatorMenuItem());
+            var localWorkflow = new MenuItem();
+            localWorkflow.textProperty().bind(bindI18n("workflow.title"));
+            localWorkflow.setOnAction(e -> WorkshopResultsDialog.show(qupath));
+            menu.getItems().add(localWorkflow);
             var settings = new MenuItem();
             settings.textProperty().bind(bindI18n("menu.settings"));
             settings.setOnAction(e -> WorkshopSettingsDialog.show());
@@ -460,6 +464,15 @@ public class WorkshopExtension implements QuPathExtension, GitHubProject {
         } catch (Throwable t) {
             logger.warn("Could not register Atölye preferences in QuPath's Preferences pane", t);
         }
+    }
+
+    public static void openLocalSetup(QuPathGUI qupath, String adapter) {
+        String filename = switch (adapter) {
+            case "histoplus" -> "yardimci-histoplus-sihirbaz.groovy";
+            case "nuclick" -> "yardimci-nuclick-sihirbaz.groovy";
+            default -> throw new IllegalArgumentException("Unsupported local model");
+        };
+        new WorkshopExtension().runScriptSafely(qupath, new ScriptEntry(adapter, filename));
     }
 
     private void runScriptSafely(QuPathGUI qupath, ScriptEntry entry) {

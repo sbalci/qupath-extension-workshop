@@ -93,6 +93,8 @@ import java.io.File
 
 def gui = qupath.lib.gui.QuPathGUI.getInstance()
 def isHeadless = gui == null
+def localWorkflow = null
+try { localWorkflow = Class.forName('io.github.sbalci.qupath.workshop.WorkshopLocalWorkflow') } catch (ClassNotFoundException ignored) {}
 
 // ── Sabitler ────────────────────────────────────────────────────────────────
 def MONO = "-fx-font-family: 'Consolas', 'Menlo', 'Courier New', monospace; -fx-font-size: 12px;"
@@ -495,6 +497,7 @@ def importResults = { File workDir, imageData, exp, String mode ->
         }
         def roi = ROIs.createPolygonROI(xs, ys, plane)
         def det = PathObjects.createDetectionObject(roi, pc)
+        det.getMetadata().put('atolye.workflow.original-class', pc.toString())
         def ml = det.getMeasurementList()
         double areaSlidePx = (double) r.areaPx * ds * ds
         if (calibrated) {
@@ -538,7 +541,7 @@ def importResults = { File workDir, imageData, exp, String mode ->
     return [ok: true, nOk: nOk, nFail: nFail, nDrift: nDrift,
             meanArea: meanArea, calibrated: calibrated,
             mode: mode, replaced: replacePrev, nRemoved: nRemoved,
-            sentinelName: sentinelName]
+            sentinelName: sentinelName, detections: dets, summary: sentinel]
 }
 
 // ── Özet metni ──────────────────────────────────────────────────────────────
@@ -723,6 +726,7 @@ def startRun = {
         }
     }
     final String runMode = mode
+    final def runProject = QP.getProject()
 
     cancelledRef.set(false)
     busyLabelRef.set(workshopText('script.53b100c3e097', 'Çalıştırılıyor'))
@@ -751,6 +755,24 @@ def startRun = {
                 if (cancelledRef.get()) { step.set('READY'); render(); return }
                 def imp = importResults(workDir, imageData, exp, runMode)
                 if (!imp.ok) { errorTextRef.set(imp.error); step.set('ERROR'); render(); return }
+                if (localWorkflow != null && runProject != null) {
+                    // Persistence and hashing stay off the UI thread; host mutations are marshalled by the facade.
+                    def capturedResult = buildResultText(exp, imp, cfg, imageData)
+                    def recorder = new Thread({
+                        try {
+                            def predictions = com.google.gson.JsonParser.parseString(new File(workDir, 'predictions.json').getText('UTF-8')).getAsJsonObject()
+                            localWorkflow.recordWizardResult(runProject, imageData, 'nuclick', imp.summary.getROI(), imp.detections, imp.summary,
+                                [runner: cfg.bridge, actual_device: predictions.get('device')?.getAsString(), classes: [imp.detections.isEmpty() ? 'NuClick' : imp.detections[0].getPathClass().toString()],
+                                 settings: [downsample: exp.ds, threshold: cfg.threshold, requested_device: cfg.device],
+                                 prompt_outcomes: [items: predictions.getAsJsonArray('items').collect { [id: it.getAsJsonObject().get('id').getAsString(), ok: it.getAsJsonObject().get('ok').getAsBoolean()] }]])
+                            javafx.application.Platform.runLater { resultTextRef.set(capturedResult); step.set('DONE'); render() }
+                        } catch (Throwable t) {
+                            javafx.application.Platform.runLater { errorTextRef.set(t.getMessage() ?: t.getClass().getSimpleName()); step.set('ERROR'); render() }
+                        }
+                    }, 'AtolyeNuClick-Record')
+                    recorder.setDaemon(true); recorder.start()
+                    return
+                }
                 resultTextRef.set(buildResultText(exp, imp, cfg, imageData))
                 step.set('DONE'); render()
             }
